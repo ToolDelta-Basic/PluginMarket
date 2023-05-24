@@ -1,3 +1,15 @@
 .vscode
 .idea
 *.pyc
+*.json
+*.bdx
+*.yml
+*.spec
+build
+dist
+GoDev
+phoenixbuilder
+go-cqhttp
+upx
+PluginEnc.py
+PluginDec.py
