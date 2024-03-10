@@ -17,7 +17,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "author": "wling/7912",
 }
 
@@ -72,7 +72,7 @@ async def _(playermessage: player_message_info):
 
 @player_death()
 async def _(playerdeath: player_death):
-    playername = playerdeath
+    playername = playerdeath.playername
     if playername not in get_all_player():
         return
     deathTime = int(time.time())
