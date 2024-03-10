@@ -2,7 +2,12 @@ import os
 import time
 import ujson as json
 from 维度传送 import tp
-from tooldelta.plugin_load.injected_plugin import player_message, player_death
+from tooldelta.plugin_load.injected_plugin import (
+    player_message,
+    player_death,
+    player_message_info,
+    player_name,
+)
 from tooldelta.plugin_load.injected_plugin.movent import (
     get_all_player,
     tellrawText,
@@ -12,7 +17,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "author": "wling/7912",
 }
 
@@ -37,7 +42,10 @@ def translateDim(dimension):
 
 
 @player_message()
-async def _(playername, msg):
+async def _(playermessage: player_message_info):
+    playername = playermessage.playername
+    msg = playermessage.message
+
     if msg == ".backdeath":
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -63,7 +71,8 @@ async def _(playername, msg):
 
 
 @player_death()
-async def _(playername, killer):
+async def _(playerdeath: player_death):
+    playername = playerdeath
     if playername not in get_all_player():
         return
     deathTime = int(time.time())

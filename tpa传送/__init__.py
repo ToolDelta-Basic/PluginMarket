@@ -1,4 +1,8 @@
-from tooldelta.plugin_load.injected_plugin import player_message, repeat
+from tooldelta.plugin_load.injected_plugin import (
+    player_message,
+    player_message_info,
+    repeat,
+)
 from tooldelta.plugin_load.injected_plugin.movent import (
     sendcmd,
     rawText,
@@ -8,7 +12,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "tpa传送",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "wling",
 }
 
@@ -87,7 +91,9 @@ class tpa:
 
 
 @player_message()
-async def tpaCommand(playername, msg):
+async def tpaCommand(playermessage: player_message_info):
+    msg = playermessage.msg
+    playername = playermessage.playername
     if msg.startswith(".tpa"):
         if msg == ".tpa":
             rawText(

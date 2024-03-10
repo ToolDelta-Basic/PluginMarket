@@ -3,11 +3,15 @@ from tooldelta.plugin_load.injected_plugin.movent import (
     get_all_player,
     rawText,
 )
-from tooldelta.plugin_load.injected_plugin import player_message, repeat
+from tooldelta.plugin_load.injected_plugin import (
+    player_message,
+    player_message_info,
+    repeat,
+)
 
 __plugin_meta__ = {
     "name": "井字棋",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "SuperScript/wling",
 }
 
@@ -109,7 +113,9 @@ JZQ_Rooms = []
 
 
 @player_message()
-async def _(playername: str, msg: str):
+async def _(playermessage: player_message_info):
+    playername = playermessage.playername
+    msg = playermessage.msg
     if msg.startswith(".井字棋 "):
         print(JZQ_Rooms)
         if not JZQ_Rooms:
@@ -147,7 +153,7 @@ async def _(playername: str, msg: str):
                             Game_JZQ.轮流(True)
                             rawText(
                                 i[Game_JZQ.轮流()],
-                                f"§a井字棋§f>> §6对方已落子: §e({x_xpos}, {y_ypos})§6 到你啦!"
+                                f"§a井字棋§f>> §6对方已落子: §e({x_xpos}, {y_ypos})§6 到你啦!",
                             )
                             if Game_JZQ.判定():
                                 Game_JZQ.stage_display(i, playername)

@@ -1,13 +1,17 @@
 import time
 from tooldelta.frame import Config
-from tooldelta.plugin_load.injected_plugin import player_left, player_message
+from tooldelta.plugin_load.injected_plugin import (
+    player_left,
+    player_message,
+    player_message_info,
+)
 from tooldelta.plugin_load.injected_plugin.movent import get_all_player, is_op
 from tooldelta import plugins
 
 
 __plugin_meta__ = {
     "name": "发言频率",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling/7912",
 }
 
@@ -32,7 +36,8 @@ ban = ban_plugin.ban
 
 
 @player_message()
-async def _(playername: str, *arg):
+async def _(playermessage: player_message_info):
+    playername = playermessage.playername
     if is_op(playername) and playername in get_all_player():
         msgSendTime = time.time()
         if playername not in playerMsgTimeDict:
