@@ -3,8 +3,6 @@ name: Generate Directory JSON
 on:
   push:
     branches: [main]
-    paths:
-      - "plugin_market/**"
   workflow_dispatch: {}
 
 jobs:
