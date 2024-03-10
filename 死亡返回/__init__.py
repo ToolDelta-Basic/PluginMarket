@@ -3,6 +3,7 @@ import time
 import ujson as json
 from 维度传送 import tp
 from tooldelta.plugin_load.injected_plugin import (
+    player_death_info,
     player_message,
     player_death,
     player_message_info,
@@ -17,7 +18,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "author": "wling/7912",
 }
 
@@ -71,7 +72,7 @@ async def _(playermessage: player_message_info):
 
 
 @player_death()
-async def _(playerdeath: player_death):
+async def _(playerdeath: player_death_info):
     playername = playerdeath.playername
     if playername not in get_all_player():
         return
