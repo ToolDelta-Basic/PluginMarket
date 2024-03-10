@@ -18,7 +18,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.0.9",
+    "version": "0.1.0",
     "author": "wling/7912",
 }
 
@@ -98,7 +98,8 @@ async def _(playerdeath: player_death_info):
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     tellrawText(
-        playername,
+        f'@a[name="{playername}"]',
         "§l死亡点记录§r",
         f"已记录死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)], 输入§l.backdeath§r返回.",
     )
+
