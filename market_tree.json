@@ -7,7 +7,7 @@
   "MarketPlugins": {
     "自定义聊天栏菜单": {
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "description": "自定义聊天栏菜单触发词触发的指令, 方便简洁",
       "limit_launcher": null,
       "pre-plugins": {
