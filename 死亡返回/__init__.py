@@ -12,7 +12,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "author": "wling/7912",
 }
 
@@ -42,20 +42,20 @@ async def _(playername, msg):
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         if playername not in data:
-            tellrawText(f'@a[name="{playername}"]', "§l§4ERROR§r", "§c未找到记录.")
+            tellrawText(playername, "§l§4ERROR§r", "§c未找到记录.")
             return
         deathData = data[playername]
         tp(
-            f'@a[name="{playername}"]',
+            playername,
             x=deathData["position"]["x"],
             y=deathData["position"]["y"],
             z=deathData["position"]["z"],
             dimension=deathData["dimension"],
         )
         tellrawText(
-            f'@a[name="{playername}"]',
+            playername,
             "§l死亡点记录§r",
-            f"已传送到上次死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)]."
+            f"已传送到上次死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)].",
         )
         data[playername] = deathData
         with open(config_path, "w", encoding="utf-8") as f:
@@ -76,9 +76,9 @@ async def _(playername, killer):
         deathTimeDelta = deathTime - deathData_old["time"]
         if deathTimeDelta < LOG_DEATH_TIME:
             tellrawText(
-                f'@a[name="{playername}"]',
+                playername,
                 "§l§4ERROR§r",
-                f"§c时间间隔过短, 未保存此次记录. (冷却时间: §l{LOG_DEATH_TIME - deathTimeDelta}§r§cs)"
+                f"§c时间间隔过短, 未保存此次记录. (冷却时间: §l{LOG_DEATH_TIME - deathTimeDelta}§r§cs)",
             )
             return
 
@@ -88,7 +88,7 @@ async def _(playername, killer):
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     tellrawText(
-        f'@a[name="{playername}"]',
+        playername,
         "§l死亡点记录§r",
         f"已记录死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)], 输入§l.backdeath§r返回.",
     )
