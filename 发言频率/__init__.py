@@ -4,6 +4,7 @@ from tooldelta.plugin_load.injected_plugin import (
     player_left,
     player_message,
     player_message_info,
+    player_name,
 )
 from tooldelta.plugin_load.injected_plugin.movent import get_all_player, is_op
 from tooldelta import plugins
@@ -11,7 +12,7 @@ from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "发言频率",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "wling/7912",
 }
 
@@ -54,6 +55,7 @@ async def _(playermessage: player_message_info):
 
 
 @player_left()
-async def _(playername: str):
+async def _(playermessage: player_name):
+    playername = playermessage.playername
     if playername in playerMsgTimeDict:
         del playerMsgTimeDict[playername]
