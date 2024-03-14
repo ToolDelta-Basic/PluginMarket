@@ -15,7 +15,7 @@ plugins.checkSystemVersion((0, 1, 9))
 
 @plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
@@ -132,7 +132,11 @@ class BasicFunctionLib(Plugin):
             raise Exception("Failed to get the position.")
         if targetNameToGet.startswith("@a"):
             return list(result.values())[0]
-        return result[targetNameToGet]
+        res = result.get(targetNameToGet)
+        if res:
+            return res
+        else:
+            raise ValueError("error(debug): 找不到坐标-玩家, 结果表是", res, "目标选择器是", targetNameToGet)
 
     def getItem(self, targetName: str, itemName: str, itemSpecialID: int = -1) -> int:
         "获取玩家背包内物品数量: 目标选择器, 物品ID, 特殊值 = 所有"
@@ -203,6 +207,11 @@ class BasicFunctionLib(Plugin):
         "获取玩家坐标的X, Y, Z值"
         res = self.getPos(player, timeout=timeout)["position"]
         return res["x"], res["y"], res["z"]
+    
+    def getPosXYZ_Int(self, player, timeout=30) -> tuple[float, float, float]:
+        "获取玩家坐标的X, Y, Z值"
+        res = self.getPos(player, timeout=timeout)["position"]
+        return int(res["x"]), int(res["y"]), int(res["z"])
 
     def sendresultcmd(self, cmd, timeout=30):
         "返回命令执行是否成功"

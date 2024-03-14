@@ -9,7 +9,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -43,15 +43,16 @@ class GameInteractive(Plugin):
         }
         return myPacket
 
-    def place_command_block(self, command_block_update_packet):
+    def place_command_block(self, command_block_update_packet, facing = 0, limit_seconds = 0.5):
+        cmd = ("/setblock "
+            + " ".join([str(i) for i in command_block_update_packet["Position"]])
+            + " " + ["", "repeating_", "chain_"][command_block_update_packet['Mode']] + "command_block " + str(facing))
         # 传入参数: 为 make_packet_command_block_update 方法的返回的第二个值
         self.game_ctrl.sendcmd(
-            "/setblock "
-            + " ".join([str(i) for i in command_block_update_packet["Position"]])
-            + " command_block"
+            cmd
         )
         self.game_ctrl.sendcmd(
             "/tp " + " ".join([str(i) for i in command_block_update_packet["Position"]])
         )
-        time.sleep(0.5)
+        time.sleep(limit_seconds)
         self.game_ctrl.sendPacket(78, command_block_update_packet)
