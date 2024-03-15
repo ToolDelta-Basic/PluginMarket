@@ -1,5 +1,7 @@
 from asyncio import run
+from sys import argv
 from tooldelta.plugin_load.injected_plugin import (
+    player_message,
     player_message_info,
     repeat,
 )
@@ -13,7 +15,7 @@ from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "tpa传送",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "author": "wling",
 }
 
@@ -91,108 +93,115 @@ class tpa:
         tpaRequests.remove(self)
 
 
+@player_message()
 async def tpaCommand(playermessage: player_message_info):
     msg = playermessage.message
     playername = playermessage.playername
 
-    if msg == "":
-        rawText(
-            playername,
-            display
-            + "\n玩家互传(选人版)  帮助菜单\n输入§c.tpa list §r查询目前的玩家传送请求\n输入§c.tpa <玩家名称> §r向对方发起传送请求\n输入§c.tpa acc §r接受对方请求, 将对方传来\n输入§c.tpa dec §r拒绝对方请求",
-        )
-        return
-    arg = msg.split(" ")[0]
-    if arg == "list":
-        if len(tpaRequests) == 0:
-            rawText(playername, display + "暂无请求.")
-        else:
-            tpaIndex = 1
-            for i in tpaRequests:
-                rawText(
-                    playername,
-                    display
-                    + "请求§l§c%d§r: §l%s§r 发送给 §l%s§r, 剩余时间: §l%d§r s"
-                    % (tpaIndex, i.playersend, i.playerrecv, i.time),
-                )
-                tpaIndex += 1
-    elif arg == "acc":
-        tpaBeRequested = False
-        for i in tpaRequests:
-            if playername == i.playerrecv:
-                tpaBeRequested = True
-                i.accept()
-                break
-        if not (tpaBeRequested):
-            tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
-    elif arg == "dec":
-        tpaBeRequested = False
-        for i in tpaRequests:
-            if playername == i.playerrecv:
-                tpaBeRequested = True
-                i.decline()
-                break
-        if not (tpaBeRequested):
-            tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
-    else:
-        playerTpaFound = []
-        playerTpaToSearch = arg
-        for i in get_all_player():
-            if playerTpaToSearch == i:
-                playerTpaFound = [i]
-                break
-            elif playerTpaToSearch in i:
-                playerTpaFound.append(i)
-        print(playerTpaFound)
-        if len(playerTpaFound) == 0:
-            tellrawText(
+    if msg.startswith(".tpa"):
+        arg = msg.split(" ")
+        if len(arg) == 1:
+            rawText(
                 playername,
-                "§l§4ERROR§r",
-                "§c未找到名称包含 §l%s§r§c 的玩家, 无法发起请求." % playerTpaToSearch,
+                display
+                + "\n玩家互传(选人版)  帮助菜单\n输入§c.tpa list §r查询目前的玩家传送请求\n输入§c.tpa <玩家名称> §r向对方发起传送请求\n输入§c.tpa acc §r接受对方请求, 将对方传来\n输入§c.tpa dec §r拒绝对方请求",
             )
-        elif len(playerTpaFound) >= 2:
-            tellrawText(
-                playername,
-                "§l§4ERROR§r",
-                "§c有多名玩家名称包含 §l%s§r§c, 无法发起请求:" % playerTpaToSearch,
-            )
-            playerTpaFoundIndex = 1
-            for i in playerTpaFound:
-                tellrawText(
-                    playername,
-                    "§l§4ERROR§r",
-                    "§l§c%d§r§c. §l%s§r§c" % (playerTpaFoundIndex, i),
-                )
-                playerTpaFoundIndex += 1
-        else:
-            tpaSentRequest = False
-            tpaRecvedRequest = False
-            for i in tpaRequests:
-                if playername == i.playersend:
-                    tpaSentRequest = True
-                if playerTpaFound[0] == i.playerrecv:
-                    tpaRecvedRequest = True
-            if tpaSentRequest:
-                tellrawText(
-                    playername,
-                    "§l§4ERROR§r",
-                    "§c你已发过请求, 请等对方处理后或等请求过期后再试.",
-                )
-            elif tpaRecvedRequest:
-                tellrawText(
-                    playername,
-                    "§l§4ERROR§r",
-                    "§c对方有未处理的请求, 请等对方处理后或等请求过期后再试.",
-                )
+            return
+        arg = msg.split(" ")[1]
+        if arg == "list":
+            if len(tpaRequests) == 0:
+                rawText(playername, display + "暂无请求.")
             else:
-                tpa(playername, playerTpaFound[0], 60)
+                tpaIndex = 1
+                for i in tpaRequests:
+                    rawText(
+                        playername,
+                        display
+                        + "请求§l§c%d§r: §l%s§r 发送给 §l%s§r, 剩余时间: §l%d§r s"
+                        % (tpaIndex, i.playersend, i.playerrecv, i.time),
+                    )
+                    tpaIndex += 1
+        elif arg == "acc":
+            tpaBeRequested = False
+            for i in tpaRequests:
+                if playername == i.playerrecv:
+                    tpaBeRequested = True
+                    i.accept()
+                    break
+            if not (tpaBeRequested):
+                tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
+        elif arg == "dec":
+            tpaBeRequested = False
+            for i in tpaRequests:
+                if playername == i.playerrecv:
+                    tpaBeRequested = True
+                    i.decline()
+                    break
+            if not (tpaBeRequested):
+                tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
+        else:
+            playerTpaFound = []
+            playerTpaToSearch = arg
+            for i in get_all_player():
+                if playerTpaToSearch == i:
+                    playerTpaFound = [i]
+                    break
+                elif playerTpaToSearch in i:
+                    playerTpaFound.append(i)
+            print(playerTpaFound)
+            if len(playerTpaFound) == 0:
+                tellrawText(
+                    playername,
+                    "§l§4ERROR§r",
+                    "§c未找到名称包含 §l%s§r§c 的玩家, 无法发起请求."
+                    % playerTpaToSearch,
+                )
+            elif len(playerTpaFound) >= 2:
+                tellrawText(
+                    playername,
+                    "§l§4ERROR§r",
+                    "§c有多名玩家名称包含 §l%s§r§c, 无法发起请求:" % playerTpaToSearch,
+                )
+                playerTpaFoundIndex = 1
+                for i in playerTpaFound:
+                    tellrawText(
+                        playername,
+                        "§l§4ERROR§r",
+                        "§l§c%d§r§c. §l%s§r§c" % (playerTpaFoundIndex, i),
+                    )
+                    playerTpaFoundIndex += 1
+            else:
+                tpaSentRequest = False
+                tpaRecvedRequest = False
+                for i in tpaRequests:
+                    if playername == i.playersend:
+                        tpaSentRequest = True
+                    if playerTpaFound[0] == i.playerrecv:
+                        tpaRecvedRequest = True
+                if tpaSentRequest:
+                    tellrawText(
+                        playername,
+                        "§l§4ERROR§r",
+                        "§c你已发过请求, 请等对方处理后或等请求过期后再试.",
+                    )
+                elif tpaRecvedRequest:
+                    tellrawText(
+                        playername,
+                        "§l§4ERROR§r",
+                        "§c对方有未处理的请求, 请等对方处理后或等请求过期后再试.",
+                    )
+                else:
+                    tpa(playername, playerTpaFound[0], 60)
 
 
+# plugins.get_plugin_api("聊天栏菜单").add_trigger(
+#     ["tpa"], None, "显示tpa帮助菜单", lambda player, args: run(tpaCommand(player_message_info(player," ".join(args))))
+# )
 plugins.get_plugin_api("聊天栏菜单").add_trigger(
     ["tpa"],
     None,
-    "tpa玩家互传，快捷方便",
-    lambda player, args: run(tpaCommand(player_message_info(player, " ".join(args)))),
+    "显示tpa帮助菜单",
+    None,
 )
 
 
