@@ -13,7 +13,7 @@ from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "tpa传送",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "author": "wling",
 }
 
@@ -191,7 +191,7 @@ async def tpaCommand(playermessage: player_message_info):
 plugins.get_plugin_api("聊天栏菜单").add_trigger(
     ["tpa"],
     None,
-    "显示tpa帮助菜单",
+    "tpa玩家互传，快捷方便",
     lambda player, args: run(tpaCommand(player_message_info(player, " ".join(args)))),
 )
 

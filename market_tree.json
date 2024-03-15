@@ -82,7 +82,7 @@
     },
     "tpa传送": {
       "author": "wling",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "description": "TPA玩家互传系统",
       "limit_launcher": null,
       "pre-plugins": { "聊天栏菜单": "0.1.11"},
