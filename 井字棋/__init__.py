@@ -115,9 +115,8 @@ JZQ_Rooms = []
 @player_message()
 async def _(playermessage: player_message_info):
     playername = playermessage.playername
-    msg = playermessage.msg
+    msg = playermessage.message
     if msg.startswith(".井字棋 "):
-        print(JZQ_Rooms)
         if not JZQ_Rooms:
             try:
                 to_who = msg.split()[1]
