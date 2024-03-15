@@ -11,7 +11,7 @@ from tooldelta.plugin_load.injected_plugin import (
 
 __plugin_meta__ = {
     "name": "井字棋",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "SuperScript/wling",
 }
 

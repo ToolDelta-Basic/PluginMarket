@@ -45,7 +45,7 @@
     },
     "井字棋": {
       "author": "SuperScript/wling",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "description": "娱乐小游戏: 3x3井字棋",
       "limit_launcher": null,
       "pre-plugins": {},
