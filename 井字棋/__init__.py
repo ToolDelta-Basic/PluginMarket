@@ -1,5 +1,5 @@
 from tooldelta.plugin_load.injected_plugin.movent import (
-    sendcmd,
+    sendwscmd,
     get_all_player,
     rawText,
 )
@@ -11,7 +11,7 @@ from tooldelta.plugin_load.injected_plugin import (
 
 __plugin_meta__ = {
     "name": "井字棋",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "SuperScript/wling",
 }
 
@@ -103,7 +103,7 @@ class JZQStage:
         return ps1 + ps2 + ps3 + "\n" + ps4 + ps5 + ps6 + "\n" + ps7 + ps8 + ps9
 
     def stage_display(self, index: list, playername: str, end=False):
-        sendcmd(
+        sendwscmd(
             f"/title {playername} actionbar §e§l井字棋\n§b时间: §c{'**' if end else self.Timer() // 60}§f:§c{'**' if end else self.Timer() % 60}§r §6落子:{'§a✔' if Game_JZQ.轮流() == index.index(playername) else '§c✘'}\n§l{Game_JZQ.display()}{'' if self.Timer() != 0 else '§c时间到!'}"
         )
 
@@ -156,13 +156,15 @@ async def _(playermessage: player_message_info):
                             )
                             if Game_JZQ.判定():
                                 Game_JZQ.stage_display(i, playername)
-                                sendcmd(f"/title {playername} title §e井字棋")
-                                sendcmd(f"/title {playername} subtitle §a祝贺!你赢了!")
+                                sendwscmd(f"/title {playername} title §e井字棋")
+                                sendwscmd(
+                                    f"/title {playername} subtitle §a祝贺!你赢了!"
+                                )
 
                                 nexPlayer = i[Game_JZQ.轮流()]
                                 Game_JZQ.stage_display(i, nexPlayer)
-                                sendcmd(f"/title {nexPlayer} title §e井字棋")
-                                sendcmd(f"/title {nexPlayer} subtitle §7惜败..")
+                                sendwscmd(f"/title {nexPlayer} title §e井字棋")
+                                sendwscmd(f"/title {nexPlayer} subtitle §7惜败..")
                                 JZQ_Rooms.remove(i)
                                 Game_JZQ.重置(True)
                                 continue
