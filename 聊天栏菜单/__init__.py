@@ -34,7 +34,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 12)
+    version = (0, 1, 13)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -51,6 +51,7 @@ class ChatbarMenu(Plugin):
     chatbar_triggers: list[ChatbarTriggers] = []
 
     def __init__(self, frame: Frame):
+        self.frame = frame
         self.game_ctrl = frame.get_game_control()
         self.cfg, _ = Config.getPluginConfigAndVersion(
             self.name, self.STD_CFG_TYPE, self.DEFAULT_CFG, (0, 0, 1)
@@ -88,7 +89,7 @@ class ChatbarMenu(Plugin):
     # ------------
     def on_player_message(self, player: str, msg: str):
         if msg in self.cfg["/help触发词"]:
-            is_op_mode = bool(
+            is_op_mode = self.frame.launcher.is_op(player) or bool(
                 self.game_ctrl.sendcmd(
                     "/testfor @a[name=" + player + ",m=1]", True
                 ).SuccessCount
@@ -115,14 +116,14 @@ class ChatbarMenu(Plugin):
             for tri in self.chatbar_triggers:
                 for trigger in tri.triggers:
                     if msg.startswith(trigger):
-                        is_op_mode = bool(
+                        is_op_mode = self.frame.launcher.is_op(player) or bool(
                             self.game_ctrl.sendcmd(
                                 "/testfor @a[name=" + player + ",m=1]", True
                             ).SuccessCount
                         )
                         if (not is_op_mode) and tri.op_only:
                             self.game_ctrl.say_to(
-                                player, "§c创造模式下才可以使用该菜单项"
+                                player, "§c创造模式或者OP才可以使用该菜单项"
                             )
                             return
                         args = msg.split()
