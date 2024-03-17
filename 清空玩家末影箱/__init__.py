@@ -1,14 +1,14 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
 from tooldelta.plugin_load.injected_plugin.movent import (
     tellrawText,
-    sendcmd,
+    sendwscmd,
     getTarget,
     is_op,
 )
 
 __plugin_meta__ = {
     "name": "清空玩家末影箱",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "wling",
 }
 
@@ -18,13 +18,13 @@ async def _(playermessage: player_message_info):
     playername = playermessage.playername
     message = playermessage.message
     if message.startswith(".encl"):
-        sendcmd(f"/tellraw {playername} §l§4ERROR§r §c指令不存在！")
+        sendwscmd(f"/tellraw {playername} §l§4ERROR§r §c指令不存在！")
         if is_op(playername):
             player_entity_clear = message.split(" ")[1]
             for i in getTarget("@a"):
                 if player_entity_clear == i:
                     for i in range(0, 27):
-                        sendcmd(
+                        sendwscmd(
                             f"/replaceitem entity {player_entity_clear} slot.enderchest {str(i)} air"
                         )
                     tellrawText(playername, text="§l§a清空末影箱  成功")
