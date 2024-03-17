@@ -61,7 +61,7 @@
     },
     "简易建造": {
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "description": "使用一些更简便的方法建造服务器",
       "limit_launcher": null,
       "pre-plugins": {

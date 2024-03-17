@@ -6,7 +6,7 @@ import time
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
