@@ -1,6 +1,5 @@
 import json
 import time
-import asyncio
 from typing import Callable
 from dataclasses import dataclass
 from tooldelta import Frame, Plugin, plugins, Config, Builtins
