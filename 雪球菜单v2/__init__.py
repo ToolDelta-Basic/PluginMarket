@@ -70,8 +70,8 @@ menu_patterns = [None, None, None, None, None]
 "菜单最大页码数, 菜单头, 菜单选项-0, 菜单选项-1, 菜单尾"
 
 default_page = MultiPage(
-    "default", 
-    "default", 
+    "default",
+    "default",
     range(0),
     default_page_show,
     default_page_okcb
@@ -81,7 +81,7 @@ default_page = MultiPage(
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 3)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     Page = Page
@@ -150,8 +150,8 @@ class SnowMenu(Plugin):
         }
         self.cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG_DEFAULT, (0, 0, 1))
         menu_patterns[:] = (
-            self.cfg["单页最大选项数"], 
-            self.cfg["菜单主界面格式头"], 
+            self.cfg["单页最大选项数"],
+            self.cfg["菜单主界面格式头"],
             self.cfg["菜单主界面选项格式(选项未选中)"],
             self.cfg["菜单主界面选项格式(选项被选中)"],
             self.cfg["菜单主界面格式尾"]
@@ -170,8 +170,8 @@ class SnowMenu(Plugin):
         x, y, z = self.getPosXYZ(player)
         for cbtype, cond, cmd in SNOWBALL_CMDS:
             p = self.interact.make_packet_command_block_update(
-                (x, y, z), 
-                cmd, mode=cbtype, 
+                (x, y, z),
+                cmd, mode=cbtype,
                 conditional=bool(cond)
             )
             self.interact.place_command_block(p, 5, 0.1)
@@ -200,12 +200,12 @@ class SnowMenu(Plugin):
             else:
                 return False
 
-    @Builtins.new_thread        
+    @Builtins.new_thread
     def next_page(self, player: str):
-        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         now_page = self.in_snowball_menu.get(player)
         if now_page is None:
+            self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
             self.in_snowball_menu[player] = self.reg_pages["default"]
             self.multi_snowball_page[player] = 0
             self.show_page_thread(player)
@@ -230,7 +230,7 @@ class SnowMenu(Plugin):
         while player in self.in_snowball_menu.keys():
             self.show_page(player)
             time.sleep(1)
-        
+
     def show_page(self, player: str):
         mp = self.in_snowball_menu[player]
         if isinstance(mp, Page):
