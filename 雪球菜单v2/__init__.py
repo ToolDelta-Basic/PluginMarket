@@ -7,14 +7,42 @@ from tooldelta import Frame, Plugin, plugins, Config, Builtins
 
 @dataclass
 class Page:
+    """
+    雪球菜单静态页面类
+    :params:
+        page_id: 菜单页面的ID, 不要与其他页面的id重复
+        next_page_id: 下一页的ID, 玩家在扔了一次雪球之后会跳转到这个ID对应的页面
+        page_texts: 这个雪球菜单页面向玩家显示的actionbar文字
+        ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
+            返回:
+                Page 对象: 跳转到该页
+                元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
+                None: 直接退出菜单
+        parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
+    """
     page_id: str
     next_page_id: str
     page_texts: str
-    ok_cb: Callable[[str], None]
+    ok_cb: Callable[[str], bool | None]
     parent_page_id: str | None = ""
 
 @dataclass
 class MultiPage:
+    """
+    雪球菜单动态复合页面类
+    :params:
+        page_id: 菜单页面的ID, 不要与其他页面的id重复
+        next_page_id: 下一页的ID, 玩家在扔了一次雪球之后会跳转到这个ID对应的页面
+        pages_range: 这个菜单页的页码数, 请传入一个 range(页码数).
+            刚刚进入这个页面的时候, 默认是在第 0 页, 玩家扔雪球后会往后翻页, 页码数+1. 当玩家翻页且当前页码>=页面数时: 会跳转到 next_page_id 指向的下一页的页面
+        page_cb: 显示动态菜单页的方法: (玩家名: str, 当前页码数: int) -> 页面内容文本: str
+        ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
+            返回:
+                Page 对象: 跳转到该页
+                元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
+                None: 直接退出菜单
+        parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
+    """
     page_id: str
     next_page_id: str
     pages_range: range
@@ -22,68 +50,14 @@ class MultiPage:
     ok_cb: Callable[[str, int], None | Page | tuple["MultiPage", int]]
     parent_page_id: str | None = None
 
-main_page_menus: list[tuple[Page | MultiPage | Callable[[str], str | None], str | Callable[[str], str]]] = []
-"主菜单: 菜单CB, 显示字"
-
-SNOWBALL_CMDS: list[tuple[int, int, str]] = [
-    (1, 0, '/execute @e[type=snowball] ~~~ execute @p[r=3] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
-    (2, 1, 'kill @e[type=snowball]'),
-    (2, 0, '/execute @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}'),
-    (2, 1, '/tag @a[rxm=88,tag=!snowmenu:escape] add snowmenu:escape'),
-    (2, 0, '/tag @a[rx=87,tag=snowmenu:escape] remove snowmenu:escape'),
-    (2, 0, '/execute @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}'),
-    (2, 1, '/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm'),
-    (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
-]
-
-def default_page_show(player: str, page: int) -> str:
-    max_length = len(main_page_menus)
-    fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
-    show_texts = [
-        Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
-    ]
-    c = page // menu_patterns[0]
-    cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
-    for i in cur_pages:
-        if isinstance(i[0], MultiPage):
-            text = i[1](player)
-        else:
-            text = i[1]
-        show_texts.append(Builtins.SimpleFmt(
-            {"[选项文本]": text}, menu_patterns[
-                3 if page == main_page_menus.index(i) else 2
-            ]
-        ))
-    if len(show_texts) == 1:
-        show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
-    show_texts.append(Builtins.SimpleFmt(fmt_kws, menu_patterns[4]))
-    return "\n".join(show_texts)
-
-def default_page_okcb(player: str, page: int):
-    page_cb = main_page_menus[page][0]
-    if isinstance(page, (Page, MultiPage)):
-        return page_cb
-    else:
-        return page_cb(player)
-
-menu_patterns = [None, None, None, None, None]
-"菜单最大页码数, 菜单头, 菜单选项-0, 菜单选项-1, 菜单尾"
-
-default_page = MultiPage(
-    "default",
-    "default",
-    range(0),
-    default_page_show,
-    default_page_okcb
-)
-
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
+    "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
     Page = Page
     MultiPage = MultiPage
 
@@ -98,6 +72,29 @@ class SnowMenu(Plugin):
         self.default_page = "default"
         self.read_cfg()
 
+    # ---------------- API ------------------
+
+    def add_page(self, page: Page | MultiPage):
+        """
+        向雪球菜单添加一个页码
+        :params:
+            page: 雪球菜单页类
+        """
+        self.reg_pages[page.page_id] = page
+
+    def register_main_page(self, page_cb: Page | MultiPage | Callable[[str], bool], usage_text: str | Callable[[str], str]):
+        """
+        注册一个雪球菜单首页跳转链接
+        确切来说就是让你的菜单页可以在雪球菜单首页被发现并被跳转
+        或者直接注册一个雪球菜单功能
+        :params:
+            page_cb: 静态菜单页类 / 动态菜单页类 / 回调方法 (玩家名: str -> 确认选项后是否不关闭菜单: bool)
+            usage_text: 选项的显示文本
+        """
+        main_page_menus.append((page_cb, usage_text))
+
+    # ---------------------------------------
+
     def on_def(self):
         self.getPosXYZ = plugins.get_plugin_api("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
         self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
@@ -105,12 +102,6 @@ class SnowMenu(Plugin):
 
     def on_inject(self):
         self.gc.sendwocmd("/tag @a remove snowmenu")
-
-    def add_page(self, page: Page | MultiPage):
-        self.reg_pages[page.page_id] = page
-
-    def register_main_page(self, page_cb: Page | MultiPage | Callable[[str], bool], usage_text: str | Callable[[str], str]):
-        main_page_menus.append((page_cb, usage_text))
 
     def set_player_page(self, player: str, page: Page | MultiPage, page_sub_id: int = 0):
         self.in_snowball_menu[player] = page
@@ -270,3 +261,59 @@ class SnowMenu(Plugin):
         if player in self.multi_snowball_page.keys():
             del self.multi_snowball_page[player]
         self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
+
+
+main_page_menus: list[tuple[Page | MultiPage | Callable[[str], str | None], str | Callable[[str], str]]] = []
+"主菜单: 菜单CB, 显示字"
+
+SNOWBALL_CMDS: list[tuple[int, int, str]] = [
+    (1, 0, '/execute @e[type=snowball] ~~~ execute @p[r=3] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
+    (2, 1, 'kill @e[type=snowball]'),
+    (2, 0, '/execute @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}'),
+    (2, 1, '/tag @a[rxm=88,tag=!snowmenu:escape] add snowmenu:escape'),
+    (2, 0, '/tag @a[rx=87,tag=snowmenu:escape] remove snowmenu:escape'),
+    (2, 0, '/execute @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}'),
+    (2, 1, '/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm'),
+    (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
+]
+
+def default_page_show(player: str, page: int) -> str:
+    max_length = len(main_page_menus)
+    fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
+    show_texts = [
+        Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
+    ]
+    c = page // menu_patterns[0]
+    cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
+    for i in cur_pages:
+        if isinstance(i[0], MultiPage):
+            text = i[1](player)
+        else:
+            text = i[1]
+        show_texts.append(Builtins.SimpleFmt(
+            {"[选项文本]": text}, menu_patterns[
+                3 if page == main_page_menus.index(i) else 2
+            ]
+        ))
+    if len(show_texts) == 1:
+        show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
+    show_texts.append(Builtins.SimpleFmt(fmt_kws, menu_patterns[4]))
+    return "\n".join(show_texts)
+
+def default_page_okcb(player: str, page: int):
+    page_cb = main_page_menus[page][0]
+    if isinstance(page, (Page, MultiPage)):
+        return page_cb
+    else:
+        return page_cb(player)
+
+menu_patterns = [None, None, None, None, None]
+"菜单最大页码数, 菜单头, 菜单选项-0, 菜单选项-1, 菜单尾"
+
+default_page = MultiPage(
+    "default",
+    "default",
+    range(0),
+    default_page_show,
+    default_page_okcb
+)
