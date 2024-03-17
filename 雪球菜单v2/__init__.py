@@ -53,7 +53,7 @@ class MultiPage:
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -70,6 +70,8 @@ class SnowMenu(Plugin):
         "玩家名 -> 多页菜单页数"
         self.default_page = "default"
         self.read_cfg()
+        self.require_listen = []
+        self.listen_result = {}
 
     # ---------------- API ------------------
 
@@ -90,7 +92,59 @@ class SnowMenu(Plugin):
             page_cb: 静态菜单页类 / 动态菜单页类 / 回调方法 (玩家名: str -> 确认选项后是否不关闭菜单: bool)
             usage_text: 选项的显示文本
         """
+        if not isinstance(page_cb, (Page, MultiPage)) and not callable(page_cb):
+            raise ValueError(f"注册的不是一个正常的菜单页 / 菜单回调: {page_cb}")
         main_page_menus.append((page_cb, usage_text))
+
+    def simple_select(self, player: str, disp_func: Callable[[str, int], str | None]):
+        """
+        简单地使用雪球菜单选择选项, 返回所选择的选项(页数), 首页是第 0 页.
+        :params:
+            player: 玩家名
+            disp_func:
+                回调方法 (玩家名, 当前页数) -> 菜单显示内容 | None
+                    如果返回None, 则视为需要返回第 0 页    或
+                页数-展示内容 dict (必须要有第零页, 即 {0: <内容>})
+        返回:
+            选项(页数)
+            None: 玩家低头取消了菜单 / 玩家中途退出.
+        """
+        now_page = 0
+        self.require_listen.append(player)
+        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
+        result = None
+        while 1:
+            resp = self.listen_result.get(player)
+            if player not in self.gc.allplayers:
+                break
+            if resp is not None:
+                match resp:
+                    case "snowball.menu.use":
+                        now_page += 1
+                    case "snowball.menu.confirm":
+                        result = now_page
+                        break
+                    case "snowball.menu.escape":
+                        break
+                del self.listen_result[player]
+            if isinstance(disp_func, dict):
+                # shh, 这是一个秘密
+                disp_text = disp_func.get(now_page)
+            else:
+                disp_text = disp_func(player, now_page)
+            if disp_text is None:
+                now_page = 0
+                if isinstance(disp_func, dict):
+                    disp_text = disp_func.get(0)
+                else:
+                    disp_text = disp_func(player, now_page)
+            self.gc.player_actionbar(player, disp_text)
+            time.sleep(0.5)
+        self.require_listen.remove(player)
+        if self.listen_result.get(player):
+            del self.listen_result[player]
+        return result
 
     # ---------------------------------------
 
@@ -98,6 +152,9 @@ class SnowMenu(Plugin):
         self.getPosXYZ = plugins.get_plugin_api("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
         self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
         plugins.get_plugin_api("聊天栏菜单").add_trigger(["snowmenu-init"], None, "初始化雪球菜单所需命令方块", self.place_cbs, op_only=True)
+
+    def on_player_join(self, player: str):
+        self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
 
     def on_inject(self):
         self.gc.sendwocmd("/tag @a remove snowmenu")
@@ -176,6 +233,9 @@ class SnowMenu(Plugin):
             msgs = [i["text"] for i in msg["rawtext"]]
             if len(msgs) > 0 and msgs[0].startswith("snowball.menu"):
                 user = msgs[1]
+                if user in self.require_listen:
+                    self.listen_result[user] = msgs[0]
+                    return True
                 if msgs[0] == "snowball.menu.use":
                     self.next_page(user)
                     return True
@@ -241,7 +301,8 @@ class SnowMenu(Plugin):
         if res is None:
             self.remove_player_in_menu(player)
         else:
-            if isinstance(res, Page):
+            self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+            if isinstance(res, (Page, MultiPage)):
                 self.set_player_page(player, res, 0)
             else:
                 self.set_player_page(player, res[0], res[1])
@@ -285,10 +346,10 @@ def default_page_show(player: str, page: int) -> str:
     c = page // menu_patterns[0]
     cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
     for i in cur_pages:
-        if isinstance(i[0], MultiPage):
-            text = i[1](player)
-        else:
+        if isinstance(i[1], str):
             text = i[1]
+        else:
+            text = i[1](player)
         show_texts.append(Builtins.SimpleFmt(
             {"[选项文本]": text}, menu_patterns[
                 3 if page == main_page_menus.index(i) else 2
@@ -301,7 +362,7 @@ def default_page_show(player: str, page: int) -> str:
 
 def default_page_okcb(player: str, page: int):
     page_cb = main_page_menus[page][0]
-    if isinstance(page, (Page, MultiPage)):
+    if isinstance(page_cb, (Page, MultiPage)):
         return page_cb
     else:
         return page_cb(player)
