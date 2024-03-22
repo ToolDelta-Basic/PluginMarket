@@ -1,6 +1,7 @@
 import time
+from datetime import datetime
 from tooldelta import plugins, Plugin, Frame, Builtins, Print, Config
-
+from typing import Union
 
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
@@ -40,7 +41,7 @@ class BanSystem(Plugin):
             self.test_ban(i)
 
     # -------------- API --------------
-    def ban(self, player: str, ban_to_time_ticks: int, reason: str = ""):
+    def ban(self, player: str, ban_to_time_ticks: float, reason: str = ""):
         # player: 需要ban的玩家
         # ban_to_time_ticks: 将其封禁直到(时间戳, 和time.time()一样)
         # reason: 原因
@@ -68,7 +69,9 @@ class BanSystem(Plugin):
             target, ymd, hms, reason = args
         all_matches = Builtins.fuzzy_match(self.game_ctrl.allplayers, target)
         if all_matches == []:
-            self.game_ctrl.say_to(caller, f"§c封禁系统: 无匹配名字关键词的玩家: {target}")
+            self.game_ctrl.say_to(
+                caller, f"§c封禁系统: 无匹配名字关键词的玩家: {target}"
+            )
         elif len(all_matches) > 1:
             self.game_ctrl.say_to(
                 caller, f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}"
@@ -87,7 +90,9 @@ class BanSystem(Plugin):
     def test_ban(self, player):
         ban_data = self.get_ban_data(player)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
+        Print.print_inf(f"封禁系统: {player} 的封禁数据: {ban_data}")
         if ban_to > time.time():
+            Print.print_inf(f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to)}")
             self.game_ctrl.sendwocmd(
                 f"/kick {player} {self.format_msg(player, ban_to, reason, '踢出玩家提示格式')}"
             )
@@ -97,12 +102,14 @@ class BanSystem(Plugin):
             # 防止出现无法执行的指令
             self.game_ctrl.sendwocmd(f"/kick {player}")
 
-    def format_msg(self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str):
-        struct_time = time.gmtime(ban_to_sec)
+    def format_msg(
+        self, player: str, ban_to_sec: float, ban_reason: str, cfg_key: str
+    ):
+        struct_time = time.localtime(ban_to_sec)
         date_show = time.strftime("%Y年 %m月 %d日", struct_time)
         time_show = time.strftime("%H : %M : %S", struct_time)
         Print.print_inf(
-            f"封禁系统使用的 当前时间: §6{time.strftime('%Y年%m月%d日 %H:%M:%S', time.gmtime(time.time()))}"
+            f"封禁系统使用的 当前时间: §6{datetime.fromtimestamp(time.time())}"
         )
         return Builtins.SimpleFmt(
             {

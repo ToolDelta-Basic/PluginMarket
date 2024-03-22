@@ -82,7 +82,7 @@ class WorldEdit(Plugin):
                     getZend = int(jsonPkt["NBTData"]["z"])
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", "§4ERROR：目标选择器报错 §c " + int(err))
+                    self.game_ctrl.say_to("@a", "§cERROR：目标选择器报错 §c " + int(err))
                 blockData = text[8:].replace("陶瓦", "stained_hardened_clay")
                 try:
                     if signPlayerName in self.getTarget("@a[m=1]"):

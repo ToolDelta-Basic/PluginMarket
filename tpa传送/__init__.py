@@ -129,7 +129,7 @@ async def tpaCommand(playermessage: player_message_info):
                     i.accept()
                     break
             if not (tpaBeRequested):
-                tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
+                tellrawText(playername, "§l§cERROR§r", "§c你没有待处理的请求.")
         elif arg == "dec":
             tpaBeRequested = False
             for i in tpaRequests:
@@ -138,7 +138,7 @@ async def tpaCommand(playermessage: player_message_info):
                     i.decline()
                     break
             if not (tpaBeRequested):
-                tellrawText(playername, "§l§4ERROR§r", "§c你没有待处理的请求.")
+                tellrawText(playername, "§l§cERROR§r", "§c你没有待处理的请求.")
         else:
             playerTpaFound = []
             playerTpaToSearch = arg
@@ -152,21 +152,21 @@ async def tpaCommand(playermessage: player_message_info):
             if len(playerTpaFound) == 0:
                 tellrawText(
                     playername,
-                    "§l§4ERROR§r",
+                    "§l§cERROR§r",
                     "§c未找到名称包含 §l%s§r§c 的玩家, 无法发起请求."
                     % playerTpaToSearch,
                 )
             elif len(playerTpaFound) >= 2:
                 tellrawText(
                     playername,
-                    "§l§4ERROR§r",
+                    "§l§cERROR§r",
                     "§c有多名玩家名称包含 §l%s§r§c, 无法发起请求:" % playerTpaToSearch,
                 )
                 playerTpaFoundIndex = 1
                 for i in playerTpaFound:
                     tellrawText(
                         playername,
-                        "§l§4ERROR§r",
+                        "§l§cERROR§r",
                         "§l§c%d§r§c. §l%s§r§c" % (playerTpaFoundIndex, i),
                     )
                     playerTpaFoundIndex += 1
@@ -181,13 +181,13 @@ async def tpaCommand(playermessage: player_message_info):
                 if tpaSentRequest:
                     tellrawText(
                         playername,
-                        "§l§4ERROR§r",
+                        "§l§cERROR§r",
                         "§c你已发过请求, 请等对方处理后或等请求过期后再试.",
                     )
                 elif tpaRecvedRequest:
                     tellrawText(
                         playername,
-                        "§l§4ERROR§r",
+                        "§l§cERROR§r",
                         "§c对方有未处理的请求, 请等对方处理后或等请求过期后再试.",
                     )
                 else:

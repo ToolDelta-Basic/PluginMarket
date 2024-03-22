@@ -51,7 +51,7 @@ async def _(playermessage: player_message_info):
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         if playername not in data:
-            tellrawText(playername, "§l§4ERROR§r", "§c未找到记录.")
+            tellrawText(playername, "§l§cERROR§r", "§c未找到记录.")
             return
         deathData = data[playername]
         tp(
@@ -87,7 +87,7 @@ async def _(playerdeath: player_death_info):
         if deathTimeDelta < LOG_DEATH_TIME:
             tellrawText(
                 playername,
-                "§l§4ERROR§r",
+                "§l§cERROR§r",
                 f"§c时间间隔过短, 未保存此次记录. (冷却时间: §l{LOG_DEATH_TIME - deathTimeDelta}§r§cs)",
             )
             return
