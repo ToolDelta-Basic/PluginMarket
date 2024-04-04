@@ -18,7 +18,7 @@
         "index",
         "ORIG_HEAD"
     ],
-    ".git\\hooks": [
+    ".git/hooks": [
         "applypatch-msg.sample",
         "commit-msg.sample",
         "fsmonitor-watchman.sample",
