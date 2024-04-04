@@ -31,10 +31,9 @@ class MultiPage:
     雪球菜单动态复合页面类
     :params:
         page_id: 菜单页面的ID, 不要与其他页面的id重复
-        next_page_id: 下一页的ID, 玩家在扔了一次雪球之后会跳转到这个ID对应的页面
-        pages_range: 这个菜单页的页码数, 请传入一个 range(页码数).
-            刚刚进入这个页面的时候, 默认是在第 0 页, 玩家扔雪球后会往后翻页, 页码数+1. 当玩家翻页且当前页码>=页面数时: 会跳转到 next_page_id 指向的下一页的页面
-        page_cb: 显示动态菜单页的方法: (玩家名: str, 当前页码数: int) -> 页面内容文本: str
+        page_cb: 显示动态菜单页的方法: (玩家名: str, 当前页码数: int) -> 需要的返回值如下:
+           str: 菜单页文本内容
+           None: 表示此页不存在, 将自动跳转回第一页(page_id=0)
         ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
             返回:
                 Page 对象: 跳转到该页
@@ -43,9 +42,7 @@ class MultiPage:
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
     page_id: str
-    next_page_id: str
-    pages_range: range
-    page_cb: Callable[[str, int], str]
+    page_cb: Callable[[str, int], str | None]
     ok_cb: Callable[[str, int], None | Page | tuple["MultiPage", int]]
     parent_page_id: str | None = None
 
@@ -53,7 +50,7 @@ class MultiPage:
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -268,11 +265,11 @@ class SnowMenu(Plugin):
                 if self.multi_snowball_page[player] >= len(main_page_menus):
                     self.multi_snowball_page[player] = 0
             else:
-                if self.multi_snowball_page[player] > now_page.pages_range.stop:
+                self.multi_snowball_page[player] += 1
+                r = self.in_snowball_menu[player].page_cb(player, self.multi_snowball_page[player])
+                if r is None:
                     self.multi_snowball_page[player] = 0
-                    self.in_snowball_menu[player] = self.reg_pages[now_page.next_page_id]
-                else:
-                    self.multi_snowball_page[player] += 1
+                    self.gc.player_actionbar(player, r)
         self.show_page(player)
 
     @Builtins.new_thread
@@ -315,6 +312,7 @@ class SnowMenu(Plugin):
             self.remove_player_in_menu(player)
         else:
             self.in_snowball_menu[player] = self.reg_pages[_parent]
+            self.multi_snowball_page[player] = 0
 
     def remove_player_in_menu(self, player: str):
         del self.in_snowball_menu[player]
@@ -337,8 +335,10 @@ SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
 ]
 
-def default_page_show(player: str, page: int) -> str:
+def default_page_show(player: str, page: int):
     max_length = len(main_page_menus)
+    if page > max_length - 1:
+        return None
     fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
     show_texts = [
         Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
@@ -372,8 +372,6 @@ menu_patterns = [None, None, None, None, None]
 
 default_page = MultiPage(
     "default",
-    "default",
-    range(0),
     default_page_show,
     default_page_okcb
 )
