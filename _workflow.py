@@ -42,10 +42,11 @@ def update_plugin_data():
     ) as f0:
         mk_dats = json.load(f0)
     for fdir in os.listdir():
-        if os.path.isdir(fdir) and os.path.isfile(os.path.join(fdir, "data.json")):
-            with open(os.path.join(fdir, "data.json"), "r", encoding="utf-8") as f:
+        p = os.path.join(fdir, "data.json")
+        if os.path.isdir(fdir) and os.path.isfile(p):
+            with open(p, "r", encoding="utf-8") as f:
                 datas = json.load(f)
-                mk_dats[fdir] = {
+                mk_dats["MarketPlugins"][fdir] = {
                     "author": datas["author"],
                     "version": datas["version"],
                     "description": datas["description"],
@@ -53,14 +54,18 @@ def update_plugin_data():
                     "pre-plugins": datas["pre-plugins"],
                     "limit_launcher": datas.get("limit_launcher")
                 }
+            os.remove(p)
     with open(
         os.path.join(directory, "market_tree.json"), "w", encoding="utf-8"
     ) as f0:
-        json.dump(mk_dats, f0)
+        json.dump(mk_dats, f0, indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
+
+    update_plugin_data()
+
     json_data = generate_json(directory)
 
     # 将生成的 JSON 数据写入文件
