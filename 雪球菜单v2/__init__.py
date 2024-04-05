@@ -2,7 +2,7 @@ import json
 import time
 from typing import Callable
 from dataclasses import dataclass
-from tooldelta import Frame, Plugin, plugins, Config, Builtins
+from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
 
 @dataclass
 class Page:
@@ -14,6 +14,7 @@ class Page:
         page_texts: 这个雪球菜单页面向玩家显示的actionbar文字
         ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
             返回:
+                True: 留在该页
                 Page 对象: 跳转到该页
                 元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
                 None: 直接退出菜单
@@ -22,7 +23,8 @@ class Page:
     page_id: str
     next_page_id: str
     page_texts: str
-    ok_cb: Callable[[str], bool | None]
+    ok_cb: Callable[[str], None | bool]
+    exit_cb: Callable[[str], None] = None
     parent_page_id: str | None = ""
 
 @dataclass
@@ -44,13 +46,14 @@ class MultiPage:
     page_id: str
     page_cb: Callable[[str, int], str | None]
     ok_cb: Callable[[str, int], None | Page | tuple["MultiPage", int]]
+    exit_cb: Callable[[str], bool | None] = None
     parent_page_id: str | None = None
 
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -135,12 +138,13 @@ class SnowMenu(Plugin):
                 if isinstance(disp_func, dict):
                     disp_text = disp_func.get(0)
                 else:
-                    disp_text = disp_func(player, now_page)
+                    disp_text = disp_func(player, 0)
             self.gc.player_actionbar(player, disp_text)
             time.sleep(0.5)
         self.require_listen.remove(player)
         if self.listen_result.get(player):
             del self.listen_result[player]
+        self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
         return result
 
     # ---------------------------------------
@@ -233,7 +237,7 @@ class SnowMenu(Plugin):
                 if user in self.require_listen:
                     self.listen_result[user] = msgs[0]
                     return True
-                if msgs[0] == "snowball.menu.use":
+                elif msgs[0] == "snowball.menu.use":
                     self.next_page(user)
                     return True
                 elif msgs[0] == "snowball.menu.escape":
@@ -290,6 +294,9 @@ class SnowMenu(Plugin):
 
     @Builtins.new_thread
     def menu_confirm(self, player: str):
+        if player not in self.in_snowball_menu.keys():
+            Print.print_war(f"玩家: {player} 雪球菜单确认异常: 不在雪球菜单页内")
+            return
         page = self.in_snowball_menu[player]
         if isinstance(page, Page):
             res = page.ok_cb(player)
@@ -299,13 +306,21 @@ class SnowMenu(Plugin):
             self.remove_player_in_menu(player)
         else:
             self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
-            if isinstance(res, (Page, MultiPage)):
+            if res == True:
+                pass
+            elif isinstance(res, (Page, MultiPage)):
                 self.set_player_page(player, res, 0)
             else:
                 self.set_player_page(player, res[0], res[1])
 
     def menu_escape(self, player: str):
         self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        if player not in self.in_snowball_menu.keys():
+            Print.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
+            return
+        cb = self.in_snowball_menu[player].exit_cb
+        if cb is not None:
+            cb(player)
         _parent = self.in_snowball_menu[player].parent_page_id
         if _parent is None:
             self.gc.player_actionbar(player, self.cfg["菜单退出提示"])
