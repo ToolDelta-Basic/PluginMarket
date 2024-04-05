@@ -44,6 +44,7 @@ def update_plugin_data():
     for fdir in os.listdir():
         p = os.path.join(fdir, "data.json")
         if os.path.isdir(fdir) and os.path.isfile(p):
+            print(f"file: {fdir} changing...")
             with open(p, "r", encoding="utf-8") as f:
                 datas = json.load(f)
                 mk_dats["MarketPlugins"][fdir] = {
@@ -59,7 +60,6 @@ def update_plugin_data():
         os.path.join(directory, "market_tree.json"), "w", encoding="utf-8"
     ) as f0:
         json.dump(mk_dats, f0, indent=2, ensure_ascii=False)
-
 
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
