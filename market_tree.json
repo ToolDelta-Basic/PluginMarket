@@ -193,6 +193,14 @@
       "plugin-type": "classic",
       "pre-plugins": {},
       "limit_launcher": null
+    },
+    "更好的公告栏": {
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "description": "使得公告能显示更多特别的内容",
+      "plugin-type": "classic",
+      "pre-plugins": {},
+      "limit_launcher": null
     }
   }
 }
