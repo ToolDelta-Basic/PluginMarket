@@ -1,0 +1,7 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "使得公告能显示更多特别的内容",
+    "plugin-type": "classic",
+    "pre-plugins": {}
+  }
