@@ -1,7 +1,6 @@
 import os
 import json
 
-
 def generate_json(directory):
     data = {}
 
