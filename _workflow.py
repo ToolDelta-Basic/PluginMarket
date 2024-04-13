@@ -24,7 +24,7 @@ def generate_json(directory):
     return data
 
 def get_latest_versions(directory):
-    v_dict = {"classic_plugin": {}, "injected_plugin": {}}
+    v_dict = {}
     for p1 in os.listdir(directory):
         if os.path.isfile(os.path.join(directory, p1, "datas.json")):
             with open(
@@ -33,7 +33,7 @@ def get_latest_versions(directory):
                 encoding="utf-8",
             ) as f:
                 dat = json.load(f)
-                v_dict[dat["plugin-type"] + "_plugin"][dat["plugin-id"]] = dat["version"]
+                v_dict[dat["plugin-id"]] = dat["version"]
     return json.dumps(v_dict, indent=2, ensure_ascii=False)
 
 def flush_basic_datas():
