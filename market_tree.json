@@ -29,11 +29,11 @@
     },
     "控制台执行MC指令": {
       "author": "SuperScript",
-      "version": "0.0.2",
-      "description": "可以在控制台让机器人执行指令, 特殊指令等",
-      "limit_launcher": null,
+      "version": "0.0.3",
+      "description": "可以在控制台让机器人执行特殊指令等, 处于FastBuilder启动模式下还可以快捷使用fb指令",
+      "plugin-type": "classic",
       "pre-plugins": {},
-      "plugin-type": "classic"
+      "limit_launcher": null
     },
     "@玩家": {
       "author": "wling",

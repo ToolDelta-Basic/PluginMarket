@@ -1,292 +1,291 @@
 {
     "": [
-        "latest_versions.json",
-        ".gitignore",
         "_workflow.py",
         "README.md",
-        "LICENSE",
+        "market_tree.json",
         "directory.json",
-        "market_tree.json"
+        ".gitignore",
+        "LICENSE",
+        "latest_versions.json"
     ],
-    "前置-世界交互": [
-        "__init__.py"
-    ],
-    "自定义聊天栏菜单": [
-        "__init__.py"
-    ],
-    "五子棋小游戏": [
-        "__init__.py"
-    ],
-    "清空玩家末影箱": [
-        "__init__.py"
-    ],
-    "全服喇叭": [
-        "__init__.py"
-    ],
-    "更好的公告栏": [
+    "@玩家": [
         "__init__.py"
     ],
     ".github": [],
     ".github/workflows": [
         "generate_directory_json.yml"
     ],
-    "简易建造": [
-        "__init__.py"
-    ],
-    "雪球菜单v2": [
-        "__init__.py"
-    ],
-    "井字棋": [
-        "__init__.py"
-    ],
     "tpa传送": [
-        "__init__.py"
-    ],
-    "聊天栏菜单": [
-        "__init__.py"
-    ],
-    "封禁系统": [
-        "__init__.py"
-    ],
-    ".git": [
-        "shallow",
-        "config",
-        "description",
-        "index",
-        "HEAD",
-        "FETCH_HEAD"
-    ],
-    ".git/branches": [],
-    ".git/hooks": [
-        "fsmonitor-watchman.sample",
-        "pre-merge-commit.sample",
-        "commit-msg.sample",
-        "post-update.sample",
-        "applypatch-msg.sample",
-        "pre-applypatch.sample",
-        "pre-commit.sample",
-        "pre-receive.sample",
-        "sendemail-validate.sample",
-        "pre-rebase.sample",
-        "push-to-checkout.sample",
-        "pre-push.sample",
-        "update.sample",
-        "prepare-commit-msg.sample"
-    ],
-    ".git/info": [
-        "exclude"
-    ],
-    ".git/refs": [],
-    ".git/refs/tags": [],
-    ".git/refs/remotes": [],
-    ".git/refs/remotes/origin": [
-        "main"
-    ],
-    ".git/refs/heads": [
-        "main"
-    ],
-    ".git/logs": [
-        "HEAD"
-    ],
-    ".git/logs/refs": [],
-    ".git/logs/refs/remotes": [],
-    ".git/logs/refs/remotes/origin": [
-        "main"
-    ],
-    ".git/logs/refs/heads": [
-        "main"
-    ],
-    ".git/objects": [],
-    ".git/objects/bb": [
-        "0ed3ab90cc709c9be957a410b046e83a594f45"
-    ],
-    ".git/objects/16": [
-        "0dcfe498e2019f963e9914c2f69c95d70f7d76"
-    ],
-    ".git/objects/11": [
-        "2c13d8f1bc56dade7f39c620ff9d574b04a0f6"
-    ],
-    ".git/objects/b7": [
-        "1044792299ba8dc4fe484c51f9d8910535dd9d"
-    ],
-    ".git/objects/40": [
-        "4960c828d2168e8f6715724bda0b3c462e9fcf"
-    ],
-    ".git/objects/14": [
-        "dd677d1302b79ff710fbe110ee935594ab460c"
-    ],
-    ".git/objects/21": [
-        "7eebeec28e6146ff4c0dce89802a07be733879"
-    ],
-    ".git/objects/ac": [
-        "acda22ec8573e5ce28e064db5adccef7517241",
-        "753171cee6e42169f9825a365e6bc7bb8f90a2"
-    ],
-    ".git/objects/28": [
-        "03d83a674525bd1ba94892fef8fac6aba16012"
-    ],
-    ".git/objects/3f": [
-        "f2e01ff66601df5cbb60651b8767df1eb61c6d"
-    ],
-    ".git/objects/8e": [
-        "935b25738c0f7b591ed93fdcd33413b7df3c5a"
-    ],
-    ".git/objects/7e": [
-        "fa4726d236d36c4d6ab4e0e571079c37ce33fc"
-    ],
-    ".git/objects/55": [
-        "9945bc0f5cc7f059fac7c18cea4f74e2dea2a3"
-    ],
-    ".git/objects/pack": [],
-    ".git/objects/4e": [
-        "33c6d224c74735e432d27ae0ef0cf87e38b4d5"
-    ],
-    ".git/objects/3e": [
-        "ca974b4108c8d5a2c3cb9ff2ec9744dbb902bd"
-    ],
-    ".git/objects/60": [
-        "0ef6ed86b0067c3ce24f3b78f9567b87a17812"
-    ],
-    ".git/objects/e0": [
-        "6ad58e71d44f85b8abc85392041ff202663390"
-    ],
-    ".git/objects/1a": [
-        "9cf54ddd84d4c2ce9db24090c0b6a973690cfa"
-    ],
-    ".git/objects/ad": [
-        "6189deb8d3d6f98d9441901effbc3ab9c023a2"
-    ],
-    ".git/objects/29": [
-        "c0e8a983e872559b97f453faf22d09a436e8da"
-    ],
-    ".git/objects/8c": [
-        "66930f1f3402aef4a915cc2d740af7b1714609",
-        "9a8d958e213b245b045a3d95e89708b9174ddd"
-    ],
-    ".git/objects/a1": [
-        "09804eb0395348351cca3543e615900411cc9f"
-    ],
-    ".git/objects/1b": [
-        "9e11ff3685cf551daa4f0e40d1da81c1da1b4e"
-    ],
-    ".git/objects/e6": [
-        "55e3f92a804d6e7b9adbe5e1a397ce62178f93",
-        "9de29bb2d1d6434b8b29ae775ad8c2e48c5391"
-    ],
-    ".git/objects/0f": [
-        "c6e3032df7c0ed46744cfc0b4e4c0736305118"
-    ],
-    ".git/objects/3c": [
-        "22080a11bb7fc713ad1689e80a389802e342eb"
-    ],
-    ".git/objects/info": [],
-    ".git/objects/93": [
-        "3e89fa7a4c1c0190871170f496f852baa6f18e"
-    ],
-    ".git/objects/b3": [
-        "2dab2ecab2fa22875c3c7dcb29481754549203",
-        "d6b91ffd0ce290cf5d820ea8b02a86c92e9023",
-        "0970c3941a91171513d49c10bac7255cf2fb4d"
-    ],
-    ".git/objects/a9": [
-        "29c971c23982fe417ba8c9f8ed8d92275e9b8b"
-    ],
-    ".git/objects/f0": [
-        "2d11d02682ab2273c3f6a28c4ef3db007b5fe7"
-    ],
-    ".git/objects/ba": [
-        "deb7bdb8e6b85c69db45c3bb8b56b96c25a58a"
-    ],
-    ".git/objects/a3": [
-        "0d6b92225caa72347b8c482e289e88fcdc7c80"
-    ],
-    ".git/objects/17": [
-        "c1346020ea1ede8c411ad120ecfec012bf925d"
-    ],
-    ".git/objects/fa": [
-        "e22ec1c317de9fd39392cfc71ca0ea7397aefe"
-    ],
-    ".git/objects/cd": [
-        "4b09e137941b6dbab918d33d8cdd67a4406c48"
-    ],
-    ".git/objects/9a": [
-        "67096a2c5d4e4d686907e071530e791f3be19b"
-    ],
-    ".git/objects/95": [
-        "d06c0485aba1e49f57d0ac86f97b9d131b1583",
-        "2f0f37bfb2db224e25b7f38fab629b3f14cb0c"
-    ],
-    ".git/objects/72": [
-        "ab2168c6a16007e0beabe29d8230bb48604b13"
-    ],
-    ".git/objects/0e": [
-        "b06643ccf31a35d9d709d29d583694b77be47d"
-    ],
-    ".git/objects/6b": [
-        "624c5ce2ee9e9de53183caa04c99d400687696"
-    ],
-    ".git/objects/a5": [
-        "f2892c9496162db5e4b60538877c830055ffe6"
-    ],
-    ".git/objects/b0": [
-        "29fc4eed217dbddf90f622f9351b23d1716e15",
-        "92d1ad645393cbe1025d56a07b2dbbdc836e6b"
-    ],
-    ".git/objects/18": [
-        "4cfdc715f1a1d8e22417ca620bf457bb0ff769"
-    ],
-    ".git/objects/fe": [
-        "1c52534121cee02435cec990dcba5a3a74af66"
-    ],
-    ".git/objects/f1": [
-        "d80231e4feefa8b70c8684a82a6f8250e9f41e"
-    ],
-    ".git/objects/c2": [
-        "4f2f61cfea559ca54b6446afa1c158fd004dbf"
-    ],
-    ".git/objects/d6": [
-        "88cec2a60c6ee2765a06acd603acbfbddf4dff"
-    ],
-    ".git/objects/00": [
-        "cc1f825447d1f49871eb090c863cf3f58ff6c2"
-    ],
-    ".git/objects/f6": [
-        "1fb90ae868336fae379666f892be8bd60420a9"
-    ],
-    ".git/objects/10": [
-        "f0cefe9c3e7b710d11c81db3702366d1afb3b7"
-    ],
-    ".git/objects/b2": [
-        "c6cbc59140fb9eb342591857fe166dc85309fd"
-    ],
-    "控制台执行MC指令": [
-        "__init__.py"
-    ],
-    "死亡返回": [
-        "__init__.py"
-    ],
-    "性能管理": [
-        "__init__.py"
-    ],
-    "维度传送": [
-        "__init__.py"
-    ],
-    "基本插件功能库": [
-        "__init__.py"
-    ],
-    "发言频率": [
-        "__init__.py"
-    ],
-    "日志文件": [
-        "2024-04-04.log"
-    ],
-    "@玩家": [
         "__init__.py"
     ],
     "地图画导入": [
         "__init__.py"
     ],
+    ".git": [
+        "shallow",
+        "FETCH_HEAD",
+        "index",
+        "HEAD",
+        "config",
+        "description"
+    ],
+    ".git/objects": [],
+    ".git/objects/17": [
+        "c1346020ea1ede8c411ad120ecfec012bf925d"
+    ],
+    ".git/objects/c2": [
+        "4f2f61cfea559ca54b6446afa1c158fd004dbf"
+    ],
+    ".git/objects/16": [
+        "0dcfe498e2019f963e9914c2f69c95d70f7d76"
+    ],
+    ".git/objects/b3": [
+        "0970c3941a91171513d49c10bac7255cf2fb4d",
+        "d6b91ffd0ce290cf5d820ea8b02a86c92e9023"
+    ],
+    ".git/objects/f2": [
+        "831f823d6bf835b357aebb2ea004b56370e6a3"
+    ],
+    ".git/objects/28": [
+        "03d83a674525bd1ba94892fef8fac6aba16012"
+    ],
+    ".git/objects/info": [],
+    ".git/objects/8e": [
+        "935b25738c0f7b591ed93fdcd33413b7df3c5a"
+    ],
+    ".git/objects/93": [
+        "3e89fa7a4c1c0190871170f496f852baa6f18e"
+    ],
+    ".git/objects/1b": [
+        "9e11ff3685cf551daa4f0e40d1da81c1da1b4e"
+    ],
+    ".git/objects/11": [
+        "2c13d8f1bc56dade7f39c620ff9d574b04a0f6"
+    ],
+    ".git/objects/3c": [
+        "22080a11bb7fc713ad1689e80a389802e342eb"
+    ],
+    ".git/objects/a9": [
+        "29c971c23982fe417ba8c9f8ed8d92275e9b8b"
+    ],
+    ".git/objects/e9": [
+        "7505f85e82e8e10cce06b773d57e3ea3295635"
+    ],
+    ".git/objects/10": [
+        "f0cefe9c3e7b710d11c81db3702366d1afb3b7"
+    ],
+    ".git/objects/6b": [
+        "624c5ce2ee9e9de53183caa04c99d400687696"
+    ],
+    ".git/objects/14": [
+        "dd677d1302b79ff710fbe110ee935594ab460c"
+    ],
+    ".git/objects/b7": [
+        "1044792299ba8dc4fe484c51f9d8910535dd9d"
+    ],
+    ".git/objects/0f": [
+        "c6e3032df7c0ed46744cfc0b4e4c0736305118"
+    ],
+    ".git/objects/95": [
+        "2f0f37bfb2db224e25b7f38fab629b3f14cb0c",
+        "d06c0485aba1e49f57d0ac86f97b9d131b1583"
+    ],
+    ".git/objects/e6": [
+        "55e3f92a804d6e7b9adbe5e1a397ce62178f93",
+        "9de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    ],
+    ".git/objects/fa": [
+        "e22ec1c317de9fd39392cfc71ca0ea7397aefe"
+    ],
+    ".git/objects/f6": [
+        "1fb90ae868336fae379666f892be8bd60420a9"
+    ],
+    ".git/objects/e0": [
+        "6ad58e71d44f85b8abc85392041ff202663390"
+    ],
+    ".git/objects/55": [
+        "2648726a26d6c27a7083f535c16c825cd4cc4c"
+    ],
+    ".git/objects/ad": [
+        "6189deb8d3d6f98d9441901effbc3ab9c023a2"
+    ],
+    ".git/objects/ce": [
+        "e70cf931abeb1512d0ef64ca1bc0d838cecbef"
+    ],
+    ".git/objects/89": [
+        "41fb343b08ba0c0da2cc55dc6f03e25e65246b"
+    ],
+    ".git/objects/e8": [
+        "fd922a6d39a530ed02bc9cd331975b3f4f9bb5"
+    ],
+    ".git/objects/9a": [
+        "67096a2c5d4e4d686907e071530e791f3be19b"
+    ],
+    ".git/objects/3f": [
+        "f2e01ff66601df5cbb60651b8767df1eb61c6d"
+    ],
+    ".git/objects/a5": [
+        "f2892c9496162db5e4b60538877c830055ffe6"
+    ],
+    ".git/objects/f0": [
+        "2d11d02682ab2273c3f6a28c4ef3db007b5fe7"
+    ],
+    ".git/objects/4e": [
+        "33c6d224c74735e432d27ae0ef0cf87e38b4d5"
+    ],
+    ".git/objects/8c": [
+        "66930f1f3402aef4a915cc2d740af7b1714609",
+        "9a8d958e213b245b045a3d95e89708b9174ddd"
+    ],
+    ".git/objects/b2": [
+        "c6cbc59140fb9eb342591857fe166dc85309fd"
+    ],
+    ".git/objects/40": [
+        "4960c828d2168e8f6715724bda0b3c462e9fcf",
+        "2b2e581384e36ad815adbfe99594fdc4ebdbfd"
+    ],
+    ".git/objects/ba": [
+        "deb7bdb8e6b85c69db45c3bb8b56b96c25a58a"
+    ],
+    ".git/objects/72": [
+        "ab2168c6a16007e0beabe29d8230bb48604b13"
+    ],
+    ".git/objects/e4": [
+        "e692db2017fa60ccd1d4c83e5c71bc3b348c4a"
+    ],
+    ".git/objects/1a": [
+        "9cf54ddd84d4c2ce9db24090c0b6a973690cfa"
+    ],
+    ".git/objects/21": [
+        "7eebeec28e6146ff4c0dce89802a07be733879"
+    ],
+    ".git/objects/d6": [
+        "88cec2a60c6ee2765a06acd603acbfbddf4dff"
+    ],
+    ".git/objects/bb": [
+        "0ed3ab90cc709c9be957a410b046e83a594f45"
+    ],
+    ".git/objects/f7": [
+        "5d5025daac2645c970dae9636bc8f35d68b3b6"
+    ],
+    ".git/objects/4d": [
+        "eaa7f0b6bad6f7ebf0087808d213d97ac684b8"
+    ],
+    ".git/objects/d7": [
+        "78bbe24893d8866c9a02a3d200bcb5caaf3bcd"
+    ],
+    ".git/objects/73": [
+        "1379cc12e62f05e3bb89a27a6953c912c539ab"
+    ],
+    ".git/objects/ac": [
+        "acda22ec8573e5ce28e064db5adccef7517241"
+    ],
+    ".git/objects/29": [
+        "c0e8a983e872559b97f453faf22d09a436e8da"
+    ],
+    ".git/objects/b0": [
+        "29fc4eed217dbddf90f622f9351b23d1716e15",
+        "92d1ad645393cbe1025d56a07b2dbbdc836e6b"
+    ],
+    ".git/objects/pack": [],
+    ".git/objects/0e": [
+        "b06643ccf31a35d9d709d29d583694b77be47d"
+    ],
+    ".git/hooks": [
+        "pre-receive.sample",
+        "fsmonitor-watchman.sample",
+        "update.sample",
+        "pre-merge-commit.sample",
+        "post-update.sample",
+        "push-to-checkout.sample",
+        "pre-applypatch.sample",
+        "pre-rebase.sample",
+        "applypatch-msg.sample",
+        "commit-msg.sample",
+        "prepare-commit-msg.sample",
+        "pre-commit.sample",
+        "pre-push.sample",
+        "sendemail-validate.sample"
+    ],
+    ".git/info": [
+        "exclude"
+    ],
+    ".git/branches": [],
+    ".git/logs": [
+        "HEAD"
+    ],
+    ".git/logs/refs": [],
+    ".git/logs/refs/heads": [
+        "main"
+    ],
+    ".git/logs/refs/remotes": [],
+    ".git/logs/refs/remotes/origin": [
+        "main"
+    ],
+    ".git/refs": [],
+    ".git/refs/tags": [],
+    ".git/refs/heads": [
+        "main"
+    ],
+    ".git/refs/remotes": [],
+    ".git/refs/remotes/origin": [
+        "main"
+    ],
+    "简易建造": [
+        "__init__.py"
+    ],
+    "自定义聊天栏菜单": [
+        "__init__.py"
+    ],
     "32k盒子显示": [
+        "__init__.py"
+    ],
+    "封禁系统": [
+        "__init__.py"
+    ],
+    "全服喇叭": [
+        "__init__.py"
+    ],
+    "维度传送": [
+        "__init__.py"
+    ],
+    "控制台执行MC指令": [
+        "__init__.py"
+    ],
+    "聊天栏菜单": [
+        "__init__.py"
+    ],
+    "更好的公告栏": [
+        "__init__.py"
+    ],
+    "发言频率": [
+        "__init__.py"
+    ],
+    "前置-世界交互": [
+        "__init__.py"
+    ],
+    "性能管理": [
+        "__init__.py"
+    ],
+    "雪球菜单v2": [
+        "__init__.py"
+    ],
+    "清空玩家末影箱": [
+        "__init__.py"
+    ],
+    "基本插件功能库": [
+        "__init__.py"
+    ],
+    "五子棋小游戏": [
+        "__init__.py"
+    ],
+    "日志文件": [
+        "2024-04-04.log"
+    ],
+    "死亡返回": [
+        "__init__.py"
+    ],
+    "井字棋": [
         "__init__.py"
     ]
 }
