@@ -19,7 +19,7 @@
 <b>上传的插件的规范格式和要求？</b>
  - 允许上传的文件类型: Python脚本, 文本文件(包括Markdown, TXT file等)
  - 插件需要放在 <code>your_plugin_name/</code> 目录下, 主插件文件需要以 `__init__.py` 命名
- - 同时, 你需要在你的插件文件夹下创建一个`data.json`:
+ - 同时, 你需要在你的插件文件夹下创建一个`datas.json`:
     这是一个标准的`data.json`的例子.
     ```
     {
