@@ -36,6 +36,23 @@ def get_latest_versions(directory):
                 v_dict[dat["plugin-type"] + "_plugin"][p1] = dat["version"]
     return json.dumps(v_dict, indent=2, ensure_ascii=False)
 
+def flush_basic_datas():
+    with open("market_tree.json", "r", encoding="utf-8") as f:
+        market_d = json.load(f)
+    for path in os.listdir():
+        datpath = os.path.join(path, "datas.json")
+        if os.path.isfile(datpath):
+            with open(datpath, "r", encoding="utf-8") as f:
+                dat = json.load(f)
+                market_d["MarketPlugins"][path] = {
+                    "author": dat["author"],
+                    "version": dat["version"],
+                    "plugin-type": dat["plugin-type"]
+                }
+
+    with open("market_tree.json", "w", encoding="utf-8") as f:
+        json.dump(market_d, f, indent=2, ensure_ascii=False)
+
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
 
@@ -47,3 +64,5 @@ if __name__ == "__main__":
 
     with open("latest_versions.json", "w", encoding="utf-8") as f:
         f.write(get_latest_versions(directory))
+
+    flush_basic_datas()

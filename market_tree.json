@@ -5,21 +5,6 @@
   "DownloadRefURL": "https://mirror.ghproxy.com/raw.githubusercontent.com/ToolDelta/ToolDelta-PluginMarket/main",
   "DirectoryFileURL": "https://mirror.ghproxy.com/raw.githubusercontent.com/ToolDelta/ToolDelta-PluginMarket/main/plugin_market/directory.json",
   "MarketPlugins": {
-    "自定义聊天栏菜单": {
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "雪球菜单v2": {
-      "author": "SuperScript",
-      "version": "0.0.7",
-      "plugin-type": "classic"
-    },
-    "控制台执行MC指令": {
-      "author": "SuperScript",
-      "version": "0.0.2",
-      "plugin-type": "classic"
-    },
     "@玩家": {
       "author": "wling",
       "version": "0.0.3",
@@ -108,6 +93,21 @@
     "更好的公告栏": {
       "author": "SuperScript",
       "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "控制台执行MC指令": {
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "自定义聊天栏菜单": {
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "雪球菜单v2": {
+      "author": "SuperScript",
+      "version": "0.0.7",
       "plugin-type": "classic"
     }
   }
