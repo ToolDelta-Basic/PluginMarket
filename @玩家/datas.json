@@ -1,0 +1,9 @@
+{
+  "author": "wling",
+  "version": "0.0.3",
+  "description": "让@更有效果！",
+  "limit_launcher": null,
+  "pre-plugins": {},
+  "plugin-type": "injected",
+  "plugin-id": "@玩家"
+}

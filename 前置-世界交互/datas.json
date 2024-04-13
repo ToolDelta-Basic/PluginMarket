@@ -1,0 +1,11 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.2",
+  "description": "所有使用世界交互的插件的前置",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.0.1"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "前置-世界交互"
+}

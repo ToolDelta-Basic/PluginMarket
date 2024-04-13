@@ -8,199 +8,107 @@
     "自定义聊天栏菜单": {
       "author": "SuperScript",
       "version": "0.0.1",
-      "description": "自定义聊天栏菜单触发词触发的指令, 方便简洁",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "classic"
     },
     "雪球菜单v2": {
       "author": "SuperScript",
       "version": "0.0.7",
-      "description": "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件.\n§f使用前请先传送到指令区后输入命令§b.snowmenu-init§f初始化雪球菜单命令方块！\n在配置文件内向雪球菜单添加内容。\n0.0.4: 源码内内置API文档",
-      "plugin-type": "classic",
-      "pre-plugins": {
-        "聊天栏菜单": "0.0.1",
-        "基本插件功能库": "0.0.7",
-        "前置-世界交互": "0.0.2"
-      },
-      "limit_launcher": null
+      "plugin-type": "classic"
     },
     "控制台执行MC指令": {
       "author": "SuperScript",
-      "version": "0.0.3",
-      "description": "可以在控制台让机器人执行特殊指令等, 处于FastBuilder启动模式下还可以快捷使用fb指令",
-      "plugin-type": "classic",
-      "pre-plugins": {},
-      "limit_launcher": null
+      "version": "0.0.2",
+      "plugin-type": "classic"
     },
     "@玩家": {
       "author": "wling",
       "version": "0.0.3",
-      "description": "让@更有效果！",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "injected"
     },
     "井字棋": {
       "author": "SuperScript/wling",
       "version": "0.0.4",
-      "description": "娱乐小游戏: 3x3井字棋",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "injected"
     },
     "清空玩家末影箱": {
       "author": "wling",
       "version": "0.0.3",
-      "description": "还在担心玩家在末影箱藏小东西吗？直接清空末影箱！",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "injected"
     },
     "简易建造": {
       "author": "SuperScript",
       "version": "0.0.3",
-      "description": "使用一些更简便的方法建造服务器",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13",
-        "基本插件功能库": "0.0.1"
-      },
       "plugin-type": "classic"
     },
     "封禁系统": {
       "author": "SuperScript",
       "version": "0.0.1",
-      "description": "服内有大哥或者熊孩子? 更方便地ban掉! 同时也是一个前置插件.",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "classic"
     },
     "tpa传送": {
       "author": "wling",
       "version": "0.0.8",
-      "description": "TPA玩家互传系统",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "injected"
     },
     "死亡返回": {
       "author": "wling/7912",
       "version": "0.1.0",
-      "description": "死亡后原地复活？ 不妨试试这个插件",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "维度传送": "0.0.1"
-      },
       "plugin-type": "injected"
     },
     "维度传送": {
       "author": "wling/7912",
       "version": "0.0.1",
-      "description": "作用如其名，跨纬度传送，谁都爱",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "injected"
     },
     "五子棋小游戏": {
       "author": "SuperScript",
       "version": "0.0.2",
-      "description": "在游戏内开一局五子棋游戏完(暂未设置自定义奖励配置)",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "classic"
     },
     "发言频率": {
       "author": "wling/7912",
       "version": "0.0.3",
-      "description": "整治天天刷屏的罪犯吧！",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "封禁系统": "0.0.1"
-      },
       "plugin-type": "injected"
     },
     "地图画导入": {
       "author": "SuperScript",
       "version": "0.0.3",
-      "description": "导入像素画, 支持多种图片格式, 还可以自定义地图画大小",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "classic"
     },
     "全服喇叭": {
       "author": "wling",
       "version": "0.0.1",
-      "description": "全体请注意！身为管理的我要装*了！",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13"
-      },
       "plugin-type": "injected"
     },
     "32k盒子显示": {
       "author": "SuperScript",
       "version": "0.0.2",
-      "description": "自动对任何放置在服内的32k盒子进行反制和保存",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.1.13",
-        "封禁系统": "0.0.1",
-        "基本插件功能库": "0.0.1"
-      },
       "plugin-type": "classic"
     },
     "基本插件功能库": {
       "author": "SuperScript",
       "version": "0.0.7",
-      "description": "所有使用基本组件API的插件的前置",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "classic"
     },
     "前置-世界交互": {
       "author": "SuperScript",
       "version": "0.0.2",
-      "description": "所有使用世界交互的插件的前置",
-      "limit_launcher": null,
-      "pre-plugins": {
-        "聊天栏菜单": "0.0.1"
-      },
       "plugin-type": "classic"
     },
     "聊天栏菜单": {
       "author": "SuperScript",
       "version": "0.1.13",
-      "description": "所有使用到聊天栏菜单的组件的前置组件",
-      "limit_launcher": null,
-      "pre-plugins": {},
       "plugin-type": "classic"
     },
     "性能管理": {
       "author": "SuperScript",
       "version": "0.0.1",
-      "description": "使用控制台命令对系统进行实时的cpu内存等监测, 更多方法请在安装插件后输入 top 命令",
-      "plugin-type": "classic",
-      "pre-plugins": {},
-      "limit_launcher": null
+      "plugin-type": "classic"
     },
     "更好的公告栏": {
       "author": "SuperScript",
       "version": "0.0.1",
-      "description": "使得公告能显示更多特别的内容",
-      "plugin-type": "classic",
-      "pre-plugins": {},
-      "limit_launcher": null
+      "plugin-type": "classic"
     }
   }
 }

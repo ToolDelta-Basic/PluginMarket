@@ -23,6 +23,7 @@
     这是一个标准的`data.json`的例子.
     ```
     {
+      "plugin-id": "snowmenu",
       "author": "SuperScript",
       "version": "0.0.6",
       "description": "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件.\n§f使用前请先传送到指令区后输入命令§b.snowmenu-init§f初始化雪球菜单命令方块！\n在配置文件内向雪球菜单添加内容。\n0.0.4: 源码内内置API文档",
@@ -34,6 +35,7 @@
       }
     }
     ```
+    - "plugin-id" 值: 字符串, 插件英文ID(是不是英文ID都行, 但是以后不能再更改, 是插件特殊标识)
     - "author" 值: 字符串, 作者名
     - "plugin-type" 值:
         - 如果是 原 DotCS 插件: "dotcs"

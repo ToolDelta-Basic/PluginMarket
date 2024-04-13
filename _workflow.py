@@ -23,47 +23,21 @@ def generate_json(directory):
 
     return data
 
-
 def get_latest_versions(directory):
-    v_dict = {"dotcs_plugin": {}, "classic_plugin": {}, "injected_plugin": {}}
-    with open(
-        os.path.join(directory, "market_tree.json"),
-        "r",
-        encoding="utf-8",
-    ) as f:
-        for k, v in json.load(f)["MarketPlugins"].items():
-            v_dict[v["plugin-type"] + "_plugin"][k] = v["version"]
+    v_dict = {"classic_plugin": {}, "injected_plugin": {}}
+    for p1 in os.listdir(directory):
+        if os.path.isfile(os.path.join(directory, p1, "datas.json")):
+            with open(
+                os.path.join(p1, "datas.json"),
+                "r",
+                encoding="utf-8",
+            ) as f:
+                dat = json.load(f)
+                v_dict[dat["plugin-type"] + "_plugin"][p1] = dat["version"]
     return json.dumps(v_dict, indent=2, ensure_ascii=False)
-
-def update_plugin_data():
-    with open(
-        os.path.join(directory, "market_tree.json"), "r", encoding="utf-8"
-    ) as f0:
-        mk_dats = json.load(f0)
-    for fdir in os.listdir():
-        p = os.path.join(fdir, "data.json")
-        if os.path.isdir(fdir) and os.path.isfile(p):
-            print(f"file: {fdir} changing...")
-            with open(p, "r", encoding="utf-8") as f:
-                datas = json.load(f)
-                mk_dats["MarketPlugins"][fdir] = {
-                    "author": datas["author"],
-                    "version": datas["version"],
-                    "description": datas["description"],
-                    "plugin-type": datas["plugin-type"],
-                    "pre-plugins": datas["pre-plugins"],
-                    "limit_launcher": datas.get("limit_launcher")
-                }
-            os.remove(p)
-    with open(
-        os.path.join(directory, "market_tree.json"), "w", encoding="utf-8"
-    ) as f0:
-        json.dump(mk_dats, f0, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
-
-    update_plugin_data()
 
     json_data = generate_json(directory)
 

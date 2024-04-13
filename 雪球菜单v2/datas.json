@@ -1,0 +1,13 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.7",
+  "description": "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件.\n§f使用前请先传送到指令区后输入命令§b.snowmenu-init§f初始化雪球菜单命令方块！\n在配置文件内向雪球菜单添加内容。\n0.0.4: 源码内内置API文档",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "聊天栏菜单": "0.0.1",
+    "基本插件功能库": "0.0.7",
+    "前置-世界交互": "0.0.2"
+  },
+  "limit_launcher": null,
+  "plugin-id": "雪球菜单v2"
+}
