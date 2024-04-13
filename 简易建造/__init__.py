@@ -2,7 +2,6 @@ from tooldelta import Frame, plugins, Plugin
 
 import time
 
-
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
