@@ -5,5 +5,5 @@
   "plugin-type": "classic",
   "pre-plugins": {},
   "limit_launcher": null,
-  "plugin-id": "性能管理"
+  "plugin-id": "prof_manager"
 }
