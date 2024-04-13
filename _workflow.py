@@ -33,7 +33,7 @@ def get_latest_versions(directory):
                 encoding="utf-8",
             ) as f:
                 dat = json.load(f)
-                v_dict[dat["plugin-type"] + "_plugin"][p1] = dat["version"]
+                v_dict[dat["plugin-type"] + "_plugin"][dat["plugin-id"]] = dat["version"]
     return json.dumps(v_dict, indent=2, ensure_ascii=False)
 
 def flush_basic_datas():
