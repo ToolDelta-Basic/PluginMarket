@@ -7,7 +7,7 @@ plugins.checkSystemVersion((0, 3, 8))
 
 @plugins.add_plugin
 class ConsoleCommands(Plugin):
-    name = "控制台执行特殊指令"
+    name = "控制台执行MC指令"
     author = "SuperScript"
     version = (0, 0, 3)
 
