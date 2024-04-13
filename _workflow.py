@@ -53,6 +53,18 @@ def flush_basic_datas():
     with open("market_tree.json", "w", encoding="utf-8") as f:
         json.dump(market_d, f, indent=2, ensure_ascii=False)
 
+def flush_plugin_ids_map():
+    mapper = {}
+    for path in os.listdir():
+        datpath = os.path.join(path, "datas.json")
+        if os.path.isfile(datpath):
+            with open(datpath, "r", encoding="utf-8") as f:
+                dat = json.load(f)
+                mapper[dat["plugin-id"]] = path
+
+    with open("plugin_ids_map.json", "w", encoding="utf-8") as f:
+        json.dump(mapper, f, indent=2, ensure_ascii=False)
+
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
 
@@ -66,3 +78,4 @@ if __name__ == "__main__":
         f.write(get_latest_versions(directory))
 
     flush_basic_datas()
+    flush_plugin_ids_map()
