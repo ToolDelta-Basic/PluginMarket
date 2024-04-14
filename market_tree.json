@@ -35,6 +35,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "MC-MIDIPlayer": {
+      "name": "库-MIDI播放器",
+      "author": "SuperScript",
+      "version": "0.1.2",
+      "plugin-type": "classic"
+    },
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
