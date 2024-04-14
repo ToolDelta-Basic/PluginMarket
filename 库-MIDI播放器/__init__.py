@@ -1,0 +1,135 @@
+import time, os
+import Musicreater
+from tooldelta import Plugin, plugins, Builtins, Print
+
+def seq_chunk_split(s: bytes, chunk_size: int = 4):
+    res = []
+    while s != b"":
+        res.append(s[:chunk_size])
+        s = s[chunk_size:]
+    return res
+
+def read_midi_and_dump_to_seq(midipath: str):
+    mid = Musicreater.MidiConvert.from_midi_file(midipath)
+    lst = mid.to_sequence()
+    return ToolSoundSequence(lst)
+
+class ToolSoundSequence:
+    def __init__(self, seq: bytes | list):
+        if isinstance(seq, bytes):
+            try:
+                instruments_bt, noteseq = seq.split(b"SEQ:\x00")
+                instruments_bts = instruments_bt.split(b"\xff")
+                instruments = [i.decode("ascii") for i in instruments_bts]
+                self.instruments = instruments
+                self.noteseq = noteseq
+            except IndexError:
+                raise Exception("解码失败: 音符表错误")
+        elif isinstance(seq, list):
+            instrument_indexes: list[str] = []
+            bt = b""
+            newb = []
+            for instrument, vol, pitch, delay in seq:
+                if instrument not in instrument_indexes:
+                    instrument_indexes.append(instrument)
+                instrument_index = instrument_indexes.index(instrument)
+                newb.append(bytes([instrument_index, vol, pitch + 60, delay]))
+            bt += b"\xfe".join(newb)
+            self.instruments = instrument_indexes
+            self.noteseq = bt
+
+    def __iter__(self):
+        seq = self.noteseq
+        instruments = self.instruments
+        for ind in seq.split(b"\xfe"):
+            i, j, k, l = ind
+            instrument: str = instruments[i]
+            vol = j / 100
+            pitch = 2 ** ((k - 60) / 12)
+            delay = l
+            yield instrument, vol, pitch, delay
+
+    def dump_seq(self):
+        instruments = self.instruments
+        bt = b"\xff".join(i.encode("ascii") for i in instruments)
+        bt += b"SEQ:\x00" + self.noteseq
+        return bt
+
+@plugins.add_plugin_as_api("MIDI播放器")
+class ToolMidiMixer(Plugin):
+    author = "SuperScript"
+
+    midi_seqs: dict[str, ToolSoundSequence] = {}
+    playsound_threads: dict[str, Builtins.createThread] = {}
+    _id_counter = 0
+
+    # ---------------- API ---------------------
+    def load_midi_file(self, path: str, as_name: str):
+        "读取MIDI文件并解析为序列载入(慢)."
+        self.midi_seqs[as_name] = read_midi_and_dump_to_seq(path)
+
+    def load_sound_seq_file(self, path: str, as_name: str):
+        "读取ToolSound声音文件解析为序列载入(快)."
+        with open(path, "rb") as f:
+            self.midi_seqs[as_name] = ToolSoundSequence(f.read())
+
+    def translate_midi_to_seq_file(self, path: str, path1: str):
+        "将MIDI文件转换为ToolSound序列文件."
+        seq = read_midi_and_dump_to_seq(path)
+        with open(path1, "wb") as f:
+            f.write(seq.dump_seq())
+
+    def read_midi_file_to_sequence(self, path: str):
+        "读取MIDI序列文件, 将其转换为序列并返回"
+        return read_midi_and_dump_to_seq(path)
+
+    def playsound_at_target(self, name_or_seq: str | ToolSoundSequence, target: str):
+        "创建播放器线程并返回线程ID, 以便使用 stop_playing() 停止线程"
+        self._id_counter += 1
+        self.playsound_threads[self._id_counter] = Builtins.createThread(
+            self._playsound_at_target_thread, (name_or_seq, target, self._id_counter)
+        )
+        return self._id_counter
+
+    def stop_playing(self, idc: int):
+        "终止播放器播放线程"
+        thr = self.playsound_threads.get(idc)
+        if thr is not None:
+            thr.stop()
+            return True
+        return False
+
+    # ------------------------------------------
+
+    def _playsound_at_target_thread(self, name_or_seq: str | ToolSoundSequence, target: str, idc: int):
+        if isinstance(name_or_seq, ToolSoundSequence):
+            seq = name_or_seq
+        else:
+            seq = self.midi_seqs[name_or_seq]
+        scmd = self.game_ctrl.sendwocmd
+        try:
+            for instrument, vol, pitch, delay in seq:
+                scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
+                time.sleep(delay / 20)
+        finally:
+            del self.playsound_threads[idc]
+
+    def on_inject(self):
+        self.frame.add_console_cmd_trigger(["播放测试"], None, "测试声乐合成器", self.play_test)
+        self.frame.add_console_cmd_trigger(["停止所有播放"], None, "停止正在播放的所有音乐", self.stop_all)
+
+    def play_test(self, *_):
+        for i in os.listdir():
+            if i.endswith(".mid"):
+                Print.print_suc(f"已找到用于示例播放的midi文件: {i}")
+                self.load_midi_file(i, "example")
+                Print.print_suc(f"开始播放: {i}")
+                self.playsound_at_target("example", "@a")
+                break
+        else:
+            Print.print_war("没有找到用于示例播放的任何midi文件(ToolDelta目录下), 已忽略")
+
+    def stop_all(self, *_):
+        for k in self.playsound_threads.copy().keys():
+            res = self.stop_playing(k)
+            Print.print_inf(f"停止音乐 {k} 的播放: " + ["失败", "成功"][res] + ".")
