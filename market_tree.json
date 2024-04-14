@@ -46,9 +46,9 @@
       "plugin-type": "classic"
     },
     "封禁系统": {
-      "name": "封禁系统",
+      "name": "点歌台",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "plugin-type": "classic"
     },
     "全服喇叭": {

@@ -44,6 +44,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "点歌台": [
+        "__init__.py",
+        "datas.json"
+    ],
     "维度传送": [
         "__init__.py",
         "datas.json"
