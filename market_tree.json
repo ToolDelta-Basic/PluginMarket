@@ -2,8 +2,6 @@
   "MarketVersion": "0.0.1",
   "SourceName": "ToolDelta插件市场 Official",
   "Greetings": "§a欢迎使用 §bToolDelta 插件市场.",
-  "DownloadRefURL": "https://gh.api.99988866.xyz/https://raw.githubusercontent.com/ToolDelta/ToolDelta-PluginMarket/main",
-  "DirectoryFileURL": "https://gh.api.99988866.xyz/https://raw.githubusercontent.com/ToolDelta/ToolDelta-PluginMarket/main/plugin_market/directory.json",
   "MarketPlugins": {
     "@玩家": {
       "name": "@玩家",
