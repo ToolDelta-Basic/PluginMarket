@@ -58,6 +58,8 @@ class ToolSoundSequence:
 @plugins.add_plugin_as_api("MIDI播放器")
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
+    name = "库-MIDI播放器"
+    version = (0, 1, 3)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
     playsound_threads: dict[str, Builtins.createThread] = {}
@@ -98,6 +100,16 @@ class ToolMidiMixer(Plugin):
             thr.stop()
             return True
         return False
+
+    def playsound_at_target_sync(self, name_or_seq: str | ToolSoundSequence, target: str):
+        if isinstance(name_or_seq, ToolSoundSequence):
+            seq = name_or_seq
+        else:
+            seq = self.midi_seqs[name_or_seq]
+        scmd = self.game_ctrl.sendwocmd
+        for instrument, vol, pitch, delay in seq:
+            scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
+            time.sleep(delay / 20)
 
     # ------------------------------------------
 
