@@ -13,8 +13,8 @@ def generate_json(directory):
     # 获取目录下所有文件
     for root, _, files in os.walk(target_directory):
         relative_path = os.path.relpath(root, target_directory)
-        if relative_path == ".":
-            relative_path = ""
+        if any(item in relative_path for item in ['.', '.git']):
+            continue
         data[relative_path] = []
 
         # 添加文件
