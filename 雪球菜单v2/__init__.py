@@ -129,9 +129,14 @@ class SnowMenu(Plugin):
                 self.page = None
                 self.event.set()
         cb = _cb()
+        if isinstance(disp_func, dict):
+            # shh, 这是一个秘密
+            page_cb = lambda _, now_page: disp_func.get(now_page)
+        else:
+            page_cb = disp_func
         page = MultiPage(
             page_id = None,
-            page_cb = disp_func,
+            page_cb = page_cb,
             ok_cb = cb.ok,
             exit_cb = cb.exit,
             leave_cb = cb.exit
