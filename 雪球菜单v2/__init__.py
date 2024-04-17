@@ -3,6 +3,7 @@ import time
 from typing import Callable
 from dataclasses import dataclass
 from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
+import threading
 
 @dataclass
 class Page:
@@ -18,6 +19,8 @@ class Page:
                 Page 对象: 跳转到该页
                 元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
                 None: 直接退出菜单
+        exit_cb: 玩家低头退出菜单后的回调 (玩家名: str) -> None
+        leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
     page_id: str
@@ -25,6 +28,7 @@ class Page:
     page_texts: str
     ok_cb: Callable[[str], None | bool]
     exit_cb: Callable[[str], None] = None
+    leave_cb: Callable[[str], None] = None
     parent_page_id: str | None = ""
 
 @dataclass
@@ -41,19 +45,22 @@ class MultiPage:
                 Page 对象: 跳转到该页
                 元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
                 None: 直接退出菜单
+        exit_cb: 玩家低头退出菜单后的回调 (玩家名: str) -> None
+        leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
     page_id: str
     page_cb: Callable[[str, int], str | None]
     ok_cb: Callable[[str, int], None | Page | tuple["MultiPage", int]]
     exit_cb: Callable[[str], bool | None] = None
+    leave_cb: Callable[[str], bool | None] = None
     parent_page_id: str | None = None
 
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -70,8 +77,6 @@ class SnowMenu(Plugin):
         "玩家名 -> 多页菜单页数"
         self.default_page = "default"
         self.read_cfg()
-        self.require_listen = []
-        self.listen_result = {}
 
     # ---------------- API ------------------
 
@@ -109,43 +114,33 @@ class SnowMenu(Plugin):
             选项(页数)
             None: 玩家低头取消了菜单 / 玩家中途退出.
         """
-        now_page = 0
-        self.require_listen.append(player)
         self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
-        result = None
-        while 1:
-            resp = self.listen_result.get(player)
-            if player not in self.gc.allplayers:
-                break
-            if resp is not None:
-                match resp:
-                    case "snowball.menu.use":
-                        now_page += 1
-                    case "snowball.menu.confirm":
-                        result = now_page
-                        break
-                    case "snowball.menu.escape":
-                        break
-                del self.listen_result[player]
-            if isinstance(disp_func, dict):
-                # shh, 这是一个秘密
-                disp_text = disp_func.get(now_page)
-            else:
-                disp_text = disp_func(player, now_page)
-            if disp_text is None:
-                now_page = 0
-                if isinstance(disp_func, dict):
-                    disp_text = disp_func.get(0)
-                else:
-                    disp_text = disp_func(player, 0)
-            self.gc.player_actionbar(player, disp_text)
-            time.sleep(0.5)
-        self.require_listen.remove(player)
-        if self.listen_result.get(player):
-            del self.listen_result[player]
-        self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
-        return result
+        class _cb:
+            def __init__(self):
+                self.event = threading.Event()
+            def start(self):
+                self.event.wait()
+                return self.page
+            def ok(self, _, page):
+                self.page = page
+                self.event.set()
+            def exit(self, _):
+                self.page = None
+                self.event.set()
+        cb = _cb()
+        page = MultiPage(
+            page_id = None,
+            page_cb = disp_func,
+            ok_cb = cb.ok,
+            exit_cb = cb.exit,
+            leave_cb = cb.exit
+        )
+        old_page = self.in_snowball_menu.get(player)
+        self.set_player_page(player, page)
+        if old_page is None:
+            self.show_page_thread(player)
+        return cb.start()
 
     # ---------------------------------------
 
@@ -164,9 +159,13 @@ class SnowMenu(Plugin):
         self.in_snowball_menu[player] = page
         if isinstance(page, MultiPage):
             self.multi_snowball_page[player] = page_sub_id
+        self.show_page(player)
 
     def on_player_leave(self, player: str):
         if player in self.in_snowball_menu.keys():
+            cb = self.in_snowball_menu[player].leave_cb
+            if cb is not None:
+                cb(player)
             self.remove_player_in_menu(player)
 
     def read_cfg(self):
@@ -234,10 +233,7 @@ class SnowMenu(Plugin):
             msgs = [i["text"] for i in msg["rawtext"]]
             if len(msgs) > 0 and msgs[0].startswith("snowball.menu"):
                 user = msgs[1]
-                if user in self.require_listen:
-                    self.listen_result[user] = msgs[0]
-                    return True
-                elif msgs[0] == "snowball.menu.use":
+                if msgs[0] == "snowball.menu.use":
                     self.next_page(user)
                     return True
                 elif msgs[0] == "snowball.menu.escape":
@@ -291,6 +287,7 @@ class SnowMenu(Plugin):
         self.gc.player_actionbar(
             player, page_text
         )
+        self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
 
     @Builtins.new_thread
     def menu_confirm(self, player: str):
@@ -314,10 +311,11 @@ class SnowMenu(Plugin):
                 self.set_player_page(player, res[0], res[1])
 
     def menu_escape(self, player: str):
-        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
         if player not in self.in_snowball_menu.keys():
             Print.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
+            self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
             return
+        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
         cb = self.in_snowball_menu[player].exit_cb
         if cb is not None:
             cb(player)
