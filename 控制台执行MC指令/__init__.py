@@ -21,6 +21,7 @@ class ConsoleCommands(Plugin):
         self.frame.add_console_cmd_trigger(
             ["wo/"], "[指令]", "执行控制台权限指令", self.SendWOCmdOnConsole
         )
+
     def SendWSCmdOnConsole(self, cmd):
         try:
             result = self.game_ctrl.sendwscmd(" ".join(cmd), True, 5)
@@ -48,12 +49,6 @@ class ConsoleCommands(Plugin):
                 Print.print_suc(f"指令执行成功： \n{jso}")
         except TimeoutError:
             Print.print_err("[超时] 指令获取结果返回超时")
-
-    def SendOriginalFBCommand(self, cmd):
-        self.game_ctrl.sendfbcmd(" ".join(cmd))
-
-    def SendFBCmdOnConsole(self, cmd):
-        self.game_ctrl.sendfbcmd(" ".join(cmd))
 
     def SendWOCmdOnConsole(self, cmd):
         self.game_ctrl.sendwocmd(" ".join(cmd))
