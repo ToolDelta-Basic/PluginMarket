@@ -1,103 +1,103 @@
 {
     "@玩家": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "tpa传送": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "地图画导入": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "简易建造": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "自定义聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "库-MIDI播放器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "库-MIDI播放器/Musicreater": [
-        "types.py",
-        "subclass.py",
-        "constants.py",
-        "__init__.py",
-        "exceptions.py",
-        "main.py",
-        "utils.py"
-    ],
-    "32k盒子显示": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "封禁系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "全服喇叭": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "点歌台": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "维度传送": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "控制台执行MC指令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "更好的公告栏": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "发言频率": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置-世界交互": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
     "性能管理": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
-    "雪球菜单v2": [
-        "__init__.py",
-        "datas.json"
+    "tpa传送": [
+        "datas.json",
+        "__init__.py"
     ],
-    "清空玩家末影箱": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "基本插件功能库": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "五子棋小游戏": [
-        "__init__.py",
-        "datas.json"
+    "聊天栏菜单": [
+        "datas.json",
+        "__init__.py"
     ],
     "死亡返回": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
+    ],
+    "自定义聊天栏菜单": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "发言频率": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "点歌台": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "维度传送": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "简易建造": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "全服喇叭": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "32k盒子显示": [
+        "datas.json",
+        "__init__.py"
     ],
     "井字棋": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "雪球菜单v2": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "封禁系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "更好的公告栏": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置-世界交互": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "基本插件功能库": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "控制台执行MC指令": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "五子棋小游戏": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "清空玩家末影箱": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "库-MIDI播放器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "库-MIDI播放器/Musicreater": [
+        "constants.py",
         "__init__.py",
-        "datas.json"
+        "utils.py",
+        "subclass.py",
+        "main.py",
+        "types.py",
+        "exceptions.py"
+    ],
+    "地图画导入": [
+        "datas.json",
+        "__init__.py"
     ]
 }

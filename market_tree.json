@@ -9,23 +9,29 @@
       "version": "0.0.3",
       "plugin-type": "injected"
     },
+    "prof_manager": {
+      "name": "性能管理",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "tpa传送": {
       "name": "tpa传送",
       "author": "wling",
       "version": "0.0.8",
       "plugin-type": "injected"
     },
-    "地图画导入": {
-      "name": "地图画导入",
+    "聊天栏菜单": {
+      "name": "聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.1.13",
       "plugin-type": "classic"
     },
-    "简易建造": {
-      "name": "简易建造",
-      "author": "SuperScript",
-      "version": "0.0.3",
-      "plugin-type": "classic"
+    "死亡返回": {
+      "name": "死亡返回",
+      "author": "wling/7912",
+      "version": "0.1.0",
+      "plugin-type": "injected"
     },
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
@@ -33,28 +39,10 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "MC-MIDIPlayer": {
-      "name": "库-MIDI播放器",
-      "author": "SuperScript",
-      "version": "0.1.3",
-      "plugin-type": "classic"
-    },
-    "32k盒子显示": {
-      "name": "32k盒子显示",
-      "author": "SuperScript",
-      "version": "0.0.2",
-      "plugin-type": "classic"
-    },
-    "封禁系统": {
-      "name": "封禁系统",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "全服喇叭": {
-      "name": "全服喇叭",
-      "author": "wling",
-      "version": "0.0.1",
+    "发言频率": {
+      "name": "发言频率",
+      "author": "wling/7912",
+      "version": "0.0.3",
       "plugin-type": "injected"
     },
     "点歌台": {
@@ -69,16 +57,40 @@
       "version": "0.0.1",
       "plugin-type": "injected"
     },
-    "控制台执行MC指令": {
-      "name": "控制台执行MC指令",
+    "简易建造": {
+      "name": "简易建造",
       "author": "SuperScript",
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "聊天栏菜单": {
-      "name": "聊天栏菜单",
+    "全服喇叭": {
+      "name": "全服喇叭",
+      "author": "wling",
+      "version": "0.0.1",
+      "plugin-type": "injected"
+    },
+    "32k盒子显示": {
+      "name": "32k盒子显示",
       "author": "SuperScript",
-      "version": "0.1.13",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "井字棋": {
+      "name": "井字棋",
+      "author": "SuperScript/wling",
+      "version": "0.0.4",
+      "plugin-type": "injected"
+    },
+    "雪球菜单v2": {
+      "name": "雪球菜单v2",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "封禁系统": {
+      "name": "封禁系统",
+      "author": "SuperScript",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "更好的公告栏": {
@@ -87,40 +99,22 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "发言频率": {
-      "name": "发言频率",
-      "author": "wling/7912",
-      "version": "0.0.3",
-      "plugin-type": "injected"
-    },
     "前置-世界交互": {
       "name": "前置-世界交互",
       "author": "SuperScript",
       "version": "0.0.2",
       "plugin-type": "classic"
     },
-    "prof_manager": {
-      "name": "性能管理",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "雪球菜单v2": {
-      "name": "雪球菜单v2",
-      "author": "SuperScript",
-      "version": "0.0.7",
-      "plugin-type": "classic"
-    },
-    "清空玩家末影箱": {
-      "name": "清空玩家末影箱",
-      "author": "wling",
-      "version": "0.0.3",
-      "plugin-type": "injected"
-    },
     "基本插件功能库": {
       "name": "基本插件功能库",
       "author": "SuperScript",
       "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "控制台执行MC指令": {
+      "name": "控制台执行MC指令",
+      "author": "SuperScript",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "五子棋小游戏": {
@@ -129,17 +123,23 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
-    "死亡返回": {
-      "name": "死亡返回",
-      "author": "wling/7912",
-      "version": "0.1.0",
+    "清空玩家末影箱": {
+      "name": "清空玩家末影箱",
+      "author": "wling",
+      "version": "0.0.3",
       "plugin-type": "injected"
     },
-    "井字棋": {
-      "name": "井字棋",
-      "author": "SuperScript/wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+    "MC-MIDIPlayer": {
+      "name": "库-MIDI播放器",
+      "author": "SuperScript",
+      "version": "0.1.3",
+      "plugin-type": "classic"
+    },
+    "地图画导入": {
+      "name": "地图画导入",
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
     }
   }
 }
