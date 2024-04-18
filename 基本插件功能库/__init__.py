@@ -1,4 +1,4 @@
-import json
+import ujson as json
 import time
 from tooldelta import Plugin, plugins, Frame
 
@@ -207,7 +207,7 @@ class BasicFunctionLib(Plugin):
         "获取玩家坐标的X, Y, Z值"
         res = self.getPos(player, timeout=timeout)["position"]
         return res["x"], res["y"], res["z"]
-    
+
     def getPosXYZ_Int(self, player, timeout=30) -> tuple[float, float, float]:
         "获取玩家坐标的X, Y, Z值"
         res = self.getPos(player, timeout=timeout)["position"]

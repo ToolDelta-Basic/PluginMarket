@@ -1,6 +1,5 @@
-import json
+import ujson as json
 from tooldelta import Plugin, plugins, Frame, Print
-from tooldelta.launch_cli import FrameFBConn
 
 plugins.checkSystemVersion((0, 3, 8))
 
@@ -22,26 +21,6 @@ class ConsoleCommands(Plugin):
         self.frame.add_console_cmd_trigger(
             ["wo/"], "[指令]", "执行控制台权限指令", self.SendWOCmdOnConsole
         )
-        if isinstance(self.frame.launcher, FrameFBConn):
-            self.frame.add_console_cmd_trigger(
-                ["fb", "!"], "[指令]", "执行FB指令 (fb + <fb指令>)", self.SendFBCmdOnConsole
-            )
-            self.frame.add_console_cmd_trigger(
-                ["bdump"], "-p <文件路径>", "导入bdx文件", self.SendOriginalFBCommand
-            )
-            self.frame.add_console_cmd_trigger(
-                ["schematic"], "-p <文件路径>", "导入schematic文件", self.SendOriginalFBCommand
-            )
-            self.frame.add_console_cmd_trigger(
-                ["plot"], "-p <文件路径>", "导入PNG文件", self.SendOriginalFBCommand
-            )
-            self.frame.add_console_cmd_trigger(
-                ["mapart"],
-                "-p <文件路径>",
-                "导入图片文件, 且效果更好",
-                self.SendOriginalFBCommand,
-            )
-
     def SendWSCmdOnConsole(self, cmd):
         try:
             result = self.game_ctrl.sendwscmd(" ".join(cmd), True, 5)

@@ -1,4 +1,4 @@
-import json
+import ujson as json
 import time
 from typing import Callable
 from dataclasses import dataclass
