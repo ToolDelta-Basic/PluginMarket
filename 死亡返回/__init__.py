@@ -7,7 +7,6 @@ from tooldelta.plugin_load.injected_plugin import (
     player_message,
     player_death,
     player_message_info,
-    player_name,
 )
 from tooldelta.plugin_load.injected_plugin.movent import (
     get_all_player,

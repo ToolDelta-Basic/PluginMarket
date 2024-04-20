@@ -12,7 +12,7 @@ from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "发言频率",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "wling/7912",
 }
 
