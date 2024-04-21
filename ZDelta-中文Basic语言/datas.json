@@ -1,7 +1,7 @@
 {
   "author": "SuperScript",
   "version": "0.0.1",
-  "description": "让你可以使用中文编写简单的ToolDelta插件！",
+  "description": "让你可以使用中文编写简单的ToolDelta插件！详情请看插件文件夹附带的使用说明",
   "plugin-type": "classic",
   "pre-plugins": {
     "基本插件功能库": "0.0.7"
