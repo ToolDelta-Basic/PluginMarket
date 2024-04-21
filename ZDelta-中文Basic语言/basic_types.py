@@ -1,0 +1,4 @@
+NUMBER = 0
+STRING = 1
+NULL = 2
+POSITION = 3
