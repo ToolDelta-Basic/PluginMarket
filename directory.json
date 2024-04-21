@@ -19,6 +19,14 @@
         "datas.json",
         "__init__.py"
     ],
+    "ZDelta-中文Basic语言": [
+        "checker.py",
+        "syntax_compile.py",
+        "basic_types.py",
+        "datas.json",
+        "__init__.py",
+        "syntax_lib.py"
+    ],
     "自定义聊天栏菜单": [
         "datas.json",
         "__init__.py"
