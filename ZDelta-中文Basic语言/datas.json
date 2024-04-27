@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "使用中文Basic来编写ToolDelta插件! \n内置多种语法, 教程可在 ToolDelta Wiki 查询。",
     "plugin-type": "classic",
     "pre-plugins": {

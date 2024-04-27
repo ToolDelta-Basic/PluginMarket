@@ -8,8 +8,7 @@ from syntax_compile import (
     deal_stxgrp,
     get_final_type,
     register_func_syntax,
-    register_var,
-    fun_stxs
+    register_var
 )
 from syntax_lib import (
     OpPtr,
@@ -32,7 +31,7 @@ tmpjson = Builtins.TMPJson
 class Compiler(Plugin):
     name = "ZDelta-中文Basic语言"
     author = "SuperScript"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     class ScriptExit(Exception):...
     class PlayerExitInterrupt(ScriptExit):...
@@ -50,7 +49,7 @@ class Compiler(Plugin):
     def add_command(
             self,
             cmd: str,
-            cmd_valid_checker: Callable[[list[str]], bool],
+            cmd_valid_checker: Callable[[list[str]], Any],
             executer: Callable
         ):
         """
@@ -58,8 +57,16 @@ class Compiler(Plugin):
         !此方法暂时不能使用!
         参数:
             cmd: 指令名
-            cmd_valid_checker: 函数, 检查传入的指令参数是否合法, 不合法可使用 assert 引发报错提示
+            cmd_valid_checker: 函数, 检查传入的指令参数是否合法
+                传入:
+                    当前的全局变量类型表: dict[str, BasicType | OptionalType]
+                    参数列表: list[str]
+                返回:
+                    经过处理后的数据
             executer: 接收参数并执行的方法
+                按顺序传入的参数:
+                    当前的全局变量列表: dict[str, Any]
+                    上方经过处理的数据
         """
         self.commands_id_hashmap[hash(cmd)] = executer
         self.reg_cmds_with_checkers[cmd] = cmd_valid_checker
@@ -75,7 +82,7 @@ class Compiler(Plugin):
         向 TD-中文Basic 添加函数, 扩展函数库
         参数:
             name: 函数名
-            args_checker: 参数类型检测器, 传入参数类型列表(用int表示), 合法返回None, 不合法返回字符串(报错消息)
+            args_checker: 参数类型检测器, 传入：参数类型列表, 合法返回None, 不合法返回所需类型的字符串
             return_type: 返回的值的类型
                 e.g. return_type = api.STRING # 返回值为字符串
             callback: 接受参数, 并返回结果
@@ -91,8 +98,8 @@ class Compiler(Plugin):
     def __init__(self, f: Frame):
         self.frame = f
         self.game_ctrl = f.get_game_control()
-        self.commands_id_hashmap = {}
-        self.reg_cmds_with_checkers = {}
+        self.commands_id_hashmap: dict[int, Callable] = {}
+        self.reg_cmds_with_checkers: dict[str, Callable] = {}
         self.reg_func_ptrs: dict[str, Callable] = {}
         self.pre_register_vars: dict[str, int] = {}
         self.builtins_register_vars = {"空变量": NULL}
@@ -109,23 +116,19 @@ class Compiler(Plugin):
         # 基础函数
         self.add_func_ptr(
             "取整", lambda x:None if (len(x)==1 and x[0]==NUMBER) else "数值",
-            NUMBER,
-            lambda x:int(x)
+            NUMBER, lambda x:int(x)
         )
         self.add_func_ptr(
             "四舍五入", lambda x:None if(len(x)==1 and x[0]==NUMBER) else "数值",
-            NUMBER,
-            lambda x:round(x)
+            NUMBER, lambda x:round(x)
         )
         self.add_func_ptr(
             "随机整数", lambda x:None if(len(x)==2 and x[0]==x[1]==NUMBER) else "数值 数值",
-            NUMBER,
-            lambda x,y:random.randint(int(x), int(y)) if x<y else 0
+            NUMBER, lambda x,y:random.randint(int(x), int(y)) if x<y else 0
         )
         self.add_func_ptr(
             "是否为空变量", lambda x:None if len(x)==1 else "任意变量",
-            NUMBER,
-            lambda x:x is None
+            NUMBER, lambda x:x is None
         )
         self.add_func_ptr(
             "当前系统时间戳",
@@ -134,10 +137,16 @@ class Compiler(Plugin):
         )
         self.add_func_ptr(
             "格式化时间", lambda x:None if x[0]==STRING else "字符串",
-            STRING,
-            lambda t:time.strftime(t)
+            STRING, lambda t:time.strftime(t)
         )
-
+        self.add_func_ptr(
+            "玩家是否在线", lambda x:None if x[0]==STRING else "字符串",
+            NUMBER, lambda t:int(t in self.game_ctrl.allplayers)
+        )
+        self.add_func_ptr(
+            "指令是否执行成功", lambda x:None if x[0]==STRING else "字符串",
+            NUMBER, lambda t:int(self.game_ctrl.sendcmd(t, True, 60)) # type: ignore
+        )
 
     def load_scripts(self):
         script_path = os.path.join(self.data_path, "脚本文件")
@@ -424,8 +433,8 @@ class Compiler(Plugin):
                         # 扩展命令
                         if args[0] in self.reg_cmds_with_checkers.keys():
                             cmd = args[0]
-                            self.reg_cmds_with_checkers[cmd](len(args))
-                            _add_cmp(hash(cmd), None if len(args) == 1 else args[1:])
+                            res = self.reg_cmds_with_checkers[cmd](len(args))
+                            _add_cmp(hash(cmd), res)
                         else:
                             raise AssertionError(f"无法被识别的指令: {args[0]}")
             return cmp_scripts, None
@@ -538,6 +547,10 @@ class Compiler(Plugin):
                         seq1, seq2 = cmd[0]
                         old = tmpjson.read(g_path)
                         loc_vars[seq1] = old.get(seq2) # type: ignore
+                    case _:
+                        f = self.commands_id_hashmap.get(code)
+                        if f is not None:
+                            f(loc_vars, cmd[0])
                 pointer += 1
         except self.PlayerExitInterrupt:
             if player not in [self.game_ctrl.bot_name, "服务器"]:
@@ -546,6 +559,8 @@ class Compiler(Plugin):
             ...
         except SkipScript:
             ...
+        except Exception as err:
+            Print.print_err(f"脚本执行时出现问题: {err}")
 
     def reload_all(self, _):
         self.load_scripts()

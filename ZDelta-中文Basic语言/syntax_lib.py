@@ -1,4 +1,4 @@
-opcodes="+-*/^"
+opcodes="+-*/^和或"
 funopcodes=",()"
 
 var_types = {}
@@ -11,7 +11,9 @@ __all__ = [
   "SubPtr",
   "MulPtr",
   "DivPtr",
-  "PowPtr"
+  "PowPtr",
+  "AndPtr",
+  "OrPtr"
 ]
 
 class VarPtr:
@@ -57,9 +59,15 @@ class DivPtr(OpPtr):
 class PowPtr(OpPtr):
   name="^"
   op=staticmethod(lambda x,y:x**y)
+class AndPtr(OpPtr):
+  name="和"
+  op=staticmethod(lambda x,y:x and y)
+class OrPtr(OpPtr):
+  name="或"
+  op=staticmethod(lambda x,y:x or y)
 
-opmap={"+":AddPtr,"-":SubPtr,"*":MulPtr,"/":DivPtr,"^":PowPtr}
-max_priority=3
+opmap={"+":AddPtr,"-":SubPtr,"*":MulPtr,"/":DivPtr,"^":PowPtr,"和":AndPtr,"或":OrPtr}
+max_priority=5
 
 def op_prior(o):
   "操作符优先级"
@@ -71,6 +79,10 @@ def op_prior(o):
     return 2
   elif o in [PowPtr]:
     return 3
+  elif o in [OrPtr]:
+    return 4
+  elif o in [AndPtr]:
+    return 5
   else:
     raise SyntaxError(o)
 
