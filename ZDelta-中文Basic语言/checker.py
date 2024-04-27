@@ -3,7 +3,6 @@ from basic_types import *
 
 fun_restype = {}
 fun_inputypechk = {}
-typelst = ("数", "字符串", "空变量", "坐标")
 
 def get_final_type(syntax):
     return _type_checker_recr(syntax)
@@ -13,7 +12,10 @@ def _type_checker_recr(syntax):
         arg1type = _type_checker_recr(syntax.arg1)
         arg2type = _type_checker_recr(syntax.arg2)
         if not _is_op_valid(arg1type, type(syntax), arg2type):
-            raise SyntaxError(f"不支持这么运算: {typelst[arg1type]} {syntax.name} {typelst[arg2type]}")
+            notice = ""
+            if isinstance(arg1type, OptionalType) or isinstance(arg2type, OptionalType):
+                notice += "\n似乎是遇到了可能为空的变量, 你可以用 §e忽略空变量 <变量名> §c这条指令以跳过空变量(如果你清楚后果的话)"
+            raise SyntaxError(f"不支持这么运算: {get_typename_zhcn(arg1type)} {syntax.name} {get_typename_zhcn(arg2type)} " + notice)
         return _valid_op_type(type(syntax))[(arg1type,arg2type)]
     elif isinstance(syntax, FuncPtr):
         input_type_checker = fun_inputypechk[syntax.name]
@@ -24,8 +26,8 @@ def _type_checker_recr(syntax):
                 if typec is None:
                     raise Exception("传入 None 类型 不支持")
                 input_argstypes.append(typec)
-            if not input_type_checker(input_argstypes):
-                raise SyntaxError(f"函数 {syntax.name} 传入的参数类型不正确: " + ", ".join(typelst[j] for j in input_argstypes))
+            if err := input_type_checker(input_argstypes):
+                raise SyntaxError(f"函数 {syntax.name} 传入的参数类型不正确: " + ", ".join(get_typename_zhcn(j) for j in input_argstypes) + ", 需要 " + err)
         except IndexError:
             raise SyntaxError(f"函数 {syntax.name} 传入的参数长度不正确, 传入了{len(input_argstypes)}个")
         for arg in syntax.args:

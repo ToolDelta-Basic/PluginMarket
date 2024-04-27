@@ -74,7 +74,7 @@ def op_prior(o):
   else:
     raise SyntaxError(o)
 
-def num3var(n):
+def num3var(n, loc_var_types: dict | None = None):
   "数字或是变量"
   try:
     if "." in n:
@@ -84,16 +84,15 @@ def num3var(n):
   except ValueError:
     if '"' in n:
       raise SyntaxError("暂不支持在表达式中使用双引号表示字符串, 请改用 设置变量 的方法设置字符串")
-    return VarPtr(n,var_types[n])
+    t = var_types.get(n)
+    if t is None and loc_var_types is not None:
+      t = loc_var_types.get(n)
+    if t is None:
+      raise ValueError(f"未知类型: {n}, 或者是表达式错误")
+    return VarPtr(n,t)
 
 def subcls(i,cls):
   if type(i)!=type:
     return False
   else:
     return issubclass(i,cls)
-
-def pprint(t, scrsize=30):
-  t=str(t)
-  while t:
-    print(t[:scrsize])
-    t=t[scrsize:]

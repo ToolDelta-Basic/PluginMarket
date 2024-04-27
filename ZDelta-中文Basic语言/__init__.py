@@ -9,9 +9,22 @@ from syntax_compile import (
     get_final_type,
     register_func_syntax,
     register_var,
+    fun_stxs
 )
-from syntax_lib import *
+from syntax_lib import (
+    OpPtr,
+    FuncPtr,
+    VarPtr
+)
 from basic_types import *
+from utils import (
+    is_valid_num,
+    is_valid_str,
+    auto_to_type_r,
+    split_by_quote,
+    to_number,
+    to_string
+)
 
 tmpjson = Builtins.TMPJson
 
@@ -19,7 +32,7 @@ tmpjson = Builtins.TMPJson
 class Compiler(Plugin):
     name = "ZDelta-中文Basic语言"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 1, 1)
 
     class ScriptExit(Exception):...
     class PlayerExitInterrupt(ScriptExit):...
@@ -54,17 +67,15 @@ class Compiler(Plugin):
     def add_func_ptr(
             self,
             name: str,
-            args_checker: Callable[[list[int]], bool],
-            return_type: int,
-            callback: Callable
+            args_checker: Callable[[list[int]], None | str] = lambda _:None,
+            return_type: BasicType | OptionalType = NULL,
+            callback: Callable = lambda _:None
         ):
         """
         向 TD-中文Basic 添加函数, 扩展函数库
         参数:
             name: 函数名
-            args_checker: 参数类型检测器, 传入参数类型列表(用int表示), 合法返回True, 不合法返回False
-                e.g. api = plugins.get_plugin_api("TD中文Basic")
-                e.g. args_checker = lambda a:a[0]==api.STRING and a[1]==api.NUMBER # 检测第一个参数是否是字符串, 第二个参数是否为数字
+            args_checker: 参数类型检测器, 传入参数类型列表(用int表示), 合法返回None, 不合法返回字符串(报错消息)
             return_type: 返回的值的类型
                 e.g. return_type = api.STRING # 返回值为字符串
             callback: 接受参数, 并返回结果
@@ -78,7 +89,7 @@ class Compiler(Plugin):
     # ------------------------------------------
 
     def __init__(self, f: Frame):
-        self.f = f
+        self.frame = f
         self.game_ctrl = f.get_game_control()
         self.commands_id_hashmap = {}
         self.reg_cmds_with_checkers = {}
@@ -97,23 +108,40 @@ class Compiler(Plugin):
     def add_basic_functions(self):
         # 基础函数
         self.add_func_ptr(
-            "取整", lambda x:len(x)==1 and x[0]==NUMBER,
+            "取整", lambda x:None if (len(x)==1 and x[0]==NUMBER) else "数值",
             NUMBER,
             lambda x:int(x)
         )
         self.add_func_ptr(
-            "四舍五入", lambda x:len(x)==1 and x[0]==NUMBER,
+            "四舍五入", lambda x:None if(len(x)==1 and x[0]==NUMBER) else "数值",
             NUMBER,
             lambda x:round(x)
         )
         self.add_func_ptr(
-            "随机整数", lambda x:len(x)==2 and x[0]==x[1]==NUMBER,
+            "随机整数", lambda x:None if(len(x)==2 and x[0]==x[1]==NUMBER) else "数值 数值",
             NUMBER,
-            lambda x,y:random.randint(x,y)
+            lambda x,y:random.randint(int(x), int(y)) if x<y else 0
+        )
+        self.add_func_ptr(
+            "是否为空变量", lambda x:None if len(x)==1 else "任意变量",
+            NUMBER,
+            lambda x:x is None
+        )
+        self.add_func_ptr(
+            "当前系统时间戳",
+            return_type=NUMBER,
+            callback=lambda :int(time.time())
+        )
+        self.add_func_ptr(
+            "格式化时间", lambda x:None if x[0]==STRING else "字符串",
+            STRING,
+            lambda t:time.strftime(t)
         )
 
+
     def load_scripts(self):
-        for script_folder in os.listdir(os.path.join(self.data_path, "脚本文件")):
+        script_path = os.path.join(self.data_path, "脚本文件")
+        for script_folder in os.listdir(script_path):
             fopath = os.path.join(self.data_path, "脚本文件", script_folder)
             err = 0
             for file in os.listdir(fopath):
@@ -158,8 +186,10 @@ class Compiler(Plugin):
         Print.print_load("§b使用TDBasic, 小白也会写插件!")
         Print.print_load("交流群(ToolDelta官方群聊): 194838530")
         self.load_scripts()
+        self.frame.add_console_cmd_trigger(["重载中文脚本"], None, "重新载入所有ZBasic中文脚本", self.reload_all)
 
     def on_inject(self):
+        self.frame.add_console_cmd_trigger(["test-l&j"], "玩家名", "测试中文脚本的玩家进入和退出脚本", self.test_player_leave_and_join)
         for k, v in self.evt_scripts["injected"].items():
             self.run_script(v, {})
 
@@ -174,6 +204,22 @@ class Compiler(Plugin):
     def on_player_message(self, player: str, msg: str):
         for k, v in self.evt_scripts["player_message"].items():
             self.run_script(v, {"玩家名": player, "消息": msg})
+
+    def test_player_leave_and_join(self, p: list[str]):
+        if len(p) != 1:
+            Print.print_war("菜单关键词: 玩家名")
+            return
+        player = p[0]
+        if player not in self.game_ctrl.allplayers:
+            Print.print_war(f"玩家不在玩家列表: {player}")
+            return
+        Print.print_inf("正在执行 玩家退出的所有脚本..")
+        for k, v in self.evt_scripts["player_leave"].items():
+            self.run_script(v, {"玩家名": player})
+        Print.print_inf("正在执行 玩家加入的所有脚本..")
+        for k, v in self.evt_scripts["player_join"].items():
+            self.run_script(v, {"玩家名": player})
+        Print.print_suc("执行完成.")
 
     @Builtins.new_thread
     def run_script(self, script_code, args_dict):
@@ -193,7 +239,7 @@ class Compiler(Plugin):
         """
         scr_lines: list[tuple[int, list[str]]] = []
         cmp_scripts = []
-        loc_vars_register = self.builtins_register_vars
+        loc_vars_register: dict[str, BasicType | OptionalType] = self.builtins_register_vars # type: ignore
         scr_lines_finder: dict[int, int] = {}
         now_line_counter = 0
         # 注册初始变量的类型: 0=int, 1=string, 2=空变量
@@ -210,7 +256,10 @@ class Compiler(Plugin):
         def _simple_assert_ln(ln):
             "简单地判断代码行数是否合法"
             assert ln in scr_lines_register, f"不存在第 {ln} 行代码"
-        _get_var_type = lambda varname : loc_vars_register.get(varname)
+        def _check_defined(varname):
+            if varname not in loc_vars_register.keys():
+                raise NameError(f"变量名 {varname} 还未被赋值")
+        _get_var_type = lambda varname : loc_vars_register[varname]
         try:
             rawlines = scripts.splitlines()
             for lett in rawlines:
@@ -221,9 +270,9 @@ class Compiler(Plugin):
                     scr_lines_register.append(linecount)
                 except ValueError:
                     return "", AssertionError(f"{lett.split()[0]} 不是有效的行数")
-                cmds = lett.split()[1:]
+                cmds = split_by_quote(lett)[1:]
                 if cmds == []:
-                    return "", AssertionError(f"第 {lett.split()[0]} 行无有效指令")
+                    return "", AssertionError(f"第 {lett.split()[0]} 行没有有效指令")
                 scr_lines.append((linecount, cmds))
                 scr_lines_finder[linecount] = now_line_counter
                 now_line_counter += 1
@@ -244,79 +293,58 @@ class Compiler(Plugin):
                         # 跳转到 <代码行数>
                     case "CMD" | "执行" | "执行指令":
                         assert len(args) > 1, "执行命令 至少需要2个参数"
-                        seq1 = " ".join(args[1:])
+                        seq1 = args[1]
+                        if not is_valid_str(seq1):
+                            raise AssertionError("执行 指令后需要作为MC指令的合法字符串(需要双引号括起来)")
                         _add_cmp(2, seq1)
                         # 执行 <mc指令>
                     case "SET" | "设定" | "设定变量" | "设置变量":
                         """
-                        md: 0=const_int, 1=const_str, 2=等待聊天栏输入, 3=等待聊天栏输入纯数字, 4=玩家计分板分数, 5=玩家坐标, 9=表达式
+                        md: 0=const_int, 1=const_str, 2=表达式
                         md: 0=math_syntax, 1=str
                         md2: 0=int, 1=str
                         """
                         assert len(args) > 2, "设定命令 至少需要2个参数"
                         assert args[2] == "为", "语法错误"
-                        seq1 = args[1]
-                        seq2 = args[3]
-                        res = None
-                        if seq2.isnumeric() or (len(seq2) > 1 and seq2[0] == "-" and seq2[1:].isnumeric()):
-                            md = 0
-                            md2 = NUMBER
-                            res = int(seq2)
-                        elif " ".join(args[3:]).startswith('"') and " ".join(args[3:]).endswith('"'):
-                            md = 1
-                            md2 = STRING
-                            res = " ".join(args[3:])[1:-1]
-                        elif seq2 == "等待聊天栏输入":
-                            if loc_vars_register.get("玩家名") is None:
-                                raise SyntaxError("无法在此时取得玩家名")
-                            md = 2
-                            md2 = STRING
-                        elif seq2 == "等待聊天栏输入纯数字":
-                            if loc_vars_register.get("玩家名") is None:
-                                raise SyntaxError("无法在此时取得玩家名")
-                            md = 3
-                            md2 = NUMBER
-                        elif seq2 == "当前玩家计分板分数":
-                            _simple_assert_len(args, 5)
-                            if loc_vars_register.get("玩家名") is None:
-                                raise SyntaxError("无法在此时取得玩家名")
-                            md = 4
-                            md2 = NUMBER
-                            res = args[4]
-                        elif seq2 == "玩家当前坐标":
-                            if loc_vars_register.get("玩家名") is None:
-                                raise SyntaxError("无法在此时取得玩家名")
-                            md = 5
-                            md2 = STRING
-                        elif seq2 == "当前时间ticks":
-                            md = 6
-                            md2 = NUMBER
+                        varname = args[1]
+                        syntax = " ".join(args[3:])
+                        if is_valid_num(syntax):
+                            is_constant = True
+                            ftype = NUMBER
+                            res = to_number(syntax)
+                        elif is_valid_str(syntax):
+                            is_constant = True
+                            ftype = STRING
+                            res = to_string(syntax)
                         else:
+                            is_constant = False
                             try:
-                                res = deal_stxgrp(syntax_parse(" ".join(args[3:])))
-                                md2 = get_final_type(res)
+                                res = deal_stxgrp(syntax_parse(syntax, loc_vars_register))
+                                ftype = get_final_type(res)
                                 self.varcheck_exists(res, list(loc_vars_register.keys()))
                             except NameError as err:
                                 raise AssertionError(f"表达式异常: {err}")
                             except SyntaxError as err:
                                 raise AssertionError(f"表达式错误: {err}")
-                            md = 9
                         #else:
                         #    raise AssertionError(f"无法识别的表达式: " + " ".join(args[3:]))
-                        assert not(loc_vars_register.get(seq1)is not None and loc_vars_register.get(seq1) != md2), "变量类型已被定义, 无法更改"
-                        loc_vars_register[seq1] = md2
-                        register_var(seq1, md2)
-                        _add_cmp(3, [md, md2, seq1, res])
+                        old_t = loc_vars_register.get(varname)
+                        assert not(
+                            old_t is not None and old_t != ftype
+                            ) or (isinstance(old_t, OptionalType) and old_t.type == ftype), "变量类型已被定义, 无法更改"
+                        loc_vars_register[varname] = ftype
+                        register_var(varname, ftype)
+                        _add_cmp(3, (varname, is_constant, ftype, res))
                         # 设定变量 设定模式, 变量类型, 变量名[, 值]
                     case "IFS" | "判断":
                         # 判断 变量 操作符 变量 成立=跳转到??? 不成立=跳转到???
                         _simple_assert_len(args, 6)
-                        arg1, arg1type, arg1_is_constant = auto_to_type_r(args[1])
-                        arg2, arg2type, arg2_is_constant = auto_to_type_r(args[3])
-                        if not arg1_is_constant and _get_var_type(arg1) is None:
-                            raise AssertionError(f"变量 {seq1} 未定义")
-                        if not arg2_is_constant and _get_var_type(arg2) is None:
-                            raise AssertionError(f"变量 {seq2} 未定义")
+                        arg1, arg1type, arg1_is_constant = auto_to_type_r(args[1], loc_vars_register)
+                        arg2, arg2type, arg2_is_constant = auto_to_type_r(args[3], loc_vars_register)
+                        if not arg1_is_constant:
+                            _check_defined(arg1)
+                        if not arg2_is_constant:
+                            _check_defined(arg2)
                         match args[2]:
                             case "=" | "==": args[2] = 0 # type: ignore
                             case "!=" | "=!": args[2] = 1 # type: ignore
@@ -330,7 +358,7 @@ class Compiler(Plugin):
                             "判断命令: 第5、6个参数应为： 成立=跳转到<脚本行数>, 不成立=跳转到<脚本行数>"
                         )
                         if args[2] in [2, 3, 4, 5] and (arg1type != NUMBER or arg2type != NUMBER):
-                            raise AssertionError("判断命令: 暂时只能比较数值变量大小")
+                            raise AssertionError(f"判断命令: 暂时只能比较数值变量大小, 也无法比较可能为空的变量: {get_typename_zhcn(arg1type)}, {get_typename_zhcn(arg2type)}")
                         try:
                             seq3 = int(args[4][6:])
                             seq4 = int(args[5][7:])
@@ -348,19 +376,50 @@ class Compiler(Plugin):
                         except:
                             raise AssertionError(f"等待命令 参数应为正整数, 为秒数")
                         _add_cmp(5, seq1)
-                    case "OUT" | "导出变量" | "存储变量":
+                    case "OUT-PRIVATE" | "导出个人变量" | "存储个人变量":
                         _simple_assert_len(args, 4)
+                        if loc_vars_register.get("玩家名") is None:
+                            raise AssertionError("此时无法存储玩家个人变量: 没有目标玩家")
                         assert args[2] == "->", "导出个人变量格式应为 内存变量名 -> 磁盘变量名"
-                        assert args[1] in loc_vars_register.keys(), f"变量 {args[1]} 未定义, 不能使用, 请先设定"
+                        _check_defined(args[1])
                         _add_cmp(6, (args[1], args[3]))
-                    case "IN" | "导入变量" | "读取变量":
+                    case "IN-PRIVATE" | "导入个人变量" | "读取个人变量":
                         _simple_assert_len(args, 6)
+                        if loc_vars_register.get("玩家名") is None:
+                            raise AssertionError("此时无法读取玩家个人变量: 没有目标玩家")
                         assert args[2] == "<-" and args[4] == "类型为" and args[5] in ["数值", "字符串"], "读取个人变量格式应为 内存变量名 <- 磁盘变量名 类型为 数值/字符串"
                         _add_cmp(7, (args[1], args[3]))
-                        loc_vars_register[args[1]] = ["数值", "字符串"].index(args[5])
+                        loc_vars_register[args[1]] = OptionalType(get_zhcn_type(args[5]))
                     case "PRINT" | "输出":
-                        assert len(args) >= 2, f"输出 需要至少1个参数, 目前{len(args) - 1}个"
-                        _add_cmp(8, " ".join(args[1:]))
+                        assert len(args) >= 2, f"输出 需要1个参数, 目前{len(args) - 1}个"
+                        if not is_valid_str(args[1]):
+                            raise ValueError("输出 命令需要一项参数: 输出内容(字符串)")
+                        _add_cmp(8, to_string(args[1]))
+                    case "SAY" | "聊天栏显示":
+                        assert len(args) >= 3, f"聊天栏显示 需要2个参数, 目前{len(args) - 1}个"
+                        if not is_valid_str(args[1]):
+                            raise ValueError("聊天栏显示 第一项参数应为: 目标(字符串)")
+                        if not is_valid_str(args[1]):
+                            raise ValueError("聊天栏显示 第二项参数应为: 文本(字符串)")
+                        _add_cmp(9, (to_string(args[1]), to_string(args[2])))
+                    case "OUT-GLOBAL" | "导出公共变量" | "存储公共变量":
+                        _simple_assert_len(args, 4)
+                        assert args[2] == "->", "导出个人变量格式应为 内存变量名 -> 磁盘变量名"
+                        _check_defined(args[1])
+                        _add_cmp(10, (args[1], args[3]))
+                    case "IN-GLOBAL" | "导入公共变量" | "读取公共变量":
+                        _simple_assert_len(args, 6)
+                        assert args[2] == "<-" and args[4] == "类型为" and args[5] in ["数值", "字符串"], "读取个人变量格式应为 内存变量名 <- 磁盘变量名 类型为 数值/字符串"
+                        loc_vars_register[args[1]] = OptionalType(get_zhcn_type(args[5]))
+                        _add_cmp(11, (args[1], args[3]))
+                    case "IGNORE-NULL" | "忽略空变量":
+                        _simple_assert_len(args, 2)
+                        _check_defined(args[1])
+                        old_t = _get_var_type(args[1])
+                        if isinstance(old_t, OptionalType):
+                            loc_vars_register[args[1]] = de_optional(old_t)
+                        else:
+                            raise AssertionError(f"变量 {args[1]} 不可能是空变量, 不需要忽略")
                     case _:
                         # 扩展命令
                         if args[0] in self.reg_cmds_with_checkers.keys():
@@ -370,7 +429,7 @@ class Compiler(Plugin):
                         else:
                             raise AssertionError(f"无法被识别的指令: {args[0]}")
             return cmp_scripts, None
-        except AssertionError as err:
+        except (AssertionError, ValueError, SyntaxError) as err:
             return [], AssertionError(f"第{ln}行 出现问题: {err}")
 
     def execute_script(self, script_code, pre_variables: dict | None = None):
@@ -385,17 +444,20 @@ class Compiler(Plugin):
         #     pointer = 0
         if pre_variables is None:
             pre_variables = {}
+        # 特殊类型: 玩家个人变量
         if pre_variables.get("玩家名") is not None:
-            if pre_variables.get("玩家名") is not None:
-                player = pre_variables["玩家名"]
-                path = self.get_player_plot_path(player)
-                tmpjson.loadPathJson(path, False)
+            player = pre_variables["玩家名"]
+            p_path = self.get_player_plot_path(player)
+            tmpjson.loadPathJson(p_path, False)
+            if tmpjson.read(p_path) is None:
+                tmpjson.write(p_path, {})
         else:
             player = None
-            path = os.path.join(self.data_path, "全局变量.json")
-            tmpjson.loadPathJson(path, False)
-        if tmpjson.read(path) is None:
-            tmpjson.write(path, {})
+            p_path = None
+        g_path = os.path.join(self.data_path, "全局变量.json")
+        tmpjson.loadPathJson(g_path, False)
+        if tmpjson.read(g_path) is None:
+            tmpjson.write(g_path, {})
         pointer = 0
         loc_vars: dict[str, object] = {"空变量": None}
         if pre_variables is not None:
@@ -407,58 +469,28 @@ class Compiler(Plugin):
                     raise self.SelectTimeout()
                 if player is not None and not player in self.game_ctrl.allplayers:
                     raise self.PlayerExitInterrupt()
-                cmd = script_code[pointer]
-                match cmd[0]:
+                code, *cmd = script_code[pointer]
+                match code:
                     case 0:
+                        # 结束
                         break
                     case 1:
-                        pointer = cmd[1]
+                        # 跳转到
+                        pointer = cmd[0]
                         continue
                     case 2:
-                        self.game_ctrl.sendwocmd(self.var_replace(loc_vars, cmd[1]))
+                        # 执行
+                        self.game_ctrl.sendwocmd(self.var_replace(loc_vars, cmd[0]))
                     case 3:
-                        setmode, _, name, value = cmd[1]
-                        match setmode:
-                            case 9:
-                                loc_vars[name] = self.eval(value, loc_vars)
-                            case 1:
-                                loc_vars[name] = value
-                            case 2:
-                                try:
-                                    res = self.funclib.waitMsg(player, 180) # type: ignore
-                                    if res is None:
-                                        res = ""
-                                    else:
-                                        self.game_ctrl.say_to(player, "§a输入完成, 请退出聊天栏") # type: ignore
-                                    loc_vars[name] = res
-                                except IOError:
-                                    plot_terminated = True
-                                    break
-                            case 3:
-                                while 1:
-                                    try:
-                                        res = int(self.funclib.waitMsg(player, 180)) # type: ignore
-                                        loc_vars[name] = res
-                                        self.game_ctrl.say_to(player, "§a输入完成, 请退出聊天栏") # type: ignore
-                                        break
-                                    except ValueError:
-                                        self.game_ctrl.say_to(player, "§c请输入纯数字") # type: ignore
-                                    except IOError:
-                                        plot_terminated = True
-                                        break
-                            case 4:
-                                try:
-                                    res = self.funclib.getScore(player, value) # type: ignore
-                                except:
-                                    res = None
-                                loc_vars[name] = res
-                            case 5:
-                                x, y, z = self.funclib.getPosXYZ(player) # type: ignore
-                                loc_vars[name] = f"{int(x)} {int(y)} {int(z)}"
-                            case 6:
-                                loc_vars[name] = int(time.time())
+                        # 设置
+                        varname, arg1, _, syntax = cmd[0]
+                        if arg1:
+                            loc_vars[varname] = syntax
+                        else:
+                            loc_vars[varname] = self.eval(syntax, loc_vars)
                     case 4:
-                        arg1, arg1_is_constant, op, arg2, arg2_is_constant, jmp1, jmp2 = cmd[1]
+                        # 判断
+                        arg1, arg1_is_constant, op, arg2, arg2_is_constant, jmp1, jmp2 = cmd[0]
                         if not arg1_is_constant:
                             arg1 = loc_vars[arg1]
                         if not arg2_is_constant:
@@ -474,24 +506,49 @@ class Compiler(Plugin):
                         pointer = jmp1 if res else jmp2
                         continue
                     case 5:
-                        time.sleep(cmd[1])
+                        # 等待
+                        time.sleep(cmd[0])
                     case 6:
-                        seq1, seq2 = cmd[1]
-                        old = tmpjson.read(path)
+                        # 读取个人变量
+                        assert isinstance(p_path, str), "CODE PANIC: 01"
+                        seq1, seq2 = cmd[0]
+                        old = tmpjson.read(p_path)
                         old[seq2] = loc_vars[seq1]
-                        tmpjson.write(path, old)
+                        tmpjson.write(p_path, old)
                     case 7:
-                        seq1, seq2 = cmd[1]
-                        old = tmpjson.read(path)
+                        # 导出个人变量
+                        assert isinstance(p_path, str), "CODE PANIC: 02"
+                        seq1, seq2 = cmd[0]
+                        old = tmpjson.read(p_path)
                         loc_vars[seq1] = old.get(seq2) # type: ignore
                     case 8:
-                        Print.print_with_info(self.var_replace(loc_vars, cmd[1]), "§f 输出 §r")
+                        # 输出
+                        Print.print_with_info(self.var_replace(loc_vars, cmd[0]), "§f 输出 §r")
+                    case 9:
+                        target, msg = cmd[0]
+                        self.game_ctrl.say_to(self.var_replace(loc_vars, target), self.var_replace(loc_vars, msg))
+                    case 10:
+                        # 读取全局变量
+                        seq1, seq2 = cmd[0]
+                        old = tmpjson.read(g_path)
+                        old[seq2] = loc_vars[seq1]
+                        tmpjson.write(g_path, old)
+                    case 11:
+                        # 导出全局变量
+                        seq1, seq2 = cmd[0]
+                        old = tmpjson.read(g_path)
+                        loc_vars[seq1] = old.get(seq2) # type: ignore
                 pointer += 1
         except self.PlayerExitInterrupt:
             if player not in [self.game_ctrl.bot_name, "服务器"]:
                 Print.print_war(f"玩家 {player} 在脚本执行结束之前退出了游戏")
         except self.ScriptExit:
             ...
+        except SkipScript:
+            ...
+
+    def reload_all(self, _):
+        self.load_scripts()
 
     @staticmethod
     def var_replace(loc_vars: dict[str, object], sub: str):
@@ -535,45 +592,6 @@ class Compiler(Plugin):
         else:
             raise ValueError(f"Unknown type waiting check: {ptr}")
 
-def identity_type(param: str):
-    if is_valid_num(param):
-        return NUMBER
-    elif is_valid_str(param):
-        return STRING
-    else:
-        return -1
-
-def auto_to_type_r(n: str):
-    t = identity_type(n)
-    if t == -1:
-        return n, -1, False
-    elif t == NUMBER:
-        return to_number(n), NUMBER, True
-    elif t == STRING:
-        return to_string(n), STRING, True
-    else:
-        raise Exception
-
-def is_valid_num(n: str):
-    try:
-        float(n)
-        return True
-    except:
-        return False
-
-def is_valid_str(n: str):
-    return n.startswith('"') and n.endswith('"') and n.count('"') == 2
-
-def to_string(n: str):
-    return n[1:-1]
-
-def to_number(n: str):
-    s = float(n)
-    if s % 1:
-        return s
-    else:
-        return int(s)
-
 def examplefunc1():
     rule = re.compile(r'([^ ]*?)=([0-9]+)')
     print(rule.findall(' 变量1=""  变量2=154154 '))
@@ -594,4 +612,5 @@ def examplefunc2():
         print(res)
 
 if __name__ == "__main__":
-    examplefunc2()
+    print(split_by_quote('123 345 "567 890" 75'))
+    os._exit(0)

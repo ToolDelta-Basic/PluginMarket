@@ -10,21 +10,26 @@ from syntax_lib import (
   op_prior,
   var_types
 )
-from checker import fun_inputypechk, fun_restype, get_final_type
+from checker import (
+  fun_inputypechk,
+  fun_restype,
+  get_final_type
+)
 from basic_types import *
 
 fun_stxs: list[str] = []
 func_cbs: list = []
 
-def register_func_syntax(stx: str, restype: int, input_type_checker=lambda _:True):
+def register_func_syntax(stx: str, restype: BasicType | OptionalType, input_type_checker=lambda _:True):
   fun_stxs.append(stx)
   fun_restype[stx]=restype
   fun_inputypechk[stx]=input_type_checker
 
-def register_var(varname: str, vartype: int):
+def register_var(varname: str, vartype: BasicType | OptionalType):
   var_types[varname]=vartype
 
-def parse(pat: str) -> list:
+def parse(pat: str, loc_vars_types: dict | None = None) -> list:
+  # 算是专门为变量检测开了个口!!!
   """
   解析表达式字符串
   传入:
@@ -53,9 +58,9 @@ def parse(pat: str) -> list:
         if not cma_txt:
           raise SyntaxError("括号内容不能为空")
         if is_fun:
-          funseq.append(parse(cma_txt))
+          funseq.append(deal_stxgrp(parse(cma_txt)))
         else:
-          opseq.append(parse(cma_txt))
+          opseq.append(deal_stxgrp(parse(cma_txt)))
         cma_txt=""
         continue
     if cma_num:
@@ -99,7 +104,7 @@ def parse(pat: str) -> list:
           opseq.append(VarPtr(txt_cache, var_types[txt_cache]))
         elif txt_cache:
           # 不是函数调用 不是已知变量 则可能为变量等?
-          opseq.append(num3var(txt_cache))
+          opseq.append(num3var(txt_cache, loc_vars_types))
         txt_cache=""
       elif c in opcodes+"?":
         # 是操作符或者结束符
@@ -117,7 +122,7 @@ def parse(pat: str) -> list:
             opseq.append(VarPtr(txt_cache, var_types[txt_cache]))
           elif txt_cache:
             # 不是函数调用 不是已知变量 则可能为变量等?
-            opseq.append(num3var(txt_cache))
+            opseq.append(num3var(txt_cache, loc_vars_types))
         if c!="?":
           opc=opmap.get(c)
           if opc is None:
@@ -161,37 +166,50 @@ def deal_stxgrp(grp: list):
     raise SyntaxError("不能以运算符作为表达式结尾")
   prtable=grp.copy()
   for p in range(max_priority,0,-1):
-   nprtable=[]
-   arg1,arg2=[None]*2
-   lastop=OpPtr
-   for s in prtable+[OpPtr]:
-    if subcls(s,OpPtr):
-     if op_prior(s)==p:
-      if op_prior(lastop)==p:
-       arg1=lastop(arg1,arg2)
-       arg2=None
-     elif op_prior(s)<p:
-      if op_prior(lastop)==p:
-       nprtable.append(lastop(arg1,arg2))
-       arg1=arg2=None
-      elif op_prior(lastop)<p:
-       nprtable.append(arg1)
-       if arg2:
-        raise Exception("what?!",arg1,arg2)
-       arg1=None
-      if s!=OpPtr:
-       nprtable.append(s)
-     lastop=s
-    else:
-     if arg1:arg2=s
-     else:arg1=s
-   prtable=nprtable.copy()
+    # 遍历所有优先级, 从大到小
+    nprtable=[]
+    arg1=None
+    arg2=None
+    lastop=OpPtr
+    for s in prtable+[OpPtr]:
+        if subcls(s, OpPtr):
+          # 是操作符
+          if op_prior(s)==p:
+            # 当前的优先级应当被处理
+            if op_prior(lastop)==p:
+              # 上一个优先级也和当前一样
+              # 那么就直接合并当前的
+              arg1=lastop(arg1,arg2)
+              arg2=None
+          elif op_prior(s)<p:
+            # 当前的优先级大于目前操作符的优先级
+            if op_prior(lastop)==p:
+              # 上一个优先级和目前优先级相同
+              # 那么就把上一个合并
+              nprtable.append(lastop(arg1,arg2))
+              arg1=arg2=None
+            elif op_prior(lastop)<p:
+              # 上一个优先级和小于目前优先级
+              nprtable.append(arg1)
+            if arg2:
+              raise Exception("what?!",arg1,arg2)
+            arg1=None
+            if s!=OpPtr:
+              nprtable.append(s)
+          lastop=s
+        else:
+          # 两个操作符之间的项
+          if arg1:
+            arg2=s
+          else:
+            arg1=s
+    prtable=nprtable.copy()
   return prtable[0]
 
 if __name__=="__main__":
   import random
-  register_func_syntax("int",0,lambda s:s[0]==s[1]==0)
-  register_func_syntax("str_d1",0,lambda s:s[0]==0 and s[1]==1)
+  register_func_syntax("int", NUMBER, lambda s:s[0]==s[1]==0)
+  register_func_syntax("str_d1", NUMBER, lambda s:s[0]==0 and s[1]==1)
   register_func_syntax(
     "随机整数", NUMBER,
     lambda x:len(x)==2 and x[0]==x[1]==NUMBER
