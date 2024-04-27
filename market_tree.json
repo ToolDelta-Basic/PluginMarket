@@ -33,10 +33,10 @@
       "version": "0.1.0",
       "plugin-type": "injected"
     },
-    "ZDeltaBasic": {
+    "ToolDelta-ZBasic": {
       "name": "ZDelta-中文Basic语言",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "自定义聊天栏菜单": {
