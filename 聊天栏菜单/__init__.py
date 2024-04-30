@@ -1,4 +1,4 @@
-from tooldelta import plugins, Plugin, Frame, Builtins, Config
+from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli
 
 from dataclasses import dataclass
 from typing import Callable
@@ -34,7 +34,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 13)
+    version = (0, 1, 14)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -87,41 +87,42 @@ class ChatbarMenu(Plugin):
         )
 
     # ------------
+
+    def on_def(self):
+        if isinstance(self.frame.launcher, launch_cli.FrameNeOmg):
+            self.is_op = lambda player: self.frame.launcher.is_op(player)
+        else:
+            self.is_op = lambda player: bool(self.game_ctrl.sendcmd(
+                "/testfor @a[name=" + player + ",m=1]", True
+            ).SuccessCount) # type: ignore
+
     def on_player_message(self, player: str, msg: str):
+        player_is_op = self.is_op(player)
         if msg in self.cfg["/help触发词"]:
-            is_op_mode = self.frame.launcher.is_op(player) or bool(
-                self.game_ctrl.sendcmd(
-                    "/testfor @a[name=" + player + ",m=1]", True
-                ).SuccessCount
-            )
             self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
             for tri in self.chatbar_triggers:
-                if not tri.op_only or (is_op_mode and tri.op_only):
+                if not tri.op_only or (player_is_op and tri.op_only):
                     self.game_ctrl.say_to(
                         player,
-                        Builtins.ArgsReplacement(
+                        Builtins.SimpleFmt(
                             {
-                                "[菜单指令]": " / ".join(tri.triggers),
+                                "[菜单指令]": ("§e" if tri.op_only else "") + " / ".join(tri.triggers) + "§r",
                                 "[参数提示]": (
                                     " " + tri.argument_hint if tri.argument_hint else ""
                                 ),
                                 "[菜单功能说明]": (
                                     "" if tri.usage is None else "以" + tri.usage
                                 ),
-                            }
-                        ).replaceTo(self.cfg["help菜单样式"]["菜单列表"]),
+                            },
+                            self.cfg["help菜单样式"]["菜单列表"]
+                        )
                     )
             self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单尾"])
         elif msg.startswith("."):
             for tri in self.chatbar_triggers:
                 for trigger in tri.triggers:
                     if msg.startswith(trigger):
-                        is_op_mode = self.frame.launcher.is_op(player) or bool(
-                            self.game_ctrl.sendcmd(
-                                "/testfor @a[name=" + player + ",m=1]", True
-                            ).SuccessCount
-                        )
-                        if (not is_op_mode) and tri.op_only:
+                        if (not player_is_op) and tri.op_only:
                             self.game_ctrl.say_to(
                                 player, "§c创造模式或者OP才可以使用该菜单项"
                             )
