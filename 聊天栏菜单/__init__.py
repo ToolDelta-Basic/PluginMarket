@@ -136,3 +136,4 @@ class ChatbarMenu(Plugin):
                             self.game_ctrl.say_to(player, "§c菜单参数数量错误")
                             return
                         tri.func(player, args)
+
