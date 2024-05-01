@@ -12,7 +12,7 @@ class BetterAnnounce(Plugin):
         self.funclib = plugins.get_plugin_api("基本插件功能库")
         CFG = {
             "公告内容(列表的每项代表一行公告)": [
-                "§7%m/%d/%y",
+                "§7%m/%d/20%y 星期[星期]",
                 "§a%H§f : §a%M",
                 "§f在线人数: §a[在线人数]",
                 "§d欢迎大家游玩"
@@ -21,7 +21,7 @@ class BetterAnnounce(Plugin):
             "刷新频率(秒)": 20
         }
         std = Config.auto_to_std(CFG)
-        cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version)
+        cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version) # type: ignore
         self.anos = cfg["公告内容(列表的每项代表一行公告)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
@@ -59,7 +59,8 @@ class BetterAnnounce(Plugin):
                     text = time.strftime(Builtins.SimpleFmt(
                         {
                             "[在线人数]": len(self.game_ctrl.allplayers),
-                            "[随机]": random.randint(1, 5)
+                            "[随机]": random.randint(1, 5),
+                            "[星期]": "一二三四五六日"[time.localtime().tm_wday]
                         }, i
                     ))
                     scmd(f'/scoreboard players set "{text}" 公告 {new_posix}')
