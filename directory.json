@@ -16,17 +16,30 @@
         "datas.json",
         "__init__.py"
     ],
-    "聊天栏菜单": [
+    "死亡返回": [
         "datas.json",
         "__init__.py"
     ],
-    "死亡返回": [
+    "前置-聊天栏菜单": [
         "datas.json",
         "__init__.py"
     ],
     "自定义聊天栏菜单": [
         "datas.json",
         "__init__.py"
+    ],
+    "前置-MIDI播放器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置-MIDI播放器/Musicreater": [
+        "constants.py",
+        "__init__.py",
+        "utils.py",
+        "subclass.py",
+        "main.py",
+        "types.py",
+        "exceptions.py"
     ],
     "发言频率": [
         "datas.json",
@@ -37,6 +50,10 @@
         "__init__.py"
     ],
     "维度传送": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置-基本插件功能库": [
         "datas.json",
         "__init__.py"
     ],
@@ -76,10 +93,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "基本插件功能库": [
-        "datas.json",
-        "__init__.py"
-    ],
     "控制台执行MC指令": [
         "datas.json",
         "__init__.py"
@@ -91,19 +104,6 @@
     "清空玩家末影箱": [
         "datas.json",
         "__init__.py"
-    ],
-    "库-MIDI播放器": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "库-MIDI播放器/Musicreater": [
-        "constants.py",
-        "__init__.py",
-        "utils.py",
-        "subclass.py",
-        "main.py",
-        "types.py",
-        "exceptions.py"
     ],
     "地图画导入": [
         "datas.json",
