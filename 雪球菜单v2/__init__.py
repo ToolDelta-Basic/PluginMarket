@@ -1,6 +1,6 @@
 import ujson as json
 import time
-from typing import Callable
+from typing import Callable, Literal
 from dataclasses import dataclass
 from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
 import threading
@@ -9,16 +9,15 @@ import threading
 class Page:
     """
     雪球菜单静态页面类
-    :params:
+    Args:
         page_id: 菜单页面的ID, 不要与其他页面的id重复
         next_page_id: 下一页的ID, 玩家在扔了一次雪球之后会跳转到这个ID对应的页面
         page_texts: 这个雪球菜单页面向玩家显示的actionbar文字
         ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
-            返回:
-                True: 留在该页
-                Page 对象: 跳转到该页
-                元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
-                None: 直接退出菜单
+            Page 对象: 跳转到该静态页
+            元组 (MultiPage对象, <页码数: int>): 跳转到该复合页的该页码
+            True: 留在该页不退出菜单
+            None: 直接退出菜单
         exit_cb: 玩家低头退出菜单后的回调 (玩家名: str) -> None
         leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
@@ -26,41 +25,50 @@ class Page:
     page_id: str
     next_page_id: str
     page_texts: str
-    ok_cb: Callable[[str], None | bool]
-    exit_cb: Callable[[str], None] = None
-    leave_cb: Callable[[str], None] = None
+    ok_cb: Callable[[str], bool]
+    exit_cb: Callable[[str], None] = lambda _:None
+    leave_cb: Callable[[str], None] = lambda _:None
     parent_page_id: str | None = ""
 
 @dataclass
 class MultiPage:
     """
     雪球菜单动态复合页面类
-    :params:
+    Args:
         page_id: 菜单页面的ID, 不要与其他页面的id重复
         page_cb: 显示动态菜单页的方法: (玩家名: str, 当前页码数: int) -> 需要的返回值如下:
            str: 菜单页文本内容
            None: 表示此页不存在, 将自动跳转回第一页(page_id=0)
         ok_cb: 玩家抬头确认选项后的回调 (玩家名: str, 当前所在页数: int) -> 需要的返回值如下:
-            返回:
-                Page 对象: 跳转到该页
-                元组 (MultiPage对象, <页码数: int>): 跳转到该页的该页码
-                None: 直接退出菜单
+            Page 对象: 跳转到该静态页
+            元组 (MultiPage对象, <页码数: int>): 跳转到该复合页的该页码
+            True: 留在该页不退出菜单
+            None: 直接退出菜单
         exit_cb: 玩家低头退出菜单后的回调 (玩家名: str) -> None
         leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
     page_id: str
     page_cb: Callable[[str, int], str | None]
-    ok_cb: Callable[[str, int], None | Page | tuple["MultiPage", int]]
-    exit_cb: Callable[[str], bool | None] = None
-    leave_cb: Callable[[str], bool | None] = None
+    ok_cb: Callable[
+        [str, int],
+        None | Literal[True] | "Page" | tuple["MultiPage", int]
+    ]
+    exit_cb: Callable[[str], bool | None] = lambda _:None
+    leave_cb: Callable[[str], bool | None] = lambda _: None
     parent_page_id: str | None = None
+
+PAGE_OBJ = Page | MultiPage
+"菜单类"
+
+PAGE_DISPLAY_OBJ = str | Callable[[str, int], str | None]
+"显示菜单页"
 
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
-    author = "SuperScript"
-    version = (0, 0, 8)
+    author = "SuperScript/chfwd"
+    version = (0, 0, 9)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -70,8 +78,8 @@ class SnowMenu(Plugin):
     def __init__(self, f: Frame):
         self.f = f
         self.gc = f.get_game_control()
-        self.reg_pages: dict[str, Page | MultiPage] = {"default": default_page}
-        self.in_snowball_menu: dict[str, Page | MultiPage] = {}
+        self.reg_pages: dict[str, PAGE_OBJ] = {"default": default_page}
+        self.in_snowball_menu: dict[str, PAGE_OBJ] = {}
         "玩家名 -> 雪球菜单页类"
         self.multi_snowball_page: dict[str, int] = {}
         "玩家名 -> 多页菜单页数"
@@ -83,17 +91,17 @@ class SnowMenu(Plugin):
     def add_page(self, page: Page | MultiPage):
         """
         向雪球菜单添加一个页码
-        :params:
+        Args:
             page: 雪球菜单页类
         """
         self.reg_pages[page.page_id] = page
 
-    def register_main_page(self, page_cb: Page | MultiPage | Callable[[str], bool], usage_text: str | Callable[[str], str]):
+    def register_main_page(self, page_cb: PAGE_OBJ | Callable[[str], bool], usage_text: str | Callable[[str], str]):
         """
         注册一个雪球菜单首页跳转链接
         确切来说就是让你的菜单页可以在雪球菜单首页被发现并被跳转
         或者直接注册一个雪球菜单功能
-        :params:
+        Args:
             page_cb: 静态菜单页类 / 动态菜单页类 / 回调方法 (玩家名: str -> 确认选项后是否不关闭菜单: bool)
             usage_text: 选项的显示文本
         """
@@ -104,7 +112,7 @@ class SnowMenu(Plugin):
     def simple_select(self, player: str, disp_func: Callable[[str, int], str | None]):
         """
         简单地使用雪球菜单选择选项, 返回所选择的选项(页数), 首页是第 0 页.
-        :params:
+        Args:
             player: 玩家名
             disp_func:
                 回调方法 (玩家名, 当前页数) -> 菜单显示内容 | None
@@ -131,11 +139,13 @@ class SnowMenu(Plugin):
         cb = _cb()
         if isinstance(disp_func, dict):
             # shh, 这是一个秘密
+            # 传入 disp_func 为字典 {0:"hi", 1:"world"} 也可以
+            # 起到的作用的代替 disp_func, 按照页数用字典里的内容按页数索引向玩家展示内容
             page_cb = lambda _, now_page: disp_func.get(now_page)
         else:
             page_cb = disp_func
         page = MultiPage(
-            page_id = None,
+            page_id = "simple-select",
             page_cb = page_cb,
             ok_cb = cb.ok,
             exit_cb = cb.exit,
@@ -215,6 +225,7 @@ class SnowMenu(Plugin):
         def menu_cb(player: str):
             for cmd in menu_arg["执行的指令"]:
                 self.gc.sendwocmd(Builtins.SimpleFmt({"[玩家名]": player}, cmd))
+            return False
         return menu_cb
 
     @Builtins.new_thread
@@ -271,10 +282,11 @@ class SnowMenu(Plugin):
                     self.multi_snowball_page[player] = 0
             else:
                 self.multi_snowball_page[player] += 1
-                r = self.in_snowball_menu[player].page_cb(player, self.multi_snowball_page[player])
+                r = self.in_snowball_menu[player].page_cb(player, self.multi_snowball_page[player]) # type: ignore
                 if r is None:
                     self.multi_snowball_page[player] = 0
-                    self.gc.player_actionbar(player, r)
+                    r = self.in_snowball_menu[player].page_cb(player, 0) # type: ignore
+                    self.gc.player_actionbar(player, r)  # type: ignore
         self.show_page(player)
 
     @Builtins.new_thread
@@ -289,6 +301,8 @@ class SnowMenu(Plugin):
             page_text = mp.page_texts
         else:
             page_text = mp.page_cb(player, self.multi_snowball_page[player])
+        if page_text is None:
+            return
         self.gc.player_actionbar(
             player, page_text
         )
@@ -310,6 +324,8 @@ class SnowMenu(Plugin):
             self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
             if res == True:
                 pass
+            elif res == False:
+                raise ValueError("菜单项不可返回 False")
             elif isinstance(res, (Page, MultiPage)):
                 self.set_player_page(player, res, 0)
             else:
@@ -338,9 +354,18 @@ class SnowMenu(Plugin):
             del self.multi_snowball_page[player]
         self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
 
+    def im_confused(self):
+        return [
+            "三月七", "要按时休息哦",
+            "丹恒", "你又给智库带来了一份开源代码了吗? 辛苦了"
+        ]
 
-main_page_menus: list[tuple[Page | MultiPage | Callable[[str], str | None], str | Callable[[str], str]]] = []
-"主菜单: 菜单CB, 显示字"
+main_page_menus: list[
+    tuple[
+        PAGE_OBJ | Callable[[str], bool],
+        str | Callable[[str], str]
+    ]] = []
+"主菜单: 菜单类/菜单cb, 显示字(字符串 or 显示回调)"
 
 SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (1, 0, '/execute @e[type=snowball] ~~~ execute @p[r=3] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
@@ -380,13 +405,15 @@ def default_page_show(player: str, page: int):
 
 def default_page_okcb(player: str, page: int):
     page_cb = main_page_menus[page][0]
-    if isinstance(page_cb, (Page, MultiPage)):
+    if isinstance(page_cb, Page):
         return page_cb
+    elif isinstance(page_cb, MultiPage):
+        return page_cb, 0
     else:
-        return page_cb(player)
+        return page_cb(player) or None
 
-menu_patterns = [None, None, None, None, None]
-"菜单最大页码数, 菜单头, 菜单选项-0, 菜单选项-1, 菜单尾"
+menu_patterns = [0, "undefined", "undefined", "undefined", "undefined"]
+"菜单最大页码数, 菜单头, 菜单选项-未被选中, 菜单选项-被选中, 菜单尾"
 
 default_page = MultiPage(
     "default",
