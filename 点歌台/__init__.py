@@ -6,7 +6,7 @@ from tooldelta.frame import Frame
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     musics_list = []
     MAX_SONGS_QUEUED = 6
@@ -31,20 +31,21 @@ class DJTable(Plugin):
                 os.remove(os.path.join(mdir, i))
         for i in os.listdir(mdir):
             if i.endswith(".midseq"):
-                self.midiplayer.load_sound_seq_file(os.path.join(mdir, i), i.strip(".midseq"))
+                self.midiplayer.load_sound_seq_file(os.path.join(mdir, i), i.replace(".midseq", ""))
 
     def on_inject(self):
         self.game_ctrl.sendcmd("/scoreboard objectives add song_point dummy 音乐点")
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
         self.main_thread = Builtins.createThread(self.choose_music_thread)
-        self.chatmenu.add_trigger(["点歌列表", "dgls"], None, "查看点歌台点歌列表", self.lookup_songs_list)
-        self.chatmenu.add_trigger(["点歌", "dg"], "[歌名]", "点歌", self.choose_menu, lambda x:x>0)
+        self.chatmenu.add_trigger(["点歌列表"], None, "查看点歌台点歌列表", self.lookup_songs_list)
+        self.chatmenu.add_trigger(["点歌"], "[歌名]", "点歌", self.choose_menu, lambda x:x>0)
+        self.chatmenu.add_trigger(["停止当前曲目"], None, "停止当前点歌曲目", self.force_stop_current, op_only=True)
 
     def on_player_join(self, _):
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
 
     def choose_menu(self, player: str, args: list[str]):
-        music_name = ' '.join(args).strip(".mid")
+        music_name = ' '.join(args).replace(".midseq", "")
         music_path = os.path.join(self.data_path, "音乐列表", (music_name + ".midseq"))
         if not os.path.isfile(music_path):
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c此音乐未被收录")
