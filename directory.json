@@ -24,25 +24,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "ZDelta-中文Basic语言": [
-        "checker.py",
-        "syntax_compile.py",
-        "basic_types.py",
-        "datas.json",
-        "__init__.py",
-        "utils.py",
-        "syntax_lib.py"
-    ],
-    "ZDelta-中文Basic语言/示例脚本": [],
-    "ZDelta-中文Basic语言/示例脚本/示例-每日签到": [
-        "玩家发言.txt"
-    ],
-    "ZDelta-中文Basic语言/示例脚本/示例-启动提示": [
-        "启动.txt"
-    ],
-    "ZDelta-中文Basic语言/示例脚本/示例-进服欢迎": [
-        "玩家进入.txt"
-    ],
     "自定义聊天栏菜单": [
         "datas.json",
         "__init__.py"
