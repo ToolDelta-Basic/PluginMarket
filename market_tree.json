@@ -51,10 +51,10 @@
       "version": "0.0.4",
       "plugin-type": "injected"
     },
-    "点歌台": {
-      "name": "点歌台",
+    "封禁系统": {
+      "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.1.0",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "维度传送": {
@@ -98,12 +98,6 @@
       "author": "wling",
       "version": "0.0.1",
       "plugin-type": "injected"
-    },
-    "封禁系统": {
-      "name": "封禁系统",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
     },
     "更好的公告栏": {
       "name": "更好的公告栏",
