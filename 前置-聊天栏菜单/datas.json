@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "所有使用到聊天栏菜单的组件的前置组件\n0.1.14更新: §e管理员专用菜单项会以黄色标明",
   "limit_launcher": null,
   "pre-plugins": {},

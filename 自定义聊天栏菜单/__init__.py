@@ -6,7 +6,7 @@ from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
 
     match_rule = re.compile(r"(\[参数:([0-9]+)\])")
@@ -23,6 +23,7 @@ class CustomChatbarMenu(Plugin):
                     "功能简介": str,
                     "需要的参数数量": Config.NNInt,
                     "触发后执行的指令": [r"%list", str],
+                    "仅OP可用": bool
                 },
             ]
         }
@@ -35,6 +36,7 @@ class CustomChatbarMenu(Plugin):
                     "参数提示": "",
                     "功能简介": "返回重生点",
                     "触发后执行的指令": ["/kill [玩家名]", "/title [玩家名] actionbar 自尽成功"],
+                    "仅OP可用": False
                 },
                 {
                     "说明": "一个测试菜单参数项的触发词菜单项",
@@ -43,6 +45,7 @@ class CustomChatbarMenu(Plugin):
                     "参数提示": "[参数1] [参数2]",
                     "功能简介": "测试触发词参数",
                     "触发后执行的指令": ["/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2]"],
+                    "仅OP可用": True
                 },
             ]
         }
@@ -57,7 +60,7 @@ class CustomChatbarMenu(Plugin):
     def on_inject(self):
         for menu in self.cfg["菜单项"]:
             cb = self.make_cb_func(menu)
-            self.chatbar.add_trigger(menu["触发词"], menu["参数提示"], menu["功能简介"], cb)
+            self.chatbar.add_trigger(menu["触发词"], menu["参数提示"], menu["功能简介"], cb, op_only=menu["仅OP可用"])
 
     def make_cb_func(self, menu):
         cmds = menu["触发后执行的指令"]
