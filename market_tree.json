@@ -101,8 +101,8 @@
     },
     "雪球菜单v2": {
       "name": "雪球菜单v2",
-      "author": "SuperScript",
-      "version": "0.0.8",
+      "author": "SuperScript/chfwd",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "入服欢迎": {
