@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "服内有大哥或者熊孩子? 更方便地ban掉! 同时也是一个前置插件.",
   "limit_launcher": null,
   "pre-plugins": {

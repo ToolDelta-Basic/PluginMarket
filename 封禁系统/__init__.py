@@ -1,13 +1,12 @@
-import time
+import time, os
 from datetime import datetime
 from tooldelta import plugins, Plugin, Frame, Builtins, Print, Config
-from typing import Union
 
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT = {"BanTo": 0, "Reason": ""}
 
@@ -17,8 +16,8 @@ class BanSystem(Plugin):
         self.tmpjson = Builtins.TMPJson
         STD_BAN_CFG = {"踢出玩家提示格式": str, "玩家被封禁的广播提示": str}
         DEFAULT_BAN_CFG = {
-            "踢出玩家提示格式": "§c你因为 [ban原因]\n被系统封禁至 §6[日期] [时间]",
-            "玩家被封禁的广播提示": "§6WARNING: §c[玩家名] 因为[ban原因] 被系统封禁至 §6[日期] [时间]",
+            "踢出玩家提示格式": "§c你因为 [ban原因]\n被系统封禁至 §6[日期时间]",
+            "玩家被封禁的广播提示": "§6WARNING: §c[玩家名] 因为[ban原因] 被系统封禁至 §6[日期时间]",
         }
         self.cfg, _ = Config.getPluginConfigAndVersion(
             self.name, STD_BAN_CFG, DEFAULT_BAN_CFG, self.version
@@ -31,10 +30,10 @@ class BanSystem(Plugin):
     def on_inject(self):
         self.chatbar.add_trigger(
             ["ban", "封禁"],
-            "[玩家名] [年]/[月]/[日] [时]:[分] [原因, 不填为未知原因]",
+            "[玩家名] [原因, 不填为未知原因]",
             "封禁玩家",
             self.ban_who,
-            lambda x: x in (3, 4),
+            lambda x: x in (0, 1),
             True,
         )
         for i in self.game_ctrl.allplayers:
@@ -42,9 +41,12 @@ class BanSystem(Plugin):
 
     # -------------- API --------------
     def ban(self, player: str, ban_to_time_ticks: float, reason: str = ""):
-        # player: 需要ban的玩家
-        # ban_to_time_ticks: 将其封禁直到(时间戳, 和time.time()一样)
-        # reason: 原因
+        """
+        封禁玩家.
+            player: 需要ban的玩家
+            ban_to_time_ticks: 将其封禁直到(时间戳, 和time.time()一样)
+            reason: 原因
+        """
         ban_datas = self.BAN_DATA_DEFAULT.copy()
         ban_datas["BanTo"] = ban_to_time_ticks
         ban_datas["Reason"] = reason
@@ -52,6 +54,12 @@ class BanSystem(Plugin):
         if player in self.game_ctrl.allplayers:
             self.test_ban(player)
 
+    def unban(self, player: str):
+        """
+        解封玩家.
+            player: 玩家名
+        """
+        self.del_ban_data(player)
     # ----------------------------------
 
     @Builtins.run_as_new_thread
@@ -59,14 +67,12 @@ class BanSystem(Plugin):
         self.test_ban(player)
 
     def ban_who(self, caller: str, args: list[str]):
-        if not self.frame.launcher.is_op(caller):
-            self.game_ctrl.say_to(caller, "§c封禁系统: 你不是管理员")
-            return
-        if len(args) == 3:
-            target, ymd, hms = args
+        target = args[0]
+        if len(args) == 1:
+            banto_time = -1
             reason = ""
         else:
-            target, ymd, hms, reason = args
+            reason = args[0]
         all_matches = Builtins.fuzzy_match(self.game_ctrl.allplayers, target)
         if all_matches == []:
             self.game_ctrl.say_to(
@@ -74,23 +80,15 @@ class BanSystem(Plugin):
             )
         elif len(all_matches) > 1:
             self.game_ctrl.say_to(
-                caller, f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}"
+                caller, f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}, 需要输入更详细一点"
             )
         else:
-            try:
-                struct_time = time.strptime(
-                    ymd.strip() + " " + hms.strip(), "%Y年%m月%d日 %H:%M"
-                )
-            except ValueError:
-                self.game_ctrl.say_to(caller, "§c封禁玩家: 封禁时间格式不正确")
-                return
-            self.ban(all_matches[0], time.mktime(struct_time), reason)
+            self.ban(all_matches[0], banto_time, reason)
             self.game_ctrl.say_to(caller, "§c封禁系统: §f设置封禁成功.")
 
     def test_ban(self, player):
         ban_data = self.get_ban_data(player)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
-        Print.print_inf(f"封禁系统: {player} 的封禁数据: {ban_data}")
         if ban_to > time.time():
             Print.print_inf(f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to)}")
             self.game_ctrl.sendwocmd(
@@ -99,33 +97,43 @@ class BanSystem(Plugin):
             self.game_ctrl.say_to(
                 "@a", self.format_msg(player, ban_to, reason, "玩家被封禁的广播提示")
             )
-            # 防止出现无法执行的指令
+            # 防止出现敏感词封禁原因的指令
             self.game_ctrl.sendwocmd(f"/kick {player}")
 
+    def format_bantime(self, banto_time: int):
+        if banto_time == -1:
+            return "永久"
+        else:
+            struct_time = time.localtime(banto_time)
+            date_show = time.strftime("%Y年 %m月 %d日", struct_time)
+            time_show = time.strftime("%H : %M : %S", struct_time)
+        return date_show + "  " + time_show
+
     def format_msg(
-        self, player: str, ban_to_sec: float, ban_reason: str, cfg_key: str
+        self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str
     ):
-        struct_time = time.localtime(ban_to_sec)
-        date_show = time.strftime("%Y年 %m月 %d日", struct_time)
-        time_show = time.strftime("%H : %M : %S", struct_time)
+        fmt_time = self.format_bantime(ban_to_sec)
         Print.print_inf(
             f"封禁系统使用的 当前时间: §6{datetime.fromtimestamp(time.time())}"
         )
         return Builtins.SimpleFmt(
             {
-                "[日期]": date_show,
-                "[时间]": time_show,
+                "[日期时间]": fmt_time,
                 "[玩家名]": player,
                 "[ban原因]": ban_reason or "未知",
             },
             self.cfg[cfg_key],
         )
 
-    @staticmethod
-    def rec_ban_data(player: str, data):
-        Builtins.SimpleJsonDataReader.writeFileTo("封禁系统", player, data)
+    def rec_ban_data(self, player: str, data):
+        Builtins.SimpleJsonDataReader.writeFileTo(self.data_path, player, data)
 
-    def get_ban_data(self, player: str):
+    def del_ban_data(self, player: str):
+        p = os.path.join(self.data_path, player + ".json")
+        if os.path.isfile(os.path.isfile(p)):
+            os.remove(p)
+
+    def get_ban_data(self, player: str) -> dict:
         return Builtins.SimpleJsonDataReader.readFileFrom(
             "封禁系统", player, self.BAN_DATA_DEFAULT
-        )
+        ) # type: ignore
