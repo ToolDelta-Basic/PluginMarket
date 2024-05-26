@@ -4,7 +4,7 @@
 from tooldelta import Frame, Plugin, Config, Print, Builtins, plugins, urlmethod
 from tooldelta import safe_jump
 
-import json, platform, os, requests, uuid, tarfile, gzip, shutil, zipfile, socket, subprocess, yaml, getpass, io, time, threading, flask, flask_gzip, logging
+import json, platform, os, requests, uuid, tarfile, gzip, shutil, zipfile, socket, subprocess, yaml, io, time, threading, flask, logging
 from urllib.parse import urlparse
 
 STD_PLU_CFG = {"CQHTTP运行目录": str, "CQHTTP运行文件": str, "CQHTTP运行UUID": str, "CQHTTP自动重启": bool, "CQHTTP自动重启最大限次": int, "输出CQHTTP输出[可能导致刷屏][如果关闭将会屏蔽CQHTTP成功登陆账号后的消息]": bool, "内置签名服务端": bool, "签名服务端运行目录": str, "SIGN-SERVER自动重启": bool, "SIGN-SERVER自动重启最大限次": int, "JDK位置": str, "Sign-Server配置": dict, "端口被占用时随机端口[全局][插件内]": bool, "当签名服务端无响应时自动重启": bool, "输出签名服务器输出[可能导致刷屏]": bool, "CQHTTP事件处理服务端配置": dict, "自动重启等待时间[S]": int, "群服互通相关配置": dict, "仅输出被启用的群消息": bool}
@@ -37,7 +37,7 @@ DEFAULT_PLU_CFG = {
         "端口": 8087
     },
     "自动重启等待时间[S]": 10,
-    "群服互通相关配置": {"管理员账号": "0000000000", "启用群列表": ["114514000", "114514000"]},
+    "群服互通相关配置": {"管理员账号": "0000000000", "启用群列表": [{"群名称[请注意敏感词]114514快乐群1": "114514000", "群名称[请注意敏感词]114514快乐群2":"114514000"}]},
     "仅输出被启用的群消息": True
 }
 
@@ -309,7 +309,7 @@ class GroupServerInterworking(Plugin):
     def __init__(self, frame: Frame):
         self.frame: Frame = frame
         self.game_ctrl: any = frame.get_game_control()
-        self.no_join_game_debug:bool = True
+        self.no_join_game_debug:bool = False
         self.base_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name)
         self.base_CQHTTP_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name, "cq-http")
         self.base_SIGN_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name, "sign-server")
@@ -327,6 +327,9 @@ class GroupServerInterworking(Plugin):
         self.SIGN_SERVER_Lib_ConfigPath: str = os.path.join(os.path.join(self.base_SIGN_dir, "unidbg-fetch-qsign-1.1.9"), "txlib", self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["lib版本"], "config.json")
         self.SIGN_SERVER_Running:bool = False
         self.CQHTTP_LOGIN_STATUS:bool = False
+        self.BOT_JOIN_GAME:bool = False
+        self.INITSTATUS:bool = False
+        self.CQHTTP_API_PORT: int = self.get_port()
         if self.no_join_game_debug:self.on_inject()
 
     def if_cqhttp_in_dir(self) -> bool:
@@ -335,7 +338,8 @@ class GroupServerInterworking(Plugin):
     def if_sign_server_in_dir(self) -> bool:
         return os.path.exists(self.base_SIGN_dir) and os.path.exists(os.path.join(self.base_SIGN_dir, "unidbg-fetch-qsign-1.1.9"))
 
-    def Initialize(self) -> dict:
+    def Initialize(self) -> None:
+        self.game_ctrl.say_to('@a', f'[§bToolDelta控制台§r] 插件 - §e群服互通 - v{".".join(map(str, self.version))}§r 成功启动!')
         self.Setup_Menu()
         if not self.if_cqhttp_in_dir():Print.print_load("CQ-HTTP目录不存在或未安装，开始尝试安装CQ-HTTP...");self.install_cqhttp()
         self.IF_CQHTTP_Config()
@@ -361,14 +365,17 @@ class GroupServerInterworking(Plugin):
         Print.print_suc("CQHTTP-事件上报服务端成功启动!")
         self.SET_SIGN_SERVER()
         self.SET_EVENT_HANDLE_SERVER()
+        self.SET_CQHTTP_API_PORT()
         self.CQHTTPNCC.save_new_cfg()
         # self.Process_Run_CQHTTP()
         self.WAIT_SIGN_SERVER_RUNNING()
         threading.Thread(target=self.Process_Run_CQHTTP, name="CQ-HTTP运行线程").start()
         self.IF_PRE_CQHTTP_RUNNING(timeout=4)
         threading.Thread(target=self.Handle_CQHTTP_Message, name="CQ-HTTP消息处理主线程").start()
+        self.SMTC = self.Send_Message_To_CQHTTP(self.CQHTTP_API_PORT);self.INITSTATUS = True
 
     def on_inject(self) -> None:
+        self.BOT_JOIN_GAME = True
         self.Initialize()
 
     def if_jdk_in_jdkdir(self) -> bool:
@@ -488,7 +495,7 @@ class GroupServerInterworking(Plugin):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex((self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["host"], port)) == 0
 
-    def get_port(self) -> int:
+    def get_sign_server_port(self) -> int:
         if not self.is_port_open(self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]):return self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]
         Print.print_war(f"您所指定的签名服务端运行端口[{self.TMPJson.read(self.ConfigPath)['配置项']['Sign-Server配置']['端口']}]已被占用，将为您随机一个可用端口！")
         for i in range(1000, 65535):
@@ -505,7 +512,7 @@ class GroupServerInterworking(Plugin):
         except Exception as e:return False
 
     def IF_SIGN_SERVER_Config(self) -> any:
-        if self.TMPJson.read(self.ConfigPath)["配置项"]["端口被占用时随机端口[全局][插件内]"] == True:self.sign_server_port = self.get_port()
+        if self.TMPJson.read(self.ConfigPath)["配置项"]["端口被占用时随机端口[全局][插件内]"] == True:self.sign_server_port = self.get_sign_server_port()
         else:self.sign_server_port = self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]
         Print.print_suc(f"签名服务端将使用端口: {self.sign_server_port}")
         if self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"] == "":
@@ -710,6 +717,19 @@ class GroupServerInterworking(Plugin):
             return True
         except:return False
 
+    def get_port(self) -> int:
+        for i in range(5000, 65535):
+            if not self.is_port_open(i):return i
+
+    def SET_CQHTTP_API_PORT(self) -> bool:
+        try:
+            self.old_cfg:dict = self.CQHTTPNCC.get_all_cfg()
+            self
+            self.old_cfg['servers'][0]['http']["address"] = f"0.0.0.0:{self.CQHTTP_API_PORT}"
+            self.CQHTTPNCC.set_all_cfg(self.old_cfg)
+            return True
+        except:return False
+       
     def Setup_Menu(self) -> None:
         self.frame.add_console_cmd_trigger(
             ["GS", "群服"],
@@ -759,6 +779,16 @@ class GroupServerInterworking(Plugin):
     def Process_Run_CQHTTP(self) -> dict:
         if not self.if_file_run_permissions(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"])):os.chmod(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]), 0o777)
         self.cqhttp_proc = subprocess.Popen([os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]), "-c", "TmpCFG.yml", "-faststart"],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"])
+
+    @plugins.add_packet_listener([9])
+    def listenner(self, packet: dict):
+        self.WAIT_FRAME_INIT_STATUS()
+        self.enabled_groups:list = [value for d in self.TMPJson.read(self.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"] for value in d.values()]
+        match packet["TextType"]:
+            case 1:
+                SourceName:str = packet["SourceName"]
+                Message: str = packet["Message"]
+                for gid in self.enabled_groups:self.SMTC.send_group_message(int(gid), f"[群服互通] [{SourceName}]: {Message}")
 
     class MESSAGE_LIST_CTL(object):
         def __init__(self) -> None:
@@ -907,6 +937,15 @@ class GroupServerInterworking(Plugin):
             except AttributeError:pass
             run_time += 0.5;time.sleep(0.5)
 
+    def WAIT_FRAME_INIT_STATUS(self, timeout: int = 120) -> None:
+        run_time = 0
+        while run_time <= timeout:
+            if timeout > timeout:raise ValueError(f"群服互通初始化超时，请自行寻求帮助!")
+            try:
+                if self.INITSTATUS == True:return
+            except AttributeError:pass
+            run_time += 0.5;time.sleep(0.5)
+
     def WAIT_CQHTTP_EVENT_HANDLE_CORE_RUNNING(self, timeout: int = 40) -> None:
         run_time = 0
         while run_time <= timeout:
@@ -917,6 +956,15 @@ class GroupServerInterworking(Plugin):
             except Exception:pass
             run_time += 0.5;time.sleep(0.5) 
 
+    def get_keys_by_value_in_list(self, list_of_dicts, value) -> str:
+        result = []
+        for d in list_of_dicts:
+            for key, val in d.items():
+                if val == value:
+                    result.append(key)
+        if len(result) == 0:return "None"
+        return result[0]
+
     class CQHTTPEventHandleCore(object):
         CoreVersion:tuple = (0, 0, 1)
         def __init__(self, PluginFrame: any) -> None:
@@ -926,11 +974,12 @@ class GroupServerInterworking(Plugin):
             self.ApiApp: flask.Flask = flask.Flask(f"CQHTTPEventHandleCore - v{'.'.join(map(str, self.CoreVersion))}")
             log = logging.getLogger('werkzeug')
             log.setLevel(logging.ERROR)
-            self.enabled_groups:list = self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"]
+            self.enabled_groups:list = [value for d in self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"] for value in d.values()]
 
         def Initialize(self) -> any:
             self.SetupCoreRoute()
             self.RunCore()
+            self.Send_Message_To_CQHTTP
 
         def SetupCoreRoute(self) -> any:
             @self.ApiApp.route("/", methods=["POST", "GET"])
@@ -938,21 +987,21 @@ class GroupServerInterworking(Plugin):
                 if flask.request.method == "POST":
                     data = flask.request.get_json()
                     if data.get('message_type')=='private':
-                        uid = data.get('sender').get('user_id')
+                        uid = str(data.get('sender').get('user_id'))
                         message = data.get('raw_message')
                         nickname = data.get('sender').get("nickname")
                         Print.print_inf(f"收到来自 {nickname}({uid}) 的私聊消息: {message}")
                     if data.get('message_type')=='group':
-                        gid = data.get('group_id')
-                        uid = data.get('sender').get('user_id')
+                        gid = str(data.get('group_id'))
+                        uid = str(data.get('sender').get('user_id'))
                         nickname = data.get('sender').get("nickname")
                         message = data.get('message')  
                         if self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["仅输出被启用的群消息"]:
-                            if self.PFEnv.check_string_in_list(self.enabled_groups, gid):                
-                                Print.print_inf(f"收到来自群聊 {gid} 中 {uid}({nickname}) 的消息: {message}")
+                            if gid in self.enabled_groups:Print.print_inf(f"收到来自群聊 {gid} 中 {uid}({nickname}) 的消息: {message}")
                         else:Print.print_inf(f"收到来自群聊 {gid} 中 {uid}({nickname}) 的消息: {message}")
-                elif flask.request.method == "GET":
-                    return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", "The CQHTTP event reporting server is running properly."), 200
+                        if gid in self.enabled_groups:
+                            if self.PFEnv.BOT_JOIN_GAME:self.PFEnv.game_ctrl.say_to('@a', f'[§b群服互通§r][§b来自群('+self.PFEnv.get_keys_by_value_in_list(self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"], gid)+') 的消息§r] §3'+message+'§r')
+                elif flask.request.method == "GET":return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", "The CQHTTP event reporting server is running properly."), 200
                 return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", "The CQHTTP event escalation server processes your form content."), 200
 
             @self.ApiApp.route("/api/status", methods=["POST", "GET"])
@@ -976,6 +1025,13 @@ class GroupServerInterworking(Plugin):
 
         def get_port(self) -> int:
             if not self.PFEnv.is_port_open(self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]):return self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]
-            Print.print_war(f"您所指定的CQHTTP-事件上报服务端运行端口[{self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)['置项']['CQHTTP事件处理服务端配置']['端口']}]已被占用，将为您随机一个可用端口！")
+            Print.print_war(f"您所指定的CQHTTP-事件上报服务端运行端口[{self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)['配置项']['CQHTTP事件处理服务端配置']['端口']}]已被占用，将为您随机一个可用端口！")
             for i in range(5000, 65535):
                 if not self.PFEnv.is_port_open(i):return i
+
+    class Send_Message_To_CQHTTP(object):
+        def __init__(self, port: int = 5700) -> None:
+            self.CQHTTP_API_URL: str = f"http://127.0.0.1:{port}"
+
+        def send_group_message(self, group_id: int, message: str, auto_escape: bool = True) -> None:
+            requests.post(f"{self.CQHTTP_API_URL}/send_msg", params={"message_type": "group", "group_id": group_id, "message": message, "auto_escape": auto_escape})
