@@ -204,7 +204,8 @@ class SnowMenu(Plugin):
                 {
                     "显示名": "自尽",
                     "执行的指令": ["/kill @a[name=[玩家名]]", "/title @a[name=[玩家名]] title §c已自尽"]
-                },{
+                },
+                {
                     "显示名": "设置重生点",
                     "执行的指令": ["/execute @a[name=[玩家名]] ~~~ spawnpoint", "/title @a[name=[玩家名]] title §a已设置重生点"]
                 }
