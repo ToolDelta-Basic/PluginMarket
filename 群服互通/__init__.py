@@ -3,6 +3,8 @@
 # Email   : <2042105325@qq.com> <xingchenawa@qq.com>
 from tooldelta import Frame, Plugin, Config, Print, Builtins, plugins, urlmethod
 from tooldelta import safe_jump
+from tooldelta.urlmethod import get_free_port
+from typing import Any
 
 import json, platform, os, requests, uuid, tarfile, gzip, shutil, zipfile, socket, subprocess, yaml, io, time, threading, flask, logging
 from urllib.parse import urlparse
@@ -66,23 +68,23 @@ account: # 账号相关
   # 如果遇到 登录 45 错误, 或者发送信息风控的话需要填入一个或多个服务器
   # 不建议设置过多，设置主备各一个即可，超过 5 个只会取前五个
   # 示例:
-  # sign-servers: 
+  # sign-servers:
   #   - url: 'http://127.0.0.1:8080' # 本地签名服务器
   #     key: "114514"  # 相应 key
   #     authorization: "-"   # authorization 内容, 依服务端设置
   #   - url: 'https://signserver.example.com' # 线上签名服务器
-  #     key: "114514"  
-  #     authorization: "-"   
+  #     key: "114514"
+  #     authorization: "-"
   #   ...
-  # 
+  #
   # 服务器可使用docker在本地搭建或者使用他人开放的服务
-  sign-servers: 
+  sign-servers:
     - url: '-'  # 主签名服务器地址， 必填
       key: '114514'  # 签名服务器所需要的apikey, 如果签名服务器的版本在1.1.0及以下则此项无效
       authorization: '-'   # authorization 内容, 依服务端设置，如 'Bearer xxxx'
     - url: '-'  # 备用
-      key: '114514'  
-      authorization: '-' 
+      key: '114514'
+      authorization: '-'
 
   # 判断签名服务不可用（需要切换）的额外规则
   # 0: 不设置 （此时仅在请求无法返回结果时判定为不可用）
@@ -304,36 +306,37 @@ CQHTTP_EVENT_HANDLE_MSG_PAG:str = '''
 class GroupServerInterworking(Plugin):
     name = "群服互通"
     author = "xingchen"
-    version = (0, 0, 1)
-    
+    version = (0, 0, 2)
+
     def __init__(self, frame: Frame):
         self.frame: Frame = frame
-        self.game_ctrl: any = frame.get_game_control()
-        self.no_join_game_debug:bool = False
-        self.base_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name)
-        self.base_CQHTTP_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name, "cq-http")
-        self.base_SIGN_dir: str = os.path.join(os.getcwd(), "插件数据文件", self.name, "sign-server")
-        self.sys_type: str = platform.system()
-        self.sys_machine: str = platform.machine().lower()
+        self.game_ctrl = frame.get_game_control()
+        self.no_join_game_debug = False
+        self.base_dir = os.path.join(os.getcwd(), "插件数据文件", self.name)
+        self.base_CQHTTP_dir = os.path.join(os.getcwd(), "插件数据文件", self.name, "cq-http")
+        self.base_SIGN_dir = os.path.join(os.getcwd(), "插件数据文件", self.name, "sign-server")
+        self.sys_type = platform.system().lower()
+        self.sys_machine = platform.machine().lower()
         self.TMPJson = Builtins.TMPJson()
-        self.Config,_ = Config.getPluginConfigAndVersion(self.name, STD_PLU_CFG, DEFAULT_PLU_CFG, self.version)
-        self.ConfigPath: str = os.path.join(os.getcwd(), "插件配置文件", f"{self.name}.json")
+        self.Config, _ = Config.getPluginConfigAndVersion(self.name, STD_PLU_CFG, DEFAULT_PLU_CFG, self.version)
+        self.ConfigPath = os.path.join(os.getcwd(), "插件配置文件", f"{self.name}.json")
         self.TMPJson.loadPathJson(self.ConfigPath, False)
-        self.CQHTTPNCC: self.New_CFG_CTL = self.New_CFG_CTL(self.TMPJson, self.ConfigPath)
-        self.CQHTTP_MSC: self.MESSAGE_LIST_CTL = self.MESSAGE_LIST_CTL()
-        self.CQHTTP_RES_NUM: dict = {}
-        self.SIGN_SERVER_MSC: self.MESSAGE_LIST_CTL = self.MESSAGE_LIST_CTL()
-        self.SIGN_SERVER_RES_NUM:dict = {}
+        self.CQHTTPNCC = self.New_CFG_CTL(self.TMPJson, self.ConfigPath)
+        self.CQHTTP_MSC = self.MESSAGE_LIST_CTL()
+        self.CQHTTP_RES_NUM = {}
+        self.SIGN_SERVER_MSC = self.MESSAGE_LIST_CTL()
+        self.SIGN_SERVER_RES_NUM = {}
         self.SIGN_SERVER_Lib_ConfigPath: str = os.path.join(os.path.join(self.base_SIGN_dir, "unidbg-fetch-qsign-1.1.9"), "txlib", self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["lib版本"], "config.json")
-        self.SIGN_SERVER_Running:bool = False
-        self.CQHTTP_LOGIN_STATUS:bool = False
-        self.BOT_JOIN_GAME:bool = False
-        self.INITSTATUS:bool = False
-        self.CQHTTP_API_PORT: int = self.get_port()
-        if self.no_join_game_debug:self.on_inject()
+        self.SIGN_SERVER_Running = False
+        self.CQHTTP_LOGIN_STATUS = False
+        self.BOT_JOIN_GAME = False
+        self.INITSTATUS = False
+        self.CQHTTP_API_PORT: int = get_free_port()
+        if self.no_join_game_debug:
+            self.on_inject()
 
     def if_cqhttp_in_dir(self) -> bool:
-        return os.path.exists(self.base_CQHTTP_dir) and os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行UUID"]))
+        return os.path.exists(self.base_CQHTTP_dir) and os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]))
 
     def if_sign_server_in_dir(self) -> bool:
         return os.path.exists(self.base_SIGN_dir) and os.path.exists(os.path.join(self.base_SIGN_dir, "unidbg-fetch-qsign-1.1.9"))
@@ -341,10 +344,14 @@ class GroupServerInterworking(Plugin):
     def Initialize(self) -> None:
         self.game_ctrl.say_to('@a', f'[§bToolDelta控制台§r] 插件 - §e群服互通 - v{".".join(map(str, self.version))}§r 成功启动!')
         self.Setup_Menu()
-        if not self.if_cqhttp_in_dir():Print.print_load("CQ-HTTP目录不存在或未安装，开始尝试安装CQ-HTTP...");self.install_cqhttp()
+        if not self.if_cqhttp_in_dir():
+            Print.print_load("CQ-HTTP目录不存在或未安装，开始尝试安装CQ-HTTP...")
+            self.install_cqhttp()
         self.IF_CQHTTP_Config()
         if self.TMPJson.read(self.ConfigPath)["配置项"]["内置签名服务端"] == True:
-            if not self.if_sign_server_in_dir():Print.print_load("sign-server目录不存在或未安装，开始尝试安装sign-server...");self.install_sign_server()
+            if not self.if_sign_server_in_dir():
+                Print.print_load("sign-server目录不存在或未安装，开始尝试安装sign-server...")
+                self.install_sign_server()
             else:
                 if not self.if_jdk_in_jdkdir():
                     if not self.use_in_sys_jdk():
@@ -359,7 +366,7 @@ class GroupServerInterworking(Plugin):
                 self.IF_PRE_SIGN_SERVER_RUNNING(timeout=4)
                 threading.Thread(target=self.Handle_SIGN_SERVER_Message, name="SIGN-SERVER消息处理主线程").start()
         Print.print_load("正在启动 CQHTTP-事件上报服务器...")
-        self.CQHTTPEHCore: self.CQHTTPEventHandleCore = self.CQHTTPEventHandleCore(self)
+        self.CQHTTPEHCore = self.CQHTTPEventHandleCore(self)
         threading.Thread(target=self.CQHTTPEHCore.Initialize, name="CQHTTP-事件上报服务端运行线程").start()
         self.WAIT_CQHTTP_EVENT_HANDLE_CORE_RUNNING()
         Print.print_suc("CQHTTP-事件上报服务端成功启动!")
@@ -383,20 +390,31 @@ class GroupServerInterworking(Plugin):
         return False
 
     def if_is_jdkdir(self) -> bool:
-        if not self.if_jdk_in_jdkdir():return False
-        if os.path.exists(os.path.join(self.base_SIGN_dir, "JDK-bin", "java")) or os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["JDK位置"], "bin", "java")):return True
-        if os.path.exists(os.path.join(self.base_SIGN_dir, "JDK-bin", "bin", "java")) or os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["JDK位置"], "bin", "java")):return True
+        if not self.if_jdk_in_jdkdir():
+            return False
+        if (
+            os.path.exists(os.path.join(self.base_SIGN_dir, "JDK-bin", "java"))
+            or os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["JDK位置"], "bin", "java"))
+        ):
+            return True
+        if (
+            os.path.exists(os.path.join(self.base_SIGN_dir, "JDK-bin", "bin", "java"))
+            or os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["JDK位置"], "bin", "java"))
+        ):
+            return True
         return False
 
     def use_in_sys_jdk(self) -> bool:
-        if self.sys_type == "Windows":raise("该函数不支持Windows系统调用！")
+        if self.sys_type == "windows":
+            raise Exception("该函数不支持Windows系统调用！")
         versionMsg = subprocess.check_output("java --version", shell=True).decode("utf-8")
         which_java = (subprocess.check_output("which java", shell=True).decode("utf-8")).replace("\n", "")
         if "not found" in versionMsg or "不是内部或外部命令，也不是可运行的程序或批处理文件。" in versionMsg:return False
         if not os.path.exists("/usr/bin/java") and len(which_java) < 6:return False
         if not "command not found" in versionMsg:
-            jdk_path:str = self.resolve_symlink(which_java)
-            if jdk_path == None:return False
+            jdk_path = self.resolve_symlink(which_java)
+            if jdk_path is None:
+                return False
             jdk_path = self.extract_path_with_bin(jdk_path)
             old = self.TMPJson.read(self.ConfigPath)
             old["配置项"]["JDK位置"] = jdk_path
@@ -404,6 +422,7 @@ class GroupServerInterworking(Plugin):
             self.reload_PathJson(self.ConfigPath)
             Print.print_suc(f"将使用系统内已存在的JDK {jdk_path}")
             return True
+        return False
 
     def extract_path_with_bin(self, input_str) -> str | None:
         bin_index = input_str.find('bin')
@@ -436,8 +455,10 @@ class GroupServerInterworking(Plugin):
         try:
             if self.sys_machine == "x86_64":sys_machine = "x64"
             elif self.sys_machine == "amd64":sys_machine = "x64"
-            if sys_machine not in ["aarch64", "x64"]:raise ValueError("暂不支持该系统架构，无法安装该架构jdk")
-            if self.sys_type == "Windows":raise ValueError("内置签名服务端暂不支持Windows系统")
+            if sys_machine not in ["aarch64", "x64"]:
+                raise ValueError("暂不支持该系统架构，无法安装该架构jdk")
+            if self.sys_type == "windows":
+                raise ValueError("内置签名服务端暂不支持Windows系统")
             jdk17_url:str = f"https://download.oracle.com/java/17/latest/jdk-17_linux-{sys_machine}_bin.tar.gz"
             if not os.path.exists(os.path.join(self.base_SIGN_dir, jdk17_url.split('/')[-1])):
                 if not self.if_jdk_in_jdkdir():
@@ -474,7 +495,8 @@ class GroupServerInterworking(Plugin):
                 if not self.use_in_sys_jdk():
                     if not self.install_jdk_17():
                         raise ValueError("安装JDK失败，请检查网络或权限！")
-            if self.sys_type == "Windows":raise ValueError("内置签名服务端暂不支持Windows系统")
+            if self.sys_type == "windows":
+                raise ValueError("内置签名服务端暂不支持Windows系统")
             sign_server_url: str = "https://github.com/CikeyQi/unidbg-fetch-qsign-shell/releases/download/1.1.9/unidbg-fetch-qsign-1.1.9.zip"
             if not os.path.exists(os.path.join(self.base_SIGN_dir, sign_server_url.split('/')[-1])):
                 fast_url = urlmethod.test_site_latency({"url": sign_server_url, "mirror_url": urlmethod.format_mirror_url(sign_server_url)})[0]
@@ -490,7 +512,7 @@ class GroupServerInterworking(Plugin):
             Print.print_war(f"尝试安装sign-server服务端失败，请检查网络或权限！{e}")
             return False
         return True
-    
+
     def is_port_open(self, port) -> bool:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex((self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["host"], port)) == 0
@@ -499,7 +521,9 @@ class GroupServerInterworking(Plugin):
         if not self.is_port_open(self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]):return self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]
         Print.print_war(f"您所指定的签名服务端运行端口[{self.TMPJson.read(self.ConfigPath)['配置项']['Sign-Server配置']['端口']}]已被占用，将为您随机一个可用端口！")
         for i in range(1000, 65535):
-            if not self.is_port_open(i):return i
+            if not self.is_port_open(i):
+                return i
+        raise ValueError("没有可用端口")
 
     def reload_PathJson(self, CFGPath: str) -> bool:
         return True if self.TMPJson.unloadPathJson(CFGPath) and self.TMPJson.loadPathJson(CFGPath, False) else False
@@ -511,9 +535,11 @@ class GroupServerInterworking(Plugin):
             return True
         except Exception as e:return False
 
-    def IF_SIGN_SERVER_Config(self) -> any:
-        if self.TMPJson.read(self.ConfigPath)["配置项"]["端口被占用时随机端口[全局][插件内]"] == True:self.sign_server_port = self.get_sign_server_port()
-        else:self.sign_server_port = self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]
+    def IF_SIGN_SERVER_Config(self) -> Any:
+        if self.TMPJson.read(self.ConfigPath)["配置项"]["端口被占用时随机端口[全局][插件内]"]:
+            self.sign_server_port = self.get_sign_server_port()
+        else:
+            self.sign_server_port = self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["端口"]
         Print.print_suc(f"签名服务端将使用端口: {self.sign_server_port}")
         if self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"] == "":
             old = self.TMPJson.read(self.ConfigPath)
@@ -532,51 +558,83 @@ class GroupServerInterworking(Plugin):
         self.reload_PathJson(self.SIGN_SERVER_Lib_ConfigPath)
         self.use_lib_info()
 
-    def IF_CQHTTP_Config(self) -> any:
+    def IF_CQHTTP_Config(self) -> Any:
         try:
             if self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"] == "":
                 old = self.TMPJson.read(self.ConfigPath)
                 old["配置项"]["CQHTTP运行文件"] = os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行UUID"])
                 self.TMPJson.write_as_tmp(self.ConfigPath, old)
                 self.reload_PathJson(self.ConfigPath)
-            if os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml")) == True and len(open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r").read()) >= 256 and "# Not Initial Config\n" not in open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r").read():return
-            config_yml = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "w+")
+            if (
+                os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml")) == True
+                and len(open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r", encoding="utf-8").read()) >= 256
+                and "# Not Initial Config\n" not in open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r", encoding="utf-8").read()
+            ):
+                return
+            config_yml = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "w+", encoding="utf-8")
             Print.print_load("CQ-HTTP首次启动需要生成配置文件")
-            config_yml.write(CQHTTP_DEF_CFG);config_yml.close()
+            config_yml.write(CQHTTP_DEF_CFG)
+            config_yml.close()
             Print.print_load(f"请设置文件 §6{os.path.join(self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行目录'], 'config.yml')}§r §d的配置，修改完成后将第一行的'#Not Initial Config'删除，修改成功后将自动进行下一步！")
             while True:
-                if not '# Not Initial Config\n' in open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r").read():break
+                if not '# Not Initial Config\n' in open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r", encoding="utf-8").read():break
                 time.sleep(0.25)
         except Exception as e:
             Print.print_war(f"写入配置到文件或检测文件头部内容时出现异常，请检查配置文件或自行修改。{e}")
             raise ValueError(f"写入配置到文件或检测文件头部内容时出现异常，请检查配置文件或自行修改。{e}")
 
-    def install_cqhttp(self) -> bool:
+    def install_cqhttp(self):
         try:
             os.makedirs(self.base_CQHTTP_dir, exist_ok=True)
-            if self.sys_machine == "x86_64":sys_machine = "amd64"
-            elif self.sys_machine == "aarch64":sys_machine = "arm64"
-            if "TERMUX_VERSION" in os.environ:sys_info_fmt: str = f"Android:{self.sys_machine.lower()}"
-            else:sys_info_fmt: str = f"{platform.uname().system}:{self.sys_machine.lower()}"
-            cqhttp_url: str = f"https://github.com/Mrs4s/go-cqhttp/releases/download/v1.2.0/go-cqhttp_{self.sys_type.lower()}_{sys_machine}.exe" if self.sys_type == "windows" else f"https://github.com/Mrs4s/go-cqhttp/releases/download/v1.2.0/go-cqhttp_{self.sys_type.lower()}_{sys_machine}.tar.gz"
+            if self.sys_machine == "x86_64":
+                sys_machine = "amd64"
+            elif self.sys_machine == "aarch64":
+                sys_machine = "arm64"
+            else:
+                sys_machine = self.sys_machine
+            if "TERMUX_VERSION" in os.environ:
+                sys_info_fmt = f"Android:{self.sys_machine.lower()}"
+            else:
+                sys_info_fmt = f"{platform.uname().system}:{self.sys_machine.lower()}"
+            cqhttp_url = (
+                f"https://github.com/Mrs4s/go-cqhttp/releases/download/v1.2.0/go-cqhttp_{self.sys_type}_{sys_machine}.exe"
+                if self.sys_type == "windows"
+                else f"https://github.com/Mrs4s/go-cqhttp/releases/download/v1.2.0/go-cqhttp_{self.sys_type}_{sys_machine}.tar.gz"
+            )
             if not os.path.exists(os.path.join(self.base_CQHTTP_dir, cqhttp_url.split('/')[-1])):
                 fast_url = urlmethod.test_site_latency({"url": cqhttp_url, "mirror_url": urlmethod.format_mirror_url(cqhttp_url)})[0]
                 Print.print_load(f"已确认最优下载线路 [URL: {fast_url[0]} Speed: {fast_url[1]}]，开始下载...")
-                try:urlmethod.download_file_singlethreaded(urlmethod.githubdownloadurl_to_rawurl(fast_url[0]), os.path.join(self.base_CQHTTP_dir, urlparse(fast_url[0]).path.split('/')[-1]))
-                except Exception as e:raise ValueError(f"无法正常下载CQ-HTTP可执行，可执行文件，请自行前往[https://github.com/Mrs4s/go-cqhttp/releases]下载对应文件放置于{self.base_CQHTTP_dir}目录下。{e}")
+                try:
+                    urlmethod.download_file_singlethreaded(
+                        urlmethod.githubdownloadurl_to_rawurl(fast_url[0]),
+                        os.path.join(self.base_CQHTTP_dir, ("go-cqhttp.exe" if self.sys_type == "windows" else cqhttp_url.split('/')[-1]))
+                    )
+                except Exception as e:
+                    raise ValueError(f"无法正常下载CQ-HTTP可执行文件，请自行前往[https://github.com/Mrs4s/go-cqhttp/releases]下载对应文件放置于{self.base_CQHTTP_dir}目录下。{e}")
             if ".tar.gz" in cqhttp_url.split('/')[-1]:
-                if self.extract_archive(os.path.join(self.base_CQHTTP_dir, cqhttp_url.split('/')[-1]), self.base_CQHTTP_dir):os.remove(os.path.join(self.base_CQHTTP_dir, cqhttp_url.split('/')[-1]));os.remove(os.path.join(self.base_CQHTTP_dir, "LICENSE"));os.remove(os.path.join(self.base_CQHTTP_dir, "README.md"))
+                if self.extract_archive(os.path.join(self.base_CQHTTP_dir, cqhttp_url.split('/')[-1]), self.base_CQHTTP_dir):
+                    os.remove(os.path.join(self.base_CQHTTP_dir, cqhttp_url.split('/')[-1]))
+                    os.remove(os.path.join(self.base_CQHTTP_dir, "LICENSE"))
+                    os.remove(os.path.join(self.base_CQHTTP_dir, "README.md"))
             old = self.TMPJson.read(self.ConfigPath)
-            old["配置项"]["CQHTTP运行文件"] = f'{old["配置项"]["CQHTTP运行UUID"]}.exe' if self.sys_type == "windows" else old["配置项"]["CQHTTP运行UUID"]
+            old["配置项"]["CQHTTP运行文件"] = (
+                f'{old["配置项"]["CQHTTP运行UUID"]}.exe'
+                if self.sys_type == "windows"
+                else old["配置项"]["CQHTTP运行UUID"]
+            )
             self.TMPJson.write_as_tmp(self.ConfigPath, old)
-            os.rename(os.path.join(old["配置项"]["CQHTTP运行目录"], "go-cqhttp.exe" if self.sys_type == "windows" else "go-cqhttp"), os.path.join(old["配置项"]["CQHTTP运行目录"], old["配置项"]["CQHTTP运行文件"]))
+            os.rename(os.path.join(
+                old["配置项"]["CQHTTP运行目录"], ("go-cqhttp.exe" if self.sys_type == "windows" else "go-cqhttp")
+                ), os.path.join(old["配置项"]["CQHTTP运行目录"], old["配置项"]["CQHTTP运行文件"])
+            )
             os.chmod(os.path.join(old["配置项"]["CQHTTP运行目录"], old["配置项"]["CQHTTP运行文件"]), 0o777)
-            if not os.path.exists(os.path.join(old["配置项"]["CQHTTP运行目录"], old["配置项"]["CQHTTP运行文件"])):raise ValueError("CQ-HTTP安装失败，请检查配置文件或自行安装。")
+            if not os.path.exists(os.path.join(old["配置项"]["CQHTTP运行目录"], old["配置项"]["CQHTTP运行文件"])):
+                raise ValueError("CQ-HTTP安装失败，请检查配置文件或自行安装。")
             Print.print_suc("成功安装CQ-HTTP！")
             self.reload_PathJson(self.ConfigPath)
         except Exception as e:
-            Print.print_war(f"尝试安装CQ-HTTP失败，可寻求他人帮助或自行安装并修改配置文件! {e}")
-            raise ValueError(f"尝试安装CQ-HTTP失败，可寻求他人帮助或自行安装并修改配置文件! {e}")
+            Print.print_war(f"尝试安装CQ-HTTP失败，可寻求他人帮助或自行安装并修改配置文件: {e}")
+            raise ValueError(f"尝试安装CQ-HTTP失败，可寻求他人帮助或自行安装并修改配置文件: {e}")
 
     def check_string_in_list(self, string: str, list: list) -> bool:
         for element in list:
@@ -616,24 +674,24 @@ class GroupServerInterworking(Plugin):
             return False
 
     class New_CFG_CTL(object):
-        def __init__(self, TMPJson: any, ConfigPath: str) -> None:
-            self.TMPJson: any = TMPJson
+        def __init__(self, TMPJson: Any, ConfigPath: str) -> None:
+            self.TMPJson: Any = TMPJson
             self.ConfigPath: str = ConfigPath
-            self.OLD_CFG: io.TextIOWrapper = None
-            self.NEW_CFG: io.TextIOWrapper = None
-            self.OLD_CFG_DATA: dict = None
+            self.OLD_CFG: io.TextIOWrapper
+            self.NEW_CFG: io.TextIOWrapper
+            self.OLD_CFG_DATA: dict
             threading.Thread(target=self.wait_yml_create, name="wait_yml_create").start()
 
-        def wait_yml_create(self, timeout: int = 600) -> any:
+        def wait_yml_create(self, timeout: int = 600) -> Any:
             run_time = 0
             while run_time <= timeout:
                 if run_time > timeout:raise ValueError(f"CQ-HTTP 配置文件生成超时，请检查配置文件是否正确生成。")
-                if os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml")) and len(open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r").read()) > 256:self.open_read_cfg();return True
+                if os.path.exists(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml")) and len(open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r", encoding="utf-8").read()) > 256:self.open_read_cfg();return True
                 run_time += 0.5;time.sleep(0.5)
 
         def open_read_cfg(self) -> None:
-            self.OLD_CFG: io.TextIOWrapper = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r")
-            self.NEW_CFG: io.TextIOWrapper = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "TmpCFG.yml"), "w+")
+            self.OLD_CFG: io.TextIOWrapper = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"), "r", encoding="utf-8")
+            self.NEW_CFG: io.TextIOWrapper = open(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "TmpCFG.yml"), "w+", encoding="utf-8")
             self.OLD_CFG_DATA: dict = self.load_old_cfg()
 
         def if_open_init(self) -> None:
@@ -642,24 +700,33 @@ class GroupServerInterworking(Plugin):
                 else:break
 
         def load_old_cfg(self) -> dict:
-            try:self.if_open_init();return yaml.load(self.OLD_CFG, Loader=yaml.FullLoader)
-            except Exception as e:os.remove(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"));Print.print_err(f"读取CQ-HTTP配置文件时出现异常，将删除配置文件，您可以在下次启动时重新配置文件！{e}");return {}
+            try:
+                self.if_open_init()
+                return yaml.load(self.OLD_CFG, Loader=yaml.FullLoader)
+            except Exception as e:
+                os.remove(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], "config.yml"));Print.print_err(f"读取CQ-HTTP配置文件时出现异常，将删除配置文件，您可以在下次启动时重新配置文件！{e}");return {}
 
-        def set_cfg_item(self, key: str, value: any) -> bool:
+        def set_cfg_item(self, key: str, value: Any) -> bool:
             self.if_open_init()
             try:self.OLD_CFG_DATA[key] = value;return True
             except:return False
 
-        def get_cfg_item(self, key: str) -> any:
+        def get_cfg_item(self, key: str) -> Any:
             self.if_open_init()
-            try:return self.OLD_CFG_DATA[key]
-            except:return None
+            try:
+                return self.OLD_CFG_DATA[key]
+            except:
+                return None
 
         def save_new_cfg(self) -> None:
-            try:self.if_open_init();yaml.dump(self.OLD_CFG_DATA, self.NEW_CFG, default_flow_style=False, sort_keys=False);self.close_cfg()
-            except Exception as e:Print.print_err(f"保存CQ-HTTP配置文件时出现异常！{e}");return
+            try:
+                self.if_open_init()
+                yaml.dump(self.OLD_CFG_DATA, self.NEW_CFG, default_flow_style=False, sort_keys=False, encoding="utf-8")
+                self.close_cfg()
+            except Exception as e:
+                Print.print_err(f"保存CQ-HTTP配置文件时出现异常！{e}");return
 
-        def add_cfg_item(self, key1: str, value: any, key2: str = None) -> bool:
+        def add_cfg_item(self, key1: str, value: Any, key2: Any | None = None) -> bool:
             try:
                 if not key2 is None:
                     if isinstance(self.OLD_CFG_DATA[key1][key2], list):
@@ -681,7 +748,7 @@ class GroupServerInterworking(Plugin):
 
         def get_all_cfg(self) -> dict:
             return self.OLD_CFG_DATA
-        
+
         def set_all_cfg(self, data: dict) -> dict:
             self.OLD_CFG_DATA = data
             return self.OLD_CFG_DATA
@@ -689,7 +756,7 @@ class GroupServerInterworking(Plugin):
         def close_cfg(self) -> None:
             self.OLD_CFG.close();self.NEW_CFG.close()
 
-    def SET_SIGN_SERVER(self) -> str | None:
+    def SET_SIGN_SERVER(self) -> list[str] | None:
         """获取可用签名服务器
 
         Returns:
@@ -708,7 +775,7 @@ class GroupServerInterworking(Plugin):
         else:
             self.CQHTTPNCC.add_cfg_item(key1 = "account", key2 = "sign-servers", value = {"url": f"http://127.0.0.1:{self.TMPJson.read(self.ConfigPath)['配置项']['Sign-Server配置']['端口']}", "key": self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["key"], "authorization": '-'})
             return None
-        
+
     def SET_EVENT_HANDLE_SERVER(self) -> bool:
         try:
             self.old_cfg:dict = self.CQHTTPNCC.get_all_cfg()
@@ -717,19 +784,14 @@ class GroupServerInterworking(Plugin):
             return True
         except:return False
 
-    def get_port(self) -> int:
-        for i in range(5000, 65535):
-            if not self.is_port_open(i):return i
-
     def SET_CQHTTP_API_PORT(self) -> bool:
         try:
             self.old_cfg:dict = self.CQHTTPNCC.get_all_cfg()
-            self
             self.old_cfg['servers'][0]['http']["address"] = f"0.0.0.0:{self.CQHTTP_API_PORT}"
             self.CQHTTPNCC.set_all_cfg(self.old_cfg)
             return True
         except:return False
-       
+
     def Setup_Menu(self) -> None:
         self.frame.add_console_cmd_trigger(
             ["GS", "群服"],
@@ -739,7 +801,7 @@ class GroupServerInterworking(Plugin):
         )
         Print.print_suc("群服互通 控制台菜单 已加载！")
 
-    def Handle_Menu_Cmd(self, args: str) -> None:
+    def Handle_Menu_Cmd(self, args: list[str]) -> None:
         try:
             if len(args) >= 1 :
                 match args[0]:
@@ -750,8 +812,11 @@ class GroupServerInterworking(Plugin):
                         if self.cqhttp_proc.poll() != None:Print.print_err("CQ-HTTP 未启动，请先启动CQ-HTTP再使用该功能!")
                         if len(args) == 2:
                             try:
+                                if self.cqhttp_proc.stdin is None:
+                                    raise ValueError("进程的标准输入不可用")
                                 self.cqhttp_proc.stdin.write(args[1].encode("utf-8"))
                                 self.cqhttp_proc.stdin.write(b"\n")
+                                self.cqhttp_proc.stdin.flush()
                             except subprocess.TimeoutExpired as e:
                                 Print.print_err(f"输入超时!{e}")
                     case "停止运行签名服务器":
@@ -768,17 +833,35 @@ class GroupServerInterworking(Plugin):
             else:
                 Print.print_err("参数错误，请提供正确的参数，使用(群服 help)获得帮助。")
         except FileNotFoundError or ValueError as e:
-            Print.print_err(e)
+            Print.print_err(str(e))
 
-    def Process_Run_SIGN_SERVER(self) -> dict:
+    def Process_Run_SIGN_SERVER(self):
         env = os.environ.copy()
         env["JAVA_HOME"] = self.TMPJson.read(self.ConfigPath)["配置项"]["JDK位置"]
-        if not self.if_file_run_permissions(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "bin", "unidbg-fetch-qsign")):os.chmod(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "bin", "unidbg-fetch-qsign"), 0o777)
+        if not self.if_file_run_permissions(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "bin", "unidbg-fetch-qsign")):
+            os.chmod(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "bin", "unidbg-fetch-qsign"), 0o777)
         self.sign_server_proc = subprocess.Popen([os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "bin", "unidbg-fetch-qsign"), f'--basePath={os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], "txlib", self.TMPJson.read(self.ConfigPath)["配置项"]["Sign-Server配置"]["lib版本"])}'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.TMPJson.read(self.ConfigPath)["配置项"]["签名服务端运行目录"], env=env)
-    
-    def Process_Run_CQHTTP(self) -> dict:
-        if not self.if_file_run_permissions(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"])):os.chmod(os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]), 0o777)
-        self.cqhttp_proc = subprocess.Popen([os.path.join(self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"], self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]), "-c", "TmpCFG.yml", "-faststart"],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"])
+
+    def Process_Run_CQHTTP(self):
+        if not self.if_file_run_permissions(
+            os.path.join(
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"],
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]
+            )
+        ):
+            os.chmod(os.path.join(
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"],
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]
+                ),
+            0o777)
+        self.cqhttp_proc = subprocess.Popen([
+            os.path.join(
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"],
+                self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行文件"]
+            ),
+            "-c", "TmpCFG.yml", "-faststart"
+        ],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        cwd=self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"])
 
     @plugins.add_packet_listener([9])
     def listenner(self, packet: dict):
@@ -789,28 +872,29 @@ class GroupServerInterworking(Plugin):
                 SourceName:str = packet["SourceName"]
                 Message: str = packet["Message"]
                 for gid in self.enabled_groups:self.SMTC.send_group_message(int(gid), f"[群服互通] [{SourceName}]: {Message}")
+        return False
 
     class MESSAGE_LIST_CTL(object):
-        def __init__(self) -> None:
+        def __init__(self):
             self.MESSAGE_LIST: list = []
-    
-        def append_msg(self, msg: str) -> None:
+
+        def append_msg(self, msg: str):
             if len(self.MESSAGE_LIST) >= 1000:self.MESSAGE_LIST.clear()
             self.MESSAGE_LIST.append(msg)
 
-        def get_err_msg(self, llen = 5) -> str:
+        def get_err_msg(self, llen = 5) -> list:
             return self.MESSAGE_LIST[-llen:] if len(self.MESSAGE_LIST) >= llen else self.MESSAGE_LIST
-        
-        def clear_msg(self) -> None:
+
+        def clear_msg(self):
             self.MESSAGE_LIST.clear()
 
-        def get_msg_len(self) -> int:
+        def get_msg_len(self):
             return len(self.MESSAGE_LIST)
-        
-        def remove_msg(self, index: int) -> None:
+
+        def remove_msg(self, index: int):
             if index < len(self.MESSAGE_LIST):self.MESSAGE_LIST.pop(index)
 
-    def Handle_SIGN_SERVER_Message(self) -> any:
+    def Handle_SIGN_SERVER_Message(self) -> Any:
         def if_sign_server_normal(interval:int = 60) -> None:
             while True:
                 if not self.SIGN_SERVER_Running:time.sleep(5);continue
@@ -835,10 +919,16 @@ class GroupServerInterworking(Plugin):
                 if not self.TMPJson.read(self.ConfigPath)["配置项"]["SIGN-SERVER自动重启"]:
                     raise ValueError("SIGN-SERVER 进程未启动")
             while True:
-                try: rec_msg = self.sign_server_proc.stdout.readline().decode("utf-8").strip("\n")
-                except ValueError as e:rec_msg:self.SIGN_SERVER_Running = False;raise ValueError(f"SIGN_SERVER 进程已退出，最后得到的消息为：{self.SIGN_SERVER_MSC.get_err_msg()} {e}")
+                try:
+                    if self.sign_server_proc.stdout is None:
+                        raise ValueError("CQHTTP标准输出不可用")
+                    rec_msg = self.sign_server_proc.stdout.readline().decode("utf-8").strip("\n")
+                except ValueError as e:
+                    self.SIGN_SERVER_Running = False
+                    raise ValueError(f"SIGN_SERVER 进程已退出，最后得到的消息为：{self.SIGN_SERVER_MSC.get_err_msg()} {e}")
                 self.SIGN_SERVER_MSC.append_msg(rec_msg)
-                if self.sign_server_proc.poll() != None:raise ValueError(f"SIGN_SERVER 进程已退出，最后得到的消息为：{self.SIGN_SERVER_MSC.get_err_msg()}")
+                if self.sign_server_proc.poll() != None:
+                    raise ValueError(f"SIGN_SERVER 进程已退出，最后得到的消息为：{self.SIGN_SERVER_MSC.get_err_msg()}")
                 match rec_msg:
                     case _:
                         if "[main] DEBUG" in rec_msg:continue
@@ -863,13 +953,13 @@ class GroupServerInterworking(Plugin):
                     Builtins.createThread(SIGN_SERVER_Handle_Message_Fuc, usage="SIGN-SERVER消息处理")
                 time.sleep(5)
 
-    def Handle_CQHTTP_Message(self) -> any:
+    def Handle_CQHTTP_Message(self) -> Any:
         def CQHTTP_Handle_Message_Fuc():
             self.CQHTTP_RES_NUM.setdefault(time.strftime('%Y-%m-%d-%H', time.localtime()), 0)
             self.CQHTTP_RES_NUM[time.strftime('%Y-%m-%d-%H', time.localtime())] += 1
             if self.cqhttp_proc is None or self.cqhttp_proc.stdout is None:
                 raise ValueError("CQ-HTTP 进程未启动")
-            enabled_groups = self.TMPJson.read(self.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"]
+            enabled_groups: list[str] = self.TMPJson.read(self.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"]
             while True:
                 try: rec_msg = self.cqhttp_proc.stdout.readline().decode("utf-8").strip("\n")
                 except ValueError as e:
@@ -882,11 +972,11 @@ class GroupServerInterworking(Plugin):
                     # case '请输入你需要的编号(0-9)，可输入多个，同一编号也可输入多个(如: 233)':
                     #     Print.print_inf(f"§d[CQ-HTTP]§r {rec_msg}")
                     #     self.cqhttp_proc.stdin.write(b"0")
-                    case _:    
+                    case _:
                         if not self.TMPJson.read(self.ConfigPath)["配置项"]["输出CQHTTP输出[可能导致刷屏][如果关闭将会屏蔽CQHTTP成功登陆账号后的消息]"] and self.CQHTTP_LOGIN_STATUS:continue
                         if self.TMPJson.read(self.ConfigPath)["配置项"]["仅输出被启用的群消息"]:
                             if "收到来自频道" in rec_msg or "收到群" in rec_msg:
-                                    if not self.check_string_in_list(enabled_groups, rec_msg):continue
+                                    if not self.check_string_in_list(rec_msg, enabled_groups):continue
                         if "检查更新完成. 当前已运行最新版本." in rec_msg:self.CQHTTP_LOGIN_STATUS = True
                         Print.print_inf(f"§d[CQ-HTTP]§r {rec_msg}")
                 # if "[INFO]: 按 Enter 继续...." in rec_msg:
@@ -914,11 +1004,17 @@ class GroupServerInterworking(Plugin):
     def IF_PRE_CQHTTP_RUNNING(self, timeout: int = 10) -> None:
         run_time = 0
         while run_time <= timeout:
-            if timeout > timeout:raise ValueError(f"CQ-HTTP 启动超时，请自行寻求帮助 启动参数 {os.path.join(self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行目录'], self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行文件'])} -h TmpCFG.yml 工作目录 {self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行目录']}")
+            if timeout > timeout:
+                raise ValueError(
+                    f"CQ-HTTP 启动超时，请自行寻求帮助 启动参数 {os.path.join(self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行目录'], self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行文件'])} -h TmpCFG.yml 工作目录 {self.TMPJson.read(self.ConfigPath)['配置项']['CQHTTP运行目录']}"
+                )
             try:
-                if self.cqhttp_proc.poll() == None:return
-            except AttributeError:pass
+                if self.cqhttp_proc.poll() == None:
+                    return
+            except AttributeError:
+                pass
             run_time += 0.5;time.sleep(0.5)
+
     def IF_PRE_SIGN_SERVER_RUNNING(self, timeout: int = 10) -> None:
         run_time = 0
         while run_time <= timeout:
@@ -926,8 +1022,9 @@ class GroupServerInterworking(Plugin):
             try:
                 if self.sign_server_proc.poll() == None:return
             except AttributeError:pass
-            run_time += 0.5;time.sleep(0.5)
-            
+            run_time += 0.5
+            time.sleep(0.5)
+
     def WAIT_SIGN_SERVER_RUNNING(self, timeout: int = 40) -> None:
         run_time = 0
         while run_time <= timeout:
@@ -954,7 +1051,8 @@ class GroupServerInterworking(Plugin):
                 if requests.post(f"http://{self.CQHTTPEHCore.CoreCFG['host']}:{self.CQHTTPEHCore.CoreCFG['port']}/api/status", timeout=4).status_code == 200:return
             except AttributeError:pass
             except Exception:pass
-            run_time += 0.5;time.sleep(0.5) 
+            run_time += 0.5
+            time.sleep(0.5)
 
     def get_keys_by_value_in_list(self, list_of_dicts, value) -> str:
         result = []
@@ -967,8 +1065,8 @@ class GroupServerInterworking(Plugin):
 
     class CQHTTPEventHandleCore(object):
         CoreVersion:tuple = (0, 0, 1)
-        def __init__(self, PluginFrame: any) -> None:
-            self.PFEnv:any = PluginFrame
+        def __init__(self, PluginFrame: "GroupServerInterworking") -> None:
+            self.PFEnv = PluginFrame
             self.CoreCFG:dict = {"host": self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["host"],
                                  "port":self.get_port()}
             self.ApiApp: flask.Flask = flask.Flask(f"CQHTTPEventHandleCore - v{'.'.join(map(str, self.CoreVersion))}")
@@ -976,12 +1074,12 @@ class GroupServerInterworking(Plugin):
             log.setLevel(logging.ERROR)
             self.enabled_groups:list = [value for d in self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["群服互通相关配置"]["启用群列表"] for value in d.values()]
 
-        def Initialize(self) -> any:
+        def Initialize(self) -> Any:
             self.SetupCoreRoute()
             self.RunCore()
-            self.Send_Message_To_CQHTTP
+            #self.Send_Message_To_CQHTTP
 
-        def SetupCoreRoute(self) -> any:
+        def SetupCoreRoute(self) -> Any:
             @self.ApiApp.route("/", methods=["POST", "GET"])
             def MainHandle():
                 if flask.request.method == "POST":
@@ -995,7 +1093,7 @@ class GroupServerInterworking(Plugin):
                         gid = str(data.get('group_id'))
                         uid = str(data.get('sender').get('user_id'))
                         nickname = data.get('sender').get("nickname")
-                        message = data.get('message')  
+                        message = data.get('message')
                         if self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["仅输出被启用的群消息"]:
                             if gid in self.enabled_groups:Print.print_inf(f"收到来自群聊 {gid} 中 {uid}({nickname}) 的消息: {message}")
                         else:Print.print_inf(f"收到来自群聊 {gid} 中 {uid}({nickname}) 的消息: {message}")
@@ -1007,11 +1105,11 @@ class GroupServerInterworking(Plugin):
             @self.ApiApp.route("/api/status", methods=["POST", "GET"])
             def ReturnCoreStauts():
                 return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", "Status 200."), 200
-            
+
             @self.ApiApp.errorhandler(404)
             def page_not_found(e):
                 return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", f"You have accessed an API that does not exist.Error: {e}"), 404
-            
+
             @self.ApiApp.errorhandler(500)
             def server_error_found(e):
                 return CQHTTP_EVENT_HANDLE_MSG_PAG.replace("MSG", f"Server exception, please contact the developer to fix!.Error: {e}"), 500
@@ -1024,10 +1122,12 @@ class GroupServerInterworking(Plugin):
             self.ApiApp.run(host=self.CoreCFG["host"], port=self.CoreCFG["port"])
 
         def get_port(self) -> int:
-            if not self.PFEnv.is_port_open(self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]):return self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]
+            if not self.PFEnv.is_port_open(self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]):
+                return self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)["配置项"]["CQHTTP事件处理服务端配置"]["端口"]
             Print.print_war(f"您所指定的CQHTTP-事件上报服务端运行端口[{self.PFEnv.TMPJson.read(self.PFEnv.ConfigPath)['配置项']['CQHTTP事件处理服务端配置']['端口']}]已被占用，将为您随机一个可用端口！")
             for i in range(5000, 65535):
                 if not self.PFEnv.is_port_open(i):return i
+            raise Exception("所有端口都不可用")
 
     class Send_Message_To_CQHTTP(object):
         def __init__(self, port: int = 5700) -> None:
