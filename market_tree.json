@@ -60,7 +60,7 @@
     "群服互通": {
       "name": "群服互通",
       "author": "xingchen",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
