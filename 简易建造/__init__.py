@@ -1,11 +1,12 @@
 from tooldelta import Frame, plugins, Plugin
+from tooldelta.plugin_load.utils import getTarget
 
 import time
 
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
@@ -14,8 +15,9 @@ class WorldEdit(Plugin):
         self.game_ctrl = frame.get_game_control()
 
     def on_def(self):
-        self.getTarget = plugins.get_plugin_api("基本插件功能库").getTarget
         self.add_trigger = plugins.get_plugin_api("聊天栏菜单").add_trigger
+        from 前置_聊天栏菜单 import ChatbarMenu
+        self.add_trigger = plugins.instant_plugin_api(ChatbarMenu).add_trigger
         self.getX = None
         self.getY = None
         self.getZ = None
@@ -43,7 +45,7 @@ class WorldEdit(Plugin):
                     jsonPkt["NBTData"]["Text"],
                 )
                 try:
-                    signPlayerName = self.getTarget(
+                    signPlayerName = getTarget(
                         f"@a[x={placeX}, y={placeY}, z={placeZ}, c=1, r=10]"
                     )[0]
                 except Exception as err:
@@ -52,7 +54,7 @@ class WorldEdit(Plugin):
                 self.getX = int(jsonPkt["NBTData"]["x"])
                 self.getY = int(jsonPkt["NBTData"]["y"])
                 self.getZ = int(jsonPkt["NBTData"]["z"])
-                if signPlayerName in self.getTarget("@a[m=1]"):
+                if signPlayerName in getTarget("@a[m=1]"):
                     self.game_ctrl.sendcmd(
                         f"/setblock {self.getX} {self.getY} {self.getZ} air 0 destroy"
                     )
@@ -73,7 +75,7 @@ class WorldEdit(Plugin):
                     jsonPkt["NBTData"]["Text"],
                 )
                 try:
-                    signPlayerName = self.getTarget(
+                    signPlayerName = getTarget(
                         f"@a[x={placeX}, y={placeY}, z={placeZ}, c=1, r=10]"
                     )[0]
                     getXend = int(jsonPkt["NBTData"]["x"])
@@ -81,10 +83,10 @@ class WorldEdit(Plugin):
                     getZend = int(jsonPkt["NBTData"]["z"])
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", "§cERROR：目标选择器报错 §c " + int(err))
+                    self.game_ctrl.say_to("@a", "§cERROR：目标选择器报错 §c " + str(err))
                 blockData = text[8:].replace("陶瓦", "stained_hardened_clay")
                 try:
-                    if signPlayerName in self.getTarget("@a[m=1]"):
+                    if signPlayerName in getTarget("@a[m=1]"):
                         if not self.getX:
                             raise AssertionError
                         self.game_ctrl.sendcmd(
@@ -108,10 +110,10 @@ class WorldEdit(Plugin):
                 try:
                     if not self.getX:
                         raise AssertionError
-                    signPlayerName = self.getTarget(
+                    signPlayerName = getTarget(
                         f"@a[x={jsonPkt['NBTData']['x']}, y={jsonPkt['NBTData']['y']}, z={jsonPkt['NBTData']['z']}, c=1, r=10]"
                     )[0]
-                    if signPlayerName in self.getTarget("@a[m=1]"):
+                    if signPlayerName in getTarget("@a[m=1]"):
                         self.frame.createThread(
                             self.fillwith,
                             (
@@ -125,6 +127,7 @@ class WorldEdit(Plugin):
                         )
                 except Exception as err:
                     self.game_ctrl.say_to("@a", "§cCan't execute because " + str(err))
+        return False
 
     def fillwith(self, sx, sy, sz, dx, dy, dz):
         p2n = lambda n: 1 if n >= 0 else -1

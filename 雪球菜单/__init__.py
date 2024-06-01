@@ -64,11 +64,61 @@ PAGE_OBJ = Page | MultiPage
 PAGE_DISPLAY_OBJ = str | Callable[[str, int], str | None]
 "显示菜单页"
 
+menu_patterns = [0, "undefined", "undefined", "undefined", "undefined"]
+"菜单最大页码数, 菜单头, 菜单选项-未被选中, 菜单选项-被选中, 菜单尾"
+
+main_page_menus: list[
+    tuple[
+        PAGE_OBJ | Callable[[str], bool],
+        str | Callable[[str], str]
+    ]] = []
+"主菜单: 菜单类/菜单cb, 显示字(字符串 or 显示回调)"
+
+def default_page_show(player: str, page: int):
+    max_length = len(main_page_menus)
+    if page > max_length - 1:
+        return None
+    fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
+    show_texts = [
+        Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
+    ]
+    c = page // menu_patterns[0]
+    cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
+    for i in cur_pages:
+        if isinstance(i[1], str):
+            text = i[1]
+        else:
+            text = i[1](player)
+        show_texts.append(Builtins.SimpleFmt(
+            {"[选项文本]": text}, menu_patterns[
+                3 if page == main_page_menus.index(i) else 2
+            ]
+        ))
+    if len(show_texts) == 1:
+        show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
+    show_texts.append(Builtins.SimpleFmt(fmt_kws, menu_patterns[4]))
+    return "\n".join(show_texts)
+
+def default_page_okcb(player: str, page: int):
+    page_cb = main_page_menus[page][0]
+    if isinstance(page_cb, Page):
+        return page_cb
+    elif isinstance(page_cb, MultiPage):
+        return page_cb, 0
+    else:
+        return page_cb(player) or None
+
+default_page = MultiPage(
+    "default",
+    default_page_show,
+    default_page_okcb
+)
+
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
-    version = (0, 0, 9)
+    version = (0, 1, 1)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -116,8 +166,7 @@ class SnowMenu(Plugin):
             player: 玩家名
             disp_func:
                 回调方法 (玩家名, 当前页数) -> 菜单显示内容 | None
-                    如果返回None, 则视为需要返回第 0 页    或
-                页数-展示内容 dict (必须要有第零页, 即 {0: <内容>})
+                    如果返回None, 则视为需要返回第 0 页
         返回:
             选项(页数)
             None: 玩家低头取消了菜单 / 玩家中途退出.
@@ -137,13 +186,46 @@ class SnowMenu(Plugin):
                 self.page = None
                 self.event.set()
         cb = _cb()
-        if isinstance(disp_func, dict):
-            # shh, 这是一个秘密
-            # 传入 disp_func 为字典 {0:"hi", 1:"world"} 也可以
-            # 起到的作用的代替 disp_func, 按照页数用字典里的内容按页数索引向玩家展示内容
-            page_cb = lambda _, now_page: disp_func.get(now_page)
-        else:
-            page_cb = disp_func
+        page = MultiPage(
+            page_id = "simple-select",
+            page_cb = disp_func,
+            ok_cb = cb.ok,
+            exit_cb = cb.exit,
+            leave_cb = cb.exit
+        )
+        old_page = self.in_snowball_menu.get(player)
+        self.set_player_page(player, page)
+        if old_page is None:
+            self.show_page_thread(player)
+        return cb.start()
+
+    def simple_select_dict(self, player: str, mapping: dict[int, str]):
+        """
+        简单地使用雪球菜单选择选项, 返回所选择的选项(页数), 首页是第 0 页.
+        Args:
+            player: 玩家名
+            mapping:
+                页数:展示内容 dict (必须要有第零页, 即 {0: <内容>})
+        返回:
+            选项(页数)
+            None: 玩家低头取消了菜单 / 玩家中途退出.
+        """
+        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
+        class _cb:
+            def __init__(self):
+                self.event = threading.Event()
+            def start(self):
+                self.event.wait()
+                return self.page
+            def ok(self, _, page):
+                self.page = page
+                self.event.set()
+            def exit(self, _):
+                self.page = None
+                self.event.set()
+        cb = _cb()
+        page_cb = lambda _, now_page: mapping.get(now_page)
         page = MultiPage(
             page_id = "simple-select",
             page_cb = page_cb,
@@ -162,7 +244,14 @@ class SnowMenu(Plugin):
     def on_def(self):
         self.getPosXYZ = plugins.get_plugin_api("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
         self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
-        plugins.get_plugin_api("聊天栏菜单").add_trigger(["snowmenu-init"], None, "初始化雪球菜单所需命令方块", self.place_cbs, op_only=True)
+        chatbar = plugins.get_plugin_api("聊天栏菜单")
+        from 前置_基本插件功能库 import BasicFunctionLib
+        from 前置_世界交互 import GameInteractive
+        from 前置_聊天栏菜单 import ChatbarMenu
+        self.getPosXYZ = plugins.instant_plugin_api(BasicFunctionLib).getPosXYZ_Int
+        self.interact = plugins.instant_plugin_api(GameInteractive)
+        chatbar = plugins.instant_plugin_api(ChatbarMenu)
+        chatbar.add_trigger(["snowmenu-init"], None, "初始化雪球菜单所需命令方块", self.place_cbs, op_only=True)
 
     def on_player_join(self, player: str):
         self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
@@ -191,7 +280,7 @@ class SnowMenu(Plugin):
             "菜单主界面格式尾": str,
             "菜单主界面选项格式(选项未选中)": str,
             "菜单主界面选项格式(选项被选中)": str,
-            "自定义主菜单内容": [r"%list", {"显示名": str, "执行的指令": [r"%list", str]}]
+            "自定义主菜单内容": Config.JsonList({"显示名": str, "执行的指令": Config.JsonList(str)})
         }
         CFG_DEFAULT = {
             "单页最大选项数": 6,
@@ -204,8 +293,7 @@ class SnowMenu(Plugin):
                 {
                     "显示名": "自尽",
                     "执行的指令": ["/kill @a[name=[玩家名]]", "/title @a[name=[玩家名]] title §c已自尽"]
-                },
-                {
+                },{
                     "显示名": "设置重生点",
                     "执行的指令": ["/execute @a[name=[玩家名]] ~~~ spawnpoint", "/title @a[name=[玩家名]] title §a已设置重生点"]
                 }
@@ -263,6 +351,7 @@ class SnowMenu(Plugin):
                     return False
             else:
                 return False
+        return False
 
     @Builtins.new_thread
     def next_page(self, player: str):
@@ -361,13 +450,6 @@ class SnowMenu(Plugin):
             "丹恒", "你又给智库带来了一份开源代码了吗? 辛苦了"
         ]
 
-main_page_menus: list[
-    tuple[
-        PAGE_OBJ | Callable[[str], bool],
-        str | Callable[[str], str]
-    ]] = []
-"主菜单: 菜单类/菜单cb, 显示字(字符串 or 显示回调)"
-
 SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (1, 0, '/execute @e[type=snowball] ~~~ execute @p[r=3] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
     (2, 1, 'kill @e[type=snowball]'),
@@ -379,45 +461,3 @@ SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
 ]
 
-def default_page_show(player: str, page: int):
-    max_length = len(main_page_menus)
-    if page > max_length - 1:
-        return None
-    fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
-    show_texts = [
-        Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
-    ]
-    c = page // menu_patterns[0]
-    cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
-    for i in cur_pages:
-        if isinstance(i[1], str):
-            text = i[1]
-        else:
-            text = i[1](player)
-        show_texts.append(Builtins.SimpleFmt(
-            {"[选项文本]": text}, menu_patterns[
-                3 if page == main_page_menus.index(i) else 2
-            ]
-        ))
-    if len(show_texts) == 1:
-        show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
-    show_texts.append(Builtins.SimpleFmt(fmt_kws, menu_patterns[4]))
-    return "\n".join(show_texts)
-
-def default_page_okcb(player: str, page: int):
-    page_cb = main_page_menus[page][0]
-    if isinstance(page_cb, Page):
-        return page_cb
-    elif isinstance(page_cb, MultiPage):
-        return page_cb, 0
-    else:
-        return page_cb(player) or None
-
-menu_patterns = [0, "undefined", "undefined", "undefined", "undefined"]
-"菜单最大页码数, 菜单头, 菜单选项-未被选中, 菜单选项-被选中, 菜单尾"
-
-default_page = MultiPage(
-    "default",
-    default_page_show,
-    default_page_okcb
-)

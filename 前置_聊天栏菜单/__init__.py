@@ -9,7 +9,7 @@ plugins.checkSystemVersion((0, 3, 20))
 @dataclass
 class ChatbarTriggers:
     triggers: list
-    argument_hint: str
+    argument_hint: str | None
     usage: str
     func: Callable
     args_pd: Callable
@@ -34,7 +34,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 14)
+    version = (0, 2, 1)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -61,7 +61,7 @@ class ChatbarMenu(Plugin):
     def add_trigger(
         self,
         triggers: list[str],
-        argument_hint: str,
+        argument_hint: str | None,
         usage: str,
         func: Callable | None,
         args_pd=lambda _: True,

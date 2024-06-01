@@ -1,4 +1,4 @@
-import ujson as json
+import json
 import time
 from tooldelta import Plugin, plugins, Frame
 
@@ -15,7 +15,7 @@ plugins.checkSystemVersion((0, 1, 9))
 
 @plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
@@ -37,11 +37,11 @@ class BasicFunctionLib(Plugin):
             self.waitmsg_req.remove(player)
 
     # -------------- API ---------------
-    def getScore(self, scoreboardNameToGet: str, targetNameToGet: str) -> int:
+    def getScore(self, scoreboardNameToGet: str, targetNameToGet: str) -> int | list:
         "获取玩家计分板分数 (计分板名, 玩家/计分板项名) 获取失败引发异常"
         resultList = self.game_ctrl.sendwscmd(
             f"/scoreboard players list {targetNameToGet}", True
-        ).OutputMessages
+        ).OutputMessages # type: ignore
         result = {}
         result2 = {}
         for i in resultList:
@@ -66,7 +66,7 @@ class BasicFunctionLib(Plugin):
         try:
             if targetNameToGet == "*" or targetNameToGet.startswith("@"):
                 if scoreboardNameToGet == "*":
-                    return [result, result2]
+                    raise ValueError("暂时无法获取 *ALL 计分板")
                 return result2[scoreboardNameToGet]
             if scoreboardNameToGet == "*":
                 return result[targetNameToGet]
@@ -208,7 +208,7 @@ class BasicFunctionLib(Plugin):
         res = self.getPos(player, timeout=timeout)["position"]
         return res["x"], res["y"], res["z"]
 
-    def getPosXYZ_Int(self, player, timeout=30) -> tuple[float, float, float]:
+    def getPosXYZ_Int(self, player, timeout=30) -> tuple[int, int, int]:
         "获取玩家坐标的X, Y, Z值"
         res = self.getPos(player, timeout=timeout)["position"]
         return int(res["x"]), int(res["y"]), int(res["z"])
