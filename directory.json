@@ -3,11 +3,19 @@
         "__init__.py",
         "datas.json"
     ],
+    "前置_聊天栏菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
     "自定义聊天栏菜单": [
         "__init__.py",
         "datas.json"
     ],
     "五子棋小游戏": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_世界交互": [
         "__init__.py",
         "datas.json"
     ],
@@ -23,10 +31,6 @@
         "types.py",
         "exceptions.py",
         "constants.py"
-    ],
-    "雪球菜单v2": [
-        "__init__.py",
-        "datas.json"
     ],
     "设置栏钢琴师": [
         "__init__.py",
@@ -49,15 +53,15 @@
         "__init__.py",
         "datas.json"
     ],
-    "群服互通": [
-        "__init__.py",
-        "datas.json"
-    ],
     "控制台执行MC指令": [
         "__init__.py",
         "datas.json"
     ],
     "全服喇叭": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "雪球菜单": [
         "__init__.py",
         "datas.json"
     ],
@@ -81,11 +85,11 @@
         "__init__.py",
         "datas.json"
     ],
-    "前置-聊天栏菜单": [
+    "前置_基本插件功能库": [
         "__init__.py",
         "datas.json"
     ],
-    "前置-基本插件功能库": [
+    "群服互通_内测": [
         "__init__.py",
         "datas.json"
     ],
@@ -106,10 +110,6 @@
         "datas.json"
     ],
     "地图画导入": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置-世界交互": [
         "__init__.py",
         "datas.json"
     ]
