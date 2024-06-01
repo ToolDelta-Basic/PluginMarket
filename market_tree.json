@@ -4,9 +4,9 @@
   "Greetings": "§a欢迎使用 §bToolDelta 插件市场.",
   "MarketPlugins": {
     "封禁系统": {
-      "name": "点歌台",
+      "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.1.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "聊天栏菜单": {
@@ -43,6 +43,12 @@
       "name": "设置栏钢琴师",
       "author": "SuperScript",
       "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "choose-song": {
+      "name": "点歌台",
+      "author": "SuperScript",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "better-announcebar": {
