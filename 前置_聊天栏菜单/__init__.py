@@ -34,7 +34,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 1)
+    version = (0, 2, 2)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -46,7 +46,7 @@ class ChatbarMenu(Plugin):
     }
     STD_CFG_TYPE = {
         "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
-        "/help触发词": [r"%list", str],
+        "/help触发词": Config.JsonList(str),
     }
     chatbar_triggers: list[ChatbarTriggers] = []
 
@@ -60,7 +60,7 @@ class ChatbarMenu(Plugin):
     # ----API----
     def add_trigger(
         self,
-        triggers: list[str],
+        triggers: list[str] | None,
         argument_hint: str | None,
         usage: str,
         func: Callable | None,
