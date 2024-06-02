@@ -6,7 +6,7 @@ from tooldelta import Plugin, plugins, Config, Builtins, Print
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def on_def(self):
         self.funclib = plugins.get_plugin_api("基本插件功能库")
