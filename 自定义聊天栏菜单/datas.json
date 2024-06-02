@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "自定义聊天栏菜单触发词触发的指令, 方便简洁",
   "limit_launcher": null,
   "pre-plugins": {

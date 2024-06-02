@@ -5,7 +5,6 @@ from typing import Callable
 
 plugins.checkSystemVersion((0, 7, 0))
 
-
 @dataclass
 class ChatbarTriggers:
     triggers: list

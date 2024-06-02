@@ -2,11 +2,13 @@ import re
 from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
 from tooldelta.plugin_load import TYPE_CHECKING
 
+plugins.checkSystemVersion((0, 7, 1))
+
 @plugins.add_plugin
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
 
     match_rule = re.compile(r"(\[参数:([0-9]+)\])")
@@ -58,7 +60,7 @@ class CustomChatbarMenu(Plugin):
             from 前置_聊天栏菜单 import ChatbarMenu
             self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
 
-    @Builtins.run_as_new_thread
+    @Builtins.thread_func
     def on_inject(self):
         for menu in self.cfg["菜单项"]:
             cb = self.make_cb_func(menu)
@@ -67,7 +69,7 @@ class CustomChatbarMenu(Plugin):
     def make_cb_func(self, menu):
         cmds = menu["触发后执行的指令"]
 
-        @Builtins.run_as_new_thread
+        @Builtins.thread_func
         def _menu_cb_func(player, args: list):
             if not self.check_args_len(player, args, menu["需要的参数数量"]):
                 return
