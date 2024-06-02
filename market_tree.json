@@ -33,22 +33,16 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "MC-MIDIPlayer": {
-      "name": "前置-MIDI播放器",
-      "author": "SuperScript",
-      "version": "0.1.3",
-      "plugin-type": "classic"
-    },
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
       "author": "SuperScript",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "better-announcebar": {
@@ -81,6 +75,12 @@
       "version": "0.0.1",
       "plugin-type": "injected"
     },
+    "MC-MIDIPlayer": {
+      "name": "前置_MIDI播放器",
+      "author": "SuperScript",
+      "version": "0.1.4",
+      "plugin-type": "classic"
+    },
     "雪球菜单v2": {
       "name": "雪球菜单",
       "author": "SuperScript",
@@ -96,7 +96,7 @@
     "prof_manager": {
       "name": "性能管理",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "清空玩家末影箱": {
@@ -138,7 +138,7 @@
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "井字棋": {
@@ -156,7 +156,7 @@
     "地图画导入": {
       "name": "地图画导入",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     }
   }

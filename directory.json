@@ -19,19 +19,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "前置-MIDI播放器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置-MIDI播放器/Musicreater": [
-        "__init__.py",
-        "main.py",
-        "subclass.py",
-        "utils.py",
-        "types.py",
-        "exceptions.py",
-        "constants.py"
-    ],
     "设置栏钢琴师": [
         "__init__.py",
         "使用方法.txt",
@@ -60,6 +47,19 @@
     "全服喇叭": [
         "__init__.py",
         "datas.json"
+    ],
+    "前置_MIDI播放器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "__init__.py",
+        "main.py",
+        "subclass.py",
+        "utils.py",
+        "types.py",
+        "exceptions.py",
+        "constants.py"
     ],
     "雪球菜单": [
         "__init__.py",
