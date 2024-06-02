@@ -3,7 +3,7 @@ from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli
 from dataclasses import dataclass
 from typing import Callable
 
-plugins.checkSystemVersion((0, 3, 20))
+plugins.checkSystemVersion((0, 7, 0))
 
 
 @dataclass
