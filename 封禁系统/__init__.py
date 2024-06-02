@@ -6,7 +6,7 @@ from tooldelta import plugins, Plugin, Frame, Builtins, Print, Config
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT = {"BanTo": 0, "Reason": ""}
 
@@ -26,7 +26,7 @@ class BanSystem(Plugin):
     def on_def(self):
         self.chatbar = plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
 
-    @Builtins.run_as_new_thread
+    @Builtins.thread_func
     def on_inject(self):
         self.chatbar.add_trigger(
             ["ban", "封禁"],
@@ -62,7 +62,7 @@ class BanSystem(Plugin):
         self.del_ban_data(player)
     # ----------------------------------
 
-    @Builtins.run_as_new_thread
+    @Builtins.thread_func
     def on_player_join(self, player: str):
         self.test_ban(player)
 
