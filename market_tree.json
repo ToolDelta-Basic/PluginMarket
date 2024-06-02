@@ -3,10 +3,10 @@
   "SourceName": "ToolDelta插件市场 Official",
   "Greetings": "§a欢迎使用 §bToolDelta 插件市场.",
   "MarketPlugins": {
-    "封禁系统": {
+    "song-choose": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "聊天栏菜单": {
