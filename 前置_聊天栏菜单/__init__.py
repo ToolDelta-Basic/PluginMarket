@@ -1,3 +1,4 @@
+
 from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli
 
 from dataclasses import dataclass
@@ -13,7 +14,6 @@ class ChatbarTriggers:
     func: Callable
     args_pd: Callable
     op_only: bool
-
 
 # 使用 api = plugins.get_plugin_api("聊天栏菜单") 来获取到这个api
 @plugins.add_plugin_as_api("聊天栏菜单")
