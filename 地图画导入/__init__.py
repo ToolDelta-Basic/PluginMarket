@@ -9,7 +9,7 @@ import time
 @plugins.add_plugin
 class MapArtImporter(Plugin):
     name = "地图画导入"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     author = "SuperScript"
     description = "导入图片到租赁服"
 
@@ -26,7 +26,7 @@ class MapArtImporter(Plugin):
             ["像素画"],
             "导入像素画",
             "<文件名> <x坐标> <y坐标> <z坐标>, <尺寸(默认为1x1, 格式: ?x?)>",
-            lambda player, args: self.frame.ClassicThread(
+            lambda player, args: self.frame.createThread(
                 self.menu_imp, (player, args)
             ),
         )

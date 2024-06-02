@@ -4,7 +4,7 @@ from tooldelta import plugins, Plugin
 class SettingsPiano(Plugin):
     name = "设置栏弹钢琴v2"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     description = "调节设置栏-世界选项的前8个选项会发出不同的乐音, 第九个选项可开启或关闭钢琴弹奏和键位锁定, 重生半径可设置音高域"
 
     lock = False
@@ -46,9 +46,9 @@ class SettingsPiano(Plugin):
                         self.game_ctrl.sendcmd("execute @a ~~~ playsound random.toast @s")
                     else:
                         self.game_ctrl.sendcmd("execute @a ~~~ playsound random.toast @s ~~~ 1 0.5")
-                return
+                return False
             case _:
-                return
+                return False
         if self.lock and isinstance(pkt['GameRules'][0]['Value'], bool):
             if  pk not in self.ks:
                 self.ks.append(pk)
@@ -57,6 +57,7 @@ class SettingsPiano(Plugin):
                 self.game_ctrl.sendwocmd(cmd)
             else:
                 self.ks.remove(pk)
+        return False
 
         # pvp
         # showcoordinates

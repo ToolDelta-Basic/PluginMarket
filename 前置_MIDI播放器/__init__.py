@@ -59,10 +59,10 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 1, 3)
+    version = (0, 1, 4)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
-    playsound_threads: dict[str, Builtins.createThread] = {}
+    playsound_threads: dict[int, Builtins.createThread] = {}
     _id_counter = 0
 
     # ---------------- API ---------------------

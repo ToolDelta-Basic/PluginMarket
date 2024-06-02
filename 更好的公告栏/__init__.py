@@ -36,14 +36,14 @@ class BetterAnnounce(Plugin):
         self.flush_gg()
         self.flush_announcement1()
 
-    @Builtins.new_thread
+    @Builtins.thread_func
     def flush_gg(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives remove 公告")
         time.sleep(0.3)
         self.game_ctrl.sendwocmd(f"/scoreboard objectives add 公告 dummy {self.ano_title}")
         self.game_ctrl.sendwocmd("/scoreboard objectives setdisplay sidebar 公告")
 
-    @Builtins.new_thread
+    @Builtins.thread_func
     def flush_announcement1(self):
         scmd = self.game_ctrl.sendwocmd
         ftime = 100

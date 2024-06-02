@@ -7,7 +7,7 @@ BYTES2MB = 1048576
 class EmergencyMetaMana(Plugin):
     name = "性能管理"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, f: Frame):
         super().__init__(f)
@@ -25,7 +25,7 @@ class EmergencyMetaMana(Plugin):
         self.frame.add_console_cmd_trigger(["性能", "top"], "[参数 或 -help]", "查看系统性能情况", self.chk_proc)
         Print.print_inf("在控制台输入 性能 以查看当前系统的性能.")
 
-    @Builtins.new_thread
+    @Builtins.thread_func
     def memory_mana(self):
         hi_used = 0
         while 1:

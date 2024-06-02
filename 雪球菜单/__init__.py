@@ -317,7 +317,7 @@ class SnowMenu(Plugin):
             return False
         return menu_cb
 
-    @Builtins.new_thread
+    @Builtins.thread_func("放置雪球菜单命令块")
     def place_cbs(self, player, _):
         x, y, z = self.getPosXYZ(player)
         for cbtype, cond, cmd in SNOWBALL_CMDS:
@@ -353,7 +353,7 @@ class SnowMenu(Plugin):
                 return False
         return False
 
-    @Builtins.new_thread
+    @Builtins.thread_func("雪球菜单切页")
     def next_page(self, player: str):
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         now_page = self.in_snowball_menu.get(player)
@@ -379,7 +379,7 @@ class SnowMenu(Plugin):
                     self.gc.player_actionbar(player, r)  # type: ignore
         self.show_page(player)
 
-    @Builtins.new_thread
+    @Builtins.thread_func("展示雪球菜单页")
     def show_page_thread(self, player: str):
         while player in self.in_snowball_menu.keys():
             self.show_page(player)
@@ -398,7 +398,7 @@ class SnowMenu(Plugin):
         )
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
 
-    @Builtins.new_thread
+    @Builtins.thread_func("雪球菜单执行")
     def menu_confirm(self, player: str):
         if player not in self.in_snowball_menu.keys():
             Print.print_war(f"玩家: {player} 雪球菜单确认异常: 不在雪球菜单页内")

@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "导入像素画, 支持多种图片格式, 还可以自定义地图画大小",
   "limit_launcher": null,
   "pre-plugins": {

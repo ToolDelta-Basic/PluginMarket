@@ -1,12 +1,14 @@
 import os, time
 from tooldelta import Plugin, plugins, Builtins
 from tooldelta.frame import Frame
+from tooldelta.plugin_load import TYPE_CHECKING
+from tooldelta.plugin_load.utils import getScore
 
 @plugins.add_plugin
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     musics_list = []
     MAX_SONGS_QUEUED = 6
@@ -20,7 +22,11 @@ class DJTable(Plugin):
     def on_def(self):
         self.midiplayer = plugins.get_plugin_api("MIDI播放器")
         self.chatmenu = plugins.get_plugin_api("聊天栏菜单")
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
+        if TYPE_CHECKING:
+            from 前置_MIDI播放器 import ToolMidiMixer
+            from 前置_聊天栏菜单 import ChatbarMenu
+            self.midiplayer = plugins.instant_plugin_api(ToolMidiMixer)
+            self.chatmenu = plugins.instant_plugin_api(ChatbarMenu)
         mdir = os.path.join(self.data_path, "音乐列表")
         for i in os.listdir(mdir):
             if i.endswith(".mid"):
@@ -51,7 +57,7 @@ class DJTable(Plugin):
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c此音乐未被收录")
         elif len(self.musics_list) >= self.MAX_SONGS_QUEUED:
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c等待列表已满，请等待这首歌播放完")
-        elif self.funclib.getScore("song_point", player) <= 0:
+        elif getScore("song_point", player) <= 0:
             self.game_ctrl.say_to(player, "§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
         else:
             self.musics_list.append((music_name, player))

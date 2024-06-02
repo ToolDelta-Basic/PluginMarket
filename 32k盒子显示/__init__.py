@@ -7,7 +7,7 @@ class Display32KShulkerBox(Plugin):
     name = "32k盒子显示"
     description = "检测32k盒子并反制"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, f: Frame):
         self.game_ctrl = f.get_game_control()
@@ -55,21 +55,22 @@ class Display32KShulkerBox(Plugin):
                 self.game_ctrl.sendcmd(f"/setblock {shulkerBoxPos} bedrock")
                 self.game_ctrl.say_to(
                     "@a",
-                    text=f"§4警报 §c发现坐标§e({shulkerBoxPos.replace(' ', ',')})§c的32k潜影盒，已自动保存并清除，最近玩家：{playerNearest}，结构方块结构名：",
+                    f"§4警报 §c发现坐标§e({shulkerBoxPos.replace(' ', ',')})§c的32k潜影盒，已自动保存并清除，最近玩家：{playerNearest}，结构方块结构名：",
                 )
                 self.game_ctrl.sendcmd(f"/tag {playerNearest} add ban")
                 self.game_ctrl.say_to(
-                    "@a[m=1]", text="§6" + structID + "§6，给予玩家的标签是ban"
+                    "@a[m=1]", "§6" + structID + "§6，给予玩家的标签是ban"
                 )
                 self.ban_sys.ban(playerNearest, time.time() + 1000000000, "使用 32k 潜影盒")
                 Print.print_war(
                     f"!!! 发现含32k的潜影盒, 坐标: {shulkerBoxPos}, 结构id: {structID}"
                 )
                 self.write32kBox(structID)
+        return False
 
     def on_menu(self, player: str, _):
         boxes = self.getAll32kBoxes()
-        if boxes.strip():
+        if boxes:
             for i in boxes:
                 self.game_ctrl.sendcmd(
                     f"/execute {player} ~~~ structure load {i} ~~~"
@@ -84,14 +85,14 @@ class Display32KShulkerBox(Plugin):
             self.game_ctrl.say_to(player, "§c没有检测到最近产生的32k潜影盒.")
 
     @staticmethod
-    def getAll32kBoxes() -> str:
+    def getAll32kBoxes() -> list[str]:
         try:
             with open("data/32kBoxes.txt", "r", encoding="utf-8") as f:
                 boxes = f.read().split("\n")
                 f.close()
             return boxes
         except FileNotFoundError:
-            return ""
+            return []
 
     @staticmethod
     def write32kBox(structID):
