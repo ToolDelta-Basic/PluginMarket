@@ -97,6 +97,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "音乐播放器": [
+        "__init__.py",
+        "datas.json"
+    ],
     "32k盒子显示": [
         "__init__.py",
         "datas.json"

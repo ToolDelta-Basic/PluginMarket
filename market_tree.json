@@ -76,9 +76,9 @@
       "plugin-type": "injected"
     },
     "MC-MIDIPlayer": {
-      "name": "前置_MIDI播放器",
+      "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.1.4",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "雪球菜单v2": {
