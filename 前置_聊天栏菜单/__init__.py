@@ -28,8 +28,6 @@ class ChatbarMenu(Plugin):
     >>> def MoYu(args):
             print("你摸了: ", " 和 ".join(args))
     >>> menu.add_trigger(["摸鱼", "摸鱼鱼"], "<鱼的名字>", "随便摸一下鱼", MoYu, lambda a: a >= 1)
-
-    触发词中含有空格也能被成功识别了哦
     """
 
     name = "聊天栏菜单"

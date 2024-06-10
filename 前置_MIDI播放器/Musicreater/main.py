@@ -681,7 +681,7 @@ class MidiConvert(MusicSequence):
             [i for j in self.channels.values() for i in j],
             key=lambda note: note.start_tick,
         )
-        res_list: list[str, int, int, int] = []
+        res_list: list[tuple[str, int, int, int]] = []
         delaytime_previous = 0
         for note in notes_list:
             tickdelay = note.start_tick - delaytime_previous
@@ -689,7 +689,7 @@ class MidiConvert(MusicSequence):
             delaytime_previous = note.start_tick
             # 响度 / 127
             # 音调 2 ** (f1 / 12)
-            res_list.append([note.sound_name, round(note.velocity / 127 * 100), note_pitch_f1, tickdelay])
+            res_list.append((note.sound_name, round(note.velocity / 127 * 100), note_pitch_f1, tickdelay))
         return res_list
 
     def copy_important(self):

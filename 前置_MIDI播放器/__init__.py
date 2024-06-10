@@ -23,20 +23,24 @@ class ToolSoundSequence:
                 instruments = [i.decode("ascii") for i in instruments_bts]
                 self.instruments = instruments
                 self.noteseq = noteseq
+                self._duration = 0
             except IndexError:
                 raise Exception("解码失败: 音符表错误")
         elif isinstance(seq, list):
             instrument_indexes: list[str] = []
             bt = b""
             newb = []
-            for instrument, vol, pitch, delay in seq:
+            duration = 0
+            for instrument, vol, pitch, delay_ticks in seq:
                 if instrument not in instrument_indexes:
                     instrument_indexes.append(instrument)
+                    duration += delay_ticks / 20
                 instrument_index = instrument_indexes.index(instrument)
-                newb.append(bytes([instrument_index, vol, pitch + 60, delay]))
+                newb.append(bytes([instrument_index, vol, pitch + 60, delay_ticks]))
             bt += b"\xfe".join(newb)
             self.instruments = instrument_indexes
             self.noteseq = bt
+            self._duration = duration
 
     def __iter__(self):
         seq = self.noteseq
@@ -49,6 +53,15 @@ class ToolSoundSequence:
             delay = l
             yield instrument, vol, pitch, delay
 
+    @property
+    def duration(self):
+        if self._duration == 0:
+            duration = 0
+            for i in self.noteseq.split(b"\xfe"):
+                duration += i[3] / 20
+            self._duration = duration
+        return self._duration
+
     def dump_seq(self):
         instruments = self.instruments
         bt = b"\xff".join(i.encode("ascii") for i in instruments)
@@ -59,7 +72,7 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 1, 4)
+    version = (0, 1, 5)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
     playsound_threads: dict[int, Builtins.createThread] = {}
@@ -86,8 +99,10 @@ class ToolMidiMixer(Plugin):
         return read_midi_and_dump_to_seq(path)
 
     def playsound_at_target(self, name_or_seq: str | ToolSoundSequence, target: str):
-        "创建播放器线程并返回线程ID, 以便使用 stop_playing() 停止线程"
+        "创建播放器线程并返回线程ID, 失败则返回0, 以便使用 stop_playing() 停止线程"
         self._id_counter += 1
+        if isinstance(name_or_seq, str) and name_or_seq not in self.midi_seqs.keys():
+            return 0
         self.playsound_threads[self._id_counter] = Builtins.createThread(
             self._playsound_at_target_thread, (name_or_seq, target, self._id_counter)
         )
@@ -110,6 +125,24 @@ class ToolMidiMixer(Plugin):
         for instrument, vol, pitch, delay in seq:
             scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
             time.sleep(delay / 20)
+
+    def iter_playsound(self, name_or_seq: str | ToolSoundSequence):
+        """
+        获取一个音乐播放遍历器
+
+        Args:
+            name_or_seq (str | ToolSoundSequence): _description_
+            target (str): _description_
+
+        Yields:
+            Iterator (str, float, float, float): 返回遍历器, 包括乐器类型, 音量, 音高, 延迟(s)
+        """
+        if isinstance(name_or_seq, ToolSoundSequence):
+            seq = name_or_seq
+        else:
+            seq = self.midi_seqs[name_or_seq]
+        for instrument, vol, pitch, delay in seq:
+            yield instrument, vol, pitch, delay/20
 
     # ------------------------------------------
 

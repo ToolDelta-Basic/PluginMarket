@@ -1,0 +1,12 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "description": "音乐播放器库API, 当然也可以简单地向全局玩家播放在主目录里的midi文件\n使用的MIDI解析和转换库所有者/组织: © 2024 音·创 开发者",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.2.3",
+    "MC-MIDIPlayer": "0.1.5"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "MC-MIDIPlayer"
+}
