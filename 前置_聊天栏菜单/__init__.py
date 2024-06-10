@@ -1,4 +1,3 @@
-
 from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli
 
 from dataclasses import dataclass
@@ -8,7 +7,7 @@ plugins.checkSystemVersion((0, 7, 0))
 
 @dataclass
 class ChatbarTriggers:
-    triggers: list
+    triggers: list[str]
     argument_hint: str | None
     usage: str
     func: Callable
@@ -29,11 +28,13 @@ class ChatbarMenu(Plugin):
     >>> def MoYu(args):
             print("你摸了: ", " 和 ".join(args))
     >>> menu.add_trigger(["摸鱼", "摸鱼鱼"], "<鱼的名字>", "随便摸一下鱼", MoYu, lambda a: a >= 1)
+
+    触发词中含有空格也能被成功识别了哦
     """
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 2)
+    version = (0, 2, 3)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -59,7 +60,7 @@ class ChatbarMenu(Plugin):
     # ----API----
     def add_trigger(
         self,
-        triggers: list[str] | None,
+        triggers: list[str],
         argument_hint: str | None,
         usage: str,
         func: Callable | None,
@@ -67,12 +68,14 @@ class ChatbarMenu(Plugin):
         op_only=False,
     ):
         """
-        triggers: 所有命令触发词
-        arg_hint: 提示词(命令参数)
-        usage: 显示的命令说明
-        func[Callable | None]: 菜单触发回调, 回调参数为(玩家名: str, 命令参数: list[str])
-        azrgs_pd: 判断方法 (参数数量:int) -> 参数数量是否合法: bool
-        op_only: 是否仅op可触发; 目前认为创造模式的都是OP, 你也可以自行更改并进行PR
+        添加菜单触发词项.
+        Args:
+            triggers (list[str]): 所有命令触发词
+            argument_hint (str | None): 提示词(命令参数)
+            usage (str): 显示的命令说明
+            func (Callable | None): 菜单触发回调, 回调参数为(玩家名: str, 命令参数: list[str])
+            args_pd ((int) -> bool): 判断方法 (参数数量:int) -> 参数数量是否合法: bool
+            op_only (bool): 是否仅op可触发; 目前认为创造模式的都是OP, 你也可以自行更改并进行PR
         """
         if func is None:
             func = lambda *args: None
@@ -117,6 +120,7 @@ class ChatbarMenu(Plugin):
                         )
                     )
             self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单尾"])
+
         elif msg.startswith("."):
             for tri in self.chatbar_triggers:
                 for trigger in tri.triggers:
@@ -134,4 +138,7 @@ class ChatbarMenu(Plugin):
                         if not tri.args_pd(len(args)):
                             self.game_ctrl.say_to(player, "§c菜单参数数量错误")
                             return
-                        tri.func(player, args)
+                        if " " in trigger:
+                            tri_split_num = len(trigger.split()) - 1
+
+                        tri.func(player, args[tri_split_num:])

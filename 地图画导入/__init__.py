@@ -1,19 +1,18 @@
-from email.mime import base
-from tooldelta import Plugin, plugins, Print
-from tooldelta.frame import Frame
+import tooldelta
 
 from PIL import Image
 import time
 
+tooldelta.plugins.checkSystemVersion((0, 7, 3))
 
-@plugins.add_plugin
-class MapArtImporter(Plugin):
+@tooldelta.plugins.add_plugin
+class MapArtImporter(tooldelta.Plugin):
     name = "地图画导入"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     author = "SuperScript"
     description = "导入图片到租赁服"
 
-    def __init__(self, frame: Frame):
+    def __init__(self, frame: tooldelta.ToolDelta):
         self.color_cache = {}
         self.color_mapping = {}
         self.default_block = "concrete"
@@ -21,7 +20,10 @@ class MapArtImporter(Plugin):
         self.game_ctrl = frame.get_game_control()
 
     def on_inject(self):
-        self.menu = plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
+        self.menu = tooldelta.plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
+        if tooldelta.TYPE_CHECKING:
+            from 前置_聊天栏菜单 import ChatbarMenu
+            self.menu = tooldelta.plugins.instant_plugin_api(ChatbarMenu)
         self.menu.add_trigger(
             ["像素画"],
             "导入像素画",
@@ -33,9 +35,9 @@ class MapArtImporter(Plugin):
 
     def get_nearest_color_block(self, rvalue, gvalue, bvalue):
         if self.color_cache.get((rvalue, gvalue, bvalue)):
-            return self.color_cache.get((rvalue, gvalue, bvalue))
+            return self.color_cache[(rvalue, gvalue, bvalue)]
         max_weight_reversed = 10000000
-        max_matches = (0, 0, 0)
+        max_matches = "stone", 0
         for i, item in enumerate(color_map):
             _, (r, g, b) = item
             weight = (r - rvalue) ** 2 + (g - gvalue) ** 2 + (b - bvalue) ** 2
@@ -78,10 +80,10 @@ class MapArtImporter(Plugin):
                 progress += 256
                 nowprogresspcent = int(progress / TOTAL * 100)
                 _prgs = int(progress / TOTAL * 20)
-                nowprogresstext = Print.colormode_replace(
+                nowprogresstext = tooldelta.Print.colormode_replace(
                     "§e" + " " * _prgs + "§c" + " " * (20 - _prgs) + "§r", 7
                 )
-                Print.print_with_info(
+                tooldelta.Print.print_with_info(
                     f"§b像素画导入进度:  {nowprogresstext}   §a{nowprogresspcent}% {progress}/{TOTAL}",
                     end="\r",
                 )
@@ -112,7 +114,7 @@ class MapArtImporter(Plugin):
                         scmd(
                             f"/setblock {re_xpos + limx} {baseYP} {re_zpos + limz} {neBlock} {neBlock_spec}"
                         )
-        Print.print_suc("像素画导入成功")
+        tooldelta.Print.print_suc("像素画导入成功")
         self.color_cache.clear()
 
     def menu_imp(self, player, args):
