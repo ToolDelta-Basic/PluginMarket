@@ -76,9 +76,9 @@
       "plugin-type": "injected"
     },
     "MC-MIDIPlayer": {
-      "name": "音乐播放器",
+      "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.1.6",
       "plugin-type": "classic"
     },
     "雪球菜单v2": {
@@ -134,6 +134,12 @@
       "author": "wling/7912",
       "version": "0.0.1",
       "plugin-type": "injected"
+    },
+    "MusicPlayer": {
+      "name": "音乐播放器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
     },
     "32k盒子显示": {
       "name": "32k盒子显示",
