@@ -1,4 +1,4 @@
-from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli
+from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli, Utils
 
 from dataclasses import dataclass
 from typing import Callable
@@ -32,7 +32,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 3)
+    version = (0, 2, 4)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -97,6 +97,10 @@ class ChatbarMenu(Plugin):
             ).SuccessCount) # type: ignore
 
     def on_player_message(self, player: str, msg: str):
+        # 相当于开启聊天栏菜单线程锁
+        Utils.create_dialogue_threading(player, self.on_player_msg, self.on_menu_warn, args = (player, msg,))
+
+    def on_player_msg(self, player: str, msg: str):
         player_is_op = self.is_op(player)
         if msg in self.cfg["/help触发词"]:
             self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
@@ -140,3 +144,6 @@ class ChatbarMenu(Plugin):
                             tri_split_num = len(trigger.split()) - 1
 
                         tri.func(player, args[tri_split_num:])
+
+    def on_menu_warn(self, player: str):
+        self.game_ctrl.say_to(player, "§c退出当前菜单才能继续唤出菜单")
