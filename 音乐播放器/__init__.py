@@ -9,13 +9,13 @@ class PlayerMusicStatus:
     now: float
     duration: float
     is_stop: bool
-    thread: tooldelta.Utils.ToolDeltaThread
+    thread: tooldelta.Utils.createThread
 
 @tooldelta.plugins.add_plugin
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
         CFG_DEFAULT = {
@@ -90,7 +90,7 @@ class MusicPlayer(tooldelta.Plugin):
                 status = PlayerMusicStatus(
                     song_name, 0, self.midiplayer.midi_seqs[song_name].duration, False, None # type: ignore
                 )
-                thread = tooldelta.Utils.ToolDeltaThread(
+                thread = tooldelta.Utils.createThread(
                     self.playmusic_thread, (player, song_name, status)
                 )
                 status.thread = thread
@@ -117,8 +117,8 @@ class MusicPlayer(tooldelta.Plugin):
         parent.duration = self.midiplayer.midi_seqs[music_name].duration
         try:
             for instrument, vol, pitch, delay in  self.midiplayer.iter_playsound(music_name):
-                scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
                 time.sleep(delay)
+                scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
                 now_play += delay
                 parent.now = now_play
                 if parent.is_stop:

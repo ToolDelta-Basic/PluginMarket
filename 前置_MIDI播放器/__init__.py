@@ -2,6 +2,8 @@ import time, os
 import Musicreater
 from tooldelta import Plugin, plugins, Builtins, Print
 
+# API 名: MIDI播放器
+
 def seq_chunk_split(s: bytes, chunk_size: int = 4):
     res = []
     while s != b"":
@@ -72,7 +74,7 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 1, 6)
+    version = (0, 1, 7)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
     playsound_threads: dict[int, Builtins.createThread] = {}
@@ -123,8 +125,8 @@ class ToolMidiMixer(Plugin):
             seq = self.midi_seqs[name_or_seq]
         scmd = self.game_ctrl.sendwocmd
         for instrument, vol, pitch, delay in seq:
-            scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
             time.sleep(delay / 20)
+            scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
 
     def iter_playsound(self, name_or_seq: str | ToolSoundSequence):
         """
