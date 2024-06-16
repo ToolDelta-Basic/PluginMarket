@@ -306,7 +306,7 @@ CQHTTP_EVENT_HANDLE_MSG_PAG:str = '''
 class GroupServerInterworking(Plugin):
     name = "群服互通"
     author = "xingchen"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         self.frame: Frame = frame
@@ -342,7 +342,7 @@ class GroupServerInterworking(Plugin):
         return os.path.exists(self.base_SIGN_dir) and os.path.exists(os.path.join(self.base_SIGN_dir, "unidbg-fetch-qsign-1.1.9"))
 
     def Initialize(self) -> None:
-        self.game_ctrl.say_to('@a', f'[§bToolDelta控制台§r] 插件 - §e群服互通 - v{".".join(map(str, self.version))}§r 成功启动!')
+        self.game_ctrl.say_to('@a', f'[§bToolDelta控制台§r] 插件 - §e{self.name} - v{".".join(map(str, self.version))}§r 成功被加载!')
         self.Setup_Menu()
         if not self.if_cqhttp_in_dir():
             Print.print_load("CQ-HTTP目录不存在或未安装，开始尝试安装CQ-HTTP...")
@@ -365,6 +365,7 @@ class GroupServerInterworking(Plugin):
                 threading.Thread(target=self.Process_Run_SIGN_SERVER, name="SIGN-SERVER运行线程").start()
                 self.IF_PRE_SIGN_SERVER_RUNNING(timeout=4)
                 threading.Thread(target=self.Handle_SIGN_SERVER_Message, name="SIGN-SERVER消息处理主线程").start()
+        os.system(f"chmod 777 {self.base_dir}")
         Print.print_load("正在启动 CQHTTP-事件上报服务器...")
         self.CQHTTPEHCore = self.CQHTTPEventHandleCore(self)
         threading.Thread(target=self.CQHTTPEHCore.Initialize, name="CQHTTP-事件上报服务端运行线程").start()
@@ -407,22 +408,25 @@ class GroupServerInterworking(Plugin):
     def use_in_sys_jdk(self) -> bool:
         if self.sys_type == "windows":
             raise Exception("该函数不支持Windows系统调用！")
-        versionMsg = subprocess.check_output("java --version", shell=True).decode("utf-8")
-        which_java = (subprocess.check_output("which java", shell=True).decode("utf-8")).replace("\n", "")
-        if "not found" in versionMsg or "不是内部或外部命令，也不是可运行的程序或批处理文件。" in versionMsg:return False
-        if not os.path.exists("/usr/bin/java") and len(which_java) < 6:return False
-        if not "command not found" in versionMsg:
-            jdk_path = self.resolve_symlink(which_java)
-            if jdk_path is None:
-                return False
-            jdk_path = self.extract_path_with_bin(jdk_path)
-            old = self.TMPJson.read(self.ConfigPath)
-            old["配置项"]["JDK位置"] = jdk_path
-            self.TMPJson.write_as_tmp(self.ConfigPath, old)
-            self.reload_PathJson(self.ConfigPath)
-            Print.print_suc(f"将使用系统内已存在的JDK {jdk_path}")
-            return True
-        return False
+        try:
+            versionMsg = subprocess.check_output("java --version", shell=True).decode("utf-8")
+            which_java = (subprocess.check_output("which java", shell=True).decode("utf-8")).replace("\n", "")
+            if "not found" in versionMsg or "不是内部或外部命令，也不是可运行的程序或批处理文件。" in versionMsg:return False
+            if not os.path.exists("/usr/bin/java") and len(which_java) < 6:return False
+            if not "command not found" in versionMsg:
+                jdk_path = self.resolve_symlink(which_java)
+                if jdk_path is None:
+                    return False
+                jdk_path = self.extract_path_with_bin(jdk_path)
+                old = self.TMPJson.read(self.ConfigPath)
+                old["配置项"]["JDK位置"] = jdk_path
+                self.TMPJson.write_as_tmp(self.ConfigPath, old)
+                self.reload_PathJson(self.ConfigPath)
+                Print.print_suc(f"将使用系统内已存在的JDK {jdk_path}")
+                return True
+            return False
+        except Exception as e:
+            return False
 
     def extract_path_with_bin(self, input_str) -> str | None:
         bin_index = input_str.find('bin')
@@ -873,7 +877,7 @@ class GroupServerInterworking(Plugin):
                 Message: str = packet["Message"]
                 for gid in self.enabled_groups:self.SMTC.send_group_message(int(gid), f"[群服互通] [{SourceName}]: {Message}")
         return False
-
+    
     class MESSAGE_LIST_CTL(object):
         def __init__(self):
             self.MESSAGE_LIST: list = []
