@@ -1,6 +1,6 @@
 {
     "author": "xingchen",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "将部分使用功能封装成的功能库",
     "limit_launcher": null,
     "pre-plugins": {},

@@ -16,7 +16,7 @@ class UpdatePlayerAttributes:
 class ToolDeltaFuncLib1(Plugin):
     name = "前置-功能封装库-1"
     author = "xingchen"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     def __init__(self, frame: Frame):
         self.frame: Frame = frame
         self.game_ctrl: any = frame.get_game_control()
@@ -36,10 +36,12 @@ class ToolDeltaFuncLib1(Plugin):
         """
         def deco(func: Callable[[UpdatePlayerAttributes], bool]):
             if isinstance(players, str):
-                self.listener_players_update_attributes_listener.append((players, func))
+                if players in self.frame.link_game_ctrl.allplayers:
+                    self.listener_players_update_attributes_listener.append((players, func))
             elif isinstance(players, list):
                 for player in players:
-                    self.listener_players_update_attributes_listener.append((player, func))
+                    if players in self.frame.link_game_ctrl.allplayers:
+                        self.listener_players_update_attributes_listener.append((player, func))
         return deco
     
     @plugins.add_packet_listener(packets.PacketIDS.IDUpdateAttributes)
@@ -78,6 +80,17 @@ class ToolDeltaFuncLib1(Plugin):
                 return player.name
         return None
     
+    def on_player_leave(self, player_name: str):
+        """
+        玩家离开游戏时触发，用于删除已退出玩家，防止异常报错
+
+        Args:
+            player_name (str): 玩家名
+
+        """
+        if player_name in [listener[0] for listener in self.listener_players_update_attributes_listener]:
+            self.listener_players_update_attributes_listener = [(name, func) for name, func in self.listener_players_update_attributes_listener if name != player_name]
+
     def __tp_player__(self) -> None:
         """
         内部方法，循环 TP 到被监听事件的玩家位置（模糊）
