@@ -7,6 +7,75 @@
         "datas.json",
         "__init__.py"
     ],
+    "bdx导入器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "bdx导入器/BDXConverter": [
+        "__init__.py"
+    ],
+    "bdx导入器/BDXConverter/Operation": [
+        "PlaceBlockWithCommandBlockData.py",
+        "PlaceBlockWithBlockStatesDeprecated.py",
+        "PlaceBlockWithBlockStates.py",
+        "CreateConstantString.py",
+        "AddInt32ZValue.py",
+        "PlaceCommandBlockWithCommandBlockData.py",
+        "SubtractXValue.py",
+        "PlaceRuntimeBlockWithCommandBlockData.py",
+        "AddInt32XValue.py",
+        "structOfChest.py",
+        "PlaceBlock.py",
+        "SubtractZValue.py",
+        "AddInt32YValue.py",
+        "AddInt32ZValue0.py",
+        "AddInt16XValue.py",
+        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
+        "UseRuntimeIDPool.py",
+        "AddZValue0.py",
+        "NOP.py",
+        "AddInt8XValue.py",
+        "AddInt8YValue.py",
+        "PlaceBlockWithNBTData.py",
+        "SubtractYValue.py",
+        "PlaceBlockWithChestData.py",
+        "AddZValue.py",
+        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
+        "PlaceBlockWithRuntimeId.py",
+        "AddYValue.py",
+        "AddInt16YValue.py",
+        "AddInt16ZValue0.py",
+        "AddXValue.py",
+        "PlaceRuntimeBlock.py",
+        "AssignDebugData.py",
+        "__init__.py",
+        "AddInt8ZValue.py",
+        "AddInt16ZValue.py",
+        "PlaceRuntimeBlockWithChestData.py",
+        "SetCommandBlockData.py"
+    ],
+    "bdx导入器/BDXConverter/General": [
+        "Operation.py",
+        "Pool.py",
+        "GeneralClass.py",
+        "__init__.py"
+    ],
+    "bdx导入器/BDXConverter/utils": [
+        "marshalNBT.py",
+        "unmarshalNBT_OldVersion.py",
+        "unmarshalNBT.py",
+        "getString.py",
+        "getByte.py",
+        "marshalNBT_OldVersion.py",
+        "__init__.py"
+    ],
+    "bdx导入器/BDXConverter/Converter": [
+        "ErrorClassDefine.py",
+        "Signature.py",
+        "FileOperation.py",
+        "Converter.py",
+        "__init__.py"
+    ],
     "控制台执行MC指令": [
         "datas.json",
         "__init__.py"

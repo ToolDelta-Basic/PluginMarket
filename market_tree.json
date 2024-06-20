@@ -15,6 +15,12 @@
       "version": "0.0.1",
       "plugin-type": "injected"
     },
+    "bbdx-importer": {
+      "name": "bdx导入器",
+      "author": "xingchen/SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "控制台执行MC指令": {
       "name": "控制台执行MC指令",
       "author": "SuperScript",
