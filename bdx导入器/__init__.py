@@ -18,6 +18,8 @@ class BDX_BDump(Plugin):
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
             self.interact = plugins.instant_plugin_api(GameInteractive)
+        Print.print_inf("§bBDX加载器 使用了来自 \"github.com/TriM-Organization/BDXConverter\" 的开源库")
+        Print.print_inf("其作者为 Eternal Crystal (Happy2018New)")
 
     def on_inject(self):
         self.get_x: float | None = None
