@@ -1,13 +1,13 @@
 from tooldelta import Plugin, Print, Utils, plugins, TYPE_CHECKING, game_utils
 import os, time
-from BDXConverter.Converter.Converter import BDX_2
-from BDXConverter import ReadBDXFile
+from .BDXConverter.Converter.Converter import BDX_2
+from .BDXConverter import ReadBDXFile
 
 @plugins.add_plugin
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
     author = "xingchen/SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -19,7 +19,7 @@ class BDX_BDump(Plugin):
             from 前置_世界交互 import GameInteractive
             self.interact = plugins.instant_plugin_api(GameInteractive)
         Print.print_inf("§bBDX加载器 使用了来自 \"github.com/TriM-Organization/BDXConverter\" 的开源库")
-        Print.print_inf("其作者为 Eternal Crystal (Happy2018New) (其他协作者请在项目内查看)")
+        Print.print_inf("§b其第一作者为 Eternal Crystal (Happy2018New) (其他协作者请在项目内查看)")
 
     def on_inject(self):
         self.get_x: float | None = None
@@ -76,6 +76,9 @@ class BDX_BDump(Plugin):
         Print.print_suc("bdx 导入完成")
 
     def progress_bar(self, name: str, curr, tota, sped):
+        if tota == 0:
+            Print.print_war("总进度为0")
+            return
         n = round(curr / tota * 30)
         p = "§b" + "|" * n + "§f" + "|" * (30 - n)
         self.game_ctrl.player_actionbar("@a", f"导入 {name} 进度: §l{curr} §7/ {tota} 速度： {sped}方块每秒 §r\n{p}")
@@ -102,7 +105,7 @@ class BDumpOP:
         block_p = 0
         self.scmd(f"/tp {self.f.game_ctrl.bot_name} {x} {y} {z}")
 
-        # wo/execute Super_AFK ~~~ fill ~~~~40~15~40 air
+        # wo/execute SkyblueSuper ~~~ fill ~~~~40~15~40 air
 
         for i in self._bdx.BDXContents:
             time.sleep(delay)
@@ -146,9 +149,13 @@ class BDumpOP:
                         i.trackOutput,
                         i.executeOnFirstTick
                     )
-                    self.f.interact.place_command_block(pck, i.blockData, 0.05)
+                    if hasattr(i, "blockData"):
+                        self.f.interact.place_command_block(pck, i.blockData, 0.05)
+                    else:
+                        self.f.interact.place_command_block(pck, i.data, 0.05)
                 case 41:
                     nbt_data = i.blockNBT
+                    Print.print_war(f"BDX导入器: 忽略NBT {nbt_data}")
 
             if abs(x - bot_x) + abs(y - bot_y) + abs(z - bot_z) > 5:
                 self.scmd(f"/tp @a[name={self.gc.bot_name}] {x} {y} {z}")
@@ -162,7 +169,7 @@ class BDumpOP:
                 block_p = now_len
                 self.f.progress_bar(self.name, now_len, total_len, bspeed)
         # ok
-        self.f.progress_bar(self.name, now_len, total_len, 0)
+        self.f.game_ctrl.player_actionbar("@a", f"§fBDX文件 {self.name} 导入完成.")
 
     def get_bdx_length_2_show(self):
         # not archieved

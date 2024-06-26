@@ -2,7 +2,7 @@ import ujson as json
 import time
 from typing import Callable, Literal
 from dataclasses import dataclass
-from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print
+from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print, TYPE_CHECKING
 import threading
 
 @dataclass
@@ -118,7 +118,7 @@ default_page = MultiPage(
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -173,6 +173,7 @@ class SnowMenu(Plugin):
         """
         self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
+        outer_self = self
         class _cb:
             def __init__(self):
                 self.event = threading.Event()
@@ -182,6 +183,7 @@ class SnowMenu(Plugin):
             def ok(self, _, page):
                 self.page = page
                 self.event.set()
+                outer_self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
             def exit(self, _):
                 self.page = None
                 self.event.set()
@@ -245,12 +247,13 @@ class SnowMenu(Plugin):
         self.getPosXYZ = plugins.get_plugin_api("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
         self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
         chatbar = plugins.get_plugin_api("聊天栏菜单")
-        from 前置_基本插件功能库 import BasicFunctionLib
-        from 前置_世界交互 import GameInteractive
-        from 前置_聊天栏菜单 import ChatbarMenu
-        self.getPosXYZ = plugins.instant_plugin_api(BasicFunctionLib).getPosXYZ_Int
-        self.interact = plugins.instant_plugin_api(GameInteractive)
-        chatbar = plugins.instant_plugin_api(ChatbarMenu)
+        if TYPE_CHECKING:
+            from 前置_基本插件功能库 import BasicFunctionLib
+            from 前置_世界交互 import GameInteractive
+            from 前置_聊天栏菜单 import ChatbarMenu
+            self.getPosXYZ = plugins.instant_plugin_api(BasicFunctionLib).getPosXYZ_Int
+            self.interact = plugins.instant_plugin_api(GameInteractive)
+            chatbar = plugins.instant_plugin_api(ChatbarMenu)
         chatbar.add_trigger(["snowmenu-init"], None, "初始化雪球菜单所需命令方块", self.place_cbs, op_only=True)
 
     def on_player_join(self, player: str):
@@ -263,7 +266,6 @@ class SnowMenu(Plugin):
         self.in_snowball_menu[player] = page
         if isinstance(page, MultiPage):
             self.multi_snowball_page[player] = page_sub_id
-        self.show_page(player)
 
     def on_player_leave(self, player: str):
         if player in self.in_snowball_menu.keys():
@@ -400,6 +402,7 @@ class SnowMenu(Plugin):
 
     @Builtins.thread_func("雪球菜单执行")
     def menu_confirm(self, player: str):
+        # 确认选项
         if player not in self.in_snowball_menu.keys():
             Print.print_war(f"玩家: {player} 雪球菜单确认异常: 不在雪球菜单页内")
             return
@@ -413,13 +416,19 @@ class SnowMenu(Plugin):
         else:
             self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
             if res == True:
+                # 保留在本页
                 pass
             elif res == False:
+                # 不应该被执行
                 raise ValueError("菜单项不可返回 False")
             elif isinstance(res, (Page, MultiPage)):
+                # 跳转到另一个页面
                 self.set_player_page(player, res, 0)
-            else:
+            elif isinstance(res, tuple):
+                # 跳转到另一个页面 并指定在第几页
                 self.set_player_page(player, res[0], res[1])
+            else:
+                raise ValueError(f"返回不可以是 {res}")
 
     def menu_escape(self, player: str):
         if player not in self.in_snowball_menu.keys():
