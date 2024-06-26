@@ -1,12 +1,12 @@
 from tooldelta import Frame, plugins, Plugin
-from tooldelta.plugin_load.utils import getTarget
+from tooldelta.game_utils import getTarget
 
 import time
 
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
@@ -83,7 +83,7 @@ class WorldEdit(Plugin):
                     getZend = int(jsonPkt["NBTData"]["z"])
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", "§cERROR：目标选择器报错 §c " + str(err))
+                    self.game_ctrl.say_to("@a", f"§cERROR：目标选择器报错 §6{(placeX, placeY, placeZ)}")
                 blockData = text[8:].replace("陶瓦", "stained_hardened_clay")
                 try:
                     if signPlayerName in getTarget("@a[m=1]"):
@@ -109,7 +109,7 @@ class WorldEdit(Plugin):
             ):
                 try:
                     if not self.getX:
-                        raise AssertionError
+                        raise AssertionError("还未获取起点坐标")
                     signPlayerName = getTarget(
                         f"@a[x={jsonPkt['NBTData']['x']}, y={jsonPkt['NBTData']['y']}, z={jsonPkt['NBTData']['z']}, c=1, r=10]"
                     )[0]
@@ -126,7 +126,7 @@ class WorldEdit(Plugin):
                             ),
                         )
                 except Exception as err:
-                    self.game_ctrl.say_to("@a", "§cCan't execute because " + str(err))
+                    self.game_ctrl.say_to("@a", f"§c无法执行方块批量复制操作， 因为 {err} ({err.__class__.__name__})")
         return False
 
     def fillwith(self, sx, sy, sz, dx, dy, dz):
