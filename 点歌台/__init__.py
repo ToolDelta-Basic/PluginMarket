@@ -1,8 +1,8 @@
 import os, time
 from tooldelta import Plugin, plugins, Builtins
-from tooldelta.frame import Frame
+from tooldelta.frame import ToolDelta
 from tooldelta.plugin_load import TYPE_CHECKING
-from tooldelta.plugin_load.utils import getScore
+from tooldelta.game_utils import getScore
 
 @plugins.add_plugin
 class DJTable(Plugin):
@@ -14,7 +14,7 @@ class DJTable(Plugin):
     MAX_SONGS_QUEUED = 6
     can_stop = None
 
-    def __init__(self, frame: Frame):
+    def __init__(self, frame: ToolDelta):
         super().__init__(frame)
         os.makedirs(self.data_path, exist_ok=True)
         os.makedirs(os.path.join(self.data_path, "音乐列表"), exist_ok=True)
