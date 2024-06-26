@@ -89,6 +89,9 @@
         "datas.json",
         "__init__.py"
     ],
+    "plugin_package": [
+        "基础功能包.json"
+    ],
     "井字棋": [
         "datas.json",
         "__init__.py"
