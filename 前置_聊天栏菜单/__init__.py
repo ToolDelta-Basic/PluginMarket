@@ -1,9 +1,9 @@
-from tooldelta import plugins, Plugin, Frame, Builtins, Config, launch_cli, Utils
+from tooldelta import plugins, Plugin, Frame, Config, launch_cli, Utils
 
 from dataclasses import dataclass
 from typing import Callable
 
-plugins.checkSystemVersion((0, 7, 0))
+plugins.checkSystemVersion((0, 7, 5))
 
 @dataclass
 class ChatbarTriggers:
@@ -32,19 +32,21 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 4)
+    version = (0, 2, 5)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
             "菜单头": "§7>>> §l§bＴｏｏｌＤｅｌｔａ\n§r§l===============================",
             "菜单列表": " - [菜单指令][参数提示] §7§o[菜单功能说明]",
-            "菜单尾": "§r§l=============================\n§r>>> §7Producted by §fToolDelta",
+            "菜单尾": "§r§l==========[[当前页数] §7/ [总页数]§f]===========\n§r>>> §7输入 .help <页数> 可以跳转到该页",
         },
         "/help触发词": [".help"],
+        "单页内最多显示数": 6
     }
     STD_CFG_TYPE = {
         "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
         "/help触发词": Config.JsonList(str),
+        "单页内最多显示数": Config.PInt
     }
     chatbar_triggers: list[ChatbarTriggers] = []
 
@@ -62,7 +64,7 @@ class ChatbarMenu(Plugin):
         argument_hint: str | None,
         usage: str,
         func: Callable | None,
-        args_pd=lambda _: True,
+        args_pd: Callable[[int], bool] = lambda _: True,
         op_only=False,
     ):
         """
@@ -96,34 +98,70 @@ class ChatbarMenu(Plugin):
                 "/testfor @a[name=" + player + ",m=1]", True
             ).SuccessCount) # type: ignore
 
-    def on_player_message(self, player: str, msg: str):
-        # 相当于开启聊天栏菜单线程锁
-        Utils.create_dialogue_threading(player, self.on_player_msg, self.on_menu_warn, args = (player, msg,))
-
-    def on_player_msg(self, player: str, msg: str):
+    def show_menu(self, player: str, page: int):
+        # page min = 1
         player_is_op = self.is_op(player)
-        if msg in self.cfg["/help触发词"]:
-            self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
-            for tri in self.chatbar_triggers:
-                if not tri.op_only or (player_is_op and tri.op_only):
-                    self.game_ctrl.say_to(
-                        player,
-                        Builtins.SimpleFmt(
-                            {
-                                "[菜单指令]": ("§e" if tri.op_only else "") + " / ".join(tri.triggers) + "§r",
-                                "[参数提示]": (
-                                    " " + tri.argument_hint if tri.argument_hint else ""
-                                ),
-                                "[菜单功能说明]": (
-                                    "" if tri.usage is None else "以" + tri.usage
-                                ),
-                            },
-                            self.cfg["help菜单样式"]["菜单列表"]
+        all_menu_args = self.chatbar_triggers
+        if not player_is_op:
+            # 仅 OP 可见的部分 过滤掉
+            all_menu_args = list(filter(lambda x:not x.op_only, all_menu_args))
+        lmt = self.cfg["单页内最多显示数"]
+        total = len(all_menu_args)
+        max_page = round(total / lmt)
+        if page < 1:
+            page_split_index = 0
+        elif page > max_page:
+            page_split_index = max_page - 1
+        else:
+            page_split_index = page - 1
+        diplay_menu_args = all_menu_args[page_split_index * lmt : (page_split_index + 1) * lmt]
+        self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
+        for tri in diplay_menu_args:
+            self.game_ctrl.say_to(
+                player,
+                Utils.simple_fmt(
+                    {
+                        "[菜单指令]": ("§e" if tri.op_only else "") + " / ".join(tri.triggers) + "§r",
+                        "[参数提示]": (
+                            " " + tri.argument_hint if tri.argument_hint else ""
+                        ),
+                        "[菜单功能说明]": (
+                            "" if tri.usage is None else "以" + tri.usage
                         )
-                    )
-            self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单尾"])
+                    },
+                    self.cfg["help菜单样式"]["菜单列表"]
+                )
+            )
+        self.game_ctrl.say_to(
+            player,
+            Utils.simple_fmt(
+                {
+                    "[当前页数]": page_split_index + 1,
+                    "[总页数]": max_page
+                },
+                self.cfg["help菜单样式"]["菜单尾"]
+            )
+        )
 
-        elif msg.startswith("."):
+    @Utils.thread_func("聊天栏菜单执行")
+    def on_player_message(self, player: str, msg: str):
+        player_is_op = self.is_op(player)
+        for tri in self.cfg["/help触发词"]:
+            if msg.startswith(tri):
+                with Utils.ChatbarLock(player, self.on_menu_warn):
+                    # 这是 help 帮助的触发词
+                    m = msg.split()
+                    if len(m) == 1:
+                        self.show_menu(player, 1)
+                    else:
+                        if (page_num := Utils.try_int(m[1])) is None:
+                            self.game_ctrl.say_to(player, "§chelp 命令应为1个参数: <页数: 正整数>")
+                        else:
+                            self.show_menu(player, page_num)
+                return
+
+        if msg.startswith("."):
+            # 这可能是触发词
             for tri in self.chatbar_triggers:
                 for trigger in tri.triggers:
                     if msg.startswith(trigger):
@@ -141,9 +179,13 @@ class ChatbarMenu(Plugin):
                             self.game_ctrl.say_to(player, "§c菜单参数数量错误")
                             return
                         if " " in trigger:
-                            tri_split_num = len(trigger.split()) - 1
-
-                        tri.func(player, args[tri_split_num:])
+                            with Utils.ChatbarLock(player, self.on_menu_warn):
+                                tri_split_num = len(trigger.split()) - 1
+                                tri.func(player, args[tri_split_num:])
+                        else:
+                            with Utils.ChatbarLock(player, self.on_menu_warn):
+                                tri_split_num = 0
+                                tri.func(player, args)
 
     def on_menu_warn(self, player: str):
         self.game_ctrl.say_to(player, "§c退出当前菜单才能继续唤出菜单")

@@ -1,9 +1,10 @@
 {
-  "author": "SuperScript",
-  "version": "0.2.4",
-  "description": "所有使用到聊天栏菜单的组件的前置组件",
-  "limit_launcher": null,
-  "pre-plugins": {},
-  "plugin-type": "classic",
-  "plugin-id": "聊天栏菜单"
+    "author": "SuperScript",
+    "version": "0.2.5",
+    "description": "所有使用到聊天栏菜单的组件的前置组件",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "聊天栏菜单",
+    "enabled": true
 }
