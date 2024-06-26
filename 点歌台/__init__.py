@@ -8,7 +8,7 @@ from tooldelta.game_utils import getScore
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 2)
+    version = (0, 1, 3)
 
     musics_list = []
     MAX_SONGS_QUEUED = 6
