@@ -18,7 +18,7 @@
     "bbdx-importer": {
       "name": "bdx导入器",
       "author": "xingchen/SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
@@ -54,7 +54,7 @@
     "雪球菜单v2": {
       "name": "雪球菜单",
       "author": "SuperScript",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "prof_manager": {
