@@ -180,7 +180,7 @@
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "injected"
     }
   }
