@@ -19,6 +19,12 @@ except:
     Print.print_err("需要前置组件 聊天栏菜单")
     raise SystemExit
 
+__plugin_meta__ = {
+    "name": "五子棋小游戏",
+    "version": "0.0.3",
+    "author": "SuperScript",
+}
+
 class Super_AFKGobangBasic:
     """
     SuperGobang v SuperScript|SuperAFK
@@ -28,7 +34,7 @@ class Super_AFKGobangBasic:
     waitingCache = {}
     cacheUID = 0
     DESCRIPTION = __doc__
-    __version__ = "0.0.1"
+    __version__ = __plugin_meta__["version"]
     class Room:
         def __init__(self, _1P: str, _2P: str):
             self.playerA = _1P

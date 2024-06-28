@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "plugin-type": "injected",
     "description": "输入 .wzq <对手名> 开始一局五子棋小游戏！",
     "pre-plugins": {
