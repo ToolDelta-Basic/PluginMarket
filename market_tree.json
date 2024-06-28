@@ -171,23 +171,17 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "gobang_game": {
-      "name": "五子棋",
-      "author": "SuperScript",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
     "入服欢迎": {
       "name": "入服欢迎",
       "author": "wling",
       "version": "0.0.1",
       "plugin-type": "injected"
     },
-    "五子棋小游戏": {
+    "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
       "version": "0.0.2",
-      "plugin-type": "classic"
+      "plugin-type": "injected"
     }
   }
 }
