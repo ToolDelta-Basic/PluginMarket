@@ -1,5 +1,6 @@
 {
     "简易建造": [
+        "readme.txt",
         "datas.json",
         "__init__.py"
     ],
@@ -145,6 +146,23 @@
     "更好的公告栏": [
         "datas.json",
         "__init__.py"
+    ],
+    "ZBasic_Lang_中文编程": [
+        "syntax_lib.py",
+        "executor.py",
+        "compiler.py",
+        "err_str.py",
+        "basic_codes.py",
+        "datas.json",
+        "syntax_compile.py",
+        "type_checker.py",
+        "basic_types.py",
+        "__init__.py"
+    ],
+    "ZBasic_Lang_中文编程/示例代码": [],
+    "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
+        "玩家进入.txt",
+        "玩家退出.txt"
     ],
     "死亡返回": [
         "datas.json",

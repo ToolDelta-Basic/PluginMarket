@@ -105,6 +105,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "TD-ZBasic": {
+      "name": "ZBasic_Lang_中文编程",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
     "死亡返回": {
       "name": "死亡返回",
       "author": "wling/7912",
