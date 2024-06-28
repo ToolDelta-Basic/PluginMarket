@@ -12,7 +12,7 @@
     "维度传送": {
       "name": "维度传送",
       "author": "wling/7912",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "injected"
     },
     "bbdx-importer": {
@@ -24,7 +24,7 @@
     "控制台执行MC指令": {
       "name": "控制台执行MC指令",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "地图画导入": {
@@ -54,7 +54,7 @@
     "雪球菜单v2": {
       "name": "雪球菜单",
       "author": "SuperScript",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "plugin-type": "classic"
     },
     "prof_manager": {
@@ -72,25 +72,25 @@
     "基本插件功能库": {
       "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.8",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
       "author": "SuperScript",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "plugin-type": "classic"
     },
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.1.7",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "choose-song": {
@@ -150,7 +150,7 @@
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "injected"
     },
     "@玩家": {
@@ -168,7 +168,7 @@
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "入服欢迎": {
@@ -180,7 +180,7 @@
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "injected"
     }
   }
