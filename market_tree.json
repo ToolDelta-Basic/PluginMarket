@@ -171,6 +171,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "gobang_game": {
+      "name": "五子棋",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "injected"
+    },
     "入服欢迎": {
       "name": "入服欢迎",
       "author": "wling",
