@@ -25,7 +25,7 @@ class ConstPtr(Pattern):
         return self.c
 
 class VarPtr(Pattern):
-    def __init__(self, name, type):
+    def __init__(self, name, type: Any = None):
         self.name = name
         self.type = type
 
@@ -36,7 +36,7 @@ class VarPtr(Pattern):
         return local_vars[self.name]
 
 class FuncPtr(Pattern):
-    def __init__(self, name: str, args: tuple, restype: RES_TYPE , func: Callable[[VAR_MAP, tuple], Any]):
+    def __init__(self, name: str, args: tuple, restype: RES_TYPE = ANY , func: Callable[[VAR_MAP, tuple], Any] = lambda x,y: None):
         self.name = name
         self.args = args
         self.restype = restype
@@ -110,6 +110,7 @@ opmap = {
 max_priority = 6
 
 OP_CHARS = ''.join(i for i in opmap.keys())
+SPEC_OP_CHARS = "+-"
 
 SYNTAX_PTRS = VarPtr | OpPtr | ConstPtr | FuncPtr
 

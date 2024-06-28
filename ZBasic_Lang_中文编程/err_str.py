@@ -1,10 +1,12 @@
 USE_COMMA_OUTSIDE_FUNC = "在非函数给参时使用了逗号: \"%s\", 是否应为分号?"
 USE_COMMA_OUTSIDE_FUNC_AT_END = "在非函数给参时使用了逗号(在表达式结尾)"
-NOT_OP_BEFORE_COMMA = "括号前只能为运算符, 而不是 %s"
+NOT_OP_BEFORE_COMMA = "括号前只能为运算符或函数, 而不是 %s"
 BRACKET_NOT_CLOSED = "括号未正确闭合"
 BRACKET_CANT_BE_EMPTY = "括号内容不能为空"
 NOT_SYNTAX_BRFORE_BRACKET = "逗号分隔符前需要表达式"
 OP_NOT_VALID = "运算符不正确: %s"
+FUNC_ARGS_NOT_FUNC = "在为函数提供参数时若想在参数表达式内使用函数, 请使用括号将函数调用的部分括起来"
+NEGATIVE_NOT_SUPPORTED = "暂不支持直接在数值前加正负号; 请在正负号前加一个0, 如 0-1"
 
 MULTI_OP_STRING = "存在多重连在一起的运算符"
 MULTI_ARGS_WITHOUT_OP = "两个项之间需要运算符"

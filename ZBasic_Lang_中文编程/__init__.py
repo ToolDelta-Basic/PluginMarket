@@ -5,13 +5,14 @@
 # 若需单独提取插件内的编译器和执行器, 请联系作者
 
 # 导入 ToolDelta 框架
-from tooldelta import Plugin, plugins, Utils, Print, game_utils, Frame
+from tooldelta import Plugin, plugins, Utils, Print, game_utils, Frame, constants
 
 # 标准库
 import random
 import math
 import os
 import time
+import shutil
 
 # 需要的类型
 from typing import Callable, Optional
@@ -29,9 +30,9 @@ from syntax_compile import register_func_syntax
 
 @plugins.add_plugin_as_api("ZBasic")
 class ToolDelta_ZBasic(Plugin):
-    name = "ZBasic-ToolDelta中文Basic语言"
+    name = "ZBasic-中文Basic语言"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)
@@ -181,8 +182,17 @@ class ToolDelta_ZBasic(Plugin):
     # ------------------------------------------------------------------------------
 
     def create_dirs(self):
-        os.makedirs(os.path.join("插件数据文件", "ZBasic中文脚本语言", "脚本文件"), exist_ok=True)
-        os.makedirs(os.path.join("插件数据文件", "ZBasic中文脚本语言", "数据文件"), exist_ok=True)
+        fdir = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, "ZBasic中文脚本语言")
+        if not os.path.isdir(fdir):
+            os.mkdir(fdir)
+            c_dir = os.path.join(os.path.dirname(__file__), "示例代码")
+            for dir in os.listdir(c_dir):
+                shutil.copytree(
+                    os.path.join(c_dir, dir),
+                    fdir
+                )
+        os.makedirs(os.path.join(fdir, "脚本文件"), exist_ok=True)
+        os.makedirs(os.path.join(fdir, "数据文件"), exist_ok=True)
 
     def load_scripts(self):
         join = os.path.join
@@ -213,6 +223,8 @@ class ToolDelta_ZBasic(Plugin):
                         scripts["玩家死亡"][filedir] = self.compile(f.read(), {"玩家名": STRING, "击杀者": STRING})
                 Print.print_suc(f"[ZBasic] 已载入脚本 {filedir}.")
         except CodeSyntaxError as e:
+            import traceback
+            traceback.print_exc()
             Print.print_err(f"中文脚本 {'/'.join(fn.split(os.sep)[3:])} 编译出现问题:")
             Print.print_err(str(e))
             Print.print_inf("修复后在控制台输入 重载脚本 即可再次载入")
@@ -237,9 +249,10 @@ class ToolDelta_ZBasic(Plugin):
         self.register_func_syntax("字符串长度", NUMBER, (STRING,), lambda x:len(x))
         self.register_func_syntax("列表长度", NUMBER, (LIST[ANY],), lambda x:len(x))
         self.register_func_syntax("切割字符串", LIST[STRING], (STRING, STRING), lambda x,y:x.split(y))
-        self.register_func_syntax("获取列表项", lambda l:OptionalType(l[0].type.extra1), (LIST[ANY], NUMBER), lambda l,i:l[int(i)] if int(i) in range(len(l)) else None) # type: ignore
+        self.register_func_syntax("获取列表项", lambda l:OptionalType(l[0].type.extra1), (LIST[ANY], NUMBER), lambda l,i:l[int(i)] if int(i) in range(len(l)) else None)
 
     def init_advanced_funcs(self):
+        # 注入高级Builtins函数
         def _get_scb_score(s: str, t: str):
             try:
                 return game_utils.getScore(s, t)
@@ -260,10 +273,10 @@ class ToolDelta_ZBasic(Plugin):
                 Print.print_err(f"ZBasic: 获取目标 {t} 的坐标失败: {e}")
                 return None
         def _de_optional_check(x: list):
-            if len(x) not in (1, 2) or not not isinstance(x[0], OptionalType):
+            if len(x) not in (1, 2) or not isinstance(x[0], OptionalType):
                 return "可空[任意类型] [, 默认值:任意类型]"
-            elif len(x) == 2 and (gft := get_final_type(x[1])) != x[0].type:
-                return f"可空[任意类型(当前为{gft})] [, 默认值:{gft}]"
+            elif len(x) == 2 and (gft := x[1]) != x[0].type:
+                return f"可空[任意类型(当前为{gft})] [, 默认值(当前可用的):{gft}]"
             return None
         def _de_optional(t: None | Any, default: Any = None):
             if t is None:

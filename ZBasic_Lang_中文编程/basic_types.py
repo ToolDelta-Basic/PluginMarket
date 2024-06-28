@@ -6,7 +6,7 @@ class Pattern:
     ...
 
 class BasicType:
-    def __init__(self, name: str, extra1: "ANY_TYPE | None" = None):
+    def __init__(self, name: str, extra1: "BasicType | Any" = None):
         self.name = name
         self.extra1 = extra1
 

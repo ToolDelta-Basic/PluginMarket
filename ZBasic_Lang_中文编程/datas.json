@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "plugin-type": "classic",
     "description": "使用中文进行ToolDelta插件的编写! 教程请查看 ToolDelta Wiki (https://tooldelta-wiki.tblstudio.cn/)",
     "pre-plugins": [],

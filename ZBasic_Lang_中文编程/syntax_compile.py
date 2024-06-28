@@ -4,7 +4,6 @@
 # 可以直接通过 eval() 属性方法传入本地变量表来计算结果
 # 当然在这之前要先去判定类型是否正确
 # 因为这是强类型的静态语言
-# (喂喂喂, 我可不想执行的时候报个错!)
 
 from typing import Callable
 import err_str
@@ -18,6 +17,8 @@ from basic_types import *
 
 # 调试器开关, 会显示详细的表达式编译信息
 DEBUG_CHECK = False
+if DEBUG_CHECK:
+    from tooldelta import Print
 
 func_names: list[str] = []
 func_cbs: dict = {}
@@ -63,17 +64,21 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
     if types_register is None:
         types_register = {}
     if DEBUG_CHECK:
-        print(f"[{level}] Start parsing {pat}")
+        Print.clean_print(f"[§b{level}§r] Start parsing §d{pat}")
     for c in pat + "?":
         if c == '"':
             if is_str:
+                # 双引号打开
                 is_str = False
                 if cma_num:
+                    # 在括号
                     cma_txt += f'"' + str_cache + f'"'
                 elif is_fun:
+                    # 在函数接收模式
                     fun_cache = ConstPtr(str_cache)
                 else:
-                    txt_cache = f'"' + str_cache + f'"'
+                    # 普通的模式
+                    txt_cache += f'"' + str_cache + f'"'
                 str_cache = ""
                 continue
             else:
@@ -86,8 +91,11 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
                 raise SyntaxError(err_str.NOT_OP_BEFORE_COMMA % txt_cache)
             cma_num += 1
             if cma_num == 1:
-              # 不需要理会第一次的出现的左括号
-              continue
+                # 不需要理会第一次的出现的左括号
+                continue
+            else:
+                # 肯定是第二次括号或者以上的括号扩增
+                cma_txt += "("
         elif c == ")":
             # 括号回缩
             cma_num -= 1
@@ -105,14 +113,21 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
                     opseq.append(parse(cma_txt, types_register, level=level + 1))
                 cma_txt = ""
                 continue
+            else:
+                # 肯定是第二次括号或者以上的括号回缩
+                cma_txt += ")"
         elif cma_num:
-            # 在括号内的表达式
+            # 在括号内的表达式, 直接无脑加入括号缓存
             cma_txt += c
         elif is_fun:
             # 正在接受函数参数
             if c in OP_CHARS + ",?":
-                # 终止了参数接收
-                if fun_cache:
+                # 终止了当前参数接收
+                if c in SPEC_OP_CHARS:
+                    # 特殊符号, 前面可以没有操作项: +, - 表示正负数
+                    txt_cache += "0" + c
+                    continue
+                elif fun_cache:
                     # 如果参数缓存区有内容
                     # 那么这可能是常量变量之类
                     funseq.append(fun_cache)
@@ -136,6 +151,10 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
                 is_fun = False
                 funseq.clear()
                 txt_cache = ""
+            elif c == " ":
+                if txt_cache.strip() in func_names:
+                    # 不允许再次调用函数, 除非使用括号 (此时正处于函数参数接收时刻)
+                    raise SyntaxError(err_str.FUNC_ARGS_NOT_FUNC)
             elif c != ",":
                 txt_cache += c
         elif c in " " + OP_CHARS + "?":
@@ -143,8 +162,16 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
             # 其他则忽略不管
             if txt_cache in func_names:
                 # 是函数调用
-                is_fun = True
-                fun_name = txt_cache
+                if c == "?":
+                    # 一开始就结束了
+                    opseq.append(deal_funptr(txt_cache, ()))
+                    is_fun = False
+                else:
+                    if is_fun:
+                        # 不可以在函数模式下再次调用函数, 除非使用括号
+                        raise SyntaxError(err_str.FUNC_ARGS_NOT_FUNC)
+                    is_fun = True
+                    fun_name = txt_cache
             elif txt_cache in types_register.keys():
                 # 是已注册变量
                 opseq.append(VarPtr(txt_cache, types_register[txt_cache]))
@@ -172,7 +199,7 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
     if is_str:
         raise SyntaxError("字符串未正确闭合")
     if DEBUG_CHECK:
-        print(f"[{level}] Parsing", pat, "ok, as", opseq)
+        Print.clean_print(f"[§9{level}§r] Parsing §2{pat}, §rok, as §d{' §6|§9 '.join(str(i) for i in opseq)}")
     return opseq
 
 def deal_funptr(func_name: str, fun_args: tuple):
@@ -262,7 +289,7 @@ def deal_syntaxgrp(grp: list):
                   arg1 = s
         prior_table = now_prior_table.copy()
     if DEBUG_CHECK:
-        print(f"[SYNTAX] Parsing {grp} ok, as {prior_table[0]}")
+        Print.clean_print(f"[§9SYNTAX§r] Parsing §b{grp}§r ok, as §b{prior_table[0]}")
     return prior_table[0]
 
 def parse(syntax: str, types_register: REGISTER, level: int = 0):
@@ -292,20 +319,44 @@ register_func_syntax("非", BOOLEAN, (BOOLEAN,), lambda x:not x)
 
 if __name__=="__main__":
     # 测试
+    DEBUG_CHECK = True
     try:
-        register_func_syntax("int", NUMBER, lambda _:None, lambda:None)
-        register_func_syntax("切割字符串", LIST[STRING], (STRING, STRING), lambda x,y:x.split(y))
-        syntax = parse_as_chunks('切割字符串 "a b", " "')
+        def _de_optional_check(x: list):
+            if len(x) not in (1, 2) or not isinstance(x[0], OptionalType):
+                return "可空[任意类型] [, 默认值:任意类型]"
+            elif len(x) == 2 and (gft := x[1]) != x[0].type:
+                return f"可空[任意类型(当前为{gft})] [, 默认值(当前可用的):{gft}]"
+            return None
+        def _de_optional(t: None | Any, default: Any = None):
+            if t is None:
+                if default is None:
+                    raise SystemExit
+                else:
+                    return default
+            else:
+                return t
+        def try_int(n):
+            try: return int(n)
+            except: return None
+        register_func_syntax("int", NUMBER, (NUMBER,), lambda x:try_int(x))
+        register_func_syntax("转换为整数", OptionalType(NUMBER), (STRING,), lambda x:try_int(x))
+        register_func_syntax("获取列表项", lambda l:OptionalType(l[0].type.extra1), (LIST[ANY], NUMBER), lambda l,i:l[int(i)] if int(i) in range(len(l)) else None)
+        register_func_syntax("转换为非空变量", lambda x:x[0].type, _de_optional_check, _de_optional)
+        syntax = parse_as_chunks('int -1', {"触发词参数": LIST[STRING]})
+        Print.clean_print(f"§2分割结果: §a{syntax}")
         syntax2 = deal_syntaxgrp(syntax)
-        #syntaxs = multi_parse('1+1; 2+3;"4+;5";6;', {})
+        #syntaxs = 转换为非空变量 (转换为整数 转换为非空变量 (获取列表项 触发词参数, 2), "-1")
         #syntax = syntaxs[0]
         t = get_final_type(syntax2)
-        print("-"*25)
+        Print.clean_print("§a-"*25)
         print("表达式组:", syntax)
         print("表达式:", syntax2)
         print("类型:", t)
     except Exception as err:
         #print(err)
+        Print.clean_print("§cCRASHED " + "="*50)
         import traceback
         traceback.print_exc()
+
+
     # will be crashed
