@@ -6,7 +6,7 @@ import time
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
@@ -28,7 +28,7 @@ class WorldEdit(Plugin):
     def description_show(self, who: str, _):
         self.game_ctrl.say_to(
             who,
-            "简易建造(需要创造模式)\n §7放置一个告示牌输入 §fWe start§7\n  即可设置起点\n 放置告示牌输入 §fWe fill <方块ID>§7\n  即可将此作为终止点填充方块\n告示牌输入 §fWe cn§7\n  将起始点的方块作为目标方块\n  并使用这个方块填充起始点到此的整个区域",
+            "简易建造，帮助你更快速地在租赁服实现快速填充等操作; 使用插件管理器的手册查看功能以查看使用说明",
         )
 
     @plugins.add_packet_listener(56)
@@ -46,11 +46,15 @@ class WorldEdit(Plugin):
                 )
                 try:
                     signPlayerName = getTarget(
-                        f"@a[x={placeX}, y={placeY}, z={placeZ}, c=1, r=10]"
+                        f"@a[x={placeX}, y={placeY}, z={placeZ}, c=1, r=8]"
                     )[0]
+                    if getTarget(
+                        f"@a[x={placeX}, y={placeY}, z={placeZ}, r=8, m=!1]"
+                    ) != []:
+                        self.game_ctrl.say_to(signPlayerName, "无法使用，请确保告示牌附近8格内无非创造模式玩家")
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", "§cCan't execute because " + str(err))
+                    self.game_ctrl.say_to("@a", f"§c告示牌简易建造 (x={placeX}, y={placeY}, z={placeZ}) 失败: {err}")
                 self.getX = int(jsonPkt["NBTData"]["x"])
                 self.getY = int(jsonPkt["NBTData"]["y"])
                 self.getZ = int(jsonPkt["NBTData"]["z"])
