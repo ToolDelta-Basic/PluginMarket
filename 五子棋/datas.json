@@ -6,6 +6,5 @@
     "pre-plugins": {
         "聊天栏菜单": "0.0.4"
     },
-    "plugin-id": "gobang_game",
-    "enabled": true
+    "plugin-id": "gobang_game"
 }
