@@ -204,6 +204,9 @@
         "datas.json",
         "__init__.py"
     ],
+    "五子棋": [
+        "SuperMade_Gobang_五子棋.py"
+    ],
     "入服欢迎": [
         "datas.json",
         "__init__.py"
