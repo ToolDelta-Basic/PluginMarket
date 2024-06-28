@@ -221,7 +221,7 @@ def on_menu_invoked(player: str, args: list[str]):
             rawText(player, f"§c你还没有退出当前游戏房间")
 
 @player_message()
-def on_chess_cmd(info: player_message_info):
+async def on_chess_cmd(info: player_message_info):
     player, msg = info.playername, info.message
     if msg.startswith("下子") or msg.lower().startswith("xz") or msg.startswith("XZ"):
         if GobangRoom.rooms:
@@ -269,7 +269,7 @@ def on_chess_cmd(info: player_message_info):
             GobangRoom.waitingCache[player] = 2
 
 @player_left()
-def player_exit(p: player_name):
+async def player_exit(p: player_name):
     player = p.playername
     if GobangRoom.rooms:
         in_room = GobangRoom.getRoom(player)
