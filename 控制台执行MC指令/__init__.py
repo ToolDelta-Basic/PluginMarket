@@ -8,7 +8,7 @@ plugins.checkSystemVersion((0, 3, 8))
 class ConsoleCommands(Plugin):
     name = "控制台执行MC指令"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -24,7 +24,7 @@ class ConsoleCommands(Plugin):
 
     def SendWSCmdOnConsole(self, cmd):
         try:
-            result = self.game_ctrl.sendwscmd(" ".join(cmd), True, 5)
+            result = self.game_ctrl.sendcmd_with_resp(" ".join(cmd), 5)
         except IndexError:
             Print.print_err("缺少指令参数")
             return

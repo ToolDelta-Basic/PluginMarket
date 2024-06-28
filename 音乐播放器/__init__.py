@@ -15,7 +15,7 @@ class PlayerMusicStatus:
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
         CFG_DEFAULT = {
@@ -118,7 +118,7 @@ class MusicPlayer(tooldelta.Plugin):
         try:
             for instrument, vol, pitch, delay in  self.midiplayer.iter_playsound(music_name):
                 time.sleep(delay)
-                scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
+                scmd(f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}")
                 now_play += delay
                 parent.now = now_play
                 if parent.is_stop:

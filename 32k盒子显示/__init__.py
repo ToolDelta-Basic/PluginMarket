@@ -7,7 +7,7 @@ class Display32KShulkerBox(Plugin):
     name = "32k盒子显示"
     description = "检测32k盒子并反制"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, f: Frame):
         self.game_ctrl = f.get_game_control()
@@ -73,10 +73,10 @@ class Display32KShulkerBox(Plugin):
         if boxes:
             for i in boxes:
                 self.game_ctrl.sendcmd(
-                    f"/execute {player} ~~~ structure load {i} ~~~"
+                    f"/execute as {player} run structure load {i} ~~~"
                 )
                 self.game_ctrl.sendcmd(
-                    f"/execute {player} ~~~ setblock ~~~ air 0 destroy"
+                    f"/execute as {player} run setblock ~~~ air 0 destroy"
                 )
                 self.game_ctrl.sendcmd("/structure delete " + i)
                 time.sleep(0.05)
@@ -87,7 +87,7 @@ class Display32KShulkerBox(Plugin):
     @staticmethod
     def getAll32kBoxes() -> list[str]:
         try:
-            with open("data/32kBoxes.txt", "r", encoding="utf-8") as f:
+            with open("插件数据文件/32kBoxes.txt", "r", encoding="utf-8") as f:
                 boxes = f.read().split("\n")
                 f.close()
             return boxes
@@ -96,6 +96,6 @@ class Display32KShulkerBox(Plugin):
 
     @staticmethod
     def write32kBox(structID):
-        with open("data/32kBoxes.txt", "a", encoding="utf-8") as f:
+        with open("插件数据文件/32kBoxes.txt", "a", encoding="utf-8") as f:
             f.write("\n" + structID)
             f.close()

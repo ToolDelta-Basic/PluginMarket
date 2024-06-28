@@ -9,7 +9,7 @@ from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "全服喇叭",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling",
 }
 
@@ -29,4 +29,4 @@ async def onPlayerChat(plyerinfomessage: player_message_info):
             )
             sendwscmd(f"title @a title §l§b{playername}§f:")
             sendwscmd(f'title @a subtitle §l§e{msg.replace(".喇叭", "").strip()}')
-            sendwscmd("execute @a ~~~ playsound firework.launch @s ~~~ 10")
+            sendwscmd("execute as @a run playsound firework.launch @s ~~~ 10")

@@ -10,12 +10,12 @@ def find_key_from_value(dic, val):
             return k
 
 
-plugins.checkSystemVersion((0, 1, 9))
+plugins.checkSystemVersion((0, 7, 5))
 
 
 @plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 8)
+    version = (0, 0, 9)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
@@ -88,8 +88,8 @@ class BasicFunctionLib(Plugin):
             and (not targetNameToGet.startswith("@a"))
         ):
             raise Exception("Player not found.")
-        result = self.game_ctrl.sendwscmd(
-            "/querytarget " + targetNameToGet, True, timeout
+        result = self.game_ctrl.sendcmd_with_resp(
+            "/querytarget " + targetNameToGet, timeout
         )
         if result.OutputMessages[0].Success is False:
             raise Exception(
@@ -146,8 +146,8 @@ class BasicFunctionLib(Plugin):
             and (not targetName.startswith("@a"))
         ):
             raise Exception("Player not found.")
-        result = self.game_ctrl.sendwscmd(
-            f"/clear {targetName} {itemName} {itemSpecialID} 0", True
+        result = self.game_ctrl.sendcmd_with_resp(
+            f"/clear {targetName} {itemName} {itemSpecialID} 0"
         )
         if result.OutputMessages[0].Message == "commands.generic.syntax":
             raise Exception("Item name error.")
@@ -160,7 +160,7 @@ class BasicFunctionLib(Plugin):
         if not sth.startswith("@"):
             raise Exception("Minecraft Target Selector is not correct.")
         result = (
-            self.game_ctrl.sendwscmd(f"/testfor {sth}", True, timeout)
+            self.game_ctrl.sendcmd_with_resp(f"/testfor {sth}", timeout)
             .OutputMessages[0]
             .Parameters
         )
@@ -172,7 +172,7 @@ class BasicFunctionLib(Plugin):
 
     def getBlockTile(self, x: int, y: int, z: int):
         "获取指定坐标的方块的ID"
-        res = self.game_ctrl.sendwscmd(f"/testforblock {x} {y} {z} air", True)
+        res = self.game_ctrl.sendcmd_with_resp(f"/testforblock {x} {y} {z} air")
         if res.SuccessCount:
             return "air"
         return res.OutputMessages[0].Parameters[4].strip("%tile.").strip(".name")
@@ -215,7 +215,7 @@ class BasicFunctionLib(Plugin):
 
     def sendresultcmd(self, cmd, timeout=30):
         "返回命令执行是否成功"
-        res = self.game_ctrl.sendwscmd(cmd, True, timeout).SuccessCount
+        res = self.game_ctrl.sendcmd_with_resp(cmd, timeout).SuccessCount
         return bool(res)
 
 

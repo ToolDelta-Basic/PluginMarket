@@ -74,7 +74,7 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 1, 7)
+    version = (0, 2, 1)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
     playsound_threads: dict[int, Builtins.createThread] = {}
@@ -126,15 +126,14 @@ class ToolMidiMixer(Plugin):
         scmd = self.game_ctrl.sendwocmd
         for instrument, vol, pitch, delay in seq:
             time.sleep(delay / 20)
-            scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
+            scmd(f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}")
 
     def iter_playsound(self, name_or_seq: str | ToolSoundSequence):
         """
         获取一个音乐播放遍历器
 
         Args:
-            name_or_seq (str | ToolSoundSequence): _description_
-            target (str): _description_
+            name_or_seq (str | ToolSoundSequence): 已导入的音乐名或音乐序列
 
         Yields:
             Iterator (str, float, float, float): 返回遍历器, 包括乐器类型, 音量, 音高, 延迟(s)
@@ -156,8 +155,8 @@ class ToolMidiMixer(Plugin):
         scmd = self.game_ctrl.sendwocmd
         try:
             for instrument, vol, pitch, delay in seq:
-                scmd(f"/execute {target} ~~~ playsound {instrument} @s ~~~ {vol} {pitch}")
                 time.sleep(delay / 20)
+                scmd(f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}")
         finally:
             del self.playsound_threads[idc]
 

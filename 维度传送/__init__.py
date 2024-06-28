@@ -13,7 +13,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "维度传送",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling/7912",
 }
 
@@ -21,17 +21,17 @@ __plugin_meta__ = {
 def tp(target, *, x, y, z, dimension):
     if dimension == 0:
         sendcmd(
-            f"/execute @e[type=armor_stand, name=td_overworld, c=1] ~ ~ ~ /tp {target} {x} {y} {z}"
+            f"/execute as @e[type=armor_stand, name=td_overworld, c=1] run /tp {target} {x} {y} {z}"
         )
         return
     if dimension == 1:
         sendcmd(
-            f"/execute @e[type=armor_stand, name=td_the_nether, c=1] ~ ~ ~ /tp {target} {x} {y} {z}"
+            f"/execute as @e[type=armor_stand, name=td_the_nether, c=1] run /tp {target} {x} {y} {z}"
         )
         return
     if dimension == 2:
         sendcmd(
-            f"/execute @e[type=armor_stand, name=td_the_end, c=1] ~ ~ ~ /tp {target} {x} {y} {z}"
+            f"/execute as @e[type=armor_stand, name=td_the_end, c=1] run /tp {target} {x} {y} {z}"
         )
         return
     raise ValueError("dimension参数仅可以是0, 1或2.")

@@ -21,7 +21,7 @@ except:
 
 __plugin_meta__ = {
     "name": "五子棋小游戏",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "SuperScript",
 }
 
@@ -248,10 +248,10 @@ async def on_chess_cmd(info: player_message_info):
                             game_control.player_title(player, "§a§l恭喜！")
                             game_control.player_subtitle(player, "§e本局五子棋您获得了胜利！")
                             rawText(player, "§7§l> §r§e恭喜！ §a本局五子棋您取得了胜利！")
-                            sendwocmd(f"/execute {player} ~~~ playsound random.levelup @s")
+                            sendwocmd(f"/execute as {player} run playsound random.levelup @s")
                             game_control.player_title(inRoom.anotherPlayer(player), "§7§l遗憾惜败")
                             game_control.player_subtitle(inRoom.anotherPlayer(player), "§6下局再接再厉哦！")
-                            sendwocmd(f"/execute {inRoom.anotherPlayer(player)} ~~~ playsound note.pling @s ~~~ 1 0.5")
+                            sendwocmd(f"/execute as {inRoom.anotherPlayer(player)} run playsound note.pling @s ~~~ 1 0.5")
                             inRoom.setStatus("done")
                             return
                         else:

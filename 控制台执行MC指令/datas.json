@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "可以在控制台让机器人执行特殊指令等, 处于FastBuilder启动模式下还可以快捷使用fb指令",
   "limit_launcher": null,
   "pre-plugins": {},

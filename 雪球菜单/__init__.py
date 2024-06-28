@@ -118,7 +118,7 @@ default_page = MultiPage(
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
-    version = (0, 1, 2)
+    version = (0, 1, 3)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
@@ -414,7 +414,7 @@ class SnowMenu(Plugin):
         if res is None:
             self.remove_player_in_menu(player)
         else:
-            self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+            self.gc.sendwocmd(f"/execute as @a[name={player}] ~~~ tp ~~~~ 0")
             if res == True:
                 # 保留在本页
                 pass
@@ -435,7 +435,7 @@ class SnowMenu(Plugin):
             Print.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
             self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
             return
-        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        self.gc.sendwocmd(f"/execute as @a[name={player}] tp ~~~~ 0")
         cb = self.in_snowball_menu[player].exit_cb
         if cb is not None:
             cb(player)
@@ -460,12 +460,12 @@ class SnowMenu(Plugin):
         ]
 
 SNOWBALL_CMDS: list[tuple[int, int, str]] = [
-    (1, 0, '/execute @e[type=snowball] ~~~ execute @p[r=3] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
+    (1, 0, '/execute as @e[type=snowball] run execute as @p[r=3] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
     (2, 1, 'kill @e[type=snowball]'),
-    (2, 0, '/execute @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}'),
+    (2, 0, '/execute as @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}'),
     (2, 1, '/tag @a[rxm=88,tag=!snowmenu:escape] add snowmenu:escape'),
     (2, 0, '/tag @a[rx=87,tag=snowmenu:escape] remove snowmenu:escape'),
-    (2, 0, '/execute @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] ~~~ tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}'),
+    (2, 0, '/execute as @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}'),
     (2, 1, '/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm'),
     (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
 ]
