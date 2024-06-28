@@ -148,6 +148,7 @@
         "__init__.py"
     ],
     "ZBasic_Lang_中文编程": [
+        "readme.txt",
         "syntax_lib.py",
         "executor.py",
         "compiler.py",
@@ -163,6 +164,9 @@
     "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
         "玩家进入.txt",
         "玩家退出.txt"
+    ],
+    "ZBasic_Lang_中文编程/示例代码/玩家转账": [
+        "玩家发言.txt"
     ],
     "死亡返回": [
         "datas.json",
