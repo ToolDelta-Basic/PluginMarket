@@ -21,7 +21,7 @@ except:
 
 __plugin_meta__ = {
     "name": "五子棋小游戏",
-    "version": "0.0.4",
+    "version": "0.0.3",
     "author": "SuperScript",
 }
 
@@ -57,7 +57,7 @@ class Super_AFKGobangBasic:
             self.timeleft = 120
 
         def fmtTimeLeft(self):
-            time_min, time_sec = divmod(int(time.time()+self.timeleft-self.startTime), 60)
+            time_min, time_sec = divmod(self.timeleft, 60)
             return "%02d ： %02d" % (time_min, time_sec)
 
         def PID(self, player: str):
@@ -96,7 +96,7 @@ class Super_AFKGobangBasic:
         linked_room_uid = GobangRoom.createRoom(Super_AFKGobangBasic.Room(_1P, _2P))
         this_room: Super_AFKGobangBasic.Room = GobangRoom.rooms[linked_room_uid]
         while 1:
-            time.sleep(0.5)
+            time.sleep(1)
             nowPlayer = _1P if this_room.isTurn(_1P) else _2P
             actbarText = f"§e§l五子棋 {this_room.fmtTimeLeft()} %s\n{this_room.stage.strfChess()}§9SuperGobang\n§a"
             game_control.player_actionbar(_1P, actbarText % ("§a我方下子" if this_room.isTurn(_1P) else "§6对方下子"))
@@ -204,27 +204,26 @@ class SuperGobangStage():
 GobangRoom = Super_AFKGobangBasic()
 
 def on_menu_invoked(player: str, args: list[str]):
-    if len(args) == 1:
-        _2P = args[0]
-        if len(_2P) < 2:
-            rawText(player, "§c模糊搜索玩家名， 输入的名字长度必须大于1")
-            return
-        allplayers = [single_player for single_player in game_control.allplayers]
-        allplayers.remove(player)
-        new2P = None
-        for single_player in allplayers:
-            if _2P in single_player:
-                new2P = single_player
-                break
-        if not new2P:
-            rawText(player, f"§c未找到名字里含有\"{_2P}\"的玩家.")
-            return
-        if new2P in GobangRoom.waitingCache.keys():
-            rawText(player, f"§c申请已经发出了")
-        if not GobangRoom.getRoom(player):
-            threading.Thread(target=GobangRoom.GameWait, args = (player, new2P)).start()
-        else:
-            rawText(player, f"§c你还没有退出当前游戏房间")
+    _2P = args[0]
+    if len(_2P) < 2:
+        rawText(player, "§c模糊搜索玩家名， 输入的名字长度必须大于1")
+        return
+    allplayers = [single_player for single_player in game_control.allplayers]
+    allplayers.remove(player)
+    new2P = None
+    for single_player in allplayers:
+        if _2P in single_player:
+            new2P = single_player
+            break
+    if not new2P:
+        rawText(player, f"§c未找到名字里含有\"{_2P}\"的玩家.")
+        return
+    if new2P in GobangRoom.waitingCache.keys():
+        rawText(player, f"§c申请已经发出了")
+    if not GobangRoom.getRoom(player):
+        threading.Thread(target=GobangRoom.GameWait, args = (player, new2P)).start()
+    else:
+        rawText(player, f"§c你还没有退出当前游戏房间")
 
 @player_message()
 async def on_chess_cmd(info: player_message_info):
@@ -248,10 +247,10 @@ async def on_chess_cmd(info: player_message_info):
                             game_control.player_title(player, "§a§l恭喜！")
                             game_control.player_subtitle(player, "§e本局五子棋您获得了胜利！")
                             rawText(player, "§7§l> §r§e恭喜！ §a本局五子棋您取得了胜利！")
-                            sendwocmd(f"/execute as {player} run playsound random.levelup @s")
+                            sendwocmd(f"/execute {player} ~~~ playsound random.levelup @s")
                             game_control.player_title(inRoom.anotherPlayer(player), "§7§l遗憾惜败")
                             game_control.player_subtitle(inRoom.anotherPlayer(player), "§6下局再接再厉哦！")
-                            sendwocmd(f"/execute as {inRoom.anotherPlayer(player)} run playsound note.pling @s ~~~ 1 0.5")
+                            sendwocmd(f"/execute {inRoom.anotherPlayer(player)} ~~~ playsound note.pling @s ~~~ 1 0.5")
                             inRoom.setStatus("done")
                             return
                         else:
@@ -284,4 +283,4 @@ async def player_exit(p: player_name):
             game_control.player_title(inRoom.anotherPlayer(player), "§c对方已退出游戏，游戏结束")
             inRoom.setStatus("done")
 
-chatbar.add_trigger(["五子棋", "wzq"], "[对手名]", "开一局五子棋游戏", on_menu_invoked)
+chatbar.add_trigger(["五子棋", "wzq"], "[对手名]", "开一局五子棋游戏", on_menu_invoked, lambda x:x==1)

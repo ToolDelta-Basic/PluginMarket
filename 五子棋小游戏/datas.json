@@ -1,10 +1,11 @@
 {
     "author": "SuperScript",
-    "version": "0.0.4",
+    "version": "0.0.3",
     "plugin-type": "injected",
     "description": "输入 .wzq <对手名> 开始一局五子棋小游戏！",
     "pre-plugins": {
         "聊天栏菜单": "0.0.4"
     },
-    "plugin-id": "gobang_game"
+    "plugin-id": "gobang_game",
+    "enabled": true
 }
