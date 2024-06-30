@@ -6,7 +6,7 @@ import time
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
@@ -34,15 +34,14 @@ class WorldEdit(Plugin):
     @plugins.add_packet_listener(56)
     def we_pkt56(self, jsonPkt: dict):
         if "NBTData" in jsonPkt and "id" in jsonPkt["NBTData"]:
-            if (
-                jsonPkt["NBTData"]["id"] == "Sign"
-                and jsonPkt["NBTData"]["Text"] == "We start"
-            ):
-                placeX, placeY, placeZ, text = (
+            if not (jsonPkt["NBTData"]["id"] == "Sign"):
+                return False
+            signText = jsonPkt["NBTData"]["FrontText"]["Text"]
+            if signText == "We start":
+                placeX, placeY, placeZ = (
                     jsonPkt["NBTData"]["x"],
                     jsonPkt["NBTData"]["y"],
-                    jsonPkt["NBTData"]["z"],
-                    jsonPkt["NBTData"]["Text"],
+                    jsonPkt["NBTData"]["z"]
                 )
                 try:
                     signPlayerName = getTarget(
@@ -60,7 +59,7 @@ class WorldEdit(Plugin):
                 self.getZ = int(jsonPkt["NBTData"]["z"])
                 if signPlayerName in getTarget("@a[m=1]"):
                     self.game_ctrl.sendcmd(
-                        f"/setblock {self.getX} {self.getY} {self.getZ} air 0 destroy"
+                        f"/setblock {self.getX} {self.getY} {self.getZ} air"
                     )
                     self.game_ctrl.say_to(
                         signPlayerName,
@@ -68,15 +67,13 @@ class WorldEdit(Plugin):
                     )
 
             elif (
-                jsonPkt["NBTData"]["id"] == "Sign"
-                and jsonPkt["NBTData"]["Text"].startswith("We fill ")
-                and len(jsonPkt["NBTData"]["Text"]) > 8
+                jsonPkt["NBTData"]["FrontText"]["Text"].startswith("We fill ")
+                and len(jsonPkt["NBTData"]["FrontText"]["Text"]) > 8
             ):
-                placeX, placeY, placeZ, text = (
+                placeX, placeY, placeZ = (
                     jsonPkt["NBTData"]["x"],
                     jsonPkt["NBTData"]["y"],
-                    jsonPkt["NBTData"]["z"],
-                    jsonPkt["NBTData"]["Text"],
+                    jsonPkt["NBTData"]["z"]
                 )
                 try:
                     signPlayerName = getTarget(
@@ -88,7 +85,7 @@ class WorldEdit(Plugin):
                 except Exception as err:
                     signPlayerName = ""
                     self.game_ctrl.say_to("@a", f"§cERROR：目标选择器报错 §6{(placeX, placeY, placeZ)}")
-                blockData = text[8:].replace("陶瓦", "stained_hardened_clay")
+                blockData = signText[8:].replace("陶瓦", "stained_hardened_clay")
                 try:
                     if signPlayerName in getTarget("@a[m=1]"):
                         if not self.getX:
@@ -107,10 +104,7 @@ class WorldEdit(Plugin):
                     self.game_ctrl.say_to(
                         signPlayerName, "§c§lWorldEdit§r>> §c没有设置起点或终点"
                     )
-            elif (
-                jsonPkt["NBTData"]["id"] == "Sign"
-                and jsonPkt["NBTData"]["Text"] == "We cn"
-            ):
+            elif signText == "We cn":
                 try:
                     if not self.getX:
                         raise AssertionError("还未获取起点坐标")

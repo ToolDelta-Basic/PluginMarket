@@ -108,12 +108,6 @@ class BDumpOP:
         self.scmd(f"/tp {self.f.game_ctrl.bot_name} {x} {y} {z}")
 
         # wo/execute SkyblueSuper ~~~ fill ~~~~40~15~40 air
-        get_data_only = True
-        use_scoreboards = set()
-        use_tag = set()
-        syn = re.compile(r"scoreboard (?:objectives|players) (?:add|remove|reset|set|test) (?:[^ ]*) ([^ ]*) [0-9]")
-        syn2 = re.compile(r"scores={([^ {}=]*)=[0-9]*}")
-
         for i in self._bdx.BDXContents:
             time.sleep(delay)
             match i.operationNumber:
@@ -123,8 +117,7 @@ class BDumpOP:
                 case 5 | 7 | 13:
                     # 13 not achieved
                     now_len += 1
-                    if not get_data_only:
-                        self.scmd(f"setblock {x} {y} {z} {self.cache_string_pool[i.blockConstantStringID]} {i.blockData}")
+                    self.scmd(f"setblock {x} {y} {z} {self.cache_string_pool[i.blockConstantStringID]} {i.blockData}")
                 case 14:
                     x += 1
                 case 15:
@@ -158,12 +151,7 @@ class BDumpOP:
                         i.executeOnFirstTick
                     )
                     t = 0.2
-                    if get_data_only:
-                        cmd = i.command
-                        if "score" in cmd:
-                            for i in syn.findall(cmd) + syn2.findall(cmd):
-                                use_scoreboards.add(i)
-                    elif hasattr(i, "blockData"):
+                    if hasattr(i, "blockData"):
                         self.f.interact.place_command_block(pck, i.blockData, t)
                     else:
                         self.f.interact.place_command_block(pck, i.data, t)
@@ -181,9 +169,6 @@ class BDumpOP:
                 self.f.progress_bar(self.name, now_len, total_len, bspeed)
         # ok
         self.f.game_ctrl.player_actionbar("@a", f"§fBDX文件 {self.name} 导入完成.")
-        Print.clean_print("§a使用计分板:")
-        for i in use_scoreboards:
-            Print.clean_print(f"§b - {i}")
 
     def get_bdx_length_2_show(self):
         # not archieved
