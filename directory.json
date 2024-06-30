@@ -215,5 +215,13 @@
     "五子棋小游戏": [
         "datas.json",
         "__init__.py"
+    ],
+    "定时任务": [
+        "readme.txt",
+        "datas.json",
+        "__init__.py"
+    ],
+    "定时任务/示例定时任务": [
+        "扫地姬.mcfunction"
     ]
 }
