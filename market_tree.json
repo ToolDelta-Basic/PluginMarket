@@ -15,7 +15,7 @@
       "version": "0.0.2",
       "plugin-type": "injected"
     },
-    "bbdx-importer": {
+    "bdx-importer": {
       "name": "bdx导入器",
       "author": "xingchen/SuperScript",
       "version": "0.0.4",
