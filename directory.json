@@ -38,7 +38,6 @@
         "NOP.py",
         "AddInt8XValue.py",
         "AddInt8YValue.py",
-        "PlaceBlockWithNBTData.py",
         "SubtractYValue.py",
         "PlaceBlockWithChestData.py",
         "AddZValue.py",
@@ -63,17 +62,12 @@
         "__init__.py"
     ],
     "bdx导入器/BDXConverter/utils": [
-        "marshalNBT.py",
-        "unmarshalNBT_OldVersion.py",
-        "unmarshalNBT.py",
         "getString.py",
         "getByte.py",
-        "marshalNBT_OldVersion.py",
         "__init__.py"
     ],
     "bdx导入器/BDXConverter/Converter": [
         "ErrorClassDefine.py",
-        "Signature.py",
         "FileOperation.py",
         "Converter.py",
         "__init__.py"
