@@ -18,7 +18,7 @@
     "bbdx-importer": {
       "name": "bdx导入器",
       "author": "xingchen/SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
