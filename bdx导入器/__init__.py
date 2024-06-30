@@ -9,7 +9,7 @@ import re
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
     author = "xingchen/SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
