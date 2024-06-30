@@ -1,5 +1,4 @@
 from brotli import compress, decompress
-from Crypto.Hash.SHA256 import new
 from io import BytesIO
 from copy import deepcopy
 from .Signature import Signature
@@ -37,11 +36,11 @@ class BDX(GeneralClass):
                     length=1, byteorder='big', signed=False))
                 i.Marshal(newWriter)
         # valid contents
-        if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
-            self.Signature.fileHash = new(newWriter.getvalue())
-            self.Signature.Marshal(newWriter)
-        else:
-            newWriter.write(b'XE')
+        #if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
+        #    self.Signature.fileHash = new(newWriter.getvalue())
+        #    self.Signature.Marshal(newWriter)
+        #else:
+        newWriter.write(b'XE')
         # signature
         writer.write(b'BD@' + compress(newWriter.getvalue()))
         # write BDX data
@@ -87,11 +86,6 @@ class BDX(GeneralClass):
                 self.BDXContents.append(struct)
                 # submit single data
         # read data from reader
-        self.Signature.UnMarshal(reader)
-        if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
-            reader.truncate(reader.seek(-1, 1))
-            self.Signature.fileHash = new(reader.getvalue())
-            self.Signature.verifySignature()
         # signature
 
     def Loads(self, jsonDict: dict) -> None:
@@ -145,11 +139,11 @@ class BDX_2(GeneralClass):
                     length=1, byteorder='big', signed=False))
                 i.Marshal(newWriter)
         # valid contents
-        if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
-            self.Signature.fileHash = new(newWriter.getvalue())
-            self.Signature.Marshal(newWriter)
-        else:
-            newWriter.write(b'XE')
+        #if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
+        #    self.Signature.fileHash = new(newWriter.getvalue())
+        #    self.Signature.Marshal(newWriter)
+        #else:
+        newWriter.write(b'XE')
         # signature
         writer.write(b'BD@' + compress(newWriter.getvalue()))
         # write BDX data
