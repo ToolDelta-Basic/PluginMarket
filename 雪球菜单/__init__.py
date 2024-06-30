@@ -171,7 +171,7 @@ class SnowMenu(Plugin):
             选项(页数)
             None: 玩家低头取消了菜单 / 玩家中途退出.
         """
-        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         outer_self = self
         class _cb:
@@ -183,7 +183,7 @@ class SnowMenu(Plugin):
             def ok(self, _, page):
                 self.page = page
                 self.event.set()
-                outer_self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+                outer_self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
             def exit(self, _):
                 self.page = None
                 self.event.set()
@@ -212,7 +212,7 @@ class SnowMenu(Plugin):
             选项(页数)
             None: 玩家低头取消了菜单 / 玩家中途退出.
         """
-        self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+        self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         class _cb:
             def __init__(self):
@@ -297,7 +297,7 @@ class SnowMenu(Plugin):
                     "执行的指令": ["/kill @a[name=[玩家名]]", "/title @a[name=[玩家名]] title §c已自尽"]
                 },{
                     "显示名": "设置重生点",
-                    "执行的指令": ["/execute @a[name=[玩家名]] ~~~ spawnpoint", "/title @a[name=[玩家名]] title §a已设置重生点"]
+                    "执行的指令": ["/execute as @a[name=[玩家名]] run spawnpoint", "/title @a[name=[玩家名]] title §a已设置重生点"]
                 }
             ]
         }
@@ -360,7 +360,7 @@ class SnowMenu(Plugin):
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         now_page = self.in_snowball_menu.get(player)
         if now_page is None:
-            self.gc.sendwocmd(f"/execute @a[name={player}] ~~~ tp ~~~~ 0")
+            self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
             self.in_snowball_menu[player] = self.reg_pages["default"]
             self.multi_snowball_page[player] = 0
             self.show_page_thread(player)
@@ -414,7 +414,7 @@ class SnowMenu(Plugin):
         if res is None:
             self.remove_player_in_menu(player)
         else:
-            self.gc.sendwocmd(f"/execute as @a[name={player}] ~~~ tp ~~~~ 0")
+            self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
             if res == True:
                 # 保留在本页
                 pass
@@ -435,7 +435,7 @@ class SnowMenu(Plugin):
             Print.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
             self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
             return
-        self.gc.sendwocmd(f"/execute as @a[name={player}] tp ~~~~ 0")
+        self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
         cb = self.in_snowball_menu[player].exit_cb
         if cb is not None:
             cb(player)
