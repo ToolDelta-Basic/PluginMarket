@@ -167,9 +167,6 @@ class BDumpOP:
                         self.f.interact.place_command_block(pck, i.blockData, t)
                     else:
                         self.f.interact.place_command_block(pck, i.data, t)
-                case 41:
-                    nbt_data = i.blockNBT
-                    Print.print_war(f"BDX导入器: 忽略NBT {nbt_data}")
 
             if abs(x - bot_x) + abs(y - bot_y) + abs(z - bot_z) > 5:
                 self.scmd(f"/tp @a[name={self.gc.bot_name}] {x} {y} {z}")

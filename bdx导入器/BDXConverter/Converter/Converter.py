@@ -1,7 +1,6 @@
 from brotli import compress, decompress
 from io import BytesIO
 from copy import deepcopy
-from .Signature import Signature
 from .ErrorClassDefine import HeaderError
 from .ErrorClassDefine import ReadError, UnknownOperationError
 from ..General.GeneralClass import GeneralClass
@@ -23,7 +22,6 @@ class BDX(GeneralClass):
         super().__init__()
         self.AuthorName: str = 'TriM-Organization/BDXConverter'
         self.BDXContents: list[GeneralClass] = []
-        self.Signature: Signature = Signature()
 
     def Marshal(self, writer: BytesIO) -> None:
         newWriter = BytesIO(
@@ -126,7 +124,6 @@ class BDX_2(GeneralClass):
         """
         super().__init__()
         self.AuthorName: str = 'TriM-Organization/BDXConverter'
-        self.Signature: Signature = Signature()
 
     def Marshal(self, writer: BytesIO) -> None:
         newWriter = BytesIO(

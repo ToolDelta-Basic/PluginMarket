@@ -42,5 +42,6 @@ def GetBDXCommandPool() -> dict[int, GeneralClass]:
         38: PlaceRuntimeBlockWithChestDataAndUint32RuntimeID(),
         39: AssignDebugData(),
         40: PlaceBlockWithChestData(),
-        41: PlaceBlockWithNBTData()
+        41: NOP(),
     }
+# warning: 41 is nbt but removed
