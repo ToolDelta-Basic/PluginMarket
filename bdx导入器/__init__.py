@@ -7,7 +7,7 @@ from .BDXConverter import ReadBDXFile
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
     author = "xingchen/SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -149,10 +149,11 @@ class BDumpOP:
                         i.trackOutput,
                         i.executeOnFirstTick
                     )
+                    import_delay = .2
                     if hasattr(i, "blockData"):
-                        self.f.interact.place_command_block(pck, i.blockData, 0.05)
+                        self.f.interact.place_command_block(pck, i.blockData, import_delay)
                     else:
-                        self.f.interact.place_command_block(pck, i.data, 0.05)
+                        self.f.interact.place_command_block(pck, i.data, import_delay)
                 case 41:
                     nbt_data = i.blockNBT
                     Print.print_war(f"BDX导入器: 忽略NBT {nbt_data}")
