@@ -118,7 +118,7 @@ default_page = MultiPage(
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
-    version = (0, 1, 3)
+    version = (0, 1, 4)
     description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
