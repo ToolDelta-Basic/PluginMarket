@@ -138,7 +138,7 @@
     "server-link": {
       "name": "服服互通",
       "author": "SuperScript/2401PT",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "清空玩家末影箱": {
