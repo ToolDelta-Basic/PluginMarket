@@ -116,12 +116,14 @@ class SuperLinkProtocol(BasicProtocol):
         except gaierror as err:
             Print.print_err(f"服服互通: 中心服务器连接失败(IP解析异常): {self.ws_ip} - {err}")
         except Exception as err:
+            import traceback
+            traceback.print_exc()
             Print.print_err(f"服服互通: 中心服务器连接失败: {err}")
         finally:
             self.active = False
 
     async def handle(self, recv_data: dict):
-        data = format_data(recv_data["Type"], recv_data)
+        data = format_data(recv_data["Type"], recv_data["Content"])
         if data.content.get("UUID") in self.req_resps.keys():
             self.req_resps[data.content["UUID"]](data)
         else:
@@ -151,7 +153,7 @@ class SuperLinkProtocol(BasicProtocol):
 class SuperLink(Plugin):
     name = "服服互通v4"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)
@@ -185,7 +187,7 @@ class SuperLink(Plugin):
                 "转发聊天到本服格式": str
             }
         }
-        self.cfg, _ = Config.getPluginConfigAndVersion(
+        self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         use_protocol: type[BasicProtocol] | None = {
