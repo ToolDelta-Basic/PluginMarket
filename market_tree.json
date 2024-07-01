@@ -39,6 +39,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "src-td-update": {
+      "name": "源码升级ToolDelta",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "井字棋": {
       "name": "井字棋",
       "author": "SuperScript/wling",

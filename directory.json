@@ -84,6 +84,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "源码升级ToolDelta": [
+        "datas.json",
+        "__init__.py"
+    ],
     "plugin_package": [
         "基础功能包.json"
     ],
