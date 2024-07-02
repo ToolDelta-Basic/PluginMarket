@@ -93,7 +93,7 @@ Getting started:
     ['MPK mini MIDI 1', 'SH-201']
 """
 
-from . import ports, sockets
+from . import ports
 from .messages import (
     MAX_PITCHWHEEL,
     MAX_SONGPOS,
@@ -142,7 +142,6 @@ __all__ = [
     "ports",
     "read_syx_file",
     "second2tick",
-    "sockets",
     "tempo2bpm",
     "tick2second",
     "version_info",
