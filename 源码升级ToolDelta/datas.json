@@ -3,6 +3,6 @@
     "version": "0.0.1",
     "plugin-type": "classic",
     "description": "下载该插件后重启ToolDelta(仅限源码启动的)可以立即更新ToolDelta, 升级完成后此插件会立即自动卸载",
-    "pre-plugins": [],
+    "pre-plugins": {},
     "plugin-id": "src-td-update"
 }
