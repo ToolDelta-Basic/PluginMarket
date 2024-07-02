@@ -128,6 +128,31 @@
         "datas.json",
         "__init__.py"
     ],
+    "前置_MIDI播放器/mido": [
+        "frozen.py",
+        "syx.py",
+        "parser.py",
+        "tokenizer.py",
+        "version.py",
+        "ports.py",
+        "__init__.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "units.py",
+        "midifiles.py",
+        "tracks.py",
+        "meta.py",
+        "__init__.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "messages.py",
+        "decode.py",
+        "strings.py",
+        "encode.py",
+        "specs.py",
+        "checks.py",
+        "__init__.py"
+    ],
     "前置_MIDI播放器/Musicreater": [
         "main.py",
         "subclass.py",
