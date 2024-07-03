@@ -137,7 +137,6 @@
         "syx.py",
         "parser.py",
         "tokenizer.py",
-        "version.py",
         "ports.py",
         "__init__.py"
     ],
