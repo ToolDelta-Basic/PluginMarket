@@ -17,7 +17,7 @@ class PlayerMusicStatus:
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
@@ -71,7 +71,7 @@ class MusicPlayer(tooldelta.Plugin):
 
     def on_inject(self):
         self.chatbar.add_trigger(
-            self.cfg["播放音乐、暂停和继续播放的触发词"],
+            self.cfg["播放音乐、暂停和继续播放的触发词(以下命令具有等效功能)"],
             "[曲目名]",
             "播放歌曲， 或停止或继续播放音乐",
             self.play_music_menu,

@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "功能请查看插件手册!!!\n使用的MIDI解析和转换库所有者/组织: © 2024 音·创 开发者",
   "limit_launcher": null,
   "pre-plugins": {
