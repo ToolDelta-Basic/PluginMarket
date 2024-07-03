@@ -118,7 +118,6 @@ from .midifiles import (
 )
 from .parser import Parser, parse, parse_all
 from .syx import read_syx_file, write_syx_file
-from .version import version_info
 
 __all__ = [
     "KeySignatureError",
@@ -144,6 +143,5 @@ __all__ = [
     "second2tick",
     "tempo2bpm",
     "tick2second",
-    "version_info",
     "write_syx_file",
 ]
