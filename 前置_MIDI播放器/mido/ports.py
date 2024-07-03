@@ -5,6 +5,7 @@
 """
 Useful tools for working with ports
 """
+
 import random
 import threading
 import time
@@ -43,7 +44,7 @@ def reset_messages():
     RESET_ALL_CONTROLLERS = 121
     for channel in range(16):
         for control in [ALL_NOTES_OFF, RESET_ALL_CONTROLLERS]:
-            yield Message('control_change', channel=channel, control=control)
+            yield Message("control_change", channel=channel, control=control)
 
 
 def panic_messages():
@@ -55,8 +56,7 @@ def panic_messages():
     """
     ALL_SOUNDS_OFF = 120
     for channel in range(16):
-        yield Message('control_change',
-                      channel=channel, control=ALL_SOUNDS_OFF)
+        yield Message("control_change", channel=channel, control=ALL_SOUNDS_OFF)
 
 
 class DummyLock:
@@ -71,12 +71,13 @@ class BasePort:
     """
     Abstract base class for Input and Output ports.
     """
+
     is_input = False
     is_output = False
     _locking = True
 
     def __init__(self, name=None, **kwargs):
-        if hasattr(self, 'closed'):
+        if hasattr(self, "closed"):
             # __init__() called twice (from BaseInput and BaseOutput).
             # This stops _open() from being called twice.
             return
@@ -105,7 +106,7 @@ class BasePort:
         """
         with self._lock:
             if not self.closed:
-                if hasattr(self, 'autoreset') and self.autoreset:
+                if hasattr(self, "autoreset") and self.autoreset:
                     try:
                         self.reset()
                     except OSError:
@@ -126,26 +127,26 @@ class BasePort:
 
     def __repr__(self):
         if self.closed:
-            state = 'closed'
+            state = "closed"
         else:
-            state = 'open'
+            state = "open"
 
         capabilities = self.is_input, self.is_output
-        port_type = {(True, False): 'input',
-                     (False, True): 'output',
-                     (True, True): 'I/O port',
-                     (False, False): 'mute port',
-                     }[capabilities]
+        port_type = {
+            (True, False): "input",
+            (False, True): "output",
+            (True, True): "I/O port",
+            (False, False): "mute port",
+        }[capabilities]
 
-        name = self.name or ''
+        name = self.name or ""
 
         try:
             device_type = self._device_type
         except AttributeError:
             device_type = self.__class__.__name__
 
-        return '<{} {} {!r} ({})>'.format(
-            state, port_type, name, device_type)
+        return "<{} {} {!r} ({})>".format(state, port_type, name, device_type)
 
 
 class BaseInput(BasePort):
@@ -154,9 +155,10 @@ class BaseInput(BasePort):
     Subclass and override _receive() to create a new input port type.
     (See portmidi.py for an example of how to do this.)
     """
+
     is_input = True
 
-    def __init__(self, name='', **kwargs):
+    def __init__(self, name="", **kwargs):
         """Create an input port.
 
         name is the port name, as returned by input_names(). If
@@ -167,8 +169,8 @@ class BaseInput(BasePort):
         self._messages = self._parser.messages  # Shortcut.
 
     def _check_callback(self):
-        if hasattr(self, 'callback') and self.callback is not None:
-            raise ValueError('a callback is set for this port')
+        if hasattr(self, "callback") and self.callback is not None:
+            raise ValueError("a callback is set for this port")
 
     def _receive(self, block=True):
         pass
@@ -196,7 +198,7 @@ class BaseInput(BasePort):
         different errors be raised? What's most useful here?
         """
         if not self.is_input:
-            raise ValueError('Not an input port')
+            raise ValueError("Not an input port")
 
         self._check_callback()
 
@@ -207,7 +209,7 @@ class BaseInput(BasePort):
 
         if self.closed:
             if block:
-                raise ValueError('receive() called on closed port')
+                raise ValueError("receive() called on closed port")
             else:
                 return None
 
@@ -222,7 +224,7 @@ class BaseInput(BasePort):
                 elif not block:
                     return None
                 elif self.closed:
-                    raise OSError('port closed during receive()')
+                    raise OSError("port closed during receive()")
 
             sleep()
 
@@ -258,9 +260,10 @@ class BaseOutput(BasePort):
     Subclass and override _send() to create a new port type.  (See
     portmidi.py for how to do this.)
     """
+
     is_output = True
 
-    def __init__(self, name='', autoreset=False, **kwargs):
+    def __init__(self, name="", autoreset=False, **kwargs):
         """Create an output port
 
         name is the port name, as returned by output_names(). If
@@ -279,11 +282,11 @@ class BaseOutput(BasePort):
         the original message without any unexpected consequences.
         """
         if not self.is_output:
-            raise ValueError('Not an output port')
+            raise ValueError("Not an output port")
         elif not isinstance(msg, Message):
-            raise TypeError('argument to send() must be a Message')
+            raise TypeError("argument to send() must be a Message")
         elif self.closed:
-            raise ValueError('send() called on closed port')
+            raise ValueError("send() called on closed port")
 
         with self._lock:
             self._send(msg.copy())
@@ -311,7 +314,7 @@ class BaseOutput(BasePort):
 
 
 class BaseIOPort(BaseInput, BaseOutput):
-    def __init__(self, name='', **kwargs):
+    def __init__(self, name="", **kwargs):
         """Create an IO port.
 
         name is the port name, as returned by ioport_names().
@@ -335,7 +338,7 @@ class IOPort(BaseIOPort):
         self.output = output
 
         # We use str() here in case name is None.
-        self.name = f'{str(input.name)} + {str(output.name)}'
+        self.name = f"{str(input.name)} + {str(output.name)}"
         self._messages = self.input._messages
         self.closed = False
         self._lock = DummyLock()
@@ -360,7 +363,7 @@ class EchoPort(BaseIOPort):
 
 class MultiPort(BaseIOPort):
     def __init__(self, ports, yield_ports=False):
-        BaseIOPort.__init__(self, 'multi')
+        BaseIOPort.__init__(self, "multi")
         self.ports = list(ports)
         self.yield_ports = yield_ports
 
@@ -371,9 +374,9 @@ class MultiPort(BaseIOPort):
                 port.send(message)
 
     def _receive(self, block=True):
-        self._messages.extend(multi_receive(self.ports,
-                                            yield_ports=self.yield_ports,
-                                            block=block))
+        self._messages.extend(
+            multi_receive(self.ports, yield_ports=self.yield_ports, block=block)
+        )
 
 
 def multi_receive(ports, yield_ports=False, block=True):
