@@ -204,7 +204,7 @@
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "plugin-type": "classic"
     },
     "聊天栏菜单": {
