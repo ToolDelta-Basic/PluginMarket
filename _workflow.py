@@ -1,6 +1,7 @@
 import os
 import json
 
+
 def generate_json(directory):
     data = {}
 
@@ -13,7 +14,7 @@ def generate_json(directory):
     # 获取目录下所有文件
     for root, _, files in os.walk(target_directory):
         relative_path = os.path.relpath(root, target_directory)
-        if any(item in relative_path for item in ['.', '.git']):
+        if any(item in relative_path for item in [".", ".git"]):
             continue
         data[relative_path] = []
 
@@ -22,6 +23,7 @@ def generate_json(directory):
             data[relative_path].append(file)
 
     return data
+
 
 def get_latest_versions(directory):
     v_dict = {}
@@ -36,6 +38,7 @@ def get_latest_versions(directory):
                 v_dict[dat["plugin-id"]] = dat["version"]
     return json.dumps(v_dict, indent=2, ensure_ascii=False)
 
+
 def flush_basic_datas():
     with open("market_tree.json", "r", encoding="utf-8") as f:
         market_d = json.load(f)
@@ -49,11 +52,22 @@ def flush_basic_datas():
                     "name": path,
                     "author": dat["author"],
                     "version": dat["version"],
-                    "plugin-type": dat["plugin-type"]
+                    "plugin-type": dat["plugin-type"],
                 }
 
+    format_tree_depen = {}
+    format_tree_main = {}
+    for k, v in market_d["MarketPlugins"].items():
+        if "前置" in v["name"]:
+            format_tree_depen[k] = v
+        else:
+            format_tree_main[k] = v
+    market_d["MarketPlugins"] = {}
+    market_d["MarketPlugins"].update(format_tree_main)
+    market_d["MarketPlugins"].update(format_tree_depen)
     with open("market_tree.json", "w", encoding="utf-8") as f:
         json.dump(market_d, f, indent=2, ensure_ascii=False)
+
 
 def flush_plugin_ids_map():
     mapper = {}
@@ -66,6 +80,7 @@ def flush_plugin_ids_map():
 
     with open("plugin_ids_map.json", "w", encoding="utf-8") as f:
         json.dump(mapper, f, indent=2, ensure_ascii=False)
+
 
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
