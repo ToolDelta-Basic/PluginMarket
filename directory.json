@@ -125,6 +125,7 @@
         "__init__.py"
     ],
     "音乐播放器": [
+        "readme.txt",
         "datas.json",
         "__init__.py"
     ],
