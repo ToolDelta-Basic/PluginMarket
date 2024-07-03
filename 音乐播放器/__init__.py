@@ -17,14 +17,14 @@ class PlayerMusicStatus:
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
         CFG_DEFAULT = {
             "音乐播放条格式": "§e[歌曲名] §f[当前播放时长] §7/ [总播放时长] [播放符号]\n[播放条]",
             "限制最大的音乐同时播放数": 4,
-            "播放音乐、暂停和继续播放的触发词": [
+            "播放音乐、暂停和继续播放的触发词(以下命令具有等效功能)": [
                 "music play",
                 "播放",
                 "music pause",
