@@ -33,6 +33,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "chunk-show": {
+      "name": "区块显示器",
+      "author": "SnowLotus",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript",

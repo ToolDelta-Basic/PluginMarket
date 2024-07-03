@@ -80,6 +80,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "区块显示器": [
+        "___init__.py",
+        "datas.json"
+    ],
     "前置_世界交互": [
         "datas.json",
         "__init__.py"
