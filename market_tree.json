@@ -123,6 +123,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "sfx-player": {
+      "name": "音效播放器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "清空玩家末影箱": {
       "name": "清空玩家末影箱",
       "author": "wling",
@@ -198,7 +204,7 @@
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "plugin-type": "classic"
     },
     "聊天栏菜单": {

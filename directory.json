@@ -138,6 +138,7 @@
         "syx.py",
         "parser.py",
         "tokenizer.py",
+        "version.py",
         "ports.py",
         "__init__.py"
     ],
@@ -208,6 +209,11 @@
         "__init__.py"
     ],
     "服服互通": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "音效播放器": [
+        "readme.txt",
         "datas.json",
         "__init__.py"
     ],
