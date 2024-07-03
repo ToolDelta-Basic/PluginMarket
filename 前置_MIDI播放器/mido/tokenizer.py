@@ -12,7 +12,6 @@ class Tokenizer:
     """
     Splits a MIDI byte stream into messages.
     """
-
     def __init__(self, data=None):
         """Create a new decoder."""
 
@@ -32,7 +31,7 @@ class Tokenizer:
 
             self._status = 0
 
-        elif 0xF8 <= status <= 0xFF:
+        elif 0xf8 <= status <= 0xff:
             if self._status != SYSEX_START:
                 # Realtime messages are only allowed inside sysex
                 # messages. Reset parser.
@@ -45,13 +44,13 @@ class Tokenizer:
             # New message.
             spec = SPEC_BY_STATUS[status]
 
-            if spec["length"] == 1:
+            if spec['length'] == 1:
                 self._messages.append([status])
                 self._status = 0
             else:
                 self._status = status
                 self._bytes = [status]
-                self._len = spec["length"]
+                self._len = spec['length']
         else:
             # Undefined message. Reset parser.
             # (Undefined realtime messages are handled above.)
@@ -75,7 +74,7 @@ class Tokenizer:
         Takes an int in range [0..255].
         """
         if not isinstance(byte, Integral):
-            raise TypeError("message byte must be integer")
+            raise TypeError('message byte must be integer')
 
         if 0 <= byte <= 255:
             if byte <= 127:
@@ -83,7 +82,7 @@ class Tokenizer:
             else:
                 return self._feed_status_byte(byte)
         else:
-            raise ValueError(f"invalid byte value {byte!r}")
+            raise ValueError(f'invalid byte value {byte!r}')
 
     def feed(self, data):
         """Feed MIDI bytes to the decoder.

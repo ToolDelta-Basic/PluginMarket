@@ -8,7 +8,7 @@ from .midifiles import MetaMessage, UnknownMetaMessage
 
 class Frozen:
     def __setattr__(self, *_):
-        raise ValueError("frozen message is immutable")
+        raise ValueError('frozen message is immutable')
 
     def __hash__(self):
         return hash(tuple(sorted(vars(self).items())))
@@ -24,7 +24,7 @@ class FrozenMetaMessage(Frozen, MetaMessage):
 
 class FrozenUnknownMetaMessage(Frozen, UnknownMetaMessage):
     def __repr__(self):
-        return "Frozen" + UnknownMetaMessage.__repr__(self)
+        return 'Frozen' + UnknownMetaMessage.__repr__(self)
 
 
 def is_frozen(msg):
@@ -34,7 +34,6 @@ def is_frozen(msg):
 
 # TODO: these two functions are almost the same except inverted. There
 # should be a way to refactor them to lessen code duplication.
-
 
 def freeze_message(msg):
     """Freeze message.
@@ -59,7 +58,7 @@ def freeze_message(msg):
     elif msg is None:
         return None
     else:
-        raise ValueError("first argument must be a message or None")
+        raise ValueError('first argument must be a message or None')
 
     frozen = class_.__new__(class_)
     vars(frozen).update(vars(msg))
@@ -85,7 +84,7 @@ def thaw_message(msg):
     elif msg is None:
         return None
     else:
-        raise ValueError("first argument must be a message or None")
+        raise ValueError('first argument must be a message or None')
 
     thawed = class_.__new__(class_)
     vars(thawed).update(vars(msg))

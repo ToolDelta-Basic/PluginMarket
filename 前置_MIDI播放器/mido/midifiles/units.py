@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-
 def tick2second(tick, ticks_per_beat, tempo):
     """Convert absolute time in ticks to seconds.
 
@@ -33,7 +32,7 @@ def bpm2tempo(bpm, time_signature=(4, 4)):
     beats. These beats are multiples/fractions of a quarter note, thus the
     returned BPM depend on the time signature. Normal rounding applies.
     """
-    return int(round(60 * 1e6 / bpm * time_signature[1] / 4.0))
+    return int(round(60 * 1e6 / bpm * time_signature[1] / 4.))
 
 
 def tempo2bpm(tempo, time_signature=(4, 4)):
@@ -44,4 +43,4 @@ def tempo2bpm(tempo, time_signature=(4, 4)):
     beats. The beats are multiples/fractions of a quarter note, thus the
     returned tempo depends on the time signature denominator.
     """
-    return 60 * 1e6 / tempo * time_signature[1] / 4.0
+    return 60 * 1e6 / tempo * time_signature[1] / 4.

@@ -24,6 +24,7 @@ Terms & Conditions: License.md in the root directory
 # 二六字组！万国码合！二六字组！万国码合！ グループ！コード＃！グループ！コード＃！  Words combine! Unicode unite!
 # 赶快呼叫 程序员！Let's Go！          直ぐに呼びましょプログラマ レッツゴー！  Hurry to call the programmer! Let's Go!
 
+
 import math
 import os
 
@@ -324,9 +325,9 @@ class MusicSequence:
             for this_note in [k for j in music_channels.values() for k in j]:
                 if this_note.sound_name in note_count_per_instrument.keys():
                     note_count_per_instrument[this_note.sound_name] += 1
-                    qualified_note_count_per_instrument[this_note.sound_name] += (
-                        is_note_in_diapason(this_note)
-                    )
+                    qualified_note_count_per_instrument[
+                        this_note.sound_name
+                    ] += is_note_in_diapason(this_note)
                 else:
                     note_count_per_instrument[this_note.sound_name] = 1
                     qualified_note_count_per_instrument[this_note.sound_name] = int(
@@ -491,11 +492,11 @@ class MusicSequence:
                         else:
                             if ignore_mismatch_error:
                                 pass
-                                # print(
+                                #print(
                                 #    "[WARRING] MIDI格式错误 音符不匹配 {} 无法在上文中找到与之匹配的音符开音消息".format(
                                 #        msg
                                 #    )
-                                # )
+                                #)
                             else:
                                 raise NoteOnOffMismatchError(
                                     "当前的MIDI很可能有损坏之嫌……",
@@ -684,22 +685,11 @@ class MidiConvert(MusicSequence):
         delaytime_previous = 0
         for note in notes_list:
             tickdelay = note.start_tick - delaytime_previous
-            note_pitch_f1 = (
-                note.note_pitch
-                - 60
-                - MM_INSTRUMENT_DEVIATION_TABLE.get(note.sound_name, 6)
-            )
+            note_pitch_f1 = note.note_pitch - 60 - MM_INSTRUMENT_DEVIATION_TABLE.get(note.sound_name, 6)
             delaytime_previous = note.start_tick
             # 响度 / 127
             # 音调 2 ** (f1 / 12)
-            res_list.append(
-                (
-                    note.sound_name,
-                    round(note.velocity / 127 * 100),
-                    note_pitch_f1,
-                    tickdelay,
-                )
-            )
+            res_list.append((note.sound_name, round(note.velocity / 127 * 100), note_pitch_f1, tickdelay))
         return res_list
 
     def copy_important(self):

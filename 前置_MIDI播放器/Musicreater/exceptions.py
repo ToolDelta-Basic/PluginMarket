@@ -58,7 +58,6 @@ class MidiDestroyedError(MSCTBaseException):
 #         super().__init__("未定义MidiFile对象：你甚至没有对象就想要生孩子？", *args)
 # 此错误在本版本内已经不再使用
 
-
 class CommandFormatError(RuntimeError):
     """指令格式与目标格式不匹配而引起的错误"""
 
