@@ -7,23 +7,23 @@ from tooldelta import Plugin, plugins, Config, Builtins, Print
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def on_def(self):
         self.funclib = plugins.get_plugin_api("基本插件功能库")
         CFG = {
-            "公告内容(列表的每项代表一行公告)": [
-                "§7%m/%d/20%y 星期[星期]",
-                "§a%H§f : §a%M",
-                "§f在线人数: §a[在线人数]",
-                "§d欢迎大家游玩",
-            ],
+            "公告内容(公告内容:计分板数字)": {
+                r"§7%m/%d/20%y 星期[星期]": 0,
+                r"§a%H§f : §a%M": -1,
+                r"§f在线人数: §a[在线人数]": -2,
+                r"§d欢迎大家游玩": -3
+            },
             "公告标题栏名(请注意长度)": "公告",
             "刷新频率(秒)": 20,
         }
         std = Config.auto_to_std(CFG)
         cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version)  # type: ignore
-        self.anos = cfg["公告内容(列表的每项代表一行公告)"]
+        self.anos = cfg["公告内容(公告内容:计分板数字)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
         if len(self.ano_title) >= 15:
@@ -46,19 +46,17 @@ class BetterAnnounce(Plugin):
         )
         self.game_ctrl.sendwocmd("/scoreboard objectives setdisplay sidebar 公告")
 
-    @Builtins.thread_func
+    @Builtins.thread_func("计分板公告刷新")
     def flush_announcement1(self):
         scmd = self.game_ctrl.sendwocmd
         ftime = 100
-        posix = len(self.anos) // 2
         while 1:
             time.sleep(1)
             ftime += 1
             if ftime > self.flush_secs:
                 ftime = 0
                 scmd(f"/scoreboard players reset * 公告")
-                new_posix = posix
-                for i in self.anos:
+                for text, scb_score in self.anos.items():
                     text = time.strftime(
                         Builtins.SimpleFmt(
                             {
@@ -66,8 +64,7 @@ class BetterAnnounce(Plugin):
                                 "[随机]": random.randint(1, 5),
                                 "[星期]": "一二三四五六日"[time.localtime().tm_wday],
                             },
-                            i,
+                            text,
                         )
                     )
-                    scmd(f'/scoreboard players set "{text}" 公告 {new_posix}')
-                    new_posix -= 1
+                    scmd(f'/scoreboard players set "{text}" 公告 {scb_score}')
