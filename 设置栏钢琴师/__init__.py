@@ -1,5 +1,6 @@
 from tooldelta import plugins, Plugin
 
+
 @plugins.add_plugin
 class SettingsPiano(Plugin):
     name = "设置栏弹钢琴v2"
@@ -33,26 +34,39 @@ class SettingsPiano(Plugin):
             case "dotiledrops":
                 pitch = 2.8
             case "spawnradius":
-                self.base_8 = max(0, pkt["GameRules"][0]["Value"]/2) - 5
+                self.base_8 = max(0, pkt["GameRules"][0]["Value"] / 2) - 5
                 if self.base_8 + 5 not in range(3, 7):
-                    self.game_ctrl.say_to("@a", f"§c音域太高或者太低啦({self.base_8 + 5})， 这样是听不到钢琴音乐的！ §6建议范围： 3~7")
+                    self.game_ctrl.say_to(
+                        "@a",
+                        f"§c音域太高或者太低啦({self.base_8 + 5})， 这样是听不到钢琴音乐的！ §6建议范围： 3~7",
+                    )
                 else:
-                    self.game_ctrl.say_to("@a", f"设置栏钢琴 音高域已变为: §a{self.base_8 + 5}")
+                    self.game_ctrl.say_to(
+                        "@a", f"设置栏钢琴 音高域已变为: §a{self.base_8 + 5}"
+                    )
             case "doimmediaterespawn":
                 if pkt["GameRules"][0]["Value"]:
                     self.lock = [True, False][self.lock]
-                    self.game_ctrl.say_to("@a", f"钢琴键演奏&锁定模式: {['§cOff', '§aOn'][self.lock]}")
+                    self.game_ctrl.say_to(
+                        "@a", f"钢琴键演奏&锁定模式: {['§cOff', '§aOn'][self.lock]}"
+                    )
                     if self.lock:
-                        self.game_ctrl.sendcmd("execute as @a run playsound random.toast @s")
+                        self.game_ctrl.sendcmd(
+                            "execute as @a run playsound random.toast @s"
+                        )
                     else:
-                        self.game_ctrl.sendcmd("execute as @a run playsound random.toast @s ~~~ 1 0.5")
+                        self.game_ctrl.sendcmd(
+                            "execute as @a run playsound random.toast @s ~~~ 1 0.5"
+                        )
                 return False
             case _:
                 return False
-        if self.lock and isinstance(pkt['GameRules'][0]['Value'], bool):
-            if  pk not in self.ks:
+        if self.lock and isinstance(pkt["GameRules"][0]["Value"], bool):
+            if pk not in self.ks:
                 self.ks.append(pk)
-                self.game_ctrl.sendwocmd(f"/gamerule {pk} {['true', 'false'][pkt['GameRules'][0]['Value']]}")
+                self.game_ctrl.sendwocmd(
+                    f"/gamerule {pk} {['true', 'false'][pkt['GameRules'][0]['Value']]}"
+                )
                 cmd = f"/execute as @a run playsound note.pling @s ~~~ 1 {pitch * 2 ** self.base_8}"
                 self.game_ctrl.sendwocmd(cmd)
             else:

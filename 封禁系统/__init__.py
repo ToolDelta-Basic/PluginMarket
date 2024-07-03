@@ -2,6 +2,7 @@ import time, os
 from datetime import datetime
 from tooldelta import plugins, Plugin, Frame, Builtins, Print, Config
 
+
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
     name = "封禁系统"
@@ -60,6 +61,7 @@ class BanSystem(Plugin):
             player: 玩家名
         """
         self.del_ban_data(player)
+
     # ----------------------------------
 
     @Builtins.thread_func
@@ -80,7 +82,8 @@ class BanSystem(Plugin):
             )
         elif len(all_matches) > 1:
             self.game_ctrl.say_to(
-                caller, f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}, 需要输入更详细一点"
+                caller,
+                f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}, 需要输入更详细一点",
             )
         else:
             self.ban(all_matches[0], banto_time, reason)
@@ -90,7 +93,9 @@ class BanSystem(Plugin):
         ban_data = self.get_ban_data(player)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
         if ban_to > time.time():
-            Print.print_inf(f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to)}")
+            Print.print_inf(
+                f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to)}"
+            )
             self.game_ctrl.sendwocmd(
                 f"/kick {player} {self.format_msg(player, ban_to, reason, '踢出玩家提示格式')}"
             )
@@ -109,9 +114,7 @@ class BanSystem(Plugin):
             time_show = time.strftime("%H : %M : %S", struct_time)
         return date_show + "  " + time_show
 
-    def format_msg(
-        self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str
-    ):
+    def format_msg(self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str):
         fmt_time = self.format_bantime(ban_to_sec)
         Print.print_inf(
             f"封禁系统使用的 当前时间: §6{datetime.fromtimestamp(time.time())}"
@@ -136,4 +139,4 @@ class BanSystem(Plugin):
     def get_ban_data(self, player: str) -> dict:
         return Builtins.SimpleJsonDataReader.readFileFrom(
             "封禁系统", player, self.BAN_DATA_DEFAULT
-        ) # type: ignore
+        )  # type: ignore

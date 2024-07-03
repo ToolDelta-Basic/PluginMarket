@@ -20,41 +20,45 @@ class BDX(GeneralClass):
             The signature data of the BDX file
         """
         super().__init__()
-        self.AuthorName: str = 'TriM-Organization/BDXConverter'
+        self.AuthorName: str = "TriM-Organization/BDXConverter"
         self.BDXContents: list[GeneralClass] = []
 
     def Marshal(self, writer: BytesIO) -> None:
         newWriter = BytesIO(
-            b'BDX\x00' + self.AuthorName.encode(encoding='utf-8') + b'\x00')
+            b"BDX\x00" + self.AuthorName.encode(encoding="utf-8") + b"\x00"
+        )
         newWriter.seek(0, 2)
         # inside header with author's name
         for i in self.BDXContents:
-            if 'operationNumber' in i.__dict__:
-                newWriter.write(i.__dict__['operationNumber'].to_bytes(
-                    length=1, byteorder='big', signed=False))
+            if "operationNumber" in i.__dict__:
+                newWriter.write(
+                    i.__dict__["operationNumber"].to_bytes(
+                        length=1, byteorder="big", signed=False
+                    )
+                )
                 i.Marshal(newWriter)
         # valid contents
-        #if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
+        # if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
         #    self.Signature.fileHash = new(newWriter.getvalue())
         #    self.Signature.Marshal(newWriter)
-        #else:
-        newWriter.write(b'XE')
+        # else:
+        newWriter.write(b"XE")
         # signature
-        writer.write(b'BD@' + compress(newWriter.getvalue()))
+        writer.write(b"BD@" + compress(newWriter.getvalue()))
         # write BDX data
 
     def UnMarshal(self, binaryData: bytes) -> None:
-        if binaryData[0:3] != b'BD@':
+        if binaryData[0:3] != b"BD@":
             raise HeaderError(binaryData[:3])
         # check outside header
         reader = BytesIO(decompress(binaryData[3:]))
         # get reader to read valid contents
         insideHeader = getByte(reader, 3)
-        if insideHeader != b'BDX':
+        if insideHeader != b"BDX":
             raise HeaderError(insideHeader)
         # check inside header
         firstOperation = getByte(reader, 1)
-        if firstOperation != b'\x00':
+        if firstOperation != b"\x00":
             raise UnknownOperationError(firstOperation[0], reader.seek(-1, 1))
         self.AuthorName = getString(reader)
         # get author's name
@@ -89,27 +93,28 @@ class BDX(GeneralClass):
     def Loads(self, jsonDict: dict) -> None:
         BDXCommandPool: dict[int, GeneralClass] = GetBDXCommandPool()
 
-        self.AuthorName = jsonDict['AuthorName'] if 'AuthorName' in jsonDict else ''
-        if 'Signature' in jsonDict:
-            self.Signature.Loads(jsonDict['Signature'])
-        if 'BDXContents' in jsonDict:
-            tmp: list[dict] = jsonDict['BDXContents']
+        self.AuthorName = jsonDict["AuthorName"] if "AuthorName" in jsonDict else ""
+        if "Signature" in jsonDict:
+            self.Signature.Loads(jsonDict["Signature"])
+        if "BDXContents" in jsonDict:
+            tmp: list[dict] = jsonDict["BDXContents"]
             for i in tmp:
-                if not ('operationNumber' in i):
+                if not ("operationNumber" in i):
                     continue
-                if not ('operationData' in i):
+                if not ("operationData" in i):
                     continue
-                commandId: int = i['operationNumber']
+                commandId: int = i["operationNumber"]
                 struct: GeneralClass = deepcopy(BDXCommandPool[commandId])
-                struct.Loads(i['operationData'])
+                struct.Loads(i["operationData"])
                 self.BDXContents.append(struct)
 
     def Dumps(self) -> dict:
         return {
-            'AuthorName': self.AuthorName,
-            'BDXContents': [i.Dumps() for i in self.BDXContents],
-            'Signature': self.Signature.Dumps()
+            "AuthorName": self.AuthorName,
+            "BDXContents": [i.Dumps() for i in self.BDXContents],
+            "Signature": self.Signature.Dumps(),
         }
+
 
 class BDX_2(GeneralClass):
     def __init__(self) -> None:
@@ -123,26 +128,30 @@ class BDX_2(GeneralClass):
             The signature data of the BDX file
         """
         super().__init__()
-        self.AuthorName: str = 'TriM-Organization/BDXConverter'
+        self.AuthorName: str = "TriM-Organization/BDXConverter"
 
     def Marshal(self, writer: BytesIO) -> None:
         newWriter = BytesIO(
-            b'BDX\x00' + self.AuthorName.encode(encoding='utf-8') + b'\x00')
+            b"BDX\x00" + self.AuthorName.encode(encoding="utf-8") + b"\x00"
+        )
         newWriter.seek(0, 2)
         # inside header with author's name
         for i in self.BDXContents:
-            if 'operationNumber' in i.__dict__:
-                newWriter.write(i.__dict__['operationNumber'].to_bytes(
-                    length=1, byteorder='big', signed=False))
+            if "operationNumber" in i.__dict__:
+                newWriter.write(
+                    i.__dict__["operationNumber"].to_bytes(
+                        length=1, byteorder="big", signed=False
+                    )
+                )
                 i.Marshal(newWriter)
         # valid contents
-        #if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
+        # if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign:
         #    self.Signature.fileHash = new(newWriter.getvalue())
         #    self.Signature.Marshal(newWriter)
-        #else:
-        newWriter.write(b'XE')
+        # else:
+        newWriter.write(b"XE")
         # signature
-        writer.write(b'BD@' + compress(newWriter.getvalue()))
+        writer.write(b"BD@" + compress(newWriter.getvalue()))
         # write BDX data
 
     @property
@@ -176,17 +185,17 @@ class BDX_2(GeneralClass):
                 # submit single data
 
     def UnMarshal(self, binaryData: bytes) -> None:
-        if binaryData[0:3] != b'BD@':
+        if binaryData[0:3] != b"BD@":
             raise HeaderError(binaryData[:3])
         # check outside header
         reader = BytesIO(decompress(binaryData[3:]))
         # get reader to read valid contents
         insideHeader = getByte(reader, 3)
-        if insideHeader != b'BDX':
+        if insideHeader != b"BDX":
             raise HeaderError(insideHeader)
         # check inside header
         firstOperation = getByte(reader, 1)
-        if firstOperation != b'\x00':
+        if firstOperation != b"\x00":
             raise UnknownOperationError(firstOperation[0], reader.seek(-1, 1))
         self.AuthorName = getString(reader)
         # get author's name

@@ -5,6 +5,7 @@ from typing import Callable
 
 plugins.checkSystemVersion((0, 7, 5))
 
+
 @dataclass
 class ChatbarTriggers:
     triggers: list[str]
@@ -13,6 +14,7 @@ class ChatbarTriggers:
     func: Callable
     args_pd: Callable
     op_only: bool
+
 
 # 使用 api = plugins.get_plugin_api("聊天栏菜单") 来获取到这个api
 @plugins.add_plugin_as_api("聊天栏菜单")
@@ -41,12 +43,12 @@ class ChatbarMenu(Plugin):
             "菜单尾": "§r§l==========[[当前页数] §7/ [总页数]§f]===========\n§r>>> §7输入 .help <页数> 可以跳转到该页",
         },
         "/help触发词": [".help"],
-        "单页内最多显示数": 6
+        "单页内最多显示数": 6,
     }
     STD_CFG_TYPE = {
         "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
         "/help触发词": Config.JsonList(str),
-        "单页内最多显示数": Config.PInt
+        "单页内最多显示数": Config.PInt,
     }
     chatbar_triggers: list[ChatbarTriggers] = []
 
@@ -94,9 +96,11 @@ class ChatbarMenu(Plugin):
         if isinstance(self.frame.launcher, launch_cli.FrameNeOmg):
             self.is_op = lambda player: self.frame.launcher.is_op(player)
         else:
-            self.is_op = lambda player: bool(self.game_ctrl.sendcmd(
-                "/testfor @a[name=" + player + ",m=1]", True
-            ).SuccessCount) # type: ignore
+            self.is_op = lambda player: bool(
+                self.game_ctrl.sendcmd(
+                    "/testfor @a[name=" + player + ",m=1]", True
+                ).SuccessCount
+            )  # type: ignore
 
     def show_menu(self, player: str, page: int):
         # page min = 1
@@ -104,7 +108,7 @@ class ChatbarMenu(Plugin):
         all_menu_args = self.chatbar_triggers
         if not player_is_op:
             # 仅 OP 可见的部分 过滤掉
-            all_menu_args = list(filter(lambda x:not x.op_only, all_menu_args))
+            all_menu_args = list(filter(lambda x: not x.op_only, all_menu_args))
         lmt = self.cfg["单页内最多显示数"]
         total = len(all_menu_args)
         max_page = round(total / lmt)
@@ -114,33 +118,34 @@ class ChatbarMenu(Plugin):
             page_split_index = max_page - 1
         else:
             page_split_index = page - 1
-        diplay_menu_args = all_menu_args[page_split_index * lmt : (page_split_index + 1) * lmt]
+        diplay_menu_args = all_menu_args[
+            page_split_index * lmt : (page_split_index + 1) * lmt
+        ]
         self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
         for tri in diplay_menu_args:
             self.game_ctrl.say_to(
                 player,
                 Utils.simple_fmt(
                     {
-                        "[菜单指令]": ("§e" if tri.op_only else "") + " / ".join(tri.triggers) + "§r",
+                        "[菜单指令]": ("§e" if tri.op_only else "")
+                        + " / ".join(tri.triggers)
+                        + "§r",
                         "[参数提示]": (
                             " " + tri.argument_hint if tri.argument_hint else ""
                         ),
                         "[菜单功能说明]": (
                             "" if tri.usage is None else "以" + tri.usage
-                        )
+                        ),
                     },
-                    self.cfg["help菜单样式"]["菜单列表"]
-                )
+                    self.cfg["help菜单样式"]["菜单列表"],
+                ),
             )
         self.game_ctrl.say_to(
             player,
             Utils.simple_fmt(
-                {
-                    "[当前页数]": page_split_index + 1,
-                    "[总页数]": max_page
-                },
-                self.cfg["help菜单样式"]["菜单尾"]
-            )
+                {"[当前页数]": page_split_index + 1, "[总页数]": max_page},
+                self.cfg["help菜单样式"]["菜单尾"],
+            ),
         )
 
     @Utils.thread_func("聊天栏菜单执行")
@@ -155,7 +160,9 @@ class ChatbarMenu(Plugin):
                         self.show_menu(player, 1)
                     else:
                         if (page_num := Utils.try_int(m[1])) is None:
-                            self.game_ctrl.say_to(player, "§chelp 命令应为1个参数: <页数: 正整数>")
+                            self.game_ctrl.say_to(
+                                player, "§chelp 命令应为1个参数: <页数: 正整数>"
+                            )
                         else:
                             self.show_menu(player, page_num)
                 return

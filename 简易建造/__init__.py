@@ -3,6 +3,7 @@ from tooldelta.game_utils import getTarget
 
 import time
 
+
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
@@ -17,13 +18,16 @@ class WorldEdit(Plugin):
     def on_def(self):
         self.add_trigger = plugins.get_plugin_api("聊天栏菜单").add_trigger
         from 前置_聊天栏菜单 import ChatbarMenu
+
         self.add_trigger = plugins.instant_plugin_api(ChatbarMenu).add_trigger
         self.getX = None
         self.getY = None
         self.getZ = None
 
     def on_inject(self):
-        self.add_trigger(["we help"], None, "查看 简易建造插件 的使用说明", self.description_show)
+        self.add_trigger(
+            ["we help"], None, "查看 简易建造插件 的使用说明", self.description_show
+        )
 
     def description_show(self, who: str, _):
         self.game_ctrl.say_to(
@@ -41,19 +45,26 @@ class WorldEdit(Plugin):
                 placeX, placeY, placeZ = (
                     jsonPkt["NBTData"]["x"],
                     jsonPkt["NBTData"]["y"],
-                    jsonPkt["NBTData"]["z"]
+                    jsonPkt["NBTData"]["z"],
                 )
                 try:
                     signPlayerName = getTarget(
                         f"@a[x={placeX}, y={placeY}, z={placeZ}, c=1, r=8]"
                     )[0]
-                    if getTarget(
-                        f"@a[x={placeX}, y={placeY}, z={placeZ}, r=8, m=!1]"
-                    ) != []:
-                        self.game_ctrl.say_to(signPlayerName, "无法使用，请确保告示牌附近8格内无非创造模式玩家")
+                    if (
+                        getTarget(f"@a[x={placeX}, y={placeY}, z={placeZ}, r=8, m=!1]")
+                        != []
+                    ):
+                        self.game_ctrl.say_to(
+                            signPlayerName,
+                            "无法使用，请确保告示牌附近8格内无非创造模式玩家",
+                        )
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", f"§c告示牌简易建造 (x={placeX}, y={placeY}, z={placeZ}) 失败: {err}")
+                    self.game_ctrl.say_to(
+                        "@a",
+                        f"§c告示牌简易建造 (x={placeX}, y={placeY}, z={placeZ}) 失败: {err}",
+                    )
                 self.getX = int(jsonPkt["NBTData"]["x"])
                 self.getY = int(jsonPkt["NBTData"]["y"])
                 self.getZ = int(jsonPkt["NBTData"]["z"])
@@ -73,7 +84,7 @@ class WorldEdit(Plugin):
                 placeX, placeY, placeZ = (
                     jsonPkt["NBTData"]["x"],
                     jsonPkt["NBTData"]["y"],
-                    jsonPkt["NBTData"]["z"]
+                    jsonPkt["NBTData"]["z"],
                 )
                 try:
                     signPlayerName = getTarget(
@@ -84,7 +95,9 @@ class WorldEdit(Plugin):
                     getZend = int(jsonPkt["NBTData"]["z"])
                 except Exception as err:
                     signPlayerName = ""
-                    self.game_ctrl.say_to("@a", f"§cERROR：目标选择器报错 §6{(placeX, placeY, placeZ)}")
+                    self.game_ctrl.say_to(
+                        "@a", f"§cERROR：目标选择器报错 §6{(placeX, placeY, placeZ)}"
+                    )
                 blockData = signText[8:].replace("陶瓦", "stained_hardened_clay")
                 try:
                     if signPlayerName in getTarget("@a[m=1]"):
@@ -124,7 +137,10 @@ class WorldEdit(Plugin):
                             ),
                         )
                 except Exception as err:
-                    self.game_ctrl.say_to("@a", f"§c无法执行方块批量复制操作， 因为 {err} ({err.__class__.__name__})")
+                    self.game_ctrl.say_to(
+                        "@a",
+                        f"§c无法执行方块批量复制操作， 因为 {err} ({err.__class__.__name__})",
+                    )
         return False
 
     def fillwith(self, sx, sy, sz, dx, dy, dz):

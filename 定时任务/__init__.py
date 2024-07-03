@@ -9,14 +9,17 @@ __plugin_meta__ = {
     "author": "System",
 }
 
+
 class Task:
-    def __init__(self, cmds: list[str], time: int, spec = False):
+    def __init__(self, cmds: list[str], time: int, spec=False):
         self.cmds = cmds
         self.wtime = time
         self.spec = spec
 
+
 data_path = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, "计划任务")
 tasks: dict[int, list[Task]] = {}
+
 
 @init()
 async def on_inject():
@@ -24,20 +27,19 @@ async def on_inject():
         os.mkdir(data_path)
         c_dir = os.path.join(os.path.dirname(__file__), "示例计划任务")
         for dir in os.listdir(c_dir):
-            shutil.copytree(
-                os.path.join(c_dir, dir),
-                data_path
-            )
+            shutil.copytree(os.path.join(c_dir, dir), data_path)
     read_files()
     Utils.createThread(asyncio.run, (run_tasks(),), "计划任务主线程")
+
 
 def read_files():
     for file in os.listdir(data_path):
         if file.endswith(".mcfunction"):
             load_mcf_file(os.path.join(data_path, file))
 
+
 def load_mcf_file(path: str):
-    name = os.path.basename(path).replace('.mcfunction', '')
+    name = os.path.basename(path).replace(".mcfunction", "")
     with open(path, encoding="utf-8") as f:
         content = f.read()
     try:
@@ -54,6 +56,7 @@ def load_mcf_file(path: str):
     tasks[s_time].append(Task(cmds, s_time, is_spec))
     Print.print_suc(f"计划任务: 已加载 {s_time}s任务 {name}")
 
+
 def parse_sth(f: str):
     s_time = None
     spec = False
@@ -68,6 +71,7 @@ def parse_sth(f: str):
         raise SyntaxError("设定时间应大于0")
     return s_time, spec
 
+
 async def run_tasks():
     counter = 0
     while 1:
@@ -77,12 +81,14 @@ async def run_tasks():
                 await asyncio.gather(*(execute_task(task) for task in v))
         counter += 1
 
+
 async def execute_task(task: Task):
     if task.spec:
         execute_task_spec(task)
     else:
         for cmd in task.cmds:
             sendwocmd(cmd)
+
 
 @Utils.thread_func("特殊计划任务执行")
 def execute_task_spec(task: Task):

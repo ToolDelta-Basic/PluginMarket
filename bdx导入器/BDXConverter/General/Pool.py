@@ -44,4 +44,6 @@ def GetBDXCommandPool() -> dict[int, GeneralClass]:
         40: PlaceBlockWithChestData(),
         41: NOP(),
     }
+
+
 # warning: 41 is nbt but removed

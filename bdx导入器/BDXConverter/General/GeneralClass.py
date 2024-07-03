@@ -2,6 +2,7 @@ from io import BytesIO
 from copy import deepcopy
 from typing import Any, TYPE_CHECKING
 
+
 class GeneralClass:
     """
     Any operation of the BDX file will inherit this class
@@ -12,6 +13,7 @@ class GeneralClass:
         self.operationName: str
 
     if TYPE_CHECKING:
+
         def __getattribute__(self, name: str) -> Any:
             raise ValueError("?")
 
@@ -31,13 +33,13 @@ class GeneralClass:
         """
         Load data from jsonDict:dict
         """
-        if 'operationNumber' in self.__dict__:
-            jsonDict['operationNumber'] = self.__dict__['operationNumber']
-            jsonDict['operationName'] = self.__dict__['operationName']
-        if 'operationData' in self.__dict__:
-            for i in self.__dict__['operationData']:
+        if "operationNumber" in self.__dict__:
+            jsonDict["operationNumber"] = self.__dict__["operationNumber"]
+            jsonDict["operationName"] = self.__dict__["operationName"]
+        if "operationData" in self.__dict__:
+            for i in self.__dict__["operationData"]:
                 if i in jsonDict:
-                    self.__dict__['operationData'][i] = jsonDict[i]
+                    self.__dict__["operationData"][i] = jsonDict[i]
         else:
             for i in self.__dict__:
                 if i in jsonDict:
@@ -47,13 +49,13 @@ class GeneralClass:
         """
         Convert Self@GeneralClass into the basic dictionary
         """
-        if 'operationNumber' in self.__dict__:
+        if "operationNumber" in self.__dict__:
             copyDict = deepcopy(self.__dict__)
-            del copyDict['operationNumber'], copyDict['operationName']
+            del copyDict["operationNumber"], copyDict["operationName"]
             return {
-                'operationNumber': self.__dict__['operationNumber'],
-                'operationName': self.__dict__['operationName'],
-                'operationData': copyDict
+                "operationNumber": self.__dict__["operationNumber"],
+                "operationName": self.__dict__["operationName"],
+                "operationData": copyDict,
             }
         else:
             return self.__dict__

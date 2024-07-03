@@ -8,6 +8,7 @@ MIDI Parser
 There is no need to use this module directly. All you need is
 available in the top level module.
 """
+
 from collections import deque
 
 from .messages import Message
@@ -23,6 +24,7 @@ class Parser:
     Data can be put into the parser in the form of
     integers, byte arrays or byte strings.
     """
+
     def __init__(self, data=None):
         # For historical reasons self.messages is public and must be a
         # deque(). (It is referenced directly inside ports.)
@@ -95,7 +97,7 @@ def parse_all(data):
 
 
 def parse(data):
-    """ Parse MIDI data and return the first message found.
+    """Parse MIDI data and return the first message found.
 
     Data after the first message is ignored. Use parse_all()
     to parse more than one message.

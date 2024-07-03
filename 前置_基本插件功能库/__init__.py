@@ -41,7 +41,7 @@ class BasicFunctionLib(Plugin):
         "获取玩家计分板分数 (计分板名, 玩家/计分板项名) 获取失败引发异常"
         resultList = self.game_ctrl.sendwscmd(
             f"/scoreboard players list {targetNameToGet}", True
-        ).OutputMessages # type: ignore
+        ).OutputMessages  # type: ignore
         result = {}
         result2 = {}
         for i in resultList:
@@ -136,7 +136,12 @@ class BasicFunctionLib(Plugin):
         if res:
             return res
         else:
-            raise ValueError("error(debug): 找不到坐标-玩家, 结果表是", res, "目标选择器是", targetNameToGet)
+            raise ValueError(
+                "error(debug): 找不到坐标-玩家, 结果表是",
+                res,
+                "目标选择器是",
+                targetNameToGet,
+            )
 
     def getItem(self, targetName: str, itemName: str, itemSpecialID: int = -1) -> int:
         "获取玩家背包内物品数量: 目标选择器, 物品ID, 特殊值 = 所有"

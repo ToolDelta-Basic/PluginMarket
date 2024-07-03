@@ -11,6 +11,7 @@
 from typing import Callable
 from basic_types import *
 
+
 class ConstPtr(Pattern):
     def __init__(self, c):
         if isinstance(c, Pattern):
@@ -24,75 +25,122 @@ class ConstPtr(Pattern):
     def eval(self, _):
         return self.c
 
+
 class VarPtr(Pattern):
     def __init__(self, name, type: Any = None):
         self.name = name
         self.type = type
 
     def __repr__(self):
-        return 'VarPtr(' + repr(self.name) + ')'
+        return "VarPtr(" + repr(self.name) + ")"
 
     def eval(self, local_vars: VAR_MAP):
         return local_vars[self.name]
 
+
 class FuncPtr(Pattern):
-    def __init__(self, name: str, args: tuple, restype: RES_TYPE = ANY , func: Callable[[VAR_MAP, tuple], Any] = lambda x,y: None):
+    def __init__(
+        self,
+        name: str,
+        args: tuple,
+        restype: RES_TYPE = ANY,
+        func: Callable[[VAR_MAP, tuple], Any] = lambda x, y: None,
+    ):
         self.name = name
         self.args = args
         self.restype = restype
         self._func = func
 
     def __repr__(self):
-        return "FuncPtr("+repr(self.name)+",args=("+",".join(repr(i)for i in self.args)+"))"
+        return (
+            "FuncPtr("
+            + repr(self.name)
+            + ",args=("
+            + ",".join(repr(i) for i in self.args)
+            + "))"
+        )
 
     def eval(self, local_vars: VAR_MAP):
         return self._func(*(i.eval(local_vars) for i in self.args))
 
+
 class OpPtr(Pattern):
-    op = staticmethod(lambda x,y:None)
+    op = staticmethod(lambda x, y: None)
     name = "<初始运算符>"
+
     def __init__(self, arg1, arg2):
         self.arg1 = arg1
         self.arg2 = arg2
 
     def __repr__(self):
-        return self.__class__.__name__+"("+repr(self.arg1)+","+repr(self.arg2)+")"
+        return (
+            self.__class__.__name__
+            + "("
+            + repr(self.arg1)
+            + ","
+            + repr(self.arg2)
+            + ")"
+        )
 
     def eval(self, local_vars: VAR_MAP):
         c1 = self.arg1.eval(local_vars)
         c2 = self.arg2.eval(local_vars)
         return self.op(c1, c2)
 
+
 class AddPtr(OpPtr):
     name = "+"
-    op = staticmethod(lambda x,y:x+y if isinstance(x,(int,float)) and isinstance(y,(int,float)) else str(x)+str(y))
+    op = staticmethod(
+        lambda x, y: x + y
+        if isinstance(x, (int, float)) and isinstance(y, (int, float))
+        else str(x) + str(y)
+    )
+
+
 class SubPtr(OpPtr):
     name = "-"
-    op = staticmethod(lambda x,y:x-y)
+    op = staticmethod(lambda x, y: x - y)
+
+
 class MulPtr(OpPtr):
     name = "*"
-    op = staticmethod(lambda x,y:x*y)
+    op = staticmethod(lambda x, y: x * y)
+
+
 class DivPtr(OpPtr):
     name = "/"
-    op = staticmethod(lambda x,y:x/y)
+    op = staticmethod(lambda x, y: x / y)
+
+
 class PowPtr(OpPtr):
     name = "^"
-    op = staticmethod(lambda x,y:x**y)
+    op = staticmethod(lambda x, y: x**y)
+
+
 class AndPtr(OpPtr):
     name = "和"
-    op = staticmethod(lambda x,y:x and y)
+    op = staticmethod(lambda x, y: x and y)
+
+
 class OrPtr(OpPtr):
     name = "或"
-    op = staticmethod(lambda x,y:x or y)
+    op = staticmethod(lambda x, y: x or y)
+
+
 class EqPtr(OpPtr):
     name = "等于"
-    op = staticmethod(lambda x,y:x==y)
+    op = staticmethod(lambda x, y: x == y)
+
+
 class LtPtr(OpPtr):
     name = "小于"
-    op = staticmethod(lambda x,y:x<y)
+    op = staticmethod(lambda x, y: x < y)
+
+
 class GtPtr(OpPtr):
     name = "大于"
-    op = staticmethod(lambda x,y:x>y)
+    op = staticmethod(lambda x, y: x > y)
+
 
 opmap = {
     "+": AddPtr,
@@ -109,14 +157,15 @@ opmap = {
 
 max_priority = 6
 
-OP_CHARS = ''.join(i for i in opmap.keys())
+OP_CHARS = "".join(i for i in opmap.keys())
 SPEC_OP_CHARS = "+-"
 
 SYNTAX_PTRS = VarPtr | OpPtr | ConstPtr | FuncPtr
 
+
 def op_prior(o):
     "操作符优先级"
-    if o  == OpPtr:
+    if o == OpPtr:
         # 根本不会被识别
         return 0
     elif o in [OrPtr]:
@@ -133,6 +182,7 @@ def op_prior(o):
         return 6
     else:
         raise SyntaxError(o)
+
 
 def num3var(n: str, register: REGISTER = {}):
     "数字或字符串或是变量"
@@ -154,12 +204,13 @@ def num3var(n: str, register: REGISTER = {}):
         else:
             return ConstPtr(int(n))
     except ValueError:
-        if t:= register.get(n) is None:
+        if t := register.get(n) is None:
             raise SyntaxError(f"未知或未完全绑定的变量: {n}")
-        return VarPtr(n,t)
+        return VarPtr(n, t)
 
-def subcls(i,cls):
+
+def subcls(i, cls):
     if type(i) != type:
         return False
     else:
-        return issubclass(i,cls)
+        return issubclass(i, cls)

@@ -61,7 +61,9 @@ class Display32KShulkerBox(Plugin):
                 self.game_ctrl.say_to(
                     "@a[m=1]", "§6" + structID + "§6，给予玩家的标签是ban"
                 )
-                self.ban_sys.ban(playerNearest, time.time() + 1000000000, "使用 32k 潜影盒")
+                self.ban_sys.ban(
+                    playerNearest, time.time() + 1000000000, "使用 32k 潜影盒"
+                )
                 Print.print_war(
                     f"!!! 发现含32k的潜影盒, 坐标: {shulkerBoxPos}, 结构id: {structID}"
                 )

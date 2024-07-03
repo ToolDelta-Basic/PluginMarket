@@ -155,7 +155,7 @@ class MineNote:
     def encode(self, is_displacement_included: bool = True) -> bytes:
         """
         将数据打包为字节码
-        
+
         :param is_displacement_included:`bool` 是否包含声像偏移数据，默认为**是**
 
         :return bytes 打包好的字节码

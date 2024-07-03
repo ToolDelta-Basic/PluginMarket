@@ -1,6 +1,7 @@
 from typing import Any
 from basic_types import *
 
+
 class OPs:
     END = 1
     SET = 2
@@ -12,23 +13,22 @@ class OPs:
     IGNORE_NULL = 11
     SLEEP = 12
 
+
 class CodeUnit:
     # 代码单元
     def __init__(self, cid: int, *args):
         self.id = cid
         self.args = args
 
+
 class CustomCodeUnit(CodeUnit):
     def __init__(self, *args):
         super().__init__(-1, *args)
 
+
 class CompiledCode:
     # 代码块
-    def __init__(
-        self,
-        code_seq: list[CodeUnit],
-        out_namespace: REGISTER | None = None
-    ):
+    def __init__(self, code_seq: list[CodeUnit], out_namespace: REGISTER | None = None):
         self.out_namespace = out_namespace or {}
         self.code_seq = code_seq
         self.cache1: Any = None
@@ -43,6 +43,7 @@ class CompiledCode:
 
     def clear_cache(self):
         self.cache1 = self.cache2 = self.cache3 = None
+
 
 class CodeSyntaxError(SyntaxError):
     def __init__(self, msg: str) -> None:

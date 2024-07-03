@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print, TYPE_CHECKING
 import threading
 
+
 @dataclass
 class Page:
     """
@@ -22,13 +23,15 @@ class Page:
         leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
+
     page_id: str
     next_page_id: str
     page_texts: str
     ok_cb: Callable[[str], bool]
-    exit_cb: Callable[[str], None] = lambda _:None
-    leave_cb: Callable[[str], None] = lambda _:None
+    exit_cb: Callable[[str], None] = lambda _: None
+    leave_cb: Callable[[str], None] = lambda _: None
     parent_page_id: str | None = ""
+
 
 @dataclass
 class MultiPage:
@@ -48,15 +51,14 @@ class MultiPage:
         leave_cb: 玩家退出游戏后的回调 (玩家名: str) -> None
         parent_page_id: 如果这个页面是一个子页面, 则玩家低头后会跳转到父页面, 如果为 None 则直接退出菜单
     """
+
     page_id: str
     page_cb: Callable[[str, int], str | None]
-    ok_cb: Callable[
-        [str, int],
-        None | Literal[True] | "Page" | tuple["MultiPage", int]
-    ]
-    exit_cb: Callable[[str], bool | None] = lambda _:None
+    ok_cb: Callable[[str, int], None | Literal[True] | "Page" | tuple["MultiPage", int]]
+    exit_cb: Callable[[str], bool | None] = lambda _: None
     leave_cb: Callable[[str], bool | None] = lambda _: None
     parent_page_id: str | None = None
+
 
 PAGE_OBJ = Page | MultiPage
 "菜单类"
@@ -68,36 +70,35 @@ menu_patterns = [0, "undefined", "undefined", "undefined", "undefined"]
 "菜单最大页码数, 菜单头, 菜单选项-未被选中, 菜单选项-被选中, 菜单尾"
 
 main_page_menus: list[
-    tuple[
-        PAGE_OBJ | Callable[[str], bool],
-        str | Callable[[str], str]
-    ]] = []
+    tuple[PAGE_OBJ | Callable[[str], bool], str | Callable[[str], str]]
+] = []
 "主菜单: 菜单类/菜单cb, 显示字(字符串 or 显示回调)"
+
 
 def default_page_show(player: str, page: int):
     max_length = len(main_page_menus)
     if page > max_length - 1:
         return None
     fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length}
-    show_texts = [
-        Builtins.SimpleFmt(fmt_kws, menu_patterns[1])
-    ]
+    show_texts = [Builtins.SimpleFmt(fmt_kws, menu_patterns[1])]
     c = page // menu_patterns[0]
-    cur_pages = main_page_menus[c * menu_patterns[0]:(c + 1) * menu_patterns[0]]
+    cur_pages = main_page_menus[c * menu_patterns[0] : (c + 1) * menu_patterns[0]]
     for i in cur_pages:
         if isinstance(i[1], str):
             text = i[1]
         else:
             text = i[1](player)
-        show_texts.append(Builtins.SimpleFmt(
-            {"[选项文本]": text}, menu_patterns[
-                3 if page == main_page_menus.index(i) else 2
-            ]
-        ))
+        show_texts.append(
+            Builtins.SimpleFmt(
+                {"[选项文本]": text},
+                menu_patterns[3 if page == main_page_menus.index(i) else 2],
+            )
+        )
     if len(show_texts) == 1:
         show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
     show_texts.append(Builtins.SimpleFmt(fmt_kws, menu_patterns[4]))
     return "\n".join(show_texts)
+
 
 def default_page_okcb(player: str, page: int):
     page_cb = main_page_menus[page][0]
@@ -108,18 +109,18 @@ def default_page_okcb(player: str, page: int):
     else:
         return page_cb(player) or None
 
-default_page = MultiPage(
-    "default",
-    default_page_show,
-    default_page_okcb
-)
+
+default_page = MultiPage("default", default_page_show, default_page_okcb)
+
 
 @plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
     version = (0, 1, 4)
-    description = "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
+    description = (
+        "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
+    )
 
     "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
     Page = Page
@@ -146,7 +147,11 @@ class SnowMenu(Plugin):
         """
         self.reg_pages[page.page_id] = page
 
-    def register_main_page(self, page_cb: PAGE_OBJ | Callable[[str], bool], usage_text: str | Callable[[str], str]):
+    def register_main_page(
+        self,
+        page_cb: PAGE_OBJ | Callable[[str], bool],
+        usage_text: str | Callable[[str], str],
+    ):
         """
         注册一个雪球菜单首页跳转链接
         确切来说就是让你的菜单页可以在雪球菜单首页被发现并被跳转
@@ -174,26 +179,33 @@ class SnowMenu(Plugin):
         self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         outer_self = self
+
         class _cb:
             def __init__(self):
                 self.event = threading.Event()
+
             def start(self):
                 self.event.wait()
                 return self.page
+
             def ok(self, _, page):
                 self.page = page
                 self.event.set()
-                outer_self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
+                outer_self.gc.sendwocmd(
+                    f"/execute as @a[name={player}] at @s run tp ~~~~ 0"
+                )
+
             def exit(self, _):
                 self.page = None
                 self.event.set()
+
         cb = _cb()
         page = MultiPage(
-            page_id = "simple-select",
-            page_cb = disp_func,
-            ok_cb = cb.ok,
-            exit_cb = cb.exit,
-            leave_cb = cb.exit
+            page_id="simple-select",
+            page_cb=disp_func,
+            ok_cb=cb.ok,
+            exit_cb=cb.exit,
+            leave_cb=cb.exit,
         )
         old_page = self.in_snowball_menu.get(player)
         self.set_player_page(player, page)
@@ -214,26 +226,31 @@ class SnowMenu(Plugin):
         """
         self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
+
         class _cb:
             def __init__(self):
                 self.event = threading.Event()
+
             def start(self):
                 self.event.wait()
                 return self.page
+
             def ok(self, _, page):
                 self.page = page
                 self.event.set()
+
             def exit(self, _):
                 self.page = None
                 self.event.set()
+
         cb = _cb()
         page_cb = lambda _, now_page: mapping.get(now_page)
         page = MultiPage(
-            page_id = "simple-select",
-            page_cb = page_cb,
-            ok_cb = cb.ok,
-            exit_cb = cb.exit,
-            leave_cb = cb.exit
+            page_id="simple-select",
+            page_cb=page_cb,
+            ok_cb=cb.ok,
+            exit_cb=cb.exit,
+            leave_cb=cb.exit,
         )
         old_page = self.in_snowball_menu.get(player)
         self.set_player_page(player, page)
@@ -244,17 +261,26 @@ class SnowMenu(Plugin):
     # ---------------------------------------
 
     def on_def(self):
-        self.getPosXYZ = plugins.get_plugin_api("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
+        self.getPosXYZ = plugins.get_plugin_api(
+            "基本插件功能库", (0, 0, 7)
+        ).getPosXYZ_Int
         self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
         chatbar = plugins.get_plugin_api("聊天栏菜单")
         if TYPE_CHECKING:
             from 前置_基本插件功能库 import BasicFunctionLib
             from 前置_世界交互 import GameInteractive
             from 前置_聊天栏菜单 import ChatbarMenu
+
             self.getPosXYZ = plugins.instant_plugin_api(BasicFunctionLib).getPosXYZ_Int
             self.interact = plugins.instant_plugin_api(GameInteractive)
             chatbar = plugins.instant_plugin_api(ChatbarMenu)
-        chatbar.add_trigger(["snowmenu-init"], None, "初始化雪球菜单所需命令方块", self.place_cbs, op_only=True)
+        chatbar.add_trigger(
+            ["snowmenu-init"],
+            None,
+            "初始化雪球菜单所需命令方块",
+            self.place_cbs,
+            op_only=True,
+        )
 
     def on_player_join(self, player: str):
         self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
@@ -262,7 +288,9 @@ class SnowMenu(Plugin):
     def on_inject(self):
         self.gc.sendwocmd("/tag @a remove snowmenu")
 
-    def set_player_page(self, player: str, page: Page | MultiPage, page_sub_id: int = 0):
+    def set_player_page(
+        self, player: str, page: Page | MultiPage, page_sub_id: int = 0
+    ):
         self.in_snowball_menu[player] = page
         if isinstance(page, MultiPage):
             self.multi_snowball_page[player] = page_sub_id
@@ -282,7 +310,9 @@ class SnowMenu(Plugin):
             "菜单主界面格式尾": str,
             "菜单主界面选项格式(选项未选中)": str,
             "菜单主界面选项格式(选项被选中)": str,
-            "自定义主菜单内容": Config.JsonList({"显示名": str, "执行的指令": Config.JsonList(str)})
+            "自定义主菜单内容": Config.JsonList(
+                {"显示名": str, "执行的指令": Config.JsonList(str)}
+            ),
         }
         CFG_DEFAULT = {
             "单页最大选项数": 6,
@@ -294,20 +324,29 @@ class SnowMenu(Plugin):
             "自定义主菜单内容": [
                 {
                     "显示名": "示例功能:自尽",
-                    "执行的指令": ["/kill @a[name=[玩家名]]", "/title @a[name=[玩家名]] title §c已自尽"]
-                },{
+                    "执行的指令": [
+                        "/kill @a[name=[玩家名]]",
+                        "/title @a[name=[玩家名]] title §c已自尽",
+                    ],
+                },
+                {
                     "显示名": "示例功能:设置重生点",
-                    "执行的指令": ["/execute as @a[name=[玩家名]] run spawnpoint", "/title @a[name=[玩家名]] title §a已设置重生点"]
-                }
-            ]
+                    "执行的指令": [
+                        "/execute as @a[name=[玩家名]] run spawnpoint",
+                        "/title @a[name=[玩家名]] title §a已设置重生点",
+                    ],
+                },
+            ],
         }
-        self.cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG_DEFAULT, (0, 0, 1))
+        self.cfg, _ = Config.getPluginConfigAndVersion(
+            self.name, CFG_STD, CFG_DEFAULT, (0, 0, 1)
+        )
         menu_patterns[:] = (
             self.cfg["单页最大选项数"],
             self.cfg["菜单主界面格式头"],
             self.cfg["菜单主界面选项格式(选项未选中)"],
             self.cfg["菜单主界面选项格式(选项被选中)"],
-            self.cfg["菜单主界面格式尾"]
+            self.cfg["菜单主界面格式尾"],
         )
         for menu_arg in self.cfg["自定义主菜单内容"]:
             self.register_main_page(self.create_menu_cb(menu_arg), menu_arg["显示名"])
@@ -317,6 +356,7 @@ class SnowMenu(Plugin):
             for cmd in menu_arg["执行的指令"]:
                 self.gc.sendwocmd(Builtins.SimpleFmt({"[玩家名]": player}, cmd))
             return False
+
         return menu_cb
 
     @Builtins.thread_func("放置雪球菜单命令块")
@@ -324,9 +364,7 @@ class SnowMenu(Plugin):
         x, y, z = self.getPosXYZ(player)
         for cbtype, cond, cmd in SNOWBALL_CMDS:
             p = self.interact.make_packet_command_block_update(
-                (x, y, z),
-                cmd, mode=cbtype,
-                conditional=bool(cond)
+                (x, y, z), cmd, mode=cbtype, conditional=bool(cond)
             )
             self.interact.place_command_block(p, 5, 0.1)
             x += 1
@@ -374,10 +412,12 @@ class SnowMenu(Plugin):
                     self.multi_snowball_page[player] = 0
             else:
                 self.multi_snowball_page[player] += 1
-                r = self.in_snowball_menu[player].page_cb(player, self.multi_snowball_page[player]) # type: ignore
+                r = self.in_snowball_menu[player].page_cb(
+                    player, self.multi_snowball_page[player]
+                )  # type: ignore
                 if r is None:
                     self.multi_snowball_page[player] = 0
-                    r = self.in_snowball_menu[player].page_cb(player, 0) # type: ignore
+                    r = self.in_snowball_menu[player].page_cb(player, 0)  # type: ignore
                     self.gc.player_actionbar(player, r)  # type: ignore
         self.show_page(player)
 
@@ -395,9 +435,7 @@ class SnowMenu(Plugin):
             page_text = mp.page_cb(player, self.multi_snowball_page[player])
         if page_text is None:
             return
-        self.gc.player_actionbar(
-            player, page_text
-        )
+        self.gc.player_actionbar(player, page_text)
         self.gc.sendwocmd(f"/tag @a[name={player}] add snowmenu")
 
     @Builtins.thread_func("雪球菜单执行")
@@ -455,18 +493,32 @@ class SnowMenu(Plugin):
 
     def im_confused(self):
         return [
-            "三月七", "要按时休息哦",
-            "丹恒", "你又给智库带来了一份开源代码了吗? 辛苦了"
+            "三月七",
+            "要按时休息哦",
+            "丹恒",
+            "你又给智库带来了一份开源代码了吗? 辛苦了",
         ]
 
-SNOWBALL_CMDS: list[tuple[int, int, str]] = [
-    (1, 0, '/execute as @e[type=snowball] run execute as @p[r=3] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}'),
-    (2, 1, 'kill @e[type=snowball]'),
-    (2, 0, '/execute as @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}'),
-    (2, 1, '/tag @a[rxm=88,tag=!snowmenu:escape] add snowmenu:escape'),
-    (2, 0, '/tag @a[rx=87,tag=snowmenu:escape] remove snowmenu:escape'),
-    (2, 0, '/execute as @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}'),
-    (2, 1, '/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm'),
-    (2, 0, '/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm'),
-]
 
+SNOWBALL_CMDS: list[tuple[int, int, str]] = [
+    (
+        1,
+        0,
+        '/execute as @e[type=snowball] run execute as @p[r=3] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}',
+    ),
+    (2, 1, "kill @e[type=snowball]"),
+    (
+        2,
+        0,
+        '/execute as @a[rxm=88,tag=snowmenu,tag=!snowmenu:escape] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.escape"},{"selector":"@s"}]}',
+    ),
+    (2, 1, "/tag @a[rxm=88,tag=!snowmenu:escape] add snowmenu:escape"),
+    (2, 0, "/tag @a[rx=87,tag=snowmenu:escape] remove snowmenu:escape"),
+    (
+        2,
+        0,
+        '/execute as @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.confirm"},{"selector":"@s"}]}',
+    ),
+    (2, 1, "/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm"),
+    (2, 0, "/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm"),
+]
