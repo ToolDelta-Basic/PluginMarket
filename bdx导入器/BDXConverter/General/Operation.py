@@ -5,7 +5,9 @@ from ..Operation.PlaceBlock import PlaceBlock
 from ..Operation.AddZValue0 import AddZValue0
 from ..Operation.NOP import NOP
 from ..Operation.AddInt32ZValue0 import AddInt32ZValue0
-from ..Operation.PlaceBlockWithBlockStatesDeprecated import PlaceBlockWithBlockStatesDeprecated
+from ..Operation.PlaceBlockWithBlockStatesDeprecated import (
+    PlaceBlockWithBlockStatesDeprecated,
+)
 from ..Operation.AddXValue import AddXValue
 from ..Operation.SubtractXValue import SubtractXValue
 from ..Operation.AddYValue import AddYValue
@@ -30,11 +32,19 @@ from ..Operation.AddInt8ZValue import AddInt8ZValue
 from ..Operation.UseRuntimeIDPool import UseRuntimeIDPool
 from ..Operation.PlaceRuntimeBlock import PlaceRuntimeBlock
 from ..Operation.PlaceBlockWithRuntimeId import PlaceBlockWithRuntimeId
-from ..Operation.PlaceRuntimeBlockWithCommandBlockData import PlaceRuntimeBlockWithCommandBlockData
-from ..Operation.PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID import PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID
-from ..Operation.PlaceCommandBlockWithCommandBlockData import PlaceCommandBlockWithCommandBlockData
+from ..Operation.PlaceRuntimeBlockWithCommandBlockData import (
+    PlaceRuntimeBlockWithCommandBlockData,
+)
+from ..Operation.PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID import (
+    PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID,
+)
+from ..Operation.PlaceCommandBlockWithCommandBlockData import (
+    PlaceCommandBlockWithCommandBlockData,
+)
 from ..Operation.PlaceRuntimeBlockWithChestData import PlaceRuntimeBlockWithChestData
-from ..Operation.PlaceRuntimeBlockWithChestDataAndUint32RuntimeID import PlaceRuntimeBlockWithChestDataAndUint32RuntimeID
+from ..Operation.PlaceRuntimeBlockWithChestDataAndUint32RuntimeID import (
+    PlaceRuntimeBlockWithChestDataAndUint32RuntimeID,
+)
 from ..Operation.AssignDebugData import AssignDebugData
 from ..Operation.PlaceBlockWithChestData import PlaceBlockWithChestData
 

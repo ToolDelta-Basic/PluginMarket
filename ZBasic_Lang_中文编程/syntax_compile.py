@@ -9,10 +9,7 @@ from typing import Callable
 import err_str
 from syntax_lib import *
 
-from type_checker import (
-    FuncRegDatas,
-    get_final_type
-)
+from type_checker import FuncRegDatas, get_final_type
 from basic_types import *
 
 # 调试器开关, 会显示详细的表达式编译信息
@@ -23,12 +20,8 @@ if DEBUG_CHECK:
 func_names: list[str] = []
 func_cbs: dict = {}
 
-def register_func_syntax(
-        func_name: str,
-        restype,
-        input_type_checker,
-        func: Callable
-    ):
+
+def register_func_syntax(func_name: str, restype, input_type_checker, func: Callable):
     """注册一个函数功能
 
     Args:
@@ -41,7 +34,8 @@ def register_func_syntax(
     FuncRegDatas.add_func_restype(func_name, restype)
     FuncRegDatas.add_type_checker(func_name, input_type_checker)
 
-def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0) -> list:
+
+def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level=0) -> list:
     """
     解析表达式字符串作为表达式序列
     传入:
@@ -192,15 +186,18 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level = 0)
                     opseq.append(opc)
             txt_cache = ""
         else:
-            #连续的文本
+            # 连续的文本
             txt_cache += c
     if cma_num:
         raise SyntaxError("括号没有正确闭合")
     if is_str:
         raise SyntaxError("字符串未正确闭合")
     if DEBUG_CHECK:
-        Print.clean_print(f"[§9{level}§r] Parsing §2{pat}, §rok, as §d{' §6|§9 '.join(str(i) for i in opseq)}")
+        Print.clean_print(
+            f"[§9{level}§r] Parsing §2{pat}, §rok, as §d{' §6|§9 '.join(str(i) for i in opseq)}"
+        )
     return opseq
+
 
 def deal_funptr(func_name: str, fun_args: tuple):
     """
@@ -215,7 +212,10 @@ def deal_funptr(func_name: str, fun_args: tuple):
     """
     if not isinstance(func_name, str):
         raise SyntaxError("需要函数名")
-    return FuncPtr(func_name, fun_args, FuncRegDatas.res_types[func_name], func_cbs[func_name])
+    return FuncPtr(
+        func_name, fun_args, FuncRegDatas.res_types[func_name], func_cbs[func_name]
+    )
+
 
 def deal_syntaxgrp(grp: list):
     """
@@ -249,7 +249,7 @@ def deal_syntaxgrp(grp: list):
         raise SyntaxError(err_str.END_WITH_OP)
     prior_table = grp.copy()
     for p in range(max_priority, 0, -1):
-    # 遍历所有优先级, 从大到小
+        # 遍历所有优先级, 从大到小
         now_prior_table = []
         # 操作符两侧的项
         arg1 = None
@@ -263,16 +263,16 @@ def deal_syntaxgrp(grp: list):
                     if op_prior(lastop) == p:
                         # 上一个优先级也和当前一样
                         # 那么就直接合并当前的
-                        arg1 = lastop(arg1,arg2)
+                        arg1 = lastop(arg1, arg2)
                         arg2 = None
-                elif op_prior(s)<p:
+                elif op_prior(s) < p:
                     # 当前的优先级大于目前操作符的优先级
-                    if op_prior(lastop)==p:
+                    if op_prior(lastop) == p:
                         # 上一个优先级和目前优先级相同
                         # 那么就把上一个合并
                         now_prior_table.append(lastop(arg1, arg2))
                         arg1 = arg2 = None
-                    elif op_prior(lastop)<p:
+                    elif op_prior(lastop) < p:
                         # 上一个优先级和小于目前优先级
                         now_prior_table.append(arg1)
                     if arg2:
@@ -282,18 +282,20 @@ def deal_syntaxgrp(grp: list):
                         now_prior_table.append(s)
                 lastop = s
             else:
-              # 两个操作符之间的项
-              if arg1:
-                  arg2 = s
-              else:
-                  arg1 = s
+                # 两个操作符之间的项
+                if arg1:
+                    arg2 = s
+                else:
+                    arg1 = s
         prior_table = now_prior_table.copy()
     if DEBUG_CHECK:
         Print.clean_print(f"[§9SYNTAX§r] Parsing §b{grp}§r ok, as §b{prior_table[0]}")
     return prior_table[0]
 
+
 def parse(syntax: str, types_register: REGISTER, level: int = 0):
     return deal_syntaxgrp(parse_as_chunks(syntax, types_register, level))
+
 
 def multi_parse(syntax: str, local_vars: REGISTER):
     in_str = False
@@ -315,18 +317,21 @@ def multi_parse(syntax: str, local_vars: REGISTER):
                 raise SyntaxError("分号前需要表达式")
     return syntaxs
 
-register_func_syntax("非", BOOLEAN, (BOOLEAN,), lambda x:not x)
 
-if __name__=="__main__":
+register_func_syntax("非", BOOLEAN, (BOOLEAN,), lambda x: not x)
+
+if __name__ == "__main__":
     # 测试
     DEBUG_CHECK = True
     try:
+
         def _de_optional_check(x: list):
             if len(x) not in (1, 2) or not isinstance(x[0], OptionalType):
                 return "可空[任意类型] [, 默认值:任意类型]"
             elif len(x) == 2 and (gft := x[1]) != x[0].type:
                 return f"可空[任意类型(当前为{gft})] [, 默认值(当前可用的):{gft}]"
             return None
+
         def _de_optional(t: None | Any, default: Any = None):
             if t is None:
                 if default is None:
@@ -335,28 +340,41 @@ if __name__=="__main__":
                     return default
             else:
                 return t
+
         def try_int(n):
-            try: return int(n)
-            except: return None
-        register_func_syntax("int", NUMBER, (NUMBER,), lambda x:try_int(x))
-        register_func_syntax("转换为整数", OptionalType(NUMBER), (STRING,), lambda x:try_int(x))
-        register_func_syntax("获取列表项", lambda l:OptionalType(l[0].type.extra1), (LIST[ANY], NUMBER), lambda l,i:l[int(i)] if int(i) in range(len(l)) else None)
-        register_func_syntax("转换为非空变量", lambda x:x[0].type, _de_optional_check, _de_optional)
-        syntax = parse_as_chunks('int -1', {"触发词参数": LIST[STRING]})
+            try:
+                return int(n)
+            except:
+                return None
+
+        register_func_syntax("int", NUMBER, (NUMBER,), lambda x: try_int(x))
+        register_func_syntax(
+            "转换为整数", OptionalType(NUMBER), (STRING,), lambda x: try_int(x)
+        )
+        register_func_syntax(
+            "获取列表项",
+            lambda l: OptionalType(l[0].type.extra1),
+            (LIST[ANY], NUMBER),
+            lambda l, i: l[int(i)] if int(i) in range(len(l)) else None,
+        )
+        register_func_syntax(
+            "转换为非空变量", lambda x: x[0].type, _de_optional_check, _de_optional
+        )
+        syntax = parse_as_chunks("int -1", {"触发词参数": LIST[STRING]})
         Print.clean_print(f"§2分割结果: §a{syntax}")
         syntax2 = deal_syntaxgrp(syntax)
-        #syntaxs = 转换为非空变量 (转换为整数 转换为非空变量 (获取列表项 触发词参数, 2), "-1")
-        #syntax = syntaxs[0]
+        # syntaxs = 转换为非空变量 (转换为整数 转换为非空变量 (获取列表项 触发词参数, 2), "-1")
+        # syntax = syntaxs[0]
         t = get_final_type(syntax2)
-        Print.clean_print("§a-"*25)
+        Print.clean_print("§a-" * 25)
         print("表达式组:", syntax)
         print("表达式:", syntax2)
         print("类型:", t)
     except Exception as err:
-        #print(err)
-        Print.clean_print("§cCRASHED " + "="*50)
+        # print(err)
+        Print.clean_print("§cCRASHED " + "=" * 50)
         import traceback
-        traceback.print_exc()
 
+        traceback.print_exc()
 
     # will be crashed

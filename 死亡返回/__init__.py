@@ -101,4 +101,3 @@ async def _(playerdeath: player_death_info):
         "§l死亡点记录§r",
         f"已记录死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)], 输入§l.backdeath§r返回.",
     )
-

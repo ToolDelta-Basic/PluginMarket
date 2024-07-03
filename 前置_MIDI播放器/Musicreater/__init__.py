@@ -16,7 +16,6 @@ Terms & Conditions: License.md in the root directory
 # Email TriM-Organization@hotmail.com
 # 若需转载或借鉴 许可声明请查看仓库目录下的 License.md
 
-
 __version__ = "2.0.0"
 __vername__ = "全新组织架构"
 __author__ = (

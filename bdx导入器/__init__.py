@@ -5,6 +5,7 @@ from .BDXConverter import ReadBDXFile
 
 import re
 
+
 @plugins.add_plugin
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
@@ -19,16 +20,25 @@ class BDX_BDump(Plugin):
         self.interact = plugins.get_plugin_api("前置-世界交互")
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
+
             self.interact = plugins.instant_plugin_api(GameInteractive)
-        Print.print_inf("§bBDX加载器 使用了来自 \"github.com/TriM-Organization/BDXConverter\" 的开源库")
-        Print.print_inf("§b其第一作者为 Eternal Crystal (Happy2018New) (其他协作者请在项目内查看)")
+        Print.print_inf(
+            '§bBDX加载器 使用了来自 "github.com/TriM-Organization/BDXConverter" 的开源库'
+        )
+        Print.print_inf(
+            "§b其第一作者为 Eternal Crystal (Happy2018New) (其他协作者请在项目内查看)"
+        )
 
     def on_inject(self):
         self.get_x: float | None = None
         self.get_y: float | None = None
         self.get_z: float | None = None
-        self.frame.add_console_cmd_trigger(["bdump", "导入bdx"], None, "导入bdx文件", self.dump_bdx_menu)
-        self.frame.add_console_cmd_trigger(["bdx-get", "坐标bdx"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu)
+        self.frame.add_console_cmd_trigger(
+            ["bdump", "导入bdx"], None, "导入bdx文件", self.dump_bdx_menu
+        )
+        self.frame.add_console_cmd_trigger(
+            ["bdx-get", "坐标bdx"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu
+        )
 
     def dump_bdx_menu(self, _):
         src_path = self.data_path
@@ -36,13 +46,13 @@ class BDX_BDump(Plugin):
             Print.print_err("未设置导入坐标 (控制台输入 bdx-get 以设置)")
             return
         Print.print_inf(f"文件搜索路径: {src_path}")
-        fs = list(filter(lambda x:x.endswith(".bdx"), os.listdir(src_path)))
+        fs = list(filter(lambda x: x.endswith(".bdx"), os.listdir(src_path)))
         if fs == []:
             Print.print_war("该文件夹内没有任何 bdx 文件, 无法导入")
             return
         Print.print_inf("请选择导入的 bdx 文件:")
         for i, j in enumerate(fs):
-                Print.print_inf(f" {i+1} - {j}")
+            Print.print_inf(f" {i+1} - {j}")
         resp = Utils.try_int(input(Print.fmt_info(f"请选择 (1~{len(fs)}): ")))
         if not resp or resp not in range(1, len(fs) + 1):
             Print.print_err("输入错, 已退出")
@@ -55,14 +65,19 @@ class BDX_BDump(Plugin):
             return
         bdx_name = bdx_file[:-4]
         Print.print_inf(f"{bdx_name} 的导入已经开始 (进度条显示于游戏内)")
-        Utils.createThread(self.dump_bdx_at, (bdx_name, bdx_inf, int(self.get_x), int(self.get_y), int(self.get_z))) # type: ignore
+        Utils.createThread(
+            self.dump_bdx_at,
+            (bdx_name, bdx_inf, int(self.get_x), int(self.get_y), int(self.get_z)),
+        )  # type: ignore
 
     def get_bdx_pos_menu(self, _):
         avali_players = self.game_ctrl.allplayers
         Print.print_inf("请选择玩家以获取其坐标:")
         for i, j in enumerate(avali_players):
             Print.print_inf(f" {i+1} - {j}")
-        resp = Utils.try_int(input(Print.fmt_info(f"请选择 (1~{len(avali_players)}): ")))
+        resp = Utils.try_int(
+            input(Print.fmt_info(f"请选择 (1~{len(avali_players)}): "))
+        )
         if not resp or resp not in range(1, len(avali_players) + 1):
             Print.print_err("输入错, 已退出")
             return
@@ -83,7 +98,10 @@ class BDX_BDump(Plugin):
             return
         n = round(curr / tota * 30)
         p = "§b" + "|" * n + "§f" + "|" * (30 - n)
-        self.game_ctrl.player_actionbar("@a", f"导入 {name} 进度: §l{curr} §7/ {tota} 速度： {sped}方块每秒 §r\n{p}")
+        self.game_ctrl.player_actionbar(
+            "@a", f"导入 {name} 进度: §l{curr} §7/ {tota} 速度： {sped}方块每秒 §r\n{p}"
+        )
+
 
 class BDumpOP:
     def __init__(self, f: BDX_BDump, bdx: BDX_2, name: str):
@@ -117,7 +135,9 @@ class BDumpOP:
                 case 5 | 7 | 13:
                     # 13 not achieved
                     now_len += 1
-                    self.scmd(f"setblock {x} {y} {z} {self.cache_string_pool[i.blockConstantStringID]} {i.blockData}")
+                    self.scmd(
+                        f"setblock {x} {y} {z} {self.cache_string_pool[i.blockConstantStringID]} {i.blockData}"
+                    )
                 case 14:
                     x += 1
                 case 15:
@@ -148,7 +168,7 @@ class BDumpOP:
                         i.conditional,
                         i.customName,
                         i.trackOutput,
-                        i.executeOnFirstTick
+                        i.executeOnFirstTick,
                     )
                     t = 0.2
                     if hasattr(i, "blockData"):
@@ -179,6 +199,8 @@ class BDumpOP:
                 count += 1
             del i
             if time.time() - t > 0.5:
-                self.gc.player_actionbar("@a", f"§f正在计算 {self.name} 的方块总数 ({count})")
+                self.gc.player_actionbar(
+                    "@a", f"§f正在计算 {self.name} 的方块总数 ({count})"
+                )
                 t = time.time()
         return count

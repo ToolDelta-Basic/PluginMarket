@@ -2,6 +2,7 @@ import time, random
 
 from tooldelta import Plugin, plugins, Config, Builtins, Print
 
+
 @plugins.add_plugin
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
@@ -15,13 +16,13 @@ class BetterAnnounce(Plugin):
                 "§7%m/%d/20%y 星期[星期]",
                 "§a%H§f : §a%M",
                 "§f在线人数: §a[在线人数]",
-                "§d欢迎大家游玩"
+                "§d欢迎大家游玩",
             ],
             "公告标题栏名(请注意长度)": "公告",
-            "刷新频率(秒)": 20
+            "刷新频率(秒)": 20,
         }
         std = Config.auto_to_std(CFG)
-        cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version) # type: ignore
+        cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version)  # type: ignore
         self.anos = cfg["公告内容(列表的每项代表一行公告)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
@@ -40,14 +41,16 @@ class BetterAnnounce(Plugin):
     def flush_gg(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives remove 公告")
         time.sleep(0.3)
-        self.game_ctrl.sendwocmd(f"/scoreboard objectives add 公告 dummy {self.ano_title}")
+        self.game_ctrl.sendwocmd(
+            f"/scoreboard objectives add 公告 dummy {self.ano_title}"
+        )
         self.game_ctrl.sendwocmd("/scoreboard objectives setdisplay sidebar 公告")
 
     @Builtins.thread_func
     def flush_announcement1(self):
         scmd = self.game_ctrl.sendwocmd
         ftime = 100
-        posix = len(self.anos)  // 2
+        posix = len(self.anos) // 2
         while 1:
             time.sleep(1)
             ftime += 1
@@ -56,12 +59,15 @@ class BetterAnnounce(Plugin):
                 scmd(f"/scoreboard players reset * 公告")
                 new_posix = posix
                 for i in self.anos:
-                    text = time.strftime(Builtins.SimpleFmt(
-                        {
-                            "[在线人数]": len(self.game_ctrl.allplayers),
-                            "[随机]": random.randint(1, 5),
-                            "[星期]": "一二三四五六日"[time.localtime().tm_wday]
-                        }, i
-                    ))
+                    text = time.strftime(
+                        Builtins.SimpleFmt(
+                            {
+                                "[在线人数]": len(self.game_ctrl.allplayers),
+                                "[随机]": random.randint(1, 5),
+                                "[星期]": "一二三四五六日"[time.localtime().tm_wday],
+                            },
+                            i,
+                        )
+                    )
                     scmd(f'/scoreboard players set "{text}" 公告 {new_posix}')
                     new_posix -= 1

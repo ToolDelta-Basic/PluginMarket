@@ -4,6 +4,7 @@ from tooldelta import Plugin, plugins, Builtins, Print
 
 # API 名: MIDI播放器
 
+
 def seq_chunk_split(s: bytes, chunk_size: int = 4):
     res = []
     while s != b"":
@@ -11,10 +12,12 @@ def seq_chunk_split(s: bytes, chunk_size: int = 4):
         s = s[chunk_size:]
     return res
 
+
 def read_midi_and_dump_to_seq(midipath: str):
     mid = Musicreater.MidiConvert.from_midi_file(midipath)
     lst = mid.to_sequence()
     return ToolSoundSequence(lst)
+
 
 class ToolSoundSequence:
     def __init__(self, seq: bytes | list):
@@ -70,6 +73,7 @@ class ToolSoundSequence:
         bt += b"SEQ:\x00" + self.noteseq
         return bt
 
+
 @plugins.add_plugin_as_api("MIDI播放器")
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
@@ -118,7 +122,9 @@ class ToolMidiMixer(Plugin):
             return True
         return False
 
-    def playsound_at_target_sync(self, name_or_seq: str | ToolSoundSequence, target: str):
+    def playsound_at_target_sync(
+        self, name_or_seq: str | ToolSoundSequence, target: str
+    ):
         if isinstance(name_or_seq, ToolSoundSequence):
             seq = name_or_seq
         else:
@@ -126,7 +132,9 @@ class ToolMidiMixer(Plugin):
         scmd = self.game_ctrl.sendwocmd
         for instrument, vol, pitch, delay in seq:
             time.sleep(delay / 20)
-            scmd(f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}")
+            scmd(
+                f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}"
+            )
 
     def iter_playsound(self, name_or_seq: str | ToolSoundSequence):
         """
@@ -143,11 +151,13 @@ class ToolMidiMixer(Plugin):
         else:
             seq = self.midi_seqs[name_or_seq]
         for instrument, vol, pitch, delay in seq:
-            yield instrument, vol, pitch, delay/20
+            yield instrument, vol, pitch, delay / 20
 
     # ------------------------------------------
 
-    def _playsound_at_target_thread(self, name_or_seq: str | ToolSoundSequence, target: str, idc: int):
+    def _playsound_at_target_thread(
+        self, name_or_seq: str | ToolSoundSequence, target: str, idc: int
+    ):
         if isinstance(name_or_seq, ToolSoundSequence):
             seq = name_or_seq
         else:
@@ -156,13 +166,19 @@ class ToolMidiMixer(Plugin):
         try:
             for instrument, vol, pitch, delay in seq:
                 time.sleep(delay / 20)
-                scmd(f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}")
+                scmd(
+                    f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}"
+                )
         finally:
             del self.playsound_threads[idc]
 
     def on_inject(self):
-        self.frame.add_console_cmd_trigger(["播放测试"], None, "测试声乐合成器", self.play_test)
-        self.frame.add_console_cmd_trigger(["停止所有播放"], None, "停止正在播放的所有音乐", self.stop_all)
+        self.frame.add_console_cmd_trigger(
+            ["播放测试"], None, "测试声乐合成器", self.play_test
+        )
+        self.frame.add_console_cmd_trigger(
+            ["停止所有播放"], None, "停止正在播放的所有音乐", self.stop_all
+        )
 
     def play_test(self, *_):
         for i in os.listdir():
@@ -173,7 +189,9 @@ class ToolMidiMixer(Plugin):
                 self.playsound_at_target("example", "@a")
                 break
         else:
-            Print.print_war("没有找到用于示例播放的任何midi文件(ToolDelta目录下), 已忽略")
+            Print.print_war(
+                "没有找到用于示例播放的任何midi文件(ToolDelta目录下), 已忽略"
+            )
 
     def stop_all(self, *_):
         for k in self.playsound_threads.copy().keys():

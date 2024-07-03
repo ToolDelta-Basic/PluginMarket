@@ -5,6 +5,7 @@ import time
 
 tooldelta.plugins.checkSystemVersion((0, 7, 3))
 
+
 @tooldelta.plugins.add_plugin
 class MapArtImporter(tooldelta.Plugin):
     name = "地图画导入"
@@ -23,14 +24,13 @@ class MapArtImporter(tooldelta.Plugin):
         self.menu = tooldelta.plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
         if tooldelta.TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
+
             self.menu = tooldelta.plugins.instant_plugin_api(ChatbarMenu)
         self.menu.add_trigger(
             ["像素画"],
             "导入像素画",
             "<文件名> <x坐标> <y坐标> <z坐标>, <尺寸(默认为1x1, 格式: ?x?)>",
-            lambda player, args: self.frame.createThread(
-                self.menu_imp, (player, args)
-            ),
+            lambda player, args: self.frame.createThread(self.menu_imp, (player, args)),
         )
 
     def get_nearest_color_block(self, rvalue, gvalue, bvalue):
