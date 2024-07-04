@@ -1,7 +1,9 @@
-import os, time
-from tooldelta import Plugin, plugins, Builtins
+import os
+import time
+from typing import TYPE_CHECKING
+
+from tooldelta import Builtins, Plugin, plugins
 from tooldelta.frame import ToolDelta
-from tooldelta.plugin_load import TYPE_CHECKING
 from tooldelta.game_utils import getScore
 
 
@@ -9,7 +11,7 @@ from tooldelta.game_utils import getScore
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 3)
+    version = (0, 1, 4)
 
     musics_list = []
     MAX_SONGS_QUEUED = 6
