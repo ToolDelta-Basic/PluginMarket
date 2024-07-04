@@ -84,7 +84,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "plugin-type": "classic"
     },
     "better-announcebar": {
