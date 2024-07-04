@@ -43,6 +43,7 @@ class MusicPlayer(tooldelta.Plugin):
         self.players_thread: dict[str, PlayerMusicStatus] = {}
         self.public_showbar_thread_awaked = False
         self.fmt = self.cfg["音乐播放条格式"]
+        os.makedirs(os.path.join(self.data_path, "midi_backup"), exist_ok=True)
 
     def on_def(self):
         self.midiplayer = tooldelta.plugins.get_plugin_api("MIDI播放器", (0, 1, 5))
@@ -60,7 +61,9 @@ class MusicPlayer(tooldelta.Plugin):
                     os.path.join(self.data_path, i),
                     os.path.join(self.data_path, i.replace(".mid", ".midseq")),
                 )
-                os.remove(os.path.join(self.data_path, i))
+                new_dir = os.path.join(self.data_path, "midi_backup", i)
+                if not os.path.isfile(new_dir):
+                    os.rename(os.path.join(self.data_path, i), new_dir)
         for i in os.listdir(self.data_path):
             if i.endswith(".midseq"):
                 name = i.replace(".midseq", "")

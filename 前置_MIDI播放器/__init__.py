@@ -41,7 +41,7 @@ class ToolSoundSequence:
                     instrument_indexes.append(instrument)
                     duration += delay_ticks / 20
                 instrument_index = instrument_indexes.index(instrument)
-                newb.append(bytes([instrument_index, vol, pitch + 60, delay_ticks]))
+                newb.append(bytes([instrument_index, vol, pitch + 120, delay_ticks]))
             bt += b"\xfe".join(newb)
             self.instruments = instrument_indexes
             self.noteseq = bt
@@ -54,7 +54,7 @@ class ToolSoundSequence:
             i, j, k, l = ind
             instrument: str = instruments[i]
             vol = j / 100
-            pitch = 2 ** ((k - 60) / 12)
+            pitch = 2 ** ((k - 120) / 12)
             delay = l
             yield instrument, vol, pitch, delay
 
@@ -78,7 +78,7 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 2, 4)
+    version = (0, 2, 5)
 
     midi_seqs: dict[str, ToolSoundSequence] = {}
     playsound_threads: dict[int, Builtins.createThread] = {}
