@@ -38,7 +38,6 @@ class MusicPlayer(tooldelta.Plugin):
         self.cfg, _ = tooldelta.Config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
-        _ = self.data_path
         self.thread_num = 0
         self.players_thread: dict[str, PlayerMusicStatus] = {}
         self.public_showbar_thread_awaked = False
