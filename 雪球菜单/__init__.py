@@ -495,7 +495,7 @@ SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (
         1,
         0,
-        '/execute as @e[type=snowball] run execute as @p[r=3] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}',
+        '/execute as @e[type=snowball] at @s run execute as @p[r=3] run tellraw @a[tag=robot] {"rawtext":[{"text":"snowball.menu.use"},{"selector":"@s"}]}',
     ),
     (2, 1, "kill @e[type=snowball]"),
     (
