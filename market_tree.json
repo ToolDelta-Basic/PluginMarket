@@ -3,100 +3,10 @@
   "SourceName": "ToolDelta插件市场 Official",
   "Greetings": "§a欢迎使用 §bToolDelta 插件市场.",
   "MarketPlugins": {
-    "简易建造": {
-      "name": "简易建造",
-      "author": "SuperScript",
-      "version": "0.0.7",
-      "plugin-type": "classic"
-    },
-    "维度传送": {
-      "name": "维度传送",
-      "author": "wling/7912",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
-    "bdx-importer": {
-      "name": "bdx导入器",
-      "author": "xingchen/SuperScript",
-      "version": "0.0.4",
-      "plugin-type": "classic"
-    },
-    "控制台执行MC指令": {
-      "name": "控制台执行MC指令",
-      "author": "SuperScript",
-      "version": "0.0.4",
-      "plugin-type": "classic"
-    },
-    "地图画导入": {
-      "name": "地图画导入",
-      "author": "SuperScript",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
-    "chunk-show": {
-      "name": "区块显示器",
-      "author": "SnowLotus",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "src-td-update": {
-      "name": "源码升级ToolDelta",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "井字棋": {
-      "name": "井字棋",
-      "author": "SuperScript/wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
-    },
-    "tpa传送": {
-      "name": "tpa传送",
-      "author": "wling",
-      "version": "0.0.8",
-      "plugin-type": "injected"
-    },
-    "雪球菜单v2": {
-      "name": "雪球菜单",
-      "author": "SuperScript",
-      "version": "0.1.4",
-      "plugin-type": "classic"
-    },
-    "prof_manager": {
-      "name": "性能管理",
-      "author": "SuperScript",
-      "version": "0.0.2",
-      "plugin-type": "classic"
-    },
-    "PianoInSettingPiano": {
-      "name": "设置栏钢琴师",
-      "author": "SuperScript",
-      "version": "0.0.7",
-      "plugin-type": "classic"
-    },
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
       "version": "0.0.5",
-      "plugin-type": "classic"
-    },
-    "choose-song": {
-      "name": "点歌台",
-      "author": "SuperScript",
-      "version": "0.1.4",
-      "plugin-type": "classic"
-    },
-    "better-announcebar": {
-      "name": "更好的公告栏",
-      "author": "SuperScript",
-      "version": "0.0.4",
-      "plugin-type": "classic"
-    },
-    "TD-ZBasic": {
-      "name": "ZBasic_Lang_中文编程",
-      "author": "SuperScript",
-      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "死亡返回": {
@@ -105,10 +15,124 @@
       "version": "0.1.0",
       "plugin-type": "injected"
     },
+    "简易建造": {
+      "name": "简易建造",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "better-announcebar": {
+      "name": "更好的公告栏",
+      "author": "SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "井字棋": {
+      "name": "井字棋",
+      "author": "SuperScript/wling",
+      "version": "0.0.4",
+      "plugin-type": "injected"
+    },
+    "入服欢迎": {
+      "name": "入服欢迎",
+      "author": "wling",
+      "version": "0.0.1",
+      "plugin-type": "injected"
+    },
+    "PianoInSettingPiano": {
+      "name": "设置栏钢琴师",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "雪球菜单v2": {
+      "name": "雪球菜单",
+      "author": "SuperScript",
+      "version": "0.1.4",
+      "plugin-type": "classic"
+    },
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
       "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "32k盒子显示": {
+      "name": "32k盒子显示",
+      "author": "SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "清空玩家末影箱": {
+      "name": "清空玩家末影箱",
+      "author": "wling",
+      "version": "0.0.3",
+      "plugin-type": "injected"
+    },
+    "@玩家": {
+      "name": "@玩家",
+      "author": "wling",
+      "version": "0.0.3",
+      "plugin-type": "injected"
+    },
+    "server-link": {
+      "name": "服服互通",
+      "author": "SuperScript/2401PT",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "scheduled-task": {
+      "name": "定时任务",
+      "author": "System",
+      "version": "0.0.1",
+      "plugin-type": "injected"
+    },
+    "维度传送": {
+      "name": "维度传送",
+      "author": "wling/7912",
+      "version": "0.0.2",
+      "plugin-type": "injected"
+    },
+    "src-td-update": {
+      "name": "源码升级ToolDelta",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "chunk-show": {
+      "name": "区块显示器",
+      "author": "SnowLotus",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "tpa传送": {
+      "name": "tpa传送",
+      "author": "wling",
+      "version": "0.0.8",
+      "plugin-type": "injected"
+    },
+    "bdx-importer": {
+      "name": "bdx导入器",
+      "author": "xingchen/SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "choose-song": {
+      "name": "点歌台",
+      "author": "SuperScript",
+      "version": "0.1.4",
+      "plugin-type": "classic"
+    },
+    "控制台执行MC指令": {
+      "name": "控制台执行MC指令",
+      "author": "SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "prof_manager": {
+      "name": "性能管理",
+      "author": "SuperScript",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "发言频率限制": {
@@ -117,9 +141,9 @@
       "version": "0.0.4",
       "plugin-type": "injected"
     },
-    "server-link": {
-      "name": "服服互通",
-      "author": "SuperScript/2401PT",
+    "地图画导入": {
+      "name": "地图画导入",
+      "author": "SuperScript",
       "version": "0.0.5",
       "plugin-type": "classic"
     },
@@ -129,9 +153,27 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "清空玩家末影箱": {
-      "name": "清空玩家末影箱",
+    "全服喇叭": {
+      "name": "全服喇叭",
       "author": "wling",
+      "version": "0.0.2",
+      "plugin-type": "injected"
+    },
+    "TD-ZBasic": {
+      "name": "ZBasic_Lang_中文编程",
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "自定义聊天栏菜单": {
+      "name": "自定义聊天栏菜单",
+      "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "gobang_game": {
+      "name": "五子棋小游戏",
+      "author": "SuperScript",
       "version": "0.0.3",
       "plugin-type": "injected"
     },
@@ -141,47 +183,23 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "全服喇叭": {
-      "name": "全服喇叭",
-      "author": "wling",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
-    "@玩家": {
-      "name": "@玩家",
-      "author": "wling",
-      "version": "0.0.3",
-      "plugin-type": "injected"
-    },
-    "自定义聊天栏菜单": {
-      "name": "自定义聊天栏菜单",
+    "聊天栏菜单": {
+      "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.0.5",
+      "version": "0.2.5",
       "plugin-type": "classic"
     },
-    "32k盒子显示": {
-      "name": "32k盒子显示",
+    "MC-MIDIPlayer": {
+      "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.2.6",
       "plugin-type": "classic"
     },
-    "入服欢迎": {
-      "name": "入服欢迎",
-      "author": "wling",
-      "version": "0.0.1",
-      "plugin-type": "injected"
-    },
-    "gobang_game": {
-      "name": "五子棋小游戏",
+    "基本插件功能库": {
+      "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.3",
-      "plugin-type": "injected"
-    },
-    "scheduled-task": {
-      "name": "定时任务",
-      "author": "System",
-      "version": "0.0.1",
-      "plugin-type": "injected"
+      "version": "0.0.9",
+      "plugin-type": "classic"
     },
     "前置-世界交互": {
       "name": "前置_世界交互",
@@ -193,24 +211,6 @@
       "name": "[前置]功能封装库-1",
       "author": "xingchen",
       "version": "0.0.2",
-      "plugin-type": "classic"
-    },
-    "基本插件功能库": {
-      "name": "前置_基本插件功能库",
-      "author": "SuperScript",
-      "version": "0.0.9",
-      "plugin-type": "classic"
-    },
-    "MC-MIDIPlayer": {
-      "name": "前置_MIDI播放器",
-      "author": "SuperScript",
-      "version": "0.2.6",
-      "plugin-type": "classic"
-    },
-    "聊天栏菜单": {
-      "name": "前置_聊天栏菜单",
-      "author": "SuperScript",
-      "version": "0.2.5",
       "plugin-type": "classic"
     }
   }
