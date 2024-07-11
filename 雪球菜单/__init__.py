@@ -412,7 +412,7 @@ class SnowMenu(Plugin):
                     self.multi_snowball_page[player] = 0
             else:
                 self.multi_snowball_page[player] += 1
-                r = self.in_snowball_menu[player].page_cb(
+                r = now_page.page_cb(
                     player, self.multi_snowball_page[player]
                 )  # type: ignore
                 if r is None:
@@ -490,15 +490,6 @@ class SnowMenu(Plugin):
         if player in self.multi_snowball_page.keys():
             del self.multi_snowball_page[player]
         self.gc.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
-
-    def im_confused(self):
-        return [
-            "三月七",
-            "要按时休息哦",
-            "丹恒",
-            "你又给智库带来了一份开源代码了吗? 辛苦了",
-        ]
-
 
 SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (
