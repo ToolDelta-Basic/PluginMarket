@@ -3,6 +3,7 @@ from tooldelta import plugins, Plugin, Frame, Config, launch_cli, Utils
 from dataclasses import dataclass
 from typing import Callable
 
+
 plugins.checkSystemVersion((0, 7, 5))
 
 
@@ -34,7 +35,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 5)
+    version = (0, 2, 6)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG = {
         "help菜单样式": {
@@ -80,7 +81,8 @@ class ChatbarMenu(Plugin):
             op_only (bool): 是否仅op可触发; 目前认为创造模式的都是OP, 你也可以自行更改并进行PR
         """
         if func is None:
-            func = lambda *args: None
+            def func(*args):
+                return None
         if not isinstance(triggers, list):
             raise TypeError
         for tri in triggers:
@@ -100,7 +102,7 @@ class ChatbarMenu(Plugin):
                 self.game_ctrl.sendcmd(
                     "/testfor @a[name=" + player + ",m=1]", True
                 ).SuccessCount
-            )  # type: ignore
+            )
 
     def show_menu(self, player: str, page: int):
         # page min = 1
@@ -111,7 +113,7 @@ class ChatbarMenu(Plugin):
             all_menu_args = list(filter(lambda x: not x.op_only, all_menu_args))
         lmt = self.cfg["单页内最多显示数"]
         total = len(all_menu_args)
-        max_page = round(total / lmt)
+        max_page = (total + lmt - 1) // lmt
         if page < 1:
             page_split_index = 0
         elif page > max_page:
@@ -119,7 +121,7 @@ class ChatbarMenu(Plugin):
         else:
             page_split_index = page - 1
         diplay_menu_args = all_menu_args[
-            page_split_index * lmt : (page_split_index + 1) * lmt
+            page_split_index * lmt: (page_split_index + 1) * lmt
         ]
         self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
         for tri in diplay_menu_args:
