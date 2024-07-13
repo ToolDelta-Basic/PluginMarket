@@ -4,7 +4,7 @@
     "description": "包含显示进度, 显示播放条等功能的Midi音乐播放器！\n用途和功能请查看插件手册!!!",
     "limit_launcher": null,
     "pre-plugins": {
-        "MC-MidiPlayer": "0.2.5",
+        "MC-MIDIPlayer": "0.2.5",
         "聊天栏菜单": "0.2.3"
     },
     "plugin-type": "classic",
