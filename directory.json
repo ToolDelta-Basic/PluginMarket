@@ -259,5 +259,26 @@
     "群服互通_内测": [
         "__init__.py",
         "datas.json"
+    ],
+    "群服互通_内测/lib": [],
+    "群服互通_内测/lib/yaml": [
+        "emitter.py",
+        "loader.py",
+        "serializer.py",
+        "tokens.py",
+        "scanner.py",
+        "__init__.py",
+        "resolver.py",
+        "nodes.py",
+        "_yaml.cpython-311-x86_64-linux-gnu.so",
+        "dumper.py",
+        "parser.py",
+        "cyaml.py",
+        "composer.py",
+        "reader.py",
+        "representer.py",
+        "events.py",
+        "constructor.py",
+        "error.py"
     ]
 }
