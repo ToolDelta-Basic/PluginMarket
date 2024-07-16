@@ -219,6 +219,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "前置_大字替换": [
+        "__init__.py",
+        "datas.json"
+    ],
     "ZBasic_Lang_中文编程": [
         "__init__.py",
         "executor.py",

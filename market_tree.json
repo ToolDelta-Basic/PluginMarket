@@ -201,6 +201,12 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "bigchar-replace": {
+      "name": "前置_大字替换",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript",
