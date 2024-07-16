@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "description": "所有使用大字替换API的插件的前置",
+  "limit_launcher": null,
+  "pre-plugins": {},
+  "plugin-type": "classic",
+  "plugin-id": "bigchar-replace"
+}
