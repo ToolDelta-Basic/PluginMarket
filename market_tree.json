@@ -183,6 +183,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "global-player-pos-get": {
+      "name": "前置_循环获取玩家坐标",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",

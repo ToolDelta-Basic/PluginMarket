@@ -13,6 +13,10 @@
         "readme.txt",
         "datas.json"
     ],
+    "前置_循环获取玩家坐标": [
+        "__init__.py",
+        "datas.json"
+    ],
     "前置_聊天栏菜单": [
         "__init__.py",
         "datas.json"
