@@ -10,7 +10,6 @@ from basic_codes import *
 COMPILER = Callable[[list[str], REGISTER], CodeUnit]
 EXECUTOR = Callable[[tuple, VAR_MAP], None]
 
-
 class _ExtendCodes:
     cmds_cb_map: dict[str, tuple[COMPILER, int]] = {}
     cmds_exe_map: dict[int, EXECUTOR] = {}
@@ -21,9 +20,7 @@ class _ExtendCodes:
         self.cmds_cb_map[cmd] = (compiler, self.counter)
         self.cmds_exe_map[self.counter] = executor
 
-
 extend_codes = _ExtendCodes()
-
 
 def multi_parse_and_raise(syntax: str, namespace: REGISTER):
     try:
@@ -31,25 +28,11 @@ def multi_parse_and_raise(syntax: str, namespace: REGISTER):
     except SyntaxError as e:
         raise CodeSyntaxError(e.args[0])
 
-
-def _type_assert(
-    check_type: ANY_TYPE,
-    std_type: ANY_TYPE,
-    err: str = "要求表达式的结果为 %s, 却收到 %s",
-):
+def _type_assert(check_type: ANY_TYPE, std_type: ANY_TYPE, err: str = "要求表达式的结果为 %s, 却收到 %s"):
     if check_type != std_type:
-        type1name = (
-            check_type.name
-            if isinstance(check_type, BasicType)
-            else "可空类型[" + check_type.type.name + "]"
-        )
-        type2name = (
-            std_type.name
-            if isinstance(std_type, BasicType)
-            else "可空类型[" + std_type.type.name + "]"
-        )
+        type1name = check_type.name if isinstance(check_type, BasicType) else "可空类型[" + check_type.type.name + "]"
+        type2name = std_type.name if isinstance(std_type, BasicType) else "可空类型[" + std_type.type.name + "]"
         raise CodeSyntaxError(err % (type2name, type1name))
-
 
 def compile(code: str, in_namespace: REGISTER):
     code_block_signal_stack = [0]
@@ -77,7 +60,7 @@ def compile(code: str, in_namespace: REGISTER):
         # 获取当前代码块的命名空间
         return code_block_stack[-1].out_namespace
 
-    def _get_space(ind=-1):
+    def _get_space(ind = -1):
         # 获取上层代码块(默认), -n=上n层
         return code_block_stack[ind]
 
@@ -100,9 +83,7 @@ def compile(code: str, in_namespace: REGISTER):
                     _append(OPs.END, None)
                 case "赋值" | "设置":
                     if len(args) < 3:
-                        raise CodeSyntaxError(
-                            "赋值语句错误, 应为 赋值 <变量名> 为 <常量/表达式>"
-                        )
+                        raise CodeSyntaxError("赋值语句错误, 应为 赋值 <变量名> 为 <常量/表达式>")
                     var_name = args[0]
                     parsed_syntax = parse(" ".join(args[2:]), _get_local_namespace())
                     new_type = get_final_type(parsed_syntax)
@@ -122,9 +103,7 @@ def compile(code: str, in_namespace: REGISTER):
                     _type_assert(get_final_type(condition), BOOLEAN)
                     _get_space().cache1 = [[condition, None]]
                     code_block_signal_stack.append(Signal.IF)
-                    code_block_stack.append(
-                        CompiledCode([], _get_local_namespace().copy())
-                    )
+                    code_block_stack.append(CompiledCode([], _get_local_namespace().copy()))
                 case "又或者":
                     if code_block_signal_stack[-1] not in (Signal.IF, Signal.ELIF):
                         raise CodeSyntaxError("又或者 语句之前应有 如果 或 又或者 语句")
@@ -141,9 +120,7 @@ def compile(code: str, in_namespace: REGISTER):
                     space.cache1[-1][1] = code_prev
                     # 放入 新代码块
                     space.cache1.append([condition, None])
-                    code_block_stack.append(
-                        CompiledCode([], _get_local_namespace().copy())
-                    )
+                    code_block_stack.append(CompiledCode([], _get_local_namespace().copy()))
                 case "否则":
                     if code_block_signal_stack[-1] not in (Signal.IF, Signal.ELIF):
                         raise CodeSyntaxError("否则 语句之前应有 如果 语句")
@@ -153,15 +130,9 @@ def compile(code: str, in_namespace: REGISTER):
                     space.cache1[-1][1] = code_prev
                     # 放入 新代码块
                     # 此时 cache2 可以为 否则 代码块
-                    code_block_stack.append(
-                        CompiledCode([], _get_local_namespace().copy())
-                    )
+                    code_block_stack.append(CompiledCode([], _get_local_namespace().copy()))
                 case "结束如果":
-                    if code_block_signal_stack[-1] not in (
-                        Signal.IF,
-                        Signal.ELSE,
-                        Signal.ELIF,
-                    ):
+                    if code_block_signal_stack[-1] not in (Signal.IF, Signal.ELSE, Signal.ELIF):
                         raise CodeSyntaxError("在这个位置无法结束 如果 语句块")
                     # 退出 如果/否则 的代码块
                     last_sign = code_block_signal_stack.pop(-1)
@@ -186,9 +157,7 @@ def compile(code: str, in_namespace: REGISTER):
                     _get_space().cache1 = parsed_syntax
                     # 此时 cache1 为判定表达式
                     code_block_signal_stack.append(Signal.LOOP_UNTIL)
-                    code_block_stack.append(
-                        CompiledCode([], _get_local_namespace().copy())
-                    )
+                    code_block_stack.append(CompiledCode([], _get_local_namespace().copy()))
                 case "结束循环":
                     if code_block_signal_stack[-1] != Signal.LOOP_UNTIL:
                         raise CodeSyntaxError("结束循环 语句之前应有 循环执行直到 语句")
@@ -199,9 +168,7 @@ def compile(code: str, in_namespace: REGISTER):
                     _append(OPs.ENDLOOP, space.cache1, cur_code)
                     space.clear_cache()
                 case "输出":
-                    parsed_syntaxs = multi_parse_and_raise(
-                        " ".join(args), _get_local_namespace()
-                    )
+                    parsed_syntaxs = multi_parse_and_raise(" ".join(args), _get_local_namespace())
                     _append(OPs.PRINT, parsed_syntaxs)
                 case "执行":
                     parsed_syntax = parse(" ".join(args), _get_local_namespace())
@@ -209,9 +176,7 @@ def compile(code: str, in_namespace: REGISTER):
                     _append(OPs.EXECMD, parsed_syntax)
                 case "@导入变量":
                     if len(args) != 2:
-                        raise CodeSyntaxError(
-                            "@导入变量 的格式: @导入变量 <变量名> <类型>"
-                        )
+                        raise CodeSyntaxError("@导入变量 的格式: @导入变量 <变量名> <类型>")
                     if code_block_signal_stack[-1] != Signal.GLOBAL:
                         raise CodeSyntaxError("@导入变量 只能在最外层代码块使用")
                     var_name = args[0]
@@ -220,29 +185,18 @@ def compile(code: str, in_namespace: REGISTER):
                     except ValueError as e:
                         raise CodeSyntaxError(e.args[0])
                     lc_namespace = _get_local_namespace()
-                    if (
-                        var_name in lc_namespace.keys()
-                        and lc_namespace[var_name] != var_type
-                    ):
-                        raise CodeSyntaxError(
-                            f"变量 {var_name} 不能重载类型 {var_type} 到其旧类型 {lc_namespace[var_name]}"
-                        )
+                    if var_name in lc_namespace.keys() and lc_namespace[var_name] != var_type:
+                        raise CodeSyntaxError(f"变量 {var_name} 不能重载类型 {var_type} 到其旧类型 {lc_namespace[var_name]}")
                     if (vc_type := in_namespace.get(var_name)) != var_type:
                         if vc_type is None:
                             raise CodeSyntaxError(f"无法导入变量 {var_name}")
                         else:
-                            raise CodeSyntaxError(
-                                f"正常导入的变量类型为 {vc_type}, 与索取的 {var_type} 不同"
-                            )
+                            raise CodeSyntaxError(f"正常导入的变量类型为 {vc_type}, 与索取的 {var_type} 不同")
                     _get_space().add_namespace({var_name: var_type})
                 case "聊天栏显示":
-                    parsed_syntaxs = multi_parse_and_raise(
-                        " ".join(args), _get_local_namespace()
-                    )
+                    parsed_syntaxs = multi_parse_and_raise(" ".join(args), _get_local_namespace())
                     if len(parsed_syntaxs) != 2:
-                        raise CodeSyntaxError(
-                            "聊天栏显示 的格式: 聊天栏显示 <目标名:表达式>; <内容:表达式>"
-                        )
+                        raise CodeSyntaxError("聊天栏显示 的格式: 聊天栏显示 <目标名:表达式>; <内容:表达式>")
                     target = parsed_syntaxs[0]
                     content = parsed_syntaxs[1]
                     _type_assert(get_final_type(target), STRING)
@@ -274,8 +228,6 @@ def compile(code: str, in_namespace: REGISTER):
         raise CodeSyntaxError(f"第 {ln} 行出现问题: {err}")
 
     if code_block_signal_stack[-1] != 0:
-        raise CodeSyntaxError(
-            f'代码结尾有代码块 "{get_code_block_zhcn(code_block_signal_stack[-1])}"未结束'
-        )
+        raise CodeSyntaxError(f"代码结尾有代码块 \"{get_code_block_zhcn(code_block_signal_stack[-1])}\"未结束")
 
     return code_block_stack[-1]

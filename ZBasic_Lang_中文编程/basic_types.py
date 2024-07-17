@@ -2,9 +2,8 @@
 
 from typing import Any, Callable
 
-
-class Pattern: ...
-
+class Pattern:
+    ...
 
 class BasicType:
     def __init__(self, name: str, extra1: "BasicType | Any" = None):
@@ -22,18 +21,14 @@ class BasicType:
         if not self.extra1:
             return get_typename_zhcn(self.type)
         else:
-            return (
-                f"{get_typename_zhcn(self.type)}[{get_typename_zhcn(self.extra1.type)}]"
-            )
+            return f"{get_typename_zhcn(self.type)}[{get_typename_zhcn(self.extra1.type)}]"
 
     def __getitem__(self, v: "ANY_TYPE"):
         return BasicType(self.name, v)
 
-
 class OptionalType:
     def __init__(self, t: BasicType):
         self.type = t
-
 
 class _Signal:
     GLOBAL = 0
@@ -43,9 +38,7 @@ class _Signal:
     WHILE = 4
     LOOP_UNTIL = 5
 
-
 Signal = _Signal
-
 
 def get_code_block_zhcn(bid: int):
     match bid:
@@ -58,9 +51,7 @@ def get_code_block_zhcn(bid: int):
         case Signal.LOOP_UNTIL:
             return "循环直到"
 
-
-class SkipScript(Exception): ...
-
+class SkipScript(Exception):...
 
 ANY = BasicType("任意值")
 NUMBER = BasicType("数值")
@@ -78,14 +69,13 @@ zhcn_type = {
     "空值": NULL,
     "坐标": POSITION,
     "任意值": ANY,
-    "列表": LIST,
+    "列表": LIST
 }
 
 ANY_TYPE = BasicType | OptionalType
 REGISTER = dict[str, ANY_TYPE]
 VAR_MAP = dict[str, Any]
 RES_TYPE = ANY_TYPE | Callable[[tuple[ANY_TYPE, ...]], ANY_TYPE]
-
 
 def get_typename_zhcn(t: ANY_TYPE):
     optional = False
@@ -101,14 +91,12 @@ def get_typename_zhcn(t: ANY_TYPE):
         else:
             return t.type.name
 
-
 def get_zhcn_type(t: str):
     res = zhcn_type.get(t)
     if res is None:
         raise ValueError(f"类型 {t} 不存在")
     else:
         return zhcn_type[t]
-
 
 def de_optional(t: OptionalType):
     return t.type
