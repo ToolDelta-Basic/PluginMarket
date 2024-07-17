@@ -1,15 +1,16 @@
-from tooldelta import Frame, Plugin, Config, Print, Builtins, plugins, packets
-from tooldelta.launch_cli import SysStatus
-from tooldelta.game_utils import getPosXYZ
-
-from typing import Callable
+import threading
+import time
 from dataclasses import dataclass
-import time, threading
+from collections.abc import Callable
+
+from tooldelta import Frame, Plugin, packets, plugins
+from tooldelta.game_utils import getPosXYZ
+from tooldelta.launch_cli import SysStatus
 
 
 @dataclass
 class UpdatePlayerAttributes:
-    player: str
+    player: str | None
     attributes: dict
     tick: int
 
@@ -18,20 +19,20 @@ class UpdatePlayerAttributes:
 class ToolDeltaFuncLib1(Plugin):
     name = "前置-功能封装库-1"
     author = "xingchen"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
-        self.frame: Frame = frame
-        self.game_ctrl: any = frame.get_game_control()
+        self.frame = frame
+        self.game_ctrl = frame.get_game_control()
         self.listener_players_update_attributes_listener: list[
-            tuple[str, Callable[[UpdatePlayerAttributes], None]]
+            tuple[str | list[str], Callable[[UpdatePlayerAttributes], None]]
         ] = []
         self.tp_players_thread: threading.Thread = threading.Thread(
             target=self.__tp_player__, name="tp_player_thread"
         )
         self.tp_players_thread.start()
 
-    def update_player_attributes_listener(self, players: str | list[str]) -> None:
+    def update_player_attributes_listener(self, players: str | list[str]) -> Callable:
         """
         监听玩家属性更新事件
         该方法需要机器人持续 TP 跟踪玩家，因该方法所用数据包只能在目标玩家半径大约60格内获取，因此不适用于大范围的玩家属性更新监听。
@@ -42,7 +43,7 @@ class ToolDeltaFuncLib1(Plugin):
 
         """
 
-        def deco(func: Callable[[UpdatePlayerAttributes], bool]):
+        def deco(func: Callable[[UpdatePlayerAttributes], None]):
             if isinstance(players, str):
                 if players in self.frame.link_game_ctrl.allplayers:
                     self.listener_players_update_attributes_listener.append(
@@ -50,7 +51,7 @@ class ToolDeltaFuncLib1(Plugin):
                     )
             elif isinstance(players, list):
                 for player in players:
-                    if players in self.frame.link_game_ctrl.allplayers:
+                    if player in self.frame.link_game_ctrl.allplayers:
                         self.listener_players_update_attributes_listener.append(
                             (player, func)
                         )
