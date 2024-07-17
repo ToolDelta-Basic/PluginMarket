@@ -31,7 +31,7 @@ from tooldelta import Frame, Plugin, Print, Utils, constants, game_utils, plugin
 class ToolDelta_ZBasic(Plugin):
     name = "ZBasic-中文Basic语言"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)
@@ -186,10 +186,13 @@ class ToolDelta_ZBasic(Plugin):
             os.mkdir(fdir)
             c_dir = os.path.join(os.path.dirname(__file__), "示例代码")
             for dir in os.listdir(c_dir):
-                shutil.copytree(
-                    os.path.join(c_dir, dir),
-                    fdir
-                )
+                try:
+                    shutil.copytree(
+                        os.path.join(c_dir, dir),
+                        fdir
+                    )
+                except Exception:
+                    pass
         os.makedirs(os.path.join(fdir, "脚本文件"), exist_ok=True)
         os.makedirs(os.path.join(fdir, "数据文件"), exist_ok=True)
 
