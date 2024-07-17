@@ -1,6 +1,6 @@
 {
     "author": "xingchen",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "支持内置签名服务端以及CQHTTP的群服互通组件",
     "limit_launcher": null,
     "pre-plugins": {},
