@@ -5,28 +5,27 @@
 # 若需单独提取插件内的编译器和执行器, 请联系作者
 
 # 导入 ToolDelta 框架
-from tooldelta import Plugin, plugins, Utils, Print, game_utils, Frame, constants
+import os
 
 # 标准库
 import random
-import math
-import os
-import time
 import shutil
+import time
 
 # 需要的类型
-from typing import Callable, Optional
-from syntax_lib import ConstPtr
+from typing import Optional
+from collections.abc import Callable
+
+from basic_codes import CodeSyntaxError, CompiledCode, CustomCodeUnit
 from basic_types import *
-from basic_codes import CompiledCode, CodeSyntaxError, CustomCodeUnit
+from compiler import COMPILER, EXECUTOR, compile, extend_codes
+from executor import run, set_game_ctrl
 
 # 表达式解析器, 编译器和执行器
-from syntax_compile import parse, multi_parse, get_final_type
-from compiler import compile, extend_codes, COMPILER, EXECUTOR
-from executor import set_game_ctrl, run
-
 # 命令和函数注册器
-from syntax_compile import register_func_syntax
+from syntax_compile import get_final_type, multi_parse, parse, register_func_syntax
+from syntax_lib import ConstPtr
+from tooldelta import Frame, Plugin, Print, Utils, constants, game_utils, plugins
 
 
 @plugins.add_plugin_as_api("ZBasic")

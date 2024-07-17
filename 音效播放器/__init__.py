@@ -1,4 +1,5 @@
-import os, json
+import os
+import json
 from tooldelta import Plugin, plugins, Print, ToolDelta, Utils, TYPE_CHECKING
 from tooldelta.game_utils import getPosXYZ
 
@@ -64,7 +65,9 @@ class SFXPlayer(Plugin):
         self.files = files
 
     def put_cmd_block(self, player: str, args: list[str]):
-        # WIP !!!
+        #TODO: WIP !!!
+        raise NotImplementedError
+
         fname = args[0]
         if fname.endswith(".mid"):
             fname = fname[:-4]

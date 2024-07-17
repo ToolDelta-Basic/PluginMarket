@@ -1,6 +1,6 @@
 import os
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from tooldelta import Builtins, Plugin, plugins
 from tooldelta.frame import ToolDelta
@@ -11,9 +11,9 @@ from tooldelta.game_utils import getScore
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 4)
+    version = (0, 1, 5)
 
-    musics_list = []
+    musics_list: ClassVar[list] = []
     MAX_SONGS_QUEUED = 6
     can_stop = None
 
@@ -84,7 +84,7 @@ class DJTable(Plugin):
                 f"/scoreboard players remove {player} song_point 1"
             )
             self.game_ctrl.say_to(
-                "@a", "§e点歌§f>> §e%s§a成功点歌:%s" % (player, music_name)
+                "@a", f"§e点歌§f>> §e{player}§a成功点歌:{music_name}"
             )
 
     def lookup_songs_list(self, player: str, _):
@@ -115,8 +115,7 @@ class DJTable(Plugin):
                     music_data = self.musics_list.pop(0)
                     self.game_ctrl.say_to(
                         "@a",
-                        "§e点歌§f>> §7开始播放§f%s§7，点歌者:§f%s"
-                        % (music_data[0], music_data[1]),
+                        f"§e点歌§f>> §7开始播放§f{music_data[0]}§7，点歌者:§f{music_data[1]}",
                     )
                     try:
                         self.midiplayer.playsound_at_target_sync(music_data[0], "@a")

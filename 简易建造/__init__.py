@@ -7,7 +7,7 @@ import time
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
@@ -93,7 +93,7 @@ class WorldEdit(Plugin):
                     getXend = int(jsonPkt["NBTData"]["x"])
                     getYend = int(jsonPkt["NBTData"]["y"])
                     getZend = int(jsonPkt["NBTData"]["z"])
-                except Exception as err:
+                except Exception:
                     signPlayerName = ""
                     self.game_ctrl.say_to(
                         "@a", f"§cERROR：目标选择器报错 §6{(placeX, placeY, placeZ)}"
@@ -144,7 +144,8 @@ class WorldEdit(Plugin):
         return False
 
     def fillwith(self, sx, sy, sz, dx, dy, dz):
-        p2n = lambda n: 1 if n >= 0 else -1
+        def p2n(n):
+            return 1 if n >= 0 else -1
         fx = p2n(dx - sx)
         fy = p2n(dy - sy)
         fz = p2n(dz - sz)

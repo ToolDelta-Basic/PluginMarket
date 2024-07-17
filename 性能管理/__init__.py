@@ -1,4 +1,6 @@
-import psutil, time, os
+import psutil
+import time
+import os
 from tooldelta import plugins, Plugin, Builtins, Print, Frame, Config
 
 BYTES2MB = 1048576
@@ -8,7 +10,7 @@ BYTES2MB = 1048576
 class EmergencyMetaMana(Plugin):
     name = "性能管理"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, f: Frame):
         super().__init__(f)
@@ -44,13 +46,11 @@ class EmergencyMetaMana(Plugin):
                 hi_used = vm.percent
                 self.warn_lck = True
                 Print.print_war(
-                    "系统可用内存告急(%.2fMB/%.2fMB 可用, %.2f%%)"
-                    % (vm.available / BYTES2MB, vm.total / BYTES2MB, vm.percent)
+                    f"系统可用内存告急({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%)"
                 )
             if vm.percent > self.mem_exit:
                 Print.print_err(
-                    "已超过最大可用内存限额(%.2fMB/%.2fMB 可用, %.2f%%), 系统将退出"
-                    % (vm.available / BYTES2MB, vm.total / BYTES2MB, vm.percent)
+                    f"已超过最大可用内存限额({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%), 系统将退出"
                 )
                 for k, _ in Builtins.TMPJson.get_tmps():
                     Builtins.TMPJson.unloadPathJson(k)
@@ -60,13 +60,7 @@ class EmergencyMetaMana(Plugin):
     def chk_proc(self, args):
         vm = psutil.virtual_memory()
         Print.print_inf(
-            "当前可用内存%.2fMB, 空闲%.2fMB (总共%.2fMB), %.2f%%"
-            % (
-                vm.available / BYTES2MB,
-                vm.free / BYTES2MB,
-                vm.total / BYTES2MB,
-                vm.percent,
-            ),
+            f"当前可用内存{vm.available / BYTES2MB:.2f}MB, 空闲{vm.free / BYTES2MB:.2f}MB (总共{vm.total / BYTES2MB:.2f}MB), {vm.percent:.2f}%",
             need_log=False,
         )
         cpup = psutil.cpu_percent()
@@ -101,4 +95,4 @@ class EmergencyMetaMana(Plugin):
                     )
 
     def test_hc(self):
-        return [k for k in Builtins.TMPJson.get_tmps().keys()]
+        return list(Builtins.TMPJson.get_tmps().keys())

@@ -1,5 +1,6 @@
 import os
 import time
+import anyio
 import ujson as json
 from 维度传送 import tp
 from tooldelta.plugin_load.injected_plugin import (
@@ -17,7 +18,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "wling/7912",
 }
 
@@ -47,8 +48,8 @@ async def _(playermessage: player_message_info):
     msg = playermessage.message
 
     if msg == ".backdeath":
-        with open(config_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        async with await anyio.open_file(config_path, encoding="utf-8") as f:
+            data = json.loads(await f.read())
         if playername not in data:
             tellrawText(playername, "§l§cERROR§r", "§c未找到记录.")
             return
@@ -66,7 +67,7 @@ async def _(playermessage: player_message_info):
             f"已传送到上次死亡点: [§l{translateDim(deathData['dimension'])}§r, (§l{deathData['position']['x']}§r, §l{deathData['position']['y']}§r, §l{deathData['position']['z']}§r)].",
         )
         data[playername] = deathData
-        with open(config_path, "w", encoding="utf-8") as f:
+        async with await anyio.open_file(config_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
 
@@ -76,8 +77,8 @@ async def _(playerdeath: player_death_info):
     if playername not in get_all_player():
         return
     deathTime = int(time.time())
-    with open(config_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    async with await anyio.open_file(config_path, encoding="utf-8") as f:
+        data = json.loads(await f.read())
     if playername not in data:
         data[playername] = {}
     deathData_old = data[playername]
@@ -94,7 +95,7 @@ async def _(playerdeath: player_death_info):
     deathData = getPos(playername)
     deathData["time"] = deathTime
     data[playername] = deathData
-    with open(config_path, "w", encoding="utf-8") as f:
+    async with await anyio.open_file(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     tellrawText(
         f'@a[name="{playername}"]',

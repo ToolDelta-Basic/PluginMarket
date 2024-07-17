@@ -47,7 +47,7 @@ class Display32KShulkerBox(Plugin):
                     playerNearest = self.bas_api.getTarget(
                         f"@a[x={shulkerx},y={shulkery},z={shulkerz},name=!{self.game_ctrl.bot_name},c=1]"
                     )[0]
-                except:
+                except Exception:
                     playerNearest = "未找到"
                 self.game_ctrl.sendcmd(
                     f"/structure save {structID} {shulkerBoxPos} {shulkerBoxPos} disk"
@@ -89,7 +89,7 @@ class Display32KShulkerBox(Plugin):
     @staticmethod
     def getAll32kBoxes() -> list[str]:
         try:
-            with open("插件数据文件/32kBoxes.txt", "r", encoding="utf-8") as f:
+            with open("插件数据文件/32kBoxes.txt", encoding="utf-8") as f:
                 boxes = f.read().split("\n")
                 f.close()
             return boxes

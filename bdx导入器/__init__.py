@@ -1,16 +1,16 @@
 from tooldelta import Plugin, Print, Utils, plugins, TYPE_CHECKING, game_utils
-import os, time
+import os
+import time
 from .BDXConverter.Converter.Converter import BDX_2
 from .BDXConverter import ReadBDXFile
 
-import re
 
 
 @plugins.add_plugin
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
     author = "xingchen/SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -65,10 +65,13 @@ class BDX_BDump(Plugin):
             return
         bdx_name = bdx_file[:-4]
         Print.print_inf(f"{bdx_name} 的导入已经开始 (进度条显示于游戏内)")
+        if self.get_x is None or self.get_y is None or self.get_z is None:
+            Print.print_err("未设置导入坐标, 无法导入")
+            return
         Utils.createThread(
             self.dump_bdx_at,
             (bdx_name, bdx_inf, int(self.get_x), int(self.get_y), int(self.get_z)),
-        )  # type: ignore
+        )
 
     def get_bdx_pos_menu(self, _):
         avali_players = self.game_ctrl.allplayers

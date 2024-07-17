@@ -1,4 +1,6 @@
-import time, ujson, dataclasses
+import time
+import ujson
+import dataclasses
 from tooldelta import plugins, Plugin, Print, Utils
 
 @plugins.add_plugin_as_api("循环获取玩家坐标")

@@ -1,5 +1,8 @@
 # 插件: 开
-import time, threading, traceback
+import time
+import threading
+import traceback
+from typing import ClassVar
 from tooldelta.plugin_load.injected_plugin.movent import (
     rawText,
     game_control,
@@ -15,13 +18,13 @@ from tooldelta import plugins, Print
 
 try:
     chatbar = plugins.get_plugin_api("聊天栏菜单")
-except:
+except ImportError:
     Print.print_err("需要前置组件 聊天栏菜单")
     raise SystemExit
 
 __plugin_meta__ = {
     "name": "五子棋小游戏",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "SuperScript",
 }
 
@@ -32,8 +35,8 @@ class Super_AFKGobangBasic:
     TM AND LICENSED BY DOYEN STUDIO(1991-2023).Inc.
     """
 
-    rooms = {}
-    waitingCache = {}
+    rooms: ClassVar[dict] = {}
+    waitingCache: ClassVar[dict] = {}
     cacheUID = 0
     DESCRIPTION = __doc__
     __version__ = __plugin_meta__["version"]
@@ -149,7 +152,7 @@ class Super_AFKGobangBasic:
     def GameWait(self, _1P: str, _2P: str):
         rawText(_1P, "§7§l> §r§6正在等待对方同意请求..")
         rawText(_2P, f"§7§l> §r§e{_1P}§f向你发送了五子棋对弈邀请 ！")
-        rawText(_2P, f"§7§l> §r§a输入wzq y同意， §c输入wzq n拒绝")
+        rawText(_2P, "§7§l> §r§a输入wzq y同意， §c输入wzq n拒绝")
         waitStartTime = time.time()
         self.waitingCache[_2P] = None
         while 1:
@@ -180,57 +183,57 @@ class SuperGobangStage:
         self.WHITE = 2
         self.PosSignLeft = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫"]
 
-    def centers(self, l, w):
+    def centers(self, rowIndex, w):
         if (
-            (l < 3 or l > self.SIZE - 2)
+            (rowIndex < 3 or rowIndex > self.SIZE - 2)
             and (w < 3 or w > self.SIZE - 2)
-            or not self.getField(l, w)
+            or not self.getField(rowIndex, w)
         ):
             return False
         return any(
             [
                 (
-                    self.getField(l, w)
-                    == self.getField(l - 1, w)
-                    == self.getField(l - 2, w)
-                    == self.getField(l + 1, w)
-                    == self.getField(l + 2, w)
+                    self.getField(rowIndex, w)
+                    == self.getField(rowIndex - 1, w)
+                    == self.getField(rowIndex - 2, w)
+                    == self.getField(rowIndex + 1, w)
+                    == self.getField(rowIndex + 2, w)
                 ),
                 (
-                    self.getField(l, w)
-                    == self.getField(l, w - 1)
-                    == self.getField(l, w - 2)
-                    == self.getField(l, w + 1)
-                    == self.getField(l, w + 2)
+                    self.getField(rowIndex, w)
+                    == self.getField(rowIndex, w - 1)
+                    == self.getField(rowIndex, w - 2)
+                    == self.getField(rowIndex, w + 1)
+                    == self.getField(rowIndex, w + 2)
                 ),
                 (
-                    self.getField(l, w)
-                    == self.getField(l - 1, w - 1)
-                    == self.getField(l - 2, w - 2)
-                    == self.getField(l + 1, w + 1)
-                    == self.getField(l + 2, w + 2)
+                    self.getField(rowIndex, w)
+                    == self.getField(rowIndex - 1, w - 1)
+                    == self.getField(rowIndex - 2, w - 2)
+                    == self.getField(rowIndex + 1, w + 1)
+                    == self.getField(rowIndex + 2, w + 2)
                     != 0
                 ),
                 (
-                    self.getField(l, w)
-                    == self.getField(l - 1, w + 1)
-                    == self.getField(l - 2, w + 2)
-                    == self.getField(l + 1, w - 1)
-                    == self.getField(l + 2, w - 2)
+                    self.getField(rowIndex, w)
+                    == self.getField(rowIndex - 1, w + 1)
+                    == self.getField(rowIndex - 2, w + 2)
+                    == self.getField(rowIndex + 1, w - 1)
+                    == self.getField(rowIndex + 2, w - 2)
                     != 0
                 ),
             ]
         )
 
-    def getField(self, l: int, w: int):
-        if l not in range(1, self.SIZE + 1) or w not in range(1, self.SIZE + 1):
+    def getField(self, row: int, w: int):
+        if row not in range(1, self.SIZE + 1) or w not in range(1, self.SIZE + 1):
             return None
-        return self.field[l - 1][w - 1]
+        return self.field[row - 1][w - 1]
 
-    def setField(self, l, w, chesType):
-        if l not in range(1, self.SIZE + 1) or w not in range(1, self.SIZE + 1):
+    def setField(self, rowIndex, w, chesType):
+        if rowIndex not in range(1, self.SIZE + 1) or w not in range(1, self.SIZE + 1):
             return False
-        self.field[l - 1][w - 1] = chesType
+        self.field[rowIndex - 1][w - 1] = chesType
         return True
 
     def get_win(self):
@@ -240,11 +243,11 @@ class SuperGobangStage:
                     return self.getField(cl, cw)
         return None
 
-    def onchess(self, l: int, w: int, player):
-        assert not self.getField(l, w), "§c此处不可以再下子哦"
-        if not l in range(1, self.SIZE + 1) or not w in range(1, self.SIZE + 1):
+    def onchess(self, row: int, w: int, player):
+        assert not self.getField(row, w), "§c此处不可以再下子哦"
+        if row not in range(1, self.SIZE + 1) or w not in range(1, self.SIZE + 1):
             return False
-        self.setField(l, w, player)
+        self.setField(row, w, player)
         return True
 
     def toSignLeft(self, num: int):
@@ -272,7 +275,7 @@ def on_menu_invoked(player: str, args: list[str]):
     if len(_2P) < 2:
         rawText(player, "§c模糊搜索玩家名， 输入的名字长度必须大于1")
         return
-    allplayers = [single_player for single_player in game_control.allplayers]
+    allplayers = list(game_control.allplayers)
     allplayers.remove(player)
     new2P = None
     for single_player in allplayers:
@@ -283,11 +286,11 @@ def on_menu_invoked(player: str, args: list[str]):
         rawText(player, f'§c未找到名字里含有"{_2P}"的玩家.')
         return
     if new2P in GobangRoom.waitingCache.keys():
-        rawText(player, f"§c申请已经发出了")
+        rawText(player, "§c申请已经发出了")
     if not GobangRoom.getRoom(player):
         threading.Thread(target=GobangRoom.GameWait, args=(player, new2P)).start()
     else:
-        rawText(player, f"§c你还没有退出当前游戏房间")
+        rawText(player, "§c你还没有退出当前游戏房间")
 
 
 @player_message()
@@ -302,7 +305,7 @@ async def on_chess_cmd(info: player_message_info):
                     try:
                         try:
                             _, posl, posw = msg.split()
-                        except:
+                        except Exception:
                             raise AssertionError(
                                 "§c落子格式不正确； 下子/xiazi/xz <纵坐标> <横坐标>"
                             )
@@ -339,7 +342,7 @@ async def on_chess_cmd(info: player_message_info):
                             inRoom.turn()
                     except AssertionError as err:
                         rawText(player, str(err))
-                    except:
+                    except Exception:
                         print(traceback.format_exc())
                 else:
                     rawText(player, "§c还没有轮到你落子哦")

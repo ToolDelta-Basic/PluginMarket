@@ -177,7 +177,7 @@ class MusicPlayer(tooldelta.Plugin):
         if not self.public_showbar_thread_awaked:
             self.public_showbar_thread()
 
-    def format_time(self, sec: float | int):
+    def format_time(self, sec: float):
         sec = int(sec)
         return "%.2d:%.2d" % (sec // 60, sec % 60)
 

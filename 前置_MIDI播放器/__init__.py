@@ -1,4 +1,6 @@
-import time, os
+import time
+import os
+from typing import ClassVar
 import Musicreater
 from tooldelta import Plugin, plugins, Builtins, Print
 
@@ -51,11 +53,11 @@ class ToolSoundSequence:
         seq = self.noteseq
         instruments = self.instruments
         for ind in seq.split(b"\xfe"):
-            i, j, k, l = ind
-            instrument: str = instruments[i]
-            vol = j / 100
-            pitch = 2 ** ((k - 120) / 12)
-            delay = l
+            instrument_index, volume, note_pitch_shift, note_delay = ind
+            instrument: str = instruments[instrument_index]
+            vol = volume / 100
+            pitch = 2 ** ((note_pitch_shift - 120) / 12)
+            delay = note_delay
             yield instrument, vol, pitch, delay
 
     @property
@@ -78,10 +80,10 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 2, 5)
+    version = (0, 2, 6)
 
-    midi_seqs: dict[str, ToolSoundSequence] = {}
-    playsound_threads: dict[int, Builtins.createThread] = {}
+    midi_seqs: ClassVar[dict[str, ToolSoundSequence]] = {}
+    playsound_threads: ClassVar[dict[int, Builtins.createThread]] = {}
     _id_counter = 0
 
     # ---------------- API ---------------------

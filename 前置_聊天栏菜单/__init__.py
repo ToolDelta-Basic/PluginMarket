@@ -1,7 +1,8 @@
 from tooldelta import plugins, Plugin, Frame, Config, launch_cli, Utils
 
 from dataclasses import dataclass
-from typing import Callable
+from typing import ClassVar
+from collections.abc import Callable
 
 
 plugins.checkSystemVersion((0, 7, 5))
@@ -35,9 +36,9 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 6)
+    version = (0, 2, 7)
     description = "前置插件, 提供聊天栏菜单功能"
-    DEFAULT_CFG = {
+    DEFAULT_CFG: ClassVar = {
         "help菜单样式": {
             "菜单头": "§7>>> §l§bＴｏｏｌＤｅｌｔａ\n§r§l===============================",
             "菜单列表": " - [菜单指令][参数提示] §7§o[菜单功能说明]",
@@ -46,12 +47,12 @@ class ChatbarMenu(Plugin):
         "/help触发词": [".help"],
         "单页内最多显示数": 6,
     }
-    STD_CFG_TYPE = {
+    STD_CFG_TYPE: ClassVar = {
         "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
         "/help触发词": Config.JsonList(str),
         "单页内最多显示数": Config.PInt,
     }
-    chatbar_triggers: list[ChatbarTriggers] = []
+    chatbar_triggers: ClassVar[list[ChatbarTriggers]] = []
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -80,14 +81,20 @@ class ChatbarMenu(Plugin):
             args_pd ((int) -> bool): 判断方法 (参数数量:int) -> 参数数量是否合法: bool
             op_only (bool): 是否仅op可触发; 目前认为创造模式的都是OP, 你也可以自行更改并进行PR
         """
-        if func is None:
-            def func(*args):
-                return None
-        if not isinstance(triggers, list):
-            raise TypeError
         for tri in triggers:
             if not tri.startswith("."):
                 triggers[triggers.index(tri)] = "." + tri
+        if func is None:
+
+            def call_none(*args):
+                return None
+
+            self.chatbar_triggers.append(
+                ChatbarTriggers(
+                    triggers, argument_hint, usage, call_none, args_pd, op_only
+                )
+            )
+            return
         self.chatbar_triggers.append(
             ChatbarTriggers(triggers, argument_hint, usage, func, args_pd, op_only)
         )
@@ -98,11 +105,14 @@ class ChatbarMenu(Plugin):
         if isinstance(self.frame.launcher, launch_cli.FrameNeOmg):
             self.is_op = lambda player: self.frame.launcher.is_op(player)
         else:
-            self.is_op = lambda player: bool(
-                self.game_ctrl.sendcmd(
-                    "/testfor @a[name=" + player + ",m=1]", True
-                ).SuccessCount
-            )
+
+            def get_success_count(player: str) -> bool:
+                result = self.game_ctrl.sendcmd(f"/testfor @a[name={player},m=1]", True)
+                if result is not None and result.SuccessCount is not None:
+                    return bool(result.SuccessCount)
+                return False  # 或者任何你认为合适的默认值
+
+            self.is_op = get_success_count
 
     def show_menu(self, player: str, page: int):
         # page min = 1
@@ -121,7 +131,7 @@ class ChatbarMenu(Plugin):
         else:
             page_split_index = page - 1
         diplay_menu_args = all_menu_args[
-            page_split_index * lmt: (page_split_index + 1) * lmt
+            page_split_index * lmt : (page_split_index + 1) * lmt
         ]
         self.game_ctrl.say_to(player, self.cfg["help菜单样式"]["菜单头"])
         for tri in diplay_menu_args:

@@ -1,15 +1,18 @@
-import time, os
+import os
+import time
 from datetime import datetime
-from tooldelta import plugins, Plugin, Frame, Builtins, Print, Config
+from typing import ClassVar
+
+from tooldelta import Builtins, Config, Frame, Plugin, Print, plugins
 
 
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
-    BAN_DATA_DEFAULT = {"BanTo": 0, "Reason": ""}
+    BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
     def __init__(self, frame: Frame):
         self.frame = frame

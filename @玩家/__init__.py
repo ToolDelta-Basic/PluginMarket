@@ -2,7 +2,6 @@ from tooldelta.plugin_load.injected_plugin import player_message, player_message
 from tooldelta.plugin_load.injected_plugin.movent import (
     rawText,
     sendcmd,
-    tellrawText,
     get_all_player,
 )
 

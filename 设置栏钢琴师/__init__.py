@@ -1,3 +1,4 @@
+from typing import ClassVar
 from tooldelta import plugins, Plugin
 
 
@@ -5,11 +6,11 @@ from tooldelta import plugins, Plugin
 class SettingsPiano(Plugin):
     name = "设置栏弹钢琴v2"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     description = "调节设置栏-世界选项的前8个选项会发出不同的乐音, 第九个选项可开启或关闭钢琴弹奏和键位锁定, 重生半径可设置音高域"
 
     lock = False
-    ks = []
+    ks: ClassVar[list] = []
     base_8 = 0
 
     @plugins.add_packet_listener(72)

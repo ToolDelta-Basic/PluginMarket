@@ -1,13 +1,14 @@
-import time, random
+import random
+import time
 
-from tooldelta import Plugin, plugins, Config, Builtins, Print
+from tooldelta import Builtins, Config, Plugin, Print, plugins
 
 
 @plugins.add_plugin
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def on_def(self):
         self.funclib = plugins.get_plugin_api("基本插件功能库")
@@ -55,7 +56,7 @@ class BetterAnnounce(Plugin):
             ftime += 1
             if ftime > self.flush_secs:
                 ftime = 0
-                scmd(f"/scoreboard players reset * 公告")
+                scmd("/scoreboard players reset * 公告")
                 for text, scb_score in self.anos.items():
                     text = time.strftime(
                         Builtins.SimpleFmt(

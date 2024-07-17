@@ -15,7 +15,7 @@ plugins.checkSystemVersion((0, 7, 5))
 
 @plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 9)
+    version = (0, 0, 10)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
@@ -74,7 +74,7 @@ class BasicFunctionLib(Plugin):
         except KeyError as err:
             raise Exception(f"Failed to get score: {err}")
 
-    def getPos(self, targetNameToGet: str, timeout: float | int = 1) -> dict:
+    def getPos(self, targetNameToGet: str, timeout: float = 1) -> dict:
         """
         获取租赁服内玩家坐标的函数
         参数:
@@ -131,7 +131,7 @@ class BasicFunctionLib(Plugin):
         if len(result) != 1:
             raise Exception("Failed to get the position.")
         if targetNameToGet.startswith("@a"):
-            return list(result.values())[0]
+            return next(iter(result.values()))
         res = result.get(targetNameToGet)
         if res:
             return res
@@ -202,7 +202,7 @@ class BasicFunctionLib(Plugin):
             if time.time() - timer >= timeout:
                 try:
                     self.waitmsg_req.remove(who)
-                except:
+                except Exception:
                     pass
                 if exc is not None:
                     raise exc
@@ -224,4 +224,4 @@ class BasicFunctionLib(Plugin):
         return bool(res)
 
 
-EXC_PLAYER_LEAVE = IOError("Player left when waiting msg.")
+EXC_PLAYER_LEAVE = OSError("Player left when waiting msg.")

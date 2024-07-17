@@ -1,6 +1,6 @@
 {
   "author": "wling",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "TPA玩家互传系统",
   "limit_launcher": null,
   "pre-plugins": {

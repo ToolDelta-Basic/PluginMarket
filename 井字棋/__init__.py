@@ -120,7 +120,7 @@ async def _(playermessage: player_message_info):
         if not JZQ_Rooms:
             try:
                 to_who = msg.split()[1]
-            except:
+            except Exception:
                 to_who = ""
             if to_who in get_all_player():
                 JZQ_Rooms.append([playername, to_who])
@@ -138,7 +138,7 @@ async def _(playermessage: player_message_info):
                     try:
                         x_xpos = int(msg.split()[1])
                         y_ypos = int(msg.split()[2])
-                    except:
+                    except Exception:
                         rawText(playername, "§a井字棋§f>> §c下子格式有误")
                         return
                     if x_xpos < 1 or x_xpos > 3 or y_ypos < 1 or y_ypos > 3:
@@ -172,7 +172,7 @@ async def _(playermessage: player_message_info):
                                 Game_JZQ.重置()
                         else:
                             rawText(playername, "§a井字棋§f>> §c这个地方不能下子")
-        except:
+        except Exception:
             return
 
 

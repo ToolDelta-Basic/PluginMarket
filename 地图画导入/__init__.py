@@ -94,7 +94,11 @@ class MapArtImporter(tooldelta.Plugin):
                     for limz in range(16):
                         image_pixel_x = re_xpos + limx - baseXP
                         image_pixel_y = re_zpos + limz - baseZP
-                        rget, gget, bget = img.getpixel((image_pixel_x, image_pixel_y))
+                        pixel_rgb = img.getpixel((image_pixel_x, image_pixel_y))
+                        if isinstance(pixel_rgb, tuple):
+                            rget, gget, bget = pixel_rgb
+                        else:
+                            raise ValueError("图片格式错误")
                         neBlock, neBlock_spec = self.get_nearest_color_block(
                             rget, gget, bget
                         )
@@ -117,7 +121,7 @@ class MapArtImporter(tooldelta.Plugin):
         tooldelta.Print.print_suc("像素画导入成功")
         self.color_cache.clear()
 
-    def menu_imp(self, player, args):
+    def menu_imp(self, player: str, args: tuple):
         if len(args) not in (4, 5):
             self.game_ctrl.say_to(player, "§c参数数量错误")
             return
@@ -131,7 +135,7 @@ class MapArtImporter(tooldelta.Plugin):
                 if not (sizex > 0 and sizey > 0):
                     raise AssertionError
                 size = (sizex, sizey)
-            except:
+            except Exception:
                 self.game_ctrl.say_to(player, "§c地图画尺寸格式应该像这样: 1x2")
                 return
         try:

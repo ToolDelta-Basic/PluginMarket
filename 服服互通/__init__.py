@@ -6,7 +6,8 @@ import base64
 import threading
 from socket import gaierror
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 from websockets.exceptions import ConnectionClosed
 from websockets.legacy.client import WebSocketClientProtocol
 from tooldelta import Frame, plugins, Plugin, Config, Print, Utils
@@ -126,7 +127,7 @@ class SuperLinkProtocol(BasicProtocol):
                         await self.handle(json.loads(await ws.recv()))
 
         except ConnectionClosed:
-            Print.print_war(f"服服互通: 服务器断开连接")
+            Print.print_war("服服互通: 服务器断开连接")
         except gaierror as err:
             Print.print_err(
                 f"服服互通: 中心服务器连接失败(IP解析异常): {self.ws_ip} - {err}"
@@ -172,7 +173,7 @@ class SuperLinkProtocol(BasicProtocol):
 class SuperLink(Plugin):
     name = "服服互通v4"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)

@@ -1,21 +1,19 @@
-from asyncio import run
-from sys import argv
+from tooldelta import plugins
 from tooldelta.plugin_load.injected_plugin import (
     player_message,
     player_message_info,
     repeat,
 )
 from tooldelta.plugin_load.injected_plugin.movent import (
-    sendcmd,
-    rawText,
     get_all_player,
+    rawText,
+    sendcmd,
     tellrawText,
 )
-from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "tpa传送",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "author": "wling",
 }
 
@@ -153,14 +151,13 @@ async def tpaCommand(playermessage: player_message_info):
                 tellrawText(
                     playername,
                     "§l§cERROR§r",
-                    "§c未找到名称包含 §l%s§r§c 的玩家, 无法发起请求."
-                    % playerTpaToSearch,
+                    f"§c未找到名称包含 §l{playerTpaToSearch}§r§c 的玩家, 无法发起请求.",
                 )
             elif len(playerTpaFound) >= 2:
                 tellrawText(
                     playername,
                     "§l§cERROR§r",
-                    "§c有多名玩家名称包含 §l%s§r§c, 无法发起请求:" % playerTpaToSearch,
+                    f"§c有多名玩家名称包含 §l{playerTpaToSearch}§r§c, 无法发起请求:",
                 )
                 playerTpaFoundIndex = 1
                 for i in playerTpaFound:

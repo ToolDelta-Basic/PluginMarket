@@ -8,7 +8,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "清空玩家末影箱",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "wling",
 }
 
@@ -25,7 +25,7 @@ async def _(playermessage: player_message_info):
                 if player_entity_clear == i:
                     for i in range(0, 27):
                         sendwscmd(
-                            f"/replaceitem entity {player_entity_clear} slot.enderchest {str(i)} air"
+                            f"/replaceitem entity {player_entity_clear} slot.enderchest {i!s} air"
                         )
                     tellrawText(playername, text="§l§a清空末影箱  成功")
                     return

@@ -1,11 +1,15 @@
-import os, time, asyncio, shutil
-from tooldelta import Utils, Print, constants
+import asyncio
+import os
+import shutil
+import time
+
+from tooldelta import Print, Utils, constants
 from tooldelta.plugin_load.injected_plugin import init
 from tooldelta.plugin_load.injected_plugin.movent import sendwocmd
 
 __plugin_meta__ = {
     "name": "定时任务",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "System",
 }
 
@@ -60,10 +64,10 @@ def load_mcf_file(path: str):
 def parse_sth(f: str):
     s_time = None
     spec = False
-    for l in f.split("\n"):
-        if l.startswith("# 定时:"):
-            s_time = Utils.try_int(l[6:])
-        elif l.startswith("sleep"):
+    for line in f.split("\n"):
+        if line.startswith("# 定时:"):
+            s_time = Utils.try_int(line[6:])
+        elif line.startswith("sleep"):
             spec = True
     if s_time is None:
         raise SyntaxError("没有设定延时时间")

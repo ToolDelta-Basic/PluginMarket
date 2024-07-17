@@ -2,15 +2,14 @@ import asyncio
 from tooldelta.plugin_load.injected_plugin import (
     player_join,
     player_left,
-    player_message_info,
     player_name,
 )
-from tooldelta.plugin_load.injected_plugin.movent import sendwscmd, tellrawText
+from tooldelta.plugin_load.injected_plugin.movent import sendwscmd
 from tooldelta.frame import Config
 
 __plugin_meta__ = {
     "name": "入服欢迎",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling",
 }
 

@@ -1,6 +1,7 @@
 import ujson as json
 import time
-from typing import Callable, Literal
+from typing import Literal
+from collections.abc import Callable
 from dataclasses import dataclass
 from tooldelta import Frame, Plugin, plugins, Config, Builtins, Print, TYPE_CHECKING
 import threading
@@ -117,7 +118,7 @@ default_page = MultiPage("default", default_page_show, default_page_okcb)
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
-    version = (0, 1, 5)
+    version = (0, 1, 6)
     description = (
         "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
     )
@@ -160,7 +161,7 @@ class SnowMenu(Plugin):
             page_cb: 静态菜单页类 / 动态菜单页类 / 回调方法 (玩家名: str -> 确认选项后是否不关闭菜单: bool)
             usage_text: 选项的显示文本
         """
-        if not isinstance(page_cb, (Page, MultiPage)) and not callable(page_cb):
+        if not isinstance(page_cb, Page | MultiPage) and not callable(page_cb):
             raise ValueError(f"注册的不是一个正常的菜单页 / 菜单回调: {page_cb}")
         main_page_menus.append((page_cb, usage_text))
 
@@ -244,7 +245,8 @@ class SnowMenu(Plugin):
                 self.event.set()
 
         cb = _cb()
-        page_cb = lambda _, now_page: mapping.get(now_page)
+        def page_cb(_, now_page):
+            return mapping.get(now_page)
         page = MultiPage(
             page_id="simple-select",
             page_cb=page_cb,
@@ -453,13 +455,13 @@ class SnowMenu(Plugin):
             self.remove_player_in_menu(player)
         else:
             self.gc.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
-            if res == True:
+            if res is True:
                 # 保留在本页
                 pass
-            elif res == False:
+            elif res is False:
                 # 不应该被执行
                 raise ValueError("菜单项不可返回 False")
-            elif isinstance(res, (Page, MultiPage)):
+            elif isinstance(res, Page | MultiPage):
                 # 跳转到另一个页面
                 self.set_player_page(player, res, 0)
             elif isinstance(res, tuple):
