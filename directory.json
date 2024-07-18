@@ -127,6 +127,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "admin命令": [
+        "__init__.py",
+        "datas.json"
+    ],
     "plugin_package": [
         "基础功能包.json"
     ],

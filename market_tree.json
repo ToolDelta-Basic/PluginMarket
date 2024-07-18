@@ -111,6 +111,12 @@
       "version": "0.0.9",
       "plugin-type": "injected"
     },
+    "admin_cmd": {
+      "name": "admin命令",
+      "author": "wling/Hadwin",
+      "version": "0.0.1",
+      "plugin-type": "injected"
+    },
     "bdx-importer": {
       "name": "bdx导入器",
       "author": "xingchen/SuperScript",
