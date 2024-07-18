@@ -206,6 +206,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "传送点": [
+        "__init__.py",
+        "datas.json"
+    ],
     "发言频率限制": [
         "__init__.py",
         "datas.json"
