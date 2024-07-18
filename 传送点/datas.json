@@ -4,7 +4,7 @@
     "description": "世界那么大，标记下次回来再看看吧！",
     "limit_launcher": null,
     "pre-plugins": {
-        "维度传送": "0.0.1"
+        "维度传送": "0.0.1","聊天栏菜单":"0.2.7"
     },
     "plugin-type": "injected",
     "plugin-id": "传送点",
