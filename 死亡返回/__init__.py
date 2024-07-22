@@ -68,8 +68,7 @@ async def _(playermessage: player_message_info):
         )
         data[playername] = deathData
         async with await anyio.open_file(config_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-
+            await f.write(json.dumps(data, indent=4, ensure_ascii=False))
 
 @player_death()
 async def _(playerdeath: player_death_info):
@@ -96,7 +95,7 @@ async def _(playerdeath: player_death_info):
     deathData["time"] = deathTime
     data[playername] = deathData
     async with await anyio.open_file(config_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+        await f.write(json.dumps(data, indent=4, ensure_ascii=False))
     tellrawText(
         f'@a[name="{playername}"]',
         "§l死亡点记录§r",
