@@ -57,6 +57,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "ad": {
+      "name": "公告栏",
+      "author": "Mono",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",

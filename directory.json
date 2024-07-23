@@ -83,6 +83,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "公告栏": [
+        "__init__.py",
+        "datas.json"
+    ],
     "前置_基本插件功能库": [
         "__init__.py",
         "datas.json"
