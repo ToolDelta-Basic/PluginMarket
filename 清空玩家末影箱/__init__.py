@@ -1,5 +1,5 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     tellrawText,
     sendwscmd,
     getTarget,
@@ -8,7 +8,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "清空玩家末影箱",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "wling",
 }
 

@@ -3,9 +3,9 @@ import time
 import threading
 import traceback
 from typing import ClassVar
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     rawText,
-    game_control,
+    _get_game_ctrl,
     sendwocmd,
 )
 from tooldelta.plugin_load.injected_plugin import (
@@ -24,9 +24,12 @@ except ImportError:
 
 __plugin_meta__ = {
     "name": "五子棋小游戏",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "SuperScript",
 }
+
+
+game_ctrl = _get_game_ctrl()
 
 
 class Super_AFKGobangBasic:
@@ -105,12 +108,12 @@ class Super_AFKGobangBasic:
             _2P,
             "§l§7> §a五子棋游戏已开始， 退出聊天栏查看棋盘，§f输入 xz <纵坐标> <横坐标>以下子.",
         )
-        game_control.player_title(_1P, "§e游戏开始")
-        game_control.player_title(_2P, "§e游戏开始")
-        game_control.player_subtitle(
+        game_ctrl.player_title(_1P, "§e游戏开始")
+        game_ctrl.player_title(_2P, "§e游戏开始")
+        game_ctrl.player_subtitle(
             _1P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子"
         )
-        game_control.player_subtitle(
+        game_ctrl.player_subtitle(
             _2P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子"
         )
         linked_room_uid = GobangRoom.createRoom(Super_AFKGobangBasic.Room(_1P, _2P))
@@ -119,32 +122,32 @@ class Super_AFKGobangBasic:
             time.sleep(1)
             nowPlayer = _1P if this_room.isTurn(_1P) else _2P
             actbarText = f"§e§l五子棋 {this_room.fmtTimeLeft()} %s\n{this_room.stage.strfChess()}§9SuperGobang\n§a"
-            game_control.player_actionbar(
+            game_ctrl.player_actionbar(
                 _1P,
                 actbarText % ("§a我方下子" if this_room.isTurn(_1P) else "§6对方下子"),
             )
-            game_control.player_actionbar(
+            game_ctrl.player_actionbar(
                 _2P,
                 actbarText % ("§a我方下子" if this_room.isTurn(_2P) else "§6对方下子"),
             )
             if this_room.status == "done":
                 break
             if this_room.timeleft < 20:
-                game_control.player_title(nowPlayer, "§c还剩 20 秒")
-                game_control.player_subtitle(
+                game_ctrl.player_title(nowPlayer, "§c还剩 20 秒")
+                game_ctrl.player_subtitle(
                     nowPlayer, "§6若仍然没有下子， 将会跳过你的回合"
                 )
             if this_room.timeleft <= 0:
-                game_control.player_title(nowPlayer, "§c已跳过你的回合")
-                game_control.player_title(
+                game_ctrl.player_title(nowPlayer, "§c已跳过你的回合")
+                game_ctrl.player_title(
                     _1P if _1P != nowPlayer else _2P, "§6对方超时， 现在轮到你落子"
                 )
                 this_room.resetTimer()
                 this_room.maxTimeout += 1
                 this_room.turn()
                 if this_room.maxTimeout > 1:
-                    game_control.player_title(_1P, "§c游戏超时， 本局已结束")
-                    game_control.player_title(_2P, "§c游戏超时， 本局已结束")
+                    game_ctrl.player_title(_1P, "§c游戏超时， 本局已结束")
+                    game_ctrl.player_title(_2P, "§c游戏超时， 本局已结束")
                     break
             this_room.timeleft -= 1
         GobangRoom.removeRoom(linked_room_uid)
@@ -275,7 +278,7 @@ def on_menu_invoked(player: str, args: list[str]):
     if len(_2P) < 2:
         rawText(player, "§c模糊搜索玩家名， 输入的名字长度必须大于1")
         return
-    allplayers = list(game_control.allplayers)
+    allplayers = list(game_ctrl.allplayers)
     allplayers.remove(player)
     new2P = None
     for single_player in allplayers:
@@ -316,8 +319,8 @@ async def on_chess_cmd(info: player_message_info):
                         inRoom.resetTimer()
                         is_win = inRoom.stage.get_win()
                         if is_win:
-                            game_control.player_title(player, "§a§l恭喜！")
-                            game_control.player_subtitle(
+                            game_ctrl.player_title(player, "§a§l恭喜！")
+                            game_ctrl.player_subtitle(
                                 player, "§e本局五子棋您获得了胜利！"
                             )
                             rawText(
@@ -326,10 +329,10 @@ async def on_chess_cmd(info: player_message_info):
                             sendwocmd(
                                 f"/execute {player} ~~~ playsound random.levelup @s"
                             )
-                            game_control.player_title(
+                            game_ctrl.player_title(
                                 inRoom.anotherPlayer(player), "§7§l遗憾惜败"
                             )
-                            game_control.player_subtitle(
+                            game_ctrl.player_subtitle(
                                 inRoom.anotherPlayer(player), "§6下局再接再厉哦！"
                             )
                             sendwocmd(
@@ -365,7 +368,7 @@ async def player_exit(p: player_name):
         in_room = GobangRoom.getRoom(player)
         if in_room:
             inRoom: Super_AFKGobangBasic.Room = GobangRoom.rooms[in_room]
-            game_control.player_title(
+            game_ctrl.player_title(
                 inRoom.anotherPlayer(player), "§c对方已退出游戏，游戏结束"
             )
             inRoom.setStatus("done")

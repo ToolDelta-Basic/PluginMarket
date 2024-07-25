@@ -6,13 +6,13 @@ from tooldelta.plugin_load.injected_plugin import (
     player_message_info,
     player_name,
 )
-from tooldelta.plugin_load.injected_plugin.movent import get_all_player, is_op
+from tooldelta.game_utils import get_all_player, is_op
 from tooldelta import plugins
 
 
 __plugin_meta__ = {
     "name": "发言频率",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "wling/7912",
 }
 

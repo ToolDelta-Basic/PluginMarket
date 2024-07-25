@@ -9,7 +9,7 @@ from tooldelta.plugin_load.injected_plugin import (
     player_death,
     player_message_info,
 )
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     get_all_player,
     tellrawText,
     getPos,
@@ -18,7 +18,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "死亡返回",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "author": "wling/7912",
 }
 
@@ -69,6 +69,7 @@ async def _(playermessage: player_message_info):
         data[playername] = deathData
         async with await anyio.open_file(config_path, "w", encoding="utf-8") as f:
             await f.write(json.dumps(data, indent=4, ensure_ascii=False))
+
 
 @player_death()
 async def _(playerdeath: player_death_info):

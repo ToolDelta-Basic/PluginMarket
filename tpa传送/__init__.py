@@ -4,7 +4,7 @@ from tooldelta.plugin_load.injected_plugin import (
     player_message_info,
     repeat,
 )
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     get_all_player,
     rawText,
     sendcmd,
@@ -13,7 +13,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "tpa传送",
-    "version": "0.0.9",
+    "version": "0.1.0",
     "author": "wling",
 }
 

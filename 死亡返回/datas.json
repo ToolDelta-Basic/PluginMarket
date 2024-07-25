@@ -1,6 +1,6 @@
 {
   "author": "wling/7912",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "死亡后原地复活？ 不妨试试这个插件",
   "limit_launcher": null,
   "pre-plugins": {

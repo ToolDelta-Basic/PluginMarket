@@ -3,7 +3,7 @@ import ujson as json
 import os
 from tooldelta.game_utils import getPos, getTarget
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
-from tooldelta.plugin_load.injected_plugin.movent import tellrawText
+from tooldelta.game_utils import tellrawText
 from 维度传送 import tp
 from tooldelta import plugins
 from tooldelta.frame import Config
@@ -11,7 +11,7 @@ from tooldelta.frame import Config
 
 __plugin_meta__ = {
     "name": "传送点",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling/7912",
 }
 

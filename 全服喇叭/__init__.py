@@ -1,14 +1,10 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
-from tooldelta.plugin_load.injected_plugin.movent import (
-    is_op,
-    rawText,
-    sendwscmd
-)
+from tooldelta.game_utils import is_op, rawText, sendwscmd
 from tooldelta import plugins
 
 __plugin_meta__ = {
     "name": "全服喇叭",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "wling",
 }
 

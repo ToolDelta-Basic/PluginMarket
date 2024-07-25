@@ -5,11 +5,11 @@ import time
 
 from tooldelta import Print, Utils, constants
 from tooldelta.plugin_load.injected_plugin import init
-from tooldelta.plugin_load.injected_plugin.movent import sendwocmd
+from tooldelta.game_utils import sendwocmd
 
 __plugin_meta__ = {
     "name": "定时任务",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "System",
 }
 

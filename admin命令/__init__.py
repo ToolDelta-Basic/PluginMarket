@@ -1,7 +1,7 @@
 from tooldelta.cfg import Config
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
 
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     is_op,
     sendwscmd,
     rawText,
@@ -9,7 +9,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "admin命令",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "wling/Hadwin",
 }
 
@@ -59,10 +59,7 @@ async def _(playermessage: player_message_info):
             rawText(playername, "您的状态已刷新")
         case ".clear" | ".CLEAR":  # 清空背包
             sendwscmd("/clear " + playername + "")
-            rawText(
-                playername,
-                "您的背包已清空"
-            )
+            rawText(playername, "您的背包已清空")
         case ".adminbag" | ".adminbag":  # 获取管理员物品
             sendwscmd("/give " + playername + " chain_command_block")
             sendwscmd("/give " + playername + " deny")

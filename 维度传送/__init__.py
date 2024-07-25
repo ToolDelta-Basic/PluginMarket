@@ -1,7 +1,7 @@
 import asyncio
 from tooldelta.plugin_load.injected_plugin import init
 from tooldelta import Print
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     get_robotname,
     getBlockTile,
     getPos,
@@ -13,7 +13,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "维度传送",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "wling/7912",
 }
 

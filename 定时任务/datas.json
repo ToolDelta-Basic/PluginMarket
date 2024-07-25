@@ -1,6 +1,6 @@
 {
     "author": "System",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "plugin-type": "injected",
     "description": "教程请打开插件手册查看",
     "pre-plugins": {},

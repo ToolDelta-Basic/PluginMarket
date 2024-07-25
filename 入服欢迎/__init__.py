@@ -4,12 +4,12 @@ from tooldelta.plugin_load.injected_plugin import (
     player_left,
     player_name,
 )
-from tooldelta.plugin_load.injected_plugin.movent import sendwscmd
+from tooldelta.game_utils import sendwscmd
 from tooldelta.frame import Config
 
 __plugin_meta__ = {
     "name": "入服欢迎",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": "wling",
 }
 

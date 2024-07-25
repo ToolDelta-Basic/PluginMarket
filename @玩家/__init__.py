@@ -1,5 +1,5 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     rawText,
     sendcmd,
     get_all_player,
@@ -8,7 +8,7 @@ from tooldelta.plugin_load.injected_plugin.movent import (
 
 __plugin_meta__ = {
     "name": "@玩家",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "当有人提及你时，会收到提醒",
     "author": "wling",
 }

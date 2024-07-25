@@ -1,4 +1,4 @@
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     sendwscmd,
     get_all_player,
     rawText,
@@ -11,7 +11,7 @@ from tooldelta.plugin_load.injected_plugin import (
 
 __plugin_meta__ = {
     "name": "井字棋",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "author": "SuperScript/wling",
 }
 
