@@ -102,7 +102,7 @@ class ChatbarMenu(Plugin):
     # ------------
 
     def on_def(self):
-        if isinstance(self.frame.launcher, launch_cli.FrameNeOmg):
+        if isinstance(self.frame.launcher, launch_cli.FrameNeOmgAccessPoint):
             self.is_op = lambda player: self.frame.launcher.is_op(player)
         else:
 

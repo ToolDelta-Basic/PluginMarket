@@ -1,11 +1,11 @@
-import threading
-import time
-from dataclasses import dataclass
-from collections.abc import Callable
-
 from tooldelta import Frame, Plugin, packets, plugins
 from tooldelta.game_utils import getPosXYZ
 from tooldelta.launch_cli import SysStatus
+from tooldelta.game_utils import getPosXYZ
+from tooldelta.constants import PacketIDS
+from typing import Callable
+from dataclasses import dataclass
+import time, threading
 
 
 @dataclass
@@ -58,7 +58,7 @@ class ToolDeltaFuncLib1(Plugin):
 
         return deco
 
-    @plugins.add_packet_listener(packets.PacketIDS.IDUpdateAttributes)
+    @plugins.add_packet_listener(PacketIDS.IDUpdateAttributes)
     def process_update_player_attributes(self, packet: dict) -> None:
         """
         处理玩家属性更新事件(29号数据包)
