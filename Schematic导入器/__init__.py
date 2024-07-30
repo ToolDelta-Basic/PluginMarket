@@ -1,6 +1,6 @@
 import time, os
 from tooldelta import Plugin, plugins, Print, Utils, game_utils
-from nbtschematic import SchematicFile
+from .nbtschematic import SchematicFile
 from .schematic_id import schema_id
 
 
@@ -46,7 +46,9 @@ class SchematicImport(Plugin):
         try:
             schema_inf = SchematicFile.load(os.path.join(self.data_path, schema_file))
             if schema_inf.root.get("Blocks") is None:
-                raise ValueError("无法正常读取文件, 请确保这是Schematic文件而不是一个Schem文件")
+                raise ValueError(
+                    "无法正常读取文件, 请确保这是Schematic文件而不是一个Schem文件"
+                )
         except Exception as err:
             Print.print_err(f"读取 {schema_file} 出现问题: {err}")
             return
@@ -54,7 +56,13 @@ class SchematicImport(Plugin):
         Print.print_inf(f"{schema_name} 的导入已经开始 (进度条显示于游戏内)")
         Utils.createThread(
             self.import_at,
-            (schema_name, schema_inf, int(self.get_x), int(self.get_y), int(self.get_z))
+            (
+                schema_name,
+                schema_inf,
+                int(self.get_x),
+                int(self.get_y),
+                int(self.get_z),
+            ),
         )
 
     def get_schema_pos_menu(self, _):
@@ -76,25 +84,29 @@ class SchematicImport(Plugin):
         # schem-get
         # schematic
         size_x, size_y, size_z = schema.shape
-        blocks       = schema.blocks
-        block_datas  = schema.data
-        size_total   = size_x * size_y * size_z
-        timer        = 0
-        prog_now     = 0
-        prog_last    = 0
+        blocks = schema.blocks
+        block_datas = schema.data
+        size_total = size_x * size_y * size_z
+        timer = 0
+        prog_now = 0
+        prog_last = 0
         for xp, yp, zp in self.snake_folding(int(size_x), int(size_y), int(size_z)):
             prog_now += 1
             block_id = int(blocks[xp, yp, zp])
             block_data = int(block_datas[xp, yp, zp])
             if block_id != 0:
                 block_id = schema_id[block_id]
-                self.game_ctrl.sendwocmd(f"setblock {x + yp} {y + xp} {z + zp} {block_id} {block_data}")
+                self.game_ctrl.sendwocmd(
+                    f"setblock {x + yp} {y + xp} {z + zp} {block_id} {block_data}"
+                )
                 time.sleep(0.001)
             if (new_timer := time.time()) - timer >= 1:
                 self.progress_bar(name, prog_now, size_total, prog_now - prog_last)
                 timer = new_timer
                 prog_last = prog_now
-                self.game_ctrl.sendwocmd(f"tp @a[name={self.game_ctrl.bot_name}] {x + yp} {y + xp} {z + zp}")
+                self.game_ctrl.sendwocmd(
+                    f"tp @a[name={self.game_ctrl.bot_name}] {x + yp} {y + xp} {z + zp}"
+                )
         self.progress_bar(name, prog_now, size_total, prog_now - prog_last)
         Print.print_suc("导入成功")
 
