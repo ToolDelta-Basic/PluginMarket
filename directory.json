@@ -158,6 +158,37 @@
         "__init__.py",
         "datas.json"
     ],
+    "Schematic导入器": [
+        "schematic_id.py",
+        "__init__.py",
+        "datas.json"
+    ],
+    "Schematic导入器/nbtlib": [
+        "cli.py",
+        "schema.py",
+        "path.py",
+        "nbt.py",
+        "tag.py",
+        "__main__.py",
+        "__init__.py"
+    ],
+    "Schematic导入器/nbtlib/contrib": [
+        "__init__.py"
+    ],
+    "Schematic导入器/nbtlib/contrib/minecraft": [
+        "structure.py",
+        "__init__.py"
+    ],
+    "Schematic导入器/nbtlib/literal": [
+        "serializer.py",
+        "parser.py",
+        "__init__.py"
+    ],
+    "Schematic导入器/nbtschematic": [
+        "schematic.py",
+        "version.py",
+        "__init__.py"
+    ],
     "前置_世界交互": [
         "__init__.py",
         "datas.json"

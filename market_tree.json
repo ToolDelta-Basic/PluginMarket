@@ -63,6 +63,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "schematic-builder": {
+      "name": "Schematic导入器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "发言频率限制": {
       "name": "发言频率限制",
       "author": "wling/7912",
