@@ -18,7 +18,7 @@ async def _(playermessage: player_message_info):
     playername = playermessage.playername
     message = playermessage.message
     if message.startswith(".encl"):
-        sendwscmd(f"/tellraw {playername} §l§cERROR§r §c指令不存在！")
+        tellrawText(playername, "§l§cERROR§r", "§c指令不存在！")
         if is_op(playername):
             player_entity_clear = message.split(" ")[1]
             for i in getTarget("@a"):
