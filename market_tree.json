@@ -231,6 +231,12 @@
       "version": "0.2.7",
       "plugin-type": "classic"
     },
+    "SQLiteLib": {
+      "name": "前置_SQL数据库支持",
+      "author": "xingchen",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript",

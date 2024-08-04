@@ -263,6 +263,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "前置_SQL数据库支持": [
+        "datas.json",
+        "__init__.py"
+    ],
     "源码升级ToolDelta": [
         "datas.json",
         "__init__.py"
