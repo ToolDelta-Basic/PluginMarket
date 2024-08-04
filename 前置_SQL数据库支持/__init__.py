@@ -8,10 +8,14 @@ from typing import Any
 from tooldelta import plugins, Plugin
 
 plugins.add_plugin_as_api("SQlite数据库支持")
-class DataBaseSqlit:
+class DataBaseSqlit(Plugin):
     """数据库操作类, 用于简化数据库操作, 并提供一些常用的数据库操作方法"""
+    name = "SQLite数据库操作支持"
+    author = "xingchen"
+    version = (0, 0, 1)
 
-    def __init__(self) -> None:
+    def __init__(self, f) -> None:
+        super().__init__(f)
         self.__DataBase__: dict = {}
         self.__DataBaseTableStruct__: dict[str, tuple] = {}
 
