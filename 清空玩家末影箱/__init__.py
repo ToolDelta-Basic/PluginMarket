@@ -1,5 +1,5 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
-from tooldelta.plugin_load.injected_plugin.movent import (
+from tooldelta.game_utils import (
     tellrawText,
     sendwscmd,
     getTarget,
