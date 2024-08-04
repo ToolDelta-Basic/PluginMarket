@@ -8,21 +8,43 @@ from typing import Any
 from tooldelta import plugins, Plugin
 
 plugins.add_plugin_as_api("SQlite数据库支持")
-class DataBaseSqlit(Plugin):
-    """数据库操作类, 用于简化数据库操作, 并提供一些常用的数据库操作方法"""
+class DataBaseEasySQL(Plugin):
     name = "SQLite数据库操作支持"
     author = "xingchen"
     version = (0, 0, 1)
 
     def __init__(self, f) -> None:
         super().__init__(f)
+        self.DataBaseError = DataBaseSqlit.DataBaseError
+        self.DataBaseTagIsNull = DataBaseSqlit.DataBaseTagIsNull
+        self.DataBaseOpenError = DataBaseSqlit.DataBaseOpenError
+        self.DataBaseNeedStruct = DataBaseSqlit.DataBaseNeedStruct
+        self.DataBaseTableNameIsNull = DataBaseSqlit.DataBaseTableNameIsNull
+        # 数据库类
+        self.DataBaseTableStruct = DataBaseSqlit.DataBaseTableStruct
+
+class DataBaseSqlit():
+    """数据库操作类, 用于简化数据库操作, 并提供一些常用的数据库操作方法"""
+    def __init__(self):
         self.__DataBase__: dict = {}
         self.__DataBaseTableStruct__: dict[str, tuple] = {}
 
-    class DataBaseTagIsNull(Exception):...
-    class DataBaseOpenError(Exception):...
-    class DataBaseNeedStruct(Exception):...
-    class DataBaseTableNameIsNull(Exception):...
+    # 例:
+        # DataBase = DataBaseSqlit()
+        # DataBase.OpenDataBase("Test-DataBase", "123456", False)
+        # Table = DataBase.OpenDataBaseTable("Test-DataBase", "test", "123456", DataBase.DataBaseTableStruct(("id", int), ("isOp", bool), ("pos", tuple)))
+        # Table.set_data(1, True, (1, -1, 6))
+        # Table.get_data()
+        # Table.update_data({"isOp": False}, {"id": 1})
+        # Table.get_data()
+        # Table.Del_Table()
+        # DataBase.CloseDataBase("Test-DataBase")
+
+    class DataBaseError(Exception):...
+    class DataBaseTagIsNull(DataBaseError):...
+    class DataBaseOpenError(DataBaseError):...
+    class DataBaseNeedStruct(DataBaseError):...
+    class DataBaseTableNameIsNull(DataBaseError):...
 
     class DataBaseTableStruct:
         """
