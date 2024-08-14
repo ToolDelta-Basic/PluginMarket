@@ -1,6 +1,6 @@
 {
     "author": "SuperScript\/2401PT",
-    "version": "0.0.6",
+    "version": "0.0.8",
     "plugin-type": "classic",
     "description": "通过中心服务器联结多个租赁服使其能够进行数据的互通\n此插件仅提供最基本的消息互通功能, 更多功能在附属插件内",
     "pre-plugins": {},
