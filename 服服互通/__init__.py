@@ -95,7 +95,7 @@ class SuperLinkProtocol(BasicProtocol):
     def find_default_ips(self):
         Print.print_war("服服互通: 正在自动获取线路中..")
         try:
-            resp = requests.get("https://mirror.ghproxy.com/raw.githubusercontent.com/ToolDelta-Basic/SuperLink/main/source.json")
+            resp = requests.get("https://tdload.tblstudio.cn/raw.githubusercontent.com/ToolDelta/SuperLink/main/source.json")
             resp.raise_for_status()
             default_name, default_ip = list(resp.json().items())[0]
             return default_name, default_ip
@@ -105,7 +105,7 @@ class SuperLinkProtocol(BasicProtocol):
 
     async def start_ws_con(self):
         try:
-            async with websockets.connect( # type: ignore
+            async with websockets.connect(
                 self.ws_ip,
                 extra_headers = {
                     "Protocol": "SuperLink-v4@SuperScript",
@@ -166,7 +166,7 @@ class SuperLinkProtocol(BasicProtocol):
 class SuperLink(Plugin):
     name = "服服互通v4"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)
@@ -184,7 +184,8 @@ class SuperLink(Plugin):
             },
             "基本互通配置": {
                 "是否转发玩家发言": True,
-                "转发聊天到本服格式": "<[服名]:[玩家名]> [消息]"
+                "转发聊天到本服格式": "<[服名]:[玩家名]> [消息]",
+                "屏蔽以下前缀的信息上传": [".", "omg", "。"]
             }
         }
         CFG_STD = {
@@ -197,7 +198,8 @@ class SuperLink(Plugin):
             },
             "基本互通配置": {
                 "是否转发玩家发言": bool,
-                "转发聊天到本服格式": str
+                "转发聊天到本服格式": str,
+                "屏蔽以下前缀的信息上传": Config.JsonList(str)
             }
         }
         self.cfg, _ = Config.get_plugin_config_and_version(
@@ -228,15 +230,23 @@ class SuperLink(Plugin):
         Print.print_inf("正在连接至服服互通..")
         self.active()
 
-    @Utils.thread_func
+    @Utils.thread_func("服服互通上报消息")
     def on_player_message(self, player, msg):
-        if self.enable_trans_chat and self.active:
+        if self.enable_trans_chat and self.active_protocol.active:
+            if not self.check_send(msg):
+                return
             asyncio.run(self.send(format_data(
                 "chat.msg", {
                     "ChatName": player,
                     "Msg": msg
                 }
             )))
+
+    def check_send(self, msg: str):
+        for prefix in self.cfg["基本互通配置"]["屏蔽以下前缀的信息上传"]:
+            if msg.startswith(prefix):
+                return False
+        return True
 
     @plugins.add_broadcast_listener("superlink.event")
     def listen_chat(self, data: Data):
