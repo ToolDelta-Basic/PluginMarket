@@ -96,7 +96,7 @@
     "server-link": {
       "name": "服服互通",
       "author": "SuperScript/2401PT",
-      "version": "0.0.6",
+      "version": "0.0.8",
       "plugin-type": "classic"
     },
     "发言频率限制": {
