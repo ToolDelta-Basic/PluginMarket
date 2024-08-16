@@ -8,10 +8,10 @@ from tooldelta import Builtins, Config, Plugin, Print, plugins
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
-    def on_def(self):
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
+    def __init__(self, f):
+        super().__init__(f)
         CFG = {
             "公告内容(公告内容:计分板数字)": {
                 r"§7%m/%d/20%y 星期[星期]": 0,
@@ -33,6 +33,9 @@ class BetterAnnounce(Plugin):
         elif self.flush_secs < 2:
             Print.print_err("公告刷新速率不能大于 1次/2秒")
             raise SystemExit
+
+    def on_def(self):
+        self.funclib = plugins.get_plugin_api("基本插件功能库")
 
     def on_inject(self):
         self.flush_gg()
