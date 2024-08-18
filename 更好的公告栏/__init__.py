@@ -33,7 +33,6 @@ class BetterAnnounce(Plugin):
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
         if len(self.ano_title) >= 20:
             Print.print_war(f"公告标题超出20字符长度: {self.ano_title}, 可能失效")
-            raise SystemExit
         elif self.flush_secs < 2:
             Print.print_err("公告刷新速率不能大于 1次/2秒")
             raise SystemExit
