@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "在公告栏添加更多特殊内容, 例如本地时间等",
   "limit_launcher": null,
   "pre-plugins": {

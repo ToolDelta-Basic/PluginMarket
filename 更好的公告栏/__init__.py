@@ -8,7 +8,7 @@ from tooldelta import Builtins, Config, Plugin, Print, plugins
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, f):
         super().__init__(f)
@@ -22,8 +22,12 @@ class BetterAnnounce(Plugin):
             "公告标题栏名(请注意长度)": "公告",
             "刷新频率(秒)": 20,
         }
-        std = Config.auto_to_std(CFG)
-        cfg, _ = Config.getPluginConfigAndVersion(self.name, std, CFG, self.version)  # type: ignore
+        CFG_STD = {
+            "公告内容(公告内容:计分板数字)": Config.AnyKeyValue(int),
+            "公告标题栏名(请注意长度)": "公告",
+            "刷新频率(秒)": 20,
+        }
+        cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG, self.version)  # type: ignore
         self.anos = cfg["公告内容(公告内容:计分板数字)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
