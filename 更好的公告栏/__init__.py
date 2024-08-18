@@ -27,7 +27,7 @@ class BetterAnnounce(Plugin):
             "公告标题栏名(请注意长度)": str,
             "刷新频率(秒)": int,
         }
-        cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG, self.version)  # type: ignore
+        cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG, self.version)
         self.anos = cfg["公告内容(公告内容:计分板数字)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
