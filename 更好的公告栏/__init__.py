@@ -24,15 +24,15 @@ class BetterAnnounce(Plugin):
         }
         CFG_STD = {
             "公告内容(公告内容:计分板数字)": Config.AnyKeyValue(int),
-            "公告标题栏名(请注意长度)": "公告",
-            "刷新频率(秒)": 20,
+            "公告标题栏名(请注意长度)": str,
+            "刷新频率(秒)": int,
         }
         cfg, _ = Config.getPluginConfigAndVersion(self.name, CFG_STD, CFG, self.version)  # type: ignore
         self.anos = cfg["公告内容(公告内容:计分板数字)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
-        if len(self.ano_title) >= 15:
-            Print.print_err(f"公告标题超出15字符长度: {self.ano_title}")
+        if len(self.ano_title) >= 20:
+            Print.print_war(f"公告标题超出20字符长度: {self.ano_title}, 可能失效")
             raise SystemExit
         elif self.flush_secs < 2:
             Print.print_err("公告刷新速率不能大于 1次/2秒")
