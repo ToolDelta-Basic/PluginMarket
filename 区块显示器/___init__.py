@@ -6,17 +6,20 @@ from tooldelta.game_utils import getPosXYZ
 class ChunkShow(Plugin):
     name = "区块显示器"
     author = "SnowLotus"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def on_def(self):
         self.chatbar_menu = plugins.get_plugin_api("聊天栏菜单")
 
     def on_inject(self):
         self.chatbar_menu.add_trigger(
-            ["显示区块", "区块范围"], None, "显示当前所在区块的起始点和终止点"
+            ["显示区块", "区块范围"],
+            None,
+            "显示当前所在区块的起始点和终止点",
+            self.show_chunk,
         )
         self.chatbar_menu.add_trigger(
-            ["地图画起点"], None, "显示当前可用作地图画区域的起点"
+            ["地图画起点"], None, "显示当前可用作地图画区域的起点", self.get_map_chunk
         )
 
     def show_chunk(self, player: str, _):
