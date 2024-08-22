@@ -33,12 +33,6 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "src-td-update": {
-      "name": "源码升级ToolDelta",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "bdx-importer": {
       "name": "bdx导入器",
       "author": "xingchen/SuperScript",
@@ -72,7 +66,7 @@
     "chunk-show": {
       "name": "区块显示器",
       "author": "SnowLotus",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "简易建造": {
