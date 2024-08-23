@@ -1,14 +1,13 @@
-import random
 import time
 
-from tooldelta import Builtins, Config, Plugin, Print, plugins
+from tooldelta import Utils, Config, Plugin, Print, plugins
 
 
 @plugins.add_plugin
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
 
     def __init__(self, f):
         super().__init__(f)
@@ -17,7 +16,8 @@ class BetterAnnounce(Plugin):
                 r"§7%m/%d/20%y 星期[星期]": 0,
                 r"§a%H§f : §a%M": -1,
                 r"§f在线人数: §a[在线人数]": -2,
-                r"§d欢迎大家游玩": -3,
+                r"§6TPS: [TPS带颜色]§7/20": -3,
+                r"§d欢迎大家游玩": -4,
             },
             "公告标题栏名(请注意长度)": "公告",
             "刷新频率(秒)": 20,
@@ -38,13 +38,13 @@ class BetterAnnounce(Plugin):
             raise SystemExit
 
     def on_def(self):
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
+        self.tpscalc = plugins.get_plugin_api("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
         self.flush_gg()
         self.flush_announcement1()
 
-    @Builtins.thread_func
+    @Utils.thread_func
     def flush_gg(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives remove 公告")
         time.sleep(0.3)
@@ -53,7 +53,24 @@ class BetterAnnounce(Plugin):
         )
         self.game_ctrl.sendwocmd("/scoreboard objectives setdisplay sidebar 公告")
 
-    @Builtins.thread_func("计分板公告刷新")
+    def get_tps_str(self, color=False):
+        if self.tpscalc is None:
+            return "§c无前置tps计算器"
+        elif color:
+            return self.get_tps_color() + str(round(self.tpscalc.get_tps(), 1))
+        else:
+            return str(round(self.tpscalc.get_tps(), 1))
+
+    def get_tps_color(self):
+        tps = self.tpscalc.get_tps()
+        if tps > 14:
+            return "§a"
+        elif tps > 10:
+            return "§6"
+        else:
+            return "§c"
+
+    @Utils.thread_func("计分板公告刷新")
     def flush_announcement1(self):
         scmd = self.game_ctrl.sendwocmd
         ftime = 100
@@ -65,11 +82,12 @@ class BetterAnnounce(Plugin):
                 scmd("/scoreboard players reset * 公告")
                 for text, scb_score in self.anos.items():
                     text = time.strftime(
-                        Builtins.SimpleFmt(
+                        Utils.SimpleFmt(
                             {
                                 "[在线人数]": len(self.game_ctrl.allplayers),
-                                "[随机]": random.randint(1, 5),
                                 "[星期]": "一二三四五六日"[time.localtime().tm_wday],
+                                "[tps]": self.get_tps_str(),
+                                "[tps颜色]": self.get_tps_str(True),
                             },
                             text,
                         )
