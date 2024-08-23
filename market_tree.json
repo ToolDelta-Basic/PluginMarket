@@ -248,6 +248,12 @@
       "author": "xingchen",
       "version": "0.0.3",
       "plugin-type": "classic"
+    },
+    "TPSCalc": {
+      "name": "前置_tps计算器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
     }
   }
 }
