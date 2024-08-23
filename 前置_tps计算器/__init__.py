@@ -10,6 +10,7 @@ class TPSCalculator(Plugin):
 
     lt = time.time()
     lt1 = 0
+    _tps = 20
 
     @plugins.add_packet_listener(constants.PacketIDS.IDTickSync)
     def listener(self, pkt):
@@ -19,7 +20,7 @@ class TPSCalculator(Plugin):
     def calc_tps(self, pkt):
         ntime = time.time()
         servert = pkt["ServerReceptionTimestamp"]
-        self._tps = (servert - self.lt1) / (ntime - self.lt)
+        self._tps = min(20, (servert - self.lt1) / (ntime - self.lt))
         self.lt = ntime
         self.lt1 = servert
 
