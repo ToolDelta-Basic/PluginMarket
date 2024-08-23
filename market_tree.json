@@ -249,7 +249,7 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "TPSCalc": {
+    "tpscalculator": {
       "name": "前置_tps计算器",
       "author": "SuperScript",
       "version": "0.0.1",
