@@ -1,0 +1,11 @@
+{
+    "author": "wling/SuperScript",
+    "version": "0.0.1",
+    "plugin-type": "injected",
+    "description": "提供了两种玩家互传功能(传送过去和传送到此), 也支持修改自身互传设置",
+    "pre-plugins": {
+        "聊天栏菜单": "0.0.1"
+    },
+    "plugin-id": "nice-tpa",
+    "enabled": true
+}
