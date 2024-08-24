@@ -837,7 +837,8 @@ class GroupServerInterworking(Plugin):
                         self.TMPJson.read(self.ConfigPath)["配置项"]["CQHTTP运行目录"],
                         "config.yml",
                     )
-                ) is True
+                )
+                is True
                 and len(
                     open(
                         os.path.join(
