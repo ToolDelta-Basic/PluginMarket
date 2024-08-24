@@ -51,6 +51,12 @@
       "version": "0.0.3",
       "plugin-type": "injected"
     },
+    "nice-tpa": {
+      "name": "多功能玩家互传",
+      "author": "wling/SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "injected"
+    },
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
