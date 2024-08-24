@@ -1,0 +1,9 @@
+{
+    "author": "大庆油田/SuperScript",
+    "version": "0.0.1",
+    "description": "提供了群服消息互通、查询玩家列表、执行指令等功能",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "cloud-qqlink"
+}
