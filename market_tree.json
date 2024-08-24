@@ -39,6 +39,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "cloud-qqlink": {
+      "name": "云链群服互通",
+      "author": "大庆油田/SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
