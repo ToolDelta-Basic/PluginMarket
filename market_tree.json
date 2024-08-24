@@ -129,12 +129,6 @@
       "version": "0.0.2",
       "plugin-type": "injected"
     },
-    "群服互通": {
-      "name": "群服互通_内测",
-      "author": "xingchen",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
     "@玩家": {
       "name": "@玩家",
       "author": "wling",
@@ -194,6 +188,12 @@
       "author": "System",
       "version": "0.0.3",
       "plugin-type": "injected"
+    },
+    "群服互通": {
+      "name": "群服互通[本地带签名服务器版]",
+      "author": "xingchen",
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "封禁系统": {
       "name": "封禁系统",
