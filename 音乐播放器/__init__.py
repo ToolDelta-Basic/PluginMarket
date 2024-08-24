@@ -10,21 +10,21 @@ class PlayerMusicStatus:
     now: float
     duration: float
     is_stop: bool
-    thread: tooldelta.Utils.createThread
+    thread: tooldelta.Utils.ToolDeltaThread
 
 
 @tooldelta.plugins.add_plugin
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
         CFG_DEFAULT = {
             "音乐播放条格式": "§e[歌曲名] §f[当前播放时长] §7/ [总播放时长] [播放符号]\n[播放条]",
             "限制最大的音乐同时播放数": 4,
-            "播放音乐、暂停和继续播放的触发词(以下命令具有等效功能)": [
+            "播放音乐、暂停和继续播放的触发词": [
                 "music play",
                 "播放",
                 "music pause",
@@ -38,6 +38,7 @@ class MusicPlayer(tooldelta.Plugin):
         self.cfg, _ = tooldelta.Config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
+        _ = self.data_path
         self.thread_num = 0
         self.players_thread: dict[str, PlayerMusicStatus] = {}
         self.public_showbar_thread_awaked = False
@@ -45,7 +46,7 @@ class MusicPlayer(tooldelta.Plugin):
         os.makedirs(os.path.join(self.data_path, "midi_backup"), exist_ok=True)
 
     def on_def(self):
-        self.midiplayer = tooldelta.plugins.get_plugin_api("MIDI播放器", (0, 1, 5))
+        self.midiplayer = tooldelta.plugins.get_plugin_api("MIDI播放器", (0, 2, 5))
         self.chatbar = tooldelta.plugins.get_plugin_api("聊天栏菜单", (0, 2, 3))
         self.song_list = []
         if tooldelta.TYPE_CHECKING:
@@ -73,7 +74,7 @@ class MusicPlayer(tooldelta.Plugin):
 
     def on_inject(self):
         self.chatbar.add_trigger(
-            self.cfg["播放音乐、暂停和继续播放的触发词(以下命令具有等效功能)"],
+            self.cfg["播放音乐、暂停和继续播放的触发词"],
             "[曲目名]",
             "播放歌曲， 或停止或继续播放音乐",
             self.play_music_menu,
@@ -123,14 +124,14 @@ class MusicPlayer(tooldelta.Plugin):
                     False,
                     None,  # type: ignore
                 )
-                thread = tooldelta.Utils.createThread(
+                thread = tooldelta.Utils.ToolDeltaThread(
                     self.playmusic_thread, (player, song_name, status)
                 )
                 status.thread = thread
                 self.players_thread[player] = status
             self.wake_showbar_thread()
 
-    def stop_song(self, player: str):
+    def stop_song(self, player: str, _):
         if not self.players_thread.get(player):
             self.game_ctrl.say_to(player, "§c当前你没有正在播放的音乐")
         else:
@@ -156,7 +157,7 @@ class MusicPlayer(tooldelta.Plugin):
             ):
                 time.sleep(delay)
                 scmd(
-                    f"/execute as {target} run playsound {instrument} @s ~~~ {vol} {pitch}"
+                    f"/execute as {target} at @s run playsound {instrument} @s ~~~ {vol} {pitch}"
                 )
                 now_play += delay
                 parent.now = now_play
@@ -171,7 +172,7 @@ class MusicPlayer(tooldelta.Plugin):
     def make_playbar(self, current, total):
         TOTAL_BAR = 30
         prg = int(TOTAL_BAR * current / total)
-        return "§b" + "=" * prg + "§f" + "=" * (TOTAL_BAR - prg)
+        return "§b" + "=" * prg + "§f§l|§r§f" + "=" * (TOTAL_BAR - prg)
 
     def wake_showbar_thread(self):
         if not self.public_showbar_thread_awaked:
@@ -191,7 +192,7 @@ class MusicPlayer(tooldelta.Plugin):
                     tooldelta.Utils.SimpleFmt(
                         {
                             "[歌曲名]": status.name,
-                            "[播放符号]": ("||", "▶")[status.is_stop],
+                            "[播放符号]": ("∥", "▶")[status.is_stop],
                             "[当前播放时长]": self.format_time(status.now),
                             "[总播放时长]": self.format_time(status.duration),
                             "[播放条]": self.make_playbar(status.now, status.duration),
