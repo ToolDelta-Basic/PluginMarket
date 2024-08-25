@@ -24,7 +24,7 @@
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.0.6",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "prof_manager": {
