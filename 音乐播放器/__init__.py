@@ -17,7 +17,7 @@ class PlayerMusicStatus:
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 9)
 
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
