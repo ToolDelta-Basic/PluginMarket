@@ -13,8 +13,8 @@ def remove_cq(content):
     return content
 
 
-@plugins.add_plugin_as_api("云链群服互通")
-class BasicFunctionLib(Plugin):
+@plugins.add_plugin_as_api("群服互通")
+class QQLinker(Plugin):
     version = (0, 0, 1)
     name = "云链群服互通"
     author = "大庆油田"
