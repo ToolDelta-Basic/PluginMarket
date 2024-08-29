@@ -9,6 +9,12 @@
       "version": "0.0.5",
       "plugin-type": "injected"
     },
+    "QuestSystem": {
+      "name": "任务系统",
+      "author": "任务系统",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "传送点": {
       "name": "传送点",
       "author": "wling/7912",
