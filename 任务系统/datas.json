@@ -1,0 +1,10 @@
+{
+  "author": "任务系统",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "为租赁服添加一套自定义的任务！",
+  "pre-plugins": {
+    "聊天栏菜单": "0.0.1"
+  },
+  "plugin-id": "QuestSystem"
+}
