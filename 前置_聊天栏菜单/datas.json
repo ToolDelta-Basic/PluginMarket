@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.2.7",
+    "version": "0.2.8",
     "description": "所有使用到聊天栏菜单的组件的前置组件",
     "limit_launcher": null,
     "pre-plugins": {},

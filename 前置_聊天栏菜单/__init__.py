@@ -36,7 +36,7 @@ class ChatbarMenu(Plugin):
 
     name = "聊天栏菜单"
     author = "SuperScript"
-    version = (0, 2, 7)
+    version = (0, 2, 8)
     description = "前置插件, 提供聊天栏菜单功能"
     DEFAULT_CFG: ClassVar = {
         "help菜单样式": {
@@ -194,16 +194,19 @@ class ChatbarMenu(Plugin):
                             args = []
                         else:
                             args = args[1:]
-                        if not tri.args_pd(len(args)):
-                            self.game_ctrl.say_to(player, "§c菜单参数数量错误")
-                            return
                         if " " in trigger:
                             with Utils.ChatbarLock(player, self.on_menu_warn):
                                 tri_split_num = len(trigger.split()) - 1
-                                tri.func(player, args[tri_split_num:])
+                                args = args[tri_split_num:]
+                                if not tri.args_pd(len(args)):
+                                    self.game_ctrl.say_to(player, "§c菜单参数数量错误")
+                                    return
+                                tri.func(player, args)
                         else:
                             with Utils.ChatbarLock(player, self.on_menu_warn):
-                                tri_split_num = 0
+                                if not tri.args_pd(len(args)):
+                                    self.game_ctrl.say_to(player, "§c菜单参数数量错误")
+                                    return
                                 tri.func(player, args)
 
     def on_menu_warn(self, player: str):
