@@ -36,7 +36,7 @@
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.0.9",
+      "version": "0.0.10",
       "plugin-type": "classic"
     },
     "prof_manager": {
