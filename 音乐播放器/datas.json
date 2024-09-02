@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "description": "包含显示进度, 显示播放条等功能的Midi音乐播放器！\n用途和功能请查看插件手册!!!",
     "limit_launcher": null,
     "pre-plugins": {

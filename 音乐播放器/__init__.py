@@ -1,6 +1,7 @@
 import os
 import time
 import tooldelta
+import tooldelta.game_utils
 from dataclasses import dataclass
 
 
@@ -17,7 +18,7 @@ class PlayerMusicStatus:
 class MusicPlayer(tooldelta.Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 9)
+    version = (0, 0, 10)
 
     def __init__(self, frame: tooldelta.ToolDelta):
         super().__init__(frame)
@@ -75,7 +76,7 @@ class MusicPlayer(tooldelta.Plugin):
     def on_inject(self):
         self.chatbar.add_trigger(
             self.cfg["播放音乐、暂停和继续播放的触发词"],
-            "[曲目名]",
+            None,
             "播放歌曲， 或停止或继续播放音乐",
             self.play_music_menu,
             op_only=self.cfg["是否仅OP可播放音乐"],
@@ -106,13 +107,24 @@ class MusicPlayer(tooldelta.Plugin):
             self.game_ctrl.say_to(player, f" §f{i + 1} §7- §f{name}")
 
     def play_music_menu(self, player: str, args: list[str]):
-        if len(args) == 0:
+        if player in self.players_thread.keys():
             self.pause_or_play(player)
         else:
-            song_name = args[0]
-            if song_name not in self.song_list:
-                self.game_ctrl.say_to(player, f"§c该曲目不存在: {song_name}")
-            elif self.thread_num > self.cfg["限制最大的音乐同时播放数"]:
+            if self.song_list == []:
+                self.game_ctrl.say_to(player, "§6曲目列表空空如也...")
+                return
+            self.game_ctrl.say_to(player, "§a当前曲目列表：")
+            for i, j in enumerate(self.song_list):
+                self.game_ctrl.say_to(player, f" §b{i+1} §f{j}")
+            self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
+            if (resp := tooldelta.Utils.try_int(tooldelta.game_utils.waitMsg(player))) is None:
+                self.game_ctrl.say_to(player, "§c选项无效")
+                return
+            elif resp not in range(1, len(self.song_list) + 1):
+                self.game_ctrl.say_to(player, "§c选项不在范围内")
+                return
+            song_name = self.song_list[resp - 1]
+            if self.thread_num > self.cfg["限制最大的音乐同时播放数"]:
                 self.game_ctrl.say_to(player, "§c目前游戏内同时播放音乐数达上限")
             elif self.players_thread.get(player):
                 self.game_ctrl.say_to(player, "§c你正在播放音乐, 请停止")
@@ -159,6 +171,7 @@ class MusicPlayer(tooldelta.Plugin):
                 scmd(
                     f"/execute as {target} at @s run playsound {instrument} @s ~~~ {vol} {pitch}"
                 )
+                print(vol)
                 now_play += delay
                 parent.now = now_play
                 if parent.is_stop:
