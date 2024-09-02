@@ -15,6 +15,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "anti-fast-piston": {
+      "name": "活塞限速",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "传送点": {
       "name": "传送点",
       "author": "wling/7912",

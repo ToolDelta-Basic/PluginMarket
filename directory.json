@@ -8,6 +8,10 @@
         "__init__.py",
         "readme.txt"
     ],
+    "活塞限速": [
+        "datas.json",
+        "__init__.py"
+    ],
     "前置_世界交互": [
         "datas.json",
         "__init__.py"
