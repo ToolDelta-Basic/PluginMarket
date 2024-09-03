@@ -1,10 +1,12 @@
 import ujson as json
 import websocket
 import time
+import re
+import threading
 from tooldelta import Plugin, plugins, Config, Utils, Print
 
 
-def remove_cq(content):
+def remove_cq_code(content):
     cq_start = content.find("[CQ:")
     while cq_start != -1:
         cq_end = content.find("]", cq_start) + 1
@@ -13,9 +15,46 @@ def remove_cq(content):
     return content
 
 
+def create_result_cb():
+    ret = [None]
+    lock = threading.Lock()
+    lock.acquire()
+
+    def getter(timeout=60):
+        lock.acquire(timeout=timeout)
+        return ret[0]
+
+    def setter(s):
+        ret[0] = s
+        lock.release()
+
+    return getter, setter
+
+
+CQ_IMAGE_RULE = re.compile(r"\[CQ:image,([^\]])*\]")
+CQ_VIDEO_RULE = re.compile(r"\[CQ:video,[^\]]*\]")
+CQ_FILE_RULE = re.compile(r"\[CQ:file,[^\]]*\]")
+CQ_AT_RULE = re.compile(r"\[CQ:at,[^\]]*\]")
+CQ_REPLY_RULE = re.compile(r"\[CQ:reply,[^\]]*\]")
+CQ_FACE_RULE = re.compile(r"\[CQ:face,[^\]]*\]")
+
+
+def replace_cq(content: str):
+    for i, j in (
+        (CQ_IMAGE_RULE, "[图片]"),
+        (CQ_FILE_RULE, "[文件]"),
+        (CQ_VIDEO_RULE, "[视频]"),
+        (CQ_AT_RULE, "[@]"),
+        (CQ_REPLY_RULE, "[回复]"),
+        (CQ_FACE_RULE, "[表情]"),
+    ):
+        content = i.sub(j, content)
+    return content
+
+
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 1)
+    version = (0, 0, 3)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -28,8 +67,16 @@ class QQLinker(Plugin):
             "云链地址": "ws://127.0.0.1:5556",
             "消息转发设置": {
                 "链接的群聊": 194838530,
-                "游戏到群": {"是否启用": False, "转发格式": "<[玩家名]> [消息]"},
-                "群到游戏": {"是否启用": True, "转发格式": "群 <[昵称]> [消息]"},
+                "游戏到群": {
+                    "是否启用": False,
+                    "转发格式": "<[玩家名]> [消息]",
+                    "仅转发以下符号开头的消息(为空则全部转发)": ["#"],
+                },
+                "群到游戏": {
+                    "是否启用": True,
+                    "转发格式": "群 <[昵称]> [消息]",
+                    "屏蔽的QQ号": [2398282073],
+                },
             },
             "指令设置": {
                 "可以对游戏执行指令的QQ号名单": [2528622340, 2483724640],
@@ -43,10 +90,21 @@ class QQLinker(Plugin):
         self.enable_game_2_group = self.cfg["消息转发设置"]["游戏到群"]["是否启用"]
         self.enable_group_2_game = self.cfg["消息转发设置"]["群到游戏"]["是否启用"]
         self.enable_playerlist = self.cfg["指令设置"]["是否允许查看玩家列表"]
-        self.link_group = self.cfg["消息转发设置"]["链接的群聊"]
+        self.linked_group = self.cfg["消息转发设置"]["链接的群聊"]
+        self.block_qqids = self.cfg["消息转发设置"]["游戏到群"]
+        self.game2qq_trans_chars = self.cfg["消息转发设置"]["游戏到群"][
+            "仅转发以下符号开头的消息(为空则全部转发)"
+        ]
+        self.waitmsg_cbs = {}
+
+    def on_def(self):
+        self.tps_calc = plugins.get_plugin_api("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
         self.connect_to_websocket()
+        self.frame.add_console_cmd_trigger(
+            ["QQ", "发群"], "[消息]", "在群内发消息测试", self.sendmsg_test
+        )
 
     @Utils.thread_func("云链群服连接进程")
     def connect_to_websocket(self):
@@ -64,11 +122,24 @@ class QQLinker(Plugin):
 
     def on_ws_message(self, ws, message):
         data = json.loads(message)
+        bc_recv = plugins.broadcastEvt("群服互通/数据json", data)
+        if any(bc_recv):
+            return
         if data.get("post_type") == "message" and data["message_type"] == "group":
-            msg: str = remove_cq(data["message"])
-            if data["group_id"] == self.link_group:
+            msg: str = data["message"]
+            if data["group_id"] == self.linked_group:
                 if self.enable_group_2_game:
                     user_id = data["sender"]["user_id"]
+                    nickname = data["sender"]["nickname"]
+                    if user_id in self.waitmsg_cbs.keys():
+                        self.waitmsg_cbs[user_id](msg)
+                        return
+                    bc_recv = plugins.broadcastEvt(
+                        "群服互通/链接群消息",
+                        {"QQ号": user_id, "昵称": nickname, "消息": msg},
+                    )
+                    if any(bc_recv):
+                        return
                     if msg.startswith("/"):
                         if (
                             user_id
@@ -76,7 +147,7 @@ class QQLinker(Plugin):
                         ):
                             self.sb_execute_cmd(msg)
                         else:
-                            self.sendmsg(self.link_group, "你是管理吗你还发指令 🤓👆")
+                            self.sendmsg(self.linked_group, "你是管理吗你还发指令 🤓👆")
                         return
                     elif msg in ["玩家列表", "list"] and self.enable_playerlist:
                         self.send_player_list()
@@ -84,13 +155,19 @@ class QQLinker(Plugin):
                         "@a",
                         Utils.simple_fmt(
                             {
-                                "[昵称]": data["sender"]["card"],
-                                "[消息]": msg,
+                                "[昵称]": nickname,
+                                "[消息]": replace_cq(msg),
                             },
                             self.cfg["消息转发设置"]["群到游戏"]["转发格式"],
                         ),
                     )
-        plugins.broadcastEvt("群服互通/消息", data)
+
+    def waitMsg(self, qqid: int, timeout=60) -> str | None:
+        g, s = create_result_cb()
+        self.waitmsg_cbs[qqid] = s
+        r = g(timeout)
+        del self.waitmsg_cbs[qqid]
+        return r
 
     def on_ws_error(self, ws, error):
         if not isinstance(error, Exception):
@@ -99,12 +176,11 @@ class QQLinker(Plugin):
             return
         Print.print_err(f"群服互通发生错误: {error}, 15s后尝试重连")
         time.sleep(15)
-        self.connect_to_websocket()
 
     @Utils.thread_func("群服执行指令并获取返回")
     def sb_execute_cmd(self, cmd: str):
         res = self.execute_cmd_and_get_zhcn_cb(cmd)
-        self.sendmsg(self.link_group, res)
+        self.sendmsg(self.linked_group, res)
 
     def on_ws_close(self, ws, _, _2):
         if self.reloaded:
@@ -114,19 +190,29 @@ class QQLinker(Plugin):
         self.connect_to_websocket()
 
     def on_player_join(self, player: str):
-        if self.enable_game_2_group:
-            self.sendmsg(self.link_group, f"{player} 加入了游戏")
+        if self.ws and self.enable_game_2_group:
+            self.sendmsg(self.linked_group, f"{player} 加入了游戏")
 
     def on_player_leave(self, player: str):
-        if self.enable_game_2_group:
-            self.sendmsg(self.link_group, f"{player} 退出了游戏")
+        if self.ws and self.enable_game_2_group:
+            self.sendmsg(self.linked_group, f"{player} 退出了游戏")
 
     def on_player_message(self, player: str, msg: str):
         if self.ws and self.enable_game_2_group:
+            if self.game2qq_trans_chars != []:
+                can_send = False
+                for prefix in self.game2qq_trans_chars:
+                    if msg.startswith(prefix):
+                        can_send = True
+                        break
+            else:
+                can_send = True
+            if not can_send:
+                return
             self.sendmsg(
-                self.link_group,
+                self.linked_group,
                 Utils.simple_fmt(
-                    {"[玩家名]": player, "[消息]": msg},
+                    {"[玩家名]": player, "[消息]": remove_cq_code(msg[1:])},
                     self.cfg["消息转发设置"]["游戏到群"]["转发格式"],
                 ),
             )
@@ -136,7 +222,7 @@ class QQLinker(Plugin):
         jsondat = json.dumps(
             {
                 "action": "send_group_msg",
-                "params": {"group_id": group, "message": msg},
+                "params": {"group_id": group, "message": remove_cq_code(msg)},
             }
         )
         self.ws.send(jsondat)
@@ -186,5 +272,19 @@ class QQLinker(Plugin):
 
     def send_player_list(self):
         players = [f"{i+1}.{j}" for i, j in enumerate(self.game_ctrl.allplayers)]
-        fmt_msg = f"在线玩家有 {len(players)} 人：\n " + "\n ".join(players)
-        self.sendmsg(self.link_group, fmt_msg)
+        fmt_msg = (
+            f"在线玩家有 {len(players)} 人：\n "
+            + "\n ".join(players)
+            + (
+                f"\n当前 TPS： {round(self.tps_calc.get_tps(), 1)}/20"
+                if self.tps_calc
+                else ""
+            )
+        )
+        self.sendmsg(self.linked_group, fmt_msg)
+
+    def sendmsg_test(self, args: list[str]):
+        if self.ws:
+            self.sendmsg(self.linked_group, " ".join(args))
+        else:
+            Print.print_err("还没有连接到群服互通")
