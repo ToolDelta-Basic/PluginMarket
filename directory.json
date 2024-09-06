@@ -1,202 +1,151 @@
 {
-    "清空玩家末影箱": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "任务系统": [
-        "datas.json",
+    "Schematic导入器": [
+        "schematic_id.py",
         "__init__.py",
-        "readme.txt"
+        "datas.json"
     ],
-    "活塞限速": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_世界交互": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "传送点": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "plugin_package": [
-        "基础功能包.json"
-    ],
-    "更好的公告栏": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "音乐播放器": [
-        "datas.json",
+    "Schematic导入器/nbtlib": [
+        "nbt.py",
+        "tag.py",
+        "cli.py",
+        "__main__.py",
+        "path.py",
         "__init__.py",
-        "readme.txt"
+        "schema.py"
     ],
-    "性能管理": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "bdx导入器": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter": [
-        "LICENSE",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter/Converter": [
-        "Converter.py",
-        "ErrorClassDefine.py",
+    "Schematic导入器/nbtlib/literal": [
+        "serializer.py",
         "__init__.py",
-        "FileOperation.py"
-    ],
-    "bdx导入器/BDXConverter/utils": [
-        "getString.py",
-        "__init__.py",
-        "getByte.py"
-    ],
-    "bdx导入器/BDXConverter/Operation": [
-        "CreateConstantString.py",
-        "PlaceBlock.py",
-        "PlaceBlockWithChestData.py",
-        "PlaceBlockWithRuntimeId.py",
-        "SetCommandBlockData.py",
-        "SubtractXValue.py",
-        "AddInt16ZValue.py",
-        "SubtractYValue.py",
-        "PlaceRuntimeBlock.py",
-        "UseRuntimeIDPool.py",
-        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
-        "AddYValue.py",
-        "AddInt8ZValue.py",
-        "PlaceRuntimeBlockWithCommandBlockData.py",
-        "structOfChest.py",
-        "AssignDebugData.py",
-        "PlaceBlockWithBlockStates.py",
-        "AddInt32YValue.py",
-        "__init__.py",
-        "AddInt16YValue.py",
-        "AddInt32ZValue.py",
-        "AddInt32ZValue0.py",
-        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
-        "AddInt32XValue.py",
-        "PlaceRuntimeBlockWithChestData.py",
-        "PlaceBlockWithBlockStatesDeprecated.py",
-        "AddInt8XValue.py",
-        "AddZValue.py",
-        "PlaceCommandBlockWithCommandBlockData.py",
-        "AddInt16ZValue0.py",
-        "PlaceBlockWithCommandBlockData.py",
-        "AddZValue0.py",
-        "AddXValue.py",
-        "SubtractZValue.py",
-        "AddInt8YValue.py",
-        "NOP.py",
-        "AddInt16XValue.py"
-    ],
-    "bdx导入器/BDXConverter/General": [
-        "Operation.py",
-        "Pool.py",
-        "__init__.py",
-        "GeneralClass.py"
-    ],
-    "云链群服互通": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "全服喇叭": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "入服欢迎": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "多功能玩家互传": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "五子棋小游戏": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_MIDI播放器": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_MIDI播放器/mido": [
-        "tokenizer.py",
-        "__init__.py",
-        "ports.py",
-        "syx.py",
-        "frozen.py",
         "parser.py"
     ],
-    "前置_MIDI播放器/mido/midifiles": [
-        "units.py",
-        "tracks.py",
-        "meta.py",
-        "__init__.py",
-        "midifiles.py"
+    "Schematic导入器/nbtlib/contrib": [
+        "__init__.py"
     ],
-    "前置_MIDI播放器/mido/messages": [
-        "strings.py",
-        "checks.py",
-        "decode.py",
-        "specs.py",
-        "__init__.py",
-        "messages.py",
-        "encode.py"
+    "Schematic导入器/nbtlib/contrib/minecraft": [
+        "structure.py",
+        "__init__.py"
     ],
-    "前置_MIDI播放器/Musicreater": [
-        "exceptions.py",
-        "utils.py",
-        "constants.py",
+    "Schematic导入器/nbtschematic": [
+        "schematic.py",
         "__init__.py",
-        "subclass.py",
-        "main.py",
-        "types.py"
+        "version.py"
     ],
     "雪球菜单": [
-        "datas.json",
-        "__init__.py"
+        "__init__.py",
+        "datas.json"
     ],
     "区块显示器": [
         "___init__.py",
         "datas.json"
     ],
-    "简易建造": [
-        "datas.json",
-        "__init__.py",
-        "readme.txt"
-    ],
-    "控制台执行MC指令": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "自定义聊天栏菜单": [
-        "datas.json",
-        "__init__.py"
-    ],
     "服服互通": [
-        "datas.json",
-        "__init__.py"
+        "__init__.py",
+        "datas.json"
     ],
     "发言频率限制": [
-        "datas.json",
-        "__init__.py"
+        "__init__.py",
+        "datas.json"
+    ],
+    "入服欢迎": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "自定义聊天栏菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "传送点": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "公告栏": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_tps计算器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "plugin_package": [
+        "基础功能包.json"
+    ],
+    "地图画导入": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_SQL数据库支持": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "活塞限速": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "控制台执行MC指令": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器/mido": [
+        "syx.py",
+        "ports.py",
+        "__init__.py",
+        "parser.py",
+        "frozen.py",
+        "tokenizer.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "midifiles.py",
+        "meta.py",
+        "tracks.py",
+        "__init__.py",
+        "units.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "messages.py",
+        "decode.py",
+        "specs.py",
+        "strings.py",
+        "encode.py",
+        "__init__.py",
+        "checks.py"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "constants.py",
+        "main.py",
+        "subclass.py",
+        "__init__.py",
+        "utils.py",
+        "types.py",
+        "exceptions.py"
+    ],
+    "简易建造": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "[前置]功能封装库-1": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "多功能玩家互传": [
+        "__init__.py",
+        "datas.json"
     ],
     "ZBasic_Lang_中文编程": [
-        "syntax_lib.py",
-        "basic_types.py",
+        "readme.txt",
         "type_checker.py",
-        "datas.json",
-        "compiler.py",
-        "__init__.py",
         "executor.py",
         "err_str.py",
+        "basic_types.py",
+        "compiler.py",
+        "syntax_lib.py",
+        "__init__.py",
+        "datas.json",
         "syntax_compile.py",
-        "readme.txt",
         "basic_codes.py"
     ],
     "ZBasic_Lang_中文编程/示例代码": [],
@@ -204,153 +153,204 @@
         "玩家发言.txt"
     ],
     "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
-        "玩家退出.txt",
-        "玩家进入.txt"
-    ],
-    "32k盒子显示": [
-        "datas.json",
-        "__init__.py"
+        "玩家进入.txt",
+        "玩家退出.txt"
     ],
     "前置_大字替换": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "admin命令": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_基本插件功能库": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "@玩家": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_SQL数据库支持": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_循环获取玩家坐标": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "公告栏": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_聊天栏菜单": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "[前置]功能封装库-1": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "前置_tps计算器": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "点歌台": [
-        "datas.json",
-        "__init__.py"
+        "__init__.py",
+        "datas.json"
     ],
     "设置栏钢琴师": [
-        "datas.json",
+        "readme.txt",
         "__init__.py",
-        "readme.txt"
+        "datas.json"
     ],
-    "井字棋": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "Schematic导入器": [
-        "datas.json",
-        "schematic_id.py",
-        "__init__.py"
-    ],
-    "Schematic导入器/nbtschematic": [
+    "任务系统": [
+        "readme.txt",
         "__init__.py",
-        "schematic.py",
-        "version.py"
+        "datas.json"
     ],
-    "Schematic导入器/nbtlib": [
-        "schema.py",
-        "cli.py",
-        "__main__.py",
-        "path.py",
-        "nbt.py",
+    "前置_循环获取玩家坐标": [
         "__init__.py",
-        "tag.py"
+        "datas.json"
     ],
-    "Schematic导入器/nbtlib/contrib": [
-        "__init__.py"
-    ],
-    "Schematic导入器/nbtlib/contrib/minecraft": [
+    "五子棋小游戏": [
         "__init__.py",
-        "structure.py"
-    ],
-    "Schematic导入器/nbtlib/literal": [
-        "__init__.py",
-        "serializer.py",
-        "parser.py"
-    ],
-    "地图画导入": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "死亡返回": [
-        "datas.json",
-        "__init__.py"
+        "datas.json"
     ],
     "tpa传送": [
-        "datas.json",
+        "__init__.py",
+        "datas.json"
+    ],
+    "维度传送": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "死亡返回": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "封禁系统": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导入器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导入器/BDXConverter": [
+        "LICENSE",
         "__init__.py"
     ],
-    "定时任务": [
-        "datas.json",
+    "bdx导入器/BDXConverter/utils": [
+        "getByte.py",
         "__init__.py",
-        "readme.txt"
+        "getString.py"
+    ],
+    "bdx导入器/BDXConverter/General": [
+        "GeneralClass.py",
+        "__init__.py",
+        "Pool.py",
+        "Operation.py"
+    ],
+    "bdx导入器/BDXConverter/Operation": [
+        "AddInt32ZValue.py",
+        "PlaceBlock.py",
+        "AddInt16ZValue.py",
+        "SetCommandBlockData.py",
+        "AddInt8YValue.py",
+        "PlaceRuntimeBlockWithChestData.py",
+        "PlaceBlockWithBlockStatesDeprecated.py",
+        "SubtractZValue.py",
+        "PlaceRuntimeBlockWithCommandBlockData.py",
+        "PlaceBlockWithCommandBlockData.py",
+        "structOfChest.py",
+        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
+        "AddInt16XValue.py",
+        "AddXValue.py",
+        "CreateConstantString.py",
+        "AddInt32YValue.py",
+        "UseRuntimeIDPool.py",
+        "AddInt32ZValue0.py",
+        "PlaceBlockWithRuntimeId.py",
+        "PlaceCommandBlockWithCommandBlockData.py",
+        "AddYValue.py",
+        "AddZValue.py",
+        "AddInt32XValue.py",
+        "AddInt8ZValue.py",
+        "PlaceBlockWithChestData.py",
+        "SubtractYValue.py",
+        "AddInt16YValue.py",
+        "AddInt8XValue.py",
+        "AddInt16ZValue0.py",
+        "__init__.py",
+        "PlaceBlockWithBlockStates.py",
+        "PlaceRuntimeBlock.py",
+        "NOP.py",
+        "SubtractXValue.py",
+        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
+        "AddZValue0.py",
+        "AssignDebugData.py"
+    ],
+    "bdx导入器/BDXConverter/Converter": [
+        "Converter.py",
+        "__init__.py",
+        "ErrorClassDefine.py",
+        "FileOperation.py"
+    ],
+    "音乐播放器": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_世界交互": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "定时任务": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
     ],
     "定时任务/示例定时任务": [
         "扫地姬.mcfunction"
     ],
+    "性能管理": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_基本插件功能库": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "音效播放器": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_聊天栏菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "点歌台": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "@玩家": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "云链群服互通": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "井字棋": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "清空玩家末影箱": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "更好的公告栏": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "admin命令": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "全服喇叭": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "32k盒子显示": [
+        "__init__.py",
+        "datas.json"
+    ],
     "群服互通[本地带签名服务器版]": [
-        "datas.json",
-        "__init__.py"
+        "__init__.py",
+        "datas.json"
     ],
     "群服互通[本地带签名服务器版]/lib": [],
     "群服互通[本地带签名服务器版]/lib/yaml": [
         "scanner.py",
-        "_yaml.cpython-311-x86_64-linux-gnu.so",
+        "resolver.py",
+        "serializer.py",
+        "dumper.py",
+        "representer.py",
         "error.py",
         "reader.py",
         "composer.py",
-        "emitter.py",
-        "dumper.py",
-        "representer.py",
         "__init__.py",
-        "serializer.py",
+        "_yaml.cpython-311-x86_64-linux-gnu.so",
+        "cyaml.py",
+        "parser.py",
+        "constructor.py",
+        "emitter.py",
         "loader.py",
         "events.py",
         "nodes.py",
-        "tokens.py",
-        "resolver.py",
-        "parser.py",
-        "constructor.py",
-        "cyaml.py"
-    ],
-    "封禁系统": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "音效播放器": [
-        "datas.json",
-        "__init__.py",
-        "readme.txt"
-    ],
-    "维度传送": [
-        "datas.json",
-        "__init__.py"
+        "tokens.py"
     ]
 }
