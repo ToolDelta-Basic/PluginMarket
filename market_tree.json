@@ -195,6 +195,12 @@
       "version": "0.0.5",
       "plugin-type": "injected"
     },
+    "SkyblockSystem": {
+      "name": "空岛系统",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "better-announcebar": {
       "name": "更好的公告栏",
       "author": "SuperScript",
@@ -270,7 +276,7 @@
     "基本插件功能库": {
       "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.10",
+      "version": "0.0.11",
       "plugin-type": "classic"
     },
     "聊天栏菜单": {

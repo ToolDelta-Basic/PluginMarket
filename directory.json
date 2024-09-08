@@ -312,6 +312,11 @@
         "__init__.py",
         "datas.json"
     ],
+    "空岛系统": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
     "更好的公告栏": [
         "__init__.py",
         "datas.json"
