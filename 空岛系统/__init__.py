@@ -244,7 +244,9 @@ class SkyBlock(Plugin):
                         self.game_ctrl.player_actionbar(
                             player, f"空岛生成中 (4/{TOTAL}) §6放置方块失败， 重试中.."
                         )
-                        time.sleep(0.2)
+                        self.game_ctrl.sendcmd_with_resp(
+                        f"setblock {this_island_pos_x} -63 {this_island_pos_z} air"
+                    )
                     else:
                         break
                 else:
