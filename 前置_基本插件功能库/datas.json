@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "所有使用基本组件API的插件的前置",
     "limit_launcher": null,
     "pre-plugins": {},

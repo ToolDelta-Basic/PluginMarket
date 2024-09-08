@@ -1,6 +1,7 @@
 import json
 import time
-from tooldelta import Plugin, plugins, Frame
+import threading
+from tooldelta import Plugin, plugins, Utils, packets
 
 
 def find_key_from_value(dic, val):
@@ -15,14 +16,13 @@ plugins.checkSystemVersion((0, 7, 5))
 
 @plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 10)
+    version = (0, 0, 11)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
 
-    def __init__(self, frame: Frame):
-        self.frame = frame
-        self.game_ctrl = frame.get_game_control()
+    def __init__(self, frame):
+        super().__init__(frame)
         self.waitmsg_req = []
         self.waitmsg_result = {}
 
@@ -37,6 +37,70 @@ class BasicFunctionLib(Plugin):
             self.waitmsg_req.remove(player)
 
     # -------------- API ---------------
+    def list_select(
+        self,
+        player: str,
+        choices_list: list[str],
+        list_prefix: str,
+        list_format: str = " %d - %s",
+        list_end: str = "§7请选输入选项序号以选择：",
+        waitmsg_timeout: int = 30,
+        if_timeout: str = "§c输入超时， 已退出",
+        if_not_int: str = "§c输入不是有效数字",
+        if_not_in_range: str = "§c选项不在范围内， 已退出",
+        if_list_empty: str = "§c列表空空如也...",
+    ):
+        """
+        向玩家在聊天栏提出列表选择请求， 并获取选项值
+
+        Args:
+            player (str): 玩家名
+            choices_list (list[str]): 选项列表
+            list_prefix (str): 列表头提示
+            list_format (str, optional): 列表格式, `%d` 和 `%s` 代表序号和选项. Defaults to " %d - %s".
+            list_end (str, optional): 列表尾提示. Defaults to "§7请选输入选项序号以选择：".
+            waitmsg_timeout (int, optional): 等待玩家选择的超时时间. Defaults to 30.
+            if_timeout (str, optional): 超时时向玩家提示的文本. Defaults to "§c输入超时， 已退出".
+            if_not_int (str, optional): 玩家输入的不是有效数字时的提示. Defaults to "§c输入不是有效数字".
+            if_not_in_range (str, optional): 序号不在选项范围内的提示. Defaults to "§c选项不在范围内， 已退出".
+            if_list_empty (str, optional): 列表空空如也的提示. Defaults to "§c列表空空如也...".
+
+        Returns:
+            str: 选项
+            None: 无法获得选项
+        """
+        if choices_list == []:
+            self.game_ctrl.say_to(player, if_list_empty)
+            return None
+        self.game_ctrl.say_to(player, list_prefix)
+        for i, j in enumerate(choices_list):
+            self.game_ctrl.say_to(player, list_format % (i + 1, j))
+        self.game_ctrl.say_to(player, list_end)
+        resp = self.waitMsg(player, waitmsg_timeout)
+        if resp is None:
+            self.game_ctrl.say_to(player, if_timeout)
+            return None
+        elif (resp := Utils.try_int(resp)) is None:
+            self.game_ctrl.say_to(player, if_not_int)
+            return None
+        elif resp not in range(1, len(choices_list) + 1):
+            self.game_ctrl.say_to(player, if_not_in_range)
+            return None
+        return choices_list[resp - 1]
+
+    def multi_sendcmd_and_wait_resp(self, cmds: list[str], timeout: int):
+        cbs: dict[str, packets.Packet_CommandOutput] = {}
+        evts: list[threading.Event] = []
+        def _sendcmd2cb(cmd):
+            evts.append(evt := threading.Event())
+            cbs[cmd] = (self.game_ctrl.sendcmd_with_resp(cmd, timeout))
+            evt.set()
+        for cmd in cmds:
+            Utils.createThread(_sendcmd2cb, args=(cmd,))
+        for evt in evts:
+            evt.wait()
+        return cbs
+    # -------------- Old API -----------
     def getScore(self, scoreboardNameToGet: str, targetNameToGet: str) -> int | list:
         "获取玩家计分板分数 (计分板名, 玩家/计分板项名) 获取失败引发异常"
         resultList = self.game_ctrl.sendwscmd(
