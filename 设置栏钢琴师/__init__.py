@@ -6,7 +6,7 @@ from tooldelta import plugins, Plugin
 class SettingsPiano(Plugin):
     name = "设置栏弹钢琴v2"
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 0, 9)
     description = "调节设置栏-世界选项的前8个选项会发出不同的乐音, 第九个选项可开启或关闭钢琴弹奏和键位锁定, 重生半径可设置音高域"
 
     lock = False
@@ -25,7 +25,7 @@ class SettingsPiano(Plugin):
             case "dofiretick":
                 pitch = 1.75
             case "tntexplodes":
-                pitch = 1.9
+                pitch = 1.88
             case "respawnblocksexplode":
                 pitch = 2.1
             case "domobloot":
@@ -52,12 +52,12 @@ class SettingsPiano(Plugin):
                         "@a", f"钢琴键演奏&锁定模式: {['§cOff', '§aOn'][self.lock]}"
                     )
                     if self.lock:
-                        self.game_ctrl.sendcmd(
-                            "execute as @a run playsound random.toast @s"
+                        self.game_ctrl.sendwocmd(
+                            "execute as @a at @s run playsound random.toast @s"
                         )
                     else:
-                        self.game_ctrl.sendcmd(
-                            "execute as @a run playsound random.toast @s ~~~ 1 0.5"
+                        self.game_ctrl.sendwocmd(
+                            "execute as @a at @s run playsound random.toast @s ~~~ 1 0.5"
                         )
                 return False
             case _:
@@ -68,7 +68,7 @@ class SettingsPiano(Plugin):
                 self.game_ctrl.sendwocmd(
                     f"/gamerule {pk} {['true', 'false'][pkt['GameRules'][0]['Value']]}"
                 )
-                cmd = f"/execute as @a run playsound note.pling @s ~~~ 1 {pitch * 2 ** self.base_8}"
+                cmd = f"/execute as @a at @s run playsound note.pling @s ~~~ 1 {pitch * 2 ** self.base_8}"
                 self.game_ctrl.sendwocmd(cmd)
             else:
                 self.ks.remove(pk)
