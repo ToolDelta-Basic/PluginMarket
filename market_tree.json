@@ -96,7 +96,7 @@
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
       "author": "SuperScript",
-      "version": "0.0.8",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "QuestSystem": {
