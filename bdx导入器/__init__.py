@@ -1,10 +1,9 @@
 from tooldelta import Plugin, Print, Utils, plugins, TYPE_CHECKING, game_utils
 import os
 import time
-from .BDXConverter.Converter.Converter import BDX_2
-from .BDXConverter import ReadBDXFile
-
-
+import json
+from .BDXConverter.Converter.Converter import BDX
+from .BDXConverter.General import Operation
 
 @plugins.add_plugin
 class BDX_BDump(Plugin):
@@ -34,15 +33,15 @@ class BDX_BDump(Plugin):
         self.get_y: float | None = None
         self.get_z: float | None = None
         self.frame.add_console_cmd_trigger(
-            ["bdump", "导入bdx"], None, "导入bdx文件", self.dump_bdx_menu
+            ["bd", "bp", "导入bdx"], None, "导入bdx文件", self.dump_bdx_menu
         )
         self.frame.add_console_cmd_trigger(
-            ["bdx-get", "坐标bdx"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu
+            ["bg", "坐标bdx"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu
         )
 
     def dump_bdx_menu(self, _):
         src_path = self.data_path
-        if not all((self.get_x, self.get_y, self.get_z)):
+        if not self.get_x or not self.get_y or not self.get_z:
             Print.print_err("未设置导入坐标 (控制台输入 bdx-get 以设置)")
             return
         Print.print_inf(f"文件搜索路径: {src_path}")
@@ -59,40 +58,45 @@ class BDX_BDump(Plugin):
             return
         bdx_file = fs[resp - 1]
         try:
-            bdx_inf = self.read_bdx(os.path.join(self.data_path, bdx_file))
+            bdx_content = self.read_bdx(os.path.join(src_path, bdx_file))
         except Exception as err:
             Print.print_err(f"读取 {bdx_file} 出现问题: {err}")
             return
         bdx_name = bdx_file[:-4]
         Print.print_inf(f"{bdx_name} 的导入已经开始 (进度条显示于游戏内)")
-        if self.get_x is None or self.get_y is None or self.get_z is None:
-            Print.print_err("未设置导入坐标, 无法导入")
-            return
         Utils.createThread(
             self.dump_bdx_at,
-            (bdx_name, bdx_inf, int(self.get_x), int(self.get_y), int(self.get_z)),
+            (bdx_name, bdx_content, int(self.get_x), int(self.get_y), int(self.get_z)),
         )
 
     def get_bdx_pos_menu(self, _):
         avali_players = self.game_ctrl.allplayers
-        Print.print_inf("请选择玩家以获取其坐标:")
-        for i, j in enumerate(avali_players):
-            Print.print_inf(f" {i+1} - {j}")
-        resp = Utils.try_int(
-            input(Print.fmt_info(f"请选择 (1~{len(avali_players)}): "))
-        )
-        if not resp or resp not in range(1, len(avali_players) + 1):
-            Print.print_err("输入错, 已退出")
-            return
-        player_get = avali_players[resp - 1]
+        if self.game_ctrl.bot_name in avali_players:
+            avali_players.remove(self.game_ctrl.bot_name)
+        if True:
+            player_get = "SkyblueSuper"
+        elif len(gplayer := [i for i in self.game_ctrl.all_players_data if i.op]) == 1:
+            player_get = gplayer[0]
+        else:
+            Print.print_inf("请选择玩家以获取其坐标:")
+            for i, j in enumerate(avali_players):
+                Print.print_inf(f" {i+1} - {j}")
+            resp = Utils.try_int(
+                input(Print.fmt_info(f"请选择 (1~{len(avali_players)}): "))
+            )
+            if not resp or resp not in range(1, len(avali_players) + 1):
+                Print.print_err("输入错, 已退出")
+                return
+            player_get = avali_players[resp - 1]
         self.get_x, self.get_y, self.get_z = game_utils.getPosXYZ(player_get)
         Print.print_inf(f"成功获取 {player_get} 的坐标.")
 
     def read_bdx(self, path: str):
-        return ReadBDXFile(path, BDX_2)
+        with open(path, "rb") as f:
+            return f.read()
 
-    def dump_bdx_at(self, name: str, bdx: BDX_2, x: int, y: int, z: int):
-        BDumpOP(self, bdx, name).dump_bdx(x, y, z, 0)
+    def dump_bdx_at(self, name: str, content: bytes, x: int, y: int, z: int):
+        BDumpOP(self, content, name).dump_bdx(x, y, z, 0)
         Print.print_suc("bdx 导入完成")
 
     def progress_bar(self, name: str, curr, tota, sped):
@@ -107,83 +111,164 @@ class BDX_BDump(Plugin):
 
 
 class BDumpOP:
-    def __init__(self, f: BDX_BDump, bdx: BDX_2, name: str):
+    def __init__(self, f: BDX_BDump, content: bytes, name: str):
         self.f = f
         self.gc = f.frame.get_game_control()
         self.scmd = self.gc.sendwocmd
-        self.cache_string_pool: list[str] = []
-        self._bdx = bdx
+        self._content = content
         self.name = name
 
-    def dump_bdx(self, base_x: int, base_y: int, base_z: int, delay: float = 0):
+    def dump_bdx(self, base_x: int, base_y: int, base_z: int, delay: float = 0.003):
         x = base_x
         y = base_y
         z = base_z
         bot_x = base_x
         bot_y = base_y
         bot_z = base_z
-        total_len = self.get_bdx_length_2_show()
+        total_len = self.get_bdx_length_2_show(self._content)
         now_len = 0
         now_t = 0
         block_p = 0
         self.scmd(f"/tp {self.f.game_ctrl.bot_name} {x} {y} {z}")
+        cache_string_pool: list[str] = []
 
         # wo/execute SkyblueSuper ~~~ fill ~~~~40~15~40 air
-        for i in self._bdx.BDXContents:
+        for i in BDX.Parse(self._content):
             time.sleep(delay)
-            match i.operationNumber:
-                case 1:
-                    # CreateConstantString
-                    self.cache_string_pool.append(i.constantString)
-                case 5 | 7 | 13:
-                    # 13 not achieved
-                    now_len += 1
+            if isinstance(i, Operation.CreateConstantString):
+                # CreateConstantString
+                # print(i.constantString)
+                cache_string_pool.append(i.constantString)
+            # case 5 | 7 | 13:
+            elif isinstance(
+                i,
+                Operation.PlaceBlock
+                | Operation.PlaceBlockWithBlockStates
+                | Operation.PlaceBlockWithBlockStatesDeprecated,
+            ):
+                now_len += 1
+                if isinstance(i, Operation.PlaceBlockWithBlockStates):
+                    if i.blockStatesConstantStringID >= len(cache_string_pool):
+                        print(
+                            f"state pass {i.blockStatesConstantStringID}>{len(cache_string_pool)}"
+                        )
+                        continue
                     self.scmd(
-                        f"setblock {x} {y} {z} {self.cache_string_pool[i.blockConstantStringID]} {i.blockData}"
+                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {cache_string_pool[i.blockStatesConstantStringID]}"
                     )
-                case 14:
-                    x += 1
-                case 15:
-                    x -= 1
-                case 16:
-                    y += 1
-                case 17:
-                    y -= 1
-                case 18:
-                    z += 1
-                case 19:
-                    z -= 1
-                case 20 | 21 | 28:
-                    x += i.value
-                case 22 | 23 | 29:
-                    y += i.value
-                case 24 | 25 | 30:
-                    z += i.value
-                case 26 | 36 | 27:
-                    # SetCommandBlockData
+                elif isinstance(i, Operation.PlaceBlockWithBlockStatesDeprecated):
+                    self.scmd(
+                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockStatesString}"
+                    )
+                else:
+                    self.scmd(
+                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockData}"
+                    )
+            elif isinstance(i, Operation.AddXValue):
+                x += 1
+            elif isinstance(i, Operation.SubtractXValue):
+                x -= 1
+            elif isinstance(i, Operation.AddYValue):
+                y += 1
+            elif isinstance(i, Operation.SubtractYValue):
+                y -= 1
+            elif isinstance(i, Operation.AddZValue):
+                z += 1
+            elif isinstance(i, Operation.SubtractZValue):
+                z -= 1
+            elif isinstance(
+                i,
+                Operation.AddInt8XValue
+                | Operation.AddInt16XValue
+                | Operation.AddInt32XValue,
+            ):
+                x += i.value
+            elif isinstance(
+                i,
+                Operation.AddInt8YValue
+                | Operation.AddInt16YValue
+                | Operation.AddInt32YValue,
+            ):
+                y += i.value
+            elif isinstance(
+                i,
+                Operation.AddInt8ZValue
+                | Operation.AddInt16ZValue
+                | Operation.AddInt32ZValue,
+            ):
+                z += i.value
+            elif isinstance(
+                i,
+                Operation.PlaceBlockWithCommandBlockData
+                | Operation.SetCommandBlockData
+                | Operation.PlaceCommandBlockWithCommandBlockData
+                | Operation.PlaceRuntimeBlockWithCommandBlockData
+                | Operation.PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID,
+            ):
+                # SetCommandBlockData
+                pck = self.f.interact.make_packet_command_block_update(
+                    (x, y, z),
+                    i.command,
+                    i.mode,
+                    i.needsRedstone,
+                    i.tickDelay,
+                    i.conditional,
+                    i.customName,
+                    i.trackOutput,
+                    i.executeOnFirstTick,
+                )
+                t = 0.1
+                if isinstance(i, Operation.SetCommandBlockData):
+                    self.gc.sendPacket(78, pck)
+                else:
                     now_len += 1
+                    if i.mode not in range(0, 3):
+                        Print.print_err(json.dumps(i.Dumps(), indent=2, ensure_ascii=False))
+                        raise ValueError(
+                            f"Range ERROR: {i.mode} (op:{i.operationNumber})"
+                        )
+                    if isinstance(i, Operation.PlaceBlockWithCommandBlockData):
+                        data = i.blockData
+                    elif isinstance(i, Operation.PlaceCommandBlockWithCommandBlockData):
+                        data = i.data
+                    else:
+                        Print.print_err(
+                            f"Unknown commandblock op: {i.operationNumber}, pass"
+                        )
+                    self.f.interact.place_command_block(pck, data, t)
+                time.sleep(0.2)
+            elif isinstance(i, Operation.PlaceBlockWithNBTData):
+                nbtdata = i.blockNBT.unpack()
+                # nbt data
+                blockID = cache_string_pool[i.blockConstantStringID]
+                blockStates = cache_string_pool[i.blockStatesConstantStringID]
+                if blockID.endswith("command_block"):
                     pck = self.f.interact.make_packet_command_block_update(
                         (x, y, z),
-                        i.command,
-                        i.mode,
-                        i.needsRedstone,
-                        i.tickDelay,
-                        i.conditional,
-                        i.customName,
-                        i.trackOutput,
-                        i.executeOnFirstTick,
+                        nbtdata["Command"],
+                        nbtdata["LPCommandMode"],
+                        bool(nbtdata["LPRedstoneMode"]),
+                        nbtdata["TickDelay"],
+                        bool(nbtdata["LPCondionalMode"]),
+                        nbtdata["CustomName"],
+                        bool(nbtdata["TrackOutput"]),
+                        bool(nbtdata["ExecuteOnFirstTick"]),
                     )
-                    t = 0.2
-                    if hasattr(i, "blockData"):
-                        self.f.interact.place_command_block(pck, i.blockData, t)
-                    else:
-                        self.f.interact.place_command_block(pck, i.data, t)
+                    self.scmd(f"tp {x} {y} {z}")
+                    self.f.game_ctrl.sendcmd_with_resp(f"setblock {x} {y} {z} {blockID} {blockStates}")
+                    self.f.game_ctrl.sendPacket(78, pck)
+                print(nbtdata["Command"])
+            else:
+                Print.print_war(f"Ignoring OP: {i.operationNumber}")
+                Print.print_war(json.dumps(i.Dumps(), indent=4, ensure_ascii=False))
 
             if abs(x - bot_x) + abs(y - bot_y) + abs(z - bot_z) > 5:
-                self.scmd(f"/tp @a[name={self.gc.bot_name}] {x} {y} {z}")
+                self.scmd(f"tp @a[name={self.gc.bot_name}] {x} {y} {z}")
+                self.scmd(f"clear {self.gc.bot_name}")
                 bot_x = x
                 bot_y = y
                 bot_z = z
+                time.sleep(0.005)
 
             if time.time() - now_t > 1:
                 now_t = time.time()
@@ -193,12 +278,21 @@ class BDumpOP:
         # ok
         self.f.game_ctrl.player_actionbar("@a", f"§fBDX文件 {self.name} 导入完成.")
 
-    def get_bdx_length_2_show(self):
+    def get_bdx_length_2_show(self, content: bytes):
         # not archieved
         count = 0
         t = time.time()
-        for i in self._bdx.BDXContents:
-            if i.operationNumber in (5, 7, 13, 26, 36, 27):
+        for i in BDX.Parse(content):
+            # is setting block op
+            if isinstance(
+                i,
+                Operation.PlaceBlock
+                | Operation.PlaceBlockWithBlockStates
+                | Operation.PlaceBlockWithBlockStatesDeprecated
+                | Operation.PlaceCommandBlockWithCommandBlockData
+                | Operation.PlaceRuntimeBlockWithCommandBlockData
+                | Operation.PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID,
+            ):
                 count += 1
             del i
             if time.time() - t > 0.5:

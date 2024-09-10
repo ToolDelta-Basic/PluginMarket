@@ -4,7 +4,7 @@ class HeaderError(Exception):
     """
 
     def __init__(self, header: bytes):
-        Exception.__init__(self, f"find invalid file header {header}")
+        Exception.__init__(self, f'find invalid file header {header}')
 
 
 class ReadError(Exception):
@@ -14,9 +14,7 @@ class ReadError(Exception):
 
     def __init__(self, errorOccurredPosition: int):
         Exception.__init__(
-            self,
-            f"failed to convert this BDX file, and the error occurred at position {errorOccurredPosition}",
-        )
+            self, f'failed to convert this BDX file, and the error occurred at position {errorOccurredPosition}')
 
 
 class UnknownOperationError(Exception):
@@ -26,9 +24,7 @@ class UnknownOperationError(Exception):
 
     def __init__(self, operationId: int, errorOccurredPosition: int):
         Exception.__init__(
-            self,
-            f"an unknown operation {operationId} was found, and the error occurred at position {errorOccurredPosition}",
-        )
+            self, f'an unknown operation {operationId} was found, and the error occurred at position {errorOccurredPosition}')
 
 
 class SignatureError(Exception):

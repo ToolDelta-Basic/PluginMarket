@@ -7,12 +7,12 @@ from ..utils.getByte import getByte
 class AddInt16ZValue0(GeneralClass):
     def __init__(self) -> None:
         super().__init__()
-        self.operationName: str = "AddInt16ZValue0"
+        self.operationName: str = 'AddInt16ZValue0'
         self.operationNumber: int = 6
         self.value: int = 0
 
     def Marshal(self, writer: BytesIO) -> None:
-        writer.write(pack(">H", self.value))
+        writer.write(pack('>H', self.value))
 
     def UnMarshal(self, buffer: BytesIO) -> None:
-        self.value = unpack(">H", getByte(buffer, 2))[0]
+        self.value = unpack('>H', getByte(buffer, 2))[0]

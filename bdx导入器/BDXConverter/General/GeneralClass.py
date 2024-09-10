@@ -1,6 +1,5 @@
 from io import BytesIO
 from copy import deepcopy
-from typing import Any, TYPE_CHECKING
 
 
 class GeneralClass:
@@ -11,11 +10,6 @@ class GeneralClass:
     def __init__(self) -> None:
         self.operationNumber: int
         self.operationName: str
-
-    if TYPE_CHECKING:
-
-        def __getattribute__(self, name: str) -> Any:
-            raise ValueError("?")
 
     def Marshal(self, writer: BytesIO) -> None:
         """
