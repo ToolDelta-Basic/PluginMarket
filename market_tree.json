@@ -15,6 +15,12 @@
       "version": "0.1.6",
       "plugin-type": "classic"
     },
+    "item-maker": {
+      "name": "物品制作器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "chunk-show": {
       "name": "区块显示器",
       "author": "SnowLotus",

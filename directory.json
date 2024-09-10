@@ -34,6 +34,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "物品制作器": [
+        "__init__.py",
+        "datas.json"
+    ],
     "区块显示器": [
         "___init__.py",
         "datas.json"
