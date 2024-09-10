@@ -198,14 +198,38 @@
         "__init__.py",
         "datas.json"
     ],
+    "bdx导入器/nbtlib": [
+        "nbt.py",
+        "tag.py",
+        "cli.py",
+        "__main__.py",
+        "path.py",
+        "__init__.py",
+        "schema.py"
+    ],
+    "bdx导入器/nbtlib/literal": [
+        "serializer.py",
+        "__init__.py",
+        "parser.py"
+    ],
+    "bdx导入器/nbtlib/contrib": [
+        "__init__.py"
+    ],
+    "bdx导入器/nbtlib/contrib/minecraft": [
+        "structure.py",
+        "__init__.py"
+    ],
     "bdx导入器/BDXConverter": [
-        "LICENSE",
         "__init__.py"
     ],
     "bdx导入器/BDXConverter/utils": [
+        "marshalNBT_OldVersion.py",
+        "unmarshalNBT_OldVersion.py",
         "getByte.py",
         "__init__.py",
-        "getString.py"
+        "getString.py",
+        "unmarshalNBT.py",
+        "marshalNBT.py"
     ],
     "bdx导入器/BDXConverter/General": [
         "GeneralClass.py",
@@ -248,6 +272,7 @@
         "PlaceRuntimeBlock.py",
         "NOP.py",
         "SubtractXValue.py",
+        "PlaceBlockWithNBTData.py",
         "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
         "AddZValue0.py",
         "AssignDebugData.py"
@@ -255,6 +280,7 @@
     "bdx导入器/BDXConverter/Converter": [
         "Converter.py",
         "__init__.py",
+        "Signature.py",
         "ErrorClassDefine.py",
         "FileOperation.py"
     ],
