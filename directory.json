@@ -284,7 +284,6 @@
     "bdx导入器/BDXConverter/Converter": [
         "Converter.py",
         "__init__.py",
-        "Signature.py",
         "ErrorClassDefine.py",
         "FileOperation.py"
     ],
