@@ -1,7 +1,6 @@
 from brotli import compress, decompress
 from io import BytesIO
 from copy import deepcopy
-from .Signature import Signature
 from .ErrorClassDefine import HeaderError
 from .ErrorClassDefine import ReadError, UnknownOperationError
 from ..General.GeneralClass import GeneralClass
@@ -23,33 +22,6 @@ class BDX(GeneralClass):
         super().__init__()
         self.AuthorName: str = "TriM-Organization/BDXConverter"
         self.BDXContents: list[GeneralClass] = []
-        self.Signature: Signature = Signature()
-
-    def Marshal(self, writer: BytesIO) -> None:
-        newWriter = BytesIO(
-            b"BDX\x00" + self.AuthorName.encode(encoding="utf-8") + b"\x00"
-        )
-        newWriter.seek(0, 2)
-        # inside header with author's name
-        for i in self.BDXContents:
-            if "operationNumber" in i.__dict__:
-                newWriter.write(
-                    i.__dict__["operationNumber"].to_bytes(
-                        length=1, byteorder="big", signed=False
-                    )
-                )
-                i.Marshal(newWriter)
-        # valid contents
-        if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign and False:
-            # not need
-            # self.Signature.fileHash = new(newWriter.getvalue())
-            # self.Signature.Marshal(newWriter)
-            pass
-        else:
-            newWriter.write(b"XE")
-        # signature
-        writer.write(b"BD@" + compress(newWriter.getvalue()))
-        # write BDX data
 
     def UnMarshal(self, binaryData: bytes) -> None:
         if binaryData[0:3] != b"BD@":
@@ -92,13 +64,12 @@ class BDX(GeneralClass):
                 self.BDXContents.append(struct)
                 # submit single data
         # read data from reader
-        self.Signature.UnMarshal(reader)
-        if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign and False:
+        #self.Signature.UnMarshal(reader)
+        #if not self.Signature.isLegacy and self.Signature.signedOrNeedToSign and False:
             # not need
             # reader.truncate(reader.seek(-1, 1))
             # self.Signature.fileHash = new(reader.getvalue())
             # self.Signature.verifySignature()
-            pass
         # signature
 
     @staticmethod
@@ -160,7 +131,8 @@ class BDX(GeneralClass):
 
         self.AuthorName = jsonDict["AuthorName"] if "AuthorName" in jsonDict else ""
         if "Signature" in jsonDict:
-            self.Signature.Loads(jsonDict["Signature"])
+            pass
+            #self.Signature.Loads(jsonDict["Signature"])
         if "BDXContents" in jsonDict:
             tmp: list[dict] = jsonDict["BDXContents"]
             for i in tmp:
@@ -177,5 +149,5 @@ class BDX(GeneralClass):
         return {
             "AuthorName": self.AuthorName,
             "BDXContents": [i.Dumps() for i in self.BDXContents],
-            "Signature": self.Signature.Dumps(),
+            "Signature": None,
         }

@@ -73,9 +73,7 @@ class BDX_BDump(Plugin):
         avali_players = self.game_ctrl.allplayers
         if self.game_ctrl.bot_name in avali_players:
             avali_players.remove(self.game_ctrl.bot_name)
-        if True:
-            player_get = "SkyblueSuper"
-        elif len(gplayer := [i for i in self.game_ctrl.all_players_data if i.op]) == 1:
+        if len(gplayer := [i for i in self.game_ctrl.all_players_data if i.op]) == 1:
             player_get = gplayer[0]
         else:
             Print.print_inf("请选择玩家以获取其坐标:")
