@@ -57,12 +57,6 @@
       "version": "0.0.2",
       "plugin-type": "injected"
     },
-    "ad": {
-      "name": "公告栏",
-      "author": "Mono",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "地图画导入": {
       "name": "地图画导入",
       "author": "SuperScript",
@@ -85,6 +79,12 @@
       "name": "简易建造",
       "author": "SuperScript",
       "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "ad": {
+      "name": "公告栏[Mono]",
+      "author": "Mono",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "nice-tpa": {

@@ -62,10 +62,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "公告栏": [
-        "__init__.py",
-        "datas.json"
-    ],
     "前置_tps计算器": [
         "__init__.py",
         "datas.json"
@@ -132,6 +128,10 @@
         "datas.json"
     ],
     "[前置]功能封装库-1": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "公告栏[Mono]": [
         "__init__.py",
         "datas.json"
     ],
