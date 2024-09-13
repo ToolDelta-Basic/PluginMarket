@@ -1,7 +1,7 @@
 import os
 import time
 import anyio
-import ujson as json
+import json
 from 维度传送 import tp
 from tooldelta.plugin_load.injected_plugin import (
     player_death_info,

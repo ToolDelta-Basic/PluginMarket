@@ -1,5 +1,5 @@
 import anyio
-import ujson as json
+import json
 import os
 from tooldelta.game_utils import getPos, getTarget
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info

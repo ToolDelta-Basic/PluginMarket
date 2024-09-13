@@ -1,4 +1,4 @@
-import ujson as json
+import json
 import time
 from typing import Literal
 from collections.abc import Callable

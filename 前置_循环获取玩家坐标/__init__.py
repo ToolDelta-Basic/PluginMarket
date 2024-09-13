@@ -1,5 +1,5 @@
 import time
-import ujson
+import json
 import dataclasses
 from tooldelta import plugins, Plugin, Print, Utils
 
@@ -59,7 +59,7 @@ class RepeatGetPlayerPos(Plugin):
             except TimeoutError:
                 Print.print_war("获取玩家坐标: 获取指令返回超时")
                 continue
-            content = ujson.loads(result.OutputMessages[0].Parameters[0])
+            content = json.loads(result.OutputMessages[0].Parameters[0])
             for i in content:
                 content_pos = i["position"]
                 self.player_posdata[uuid2player[i["uniqueId"]]] = self.PlayerPosData(

@@ -1,4 +1,4 @@
-import ujson as json
+import json
 from tooldelta import Plugin, plugins, Frame, Print
 
 plugins.checkSystemVersion((0, 3, 8))
