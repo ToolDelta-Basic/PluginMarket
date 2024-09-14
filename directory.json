@@ -66,8 +66,8 @@
         "__init__.py",
         "datas.json"
     ],
-    "plugin_package": [
-        "基础功能包.json"
+    "[pkg]新手插件包": [
+        "main.json"
     ],
     "地图画导入": [
         "__init__.py",
