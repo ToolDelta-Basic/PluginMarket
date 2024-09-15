@@ -28,6 +28,8 @@ def generate_json(directory):
 def get_latest_versions(directory):
     v_dict = {}
     for p1 in os.listdir(directory):
+        if p1.startswith("[pkg]"):
+            continue
         if os.path.isfile(os.path.join(directory, p1, "datas.json")):
             with open(
                 os.path.join(p1, "datas.json"),
@@ -42,17 +44,26 @@ def flush_basic_datas():
     with open("market_tree.json", encoding="utf-8") as f:
         market_d = json.load(f)
     market_d["MarketPlugins"] = {}
+    market_d["Packages"] = {}
     for path in os.listdir():
         datpath = os.path.join(path, "datas.json")
         if os.path.isfile(datpath):
             with open(datpath, encoding="utf-8") as f:
                 dat = json.load(f)
-                market_d["MarketPlugins"][dat["plugin-id"]] = {
-                    "name": path,
-                    "author": dat["author"],
-                    "version": dat["version"],
-                    "plugin-type": dat["plugin-type"],
-                }
+                if not path.startswith("[pkg]"):
+                    market_d["MarketPlugins"][dat["plugin-id"]] = {
+                        "name": path,
+                        "author": dat["author"],
+                        "version": dat["version"],
+                        "plugin-type": dat["plugin-type"],
+                    }
+                else:
+                    market_d["Packages"][path[5:]] = {
+                        "plugin-ids": dat["plugin-ids"],
+                        "description": dat["description"],
+                        "author": dat["author"],
+                        "version": dat["version"]
+                    }
 
     format_tree_depen = {}
     format_tree_main = {}
@@ -61,7 +72,6 @@ def flush_basic_datas():
             format_tree_depen[k] = v
         else:
             format_tree_main[k] = v
-    market_d["MarketPlugins"] = {}
     market_d["MarketPlugins"].update(format_tree_main)
     market_d["MarketPlugins"].update(format_tree_depen)
     with open("market_tree.json", "w", encoding="utf-8") as f:
@@ -71,6 +81,8 @@ def flush_basic_datas():
 def flush_plugin_ids_map():
     mapper = {}
     for path in os.listdir():
+        if path.startswith("[pkg]"):
+            continue
         datpath = os.path.join(path, "datas.json")
         if os.path.isfile(datpath):
             with open(datpath, encoding="utf-8") as f:
