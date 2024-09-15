@@ -3,6 +3,6 @@
     "version": "0.0.1",
     "plugin-type": "classic",
     "description": "可制作换行物品等",
-    "pre-plugins": [],
+    "pre-plugins": {},
     "plugin-id": "item-maker"
 }
