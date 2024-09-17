@@ -1,0 +1,9 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "记录每一个登录了租赁服的玩家的皮肤, 并存储到插件数据文件夹",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "skin-getter"
+}
