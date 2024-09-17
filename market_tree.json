@@ -93,6 +93,12 @@
       "version": "0.2.6",
       "plugin-type": "classic"
     },
+    "skin-getter": {
+      "name": "获取全服玩家皮肤",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "简易建造": {
       "name": "简易建造",
       "author": "SuperScript",

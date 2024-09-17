@@ -126,6 +126,10 @@
         "types.py",
         "exceptions.py"
     ],
+    "获取全服玩家皮肤": [
+        "__init__.py",
+        "datas.json"
+    ],
     "简易建造": [
         "readme.txt",
         "__init__.py",
