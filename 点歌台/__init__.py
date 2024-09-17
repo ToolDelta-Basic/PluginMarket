@@ -1,23 +1,21 @@
 import os
 import time
 from typing import TYPE_CHECKING, ClassVar
-
-from tooldelta import Builtins, Plugin, plugins
-from tooldelta.frame import ToolDelta
-from tooldelta.game_utils import getScore
+from tooldelta import Utils, Plugin, plugins
+from tooldelta.game_utils import getScore, waitMsg
 
 
 @plugins.add_plugin
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 5)
+    version = (0, 1, 6)
 
     musics_list: ClassVar[list] = []
     MAX_SONGS_QUEUED = 6
     can_stop = None
 
-    def __init__(self, frame: ToolDelta):
+    def __init__(self, frame):
         super().__init__(frame)
         os.makedirs(self.data_path, exist_ok=True)
         os.makedirs(os.path.join(self.data_path, "音乐列表"), exist_ok=True)
@@ -25,6 +23,7 @@ class DJTable(Plugin):
     def on_def(self):
         self.midiplayer = plugins.get_plugin_api("MIDI播放器")
         self.chatmenu = plugins.get_plugin_api("聊天栏菜单")
+        midi_names = []
         if TYPE_CHECKING:
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
@@ -44,16 +43,18 @@ class DJTable(Plugin):
                 self.midiplayer.load_sound_seq_file(
                     os.path.join(mdir, i), i.replace(".midseq", "")
                 )
+                midi_names.append(i.replace(".midseq", ""))
+        self.midis_list = midi_names
 
     def on_inject(self):
         self.game_ctrl.sendcmd("/scoreboard objectives add song_point dummy 音乐点")
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
-        self.main_thread = Builtins.createThread(self.choose_music_thread)
+        self.main_thread = Utils.createThread(self.choose_music_thread)
         self.chatmenu.add_trigger(
             ["点歌列表"], None, "查看点歌台点歌列表", self.lookup_songs_list
         )
         self.chatmenu.add_trigger(
-            ["点歌"], "[歌名]", "点歌", self.choose_menu, lambda x: x > 0
+            ["点歌"], "", "点歌", self.choose_menu
         )
         self.chatmenu.add_trigger(
             ["停止当前曲目"],
@@ -66,12 +67,23 @@ class DJTable(Plugin):
     def on_player_join(self, _):
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
 
-    def choose_menu(self, player: str, args: list[str]):
-        music_name = " ".join(args).replace(".midseq", "")
-        music_path = os.path.join(self.data_path, "音乐列表", (music_name + ".midseq"))
-        if not os.path.isfile(music_path):
-            self.game_ctrl.say_to("@a", "§e点歌§f>> §c此音乐未被收录")
-        elif len(self.musics_list) >= self.MAX_SONGS_QUEUED:
+    def choose_menu(self, player: str, _):
+        song_list = self.midis_list
+        if song_list == []:
+            self.game_ctrl.say_to(player, "§6曲目列表空空如也...")
+            return
+        self.game_ctrl.say_to(player, "§a当前曲目列表：")
+        for i, j in enumerate(song_list):
+            self.game_ctrl.say_to(player, f" §b{i+1} §f{j}")
+        self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
+        if (resp := Utils.try_int(waitMsg(player))) is None:
+            self.game_ctrl.say_to(player, "§c选项无效")
+            return
+        elif resp not in range(1, len(song_list) + 1):
+            self.game_ctrl.say_to(player, "§c选项不在范围内")
+            return
+        music_name = song_list[resp - 1].replace(".midseq", "")
+        if len(self.musics_list) >= self.MAX_SONGS_QUEUED:
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c等待列表已满，请等待这首歌播放完")
         elif getScore("song_point", player) <= 0:
             self.game_ctrl.say_to(
