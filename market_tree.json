@@ -234,7 +234,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "plugin-type": "classic"
     },
     "@玩家": {
