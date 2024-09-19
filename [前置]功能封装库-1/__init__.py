@@ -1,11 +1,11 @@
-from tooldelta import Frame, Plugin, packets, plugins
+from tooldelta import Frame, Plugin, plugins
 from tooldelta.game_utils import getPosXYZ
 from tooldelta.launch_cli import SysStatus
-from tooldelta.game_utils import getPosXYZ
 from tooldelta.constants import PacketIDS
-from typing import Callable
+from typing import Callable  # noqa: UP035
 from dataclasses import dataclass
-import time, threading
+import time
+import threading
 
 
 @dataclass
