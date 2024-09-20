@@ -8,6 +8,23 @@
         "readme.txt",
         "__init__.py"
     ],
+    "[pkg]音乐曲目-1": [
+        "datas.json"
+    ],
+    "[pkg]音乐曲目-1/插件数据文件": [],
+    "[pkg]音乐曲目-1/插件数据文件/音乐播放器": [
+        "see you again.midseq",
+        "Undertale.midseq",
+        "海阔天空.midseq",
+        "春节序曲.midseq"
+    ],
+    "[pkg]音乐曲目-1/插件数据文件/点歌台": [],
+    "[pkg]音乐曲目-1/插件数据文件/点歌台/音乐列表": [
+        "see you again.midseq",
+        "Undertale.midseq",
+        "海阔天空.midseq",
+        "春节序曲.midseq"
+    ],
     "任务系统": [
         "datas.json",
         "readme.txt",
