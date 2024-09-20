@@ -156,7 +156,7 @@
     "sfx-player": {
       "name": "音效播放器",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "MusicPlayer": {
