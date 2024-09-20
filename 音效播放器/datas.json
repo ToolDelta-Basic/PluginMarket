@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "§a功能请查看手册!!!§r支持直接使用命令方块请求播放MIDI文件，还增加了ZBasic的播放命令语法扩展！",
     "plugin-type": "classic",
     "pre-plugins": {
