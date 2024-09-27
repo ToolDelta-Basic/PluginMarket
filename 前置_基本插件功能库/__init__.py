@@ -91,15 +91,18 @@ class BasicFunctionLib(Plugin):
     def multi_sendcmd_and_wait_resp(self, cmds: list[str], timeout: int):
         cbs: dict[str, packets.Packet_CommandOutput] = {}
         evts: list[threading.Event] = []
+
         def _sendcmd2cb(cmd):
             evts.append(evt := threading.Event())
-            cbs[cmd] = (self.game_ctrl.sendcmd_with_resp(cmd, timeout))
+            cbs[cmd] = self.game_ctrl.sendcmd_with_resp(cmd, timeout)
             evt.set()
+
         for cmd in cmds:
             Utils.createThread(_sendcmd2cb, args=(cmd,))
         for evt in evts:
             evt.wait()
         return cbs
+
     # -------------- Old API -----------
     def getScore(self, scoreboardNameToGet: str, targetNameToGet: str) -> int | list:
         "获取玩家计分板分数 (计分板名, 玩家/计分板项名) 获取失败引发异常"
@@ -256,6 +259,33 @@ class BasicFunctionLib(Plugin):
             self.waitmsg_req.append(who)
         timer = time.time()
         while 1:
+            time.sleep(0.2)
+            if who in self.waitmsg_result.keys():
+                r = self.waitmsg_result[who]
+                del self.waitmsg_result[who]
+                if r == EXC_PLAYER_LEAVE:
+                    raise EXC_PLAYER_LEAVE
+                return r
+            if time.time() - timer >= timeout:
+                try:
+                    self.waitmsg_req.remove(who)
+                except Exception:
+                    pass
+                if exc is not None:
+                    raise exc
+                return None
+
+    def waitMsg_with_actbar(self, who: str, msg: str, timeout: int = 30, exc=None):
+        """
+        使用其来等待一个玩家的聊天栏回复, 超时则引发exc给定的异常, 没有给定时超时返回None
+        当过程中玩家退出了游戏, 则引发异常(为IOError)
+        """
+        time.sleep(0.5)
+        if who not in self.waitmsg_req:
+            self.waitmsg_req.append(who)
+        timer = time.time()
+        while 1:
+            self.game_ctrl.player_actionbar(who, msg)
             time.sleep(0.2)
             if who in self.waitmsg_result.keys():
                 r = self.waitmsg_result[who]
