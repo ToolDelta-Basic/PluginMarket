@@ -331,55 +331,37 @@
         "datas.json",
         "__init__.py"
     ],
-    "云链群服互通/websockets": [
-        "streams.py",
-        "uri.py",
-        "headers.py",
-        "version.py",
-        "typing.py",
-        "client.py",
-        "frames.py",
-        "http.py",
-        "auth.py",
-        "protocol.py",
-        "__main__.py",
-        "imports.py",
-        "exceptions.py",
-        "connection.py",
-        "datastructures.py",
-        "speedups.c",
-        "utils.py",
+    "云链群服互通/websocket": [
+        "_socket.py",
+        "_url.py",
+        "_ssl_compat.py",
+        "_app.py",
+        "_exceptions.py",
+        "_cookiejar.py",
+        "_abnf.py",
+        "_wsdump.py",
+        "_handshake.py",
+        "_utils.py",
+        "_core.py",
+        "_http.py",
         "__init__.py",
         "py.typed",
-        "http11.py",
-        "speedups.cp311-win_amd64.pyd",
-        "server.py"
+        "_logging.py"
     ],
-    "云链群服互通/websockets/extensions": [
-        "permessage_deflate.py",
-        "base.py",
+    "云链群服互通/websocket/tests": [
+        "test_cookiejar.py",
+        "test_app.py",
+        "test_http.py",
+        "test_websocket.py",
+        "echo-server.py",
+        "test_abnf.py",
+        "test_url.py",
         "__init__.py"
     ],
-    "云链群服互通/websockets/legacy": [
-        "handshake.py",
-        "client.py",
-        "http.py",
-        "auth.py",
-        "protocol.py",
-        "compatibility.py",
-        "framing.py",
-        "async_timeout.py",
-        "__init__.py",
-        "server.py"
-    ],
-    "云链群服互通/websockets/sync": [
-        "client.py",
-        "messages.py",
-        "compatibility.py",
-        "connection.py",
-        "utils.py",
-        "__init__.py",
-        "server.py"
+    "云链群服互通/websocket/tests/data": [
+        "header03.txt",
+        "header02.txt",
+        "header01.txt"
     ],
     "音效播放器": [
         "datas.json",
