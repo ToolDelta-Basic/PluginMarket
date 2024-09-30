@@ -86,8 +86,8 @@ class BetterAnnounce(Plugin):
                             {
                                 "[在线人数]": len(self.game_ctrl.allplayers),
                                 "[星期]": "一二三四五六日"[time.localtime().tm_wday],
-                                "[tps]": self.get_tps_str(),
-                                "[tps颜色]": self.get_tps_str(True),
+                                "[TPS]": self.get_tps_str(),
+                                "[TPS带颜色]": self.get_tps_str(True),
                             },
                             text,
                         )
