@@ -70,7 +70,7 @@ class QQLinker(Plugin):
                 "游戏到群": {
                     "是否启用": False,
                     "转发格式": "<[玩家名]> [消息]",
-                    "仅转发以下符号开头的消息(为空则全部转发)": ["#"],
+                    "仅转发以下符号开头的消息(列表为空则全部转发)": ["#"],
                 },
                 "群到游戏": {
                     "是否启用": True,
@@ -93,7 +93,7 @@ class QQLinker(Plugin):
         self.linked_group = self.cfg["消息转发设置"]["链接的群聊"]
         self.block_qqids = self.cfg["消息转发设置"]["游戏到群"]
         self.game2qq_trans_chars = self.cfg["消息转发设置"]["游戏到群"][
-            "仅转发以下符号开头的消息(为空则全部转发)"
+            "仅转发以下符号开头的消息(列表为空则全部转发)"
         ]
         self.waitmsg_cbs = {}
 
