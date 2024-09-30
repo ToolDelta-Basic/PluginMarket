@@ -150,7 +150,7 @@
     "cloud-qqlink": {
       "name": "云链群服互通",
       "author": "大庆油田/SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "sfx-player": {
