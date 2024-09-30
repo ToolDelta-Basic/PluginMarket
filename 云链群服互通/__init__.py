@@ -54,7 +54,7 @@ def replace_cq(content: str):
 
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -204,6 +204,7 @@ class QQLinker(Plugin):
                 for prefix in self.game2qq_trans_chars:
                     if msg.startswith(prefix):
                         can_send = True
+                        msg = msg[1:]
                         break
             else:
                 can_send = True
@@ -212,7 +213,7 @@ class QQLinker(Plugin):
             self.sendmsg(
                 self.linked_group,
                 Utils.simple_fmt(
-                    {"[玩家名]": player, "[消息]": remove_cq_code(msg[1:])},
+                    {"[玩家名]": player, "[消息]": remove_cq_code(msg)},
                     self.cfg["消息转发设置"]["游戏到群"]["转发格式"],
                 ),
             )
