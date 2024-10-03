@@ -1,0 +1,10 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "所有使用命令方块与机器人通信的插件的前置",
+    "limit_launcher": null,
+    "pre-plugins": {
+    },
+    "plugin-type": "classic",
+    "plugin-id": "Cb2Bot通信"
+  }
