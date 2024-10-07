@@ -1,0 +1,8 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "用计划任务执行mcfunction中的指令！支持传参",
+  "pre-plugins": {},
+  "plugin-id": "mcfunction-tasks"
+}

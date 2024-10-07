@@ -1,0 +1,9 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "description": "将现实时间同步到服内的计分板\n一定要去看本插件的配置文件！",
+  "limit_launcher": null,
+  "pre-plugins": {},
+  "plugin-type": "classic",
+  "plugin-id": "DateTimeSync"
+}
