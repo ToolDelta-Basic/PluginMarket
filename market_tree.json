@@ -15,9 +15,21 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "DateTimeSync": {
+      "name": "时间同步计分板",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "QuestSystem": {
       "name": "任务系统",
       "author": "任务系统",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "mcfunction-tasks": {
+      "name": "MCFunction计划任务",
+      "author": "SuperScript",
       "version": "0.0.1",
       "plugin-type": "classic"
     },

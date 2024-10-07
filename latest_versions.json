@@ -1,7 +1,9 @@
 {
   "ad": "0.0.1",
   "PianoInSettingPiano": "0.0.9",
+  "DateTimeSync": "0.0.1",
   "QuestSystem": "0.0.1",
+  "mcfunction-tasks": "0.0.1",
   "admin_cmd": "0.0.2",
   "chunk-show": "0.0.2",
   "skin-getter": "0.0.1",

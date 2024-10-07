@@ -77,10 +77,23 @@
         "海阔天空.midseq",
         "春节序曲.midseq"
     ],
+    "时间同步计分板": [
+        "datas.json",
+        "__init__.py"
+    ],
     "任务系统": [
         "datas.json",
         "readme.txt",
         "__init__.py"
+    ],
+    "MCFunction计划任务": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MCFunction计划任务/examples": [
+        "示例-触发词.mcfunction",
+        "示例-系统启动.mcfunction",
+        "示例-定时任务.mcfunction"
     ],
     "admin命令": [
         "datas.json",

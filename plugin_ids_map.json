@@ -1,7 +1,9 @@
 {
   "ad": "公告栏[Mono]",
   "PianoInSettingPiano": "设置栏钢琴师",
+  "DateTimeSync": "时间同步计分板",
   "QuestSystem": "任务系统",
+  "mcfunction-tasks": "MCFunction计划任务",
   "admin_cmd": "admin命令",
   "chunk-show": "区块显示器",
   "skin-getter": "获取全服玩家皮肤",
