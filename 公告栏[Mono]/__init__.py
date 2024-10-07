@@ -107,7 +107,7 @@ class BetterAnnounce(Plugin):
         ...
 
     def ad_menu(self,player: str, args: list[str]):
-        if args[0]=="reload":
+        if len(args) > 0 and args[0]=="reload":
             self.read_config()
         self.game_ctrl.say_to(player,"公告栏 | §a重载完成.")
 
