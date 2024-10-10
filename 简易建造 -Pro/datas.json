@@ -1,0 +1,12 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.8",
+    "description": "简易建造插件的Pro版(还没有写使用说明)",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "聊天栏菜单": "0.1.13"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "简易建造-Pro",
+    "enabled": true
+}
