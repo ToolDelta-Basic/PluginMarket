@@ -318,6 +318,11 @@
         "聊天栏菜单.json",
         "自定义聊天栏菜单.json"
     ],
+    "简易建造-Pro": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
     "获取全服玩家皮肤": [
         "__init__.py",
         "datas.json"
@@ -374,11 +379,6 @@
         "datas.json"
     ],
     "地图画导入": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "简易建造 -Pro": [
-        "readme.txt",
         "__init__.py",
         "datas.json"
     ],

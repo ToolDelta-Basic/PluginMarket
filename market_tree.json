@@ -141,6 +141,12 @@
       "version": "0.0.3",
       "plugin-type": "injected"
     },
+    "简易建造-Pro": {
+      "name": "简易建造-Pro",
+      "author": "SuperScript",
+      "version": "0.0.8",
+      "plugin-type": "classic"
+    },
     "skin-getter": {
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
@@ -193,12 +199,6 @@
       "name": "地图画导入",
       "author": "SuperScript",
       "version": "0.0.5",
-      "plugin-type": "classic"
-    },
-    "简易建造-Pro": {
-      "name": "简易建造 -Pro",
-      "author": "SuperScript",
-      "version": "0.0.8",
       "plugin-type": "classic"
     },
     "cloud-qqlink": {
