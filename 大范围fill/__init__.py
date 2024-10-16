@@ -72,9 +72,9 @@ class LargeFill(Plugin):
         nowx = sx
         nowy = sy
         nowz = sz
-        while nowz < ez:
-            while nowx < ex:
-                while nowy < ey:
+        while nowz <= ez:
+            while nowx <= ex:
+                while nowy <= ey:
                     Print.print_inf(f"大范围填充: 正在填充 {nowx}, {nowy}, {nowz} 区域     ", need_log=False, end="\r")
                     self.game_ctrl.sendcmd_with_resp(f"tp @a[name={self.game_ctrl.bot_name}] {nowx} {nowy} {nowz}")
                     self.game_ctrl.sendcmd_with_resp(f"fill {nowx} {nowy} {nowz} {min(nowx + 31, ex)} {min(nowy + 31, ey)} {min(nowz + 31, ez)} {fillblock_id}")
