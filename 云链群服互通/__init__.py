@@ -54,7 +54,7 @@ def replace_cq(content: str):
 
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -126,7 +126,9 @@ class QQLinker(Plugin):
         if any(bc_recv):
             return
         if data.get("post_type") == "message" and data["message_type"] == "group":
-            msg: str = data["message"]
+            msg = data["message"]
+            if not isinstance(msg, str):
+                raise ValueError(f"键 'message' 值不是字符串类型, 而是 {msg}")
             if data["group_id"] == self.linked_group:
                 if self.enable_group_2_game:
                     user_id = data["sender"]["user_id"]
