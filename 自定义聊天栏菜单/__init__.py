@@ -62,8 +62,8 @@ class CustomChatbarMenu(Plugin):
                         "td:/show §e| §l个人档案§r§e |",
                         "td:/show §7▶ §e金币: [计分板:金币]",
                         "td:/show §7▶ §d在线时长: [计分板:在线时长]",
-                        'td:/show §7▶ §6您的性别: [计分板替换:性别(0:未知 1:男 2:女)]',
-                        'td:/show §7▶ §c金币称号: [计分板替换:金币(0~1000:平民 1001~10000:公民 10001~80000:中产 80001~150000:富婆)]'
+                        "td:/show §7▶ §6您的性别: [计分板替换:性别(0:未知 1:男 2:女)]",
+                        "td:/show §7▶ §c金币称号: [计分板替换:金币(0~1000:平民 1001~10000:公民 10001~80000:中产 80001~150000:富婆)]"
                     ],
                     "仅OP可用": False
                 }
@@ -126,12 +126,12 @@ class CustomChatbarMenu(Plugin):
         res = self.scb_replace_simple_rule.findall(sub)
         for scb_name, scb_repl in res:
             try:
-                repl_text = f"<未知分数>"
+                repl_text = "<未知分数>"
                 score = game_utils.getScore(scb_name, user, 3)
                 repl_text = f"<未知替换样式:{score}>"
                 res2 = self.scb_replace_next_rule.findall(scb_repl)
                 for scb_num_repl, scb_str_repl in res2:
-                    if not "~" in scb_num_repl:
+                    if "~" not in scb_num_repl:
                         if score == int(scb_num_repl):
                             repl_text = scb_str_repl
                             break

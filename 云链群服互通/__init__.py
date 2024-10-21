@@ -54,7 +54,7 @@ def replace_cq(content: str):
 
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -241,11 +241,10 @@ class QQLinker(Plugin):
                 return f'😅 未知的 MC 指令, 可能是指令格式有误: "{cmd}"'
             else:
                 if game_text_handler := self.game_ctrl.game_data_handler:
-                    mjon = json.loads(
-                        " ".join(
-                            self.game_ctrl.game_data_handler.Handle_Text_Class1(
-                                result.as_dict["OutputMessages"]
-                            )
+                    mjon = " ".join(
+                        json.loads(i)
+                        for i in game_text_handler.Handle_Text_Class1(
+                            result.as_dict["OutputMessages"]
                         )
                     )
                 if result.SuccessCount:

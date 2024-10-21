@@ -1,4 +1,5 @@
-from tooldelta import plugins, Plugin, Utils, Print
+from tooldelta import plugins, Plugin, Utils, Print, game_utils
+
 
 @plugins.add_plugin
 class LargeFill(Plugin):
@@ -21,6 +22,9 @@ class LargeFill(Plugin):
         )
         self.frame.add_console_cmd_trigger(
             ["lfill"], None, "设置大范围填充起点", self.on_fill
+        )
+        self.frame.add_console_cmd_trigger(
+            ["lfpos"], None, "获取所有人的坐标", self.get_all_pos
         )
         # lfset 400 -60 400
         # lfsend 500 -40 500
@@ -54,6 +58,17 @@ class LargeFill(Plugin):
             return
         self.thread_fill(args[0])
 
+    def get_all_pos(self, _):
+        players = self.game_ctrl.allplayers
+        ress = Utils.thread_gather(
+            [(self.get_single_pos, (player,)) for player in players]
+        )
+        for player, (x, y, z) in ress:
+            Print.print_inf(f"玩家 {player} 在 {x} {y} {z}")
+
+    def get_single_pos(self, player: str):
+        return player, game_utils.getPosXYZ(player)
+
     @Utils.thread_func("大范围填充")
     def thread_fill(self, fillblock_id: str):
         pos_start = self.getpos_start()
@@ -75,10 +90,22 @@ class LargeFill(Plugin):
         while nowz <= ez:
             while nowx <= ex:
                 while nowy <= ey:
-                    Print.print_inf(f"大范围填充: 正在填充 {nowx}, {nowy}, {nowz} 区域     ", need_log=False, end="\r")
-                    self.game_ctrl.sendcmd_with_resp(f"tp @a[name={self.game_ctrl.bot_name}] {nowx} {nowy} {nowz}")
-                    self.game_ctrl.sendcmd_with_resp(f"fill {nowx} {nowy} {nowz} {min(nowx + 31, ex)} {min(nowy + 31, ey)} {min(nowz + 31, ez)} {fillblock_id}")
-                    Print.print_inf(f"大范围填充: 已填充 {nowx}, {nowy}, {nowz} 区域     ", need_log=False, end="\r")
+                    Print.print_inf(
+                        f"大范围填充: 正在填充 {nowx}, {nowy}, {nowz} 区域     ",
+                        need_log=False,
+                        end="\r",
+                    )
+                    self.game_ctrl.sendcmd_with_resp(
+                        f"tp @a[name={self.game_ctrl.bot_name}] {nowx} {nowy} {nowz}"
+                    )
+                    self.game_ctrl.sendcmd_with_resp(
+                        f"fill {nowx} {nowy} {nowz} {min(nowx + 31, ex)} {min(nowy + 31, ey)} {min(nowz + 31, ez)} {fillblock_id}"
+                    )
+                    Print.print_inf(
+                        f"大范围填充: 已填充 {nowx}, {nowy}, {nowz} 区域     ",
+                        need_log=False,
+                        end="\r",
+                    )
                     nowy += 32
                 nowy = sy
                 nowx += 32
