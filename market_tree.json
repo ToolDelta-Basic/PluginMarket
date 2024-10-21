@@ -210,7 +210,7 @@
     "cloud-qqlink": {
       "name": "云链群服互通",
       "author": "大庆油田/SuperScript",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "简易建造": {
