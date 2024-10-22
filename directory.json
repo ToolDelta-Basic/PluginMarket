@@ -432,42 +432,6 @@
         "header02.txt",
         "header01.txt"
     ],
-    "云链群服互通": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "云链群服互通/websocket": [
-        "_wsdump.py",
-        "_utils.py",
-        "_cookiejar.py",
-        "_http.py",
-        "_core.py",
-        "__init__.py",
-        "_handshake.py",
-        "_app.py",
-        "_exceptions.py",
-        "_ssl_compat.py",
-        "_abnf.py",
-        "_socket.py",
-        "_logging.py",
-        "_url.py",
-        "py.typed"
-    ],
-    "云链群服互通/websocket/tests": [
-        "test_cookiejar.py",
-        "__init__.py",
-        "test_app.py",
-        "test_http.py",
-        "test_url.py",
-        "test_websocket.py",
-        "echo-server.py",
-        "test_abnf.py"
-    ],
-    "云链群服互通/websocket/tests/data": [
-        "header03.txt",
-        "header02.txt",
-        "header01.txt"
-    ],
     "简易建造": [
         "readme.txt",
         "__init__.py",
@@ -494,6 +458,42 @@
     "前置_聊天栏菜单": [
         "__init__.py",
         "datas.json"
+    ],
+    "群服互通云链版": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "群服互通云链版/websocket": [
+        "_wsdump.py",
+        "_utils.py",
+        "_cookiejar.py",
+        "_http.py",
+        "_core.py",
+        "__init__.py",
+        "_handshake.py",
+        "_app.py",
+        "_exceptions.py",
+        "_ssl_compat.py",
+        "_abnf.py",
+        "_socket.py",
+        "_logging.py",
+        "_url.py",
+        "py.typed"
+    ],
+    "群服互通云链版/websocket/tests": [
+        "test_cookiejar.py",
+        "__init__.py",
+        "test_app.py",
+        "test_http.py",
+        "test_url.py",
+        "test_websocket.py",
+        "echo-server.py",
+        "test_abnf.py"
+    ],
+    "群服互通云链版/websocket/tests/data": [
+        "header03.txt",
+        "header02.txt",
+        "header01.txt"
     ],
     "点歌台": [
         "__init__.py",
