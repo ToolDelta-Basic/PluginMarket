@@ -1,0 +1,11 @@
+{
+    "author": "大庆油田\/SuperScript",
+    "version": "0.0.1",
+    "description": "群服互通本地版， 不需要云链， 可在本地启动群服互通等服务",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "tpscalculator": "0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "local-qqlink"
+  }
