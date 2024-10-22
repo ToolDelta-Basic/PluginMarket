@@ -207,6 +207,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "local-qqlink": {
+      "name": "群服互通本地版",
+      "author": "大庆油田/SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "cloud-qqlink": {
       "name": "云链群服互通",
       "author": "大庆油田/SuperScript",

@@ -386,6 +386,48 @@
         "__init__.py",
         "datas.json"
     ],
+    "群服互通本地版": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "群服互通本地版/cqlib": [
+        "utils.py",
+        "cq_runner.py",
+        "downloader.py",
+        "config_spawn.py"
+    ],
+    "群服互通本地版/websocket": [
+        "_wsdump.py",
+        "_utils.py",
+        "_cookiejar.py",
+        "_http.py",
+        "_core.py",
+        "__init__.py",
+        "_handshake.py",
+        "_app.py",
+        "_exceptions.py",
+        "_ssl_compat.py",
+        "_abnf.py",
+        "_socket.py",
+        "_logging.py",
+        "_url.py",
+        "py.typed"
+    ],
+    "群服互通本地版/websocket/tests": [
+        "test_cookiejar.py",
+        "__init__.py",
+        "test_app.py",
+        "test_http.py",
+        "test_url.py",
+        "test_websocket.py",
+        "echo-server.py",
+        "test_abnf.py"
+    ],
+    "群服互通本地版/websocket/tests/data": [
+        "header03.txt",
+        "header02.txt",
+        "header01.txt"
+    ],
     "云链群服互通": [
         "__init__.py",
         "datas.json"
