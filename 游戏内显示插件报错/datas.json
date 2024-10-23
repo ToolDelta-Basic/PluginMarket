@@ -1,6 +1,6 @@
 {
     "author": "System",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "将插件产生的报错转发到游戏内",
     "plugin-type": "classic",
     "pre-plugins": {},
