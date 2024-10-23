@@ -327,7 +327,6 @@
         "自定义聊天栏菜单.json"
     ],
     "简易建造-Pro": [
-        "readme.txt",
         "__init__.py",
         "datas.json"
     ],
@@ -431,6 +430,10 @@
         "header03.txt",
         "header02.txt",
         "header01.txt"
+    ],
+    "游戏内显示插件报错": [
+        "__init__.py",
+        "datas.json"
     ],
     "简易建造": [
         "readme.txt",

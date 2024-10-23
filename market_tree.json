@@ -219,6 +219,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "ingame-errmsg": {
+      "name": "游戏内显示插件报错",
+      "author": "System",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "简易建造": {
       "name": "简易建造",
       "author": "SuperScript",
