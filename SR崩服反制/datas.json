@@ -1,7 +1,7 @@
 {
     "author": "SuperScript",
     "version": "0.0.1",
-    "description": "针对 Server Rest 服务崩服的制裁手段",
+    "description": "针对 Server Rest 服务崩服的制裁手段\n注意: 当看到 疑似崩服字样后， 即代表连续崩服已开始, 你的服务器已被针对, \n此时请不要重启 ToolDelta 或者进行任何使得机器人掉线的活动！ 否则, 对于持续的攻击, SR崩服服务将立即生效！",
     "plugin-type": "classic",
     "pre-plugins": {
     },
