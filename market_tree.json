@@ -147,6 +147,12 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
+    "AntiServerRest": {
+      "name": "SR崩服反制",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "维度传送": {
       "name": "维度传送",
       "author": "wling/7912",
