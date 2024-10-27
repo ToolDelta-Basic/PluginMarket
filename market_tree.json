@@ -216,7 +216,7 @@
     "local-qqlink": {
       "name": "群服互通本地版",
       "author": "大庆油田/SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "ingame-errmsg": {
