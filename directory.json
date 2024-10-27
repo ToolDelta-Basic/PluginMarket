@@ -125,6 +125,10 @@
         "春节序曲.midseq",
         "see you again.midseq"
     ],
+    "锁服反制": [
+        "__init__.py",
+        "datas.json"
+    ],
     "违规名称踢出": [
         "__init__.py",
         "datas.json"
@@ -312,10 +316,6 @@
         "datas.json"
     ],
     "雪球菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "SR崩服反制": [
         "__init__.py",
         "datas.json"
     ],
