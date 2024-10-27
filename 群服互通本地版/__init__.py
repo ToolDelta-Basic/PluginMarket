@@ -10,6 +10,7 @@ from cqlib import (
     config_spawn,
     cq_runner,
     downloader,
+    utils
 )
 
 if sys.platform == "win32":
@@ -141,7 +142,7 @@ class QQLinker(Plugin):
     def msg_thread(self, evt):
         while 1:
             msg = self.proc.readline().removesuffix("\n")
-            Print.print_with_info(msg, "§d GOCQ §r")
+            Print.print_with_info(utils.output_remove_dtime(msg), "§d GOCQ §r")
             self.handle_some_output(msg, evt)
             if msg == "":
                 break

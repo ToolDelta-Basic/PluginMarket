@@ -1,5 +1,8 @@
 import tarfile
 import zipfile
+from datetime import datetime
+
+now = datetime.now
 
 
 def extract_executable_file(src: str, dst: str):
@@ -25,3 +28,8 @@ def extract_executable_file(src: str, dst: str):
         file.extract(extract_file, dst)
     else:
         raise ValueError(f"不是合法tar或zip压缩包: {src}")
+
+
+def output_remove_dtime(msg: str):
+    # [2024-10-27 16:41:07] \x1b[0m\x1b[37m
+    return msg.removeprefix(now().strftime("\x1b[0m\x1b[37m[%Y-%m-%d %H:%M:%S] "))
