@@ -1,0 +1,10 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "针对 Server Rest 服务崩服的制裁手段",
+    "plugin-type": "classic",
+    "pre-plugins": {
+    },
+    "limit_launcher": null,
+    "plugin-id": "AntiServerRest"
+  }
