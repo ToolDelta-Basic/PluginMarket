@@ -22,25 +22,21 @@ def hasNumber(string: str):
 def test_name_similar_percent(name: str):
     probably = 0
     if len(name) == 10 and name.isascii():
-        # 很可能就是机器人随机生成的名字
         probably += 5
     for i, char in enumerate(name):
         nextChar = getNextChar(name, i)
         if not char.isascii():
-            # 中文名, 不大可能是了, 权重减小
             probably -= 1
         if char.isdigit() and nextChar.isalpha():
-            # 数字后面接着字母
             probably += 2.5
         if char.islower() and nextChar.isupper():
-            # 小写字母后跟着大写字母
             probably += 1.5
     return probably / len(name)
 
 
 @plugins.add_plugin
 class ServerRestKicker(Plugin):
-    name = "崩服机器人踢出"
+    name = "锁服反制"
     author = "SuperScript"
     version = (0, 0, 1)
 
