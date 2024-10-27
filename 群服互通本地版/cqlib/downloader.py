@@ -8,7 +8,7 @@ if 0:
 
 
 def download_gocq(self: "QQLinker", GOCQ_EXECFILE: str):
-    Print.print_inf("正在下载 go-cqhttp 可执行文件..")
+    Print.print_inf("正在下载 go-cqhttp 可执行文件=", end="")
     platform = uname().system.lower()
     machine = uname().machine.lower()
     machine = {"x86_64": "amd64", "aarch64": "arm64"}.get(machine, machine)
@@ -23,6 +23,7 @@ def download_gocq(self: "QQLinker", GOCQ_EXECFILE: str):
         "LagrangeDev/go-cqhttp/releases/download/v2.0.0-beta.1/" + gocq_file
     )
     tmp_dir = os.path.join(self.data_path, "gocqhttp-cachedir")
+    Print.clean_print(gocq_file)
     urlmethod.download_file_singlethreaded(url, download_path)
     utils.extract_executable_file(download_path, tmp_dir)
     os.rename(os.path.join(tmp_dir, os.listdir(tmp_dir)[0]), exec_path)

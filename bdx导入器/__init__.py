@@ -5,6 +5,7 @@ import json
 from .BDXConverter.Converter.Converter import BDX
 from .BDXConverter.General import Operation
 
+
 @plugins.add_plugin
 class BDX_BDump(Plugin):
     name = "BDX-BDump导入器"
@@ -33,10 +34,10 @@ class BDX_BDump(Plugin):
         self.get_y: float | None = None
         self.get_z: float | None = None
         self.frame.add_console_cmd_trigger(
-            ["bd", "bp", "导入bdx"], None, "导入bdx文件", self.dump_bdx_menu
+            ["bdump"], None, "导入bdx文件", self.dump_bdx_menu
         )
         self.frame.add_console_cmd_trigger(
-            ["bg", "坐标bdx"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu
+            ["bdxget"], None, "获取bdx文件导入坐标", self.get_bdx_pos_menu
         )
 
     def dump_bdx_menu(self, _):
@@ -73,8 +74,17 @@ class BDX_BDump(Plugin):
         avali_players = self.game_ctrl.allplayers
         if self.game_ctrl.bot_name in avali_players:
             avali_players.remove(self.game_ctrl.bot_name)
-        if len(gplayer := [i for i in self.game_ctrl.all_players_data if i.op]) == 1:
-            player_get = gplayer[0]
+        if (
+            len(
+                gplayer := [
+                    i
+                    for i in self.game_ctrl.all_players_data
+                    if i.op and i.name != self.game_ctrl.bot_name
+                ]
+            )
+            == 1
+        ):
+            player_get = gplayer[0].name
         else:
             Print.print_inf("请选择玩家以获取其坐标:")
             for i, j in enumerate(avali_players):
@@ -127,7 +137,7 @@ class BDumpOP:
         now_len = 0
         now_t = 0
         block_p = 0
-        self.scmd(f"/tp {self.f.game_ctrl.bot_name} {x} {y} {z}")
+        self.scmd(f"/execute as {self.f.game_ctrl.bot_name} at @s run tp {x} {y} {z}")
         cache_string_pool: list[str] = []
 
         # wo/execute SkyblueSuper ~~~ fill ~~~~40~15~40 air
@@ -152,15 +162,15 @@ class BDumpOP:
                         )
                         continue
                     self.scmd(
-                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {cache_string_pool[i.blockStatesConstantStringID]}"
+                        f"/execute as {self.f.game_ctrl.bot_name} at @s run setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {cache_string_pool[i.blockStatesConstantStringID]}"
                     )
                 elif isinstance(i, Operation.PlaceBlockWithBlockStatesDeprecated):
                     self.scmd(
-                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockStatesString}"
+                        f"/execute as {self.f.game_ctrl.bot_name} at @s run setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockStatesString}"
                     )
                 else:
                     self.scmd(
-                        f"setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockData}"
+                        f"/execute as {self.f.game_ctrl.bot_name} at @s run setblock {x} {y} {z} {cache_string_pool[i.blockConstantStringID]} {i.blockData}"
                     )
             elif isinstance(i, Operation.AddXValue):
                 x += 1
@@ -221,7 +231,9 @@ class BDumpOP:
                 else:
                     now_len += 1
                     if i.mode not in range(0, 3):
-                        Print.print_err(json.dumps(i.Dumps(), indent=2, ensure_ascii=False))
+                        Print.print_err(
+                            json.dumps(i.Dumps(), indent=2, ensure_ascii=False)
+                        )
                         raise ValueError(
                             f"Range ERROR: {i.mode} (op:{i.operationNumber})"
                         )
@@ -253,7 +265,9 @@ class BDumpOP:
                         bool(nbtdata["ExecuteOnFirstTick"]),
                     )
                     self.scmd(f"tp {x} {y} {z}")
-                    self.f.game_ctrl.sendcmd_with_resp(f"setblock {x} {y} {z} {blockID} {blockStates}")
+                    self.f.game_ctrl.sendcmd_with_resp(
+                        f"/execute as {self.f.game_ctrl.bot_name} at @s run setblock {x} {y} {z} {blockID} {blockStates}"
+                    )
                     self.f.game_ctrl.sendPacket(78, pck)
                 print(nbtdata["Command"])
             else:
@@ -286,6 +300,7 @@ class BDumpOP:
                 i,
                 Operation.PlaceBlock
                 | Operation.PlaceBlockWithBlockStates
+                | Operation.PlaceBlockWithCommandBlockData
                 | Operation.PlaceBlockWithBlockStatesDeprecated
                 | Operation.PlaceCommandBlockWithCommandBlockData
                 | Operation.PlaceRuntimeBlockWithCommandBlockData

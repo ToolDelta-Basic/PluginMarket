@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from websocket import WebSocketApp
 from tooldelta import Print
@@ -12,6 +13,9 @@ class ProcMana:
         global running_proc
         Print.print_inf(f"当前工作目录: {os.getcwd()}")
         Print.print_inf(f"正在启动 GoCQ 进程 ({exec_fp})")
+        if sys.platform == "linux":
+            os.system(f"chmod +x {exec_fp}")
+            exec_fp = "./" + exec_fp
         if not running_proc:
             self.proc = running_proc = subprocess.Popen(
                 f"{exec_fp} --faststart",

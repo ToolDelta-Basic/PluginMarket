@@ -14,7 +14,7 @@ def extract_executable_file(src: str, dst: str):
             raise ValueError("在压缩包中未找到go-cqhttp可执行文件")
         file.extract(extract_file, dst)
     elif src.endswith(".tar.gz"):
-        file = tarfile.TarFile(src)
+        file = tarfile.open(src, "r:gz")
         flist = file.getmembers()
         for i in flist:
             if "cqhttp" in i.name:

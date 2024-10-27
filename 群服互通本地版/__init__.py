@@ -65,7 +65,7 @@ def replace_cq(content: str):
 
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     name = "群服互通本地版"
     author = "SuperScript/大庆油田"
     description = "提供简单的群服互通(在本地运行)"
