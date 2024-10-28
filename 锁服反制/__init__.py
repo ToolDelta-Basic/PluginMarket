@@ -56,6 +56,7 @@ class ServerRestKicker(Plugin):
         self.action_list.append(player)
         Print.print_war(f"疑似 {player} 为崩服机器人， 正在制裁..")
         while player in self.action_list:
-            self.game_ctrl.sendwocmd(f'kick "{player}" PyRPC Check failed')
+            self.game_ctrl.sendwocmd(f'kick "{player}" 因违规游戏行为，您的账号被禁止进入游戏，如有疑问，请联系官方客服了解详情')
+            self.game_ctrl.sendwocmd(f'kick "{player}" Account check failed')
             time.sleep(0.01)
         Print.print_suc(f"疑似 {player} 为崩服机器人， 制裁已完成")
