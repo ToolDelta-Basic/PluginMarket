@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "所有使用世界交互的插件的前置",
   "limit_launcher": null,
   "pre-plugins": {
