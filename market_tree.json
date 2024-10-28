@@ -210,7 +210,7 @@
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "地图画导入": {
