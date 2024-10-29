@@ -81,12 +81,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "AntiServerRest": {
-      "name": "锁服反制",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "违规名称踢出": {
       "name": "违规名称踢出",
       "author": "大庆油田",
