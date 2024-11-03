@@ -1,4 +1,4 @@
-from tooldelta import plugins, Plugin, Utils, Print, game_utils
+from tooldelta import plugins, Plugin, Utils, Print, game_utils, TYPE_CHECKING
 
 
 @plugins.add_plugin
@@ -26,9 +26,20 @@ class LargeFill(Plugin):
         self.frame.add_console_cmd_trigger(
             ["lfpos"], None, "获取所有人的坐标", self.get_all_pos
         )
+        self.frame.add_console_cmd_trigger(
+            ["lfp1"], None, "获取Super的坐标1", self.get_super_pos1
+        )
+        self.frame.add_console_cmd_trigger(
+            ["lfp2"], None, "获取Super的坐标2", self.get_super_pos2
+        )
         # lfset 400 -60 400
         # lfsend 500 -40 500
         # lfill diamond_ore
+        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
+        if TYPE_CHECKING:
+            from 前置_聊天栏菜单 import ChatbarMenu
+            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
+
 
     def on_setpos_start(self, args: list[str]):
         try:
@@ -65,6 +76,14 @@ class LargeFill(Plugin):
         )
         for player, (x, y, z) in ress:
             Print.print_inf(f"玩家 {player} 在 {x} {y} {z}")
+
+    def get_super_pos1(self, _):
+        x, y, z = game_utils.getPosXYZ("SkyblueSuper")
+        self.gx, self.gy, self.gz = x, -63, z
+
+    def get_super_pos2(self, _):
+        x, y, z = game_utils.getPosXYZ("SkyblueSuper")
+        self.ex, self.ey, self.ez = x, -63, z
 
     def get_single_pos(self, player: str):
         return player, game_utils.getPosXYZ(player)

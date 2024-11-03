@@ -1,4 +1,4 @@
-from tooldelta import Frame, plugins, Plugin, Utils
+from tooldelta import Frame, plugins, Plugin, Utils, TYPE_CHECKING
 from tooldelta.game_utils import getTarget, is_op
 
 import time
@@ -8,9 +8,9 @@ import math
 @plugins.add_plugin
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 0, 9)
     name = "简易建造"
-    description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
+    description = "以更方便的方法在租赁服进行创作"
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -20,9 +20,13 @@ class WorldEdit(Plugin):
         self.getX = None
         self.getY = None
         self.getZ = None
-        self.getXEnd = None
-        self.getYEnd = None
-        self.getZEnd = None
+        self.endX = None
+        self.endY = None
+        self.endZ = None
+        self.intr = plugins.get_plugin_api("前置-世界交互")
+        if TYPE_CHECKING:
+            from 前置_世界交互 import GameInteractive
+            self.intr = plugins.instant_plugin_api(GameInteractive)
 
     @plugins.add_packet_listener(56)
     def we_pkt56(self, jsonPkt: dict):
@@ -65,9 +69,9 @@ class WorldEdit(Plugin):
                 self.endX, self.endY, self.endZ = x, y, z
                 self.showto(op, f"终点已设置: {x}, {y}, {z}")
                 return False
-            case "tc" | "填充":
+            case "lf" | "立方":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
-                self.fillwith_block(x, y - 1, z, sx, sy, sz, ex, ey, ez, op)
+                self.cube_fill(x, y - 1, z, sx, sy, sz, ex, ey, ez, op)
                 return False
             case "fz" | "复制":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
@@ -95,32 +99,39 @@ class WorldEdit(Plugin):
                 return False
             case "yz" | "圆柱":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
-                self.column(x, y - 1, z, sx, sy, sz, round(math.hypot(ex - sx, ez - sz)), ey - sy)
+                self.column(
+                    x,
+                    y - 1,
+                    z,
+                    sx,
+                    sy,
+                    sz,
+                    round(math.hypot(ex - sx, ez - sz)),
+                    ey - sy,
+                )
             case "yz1" | "圆锥":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
-                self.awl(x, y - 1, z, sx, sy, sz, round(math.hypot(ex - sx, ez - sz)), ey - sy)
+                self.awl(
+                    x,
+                    y - 1,
+                    z,
+                    sx,
+                    sy,
+                    sz,
+                    round(math.hypot(ex - sx, ez - sz)),
+                    ey - sy,
+                )
             case "qt" | "球体":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
-                self.ball(x, y-1, z, sx, sy, sz, round(math.hypot(ex - sx, ez - sz)))
+                self.ball(x, y - 1, z, sx, sy, sz, round(math.hypot(ex - sx, ey - sy, ez - sz)))
+            case "tc" | "填充":
+                self.showto(op, "填充命令正在执行")
+                self.fill_horizon(x, y-1, z)
+                self.showto(op, "填充命令执行完毕")
         return True
 
-    def fillwith(self, sx, sy, sz, dx, dy, dz):
-        def p2n(n):
-            return 1 if n >= 0 else -1
-
-        fx = p2n(dx - sx)
-        fy = p2n(dy - sy)
-        fz = p2n(dz - sz)
-        for x in range(sx, dx + fx, fx):
-            for y in range(sy, dy + fy, fy):
-                for z in range(sz, dz + fz, fz):
-                    self.game_ctrl.sendwocmd(
-                        f"/clone {sx} {sy} {sz} {sx} {sy} {sz} {x} {y} {z}"
-                    )
-                    time.sleep(0.01)
-
     @Utils.thread_func("简易建造-填充")
-    def fillwith_block(self, bx, by, bz, sx, sy, sz, dx, dy, dz, op):
+    def cube_fill(self, bx, by, bz, sx, sy, sz, dx, dy, dz, op):
         def p2n(n):
             return 1 if n >= 0 else -1
 
@@ -160,13 +171,11 @@ class WorldEdit(Plugin):
             time.sleep(0.05)
 
     def hollow_horizon_round(
-        self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, delay = 0.005
+        self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, delay=0.005
     ):
-        self.game_ctrl.sendwocmd(
-            f"clone {bx} {by} {bz} {bx} {by} {bz} {cx} {cy} {cz}"
-        )
+        self.game_ctrl.sendwocmd(f"clone {bx} {by} {bz} {bx} {by} {bz} {cx} {cy} {cz}")
         processor = round
-        for dx in range(-2*r, 2*r + 1):
+        for dx in range(-2 * r, 2 * r + 1):
             dx1 = dx / 2
             dz = processor(math.cos(math.asin(dx1 / r)) * r)
             dx = dx // 2
@@ -177,7 +186,7 @@ class WorldEdit(Plugin):
                 f"clone {bx} {by} {bz} {bx} {by} {bz} {cx+dx} {cy} {cz-dz}"
             )
             time.sleep(delay)
-        for dz in range(-2*r, 2*r + 1):
+        for dz in range(-2 * r, 2 * r + 1):
             dz1 = dz / 2
             dx = processor(math.cos(math.asin(dz1 / r)) * r)
             dz = dz // 2
@@ -190,15 +199,24 @@ class WorldEdit(Plugin):
             time.sleep(delay)
 
     def horizon_round(
-        self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, delay = 0.005
+        self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, delay=0.005
     ):
-        for iter_r in range(1, r):
-            self.hollow_horizon_round(bx, by, bz, cx, cy, cz, iter_r, 0.003)
+        for x in range(cx - r, cx + r + 1):
+            for z in range(cz - r, cz + r + 1):
+                if math.hypot(x - cx, z - cz) <= r:
+                    self.game_ctrl.sendwocmd(
+                        f"clone {self.make_clone_pos(bx, by, bz, x, cy, z)}"
+                    )
+                    time.sleep(delay)
 
     def ball(self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int):
-        for dy in range(-r, r + 1):
-            dyna_r = round((r ** 2 - dy ** 2) ** 0.5)
-            self.horizon_round(bx, by, bz, cx, cy + dy, cz, dyna_r, 0.003)
+        for x in range(cx - r, cx + r + 1):
+            for y in range(cy - r, cy + r + 1):
+                for z in range(cz - r, cz + r + 1):
+                    if math.hypot(x - cx, y - cy, z - cz) <= r:
+                        self.game_ctrl.sendwocmd(
+                            f"clone {self.make_clone_pos(bx, by, bz, x, y, z)}"
+                        )
 
     def showto(self, player: str, msg: str):
         self.game_ctrl.say_to(player, f"§7WorldEdit§f>> §e{msg}")
@@ -224,7 +242,9 @@ class WorldEdit(Plugin):
             raise Utils.ThreadExit
         return gx, gy, gz, ex, ey, ez
 
-    def column(self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, h: int):
+    def column(
+        self, bx: int, by: int, bz: int, cx: int, cy: int, cz: int, r: int, h: int
+    ):
         for hi in range(h + 1):
             self.horizon_round(bx, by, bz, cx, cy + hi, cz, r, 0.003)
 
@@ -233,19 +253,41 @@ class WorldEdit(Plugin):
             dyna_r = self.get_midval(r, 0, hi / h)
             self.horizon_round(bx, by, bz, cx, cy + hi, cz, dyna_r, 0.003)
 
-    def cube_frame(self, bx: int, by: int, bz: int, sx: int, sy: int, sz: int, ex: int, ey: int, ez: int):
-        # sxyz
-        self.lineTo(sx, sy, sz, ex, sy, sz, bx, by, bz)
-        self.lineTo(sx, sy, sz, sx, ey, sz, bx, by, bz)
-        self.lineTo(sx, sy, sz, sx, sy, ez, bx, by, bz)
-        # exyz
-        self.lineTo(sx, ey, ez, ex, ey, ez, bx, by, bz)
-        self.lineTo(ex, sy, ez, ex, ey, ez, bx, by, bz)
-        self.lineTo(ex, ey, sz, ex, ey, ez, bx, by, bz)
-        # other
-        self.lineTo(ex, sy, sz, ex, ey, ez)
-        self.lineTo(ex, sy, sz, ex, ey, ez)
-        
+    def fill_horizon(self, bx: int, by: int, bz: int):
+        BLOCK_AIR = 0
+        BLOCK_BORDER = 1
+        BLOCK_FILL = 2
+        area = self.intr.get_structure((bx - 32, by, bz - 32), (64, 1, 64))
+        mapping: list[list[int]] = []
+        for x in range(64):
+            mapping.append([])
+            for z in range(64):
+                b = area.get_block((x, 0, z))
+                mapping[x].append(BLOCK_AIR if (b.name.endswith("air") or b.name.endswith("light_block")) else BLOCK_BORDER)
+        mapping[32][32] = BLOCK_FILL
+        has_air = True
+        while has_air:
+            has_air = False
+            for x, zs_map in enumerate(mapping.copy()):
+                for z, x_block in enumerate(zs_map.copy()):
+                    if x_block == BLOCK_FILL:
+                        empty_blocks = self.is_in_fill(mapping, x, z)
+                        if empty_blocks != []:
+                            has_air = True
+                        for x1, z1 in empty_blocks:
+                            mapping[x1][z1] = BLOCK_FILL
+                            destx = bx + x1 - 32
+                            destz = bz + z1 - 32
+                            self.send_clone_pos(bx, by, bz, destx, by, destz)
+                            time.sleep(0.002)
+
+
+    @staticmethod
+    def make_clone_pos(bx: int, by: int, bz: int, destx: int, desty: int, destz: int):
+        return f"{bx} {by} {bz} {bx} {by} {bz} {destx} {desty} {destz}"
+
+    def send_clone_pos(self, bx: int, by: int, bz: int, destx: int, desty: int, destz: int):
+        self.game_ctrl.sendwocmd(f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run clone {bx} {by} {bz} {bx} {by} {bz} {destx} {desty} {destz}')
 
     @staticmethod
     def get_blocks_num(sx: int, sy: int, sz: int, ex: int, ey: int, ez: int):
@@ -254,3 +296,13 @@ class WorldEdit(Plugin):
     @staticmethod
     def get_midval(start: int, end: int, prog: float):
         return int(start + (end - start) * prog)
+
+
+    @staticmethod
+    def is_in_fill(mapping: list[list[int]], x: int, z: int):
+        result: list[tuple[int, int]] = []
+        for posx, posz in (x-1, z), (x+1, z), (x, z-1), (x, z+1):
+            if 0 <= posx < 64 and 0 <= posz < 64:
+                if mapping[posx][posz] == 0:
+                    result.append((posx, posz))
+        return result
