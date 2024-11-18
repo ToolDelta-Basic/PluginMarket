@@ -72,7 +72,7 @@ class ToolSoundSequence:
                 note_pitch_shift - pitch_modifier
             )
             vol = volume / 100
-            pitch = 2 ** ((pitch_resized - 60) / 12)
+            pitch = 1 if instrument in ("note.snare", "note.bd", "note.hat") else 2 ** ((pitch_resized - 60) / 12)
             delay = note_delay
             yield instrument, vol, pitch, delay
 
