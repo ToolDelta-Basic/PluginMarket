@@ -1,6 +1,8 @@
 # 本模块功能: 执行代码块 (run)
 # 对于要在 Minecraft 中进行操作的代码指令, 需要先 set_game_ctrl 初始化游戏控制器
 
+# ruff: noqa: F403, F405
+
 import time
 
 from compiler import *

@@ -1,26 +1,66 @@
-from typing import Callable
+from typing import Callable  # noqa: UP035
 import err_str
-from syntax_lib import *
-from basic_types import *
-from basic_types import get_typename_zhcn, get_zhcn_type
+from syntax_lib import (
+    OpPtr,
+    VarPtr,
+    ConstPtr,
+    FuncPtr,
+)
+from syntax_lib import (
+    AddPtr,
+    SubPtr,
+    MulPtr,
+    DivPtr,
+    PowPtr,
+    EqPtr,
+    AndPtr,
+    OrPtr,
+    LtPtr,
+    GtPtr
+)
+from basic_types import (
+    BasicType,
+    OptionalType,
+    ANY,
+    ANY_TYPE,
+    RES_TYPE,
+    REGISTER,
+)
+from basic_types import (
+    STRING,
+    NUMBER,
+    BOOLEAN,
+)
+from basic_types import get_typename_zhcn
 
-class ReallyNone:...
+
+class ReallyNone: ...
+
 
 class FuncRegDatas:
-    res_types: dict[str, RES_TYPE] = {}
-    input_type_checkers: dict[str, Callable[[list[ANY_TYPE]], str | None]] = {}
-    func_cbs = {}
+    res_types: dict[str, RES_TYPE] = {}  # noqa: RUF012
+    input_type_checkers: dict[str, Callable[[list[ANY_TYPE]], str | None]] = {}  # noqa: RUF012
+    func_cbs = {}  # noqa: RUF012
 
     @classmethod
-    def add_type_checker(cls, func_name: str, checker: Callable[[list[ANY_TYPE]], str | None] | tuple[ANY_TYPE, ...]):
+    def add_type_checker(
+        cls,
+        func_name: str,
+        checker: Callable[[list[ANY_TYPE]], str | None] | tuple[ANY_TYPE, ...],
+    ):
         if isinstance(checker, tuple):
-            types_zhcn = ", ".join(f"可空[{t.type.name}]" if isinstance(t, OptionalType) else t.name for t in checker)
+            types_zhcn = ", ".join(
+                f"可空[{t.type.name}]" if isinstance(t, OptionalType) else t.name
+                for t in checker
+            )
+
             def _checker(args: list[ANY_TYPE]):
                 if len(args) != len(checker):
                     return types_zhcn
                 for i, j in zip(args, checker):
                     if not cls_isinstance(i, j):
                         return types_zhcn
+
             cls.input_type_checkers[func_name] = _checker
         else:
             cls.input_type_checkers[func_name] = checker
@@ -28,6 +68,7 @@ class FuncRegDatas:
     @classmethod
     def add_func_restype(cls, func_name: str, res_type):
         cls.res_types[func_name] = res_type
+
 
 def cls_isinstance(type_c: ANY_TYPE, checker: ANY_TYPE):
     if type_c.type.name != checker.type.name:
@@ -39,10 +80,12 @@ def cls_isinstance(type_c: ANY_TYPE, checker: ANY_TYPE):
     else:
         return True
 
+
 def get_final_type(syntax):
     if isinstance(syntax, BasicType):
         raise SyntaxError(f"Input can't be {syntax}")
     return _type_checker_recr(syntax)
+
 
 def _type_checker_recr(syntax):
     "对表达式进行类型检查"
@@ -53,7 +96,15 @@ def _type_checker_recr(syntax):
             notice = ""
             if isinstance(arg1type, OptionalType) or isinstance(arg2type, OptionalType):
                 notice += "\n似乎是遇到了可能为空的变量, 你可以用 §e忽略空变量 <变量名> §c这条指令以跳过空变量(如果你清楚后果的话)"
-            raise SyntaxError(err_str.OP_NOT_SUPPORTED % (get_typename_zhcn(arg1type), syntax.name, get_typename_zhcn(arg2type)) + notice)
+            raise SyntaxError(
+                err_str.OP_NOT_SUPPORTED
+                % (
+                    get_typename_zhcn(arg1type),
+                    syntax.name,
+                    get_typename_zhcn(arg2type),
+                )
+                + notice
+            )
         if isinstance(syntax, EqPtr):
             return BOOLEAN
         else:
@@ -68,13 +119,20 @@ def _type_checker_recr(syntax):
                     raise Exception("传入 None 类型 不支持")
                 input_argstypes.append(typec)
             if err := input_type_checker(input_argstypes):
-                raise SyntaxError(err_str.FUNC_ARGS_TYPE_INVALID % (
-                    syntax.name, ", ".join(get_typename_zhcn(j) for j in input_argstypes), err)
+                raise SyntaxError(
+                    err_str.FUNC_ARGS_TYPE_INVALID
+                    % (
+                        syntax.name,
+                        ", ".join(get_typename_zhcn(j) for j in input_argstypes),
+                        err,
+                    )
                 )
         except IndexError:
-            raise SyntaxError(err_str.FUNC_ARGS_LEN_WRONG % (syntax.name, len(input_argstypes)))
+            raise SyntaxError(
+                err_str.FUNC_ARGS_LEN_WRONG % (syntax.name, len(input_argstypes))
+            )
         arg_types = tuple(_type_checker_recr(arg) for arg in syntax.args)
-        restype =  FuncRegDatas.res_types[syntax.name]
+        restype = FuncRegDatas.res_types[syntax.name]
         if callable(restype):
             return restype(arg_types)
         else:
@@ -85,14 +143,15 @@ def _type_checker_recr(syntax):
     elif isinstance(syntax, ConstPtr):
         if syntax.type in (int, float):
             return NUMBER
-        elif syntax.type == str:
+        elif syntax.type is str:
             return STRING
-        elif syntax.type == bool:
+        elif syntax.type is bool:
             return BOOLEAN
         else:
             raise SyntaxError(err_str.UNKNOWN_TYPE % str(syntax))
     else:
         raise SyntaxError(err_str.UNKNOWN_TYPE % str(syntax))
+
 
 def _is_op_valid(arg1, op: type[OpPtr], arg2):
     if op == EqPtr:
@@ -100,22 +159,29 @@ def _is_op_valid(arg1, op: type[OpPtr], arg2):
     ops = _valid_op_type(op)
     return any((arg1, arg2) == sop for sop in ops.keys())
 
+
 def _valid_op_type(op: type[OpPtr]):
     # 给出该运算可用的运算项与结果类型
     if op == AddPtr:
-        return {(STRING, STRING): STRING, (NUMBER, NUMBER): NUMBER, (STRING, NUMBER): STRING, (NUMBER, STRING): STRING}
+        return {
+            (STRING, STRING): STRING,
+            (NUMBER, NUMBER): NUMBER,
+            (STRING, NUMBER): STRING,
+            (NUMBER, STRING): STRING,
+        }
     elif op == MulPtr:
         return {(NUMBER, NUMBER): NUMBER, (STRING, NUMBER): STRING}
     elif op in (SubPtr, DivPtr, PowPtr):
         return {(NUMBER, NUMBER): NUMBER}
     elif op in (AndPtr, OrPtr):
-        return {(NUMBER, NUMBER): BOOLEAN}
+        return {(NUMBER, NUMBER): BOOLEAN, (BOOLEAN, BOOLEAN): BOOLEAN}
     elif op in (LtPtr, GtPtr):
         return {(NUMBER, NUMBER): BOOLEAN, (STRING, STRING): BOOLEAN}
     elif op == EqPtr:
         raise Exception("无法在此使用 EqPtr 作为参数")
     else:
         raise Exception(err_str.UNKNOWN_OP % str(op))
+
 
 def find_pairs(regs: list[REGISTER]) -> REGISTER:
     # 寻找在所有代码分支里都存在且变量类型相同的变量命名
