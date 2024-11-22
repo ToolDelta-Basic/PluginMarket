@@ -126,7 +126,6 @@ def compile(code: str, in_namespace: REGISTER):
                     code_block_stack.append(
                         CompiledCode([], _get_local_namespace().copy(), ln)
                     )
-                    #print("case IF")
                 case "又或者":
                     if code_block_signal_stack[-1] not in (Signal.IF, Signal.ELIF):
                         raise CodeSyntaxError("又或者 语句之前应有 如果 或 又或者 语句")
@@ -152,7 +151,6 @@ def compile(code: str, in_namespace: REGISTER):
                     code_block_signal_stack[-1] = Signal.ELSE
                     code_prev = code_block_stack.pop(-1)
                     space = _get_space()
-                    #print("case ELSE")
                     space.cache1[-1][1] = code_prev
                     # 放入 新代码块
                     # 此时 cache2 可以为 否则 代码块
@@ -169,18 +167,17 @@ def compile(code: str, in_namespace: REGISTER):
                         raise CodeSyntaxError("在这个位置无法结束 如果 语句块")
                     # 退出 如果/否则 的代码块
                     code_prev = code_block_stack.pop(-1)
+                    space = _get_space()
                     # 判断提取两份代码块共有的命名空间, 作为导出的命名空间, 导出到上级代码块
                     if last_sign in (Signal.ELIF, Signal.IF):
                         # 如果代码不包含 否则 语句
                         # 只需要取 如果 到最后一个 又或者 的所有变量共同类型命名空间
-                        space = _get_space()
                         space.cache1[-1][1] = code_prev
                         code_prev = None
                         namespaces = find_pairs([i[1].out_namespace for i in space.cache1])
                     else:
                         # 如果代码包含 否则 语句
                         # 只需要取 如果 到最后一个 又或者 再到 否则 的所有变量共同类型命名空间
-                        space.cache1[-1][1] = code_prev
                         namespaces = find_pairs([i[1].out_namespace for i in space.cache1] + [code_prev.out_namespace])
                     _get_local_namespace().update(namespaces)
                     # space.cache1 = [[cond, code], ...]
