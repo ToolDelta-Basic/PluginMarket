@@ -165,12 +165,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "群服互通": {
-      "name": "群服互通[本地带签名服务器版]",
-      "author": "xingchen",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
       "author": "SuperScript",
@@ -325,6 +319,12 @@
       "name": "服服互通",
       "author": "SuperScript/2401PT",
       "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "群服互通": {
+      "name": "群服互通[本地带签名服务器版][不推荐]",
+      "author": "xingchen",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "发言频率限制": {

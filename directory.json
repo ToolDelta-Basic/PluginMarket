@@ -335,31 +335,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "群服互通[本地带签名服务器版]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通[本地带签名服务器版]/lib": [],
-    "群服互通[本地带签名服务器版]/lib/yaml": [
-        "events.py",
-        "_yaml.cpython-311-x86_64-linux-gnu.so",
-        "scanner.py",
-        "serializer.py",
-        "nodes.py",
-        "__init__.py",
-        "composer.py",
-        "loader.py",
-        "error.py",
-        "representer.py",
-        "resolver.py",
-        "dumper.py",
-        "reader.py",
-        "constructor.py",
-        "cyaml.py",
-        "tokens.py",
-        "parser.py",
-        "emitter.py"
-    ],
     "自定义聊天栏菜单": [
         "__init__.py",
         "datas.json"
@@ -559,6 +534,31 @@
     "服服互通": [
         "__init__.py",
         "datas.json"
+    ],
+    "群服互通[本地带签名服务器版][不推荐]": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "群服互通[本地带签名服务器版][不推荐]/lib": [],
+    "群服互通[本地带签名服务器版][不推荐]/lib/yaml": [
+        "events.py",
+        "_yaml.cpython-311-x86_64-linux-gnu.so",
+        "scanner.py",
+        "serializer.py",
+        "nodes.py",
+        "__init__.py",
+        "composer.py",
+        "loader.py",
+        "error.py",
+        "representer.py",
+        "resolver.py",
+        "dumper.py",
+        "reader.py",
+        "constructor.py",
+        "cyaml.py",
+        "tokens.py",
+        "parser.py",
+        "emitter.py"
     ],
     "发言频率限制": [
         "__init__.py",
