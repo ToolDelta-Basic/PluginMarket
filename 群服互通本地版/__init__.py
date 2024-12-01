@@ -66,7 +66,7 @@ def replace_cq(content: str):
 
 @plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     name = "群服互通本地版"
     author = "SuperScript/大庆油田"
     description = "提供简单的群服互通(在本地运行)"
@@ -82,6 +82,7 @@ class QQLinker(Plugin):
                     "是否启用": False,
                     "转发格式": "<[玩家名]> [消息]",
                     "仅转发以下符号开头的消息(列表为空则全部转发)": ["#"],
+                    "屏蔽以下字符串开头的消息": [".", "。"],
                 },
                 "群到游戏": {
                     "是否启用": True,
@@ -105,6 +106,9 @@ class QQLinker(Plugin):
         self.block_qqids = self.cfg["消息转发设置"]["游戏到群"]
         self.game2qq_trans_chars = self.cfg["消息转发设置"]["游戏到群"][
             "仅转发以下符号开头的消息(列表为空则全部转发)"
+        ]
+        self.game2qq_block_prefixs = self.cfg["消息转发设置"]["游戏到群"][
+            "屏蔽以下字符串开头的消息"
         ]
         self.waitmsg_cbs = {}
 
@@ -256,6 +260,12 @@ class QQLinker(Plugin):
                     if msg.startswith(prefix):
                         can_send = True
                         msg = msg[1:]
+                        break
+            elif self.game2qq_block_prefixs != []:
+                can_send = True
+                for prefix in self.game2qq_block_prefixs:
+                    if msg.startswith(prefix):
+                        can_send = False
                         break
             else:
                 can_send = True
