@@ -216,7 +216,7 @@
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "简易建造": {
