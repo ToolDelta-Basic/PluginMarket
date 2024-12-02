@@ -1,12 +1,10 @@
 from tooldelta import Plugin, plugins, ToolDelta
 
-GN = "\n"
-
 @plugins.add_plugin
 class InGameError(Plugin):
     name = "游戏内显示插件报错"
     author = "System"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -23,7 +21,8 @@ class InGameError(Plugin):
         if self.game_avali:
             try:
                 self.game_ctrl.say_to("@a", f"§7[§cERROR§7] §4{plugin_name} 报错：")
-                self.game_ctrl.say_to("@a", f" §c{f'{GN} '.join(exc_str.split(GN))}")
+                for ln in exc_str.split("\n"):
+                    self.game_ctrl.say_to("@a", " " + ln)
             except Exception:
                 self._backup_onerr(plugin_name, exception, exc_str)
 
