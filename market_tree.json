@@ -165,6 +165,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "前置-世界交互": {
+      "name": "前置_世界交互",
+      "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
       "author": "SuperScript",
@@ -193,12 +199,6 @@
       "name": "音乐播放器",
       "author": "SuperScript",
       "version": "0.0.10",
-      "plugin-type": "classic"
-    },
-    "前置-世界交互": {
-      "name": "前置_世界交互",
-      "author": "SuperScript",
-      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "地图画导入": {
