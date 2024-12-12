@@ -1,29 +1,5 @@
 {
-    "时间同步计分板": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "清空玩家末影箱": [
-        "__init__.py",
-        "datas.json"
-    ],
     "前置_基本插件功能库": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_循环获取玩家坐标": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "控制台执行MC指令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "32k盒子显示": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "全服喇叭": [
         "__init__.py",
         "datas.json"
     ],
@@ -31,28 +7,58 @@
         "__init__.py",
         "datas.json"
     ],
-    "前置_大字替换": [
+    "雪球菜单": [
         "__init__.py",
         "datas.json"
     ],
-    "大范围fill": [
+    "前置_玩家XUID获取": [
         "__init__.py",
         "datas.json"
     ],
-    "MCFunction计划任务": [
+    "全服喇叭": [
         "__init__.py",
         "datas.json"
     ],
-    "MCFunction计划任务/examples": [
-        "示例-触发词.mcfunction",
-        "示例-定时任务.mcfunction",
-        "示例-系统启动.mcfunction"
-    ],
-    "更好的公告栏": [
+    "物品制作器": [
         "__init__.py",
         "datas.json"
     ],
-    "活塞限速": [
+    "简易建造": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "死亡返回": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "五子棋小游戏": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "传送点": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "井字棋": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "简易建造-Pro": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "32k盒子显示": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "音效播放器": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "前置_聊天栏菜单": [
         "__init__.py",
         "datas.json"
     ],
@@ -63,53 +69,53 @@
         "音乐播放器.json"
     ],
     "[pkg]音乐曲目-1/插件配置文件/websockets": [
-        "typing.py",
-        "server.py",
-        "streams.py",
-        "utils.py",
-        "speedups.cp311-win_amd64.pyd",
-        "http.py",
-        "client.py",
+        "imports.py",
         "exceptions.py",
-        "http11.py",
-        "__init__.py",
-        "speedups.c",
-        "uri.py",
-        "auth.py",
-        "version.py",
-        "protocol.py",
-        "__main__.py",
+        "typing.py",
         "connection.py",
         "frames.py",
-        "datastructures.py",
-        "headers.py",
-        "py.typed",
-        "imports.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/legacy": [
-        "server.py",
-        "framing.py",
-        "http.py",
         "client.py",
-        "async_timeout.py",
-        "__init__.py",
-        "compatibility.py",
+        "uri.py",
+        "streams.py",
+        "protocol.py",
+        "speedups.cp311-win_amd64.pyd",
+        "py.typed",
+        "datastructures.py",
         "auth.py",
-        "handshake.py",
-        "protocol.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/extensions": [
         "__init__.py",
-        "base.py",
-        "permessage_deflate.py"
+        "__main__.py",
+        "utils.py",
+        "server.py",
+        "http.py",
+        "http11.py",
+        "version.py",
+        "speedups.c",
+        "headers.py"
     ],
     "[pkg]音乐曲目-1/插件配置文件/websockets/sync": [
-        "server.py",
-        "utils.py",
+        "connection.py",
         "client.py",
         "messages.py",
         "__init__.py",
-        "connection.py"
+        "utils.py",
+        "server.py"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets/legacy": [
+        "client.py",
+        "protocol.py",
+        "handshake.py",
+        "auth.py",
+        "__init__.py",
+        "server.py",
+        "http.py",
+        "async_timeout.py",
+        "compatibility.py",
+        "framing.py"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets/extensions": [
+        "__init__.py",
+        "permessage_deflate.py",
+        "base.py"
     ],
     "[pkg]音乐曲目-1/插件数据文件": [],
     "[pkg]音乐曲目-1/插件数据文件/音乐播放器": [
@@ -125,113 +131,11 @@
         "春节序曲.midseq",
         "see you again.midseq"
     ],
-    "违规名称踢出": [
+    "命令发送监视器": [
         "__init__.py",
         "datas.json"
     ],
-    "区块显示器": [
-        "datas.json",
-        "___init__.py"
-    ],
-    "死亡返回": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "空岛系统": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "bdx导入器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "bdx导入器/nbtlib": [
-        "nbt.py",
-        "tag.py",
-        "__init__.py",
-        "schema.py",
-        "cli.py",
-        "__main__.py",
-        "path.py"
-    ],
-    "bdx导入器/nbtlib/literal": [
-        "serializer.py",
-        "__init__.py",
-        "parser.py"
-    ],
-    "bdx导入器/nbtlib/contrib": [
-        "__init__.py"
-    ],
-    "bdx导入器/nbtlib/contrib/minecraft": [
-        "structure.py",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter": [
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter/Converter": [
-        "ErrorClassDefine.py",
-        "__init__.py",
-        "Converter.py",
-        "FileOperation.py"
-    ],
-    "bdx导入器/BDXConverter/General": [
-        "__init__.py",
-        "Operation.py",
-        "Pool.py",
-        "GeneralClass.py"
-    ],
-    "bdx导入器/BDXConverter/Operation": [
-        "PlaceBlockWithBlockStatesDeprecated.py",
-        "PlaceBlockWithNBTData.py",
-        "AddInt16XValue.py",
-        "CreateConstantString.py",
-        "AddInt16ZValue0.py",
-        "NOP.py",
-        "AddInt16YValue.py",
-        "AddInt8YValue.py",
-        "PlaceBlock.py",
-        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
-        "PlaceBlockWithCommandBlockData.py",
-        "__init__.py",
-        "AddZValue0.py",
-        "UseRuntimeIDPool.py",
-        "AddInt32XValue.py",
-        "AddXValue.py",
-        "AddInt32YValue.py",
-        "PlaceRuntimeBlock.py",
-        "AddInt16ZValue.py",
-        "PlaceBlockWithRuntimeId.py",
-        "AddInt8XValue.py",
-        "PlaceBlockWithChestData.py",
-        "PlaceBlockWithBlockStates.py",
-        "AssignDebugData.py",
-        "AddInt8ZValue.py",
-        "PlaceRuntimeBlockWithCommandBlockData.py",
-        "SubtractXValue.py",
-        "AddZValue.py",
-        "structOfChest.py",
-        "SubtractYValue.py",
-        "PlaceRuntimeBlockWithChestData.py",
-        "AddInt32ZValue.py",
-        "SetCommandBlockData.py",
-        "AddInt32ZValue0.py",
-        "AddYValue.py",
-        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
-        "PlaceCommandBlockWithCommandBlockData.py",
-        "SubtractZValue.py"
-    ],
-    "bdx导入器/BDXConverter/utils": [
-        "marshalNBT.py",
-        "marshalNBT_OldVersion.py",
-        "__init__.py",
-        "unmarshalNBT_OldVersion.py",
-        "getString.py",
-        "getByte.py",
-        "unmarshalNBT.py"
-    ],
-    "井字棋": [
+    "前置_循环获取玩家坐标": [
         "__init__.py",
         "datas.json"
     ],
@@ -239,61 +143,41 @@
         "__init__.py",
         "datas.json"
     ],
-    "前置_MIDI播放器": [
+    "入服欢迎": [
         "__init__.py",
         "datas.json"
     ],
-    "前置_MIDI播放器/Musicreater": [
-        "utils.py",
-        "main.py",
-        "constants.py",
-        "exceptions.py",
-        "subclass.py",
+    "前置_tps计算器": [
         "__init__.py",
-        "types.py"
+        "datas.json"
     ],
-    "前置_MIDI播放器/mido": [
-        "frozen.py",
-        "tokenizer.py",
+    "空岛系统": [
         "__init__.py",
-        "ports.py",
-        "syx.py",
-        "parser.py"
+        "datas.json",
+        "readme.txt"
     ],
-    "前置_MIDI播放器/mido/messages": [
-        "specs.py",
-        "encode.py",
-        "strings.py",
-        "messages.py",
+    "服服互通": [
         "__init__.py",
-        "checks.py",
-        "decode.py"
-    ],
-    "前置_MIDI播放器/mido/midifiles": [
-        "tracks.py",
-        "units.py",
-        "meta.py",
-        "__init__.py",
-        "midifiles.py"
+        "datas.json"
     ],
     "Schematic导入器": [
         "__init__.py",
         "datas.json",
         "schematic_id.py"
     ],
-    "Schematic导入器/nbtlib": [
-        "nbt.py",
-        "tag.py",
+    "Schematic导入器/nbtschematic": [
         "__init__.py",
-        "schema.py",
-        "cli.py",
-        "__main__.py",
-        "path.py"
+        "schematic.py",
+        "version.py"
     ],
-    "Schematic导入器/nbtlib/literal": [
-        "serializer.py",
+    "Schematic导入器/nbtlib": [
+        "schema.py",
         "__init__.py",
-        "parser.py"
+        "nbt.py",
+        "__main__.py",
+        "tag.py",
+        "path.py",
+        "cli.py"
     ],
     "Schematic导入器/nbtlib/contrib": [
         "__init__.py"
@@ -302,66 +186,38 @@
         "structure.py",
         "__init__.py"
     ],
-    "Schematic导入器/nbtschematic": [
-        "schematic.py",
+    "Schematic导入器/nbtlib/literal": [
+        "parser.py",
         "__init__.py",
-        "version.py"
+        "serializer.py"
+    ],
+    "音乐播放器": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
     ],
     "前置_Cb2Bot通信": [
         "__init__.py",
         "datas.json"
     ],
-    "雪球菜单": [
+    "控制台执行MC指令": [
         "__init__.py",
         "datas.json"
     ],
-    "维度传送": [
+    "设置栏钢琴师": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "违规名称踢出": [
         "__init__.py",
         "datas.json"
     ],
-    "[pkg]新手插件包": [
-        "datas.json"
-    ],
-    "[pkg]新手插件包/插件配置文件": [
-        "聊天栏菜单.json",
-        "自定义聊天栏菜单.json"
-    ],
-    "简易建造-Pro": [
-        "readme.txt",
+    "大范围fill": [
         "__init__.py",
         "datas.json"
     ],
-    "获取全服玩家皮肤": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_玩家XUID获取": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "自定义聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_SQL数据库支持": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "任务系统": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "性能管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音乐播放器": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_世界交互": [
+    "公告栏[Mono]": [
         "__init__.py",
         "datas.json"
     ],
@@ -369,128 +225,81 @@
         "__init__.py",
         "datas.json"
     ],
+    "自定义聊天栏菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "[pkg]新手插件包": [
+        "datas.json"
+    ],
+    "[pkg]新手插件包/插件配置文件": [
+        "自定义聊天栏菜单.json",
+        "聊天栏菜单.json"
+    ],
+    "时间同步计分板": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "区块显示器": [
+        "datas.json",
+        "___init__.py"
+    ],
+    "MCFunction计划任务": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "MCFunction计划任务/examples": [
+        "示例-定时任务.mcfunction",
+        "示例-系统启动.mcfunction",
+        "示例-触发词.mcfunction"
+    ],
+    "更好的公告栏": [
+        "__init__.py",
+        "datas.json"
+    ],
     "群服互通本地版": [
         "__init__.py",
         "datas.json"
     ],
-    "群服互通本地版/cqlib": [
-        "utils.py",
-        "cq_runner.py",
-        "downloader.py",
-        "config_spawn.py"
-    ],
     "群服互通本地版/websocket": [
         "_wsdump.py",
-        "_utils.py",
-        "_cookiejar.py",
+        "_url.py",
         "_http.py",
+        "_cookiejar.py",
+        "py.typed",
         "_core.py",
         "__init__.py",
-        "_handshake.py",
-        "_app.py",
-        "_exceptions.py",
         "_ssl_compat.py",
+        "_exceptions.py",
+        "_app.py",
         "_abnf.py",
+        "_handshake.py",
         "_socket.py",
-        "_logging.py",
-        "_url.py",
-        "py.typed"
+        "_utils.py",
+        "_logging.py"
     ],
     "群服互通本地版/websocket/tests": [
-        "test_cookiejar.py",
-        "__init__.py",
         "test_app.py",
-        "test_http.py",
         "test_url.py",
         "test_websocket.py",
-        "echo-server.py",
-        "test_abnf.py"
+        "test_http.py",
+        "__init__.py",
+        "test_abnf.py",
+        "test_cookiejar.py",
+        "echo-server.py"
     ],
     "群服互通本地版/websocket/tests/data": [
-        "header03.txt",
         "header02.txt",
-        "header01.txt"
+        "header01.txt",
+        "header03.txt"
     ],
-    "游戏内显示插件报错": [
-        "__init__.py",
-        "datas.json"
+    "群服互通本地版/cqlib": [
+        "cq_runner.py",
+        "downloader.py",
+        "utils.py",
+        "config_spawn.py"
     ],
-    "简易建造": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "多功能玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "设置栏钢琴师": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_tps计算器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音效播放器": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版/websocket": [
-        "_wsdump.py",
-        "_utils.py",
-        "_cookiejar.py",
-        "_http.py",
-        "_core.py",
-        "__init__.py",
-        "_handshake.py",
-        "_app.py",
-        "_exceptions.py",
-        "_ssl_compat.py",
-        "_abnf.py",
-        "_socket.py",
-        "_logging.py",
-        "_url.py",
-        "py.typed"
-    ],
-    "群服互通云链版/websocket/tests": [
-        "test_cookiejar.py",
-        "__init__.py",
-        "test_app.py",
-        "test_http.py",
-        "test_url.py",
-        "test_websocket.py",
-        "echo-server.py",
-        "test_abnf.py"
-    ],
-    "群服互通云链版/websocket/tests/data": [
-        "header03.txt",
-        "header02.txt",
-        "header01.txt"
-    ],
-    "点歌台": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "物品制作器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "五子棋小游戏": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "传送点": [
+    "清空玩家末影箱": [
         "__init__.py",
         "datas.json"
     ],
@@ -498,34 +307,71 @@
         "__init__.py",
         "datas.json"
     ],
-    "@玩家": [
+    "任务系统": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "群服互通云链版": [
         "__init__.py",
         "datas.json"
     ],
-    "定时任务": [
-        "readme.txt",
+    "群服互通云链版/websocket": [
+        "_wsdump.py",
+        "_url.py",
+        "_http.py",
+        "_cookiejar.py",
+        "py.typed",
+        "_core.py",
+        "__init__.py",
+        "_ssl_compat.py",
+        "_exceptions.py",
+        "_app.py",
+        "_abnf.py",
+        "_handshake.py",
+        "_socket.py",
+        "_utils.py",
+        "_logging.py"
+    ],
+    "群服互通云链版/websocket/tests": [
+        "test_app.py",
+        "test_url.py",
+        "test_websocket.py",
+        "test_http.py",
+        "__init__.py",
+        "test_abnf.py",
+        "test_cookiejar.py",
+        "echo-server.py"
+    ],
+    "群服互通云链版/websocket/tests/data": [
+        "header02.txt",
+        "header01.txt",
+        "header03.txt"
+    ],
+    "性能管理": [
         "__init__.py",
         "datas.json"
     ],
-    "定时任务/示例定时任务": [
-        "扫地姬.mcfunction"
+    "前置_大字替换": [
+        "__init__.py",
+        "datas.json"
     ],
-    "公告栏[Mono]": [
+    "维度传送": [
         "__init__.py",
         "datas.json"
     ],
     "ZBasic_Lang_中文编程": [
-        "readme.txt",
+        "basic_types.py",
+        "err_str.py",
         "type_checker.py",
-        "syntax_lib.py",
+        "basic_codes.py",
         "__init__.py",
         "datas.json",
-        "basic_types.py",
         "compiler.py",
-        "err_str.py",
-        "syntax_compile.py",
+        "readme.txt",
         "executor.py",
-        "basic_codes.py"
+        "syntax_lib.py",
+        "syntax_compile.py"
     ],
     "ZBasic_Lang_中文编程/示例代码": [],
     "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
@@ -535,7 +381,177 @@
     "ZBasic_Lang_中文编程/示例代码/玩家转账": [
         "玩家发言.txt"
     ],
-    "服服互通": [
+    "前置_世界交互": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "游戏内显示插件报错": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "@玩家": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_SQL数据库支持": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "多功能玩家互传": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器/mido": [
+        "frozen.py",
+        "parser.py",
+        "ports.py",
+        "__init__.py",
+        "tokenizer.py",
+        "syx.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "specs.py",
+        "messages.py",
+        "strings.py",
+        "__init__.py",
+        "decode.py",
+        "checks.py",
+        "encode.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "units.py",
+        "__init__.py",
+        "tracks.py",
+        "meta.py",
+        "midifiles.py"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "exceptions.py",
+        "types.py",
+        "__init__.py",
+        "constants.py",
+        "utils.py",
+        "subclass.py",
+        "main.py"
+    ],
+    "tpa传送": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "获取全服玩家皮肤": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导入器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导入器/BDXConverter": [
+        "__init__.py"
+    ],
+    "bdx导入器/BDXConverter/General": [
+        "Operation.py",
+        "__init__.py",
+        "Pool.py",
+        "GeneralClass.py"
+    ],
+    "bdx导入器/BDXConverter/Converter": [
+        "FileOperation.py",
+        "__init__.py",
+        "Converter.py",
+        "ErrorClassDefine.py"
+    ],
+    "bdx导入器/BDXConverter/utils": [
+        "marshalNBT.py",
+        "unmarshalNBT_OldVersion.py",
+        "unmarshalNBT.py",
+        "__init__.py",
+        "getString.py",
+        "getByte.py",
+        "marshalNBT_OldVersion.py"
+    ],
+    "bdx导入器/BDXConverter/Operation": [
+        "AddInt16YValue.py",
+        "AddXValue.py",
+        "PlaceBlockWithCommandBlockData.py",
+        "AddInt8XValue.py",
+        "AddZValue.py",
+        "AddInt16ZValue.py",
+        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
+        "PlaceRuntimeBlockWithChestData.py",
+        "AddInt16XValue.py",
+        "SubtractYValue.py",
+        "AddInt8YValue.py",
+        "AddInt8ZValue.py",
+        "PlaceRuntimeBlockWithCommandBlockData.py",
+        "NOP.py",
+        "__init__.py",
+        "PlaceBlock.py",
+        "AddZValue0.py",
+        "PlaceRuntimeBlock.py",
+        "PlaceCommandBlockWithCommandBlockData.py",
+        "PlaceBlockWithBlockStatesDeprecated.py",
+        "AddYValue.py",
+        "SubtractZValue.py",
+        "SetCommandBlockData.py",
+        "structOfChest.py",
+        "AddInt32ZValue0.py",
+        "SubtractXValue.py",
+        "CreateConstantString.py",
+        "PlaceBlockWithRuntimeId.py",
+        "PlaceBlockWithChestData.py",
+        "AddInt32ZValue.py",
+        "PlaceBlockWithNBTData.py",
+        "UseRuntimeIDPool.py",
+        "AssignDebugData.py",
+        "AddInt32XValue.py",
+        "AddInt32YValue.py",
+        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
+        "PlaceBlockWithBlockStates.py",
+        "AddInt16ZValue0.py"
+    ],
+    "bdx导入器/nbtlib": [
+        "schema.py",
+        "__init__.py",
+        "nbt.py",
+        "__main__.py",
+        "tag.py",
+        "path.py",
+        "cli.py"
+    ],
+    "bdx导入器/nbtlib/contrib": [
+        "__init__.py"
+    ],
+    "bdx导入器/nbtlib/contrib/minecraft": [
+        "structure.py",
+        "__init__.py"
+    ],
+    "bdx导入器/nbtlib/literal": [
+        "parser.py",
+        "__init__.py",
+        "serializer.py"
+    ],
+    "定时任务": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
+    ],
+    "定时任务/示例定时任务": [
+        "扫地姬.mcfunction"
+    ],
+    "发言频率限制": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "活塞限速": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "点歌台": [
         "__init__.py",
         "datas.json"
     ],
@@ -545,35 +561,23 @@
     ],
     "群服互通[本地带签名服务器版][不推荐]/lib": [],
     "群服互通[本地带签名服务器版][不推荐]/lib/yaml": [
-        "events.py",
         "_yaml.cpython-311-x86_64-linux-gnu.so",
-        "scanner.py",
-        "serializer.py",
-        "nodes.py",
-        "__init__.py",
-        "composer.py",
-        "loader.py",
-        "error.py",
-        "representer.py",
+        "events.py",
         "resolver.py",
-        "dumper.py",
-        "reader.py",
-        "constructor.py",
+        "nodes.py",
         "cyaml.py",
-        "tokens.py",
+        "composer.py",
+        "error.py",
         "parser.py",
-        "emitter.py"
-    ],
-    "发言频率限制": [
+        "loader.py",
+        "reader.py",
         "__init__.py",
-        "datas.json"
-    ],
-    "入服欢迎": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "tpa传送": [
-        "__init__.py",
-        "datas.json"
+        "scanner.py",
+        "tokens.py",
+        "dumper.py",
+        "serializer.py",
+        "emitter.py",
+        "constructor.py",
+        "representer.py"
     ]
 }
