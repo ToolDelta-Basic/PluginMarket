@@ -20,9 +20,12 @@ class InGameError(Plugin):
     def call_err(self, plugin_name: str, exception: Exception, exc_str: str):
         if self.game_avali:
             try:
+                if exc_str.strip() == "":
+                    self.game_ctrl.say_to("@a", f"§7[§cERROR§7] §4{plugin_name} 报错：空报错")
+                    return
                 self.game_ctrl.say_to("@a", f"§7[§cERROR§7] §4{plugin_name} 报错：")
                 for ln in exc_str.split("\n"):
-                    self.game_ctrl.say_to("@a", " " + ln)
+                    self.game_ctrl.say_to("@a", "§c " + ln)
             except Exception:
                 self._backup_onerr(plugin_name, exception, exc_str)
 
