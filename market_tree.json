@@ -195,6 +195,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "class-plugin-creator": {
+      "name": "类式插件创建器",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "DateTimeSync": {
       "name": "时间同步计分板",
       "author": "SuperScript",
