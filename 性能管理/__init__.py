@@ -1,5 +1,4 @@
 import psutil
-import time
 import os
 from tooldelta import plugins, Plugin, Utils, Print, Config
 
@@ -54,7 +53,6 @@ class EmergencyMetaMana(Plugin):
             for k, _ in Utils.TMPJson.get_tmps():
                 Utils.TMPJson.unloadPathJson(k)
             os._exit(0)
-        time.sleep(20)
 
     def chk_proc(self, args):
         vm = psutil.virtual_memory()
