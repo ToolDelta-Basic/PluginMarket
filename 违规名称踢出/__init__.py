@@ -28,7 +28,7 @@ class kill(Plugin):
             if a in player:
                 self.game_ctrl.sendcmd_with_resp(f"/kick {player} {self.yy}")
 
-    def on_player_message(self, player: str):
+    def on_player_message(self, player: str, _):
         self.killpl(player)
 
     def on_player_join(self, player: str):

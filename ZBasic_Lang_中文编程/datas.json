@@ -1,8 +1,8 @@
 {
     "author": "SuperScript",
-    "version": "0.0.5",
+    "version": "0.1.1",
     "plugin-type": "classic",
-    "description": "使用中文进行ToolDelta插件的编写! 教程请查看 ToolDelta Wiki (https:\/\/tooldelta-wiki.tblstudio.cn\/)",
+    "description": "使用中文进行ToolDelta插件的编写! 教程请查看 ToolDelta Wiki (https:\/\/td-wiki.dqyt.online\/)",
     "pre-plugins": {},
     "plugin-id": "TD-ZBasic",
     "enabled": true

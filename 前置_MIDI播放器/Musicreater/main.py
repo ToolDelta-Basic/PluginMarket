@@ -684,11 +684,6 @@ class MidiConvert(MusicSequence):
         delaytime_previous = 0
         for note in notes_list:
             tickdelay = note.start_tick - delaytime_previous
-            note_pitch_f1 = (
-                note.note_pitch
-                - 60
-                - MM_INSTRUMENT_DEVIATION_TABLE.get(note.sound_name, 6)
-            )
             delaytime_previous = note.start_tick
             # 响度 / 127
             # 音调 2 ** (f1 / 12)
@@ -696,7 +691,7 @@ class MidiConvert(MusicSequence):
                 (
                     note.sound_name,
                     round(note.velocity / 127 * 100),
-                    note_pitch_f1,
+                    note.note_pitch,
                     tickdelay,
                 )
             )

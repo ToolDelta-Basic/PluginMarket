@@ -1,0 +1,9 @@
+{
+    "author": "ToolDelta",
+    "version": "0.0.1",
+    "description": "在控制台使用 §ecmdt§r 命令来开启监听或者取消监听 ToolDelta 发送的所有指令",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "cmdsender-monitor"
+}

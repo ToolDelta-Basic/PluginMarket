@@ -2,6 +2,7 @@ import time
 import os
 from typing import ClassVar
 import Musicreater
+from Musicreater.constants import MM_INSTRUMENT_DEVIATION_TABLE
 from tooldelta import Plugin, plugins, Builtins, Print
 
 # API 名: MIDI播放器
@@ -43,7 +44,15 @@ class ToolSoundSequence:
                     instrument_indexes.append(instrument)
                     duration += delay_ticks / 20
                 instrument_index = instrument_indexes.index(instrument)
-                newb.append(bytes([instrument_index, vol, pitch + 120, delay_ticks]))
+                if pitch not in range(256):
+                    Print.print_err(f"超出转换预期: {pitch}")
+                # 有些音符间隔很长
+                while delay_ticks >= 256:
+                    newb.append(bytes([instrument_index, 0, 60, min(delay_ticks, 255)]))
+                    delay_ticks -= 255
+                newb.append(
+                    bytes([instrument_index, vol, pitch, min(delay_ticks, 127)])
+                )
             bt += b"\xfe".join(newb)
             self.instruments = instrument_indexes
             self.noteseq = bt
@@ -55,8 +64,15 @@ class ToolSoundSequence:
         for ind in seq.split(b"\xfe"):
             instrument_index, volume, note_pitch_shift, note_delay = ind
             instrument: str = instruments[instrument_index]
+            pitch_modifier = MM_INSTRUMENT_DEVIATION_TABLE.get(instrument)
+            if pitch_modifier is None:
+                pitch_modifier = 6
+                Print.print_war(f"modifier: instrument {instrument} is invalid")
+            pitch_resized = (
+                note_pitch_shift - pitch_modifier
+            )
             vol = volume / 100
-            pitch = 2 ** ((note_pitch_shift - 120) / 12)
+            pitch = 1 if instrument in ("note.snare", "note.bd", "note.hat") else 2 ** ((pitch_resized - 60) / 12)
             delay = note_delay
             yield instrument, vol, pitch, delay
 
@@ -80,7 +96,7 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 2, 6)
+    version = (0, 2, 7)
 
     midi_seqs: ClassVar[dict[str, ToolSoundSequence]] = {}
     playsound_threads: ClassVar[dict[int, Builtins.createThread]] = {}
@@ -94,17 +110,29 @@ class ToolMidiMixer(Plugin):
     def load_sound_seq_file(self, path: str, as_name: str):
         "读取ToolSound声音文件解析为序列载入(快)."
         with open(path, "rb") as f:
-            self.midi_seqs[as_name] = ToolSoundSequence(f.read())
+            try:
+                self.midi_seqs[as_name] = ToolSoundSequence(f.read())
+            except Exception as err:
+                Print.print_err(f"转换音乐 {path} 失败: {err}")
+                raise SystemExit
 
     def translate_midi_to_seq_file(self, path: str, path1: str):
         "将MIDI文件转换为ToolSound序列文件."
-        seq = read_midi_and_dump_to_seq(path)
+        try:
+            seq = read_midi_and_dump_to_seq(path)
+        except Exception as err:
+            Print.print_err(f"转换音乐 {path} 失败: {err}")
+            raise SystemExit
         with open(path1, "wb") as f:
             f.write(seq.dump_seq())
 
     def read_midi_file_to_sequence(self, path: str):
         "读取MIDI序列文件, 将其转换为序列并返回"
-        return read_midi_and_dump_to_seq(path)
+        try:
+            return read_midi_and_dump_to_seq(path)
+        except Exception as err:
+            Print.print_err(f"转换音乐 {path} 失败: {err}")
+            raise SystemExit
 
     def playsound_at_target(self, name_or_seq: str | ToolSoundSequence, target: str):
         "创建播放器线程并返回线程ID, 失败则返回0, 以便使用 stop_playing() 停止线程"

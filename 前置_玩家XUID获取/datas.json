@@ -1,0 +1,11 @@
+{
+  "author": "System",
+  "version": "0.0.1",
+  "description": "通过 XUID 获取玩家名或通过玩家名获取 XUID",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.0.1"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "前置-世界交互"
+}

@@ -3,21 +3,21 @@ import time
 from datetime import datetime
 from typing import ClassVar
 
-from tooldelta import Builtins, Config, Frame, Plugin, Print, plugins
+from tooldelta import Utils, Config, Frame, Plugin, Print, plugins
 
 
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
-        self.tmpjson = Builtins.TMPJson
+        self.tmpjson = Utils.TMPJson
         STD_BAN_CFG = {"踢出玩家提示格式": str, "玩家被封禁的广播提示": str}
         DEFAULT_BAN_CFG = {
             "踢出玩家提示格式": "§c你因为 [ban原因]\n被系统封禁至 §6[日期时间]",
@@ -30,14 +30,13 @@ class BanSystem(Plugin):
     def on_def(self):
         self.chatbar = plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
 
-    @Builtins.thread_func
     def on_inject(self):
         self.chatbar.add_trigger(
             ["ban", "封禁"],
-            "[玩家名] [原因, 不填为未知原因]",
+            "[玩家名:可粗略] [原因, 不填为未知原因]",
             "封禁玩家",
             self.ban_who,
-            lambda x: x in (0, 1),
+            lambda x: x in (1, 2),
             True,
         )
         for i in self.game_ctrl.allplayers:
@@ -67,7 +66,7 @@ class BanSystem(Plugin):
 
     # ----------------------------------
 
-    @Builtins.thread_func
+    @Utils.thread_func
     def on_player_join(self, player: str):
         self.test_ban(player)
 
@@ -78,7 +77,7 @@ class BanSystem(Plugin):
             reason = ""
         else:
             reason = args[0]
-        all_matches = Builtins.fuzzy_match(self.game_ctrl.allplayers, target)
+        all_matches = Utils.fuzzy_match(self.game_ctrl.allplayers, target)
         if all_matches == []:
             self.game_ctrl.say_to(
                 caller, f"§c封禁系统: 无匹配名字关键词的玩家: {target}"
@@ -122,7 +121,7 @@ class BanSystem(Plugin):
         Print.print_inf(
             f"封禁系统使用的 当前时间: §6{datetime.fromtimestamp(time.time())}"
         )
-        return Builtins.SimpleFmt(
+        return Utils.SimpleFmt(
             {
                 "[日期时间]": fmt_time,
                 "[玩家名]": player,
@@ -132,7 +131,7 @@ class BanSystem(Plugin):
         )
 
     def rec_ban_data(self, player: str, data):
-        Builtins.SimpleJsonDataReader.writeFileTo(self.data_path, player, data)
+        Utils.JsonIO.writeFileTo(self.name, player + ".json", data)
 
     def del_ban_data(self, player: str):
         p = os.path.join(self.data_path, player + ".json")
@@ -140,6 +139,4 @@ class BanSystem(Plugin):
             os.remove(p)
 
     def get_ban_data(self, player: str) -> dict:
-        return Builtins.SimpleJsonDataReader.readFileFrom(
-            "封禁系统", player, self.BAN_DATA_DEFAULT
-        )  # type: ignore
+        return Utils.JsonIO.readFileFrom(self.name, player + ".json", self.BAN_DATA_DEFAULT)

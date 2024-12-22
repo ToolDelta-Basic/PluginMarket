@@ -63,6 +63,7 @@ class DJTable(Plugin):
             self.force_stop_current,
             op_only=True,
         )
+        self.choose_music_thread()
 
     def on_player_join(self, _):
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
@@ -116,24 +117,20 @@ class DJTable(Plugin):
         else:
             self.game_ctrl.say_to(player, "§e点歌§f>> §6当前没有在播放曲目啦！")
 
+    @Utils.timer_event(4, "点歌台选歌")
     def choose_music_thread(self):
-        counter = 0
-        while 1:
-            time.sleep(1)
-            counter += 1
-            if counter > 4:
-                if self.musics_list != []:
-                    self.can_stop = True
-                    music_data = self.musics_list.pop(0)
-                    self.game_ctrl.say_to(
-                        "@a",
-                        f"§e点歌§f>> §7开始播放§f{music_data[0]}§7，点歌者:§f{music_data[1]}",
-                    )
-                    try:
-                        self.midiplayer.playsound_at_target_sync(music_data[0], "@a")
-                    except SystemExit:
-                        self.game_ctrl.say_to("@a", "§e点歌§f>> §7下一首")
-                    if self.musics_list == []:
-                        self.game_ctrl.say_to("@a", "§e点歌§f>> §7点歌列表已空!")
-                else:
-                    self.can_stop = False
+        if self.musics_list != []:
+            self.can_stop = True
+            music_data = self.musics_list.pop(0)
+            self.game_ctrl.say_to(
+                "@a",
+                f"§e点歌§f>> §7开始播放§f{music_data[0]}§7，点歌者:§f{music_data[1]}",
+            )
+            try:
+                self.midiplayer.playsound_at_target_sync(music_data[0], "@a")
+            except SystemExit:
+                self.game_ctrl.say_to("@a", "§e点歌§f>> §7下一首")
+            if self.musics_list == []:
+                self.game_ctrl.say_to("@a", "§e点歌§f>> §7点歌列表已空!")
+        else:
+            self.can_stop = False
