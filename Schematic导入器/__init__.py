@@ -45,7 +45,7 @@ class SchematicImport(Plugin):
         schema_file = fs[resp - 1]
         try:
             schema_inf = SchematicFile.load(os.path.join(self.data_path, schema_file))
-            if schema_inf.root.get("Blocks") is None:
+            if schema_inf.root.get("Blocks") is None:  # type: ignore
                 raise ValueError(
                     "无法正常读取文件, 请确保这是Schematic文件而不是一个Schem文件"
                 )
