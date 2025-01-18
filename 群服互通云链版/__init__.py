@@ -130,43 +130,52 @@ class QQLinker(Plugin):
         if any(bc_recv):
             return
         if data.get("post_type") == "message" and data["message_type"] == "group":
+            if data["group_id"] != self.linked_group:
+                return
             msg = data["message"]
-            if not isinstance(msg, str):
+            if isinstance(msg, list):
+                # NapCat
+                msg_rawdict = msg[0]
+                msg_type = msg_rawdict["type"]
+                msg_data = msg_rawdict["data"]
+                if msg_type != "text":
+                    return
+                msg = msg_data["text"]
+            elif not isinstance(msg, str):
                 raise ValueError(f"键 'message' 值不是字符串类型, 而是 {msg}")
-            if data["group_id"] == self.linked_group:
-                if self.enable_group_2_game:
-                    user_id = data["sender"]["user_id"]
-                    nickname = data["sender"]["nickname"]
-                    if user_id in self.waitmsg_cbs.keys():
-                        self.waitmsg_cbs[user_id](msg)
-                        return
-                    bc_recv = plugins.broadcastEvt(
-                        "群服互通/链接群消息",
-                        {"QQ号": user_id, "昵称": nickname, "消息": msg},
-                    )
-                    if any(bc_recv):
-                        return
-                    if msg.startswith("/"):
-                        if (
-                            user_id
-                            in self.cfg["指令设置"]["可以对游戏执行指令的QQ号名单"]
-                        ):
-                            self.sb_execute_cmd(msg)
-                        else:
-                            self.sendmsg(self.linked_group, "你是管理吗你还发指令 🤓👆")
-                        return
-                    elif msg in ["玩家列表", "list"] and self.enable_playerlist:
-                        self.send_player_list()
-                    self.game_ctrl.say_to(
-                        "@a",
-                        Utils.simple_fmt(
-                            {
-                                "[昵称]": nickname,
-                                "[消息]": replace_cq(msg),
-                            },
-                            self.cfg["消息转发设置"]["群到游戏"]["转发格式"],
-                        ),
-                    )
+            if self.enable_group_2_game:
+                user_id = data["sender"]["user_id"]
+                nickname = data["sender"]["nickname"]
+                if user_id in self.waitmsg_cbs.keys():
+                    self.waitmsg_cbs[user_id](msg)
+                    return
+                bc_recv = plugins.broadcastEvt(
+                    "群服互通/链接群消息",
+                    {"QQ号": user_id, "昵称": nickname, "消息": msg},
+                )
+                if any(bc_recv):
+                    return
+                if msg.startswith("/"):
+                    if (
+                        user_id
+                        in self.cfg["指令设置"]["可以对游戏执行指令的QQ号名单"]
+                    ):
+                        self.sb_execute_cmd(msg)
+                    else:
+                        self.sendmsg(self.linked_group, "你是管理吗你还发指令 🤓👆")
+                    return
+                elif msg in ["玩家列表", "list"] and self.enable_playerlist:
+                    self.send_player_list()
+                self.game_ctrl.say_to(
+                    "@a",
+                    Utils.simple_fmt(
+                        {
+                            "[昵称]": nickname,
+                            "[消息]": replace_cq(msg),
+                        },
+                        self.cfg["消息转发设置"]["群到游戏"]["转发格式"],
+                    ),
+                )
 
     def waitMsg(self, qqid: int, timeout=60) -> str | None:
         g, s = create_result_cb()
@@ -210,7 +219,7 @@ class QQLinker(Plugin):
                 for prefix in self.game2qq_trans_chars:
                     if msg.startswith(prefix):
                         can_send = True
-                        msg = msg[1:]
+                        msg = msg[len(prefix):]
                         break
             elif self.game2qq_block_prefixs != []:
                 can_send = True
