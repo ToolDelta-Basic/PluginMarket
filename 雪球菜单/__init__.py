@@ -9,18 +9,18 @@ import threading
 _source_lock = threading.Lock()
 snowmenu_lock_list: list[str] = []
 
-class AcquiredLock:
-    def __init__(self, sys: "SnowMenu"):
-        self.sys = sys
+# class AcquiredLock:
+#     def __init__(self, sys: "SnowMenu"):
+#         self.sys = sys
 
-    def __enter__(self):
-        self.sys._dbg("[L] Acquring lock..")
-        _source_lock.acquire()
-        self.sys._dbg("[L] Acquring lock..ok")
+#     def __enter__(self):
+#         self.sys._dbg("[L] Acquring lock..")
+#         _source_lock.acquire()
+#         self.sys._dbg("[L] Acquring lock..ok")
 
-    def __exit__(self, a, b, c):
-        _source_lock.release()
-        self.sys._dbg("[L] Releasing lock.")
+#     def __exit__(self, a, b, c):
+#         _source_lock.release()
+#         self.sys._dbg("[L] Releasing lock.")
 
 
 DBG_MODE = False
@@ -274,12 +274,12 @@ class SnowMenu(Plugin):
                 self.page = page
                 self.event.set()
                 self._end = True
+                return True
 
             def exit(self, _):
                 self.page = None
                 self.event.set()
                 self._end = True
-                return True
 
         cb = _cb()
 
