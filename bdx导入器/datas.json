@@ -6,6 +6,6 @@
   "pre-plugins": {
     "前置-世界交互": "0.0.4"
   },
-  "plugin-id": "bdx-importer",
+  "plugin-id": "bdx-builder",
   "enabled": true
 }
