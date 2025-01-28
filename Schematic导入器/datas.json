@@ -1,9 +1,0 @@
-{
-  "author": "SuperScript",
-  "version": "0.0.1",
-  "plugin-type": "classic",
-  "description": "支持导入schematic文件, 在控制台输入 ? 查看导入命令",
-  "pre-plugins": {},
-  "plugin-id": "schematic-builder",
-  "enabled": true
-}
