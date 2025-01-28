@@ -246,95 +246,6 @@
         "__init__.py",
         "readme.txt"
     ],
-    "bdx导入器": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter": [
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter/General": [
-        "Pool.py",
-        "Operation.py",
-        "GeneralClass.py",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter/utils": [
-        "marshalNBT_OldVersion.py",
-        "getString.py",
-        "unmarshalNBT_OldVersion.py",
-        "unmarshalNBT.py",
-        "getByte.py",
-        "__init__.py",
-        "marshalNBT.py"
-    ],
-    "bdx导入器/BDXConverter/Converter": [
-        "Converter.py",
-        "FileOperation.py",
-        "ErrorClassDefine.py",
-        "__init__.py"
-    ],
-    "bdx导入器/BDXConverter/Operation": [
-        "AddInt16YValue.py",
-        "AddZValue0.py",
-        "CreateConstantString.py",
-        "PlaceBlockWithCommandBlockData.py",
-        "AssignDebugData.py",
-        "PlaceCommandBlockWithCommandBlockData.py",
-        "AddZValue.py",
-        "AddInt8YValue.py",
-        "PlaceBlockWithRuntimeId.py",
-        "AddXValue.py",
-        "SetCommandBlockData.py",
-        "AddYValue.py",
-        "AddInt8XValue.py",
-        "SubtractXValue.py",
-        "AddInt16ZValue0.py",
-        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
-        "PlaceRuntimeBlock.py",
-        "PlaceBlockWithBlockStatesDeprecated.py",
-        "AddInt32YValue.py",
-        "AddInt32XValue.py",
-        "structOfChest.py",
-        "UseRuntimeIDPool.py",
-        "PlaceBlockWithBlockStates.py",
-        "PlaceBlock.py",
-        "AddInt16ZValue.py",
-        "AddInt8ZValue.py",
-        "PlaceRuntimeBlockWithChestData.py",
-        "AddInt32ZValue0.py",
-        "SubtractYValue.py",
-        "AddInt16XValue.py",
-        "PlaceRuntimeBlockWithCommandBlockData.py",
-        "__init__.py",
-        "PlaceBlockWithChestData.py",
-        "SubtractZValue.py",
-        "PlaceBlockWithNBTData.py",
-        "NOP.py",
-        "AddInt32ZValue.py",
-        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py"
-    ],
-    "bdx导入器/nbtlib": [
-        "tag.py",
-        "__main__.py",
-        "cli.py",
-        "path.py",
-        "nbt.py",
-        "__init__.py",
-        "schema.py"
-    ],
-    "bdx导入器/nbtlib/literal": [
-        "parser.py",
-        "serializer.py",
-        "__init__.py"
-    ],
-    "bdx导入器/nbtlib/contrib": [
-        "__init__.py"
-    ],
-    "bdx导入器/nbtlib/contrib/minecraft": [
-        "__init__.py",
-        "structure.py"
-    ],
     "封禁系统": [
         "datas.json",
         "__init__.py"
@@ -418,37 +329,6 @@
         "示例-定时任务.mcfunction",
         "示例-触发词.mcfunction",
         "示例-系统启动.mcfunction"
-    ],
-    "Schematic导入器": [
-        "datas.json",
-        "schematic_id.py",
-        "__init__.py"
-    ],
-    "Schematic导入器/nbtschematic": [
-        "schematic.py",
-        "__init__.py",
-        "version.py"
-    ],
-    "Schematic导入器/nbtlib": [
-        "tag.py",
-        "__main__.py",
-        "cli.py",
-        "path.py",
-        "nbt.py",
-        "__init__.py",
-        "schema.py"
-    ],
-    "Schematic导入器/nbtlib/literal": [
-        "parser.py",
-        "serializer.py",
-        "__init__.py"
-    ],
-    "Schematic导入器/nbtlib/contrib": [
-        "__init__.py"
-    ],
-    "Schematic导入器/nbtlib/contrib/minecraft": [
-        "__init__.py",
-        "structure.py"
     ],
     "前置_大字替换": [
         "datas.json",

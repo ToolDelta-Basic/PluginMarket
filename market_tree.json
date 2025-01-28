@@ -213,12 +213,6 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
-    "bdx-builder": {
-      "name": "bdx导入器",
-      "author": "xingchen/SuperScript",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
@@ -275,12 +269,6 @@
     },
     "mcfunction-tasks": {
       "name": "MCFunction计划任务",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "schematic-builder": {
-      "name": "Schematic导入器",
       "author": "SuperScript",
       "version": "0.0.1",
       "plugin-type": "classic"
