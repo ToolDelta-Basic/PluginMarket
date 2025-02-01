@@ -3,7 +3,6 @@
         "聊天栏菜单",
         "自定义聊天栏菜单",
         "入服欢迎",
-        "死亡返回",
         "better-announcebar",
         "gobang_game",
         "发言频率限制",
@@ -11,5 +10,5 @@
     ],
     "description": "入门ToolDelta的插件包， 提供了ToolDelta的经典插件集\n包括一些实用插件和娱乐插件",
     "author": "SuperScript",
-    "version": "0.0.1"
+    "version": "0.0.2"
 }
