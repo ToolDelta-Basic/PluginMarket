@@ -18,34 +18,56 @@
         "datas.json",
         "__init__.py"
     ],
-    "群服互通[本地带签名服务器版][不推荐]": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "群服互通[本地带签名服务器版][不推荐]/lib": [],
-    "群服互通[本地带签名服务器版][不推荐]/lib/yaml": [
-        "events.py",
-        "composer.py",
-        "resolver.py",
-        "scanner.py",
-        "nodes.py",
-        "cyaml.py",
-        "_yaml.cpython-311-x86_64-linux-gnu.so",
-        "reader.py",
-        "emitter.py",
-        "parser.py",
-        "serializer.py",
-        "constructor.py",
-        "__init__.py",
-        "error.py",
-        "tokens.py",
-        "loader.py",
-        "representer.py",
-        "dumper.py"
-    ],
     "更好的公告栏": [
         "datas.json",
         "__init__.py"
+    ],
+    "desperated_plugins": [],
+    "desperated_plugins/地图画导入": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/群服互通本地版": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/群服互通本地版/cqlib": [
+        "config_spawn.py",
+        "cq_runner.py",
+        "downloader.py",
+        "utils.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket": [
+        "_abnf.py",
+        "_exceptions.py",
+        "_app.py",
+        "_handshake.py",
+        "_utils.py",
+        "_core.py",
+        "_logging.py",
+        "_url.py",
+        "py.typed",
+        "_http.py",
+        "_ssl_compat.py",
+        "_socket.py",
+        "__init__.py",
+        "_cookiejar.py",
+        "_wsdump.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket/tests": [
+        "echo-server.py",
+        "test_abnf.py",
+        "test_http.py",
+        "test_app.py",
+        "test_cookiejar.py",
+        "test_websocket.py",
+        "test_url.py",
+        "__init__.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket/tests/data": [
+        "header03.txt",
+        "header01.txt",
+        "header02.txt"
     ],
     "前置_基本插件功能库": [
         "datas.json",
@@ -98,10 +120,6 @@
         "header03.txt",
         "header01.txt",
         "header02.txt"
-    ],
-    "地图画导入": [
-        "datas.json",
-        "__init__.py"
     ],
     "控制台执行MC指令": [
         "datas.json",
@@ -186,48 +204,6 @@
     "清空玩家末影箱": [
         "datas.json",
         "__init__.py"
-    ],
-    "群服互通本地版": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "群服互通本地版/cqlib": [
-        "config_spawn.py",
-        "cq_runner.py",
-        "downloader.py",
-        "utils.py"
-    ],
-    "群服互通本地版/websocket": [
-        "_abnf.py",
-        "_exceptions.py",
-        "_app.py",
-        "_handshake.py",
-        "_utils.py",
-        "_core.py",
-        "_logging.py",
-        "_url.py",
-        "py.typed",
-        "_http.py",
-        "_ssl_compat.py",
-        "_socket.py",
-        "__init__.py",
-        "_cookiejar.py",
-        "_wsdump.py"
-    ],
-    "群服互通本地版/websocket/tests": [
-        "echo-server.py",
-        "test_abnf.py",
-        "test_http.py",
-        "test_app.py",
-        "test_cookiejar.py",
-        "test_websocket.py",
-        "test_url.py",
-        "__init__.py"
-    ],
-    "群服互通本地版/websocket/tests/data": [
-        "header03.txt",
-        "header01.txt",
-        "header02.txt"
     ],
     "点歌台": [
         "datas.json",

@@ -21,12 +21,6 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
-    "群服互通": {
-      "name": "群服互通[本地带签名服务器版][不推荐]",
-      "author": "xingchen",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
     "better-announcebar": {
       "name": "更好的公告栏",
       "author": "SuperScript",
@@ -61,12 +55,6 @@
       "name": "群服互通云链版",
       "author": "大庆油田/SuperScript",
       "version": "0.0.7",
-      "plugin-type": "classic"
-    },
-    "地图画导入": {
-      "name": "地图画导入",
-      "author": "SuperScript",
-      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
@@ -182,12 +170,6 @@
       "author": "wling",
       "version": "0.0.5",
       "plugin-type": "injected"
-    },
-    "local-qqlink": {
-      "name": "群服互通本地版",
-      "author": "大庆油田/SuperScript",
-      "version": "0.0.3",
-      "plugin-type": "classic"
     },
     "choose-song": {
       "name": "点歌台",
