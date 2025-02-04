@@ -150,7 +150,7 @@
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "cmdsender-monitor": {
