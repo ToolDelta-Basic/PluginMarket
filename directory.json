@@ -18,10 +18,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "维度传送": [
-        "datas.json",
-        "__init__.py"
-    ],
     "群服互通[本地带签名服务器版][不推荐]": [
         "datas.json",
         "__init__.py"
@@ -156,10 +152,6 @@
         "__init__.py"
     ],
     "前置_玩家XUID获取": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "死亡返回": [
         "datas.json",
         "__init__.py"
     ],

@@ -21,12 +21,6 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
-    "维度传送": {
-      "name": "维度传送",
-      "author": "wling/7912",
-      "version": "0.0.3",
-      "plugin-type": "injected"
-    },
     "群服互通": {
       "name": "群服互通[本地带签名服务器版][不推荐]",
       "author": "xingchen",
@@ -140,12 +134,6 @@
       "author": "SuperScript",
       "version": "0.0.5",
       "plugin-type": "classic"
-    },
-    "死亡返回": {
-      "name": "死亡返回",
-      "author": "wling/7912",
-      "version": "0.1.2",
-      "plugin-type": "injected"
     },
     "anti-fast-piston": {
       "name": "活塞限速",
