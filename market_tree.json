@@ -234,7 +234,7 @@
     "ad": {
       "name": "公告栏[Mono]",
       "author": "Mono",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "mcfunction-tasks": {
