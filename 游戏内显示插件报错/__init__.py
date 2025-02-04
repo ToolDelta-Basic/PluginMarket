@@ -4,7 +4,7 @@ from tooldelta import Plugin, plugins, ToolDelta
 class InGameError(Plugin):
     name = "游戏内显示插件报错"
     author = "System"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -28,6 +28,8 @@ class InGameError(Plugin):
                     self.game_ctrl.say_to("@a", "§c " + ln)
             except Exception:
                 self._backup_onerr(plugin_name, exception, exc_str)
+        else:
+            self._backup_onerr(plugin_name, exception, exc_str)
 
     def test_error(self, args):
         if len(args) == 0:
