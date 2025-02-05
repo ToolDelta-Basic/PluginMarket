@@ -1,11 +1,6 @@
 import re
-import prompt_toolkit.input
 from tooldelta import ToolDelta, Plugin, plugins, Config, Utils, Print, game_utils
 from tooldelta import TYPE_CHECKING
-
-import prompt_toolkit
-
-prompt_toolkit.prompt()
 
 plugins.checkSystemVersion((0, 7, 1))
 
@@ -13,7 +8,7 @@ plugins.checkSystemVersion((0, 7, 1))
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
 
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
