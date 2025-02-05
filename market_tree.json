@@ -174,7 +174,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript",
-      "version": "0.1.6",
+      "version": "0.1.7",
       "plugin-type": "classic"
     },
     "sfx-player": {
