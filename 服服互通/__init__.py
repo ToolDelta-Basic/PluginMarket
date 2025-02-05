@@ -95,7 +95,7 @@ class SuperLinkProtocol(BasicProtocol):
     def find_default_ips(self):
         Print.print_war("服服互通: 正在自动获取线路中..")
         try:
-            resp = requests.get("https://tdload.tblstudio.cn/raw.githubusercontent.com/ToolDelta/SuperLink/main/source.json")
+            resp = requests.get("https://github.dqyt.online/raw.githubusercontent.com/ToolDelta/SuperLink/main/source.json")
             resp.raise_for_status()
             default_name, default_ip = list(resp.json().items())[0]
             return default_name, default_ip
@@ -166,7 +166,7 @@ class SuperLinkProtocol(BasicProtocol):
 class SuperLink(Plugin):
     name = "服服互通v4"
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 0, 9)
 
     def __init__(self, frame: Frame):
         super().__init__(frame)

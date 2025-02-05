@@ -1,6 +1,11 @@
 import re
+import prompt_toolkit.input
 from tooldelta import ToolDelta, Plugin, plugins, Config, Utils, Print, game_utils
 from tooldelta import TYPE_CHECKING
+
+import prompt_toolkit
+
+prompt_toolkit.prompt()
 
 plugins.checkSystemVersion((0, 7, 1))
 
