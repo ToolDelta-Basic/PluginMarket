@@ -48,7 +48,7 @@
     "server-link": {
       "name": "服服互通",
       "author": "SuperScript/2401PT",
-      "version": "0.0.8",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "cloud-qqlink": {
