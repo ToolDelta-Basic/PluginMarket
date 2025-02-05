@@ -1,5 +1,4 @@
 import os
-import time
 from typing import TYPE_CHECKING, ClassVar
 from tooldelta import Utils, Plugin, plugins
 from tooldelta.game_utils import getScore, waitMsg
@@ -9,11 +8,11 @@ from tooldelta.game_utils import getScore, waitMsg
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 6)
+    version = (0, 1, 7)
 
     musics_list: ClassVar[list] = []
     MAX_SONGS_QUEUED = 6
-    can_stop = None
+    can_stop = False
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -49,13 +48,10 @@ class DJTable(Plugin):
     def on_inject(self):
         self.game_ctrl.sendcmd("/scoreboard objectives add song_point dummy 音乐点")
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
-        self.main_thread = Utils.createThread(self.choose_music_thread)
         self.chatmenu.add_trigger(
             ["点歌列表"], None, "查看点歌台点歌列表", self.lookup_songs_list
         )
-        self.chatmenu.add_trigger(
-            ["点歌"], "", "点歌", self.choose_menu
-        )
+        self.chatmenu.add_trigger(["点歌"], "", "点歌", self.choose_menu)
         self.chatmenu.add_trigger(
             ["停止当前曲目"],
             None,
@@ -75,7 +71,7 @@ class DJTable(Plugin):
             return
         self.game_ctrl.say_to(player, "§a当前曲目列表：")
         for i, j in enumerate(song_list):
-            self.game_ctrl.say_to(player, f" §b{i+1} §f{j}")
+            self.game_ctrl.say_to(player, f" §b{i + 1} §f{j}")
         self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
         if (resp := Utils.try_int(waitMsg(player))) is None:
             self.game_ctrl.say_to(player, "§c选项无效")
@@ -96,16 +92,14 @@ class DJTable(Plugin):
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players remove {player} song_point 1"
             )
-            self.game_ctrl.say_to(
-                "@a", f"§e点歌§f>> §e{player}§a成功点歌:{music_name}"
-            )
+            self.game_ctrl.say_to("@a", f"§e点歌§f>> §e{player}§a成功点歌:{music_name}")
 
     def lookup_songs_list(self, player: str, _):
         if not self.musics_list == []:
             self.game_ctrl.say_to(player, "§b◎§e当前点歌♬等待列表:")
             for i, j in enumerate(self.musics_list):
                 self.game_ctrl.say_to(
-                    player, "§a%d§f. %s §7点歌: %s" % (i + 1, j[0], j)
+                    player, f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}"
                 )
         else:
             self.game_ctrl.say_to(player, "§a♬§f列表空空如也啦! ")
@@ -117,20 +111,22 @@ class DJTable(Plugin):
         else:
             self.game_ctrl.say_to(player, "§e点歌§f>> §6当前没有在播放曲目啦！")
 
-    @Utils.timer_event(4, "点歌台选歌")
+    def play_music(self, song_name, player):
+        self.game_ctrl.say_to(
+            "@a",
+            f"§e点歌§f>> §7开始播放§f{song_name}§7，点歌者:§f{player}",
+        )
+        try:
+            self.midiplayer.playsound_at_target_sync(song_name, "@a")
+        except SystemExit:
+            self.game_ctrl.say_to("@a", "§e点歌§f>> §7准备播放下一首")
+        if self.musics_list == []:
+            self.game_ctrl.say_to("@a", "§e点歌§f>> §7点歌列表已空!")
+        self.can_stop = False
+
+    @Utils.timer_event(10, "点歌台切歌")
     def choose_music_thread(self):
-        if self.musics_list != []:
+        if self.musics_list != [] and not self.can_stop:
             self.can_stop = True
-            music_data = self.musics_list.pop(0)
-            self.game_ctrl.say_to(
-                "@a",
-                f"§e点歌§f>> §7开始播放§f{music_data[0]}§7，点歌者:§f{music_data[1]}",
-            )
-            try:
-                self.midiplayer.playsound_at_target_sync(music_data[0], "@a")
-            except SystemExit:
-                self.game_ctrl.say_to("@a", "§e点歌§f>> §7下一首")
-            if self.musics_list == []:
-                self.game_ctrl.say_to("@a", "§e点歌§f>> §7点歌列表已空!")
-        else:
-            self.can_stop = False
+            song_name, player = self.musics_list.pop(0)
+            self.main_thread = Utils.createThread(self.play_music, args=(song_name, player))
