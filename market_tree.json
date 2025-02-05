@@ -195,12 +195,6 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "bye_runaway": {
-      "name": "bey-runaway",
-      "author": "大庆油田",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "简易建造": {
       "name": "简易建造",
       "author": "SuperScript",
