@@ -210,6 +210,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "发言频率限制v2": [
+        "datas.json",
+        "__init__.py"
+    ],
     "点歌台": [
         "datas.json",
         "__init__.py"
