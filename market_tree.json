@@ -117,10 +117,10 @@
       "version": "0.1.0",
       "plugin-type": "injected"
     },
-    "前置-世界交互": {
-      "name": "前置_世界交互",
-      "author": "SuperScript",
-      "version": "0.0.5",
+    "XUID获取": {
+      "name": "前置_玩家XUID获取",
+      "author": "System",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "anti-fast-piston": {
@@ -187,6 +187,12 @@
       "name": "封禁系统",
       "author": "SuperScript",
       "version": "0.0.6",
+      "plugin-type": "classic"
+    },
+    "前置-世界交互": {
+      "name": "前置_世界交互",
+      "author": "SuperScript",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "违规名称踢出": {
