@@ -127,7 +127,7 @@ class SuperLinkProtocol(BasicProtocol):
                         await self.handle(json.loads(await ws.recv()))
 
         except ConnectionClosed:
-            Print.print_war(f"服服互通: 服务器断开连接")
+            Print.print_war("服服互通: 服务器断开连接")
         except gaierror as err:
             Print.print_err(f"服服互通: 中心服务器连接失败(IP解析异常): {self.ws_ip} - {err}")
         except Exception as err:

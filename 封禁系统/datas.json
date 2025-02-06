@@ -1,7 +1,7 @@
 {
   "author": "SuperScript",
-  "version": "0.0.5",
-  "description": "服内有大哥或者熊孩子? 更方便地ban掉! 同时也是一个前置插件.",
+  "version": "0.0.6",
+  "description": "在控制台封禁/解禁玩家。记录XUID，不用担心玩家改名！",
   "limit_launcher": null,
   "pre-plugins": {
     "聊天栏菜单": "0.1.13"

@@ -3,20 +3,19 @@ import time
 from datetime import datetime
 from typing import ClassVar
 
-from tooldelta import Utils, Config, Frame, Plugin, Print, plugins
+from tooldelta import Utils, Config, Plugin, Print, game_utils, plugins, TYPE_CHECKING
 
 
 @plugins.add_plugin_as_api("封禁系统")
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
-    def __init__(self, frame: Frame):
-        self.frame = frame
-        self.game_ctrl = frame.get_game_control()
+    def __init__(self, frame):
+        super().__init__(frame)
         self.tmpjson = Utils.TMPJson
         STD_BAN_CFG = {"踢出玩家提示格式": str, "玩家被封禁的广播提示": str}
         DEFAULT_BAN_CFG = {
@@ -29,18 +28,31 @@ class BanSystem(Plugin):
 
     def on_def(self):
         self.chatbar = plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
+        self.xuidm = plugins.get_plugin_api("XUID获取")
+        if TYPE_CHECKING:
+            from 前置_聊天栏菜单 import ChatbarMenu
+            from 前置_玩家XUID获取 import XUIDGetter
+
+            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
+            self.xuidm = plugins.instant_plugin_api(XUIDGetter)
 
     def on_inject(self):
         self.chatbar.add_trigger(
             ["ban", "封禁"],
-            "[玩家名:可粗略] [原因, 不填为未知原因]",
+            None,
             "封禁玩家",
             self.ban_who,
-            lambda x: x in (1, 2),
+            lambda x: x in (0, 1),
             True,
         )
         for i in self.game_ctrl.allplayers:
             self.test_ban(i)
+        self.frame.add_console_cmd_trigger(
+            ["ban", "封禁"], None, "封禁玩家", self.console_ban
+        )
+        self.frame.add_console_cmd_trigger(
+            ["unban", "解封"], None, "解封玩家", self.console_unban
+        )
 
     # -------------- API --------------
     def ban(self, player: str, ban_to_time_ticks: float, reason: str = ""):
@@ -66,37 +78,72 @@ class BanSystem(Plugin):
 
     # ----------------------------------
 
-    @Utils.thread_func
+    @Utils.thread_func("封禁系统测试 ban")
     def on_player_join(self, player: str):
         self.test_ban(player)
 
-    def ban_who(self, caller: str, args: list[str]):
-        target = args[0]
-        if len(args) == 1:
-            banto_time = -1
-            reason = ""
+    def console_ban(self, _):
+        allplayers = self.game_ctrl.allplayers.copy()
+        Print.print_inf("选择一个玩家进行封禁：")
+        for i, j in enumerate(allplayers):
+            Print.print_inf(f"{i + 1}: {j}")
+        resp = Utils.try_int(input(Print.fmt_info("请输入序号：")))
+        if resp and resp in range(1, len(allplayers) + 1):
+            ban_player = allplayers[resp - 1]
+            reason = input(Print.fmt_info("请输入封禁理由：")) or "未知"
+            self.ban(ban_player, -1, reason)
+            Print.print_suc(f"封禁成功: 已封禁 {ban_player}")
         else:
-            reason = args[0]
-        all_matches = Utils.fuzzy_match(self.game_ctrl.allplayers, target)
-        if all_matches == []:
-            self.game_ctrl.say_to(
-                caller, f"§c封禁系统: 无匹配名字关键词的玩家: {target}"
-            )
-        elif len(all_matches) > 1:
-            self.game_ctrl.say_to(
-                caller,
-                f"§c封禁系统: 匹配到多个玩家符合要求: {', '.join(all_matches)}, 需要输入更详细一点",
-            )
+            Print.print_err("输入有误")
+
+    def console_unban(self, _):
+        all_ban_player_xuids = os.listdir(self.data_path)
+        all_ban_playernames: list[tuple[str, str]] = []
+        for i in all_ban_player_xuids:
+            xuid = i.replace(".json", "")
+            try:
+                all_ban_playernames.append((self.xuidm.get_name_by_xuid(
+                   xuid, allow_offline=True
+                ), xuid))
+            except ValueError:
+                continue
+        if all_ban_playernames == []:
+            Print.print_inf("没有封禁的玩家")
+            return
+        Print.print_inf("选择一个玩家进行解封：")
+        for i, (name, xuid) in enumerate(all_ban_playernames):
+            Print.print_inf(f"{i + 1}: {name}")
+        resp = Utils.try_int(input(Print.fmt_info("请输入序号：")))
+        if resp and resp in range(1, len(all_ban_playernames) + 1):
+            unban_player = all_ban_playernames[resp - 1][0]
+            self.del_ban_data(all_ban_playernames[resp - 1][0])
+            Print.print_suc(f"解封成功: 已解封 {unban_player}")
         else:
-            self.ban(all_matches[0], banto_time, reason)
-            self.game_ctrl.say_to(caller, "§c封禁系统: §f设置封禁成功.")
+            Print.print_err("输入有误")
+
+    def ban_who(self, caller: str, _):
+        allplayers = self.game_ctrl.allplayers.copy()
+        self.game_ctrl.say_to(caller, "§6选择一个玩家进行封禁：")
+        for i, j in enumerate(allplayers):
+            Print.print_inf(f"{i + 1}: {j}")
+        self.game_ctrl.say_to(caller, "§6请输入序号：")
+        resp = Utils.try_int(game_utils.waitMsg(caller))
+        if resp and resp in range(1, len(allplayers) + 1):
+            ban_player = allplayers[resp - 1]
+            if caller == ban_player:
+                self.game_ctrl.say_to(caller, "§6看起来你不能封禁自己..")
+                return
+            self.ban(allplayers[resp - 1], -1)
+            Print.print_suc(f"封禁成功: 已封禁 {ban_player}")
+        else:
+            Print.print_err("输入有误")
 
     def test_ban(self, player):
         ban_data = self.get_ban_data(player)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
-        if ban_to > time.time():
+        if ban_to == -1 or ban_to > time.time():
             Print.print_inf(
-                f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to)}"
+                f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
             self.game_ctrl.sendwocmd(
                 f"/kick {player} {self.format_msg(player, ban_to, reason, '踢出玩家提示格式')}"
@@ -131,12 +178,29 @@ class BanSystem(Plugin):
         )
 
     def rec_ban_data(self, player: str, data):
-        Utils.JsonIO.writeFileTo(self.name, player + ".json", data)
+        Utils.TMPJson.write_as_tmp(
+            path := self.format_data_path(
+                self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
+            ),
+            data,
+            needFileExists=False,
+        )
+        Utils.TMPJson.flush(path)
 
     def del_ban_data(self, player: str):
-        p = os.path.join(self.data_path, player + ".json")
-        if os.path.isfile(os.path.isfile(p)):
+        p = self.format_data_path(self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json")
+        if os.path.isfile(p):
             os.remove(p)
 
     def get_ban_data(self, player: str) -> dict:
-        return Utils.JsonIO.readFileFrom(self.name, player + ".json", self.BAN_DATA_DEFAULT)
+        if os.path.isfile(
+            self.format_data_path(
+                fname := self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
+            )
+        ):
+            return Utils.JsonIO.readFileFrom(
+                self.name, fname,
+                default=self.BAN_DATA_DEFAULT,
+            )
+        else:
+            return self.BAN_DATA_DEFAULT
