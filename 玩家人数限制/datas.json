@@ -1,0 +1,8 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "限制租赁服人数",
+  "pre-plugins": {},
+  "plugin-id": "玩家人数限制"
+}
