@@ -170,6 +170,10 @@
         "__init__.py",
         "readme.txt"
     ],
+    "玩家人数限制": [
+        "datas.json",
+        "__init__.py"
+    ],
     "物品制作器": [
         "datas.json",
         "__init__.py"

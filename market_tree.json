@@ -111,6 +111,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "玩家人数限制": {
+      "name": "玩家人数限制",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "item-maker": {
       "name": "物品制作器",
       "author": "SuperScript",
