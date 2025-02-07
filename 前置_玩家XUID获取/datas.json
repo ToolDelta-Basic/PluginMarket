@@ -1,6 +1,6 @@
 {
   "author": "System",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "通过 XUID 获取玩家名或通过玩家名获取 XUID",
   "limit_launcher": null,
   "pre-plugins": {
