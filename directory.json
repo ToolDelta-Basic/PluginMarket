@@ -82,6 +82,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "头衔系统": [
+        "datas.json",
+        "__init__.py"
+    ],
     "admin命令": [
         "datas.json",
         "__init__.py"

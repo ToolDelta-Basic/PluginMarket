@@ -39,6 +39,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "头衔系统": {
+      "name": "头衔系统",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "admin_cmd": {
       "name": "admin命令",
       "author": "wling/Hadwin",
