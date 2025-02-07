@@ -1,0 +1,14 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "在租赁服内多人同显不同称号！\n聊天栏命令:\n  .title-set / 。设置称号 以添加删除或给予称号\n  .titles 玩家查看或切换称号",
+    "limit_launcher": null,
+    "pre-plugins": {
+      "聊天栏菜单": "0.1.13",
+      "XUID获取": "0.0.2",
+      "前置-世界交互": "0.0.1",
+      "Cb2Bot通信": "0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "头衔系统"
+  }
