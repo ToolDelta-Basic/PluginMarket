@@ -183,10 +183,10 @@
       "version": "0.0.5",
       "plugin-type": "injected"
     },
-    "发言频率限制": {
-      "name": "发言频率限制",
-      "author": "wling/7912",
-      "version": "0.0.5",
+    "发言频率限制v2": {
+      "name": "发言频率限制v2",
+      "author": "SuperScript",
+      "version": "0.0.1",
       "plugin-type": "injected"
     },
     "choose-song": {
@@ -318,6 +318,12 @@
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "injected"
+    },
+    "发言频率限制": {
+      "name": "发言频率限制",
+      "author": "wling/7912",
       "version": "0.0.5",
       "plugin-type": "injected"
     },
