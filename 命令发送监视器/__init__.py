@@ -34,7 +34,7 @@ class CommandSenderMonitor(Plugin):
             self.enable_monitor()
         else:
             self.disable_monitor()
-        Print.print_suc(f"已{['关闭', '打开'][self.instant_monitor]}指令坚监测器")
+        Print.print_suc(f"已{['关闭', '打开'][self.instant_monitor]}指令监测器")
 
     def special_monitor_sendcmd(self, cmd: str, waitForResp: bool = False, timeout: float = 30):
         if self.instant_monitor:
