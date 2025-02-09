@@ -8,6 +8,7 @@ class CommandSenderMonitor(Plugin):
 
     def on_def(self):
         self.instant_monitor = False
+        self.is_injected = False
         self.cached_sendcmd = self.game_ctrl.sendcmd
         self.cached_sendwscmd = self.game_ctrl.sendwscmd
         self.cached_sendwocmd = self.game_ctrl.sendwocmd
@@ -19,11 +20,13 @@ class CommandSenderMonitor(Plugin):
         self.game_ctrl.sendcmd = self.special_monitor_sendcmd
         self.game_ctrl.sendwscmd = self.special_monitor_sendwscmd
         self.game_ctrl.sendwocmd = self.special_monitor_sendwocmd
+        self.is_injected = True
 
     def disable_monitor(self):
-        self.game_ctrl.sendcmd = self.cached_sendcmd
-        self.game_ctrl.sendwscmd = self.cached_sendwscmd
-        self.game_ctrl.sendwocmd = self.cached_sendwocmd
+        if self.is_injected:
+            self.game_ctrl.sendcmd = self.cached_sendcmd
+            self.game_ctrl.sendwscmd = self.cached_sendwscmd
+            self.game_ctrl.sendwocmd = self.cached_sendwocmd
 
     def on_menu(self, _):
         self.instant_monitor = not self.instant_monitor
