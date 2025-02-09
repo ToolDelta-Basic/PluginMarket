@@ -10,7 +10,7 @@ from tooldelta import Utils, Config, Plugin, Print, game_utils, plugins, TYPE_CH
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
@@ -29,33 +29,52 @@ class BanSystem(Plugin):
     def on_def(self):
         self.chatbar = plugins.get_plugin_api("聊天栏菜单", (0, 0, 1))
         self.xuidm = plugins.get_plugin_api("XUID获取")
+        self.qqlink = plugins.get_plugin_api("群服互通", force=False)
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_玩家XUID获取 import XUIDGetter
+            from 群服互通云链版 import QQLinker
 
             self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
             self.xuidm = plugins.instant_plugin_api(XUIDGetter)
+            self.qqlink = plugins.instant_plugin_api(QQLinker)
 
     def on_inject(self):
         self.chatbar.add_trigger(
             ["ban", "封禁"],
             None,
             "封禁玩家",
-            self.ban_who,
+            self.on_chatbar_ban,
             lambda x: x in (0, 1),
             True,
         )
         for i in self.game_ctrl.allplayers:
             self.test_ban(i)
         self.frame.add_console_cmd_trigger(
-            ["ban", "封禁"], None, "封禁玩家", self.console_ban
+            ["ban", "封禁"], None, "封禁玩家", self.on_console_ban
         )
         self.frame.add_console_cmd_trigger(
-            ["unban", "解封"], None, "解封玩家", self.console_unban
+            ["unban", "解封"], None, "解封玩家", self.on_console_unban
         )
+        if self.qqlink:
+            self.qqlink.add_trigger(
+                ["ban", "封禁"],
+                "[玩家名] [封禁时间(秒数)] [原因]",
+                "封禁玩家",
+                self.on_qq_ban,
+                lambda x: x in (1, 2, 3),
+                True,
+            )
+            self.qqlink.add_trigger(
+                ["unban", "解封"],
+                None,
+                "解封玩家",
+                self.on_qq_unban,
+                op_only=True,
+            )
 
     # -------------- API --------------
-    def ban(self, player: str, ban_to_time_ticks: float, reason: str = ""):
+    def ban(self, player: str, ban_time: float, reason: str = ""):
         """
         封禁玩家.
             player: 需要ban的玩家
@@ -63,7 +82,7 @@ class BanSystem(Plugin):
             reason: 原因
         """
         ban_datas = self.BAN_DATA_DEFAULT.copy()
-        ban_datas["BanTo"] = ban_to_time_ticks
+        ban_datas["BanTo"] = time.time() + ban_time
         ban_datas["Reason"] = reason
         self.rec_ban_data(player, ban_datas)
         if player in self.game_ctrl.allplayers:
@@ -82,7 +101,7 @@ class BanSystem(Plugin):
     def on_player_join(self, player: str):
         self.test_ban(player)
 
-    def console_ban(self, _):
+    def on_console_ban(self, _):
         allplayers = self.game_ctrl.allplayers.copy()
         Print.print_inf("选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
@@ -96,15 +115,15 @@ class BanSystem(Plugin):
         else:
             Print.print_err("输入有误")
 
-    def console_unban(self, _):
+    def on_console_unban(self, _):
         all_ban_player_xuids = os.listdir(self.data_path)
         all_ban_playernames: list[tuple[str, str]] = []
         for i in all_ban_player_xuids:
             xuid = i.replace(".json", "")
             try:
-                all_ban_playernames.append((self.xuidm.get_name_by_xuid(
-                   xuid, allow_offline=True
-                ), xuid))
+                all_ban_playernames.append(
+                    (self.xuidm.get_name_by_xuid(xuid, allow_offline=True), xuid)
+                )
             except ValueError:
                 continue
         if all_ban_playernames == []:
@@ -121,11 +140,62 @@ class BanSystem(Plugin):
         else:
             Print.print_err("输入有误")
 
-    def ban_who(self, caller: str, _):
+    def on_qq_ban(self, qqid: int, args: list[str]):
+        Utils.fill_list_index(args, ["", "永久", "未知"])
+        ban_who, ban_time, reason = args
+        if ban_who not in self.game_ctrl.allplayers:
+            self.qqlink.sendmsg(self.qqlink.linked_group, "此玩家不在线..")
+            return
+        if ban_time == "永久":
+            ban_time = -1
+        elif (ban_time := Utils.try_int(ban_time)) is None or ban_time <= 0:
+            self.qqlink.sendmsg(self.qqlink.linked_group, "封禁时间不正确..")
+            return
+        self.ban(ban_who, ban_time, reason)
+        if ban_time > 0:
+            self.qqlink.sendmsg(
+                self.qqlink.linked_group,
+                f"[CQ:at,qq={qqid}] 封禁 {ban_who} 成功， 封禁了 {self.format_date_zhcn(ban_time)}",
+            )
+        else:
+            self.qqlink.sendmsg(
+                self.qqlink.linked_group,
+                f"[CQ:at,qq={qqid}] 封禁 {ban_who} 成功， 封禁至永久",
+            )
+
+    def on_qq_unban(self, qqid: int, _):
+        all_ban_player_xuids = os.listdir(self.data_path)
+        all_ban_playernames: list[tuple[str, str]] = []
+        for i in all_ban_player_xuids:
+            xuid = i.replace(".json", "")
+            try:
+                all_ban_playernames.append(
+                    (self.xuidm.get_name_by_xuid(xuid, allow_offline=True), xuid)
+                )
+            except ValueError:
+                continue
+        if all_ban_playernames == []:
+            self.qqlink.sendmsg(self.qqlink.linked_group, "没有封禁的玩家")
+            return
+        output_msg = "选择一个玩家进行解封："
+        for i, (name, xuid) in enumerate(all_ban_playernames):
+            output_msg += f"\n  {i + 1}: {name}"
+        self.qqlink.sendmsg(self.qqlink.linked_group, output_msg + "\n请输入序号：")
+        resp = Utils.try_int(self.qqlink.waitMsg(qqid))
+        if resp and resp in range(1, len(all_ban_playernames) + 1):
+            unban_player = all_ban_playernames[resp - 1][0]
+            self.del_ban_data(all_ban_playernames[resp - 1][0])
+            self.qqlink.sendmsg(
+                self.qqlink.linked_group, f"解封成功: 已解封 {unban_player}"
+            )
+        else:
+            self.qqlink.sendmsg(self.qqlink.linked_group, "输入有误")
+
+    def on_chatbar_ban(self, caller: str, _):
         allplayers = self.game_ctrl.allplayers.copy()
         self.game_ctrl.say_to(caller, "§6选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
-            Print.print_inf(f"{i + 1}: {j}")
+            self.game_ctrl.say_to(caller, f"{i + 1}: {j}")
         self.game_ctrl.say_to(caller, "§6请输入序号：")
         resp = Utils.try_int(game_utils.waitMsg(caller))
         if resp and resp in range(1, len(allplayers) + 1):
@@ -165,9 +235,6 @@ class BanSystem(Plugin):
 
     def format_msg(self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str):
         fmt_time = self.format_bantime(ban_to_sec)
-        Print.print_inf(
-            f"封禁系统使用的 当前时间: §6{datetime.fromtimestamp(time.time())}"
-        )
         return Utils.SimpleFmt(
             {
                 "[日期时间]": fmt_time,
@@ -188,19 +255,34 @@ class BanSystem(Plugin):
         Utils.TMPJson.flush(path)
 
     def del_ban_data(self, player: str):
-        p = self.format_data_path(self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json")
+        p = self.format_data_path(
+            self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
+        )
         if os.path.isfile(p):
             os.remove(p)
 
     def get_ban_data(self, player: str) -> dict:
         if os.path.isfile(
             self.format_data_path(
-                fname := self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
+                fname := self.xuidm.get_xuid_by_name(player, allow_offline=True)
+                + ".json"
             )
         ):
             return Utils.JsonIO.readFileFrom(
-                self.name, fname,
+                self.name,
+                fname,
                 default=self.BAN_DATA_DEFAULT,
             )
         else:
             return self.BAN_DATA_DEFAULT
+
+    @staticmethod
+    def format_date_zhcn(seconds: int):
+        if seconds < 60:
+            return f"{seconds}秒"
+        elif seconds < 3600:
+            return f"{seconds // 60}分钟{seconds % 60}秒"
+        elif seconds < 86400:
+            return f"{seconds // 3600}小时{seconds % 3600 // 60}分钟{seconds % 60}秒"
+        else:
+            return f"{seconds // 86400}天{seconds % 86400 // 3600}小时{seconds % 3600 // 60}分钟{seconds % 60}秒"
