@@ -60,7 +60,7 @@
     "cloud-qqlink": {
       "name": "群服互通云链版",
       "author": "大庆油田/SuperScript",
-      "version": "0.0.7",
+      "version": "0.0.8",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
@@ -204,7 +204,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "plugin-type": "classic"
     },
     "前置-世界交互": {
