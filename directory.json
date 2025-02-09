@@ -1043,6 +1043,10 @@
         "春节序曲.midseq",
         "Undertale.midseq"
     ],
+    "机器人发言": [
+        "datas.json",
+        "__init__.py"
+    ],
     "32k盒子显示": [
         "datas.json",
         "__init__.py"

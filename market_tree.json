@@ -279,6 +279,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "机器人发言": {
+      "name": "机器人发言",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
