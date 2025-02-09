@@ -9,6 +9,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "玩家数据管理": {
+      "name": "玩家数据管理",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "nice-tpa": {
       "name": "多功能玩家互传",
       "author": "wling/SuperScript",
