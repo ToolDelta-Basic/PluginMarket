@@ -35,12 +35,12 @@ def server_resp(args):
     Print.print_war("MCChatLinker - " + args.get("msg"))
 
 
-def on_ws_error(ws, T_T):
+def on_ws_error(_, T_T):
     Print.print_err(f"ws客户端出现错误, {T_T}")
 
 
-def on_ws_close(ws, OoO, oOo):
-    Print.print_inf(f"坏掉了喵...,")
+def on_ws_close(_, _1, _2):
+    Print.print_inf("坏掉了喵...,")
 
 
 @plugins.add_plugin
@@ -108,11 +108,11 @@ class MCChatLinker(Plugin):
     def on_player_leave(self, player: str):
         self.send2ws_server(3, m=player + " 退出了游戏")
 
-    def on_ws_open(self, ws):
+    def on_ws_open(self, _):
         Print.print_suc(f"成功连接到聊天互通ws服务端: {self.cfg_ws_url}")
         self.__set_chat()
 
-    def on_ws_message(self, ws, msg):
+    def on_ws_message(self, _, msg):
         try:
             msg_data = json.loads(msg)
             self.OoO[int(msg_data.get("o"))](msg_data.get("d", {}))
