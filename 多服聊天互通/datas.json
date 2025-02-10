@@ -1,0 +1,8 @@
+{
+    "author": "WuMing",
+    "version": "0.0.1",
+    "description": "多服聊天互通，提供简单，轻量的多服互通",
+    "limit_launcher": null,
+    "plugin-type": "classic",
+    "plugin-id": "MCChatLinker-TD"
+  }
