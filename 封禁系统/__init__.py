@@ -10,7 +10,7 @@ from tooldelta import Utils, Config, Plugin, Print, game_utils, plugins, TYPE_CH
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
@@ -139,6 +139,39 @@ class BanSystem(Plugin):
             Print.print_suc(f"解封成功: 已解封 {unban_player}")
         else:
             Print.print_err("输入有误")
+
+    def on_console_ban_offline(self, _):
+        name_part = input(Print.fmt_info("请输入玩家名或部分玩家名: ")).strip()
+        if name_part == "":
+            Print.print_err("输入不能为空")
+            return
+        players_uuids = Utils.TMPJson.read(self.xuidm.format_data_path("xuids.json"))
+        matched_names_and_uuids: list[tuple[str, str]] = []
+        for name, uuid in players_uuids.items():
+            if name_part in name:
+                matched_names_and_uuids.append((name, uuid))
+        matched_names_and_uuids.sort(key=lambda x: x[0].count(name_part))
+        Print.print_inf("找到以下匹配的玩家名：")
+        for i, (name, _) in enumerate(matched_names_and_uuids):
+            Print.print_inf(
+                f" {i + 1}. {name.replace(name_part, '§b' + name_part + '§r')}"
+            )
+        resp = Utils.try_int(input(Print.fmt_info("请输入序号：")))
+        if resp is None or resp not in range(1, len(matched_names_and_uuids) + 1):
+            Print.print_err("输入有误")
+            return
+        target, xuid = matched_names_and_uuids[resp - 1]
+        ban_seconds = Utils.try_int(
+            input(Print.fmt_info("请输入封禁时间(秒, 默认为永久)：") or "-1")
+        )
+        if ban_seconds is None or (ban_seconds < 0 and ban_seconds != -1):
+            Print.print_err("不合法的封禁时间")
+            return
+        reason = input(Print.fmt_info("请输入封禁原因:")).strip() or "未知"
+        self.ban(target, ban_seconds, reason)
+        Print.print_suc(
+            f"封禁 {target} 成功, 封禁到 {self.format_date_zhcn(int(time.time() + ban_seconds))}"
+        )
 
     def on_qq_ban(self, qqid: int, args: list[str]):
         Utils.fill_list_index(args, ["", "永久", "未知"])

@@ -1,0 +1,14 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "",
+  "pre-plugins": {
+    "基本插件功能库": "0.0.1",
+    "聊天栏菜单": "0.0.1",
+    "雪球菜单v2": "0.0.1",
+    "XUID获取": "0.0.1"
+  },
+  "plugin-id": "???",
+  "enabled": false
+}
