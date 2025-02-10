@@ -159,12 +159,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "传送点": {
-      "name": "传送点",
-      "author": "wling/7912",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
@@ -210,7 +204,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.7",
+      "version": "0.0.8",
       "plugin-type": "classic"
     },
     "前置-世界交互": {
@@ -349,6 +343,12 @@
       "name": "ZBasic_Lang_中文编程",
       "author": "SuperScript",
       "version": "0.1.1",
+      "plugin-type": "classic"
+    },
+    "???": {
+      "name": "传送点设置",
+      "author": "SuperScript",
+      "version": "0.0.1",
       "plugin-type": "classic"
     }
   },

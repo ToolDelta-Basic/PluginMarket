@@ -25,7 +25,6 @@
   "anti-fast-piston": "活塞限速",
   "skin-getter": "获取全服玩家皮肤",
   "class-plugin-creator": "类式插件创建器",
-  "传送点": "传送点",
   "ingame-errmsg": "游戏内显示插件报错",
   "cmdsender-monitor": "命令发送监视器",
   "largefill": "大范围fill",
@@ -56,5 +55,6 @@
   "gobang_game": "五子棋小游戏",
   "发言频率限制": "发言频率限制",
   "自定义聊天栏菜单": "自定义聊天栏菜单",
-  "TD-ZBasic": "ZBasic_Lang_中文编程"
+  "TD-ZBasic": "ZBasic_Lang_中文编程",
+  "???": "传送点设置"
 }

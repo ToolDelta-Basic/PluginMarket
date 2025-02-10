@@ -202,10 +202,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "传送点": [
-        "datas.json",
-        "__init__.py"
-    ],
     "游戏内显示插件报错": [
         "datas.json",
         "__init__.py"
@@ -1108,5 +1104,9 @@
     ],
     "ZBasic_Lang_中文编程/示例代码/玩家转账": [
         "玩家发言.txt"
+    ],
+    "传送点设置": [
+        "datas.json",
+        "__init__.py"
     ]
 }
