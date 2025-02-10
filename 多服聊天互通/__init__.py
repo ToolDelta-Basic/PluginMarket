@@ -39,7 +39,7 @@ def on_ws_error(ws, T_T):
     Print.print_err(f"ws客户端出现错误, {T_T}")
 
 
-def on_ws_close(ws, oOo, OoO):
+def on_ws_close(ws, OoO, oOo):
     Print.print_inf(f"坏掉了喵...,")
 
 
