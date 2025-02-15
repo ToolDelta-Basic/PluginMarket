@@ -3,7 +3,7 @@ import os
 import json
 
 
-@plugins.add_plugin
+@plugins.add_plugin_as_api("玩家数据管理")
 class 数据管理(Plugin):
     name = "数据管理系统"
     author = "猫七街"
