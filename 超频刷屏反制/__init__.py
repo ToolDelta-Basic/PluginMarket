@@ -6,12 +6,12 @@ from tooldelta.plugin_load.injected_plugin import (
     player_message_info,
     player_name,
 )
-from tooldelta.game_utils import get_all_player, is_op, sendwocmd
+from tooldelta.game_utils import get_all_player
 
 
 __plugin_meta__ = {
-    "name": "发言频率限制",
-    "version": "0.0.5",
+    "name": "超频发言限制",
+    "version": "0.0.2",
     "author": "SuperScript",
 }
 
@@ -55,7 +55,7 @@ async def player_msg(msg_info: player_message_info):
     last_msgs.setdefault(player, 0)
     last_msgs[player] += 1
     if is_too_fast(player):
-        ban(player, ban_days, "超频刷屏")
+        ban.ban(player, ban_days, "超频刷屏")
 
 
 @player_left()
