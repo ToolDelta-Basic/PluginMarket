@@ -54,7 +54,7 @@ async def player_msg(msg_info: player_message_info):
 
     last_msgs.setdefault(player, 0)
     last_msgs[player] += 1
-    if False and is_op(player):
+    if is_op(player):
         return
     if len(msg) > 60:
         sendwocmd(f'kick "{player}" §c发言长度太长， 您已被踢出租赁服')
