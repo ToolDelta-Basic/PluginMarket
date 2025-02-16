@@ -318,7 +318,7 @@
     "超频刷屏反制": {
       "name": "超频刷屏反制",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "injected"
     },
     "mcfunction-tasks": {
