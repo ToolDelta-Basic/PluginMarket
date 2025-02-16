@@ -75,6 +75,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "巡逻": {
+      "name": "巡逻",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "chunk-show": {
       "name": "区块显示器",
       "author": "SnowLotus",
@@ -199,6 +205,12 @@
       "name": "物品制作器",
       "author": "SuperScript",
       "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "白名单&管理员检测": {
+      "name": "白名单&管理员检测",
+      "author": "猫七街",
+      "version": "1.0.0",
       "plugin-type": "classic"
     },
     "井字棋": {

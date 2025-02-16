@@ -65,6 +65,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "巡逻": [
+        "__init__.py",
+        "datas.json"
+    ],
     "区块显示器": [
         "___init__.py",
         "datas.json"
@@ -274,6 +278,10 @@
         "春节序曲.midseq",
         "Undertale.midseq",
         "see you again.midseq"
+    ],
+    "白名单&管理员检测": [
+        "__init__.py",
+        "datas.json"
     ],
     "井字棋": [
         "__init__.py",
