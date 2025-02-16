@@ -74,6 +74,10 @@
         "datas.json",
         "readme.txt"
     ],
+    "pip模块支持": [
+        "__init__.py",
+        "datas.json"
+    ],
     "命令发送监视器": [
         "__init__.py",
         "datas.json"

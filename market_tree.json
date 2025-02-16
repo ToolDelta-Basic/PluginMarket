@@ -87,6 +87,12 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "pip": {
+      "name": "pip模块支持",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "cmdsender-monitor": {
       "name": "命令发送监视器",
       "author": "ToolDelta",
