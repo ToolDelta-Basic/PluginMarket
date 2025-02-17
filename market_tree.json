@@ -168,7 +168,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.8",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "largefill": {
@@ -344,6 +344,12 @@
       "author": "wling",
       "version": "0.1.0",
       "plugin-type": "injected"
+    },
+    "空岛分配": {
+      "name": "空岛分配",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
     },
     "better-announcebar": {
       "name": "更好的公告栏",
