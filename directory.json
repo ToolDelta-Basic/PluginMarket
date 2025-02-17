@@ -1106,6 +1106,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "宠物背包清理": [
+        "__init__.py",
+        "datas.json"
+    ],
     "空岛分配": [
         "__init__.py",
         "datas.json"
