@@ -1,0 +1,9 @@
+{
+    "author": "猫七街",
+    "version": "0.0.1",
+    "description": "自动分配空岛",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "空岛分配"
+  }
