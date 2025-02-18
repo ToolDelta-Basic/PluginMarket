@@ -204,7 +204,7 @@
     "item-maker": {
       "name": "物品制作器",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "白名单&管理员检测": {

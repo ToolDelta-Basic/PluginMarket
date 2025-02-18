@@ -208,7 +208,8 @@
     ],
     "物品制作器": [
         "__init__.py",
-        "datas.json"
+        "datas.json",
+        "readme.txt"
     ],
     "[pkg]音乐曲目-1": [
         "datas.json"
