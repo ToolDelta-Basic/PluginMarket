@@ -33,7 +33,10 @@ def PyString(n: bytes):
 class TDItemMaker(Plugin):
     name = "特殊物品制作器"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
+
+    def __init__(self, frame):
+        super().__init__(frame)
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -44,6 +47,7 @@ class TDItemMaker(Plugin):
         fs = os.listdir(self.data_path)
         if fs == []:
             Print.print_inf("物品数据文件夹空空如也...")
+            Print.print_inf("可在插件管理器界面选择该插件， 选择查看手册以查看教程")
             return
         for i, file in enumerate(fs):
             Print.print_inf(f"{i+1} - {file}")
