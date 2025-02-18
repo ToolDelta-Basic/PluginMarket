@@ -3,11 +3,11 @@ from tooldelta.launch_cli import FrameNeOmgAccessPoint
 import time
 
 
-@plugins.add_plugin
+@plugins.add_plugin_as_api("巡逻")
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -38,7 +38,7 @@ class xunluo(Plugin):
         bot_name = bot_info.BotName
         while True:
             try:
-                players = self.game_ctrl.allplayers
+                players = game_utils.getTarget("@e[type=player]")
                 for player in players:
                     if player == bot_name:
                         continue
