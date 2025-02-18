@@ -1,3 +1,4 @@
+import os
 from tooldelta import Plugin, plugins, Utils, game_utils, Config, TYPE_CHECKING
 
 DIMENSIONS = ["overworld", "nether", "the_end", *(f"dim{i}" for i in range(3, 21))]
@@ -31,6 +32,7 @@ class HomePointSet(Plugin):
         self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, Config.auto_to_std(CONFIG), CONFIG, self.version
         )
+        os.makedirs(self.format_data_path("传送点列表"), exist_ok=True)
 
     def on_def(self):
         self.funclib = plugins.get_plugin_api("基本插件功能库")
