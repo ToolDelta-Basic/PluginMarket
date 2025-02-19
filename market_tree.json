@@ -57,6 +57,12 @@
       "version": "0.1.1",
       "plugin-type": "classic"
     },
+    "云黑": {
+      "name": "猫七街云黑封禁",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "机器人发言": {
       "name": "机器人发言",
       "author": "SuperScript",
@@ -331,6 +337,12 @@
       "name": "简易建造-Pro",
       "author": "SuperScript",
       "version": "0.0.9",
+      "plugin-type": "classic"
+    },
+    "bdx-exporter": {
+      "name": "bdx导出器",
+      "author": "SuperScript",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "global-player-pos-get": {

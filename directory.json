@@ -53,6 +53,16 @@
         "玩家退出.txt",
         "玩家进入.txt"
     ],
+    "猫七街云黑封禁": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "猫七街云黑封禁/server": [
+        "server.py"
+    ],
+    "猫七街云黑封禁/server/官方云黑列表": [
+        "blacklist.json"
+    ],
     "机器人发言": [
         "__init__.py",
         "datas.json"
@@ -1098,6 +1108,102 @@
         "__init__.py",
         "datas.json",
         "readme.txt"
+    ],
+    "bdx导出器": [
+        "__init__.py",
+        "state_dump.py",
+        "scanner.py",
+        "utils.py",
+        "datas.json",
+        "struct_loader.py"
+    ],
+    "bdx导出器/BDXConverter": [
+        "__init__.py",
+        "LICENSE",
+        "readme.md"
+    ],
+    "bdx导出器/BDXConverter/Operation": [
+        "PlaceBlockWithNBTData.py",
+        "AddInt16ZValue0.py",
+        "PlaceBlockWithRuntimeId.py",
+        "AddInt16XValue.py",
+        "AssignDebugData.py",
+        "AddInt32YValue.py",
+        "AddInt32ZValue0.py",
+        "AddYValue.py",
+        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
+        "AddInt16ZValue.py",
+        "PlaceRuntimeBlockWithChestData.py",
+        "__init__.py",
+        "PlaceCommandBlockWithCommandBlockData.py",
+        "AddZValue.py",
+        "AddInt32XValue.py",
+        "PlaceBlockWithCommandBlockData.py",
+        "SetCommandBlockData.py",
+        "PlaceBlockWithChestData.py",
+        "PlaceBlock.py",
+        "PlaceBlockWithBlockStatesDeprecated.py",
+        "AddInt8XValue.py",
+        "AddInt32ZValue.py",
+        "structOfChest.py",
+        "AddXValue.py",
+        "AddZValue0.py",
+        "SubtractYValue.py",
+        "PlaceBlockWithBlockStates.py",
+        "NOP.py",
+        "AddInt8ZValue.py",
+        "PlaceRuntimeBlock.py",
+        "PlaceRuntimeBlockWithCommandBlockData.py",
+        "SubtractXValue.py",
+        "SubtractZValue.py",
+        "AddInt8YValue.py",
+        "CreateConstantString.py",
+        "AddInt16YValue.py",
+        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
+        "UseRuntimeIDPool.py"
+    ],
+    "bdx导出器/BDXConverter/General": [
+        "Pool.py",
+        "Operation.py",
+        "__init__.py",
+        "GeneralClass.py"
+    ],
+    "bdx导出器/BDXConverter/utils": [
+        "getByte.py",
+        "__init__.py",
+        "marshalNBT_OldVersion.py",
+        "getString.py",
+        "marshalNBT.py",
+        "unmarshalNBT.py",
+        "unmarshalNBT_OldVersion.py"
+    ],
+    "bdx导出器/BDXConverter/Converter": [
+        "__init__.py",
+        "Converter.py",
+        "ErrorClassDefine.py",
+        "FileOperation.py"
+    ],
+    "bdx导出器/nbtlib": [
+        "__init__.py",
+        "LICENSE",
+        "nbt.py",
+        "path.py",
+        "schema.py",
+        "cli.py",
+        "tag.py",
+        "__main__.py"
+    ],
+    "bdx导出器/nbtlib/contrib": [
+        "__init__.py"
+    ],
+    "bdx导出器/nbtlib/contrib/minecraft": [
+        "__init__.py",
+        "structure.py"
+    ],
+    "bdx导出器/nbtlib/literal": [
+        "__init__.py",
+        "serializer.py",
+        "parser.py"
     ],
     "前置_循环获取玩家坐标": [
         "__init__.py",
