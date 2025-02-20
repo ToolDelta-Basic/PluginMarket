@@ -39,7 +39,7 @@ class Structure:
         self.x, self.y, self.z = structure_json["StructureTemplate"][
             "structure_world_origin"
         ]
-        self._block_matrix = numpy.array(block_matrix, dtype=numpy.uint16)
+        self._block_matrix = numpy.array(block_matrix, dtype=numpy.int16)
         self._palette = [
             (i["name"], i["states"], i["val"], i["version"]) for i in block_palettes
         ]
