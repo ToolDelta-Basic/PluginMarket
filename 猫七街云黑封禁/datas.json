@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "云端黑名单插件",
   "limit_launcher": null,
-  "pre-plugins": "XUID获取",
+  "pre-plugins": {
+    "XUID获取": "0.0.1"
+  },
   "plugin-type": "classic",
   "plugin-id": "云黑"
 }
