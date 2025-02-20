@@ -5,7 +5,10 @@ from json import dumps as stringfy
 from dataclasses import dataclass
 from tooldelta import plugins, Frame, Plugin, Utils, Print
 from tooldelta.constants import PacketIDS
-from tooldelta.launch_cli import FrameEulogistLauncher
+try:
+    from tooldelta.launch_cli import FrameEulogistLauncher
+except ImportError:
+    FrameEulogistLauncher = None
 
 plugins.checkSystemVersion((0, 3, 20))
 
@@ -270,7 +273,7 @@ class GameInteractive(Plugin):
 
     @property
     def bot_ud(self):
-        if isinstance(self.frame.launcher, FrameEulogistLauncher):
+        if FrameEulogistLauncher and isinstance(self.frame.launcher, FrameEulogistLauncher):
             return self.frame.launcher.eulogist.bot_unique_id
         else:
-            return self.frame.launcher.omega.get_bot_unique_id()
+            return self.frame.launcher.omega.get_bot_unique_id() # type: ignore
