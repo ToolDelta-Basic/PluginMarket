@@ -21,8 +21,17 @@ def get_structure(
     sizey: int,
     sizez: int,
 ):
-    sys.game_ctrl.sendcmd_with_resp(f"tp {x} {y} {z}")
-    return sys.intr.get_structure((x, y, z), (sizex, sizey, sizez))
+    sys.game_ctrl.sendcmd(f"tp {x} {y} {z}")
+    Print.print_inf(
+        f"正在获取 {x}, {y}, {z} ~ {x + sizex}, {y + sizey}, {z + sizez}       ",
+        end="\r",
+    )
+    r = sys.intr._request_structure_and_get((x, y, z), (sizex, sizey, sizez))
+    Print.print_inf(
+        f"正在解析结构 {x}, {y}, {z} ~ {x + sizex}, {y + sizey}, {z + sizez}       ",
+        end="\r",
+    )
+    return sys.intr.Structure(r)
 
 
 def export_to_structures(
@@ -41,12 +50,13 @@ def export_to_structures(
     dy = endy - starty
     for x, z, rel_x, rel_z in yield_4chunks(startx, startz, endx, endz):
         sizex, sizez = min(64, endx - x + 1), min(64, endz - z + 1)
-        Print.print_inf(
-            f"正在导出 {x}, {starty}, {z} ~ {x + sizex}, {endy}, {z + sizez}       ", end = "\r"
-        )
         structure = get_structure(sys, x, starty, z, sizex, dy, sizez)
         structures.append((structure, (rel_x, starty, rel_z)))
     return structures
+
+
+# 241 -60 11
+# 769 317 -206
 
 
 def structures_to_bdx(structures: list[tuple["Structure", POS]]):
@@ -58,19 +68,26 @@ def structures_to_bdx(structures: list[tuple["Structure", POS]]):
     global_constants_pool: dict[str, int] = {}
     now_x, now_y, now_z = 0, None, 0
     for structure, (rel_x, rel_y, rel_z) in structures:
+        Print.print_inf(
+            f"正在转换结构 {structure.x}, {structure.y}, {structure.z} ~ {structure.x + structure.sizex}, {structure.y + structure.sizey}, {structure.z + structure.sizez}       ",
+            end="\r",
+        )
         if now_y is None:
             now_y = rel_y
         if (dx := rel_x - now_x) != 0:
-            # if dx < -64 or dx > 64:
-            #     raise ValueError(f"Error AddIntXValue: {dx}")
+            if dx <= -128 or dx >= 128:
+                raise ValueError(f"Error AddIntXValue: {dx}")
             (op := Operation.AddInt8XValue()).value = dx
             add_operation(op)
         if (dy := rel_y - now_y) != 0:
-            (op := Operation.AddInt8YValue()).value = dy
+            if dy <= -128 or dy >= 128:
+                (op := Operation.AddInt16YValue()).value = dy
+            else:
+                (op := Operation.AddInt8YValue()).value = dy
             add_operation(op)
         if (dz := rel_z - now_z) != 0:
-            # if dz < -64 or dz > 64:
-            #     raise ValueError(f"Error AddIntZValue: {dz}")
+            if dz <= -128 or dz >= 128:
+                raise ValueError(f"Error AddIntZValue: {dz}")
             (op := Operation.AddInt8ZValue()).value = dz
             add_operation(op)
         now_x, now_y, now_z = write_structure_into_bdx(
@@ -152,7 +169,6 @@ def write_structure_into_bdx(
             }[block.name]
             op.data = block.val
             add_operation(op)
-            print("add_op")
         # 其他的暂时当普通方块处理
         elif block.states:
             states_str = dump_block_states(block.states)

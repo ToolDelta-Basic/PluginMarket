@@ -123,8 +123,8 @@ class BDXExporter(Plugin):
             return
         structures = export_to_structures(self, *start, *end)
         bdx = structures_to_bdx(structures)
+        Print.print_inf("")
+        Print.print_inf(f"正在导出到文件 {fname} .. ")
         DumpStructs(bdx, self.format_data_path(fname))
         Print.print_suc(f"导出成功: {self.format_data_path(fname)}")
 
-
-# 109, -63, 247   -300, 60, -300
