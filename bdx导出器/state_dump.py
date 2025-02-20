@@ -1,6 +1,34 @@
 import json
 
-SPECIAL_KTYPE = {"conditional_bit": lambda x: ("false", "true")[x]}
+
+def bool_func(x):
+    return ("false", "true")[x]
+
+
+SPECIAL_KTYPE = {
+    "conditional_bit": bool_func,
+    "upside_down_bit": bool_func,
+    "unstable": bool_func,
+    "waterlogged": bool_func,
+    "powered": bool_func,
+    "locked": bool_func,
+    "open": bool_func,
+    "lit": bool_func,
+    "open_bit": bool_func,
+    "powered_bit": bool_func,
+    "persistent_bit": bool_func,
+    "update_bit": bool_func,
+    "age_bit": bool_func,
+    "end_portal_eye_bit": bool_func,
+    "hanging": bool_func,
+    "attached_bit": bool_func,
+    "dead_bit": bool_func,
+    "infiniburn_bit": bool_func,
+    "active": bool_func,
+    "natural": bool_func,
+    "head_piece_bit": bool_func,
+    "triggered_bit": bool_func,
+}
 
 
 def to_string(val: str):
