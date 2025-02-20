@@ -47,7 +47,7 @@ def export_to_structures(
     startx, endx = min(startx, endx), max(startx, endx)
     starty, endy = min(starty, endy), max(starty, endy)
     startz, endz = min(startz, endz), max(startz, endz)
-    dy = endy - starty
+    dy = endy - starty + 1
     for x, z, rel_x, rel_z in yield_4chunks(startx, startz, endx, endz):
         sizex, sizez = min(64, endx - x + 1), min(64, endz - z + 1)
         structure = get_structure(sys, x, starty, z, sizex, dy, sizez)
@@ -159,6 +159,7 @@ def write_structure_into_bdx(
             op.blockData = block.val
             op.data = chest_data
             op.slotCount = chest_data.slotCount
+            add_operation(op)
         # 是命令方块
         elif bname.endswith("command_block"):
             op = load_command_block(block.metadata, block.states)
