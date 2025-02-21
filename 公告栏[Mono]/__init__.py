@@ -13,10 +13,33 @@ class BetterAnnounce(Plugin):
     version = (0, 0, 3)
     def on_def(self):
 
+        """
+        公告修改手册:
+        1.直接修改下面的列表,排列顺序(上->下),提供的可供更换的文本有:
+            {num_players} : 在线人数
+            {week_day}    : 周几
+            {tps}         : tps
+            {year}        : 年
+            {month}       : 月
+            {day}         : 日
+            {time_cn}     : 时间中文
+            {time_color}  : 时间颜色
+            {hour}        : 小时
+            {minute}      : 分钟
+            {second}      : 秒
+            {run_time}    : 运行时间
+        2.修改title 修改标题,默认为"公告栏"
+        3.修改刷新时间 修改刷新时间,默认为1秒
+        4.最好别乱改,运行不了删了重新从插件市场下载
+        5.已自动同步北京时间(UTC+8),一般面板时间不会影响到显示时间
+
+        注:因为写个配置太麻烦了,所以就没有设置,直接修改本文件即可
+        
+        """
         self.ads_texts_bak = [
                 "§7***************",
-                "§7",
-                "§b| §7{year}/{month}/{day} {week_day}",
+                "§7| §7{year}/{month}/{day} {week_day}",
+                "§b| §7已运行{run_time}",
                 "§b| §7{time_cn} §{time_color}{hour}:{minute}:{second}",
                 "§b",
                 "§b| §f延迟 : {tps}§r",
@@ -28,6 +51,7 @@ class BetterAnnounce(Plugin):
         self.title = "公告栏"
         self.tpscalc = plugins.get_plugin_api("tps计算器", (0, 0, 1), False)
         self.on_first_run = True
+        self.start_time = time.time()
         
     
     def on_inject(self):
@@ -100,6 +124,8 @@ class BetterAnnounce(Plugin):
             self.lastest_texts_bak=self.lastest_texts.copy()
             self.lastest_texts_bak.reverse()
             self.lastest_texts=[]
+            endime = time.time()
+            difference = endime-self.start_time
             for text in self.ads_texts_bak:
                 text=Utils.SimpleFmt(
                                 {
@@ -114,6 +140,7 @@ class BetterAnnounce(Plugin):
                                     "{hour}":self.hour,
                                     "{minute}":self.minute,
                                     "{second}":self.second,
+                                    "{run_time}":str(int(difference//86400))+"天"+str(int((difference%86400)//3600))+"小时"+str(int((difference%3600)//60))+"分"
 
                                 },
                                 text,
