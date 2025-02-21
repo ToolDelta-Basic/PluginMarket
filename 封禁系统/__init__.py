@@ -10,7 +10,7 @@ from tooldelta import Utils, Config, Plugin, Print, game_utils, plugins, TYPE_CH
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 9)
+    version = (0, 0, 8)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
@@ -54,10 +54,10 @@ class BanSystem(Plugin):
             ["ban", "封禁"], None, "封禁玩家", self.on_console_ban
         )
         self.frame.add_console_cmd_trigger(
-            ["offban", "离线封禁"], None, "离线封禁玩家", self.on_console_ban_offline
+            ["unban", "解封"], None, "解封玩家", self.on_console_unban
         )
         self.frame.add_console_cmd_trigger(
-            ["unban", "解封"], None, "解封玩家", self.on_console_unban
+            ["offban", "离线封禁"], None, "离线封禁玩家", self.on_console_ban_offline
         )
         if self.qqlink:
             self.qqlink.add_trigger(
