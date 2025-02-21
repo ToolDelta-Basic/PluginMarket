@@ -174,7 +174,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.9",
+      "version": "0.0.10",
       "plugin-type": "classic"
     },
     "largefill": {
