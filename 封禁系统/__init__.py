@@ -85,7 +85,10 @@ class BanSystem(Plugin):
             reason: 原因
         """
         ban_datas = self.BAN_DATA_DEFAULT.copy()
-        ban_datas["BanTo"] = time.time() + ban_time
+        if ban_time != -1:
+            ban_datas["BanTo"] = time.time() + ban_time
+        else:
+            ban_datas["BanTo"] = -1
         ban_datas["Reason"] = reason
         self.rec_ban_data(player, ban_datas)
         if player in self.game_ctrl.allplayers:
