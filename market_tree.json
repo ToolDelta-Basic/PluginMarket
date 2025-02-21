@@ -294,7 +294,7 @@
     "scheduled-task": {
       "name": "定时任务",
       "author": "System",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "injected"
     },
     "玩家数据管理": {
