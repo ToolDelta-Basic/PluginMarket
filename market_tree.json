@@ -398,12 +398,6 @@
       "author": "SuperScript",
       "version": "0.3.0",
       "plugin-type": "classic"
-    },
-    "SQLiteLib": {
-      "name": "前置_SQL数据库支持",
-      "author": "xingchen",
-      "version": "0.0.1",
-      "plugin-type": "classic"
     }
   },
   "Packages": {

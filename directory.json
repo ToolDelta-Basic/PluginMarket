@@ -177,6 +177,10 @@
         "downloader.py",
         "utils.py"
     ],
+    "desperated_plugins/前置_SQL数据库支持": [
+        "__init__.py",
+        "datas.json"
+    ],
     "前置_Cb2Bot通信": [
         "__init__.py",
         "datas.json"
@@ -1238,10 +1242,6 @@
         "datas.json"
     ],
     "前置_聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_SQL数据库支持": [
         "__init__.py",
         "datas.json"
     ]
