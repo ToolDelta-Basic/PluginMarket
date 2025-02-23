@@ -151,11 +151,11 @@ class BanSystem(Plugin):
         if name_part == "":
             Print.print_err("输入不能为空")
             return
-        players_uuids = Utils.TMPJson.read(self.xuidm.format_data_path("xuids.json"))
+        players_xuids = Utils.TMPJson.read(self.xuidm.format_data_path("xuids.json"))
         matched_names_and_uuids: list[tuple[str, str]] = []
-        for name, uuid in players_uuids.items():
+        for xuid, name in players_xuids.items():
             if name_part in name:
-                matched_names_and_uuids.append((name, uuid))
+                matched_names_and_uuids.append((name, xuid))
         matched_names_and_uuids.sort(key=lambda x: x[0].count(name_part))
         Print.print_inf("找到以下匹配的玩家名：")
         for i, (name, _) in enumerate(matched_names_and_uuids):
