@@ -176,7 +176,7 @@ class BanSystem(Plugin):
         reason = input(Print.fmt_info("请输入封禁原因:")).strip() or "未知"
         self.ban(target, ban_seconds, reason)
         Print.print_suc(
-            f"封禁 {target} 成功, 封禁到 {self.format_date_zhcn(int(time.time() + ban_seconds))}"
+            f"封禁 {target} 成功, 封禁了 {self.format_date_zhcn(ban_seconds)}"
         )
 
     def on_qq_ban(self, qqid: int, args: list[str]):
