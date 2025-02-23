@@ -24,7 +24,7 @@ CFG_DEFAULT = {
 }
 
 cfg, _ = Config.get_plugin_config_and_version(
-    "发言频率限制", Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
+    "超频发言限制", Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
 )
 
 ban = plugins.get_plugin_api("封禁系统")
