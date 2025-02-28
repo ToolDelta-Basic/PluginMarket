@@ -6,7 +6,7 @@ from tooldelta.constants import PacketIDS
 class XUIDGetter(Plugin):
     name = "前置-玩家XUID获取"
     author = "System"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     inject_signal = False
 
@@ -15,15 +15,25 @@ class XUIDGetter(Plugin):
         Utils.TMPJson.loadPathJson(path, needFileExists=False)
         if Utils.TMPJson.read(path) is None:
             Utils.TMPJson.write(path, {})
-        self.map = self.game_ctrl.players_uuid.copy()
+        self.map = {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
+        self.cached_playernames: dict[str, int] = {}
         self.inject_signal = True
+        self.frame.add_console_cmd_trigger(
+            ["xuids"], None, "查看在线玩家的 XUID 列表", self.on_lookup_xuids
+        )
+        for k, v in self.get_map().items():
+            self.record_player_xuid(k, v[-8:])
+
+    def on_lookup_xuids(self, _):
+        for k, v in self.get_map().items():
+            print(f"{k}: {v}")
 
     def get_map(self):
         if not self.inject_signal:
-            return self.game_ctrl.players_uuid.copy()
+            return {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
         return self.map
 
-    def on_frame_exit(self):
+    def on_frame_exit(self, _, _2):
         Utils.TMPJson.unloadPathJson(self.format_data_path("xuids.json"))
 
     @plugins.add_packet_listener(PacketIDS.IDPlayerList)
@@ -32,11 +42,16 @@ class XUIDGetter(Plugin):
         for entry in pk["Entries"]:
             playername = entry["Username"]
             xuid = entry.get("XUID")
+            if len(xuid) > 8:
+                raise ValueError(f"Not valid XUID: {xuid}")
+            uuid = entry["UUID"]
             if is_joining:
                 self.map[playername] = xuid
                 self.record_player_xuid(playername, xuid)
             else:
-                del self.map[playername]
+                playername = {v: k for k, v in self.map.items()}[uuid[-8:]]
+                if playername in self.map.values():
+                    self.cached_playernames[playername] = 4
         return False
 
     def get_xuid_by_name(self, playername: str, allow_offline=False):
@@ -103,3 +118,14 @@ class XUIDGetter(Plugin):
         c = Utils.TMPJson.read(path)
         c[xuid] = playername
         Utils.TMPJson.write(path, c)
+
+    @Utils.timer_event(20, "XUID缓存区")
+    def cache_clean(self):
+        # 因为玩家退出后的瞬间仍有插件会使用此玩家的 XUID
+        # 所以需要将退出玩家的 XUID 存留一段时间
+        for k, v in self.cached_playernames.copy().items():
+            if v == 0:
+                del self.cached_playernames[k]
+                del self.map[k]
+            else:
+                self.cached_playernames[k] = v - 1

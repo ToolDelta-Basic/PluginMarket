@@ -1,0 +1,8 @@
+{
+  "author": "猫七街",
+  "version": "0.0.2",
+  "plugin-type": "classic",
+  "description": "让机器人在玩家头上巡逻",
+  "pre-plugins": {},
+  "plugin-id": "巡逻"
+}

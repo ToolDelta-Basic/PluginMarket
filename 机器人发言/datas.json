@@ -1,0 +1,8 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "控制台输入 say [消息] 使机器人在游戏内发言",
+  "pre-plugins": {},
+  "plugin-id": "机器人发言"
+}

@@ -9,7 +9,7 @@ from tooldelta.game_utils import sendwocmd
 
 __plugin_meta__ = {
     "name": "定时任务",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "author": "System",
 }
 
@@ -21,17 +21,18 @@ class Task:
         self.spec = spec
 
 
-data_path = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, "计划任务")
+data_path = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, "定时任务")
 tasks: dict[int, list[Task]] = {}
 
 
 @init()
 async def on_inject():
     if not os.path.isdir(data_path):
-        os.mkdir(data_path)
-        c_dir = os.path.join(os.path.dirname(__file__), "示例计划任务")
-        for dir in os.listdir(c_dir):
-            shutil.copytree(os.path.join(c_dir, dir), data_path)
+        os.makedirs(data_path)
+        c_dir = os.path.join(os.path.dirname(__file__), "示例定时任务")
+        for file in os.listdir(c_dir):
+            shutil.copy(os.path.join(c_dir, file), data_path)
+        Print.print_suc("定时任务: 已创建示例文件")
     read_files()
     Utils.createThread(asyncio.run, (run_tasks(),), "计划任务主线程")
 

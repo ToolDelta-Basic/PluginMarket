@@ -1,0 +1,9 @@
+{
+  "author": "小虫虫",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "在MC中使用番茄小说",
+  "pre-plugins": {},
+  "plugin-id": "番茄小说",
+  "enabled": true
+}

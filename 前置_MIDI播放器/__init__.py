@@ -44,8 +44,10 @@ class ToolSoundSequence:
                     instrument_indexes.append(instrument)
                     duration += delay_ticks / 20
                 instrument_index = instrument_indexes.index(instrument)
+                if pitch < 0:
+                    pitch = 0
                 if pitch not in range(256):
-                    Print.print_err(f"超出转换预期: {pitch}")
+                    Print.print_err(f"音高超出转换预期: {pitch} (当前乐器: {instrument})")
                 # 有些音符间隔很长
                 while delay_ticks >= 256:
                     newb.append(bytes([instrument_index, 0, 60, min(delay_ticks, 255)]))
@@ -113,7 +115,7 @@ class ToolMidiMixer(Plugin):
             try:
                 self.midi_seqs[as_name] = ToolSoundSequence(f.read())
             except Exception as err:
-                Print.print_err(f"转换音乐 {path} 失败: {err}")
+                Print.print_err(f"读取音乐序列 {path} 失败: {err}")
                 raise SystemExit
 
     def translate_midi_to_seq_file(self, path: str, path1: str):
@@ -121,6 +123,8 @@ class ToolMidiMixer(Plugin):
         try:
             seq = read_midi_and_dump_to_seq(path)
         except Exception as err:
+            import traceback
+            traceback.print_exc()
             Print.print_err(f"转换音乐 {path} 失败: {err}")
             raise SystemExit
         with open(path1, "wb") as f:

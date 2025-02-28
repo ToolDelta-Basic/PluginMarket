@@ -1,8 +1,8 @@
 {
     "author": "SuperScript",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "plugin-type": "classic",
-    "description": "可制作换行物品等",
+    "description": "可制作换行物品等; 详情请查看该插件附带的手册",
     "pre-plugins": {},
     "plugin-id": "item-maker"
 }

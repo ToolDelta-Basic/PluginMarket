@@ -238,11 +238,7 @@ class ChatbarMenu(Plugin):
                             player, "§c创造模式或者OP才可以使用该菜单项"
                         )
                         return
-                    args = msg.split()
-                    if len(args) == 1:
-                        args = []
-                    else:
-                        args = args[1:]
+                    args = msg.removeprefix(trigger).split()
                     if " " in trigger:
                         with Utils.ChatbarLock(player, self.on_menu_warn):
                             tri_split_num = len(trigger.split()) - 1

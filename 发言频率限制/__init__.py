@@ -26,7 +26,7 @@ cfg, cfg_version = Config.getPluginConfigAndVersion(
     __plugin_meta__["name"],
     STD_BAN_CFG,
     DEFAULT_BAN_CFG,
-    __plugin_meta__["version"].split("."),
+    __plugin_meta__["version"].split("."), # type: ignore
 )
 
 playerMsgTimeDict = {}

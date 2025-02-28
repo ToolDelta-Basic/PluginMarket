@@ -1,0 +1,8 @@
+{
+  "author": "猫七街",
+  "version": "1.1.0",
+  "plugin-type": "classic",
+  "description": "白名单&管理员检测",
+  "pre-plugins": {},
+  "plugin-id": "白名单&管理员检测"
+}

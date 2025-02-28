@@ -1,9 +1,14 @@
+import time
+import numpy
 from typing import Any
 from json import dumps as stringfy
 from dataclasses import dataclass
 from tooldelta import plugins, Frame, Plugin, Utils, Print
 from tooldelta.constants import PacketIDS
-import time
+try:
+    from tooldelta.launch_cli import FrameEulogistLauncher
+except ImportError:
+    FrameEulogistLauncher = None
 
 plugins.checkSystemVersion((0, 3, 20))
 
@@ -34,7 +39,7 @@ class Structure:
         self.x, self.y, self.z = structure_json["StructureTemplate"][
             "structure_world_origin"
         ]
-        self._block_matrix = block_matrix
+        self._block_matrix = numpy.array(block_matrix, dtype=numpy.int16)
         self._palette = [
             (i["name"], i["states"], i["val"], i["version"]) for i in block_palettes
         ]
@@ -80,6 +85,9 @@ class GameInteractive(Plugin):
     description = "前置插件, 提供世界交互功能的数据包, etc."
     version = (0, 0, 5)
 
+    Structure = Structure
+    Block = Block
+
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
@@ -92,9 +100,11 @@ class GameInteractive(Plugin):
 
     @plugins.add_packet_listener(PacketIDS.IDStructureTemplateDataResponse)
     def on_structure_pkt(self, pk):
-        x, y, z = pk["StructureTemplate"]["structure_world_origin"]
-        if (x, y, z) in self.structure_cbs.keys():
-            self.structure_cbs[(x, y, z)](pk)
+        xyz = tuple(pk["StructureTemplate"]["structure_world_origin"])
+        if xyz in self.structure_cbs.keys():
+            self.structure_cbs[xyz].pop()(pk)
+            if self.structure_cbs[xyz] == []:
+                del self.structure_cbs[xyz]
         return False
 
     @staticmethod
@@ -146,8 +156,8 @@ class GameInteractive(Plugin):
         self,
         command_block_update_packet,
         facing=0,
-        limit_seconds=0,
-        limit_seconds2=0,
+        limit_seconds=0.0,
+        limit_seconds2=0.0,
         in_dim="overworld",
     ):
         """
@@ -228,7 +238,7 @@ class GameInteractive(Plugin):
             Print.print_err(f"获取结构错误: {err}")
             return
         block = res.get_block((0, 0, 0))
-        Print.print_inf(f"目标方块ID: {block.name}, NBT数据:")
+        Print.print_inf(f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:")
         Print.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
 
     def _request_structure_and_get(
@@ -243,7 +253,7 @@ class GameInteractive(Plugin):
                 "IgnoreBlocks": False,
                 "Size": list(size),
                 "Offset": [0, 0, 0],
-                "LastEditingPlayerUniqueID": self.frame.launcher.omega.get_bot_unique_id(),
+                "LastEditingPlayerUniqueID": self.bot_ud,
                 "Rotation": 0,
                 "Mirror": 0,
                 "Integrity": 100,
@@ -254,8 +264,16 @@ class GameInteractive(Plugin):
         }
         self.game_ctrl.sendPacket(PacketIDS.IDStructureTemplateDataRequest, pk)
         getter, setter = Utils.create_result_cb()
-        self.structure_cbs[position] = setter
+        self.structure_cbs.setdefault(position, [])
+        self.structure_cbs[position].append(setter)
         resp = getter(timeout)
         if resp is None:
             raise ValueError(f"无法获取 {position} 的结构")
         return resp
+
+    @property
+    def bot_ud(self):
+        if FrameEulogistLauncher and isinstance(self.frame.launcher, FrameEulogistLauncher):
+            return self.frame.launcher.eulogist.bot_unique_id
+        else:
+            return self.frame.launcher.omega.get_bot_unique_id() # type: ignore
