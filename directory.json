@@ -1,49 +1,196 @@
 {
-    "[前置]功能封装库-1": [
-        "__init__.py",
-        "datas.json"
-    ],
     "获取全服玩家皮肤": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "任务系统": [
-        "__init__.py",
         "datas.json",
-        "readme.txt"
+        "__init__.py"
     ],
-    "发言频率限制v2": [
-        "__init__.py",
-        "datas.json"
+    "空岛分配": [
+        "datas.json",
+        "__init__.py"
     ],
-    "玩家人数限制": [
-        "__init__.py",
-        "datas.json"
+    "传送点设置": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_Cb2Bot通信": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "头衔系统": [
+        "datas.json",
+        "__init__.py"
     ],
     "32k盒子显示": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
+    ],
+    "pip模块支持": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "番茄小说": [
+        "datas.json",
+        "TomatoNovelAPI.py",
+        "__init__.py"
+    ],
+    "空岛系统": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "前置_大字替换": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "控制台执行MC指令": [
+        "datas.json",
+        "__init__.py"
     ],
     "前置_世界交互": [
-        "__init__.py",
+        "datas.json",
+        "__init__.py"
+    ],
+    "猫七街云黑封禁": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "猫七街云黑封禁/server": [
+        "server.py"
+    ],
+    "猫七街云黑封禁/server/官方云黑列表": [
+        "blacklist.json"
+    ],
+    "[pkg]新手插件包": [
         "datas.json"
     ],
-    "admin命令": [
+    "[pkg]新手插件包/插件配置文件": [
+        "聊天栏菜单.json",
+        "自定义聊天栏菜单.json"
+    ],
+    "超频刷屏反制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "机器人发言": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "多功能玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "活塞限速": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "游戏内显示插件报错": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "[前置]功能封装库-1": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "雪球菜单": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "违规名称踢出": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "类式插件创建器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins": [],
+    "desperated_plugins/地图画导入": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/bey-runaway": [
+        "datas.json",
+        "a.cpython-311-x86_64-linux-gnu.so",
+        "__init__.py"
+    ],
+    "desperated_plugins/群服互通本地版": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket": [
+        "_url.py",
+        "_logging.py",
+        "_socket.py",
+        "_http.py",
+        "_core.py",
+        "_app.py",
+        "_handshake.py",
+        "_abnf.py",
+        "py.typed",
+        "_exceptions.py",
+        "_utils.py",
         "__init__.py",
-        "datas.json"
+        "_wsdump.py",
+        "_cookiejar.py",
+        "_ssl_compat.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket/tests": [
+        "test_app.py",
+        "test_cookiejar.py",
+        "echo-server.py",
+        "test_url.py",
+        "test_websocket.py",
+        "__init__.py",
+        "test_http.py",
+        "test_abnf.py"
+    ],
+    "desperated_plugins/群服互通本地版/websocket/tests/data": [
+        "header01.txt",
+        "header03.txt",
+        "header02.txt"
+    ],
+    "desperated_plugins/群服互通本地版/cqlib": [
+        "config_spawn.py",
+        "utils.py",
+        "downloader.py",
+        "cq_runner.py"
+    ],
+    "desperated_plugins/前置_SQL数据库支持": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "更好的公告栏": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "点歌台": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "音效播放器": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "自定义聊天栏菜单": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_tps计算器": [
+        "datas.json",
+        "__init__.py"
     ],
     "ZBasic_Lang_中文编程": [
-        "basic_codes.py",
-        "syntax_lib.py",
         "syntax_compile.py",
-        "executor.py",
-        "__init__.py",
-        "basic_types.py",
-        "err_str.py",
-        "compiler.py",
         "type_checker.py",
+        "basic_types.py",
         "datas.json",
-        "readme.txt"
+        "readme.txt",
+        "syntax_lib.py",
+        "basic_codes.py",
+        "__init__.py",
+        "executor.py",
+        "err_str.py",
+        "compiler.py"
     ],
     "ZBasic_Lang_中文编程/示例代码": [],
     "ZBasic_Lang_中文编程/示例代码/玩家转账": [
@@ -53,1149 +200,40 @@
         "玩家退出.txt",
         "玩家进入.txt"
     ],
-    "猫七街云黑封禁": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "猫七街云黑封禁/server": [
-        "server.py"
-    ],
-    "猫七街云黑封禁/server/官方云黑列表": [
-        "blacklist.json"
-    ],
-    "机器人发言": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "全服喇叭": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_tps计算器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "巡逻": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "区块显示器": [
-        "___init__.py",
-        "datas.json"
-    ],
-    "设置栏钢琴师": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "pip模块支持": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令发送监视器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "游戏内显示插件报错": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "违规名称踢出": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "活塞限速": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "发言频率限制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音效播放器": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "雪球菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "头衔系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins": [],
-    "desperated_plugins/bey-runaway": [
-        "a.cpython-311-x86_64-linux-gnu.so",
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/地图画导入": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/群服互通本地版": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/群服互通本地版/websocket": [
-        "_cookiejar.py",
-        "_exceptions.py",
-        "_core.py",
-        "_url.py",
-        "_socket.py",
-        "__init__.py",
-        "_app.py",
-        "_wsdump.py",
-        "_ssl_compat.py",
-        "_handshake.py",
-        "py.typed",
-        "_abnf.py",
-        "_utils.py",
-        "_http.py",
-        "_logging.py"
-    ],
-    "desperated_plugins/群服互通本地版/websocket/tests": [
-        "test_websocket.py",
-        "__init__.py",
-        "test_abnf.py",
-        "test_http.py",
-        "test_url.py",
-        "echo-server.py",
-        "test_app.py",
-        "test_cookiejar.py"
-    ],
-    "desperated_plugins/群服互通本地版/websocket/tests/data": [
-        "header02.txt",
-        "header01.txt",
-        "header03.txt"
-    ],
-    "desperated_plugins/群服互通本地版/cqlib": [
-        "config_spawn.py",
-        "cq_runner.py",
-        "downloader.py",
-        "utils.py"
-    ],
-    "desperated_plugins/前置_SQL数据库支持": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_Cb2Bot通信": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "点歌台": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "五子棋小游戏": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "封禁系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "大范围fill": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "番茄小说": [
-        "__init__.py",
-        "TomatoNovelAPI.py",
-        "datas.json"
-    ],
-    "简易建造": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "前置_基本插件功能库": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "空岛系统": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "物品制作器": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "[pkg]音乐曲目-1": [
-        "datas.json"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件": [
-        "音乐播放器.json"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets": [
-        "server.py",
-        "__init__.py",
-        "speedups.c",
-        "client.py",
-        "connection.py",
-        "version.py",
-        "datastructures.py",
-        "http11.py",
-        "speedups.cp311-win_amd64.pyd",
-        "headers.py",
-        "protocol.py",
-        "py.typed",
-        "__main__.py",
-        "frames.py",
-        "exceptions.py",
-        "imports.py",
-        "uri.py",
-        "utils.py",
-        "auth.py",
-        "typing.py",
-        "http.py",
-        "streams.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/sync": [
-        "server.py",
-        "messages.py",
-        "__init__.py",
-        "client.py",
-        "connection.py",
-        "utils.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/extensions": [
-        "__init__.py",
-        "base.py",
-        "permessage_deflate.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/legacy": [
-        "server.py",
-        "__init__.py",
-        "framing.py",
-        "client.py",
-        "handshake.py",
-        "compatibility.py",
-        "protocol.py",
-        "async_timeout.py",
-        "auth.py",
-        "http.py"
-    ],
-    "[pkg]音乐曲目-1/插件数据文件": [],
-    "[pkg]音乐曲目-1/插件数据文件/点歌台": [],
-    "[pkg]音乐曲目-1/插件数据文件/点歌台/音乐列表": [
-        "海阔天空.midseq",
-        "春节序曲.midseq",
-        "Undertale.midseq",
-        "see you again.midseq"
-    ],
-    "[pkg]音乐曲目-1/插件数据文件/音乐播放器": [
-        "海阔天空.midseq",
-        "春节序曲.midseq",
-        "Undertale.midseq",
-        "see you again.midseq"
-    ],
-    "白名单&管理员检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "井字棋": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "自定义聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]/pytz": [
-        "tzinfo.py",
-        "tzfile.py",
-        "__init__.py",
-        "reference.py",
-        "lazy.py",
-        "exceptions.py"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo": [
-        "zone1970.tab",
-        "MET",
-        "Iceland",
-        "EST",
-        "GMT-0",
-        "Zulu",
-        "CET",
-        "Egypt",
-        "Factory",
-        "iso3166.tab",
-        "NZ",
-        "Cuba",
-        "GMT+0",
-        "EET",
-        "GB",
-        "CST6CDT",
-        "Singapore",
-        "leapseconds",
-        "Iran",
-        "Kwajalein",
-        "Universal",
-        "Navajo",
-        "ROK",
-        "GMT0",
-        "HST",
-        "UCT",
-        "Portugal",
-        "GMT",
-        "WET",
-        "ROC",
-        "MST",
-        "NZ-CHAT",
-        "Hongkong",
-        "tzdata.zi",
-        "PST8PDT",
-        "MST7MDT",
-        "UTC",
-        "Turkey",
-        "Jamaica",
-        "EST5EDT",
-        "Greenwich",
-        "PRC",
-        "Poland",
-        "Israel",
-        "Libya",
-        "Japan",
-        "zone.tab",
-        "Eire",
-        "W-SU",
-        "GB-Eire"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Indian": [
-        "Cocos",
-        "Reunion",
-        "Antananarivo",
-        "Comoro",
-        "Maldives",
-        "Chagos",
-        "Kerguelen",
-        "Mayotte",
-        "Mahe",
-        "Mauritius",
-        "Christmas"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Asia": [
-        "Tokyo",
-        "Kathmandu",
-        "Tbilisi",
-        "Krasnoyarsk",
-        "Choibalsan",
-        "Aqtau",
-        "Harbin",
-        "Yerevan",
-        "Riyadh",
-        "Novosibirsk",
-        "Kuching",
-        "Hong_Kong",
-        "Tehran",
-        "Brunei",
-        "Ashgabat",
-        "Kashgar",
-        "Istanbul",
-        "Samarkand",
-        "Colombo",
-        "Kamchatka",
-        "Thimbu",
-        "Khandyga",
-        "Vladivostok",
-        "Tomsk",
-        "Aden",
-        "Macao",
-        "Bishkek",
-        "Ashkhabad",
-        "Novokuznetsk",
-        "Damascus",
-        "Srednekolymsk",
-        "Anadyr",
-        "Makassar",
-        "Nicosia",
-        "Vientiane",
-        "Kuala_Lumpur",
-        "Yekaterinburg",
-        "Singapore",
-        "Rangoon",
-        "Dacca",
-        "Kabul",
-        "Dubai",
-        "Magadan",
-        "Irkutsk",
-        "Baghdad",
-        "Ujung_Pandang",
-        "Almaty",
-        "Sakhalin",
-        "Thimphu",
-        "Barnaul",
-        "Chongqing",
-        "Qyzylorda",
-        "Jerusalem",
-        "Muscat",
-        "Famagusta",
-        "Ust-Nera",
-        "Kuwait",
-        "Oral",
-        "Jayapura",
-        "Yangon",
-        "Qostanay",
-        "Hovd",
-        "Chungking",
-        "Dushanbe",
-        "Chita",
-        "Amman",
-        "Phnom_Penh",
-        "Karachi",
-        "Ulan_Bator",
-        "Taipei",
-        "Kolkata",
-        "Yakutsk",
-        "Beirut",
-        "Hebron",
-        "Calcutta",
-        "Bahrain",
-        "Pyongyang",
-        "Shanghai",
-        "Bangkok",
-        "Gaza",
-        "Dili",
-        "Seoul",
-        "Manila",
-        "Tashkent",
-        "Atyrau",
-        "Omsk",
-        "Ho_Chi_Minh",
-        "Dhaka",
-        "Saigon",
-        "Pontianak",
-        "Aqtobe",
-        "Qatar",
-        "Jakarta",
-        "Tel_Aviv",
-        "Baku",
-        "Urumqi",
-        "Katmandu",
-        "Macau",
-        "Ulaanbaatar"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Antarctica": [
-        "South_Pole",
-        "Mawson",
-        "McMurdo",
-        "DumontDUrville",
-        "Troll",
-        "Davis",
-        "Vostok",
-        "Casey",
-        "Macquarie",
-        "Syowa",
-        "Palmer",
-        "Rothera"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Africa": [
-        "Addis_Ababa",
-        "Tunis",
-        "Libreville",
-        "Brazzaville",
-        "Nouakchott",
-        "Asmara",
-        "Gaborone",
-        "Monrovia",
-        "Timbuktu",
-        "Sao_Tome",
-        "Algiers",
-        "Bamako",
-        "Bissau",
-        "Maseru",
-        "Ndjamena",
-        "Lusaka",
-        "Kinshasa",
-        "Blantyre",
-        "Niamey",
-        "Maputo",
-        "Windhoek",
-        "Conakry",
-        "El_Aaiun",
-        "Ouagadougou",
-        "Djibouti",
-        "Kampala",
-        "Harare",
-        "Porto-Novo",
-        "Luanda",
-        "Abidjan",
-        "Bangui",
-        "Freetown",
-        "Cairo",
-        "Johannesburg",
-        "Accra",
-        "Mbabane",
-        "Casablanca",
-        "Banjul",
-        "Dakar",
-        "Lome",
-        "Lubumbashi",
-        "Mogadishu",
-        "Douala",
-        "Ceuta",
-        "Nairobi",
-        "Juba",
-        "Kigali",
-        "Khartoum",
-        "Lagos",
-        "Malabo",
-        "Bujumbura",
-        "Dar_es_Salaam",
-        "Tripoli",
-        "Asmera"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Etc": [
-        "GMT-2",
-        "GMT-14",
-        "GMT+12",
-        "GMT-0",
-        "Zulu",
-        "GMT+2",
-        "GMT+3",
-        "GMT-3",
-        "GMT-10",
-        "GMT+5",
-        "GMT-6",
-        "GMT+0",
-        "GMT-4",
-        "GMT+11",
-        "GMT+9",
-        "GMT+6",
-        "Universal",
-        "GMT+4",
-        "GMT-8",
-        "GMT0",
-        "GMT-1",
-        "UCT",
-        "GMT+10",
-        "GMT+7",
-        "GMT-12",
-        "GMT-13",
-        "GMT",
-        "GMT-9",
-        "GMT-5",
-        "GMT-7",
-        "UTC",
-        "GMT+8",
-        "Greenwich",
-        "GMT-11",
-        "GMT+1"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/America": [
-        "Nuuk",
-        "Barbados",
-        "Yellowknife",
-        "Knox_IN",
-        "La_Paz",
-        "Ensenada",
-        "Rio_Branco",
-        "Port-au-Prince",
-        "Asuncion",
-        "Coral_Harbour",
-        "Dawson_Creek",
-        "Paramaribo",
-        "Pangnirtung",
-        "St_Thomas",
-        "Punta_Arenas",
-        "Guatemala",
-        "Thunder_Bay",
-        "Porto_Velho",
-        "Godthab",
-        "Fortaleza",
-        "Cancun",
-        "Montserrat",
-        "Belem",
-        "Cambridge_Bay",
-        "Araguaina",
-        "Bahia",
-        "Eirunepe",
-        "Anchorage",
-        "Caracas",
-        "Guadeloupe",
-        "Resolute",
-        "Panama",
-        "Merida",
-        "Whitehorse",
-        "Grand_Turk",
-        "Lima",
-        "El_Salvador",
-        "Goose_Bay",
-        "Los_Angeles",
-        "Belize",
-        "Cuiaba",
-        "Port_of_Spain",
-        "Metlakatla",
-        "Rankin_Inlet",
-        "Cayenne",
-        "Tegucigalpa",
-        "Anguilla",
-        "Rosario",
-        "Guayaquil",
-        "Rainy_River",
-        "Indianapolis",
-        "Dawson",
-        "Mexico_City",
-        "Adak",
-        "Montevideo",
-        "Edmonton",
-        "Creston",
-        "Fort_Wayne",
-        "Ojinaga",
-        "Recife",
-        "Louisville",
-        "Fort_Nelson",
-        "Catamarca",
-        "Managua",
-        "Phoenix",
-        "Shiprock",
-        "Thule",
-        "New_York",
-        "Buenos_Aires",
-        "Monterrey",
-        "Dominica",
-        "Sitka",
-        "Hermosillo",
-        "Campo_Grande",
-        "Inuvik",
-        "St_Barthelemy",
-        "Virgin",
-        "Martinique",
-        "Winnipeg",
-        "St_Lucia",
-        "Chicago",
-        "Regina",
-        "Bahia_Banderas",
-        "Tijuana",
-        "Santo_Domingo",
-        "Boise",
-        "Puerto_Rico",
-        "St_Kitts",
-        "Manaus",
-        "Santiago",
-        "Danmarkshavn",
-        "Menominee",
-        "Nassau",
-        "Kralendijk",
-        "Vancouver",
-        "Denver",
-        "Curacao",
-        "Bogota",
-        "Yakutat",
-        "Mazatlan",
-        "Havana",
-        "Montreal",
-        "Halifax",
-        "Marigot",
-        "Miquelon",
-        "Lower_Princes",
-        "Scoresbysund",
-        "Atikokan",
-        "Noronha",
-        "St_Johns",
-        "Detroit",
-        "St_Vincent",
-        "Juneau",
-        "Moncton",
-        "Glace_Bay",
-        "Atka",
-        "Jujuy",
-        "Sao_Paulo",
-        "Tortola",
-        "Chihuahua",
-        "Cayman",
-        "Grenada",
-        "Guyana",
-        "Toronto",
-        "Nome",
-        "Iqaluit",
-        "Cordoba",
-        "Matamoros",
-        "Jamaica",
-        "Santa_Isabel",
-        "Aruba",
-        "Swift_Current",
-        "Blanc-Sablon",
-        "Boa_Vista",
-        "Nipigon",
-        "Porto_Acre",
-        "Maceio",
-        "Costa_Rica",
-        "Mendoza",
-        "Ciudad_Juarez",
-        "Antigua",
-        "Santarem"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/America/Argentina": [
-        "San_Luis",
-        "La_Rioja",
-        "San_Juan",
-        "Catamarca",
-        "Buenos_Aires",
-        "Tucuman",
-        "ComodRivadavia",
-        "Jujuy",
-        "Cordoba",
-        "Rio_Gallegos",
-        "Ushuaia",
-        "Salta",
-        "Mendoza"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/America/North_Dakota": [
-        "Beulah",
-        "New_Salem",
-        "Center"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/America/Indiana": [
-        "Petersburg",
-        "Indianapolis",
-        "Marengo",
-        "Vevay",
-        "Knox",
-        "Winamac",
-        "Vincennes",
-        "Tell_City"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/America/Kentucky": [
-        "Louisville",
-        "Monticello"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Arctic": [
-        "Longyearbyen"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Europe": [
-        "Malta",
-        "Copenhagen",
-        "Ljubljana",
-        "Sarajevo",
-        "Belgrade",
-        "Busingen",
-        "Prague",
-        "San_Marino",
-        "Kirov",
-        "Istanbul",
-        "Riga",
-        "Bratislava",
-        "Vatican",
-        "Berlin",
-        "Zagreb",
-        "Zaporozhye",
-        "Gibraltar",
-        "Dublin",
-        "Astrakhan",
-        "London",
-        "Kyiv",
-        "Vienna",
-        "Bucharest",
-        "Oslo",
-        "Simferopol",
-        "Nicosia",
-        "Saratov",
-        "Jersey",
-        "Luxembourg",
-        "Tiraspol",
-        "Rome",
-        "Vaduz",
-        "Guernsey",
-        "Podgorica",
-        "Moscow",
-        "Ulyanovsk",
-        "Budapest",
-        "Kiev",
-        "Uzhgorod",
-        "Stockholm",
-        "Chisinau",
-        "Minsk",
-        "Isle_of_Man",
-        "Tirane",
-        "Belfast",
-        "Monaco",
-        "Volgograd",
-        "Lisbon",
-        "Athens",
-        "Zurich",
-        "Andorra",
-        "Amsterdam",
-        "Brussels",
-        "Kaliningrad",
-        "Paris",
-        "Skopje",
-        "Mariehamn",
-        "Vilnius",
-        "Samara",
-        "Madrid",
-        "Warsaw",
-        "Helsinki",
-        "Tallinn",
-        "Sofia"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Mexico": [
-        "General",
-        "BajaNorte",
-        "BajaSur"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Pacific": [
-        "Ponape",
-        "Galapagos",
-        "Bougainville",
-        "Kiritimati",
-        "Norfolk",
-        "Nauru",
-        "Funafuti",
-        "Saipan",
-        "Samoa",
-        "Easter",
-        "Marquesas",
-        "Fiji",
-        "Fakaofo",
-        "Wake",
-        "Enderbury",
-        "Honolulu",
-        "Kwajalein",
-        "Pago_Pago",
-        "Majuro",
-        "Tongatapu",
-        "Tarawa",
-        "Pohnpei",
-        "Pitcairn",
-        "Apia",
-        "Yap",
-        "Tahiti",
-        "Midway",
-        "Rarotonga",
-        "Auckland",
-        "Kosrae",
-        "Noumea",
-        "Guadalcanal",
-        "Gambier",
-        "Port_Moresby",
-        "Efate",
-        "Palau",
-        "Truk",
-        "Chatham",
-        "Guam",
-        "Kanton",
-        "Chuuk",
-        "Johnston",
-        "Niue",
-        "Wallis"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Atlantic": [
-        "Azores",
-        "St_Helena",
-        "Stanley",
-        "Cape_Verde",
-        "Madeira",
-        "Faeroe",
-        "Canary",
-        "Reykjavik",
-        "Faroe",
-        "South_Georgia",
-        "Jan_Mayen",
-        "Bermuda"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Canada": [
-        "Central",
-        "Newfoundland",
-        "Yukon",
-        "Eastern",
-        "Pacific",
-        "Atlantic",
-        "Mountain",
-        "Saskatchewan"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Chile": [
-        "EasterIsland",
-        "Continental"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Brazil": [
-        "East",
-        "West",
-        "Acre",
-        "DeNoronha"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/Australia": [
-        "Broken_Hill",
-        "North",
-        "Eucla",
-        "Melbourne",
-        "NSW",
-        "South",
-        "Adelaide",
-        "Sydney",
-        "Perth",
-        "Queensland",
-        "Brisbane",
-        "Tasmania",
-        "Yancowinna",
-        "Currie",
-        "Victoria",
-        "Hobart",
-        "West",
-        "Lord_Howe",
-        "Darwin",
-        "ACT",
-        "LHI",
-        "Canberra",
-        "Lindeman"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo/US": [
-        "Indiana-Starke",
-        "Samoa",
-        "Aleutian",
-        "Michigan",
-        "Central",
-        "Arizona",
-        "East-Indiana",
-        "Hawaii",
-        "Eastern",
-        "Alaska",
-        "Pacific",
-        "Mountain"
-    ],
-    "前置_大字替换": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器/mido": [
-        "frozen.py",
-        "__init__.py",
-        "syx.py",
-        "tokenizer.py",
-        "ports.py",
-        "parser.py"
-    ],
-    "前置_MIDI播放器/mido/messages": [
-        "specs.py",
-        "messages.py",
-        "__init__.py",
-        "decode.py",
-        "checks.py",
-        "encode.py",
-        "strings.py"
-    ],
-    "前置_MIDI播放器/mido/midifiles": [
-        "midifiles.py",
-        "__init__.py",
-        "meta.py",
-        "units.py",
-        "tracks.py"
-    ],
-    "前置_MIDI播放器/Musicreater": [
-        "__init__.py",
-        "types.py",
-        "constants.py",
-        "main.py",
-        "subclass.py",
-        "exceptions.py",
-        "utils.py"
-    ],
-    "传送点设置": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_玩家XUID获取": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音乐播放器": [
-        "__init__.py",
-        "datas.json",
-        "readme.txt"
-    ],
-    "@玩家": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "[pkg]新手插件包": [
-        "datas.json"
-    ],
-    "[pkg]新手插件包/插件配置文件": [
-        "聊天栏菜单.json",
-        "自定义聊天栏菜单.json"
-    ],
-    "服服互通": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "类式插件创建器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "多功能玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
     "定时任务": [
-        "__init__.py",
         "datas.json",
-        "readme.txt"
+        "readme.txt",
+        "__init__.py"
     ],
     "定时任务/示例定时任务": [
         "扫地姬.mcfunction"
     ],
-    "玩家数据管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "入服欢迎": [
-        "__init__.py",
-        "datas.json"
-    ],
     "时间同步计分板": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版/websocket": [
-        "_cookiejar.py",
-        "_exceptions.py",
-        "_core.py",
-        "_url.py",
-        "_socket.py",
-        "__init__.py",
-        "_app.py",
-        "_wsdump.py",
-        "_ssl_compat.py",
-        "_handshake.py",
-        "py.typed",
-        "_abnf.py",
-        "_utils.py",
-        "_http.py",
-        "_logging.py"
-    ],
-    "群服互通云链版/websocket/tests": [
-        "test_websocket.py",
-        "__init__.py",
-        "test_abnf.py",
-        "test_http.py",
-        "test_url.py",
-        "echo-server.py",
-        "test_app.py",
-        "test_cookiejar.py"
-    ],
-    "群服互通云链版/websocket/tests/data": [
-        "header02.txt",
-        "header01.txt",
-        "header03.txt"
-    ],
-    "超频刷屏反制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务/examples": [
-        "示例-触发词.mcfunction",
-        "示例-定时任务.mcfunction",
-        "示例-系统启动.mcfunction"
-    ],
-    "简易建造-Pro": [
-        "__init__.py",
         "datas.json",
-        "readme.txt"
+        "__init__.py"
     ],
     "bdx导出器": [
-        "__init__.py",
-        "state_dump.py",
+        "struct_loader.py",
+        "datas.json",
         "scanner.py",
         "utils.py",
-        "datas.json",
-        "struct_loader.py"
-    ],
-    "bdx导出器/BDXConverter": [
-        "__init__.py",
-        "LICENSE",
-        "readme.md"
-    ],
-    "bdx导出器/BDXConverter/Operation": [
-        "PlaceBlockWithNBTData.py",
-        "AddInt16ZValue0.py",
-        "PlaceBlockWithRuntimeId.py",
-        "AddInt16XValue.py",
-        "AssignDebugData.py",
-        "AddInt32YValue.py",
-        "AddInt32ZValue0.py",
-        "AddYValue.py",
-        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
-        "AddInt16ZValue.py",
-        "PlaceRuntimeBlockWithChestData.py",
-        "__init__.py",
-        "PlaceCommandBlockWithCommandBlockData.py",
-        "AddZValue.py",
-        "AddInt32XValue.py",
-        "PlaceBlockWithCommandBlockData.py",
-        "SetCommandBlockData.py",
-        "PlaceBlockWithChestData.py",
-        "PlaceBlock.py",
-        "PlaceBlockWithBlockStatesDeprecated.py",
-        "AddInt8XValue.py",
-        "AddInt32ZValue.py",
-        "structOfChest.py",
-        "AddXValue.py",
-        "AddZValue0.py",
-        "SubtractYValue.py",
-        "PlaceBlockWithBlockStates.py",
-        "NOP.py",
-        "AddInt8ZValue.py",
-        "PlaceRuntimeBlock.py",
-        "PlaceRuntimeBlockWithCommandBlockData.py",
-        "SubtractXValue.py",
-        "SubtractZValue.py",
-        "AddInt8YValue.py",
-        "CreateConstantString.py",
-        "AddInt16YValue.py",
-        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
-        "UseRuntimeIDPool.py"
-    ],
-    "bdx导出器/BDXConverter/General": [
-        "Pool.py",
-        "Operation.py",
-        "__init__.py",
-        "GeneralClass.py"
-    ],
-    "bdx导出器/BDXConverter/utils": [
-        "getByte.py",
-        "__init__.py",
-        "marshalNBT_OldVersion.py",
-        "getString.py",
-        "marshalNBT.py",
-        "unmarshalNBT.py",
-        "unmarshalNBT_OldVersion.py"
-    ],
-    "bdx导出器/BDXConverter/Converter": [
-        "__init__.py",
-        "Converter.py",
-        "ErrorClassDefine.py",
-        "FileOperation.py"
+        "state_dump.py",
+        "__init__.py"
     ],
     "bdx导出器/nbtlib": [
-        "__init__.py",
         "LICENSE",
+        "tag.py",
+        "__main__.py",
+        "__init__.py",
+        "cli.py",
         "nbt.py",
         "path.py",
-        "schema.py",
-        "cli.py",
-        "tag.py",
-        "__main__.py"
+        "schema.py"
+    ],
+    "bdx导出器/nbtlib/literal": [
+        "__init__.py",
+        "serializer.py",
+        "parser.py"
     ],
     "bdx导出器/nbtlib/contrib": [
         "__init__.py"
@@ -1204,45 +242,1012 @@
         "__init__.py",
         "structure.py"
     ],
-    "bdx导出器/nbtlib/literal": [
-        "__init__.py",
-        "serializer.py",
-        "parser.py"
+    "bdx导出器/BDXConverter": [
+        "LICENSE",
+        "readme.md",
+        "__init__.py"
     ],
-    "前置_循环获取玩家坐标": [
+    "bdx导出器/BDXConverter/General": [
+        "GeneralClass.py",
+        "Operation.py",
         "__init__.py",
-        "datas.json"
+        "Pool.py"
     ],
-    "tpa传送": [
-        "__init__.py",
-        "datas.json"
+    "bdx导出器/BDXConverter/Converter": [
+        "ErrorClassDefine.py",
+        "Converter.py",
+        "FileOperation.py",
+        "__init__.py"
     ],
-    "宠物背包清理": [
+    "bdx导出器/BDXConverter/utils": [
+        "getString.py",
+        "getByte.py",
+        "unmarshalNBT_OldVersion.py",
+        "marshalNBT_OldVersion.py",
+        "unmarshalNBT.py",
         "__init__.py",
-        "datas.json"
+        "marshalNBT.py"
     ],
-    "空岛分配": [
+    "bdx导出器/BDXConverter/Operation": [
+        "PlaceBlock.py",
+        "AddInt16YValue.py",
+        "AddInt8XValue.py",
+        "UseRuntimeIDPool.py",
+        "AddInt32ZValue0.py",
+        "PlaceRuntimeBlockWithCommandBlockData.py",
+        "AddInt16ZValue0.py",
+        "PlaceCommandBlockWithCommandBlockData.py",
+        "SetCommandBlockData.py",
+        "structOfChest.py",
+        "AddXValue.py",
+        "SubtractZValue.py",
+        "PlaceRuntimeBlockWithChestData.py",
+        "AddInt8ZValue.py",
+        "PlaceBlockWithBlockStatesDeprecated.py",
+        "AddZValue.py",
+        "SubtractYValue.py",
+        "AddInt16XValue.py",
+        "PlaceRuntimeBlock.py",
+        "CreateConstantString.py",
+        "AddZValue0.py",
+        "PlaceBlockWithRuntimeId.py",
+        "PlaceBlockWithChestData.py",
+        "AddInt32ZValue.py",
+        "AddInt32XValue.py",
+        "AssignDebugData.py",
         "__init__.py",
-        "datas.json"
+        "SubtractXValue.py",
+        "AddInt32YValue.py",
+        "PlaceBlockWithCommandBlockData.py",
+        "AddInt16ZValue.py",
+        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
+        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
+        "NOP.py",
+        "PlaceBlockWithBlockStates.py",
+        "AddInt8YValue.py",
+        "PlaceBlockWithNBTData.py",
+        "AddYValue.py"
     ],
-    "更好的公告栏": [
-        "__init__.py",
-        "datas.json"
+    "五子棋小游戏": [
+        "datas.json",
+        "__init__.py"
     ],
-    "控制台执行MC指令": [
-        "__init__.py",
-        "datas.json"
+    "井字棋": [
+        "datas.json",
+        "__init__.py"
     ],
-    "性能管理": [
+    "群服互通云链版": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "群服互通云链版/websocket": [
+        "_url.py",
+        "_logging.py",
+        "_socket.py",
+        "_http.py",
+        "_core.py",
+        "_app.py",
+        "_handshake.py",
+        "_abnf.py",
+        "py.typed",
+        "_exceptions.py",
+        "_utils.py",
         "__init__.py",
-        "datas.json"
+        "_wsdump.py",
+        "_cookiejar.py",
+        "_ssl_compat.py"
+    ],
+    "群服互通云链版/websocket/tests": [
+        "test_app.py",
+        "test_cookiejar.py",
+        "echo-server.py",
+        "test_url.py",
+        "test_websocket.py",
+        "__init__.py",
+        "test_http.py",
+        "test_abnf.py"
+    ],
+    "群服互通云链版/websocket/tests/data": [
+        "header01.txt",
+        "header03.txt",
+        "header02.txt"
+    ],
+    "前置_基本插件功能库": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "多服聊天互通": [
+        "README.txt",
+        "datas.json",
+        "__init__.py"
+    ],
+    "admin命令": [
+        "datas.json",
+        "__init__.py"
     ],
     "清空玩家末影箱": [
-        "__init__.py",
+        "datas.json",
+        "__init__.py"
+    ],
+    "[pkg]音乐曲目-1": [
         "datas.json"
     ],
-    "前置_聊天栏菜单": [
+    "[pkg]音乐曲目-1/插件数据文件": [],
+    "[pkg]音乐曲目-1/插件数据文件/点歌台": [],
+    "[pkg]音乐曲目-1/插件数据文件/点歌台/音乐列表": [
+        "春节序曲.midseq",
+        "海阔天空.midseq",
+        "Undertale.midseq",
+        "see you again.midseq"
+    ],
+    "[pkg]音乐曲目-1/插件数据文件/音乐播放器": [
+        "春节序曲.midseq",
+        "海阔天空.midseq",
+        "Undertale.midseq",
+        "see you again.midseq"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件": [
+        "音乐播放器.json"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets": [
+        "frames.py",
+        "http11.py",
+        "http.py",
+        "streams.py",
+        "exceptions.py",
+        "typing.py",
+        "speedups.cp311-win_amd64.pyd",
+        "connection.py",
+        "__main__.py",
+        "version.py",
+        "py.typed",
+        "protocol.py",
+        "client.py",
+        "utils.py",
+        "uri.py",
         "__init__.py",
-        "datas.json"
+        "datastructures.py",
+        "server.py",
+        "headers.py",
+        "auth.py",
+        "speedups.c",
+        "imports.py"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets/sync": [
+        "messages.py",
+        "connection.py",
+        "client.py",
+        "utils.py",
+        "__init__.py",
+        "server.py"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets/legacy": [
+        "compatibility.py",
+        "http.py",
+        "async_timeout.py",
+        "handshake.py",
+        "framing.py",
+        "protocol.py",
+        "client.py",
+        "__init__.py",
+        "server.py",
+        "auth.py"
+    ],
+    "[pkg]音乐曲目-1/插件配置文件/websockets/extensions": [
+        "base.py",
+        "__init__.py",
+        "permessage_deflate.py"
+    ],
+    "前置_MIDI播放器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "main.py",
+        "constants.py",
+        "exceptions.py",
+        "utils.py",
+        "__init__.py",
+        "subclass.py",
+        "types.py"
+    ],
+    "前置_MIDI播放器/mido": [
+        "syx.py",
+        "ports.py",
+        "frozen.py",
+        "tokenizer.py",
+        "__init__.py",
+        "parser.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "strings.py",
+        "messages.py",
+        "checks.py",
+        "encode.py",
+        "specs.py",
+        "__init__.py",
+        "decode.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "units.py",
+        "tracks.py",
+        "__init__.py",
+        "meta.py",
+        "midifiles.py"
+    ],
+    "发言频率限制v2": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "区块显示器": [
+        "datas.json",
+        "___init__.py"
+    ],
+    "巡逻": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "发言频率限制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "白名单&管理员检测": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_聊天栏菜单": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "宠物背包清理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MCFunction计划任务": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MCFunction计划任务/examples": [
+        "示例-系统启动.mcfunction",
+        "示例-定时任务.mcfunction",
+        "示例-触发词.mcfunction"
+    ],
+    "公告栏[Mono]": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "公告栏[Mono]/pytz": [
+        "exceptions.py",
+        "tzinfo.py",
+        "reference.py",
+        "lazy.py",
+        "__init__.py",
+        "tzfile.py"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo": [
+        "Hongkong",
+        "Iceland",
+        "Iran",
+        "HST",
+        "Factory",
+        "zone.tab",
+        "ROC",
+        "Kwajalein",
+        "Jamaica",
+        "GMT+0",
+        "UCT",
+        "GB",
+        "Eire",
+        "Universal",
+        "GMT",
+        "Poland",
+        "UTC",
+        "leapseconds",
+        "Japan",
+        "Egypt",
+        "Singapore",
+        "PST8PDT",
+        "zone1970.tab",
+        "NZ",
+        "Israel",
+        "Portugal",
+        "MST",
+        "Greenwich",
+        "Libya",
+        "GMT0",
+        "CET",
+        "ROK",
+        "tzdata.zi",
+        "W-SU",
+        "Cuba",
+        "EET",
+        "iso3166.tab",
+        "Turkey",
+        "PRC",
+        "EST",
+        "EST5EDT",
+        "NZ-CHAT",
+        "CST6CDT",
+        "MET",
+        "GB-Eire",
+        "Zulu",
+        "Navajo",
+        "GMT-0",
+        "WET",
+        "MST7MDT"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Australia": [
+        "Adelaide",
+        "Victoria",
+        "Canberra",
+        "Melbourne",
+        "Brisbane",
+        "Queensland",
+        "Currie",
+        "NSW",
+        "Yancowinna",
+        "Darwin",
+        "West",
+        "Perth",
+        "Lord_Howe",
+        "LHI",
+        "Lindeman",
+        "ACT",
+        "Eucla",
+        "Sydney",
+        "Broken_Hill",
+        "North",
+        "Hobart",
+        "South",
+        "Tasmania"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Chile": [
+        "EasterIsland",
+        "Continental"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Etc": [
+        "GMT+8",
+        "GMT+11",
+        "GMT-4",
+        "GMT+6",
+        "GMT+10",
+        "GMT-12",
+        "GMT+0",
+        "UCT",
+        "GMT+4",
+        "GMT+9",
+        "GMT-11",
+        "GMT-9",
+        "Universal",
+        "GMT",
+        "GMT+5",
+        "UTC",
+        "GMT-5",
+        "GMT+3",
+        "GMT+1",
+        "GMT-2",
+        "GMT-8",
+        "GMT-14",
+        "GMT-1",
+        "Greenwich",
+        "GMT0",
+        "GMT-7",
+        "GMT-3",
+        "GMT-6",
+        "GMT+12",
+        "GMT-10",
+        "GMT+7",
+        "GMT-13",
+        "GMT+2",
+        "Zulu",
+        "GMT-0"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Mexico": [
+        "BajaNorte",
+        "BajaSur",
+        "General"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/US": [
+        "Mountain",
+        "Indiana-Starke",
+        "Samoa",
+        "Alaska",
+        "Aleutian",
+        "Pacific",
+        "East-Indiana",
+        "Central",
+        "Hawaii",
+        "Michigan",
+        "Eastern",
+        "Arizona"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Indian": [
+        "Cocos",
+        "Maldives",
+        "Chagos",
+        "Comoro",
+        "Kerguelen",
+        "Mayotte",
+        "Mahe",
+        "Mauritius",
+        "Reunion",
+        "Antananarivo",
+        "Christmas"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Antarctica": [
+        "Troll",
+        "Syowa",
+        "Davis",
+        "Macquarie",
+        "McMurdo",
+        "DumontDUrville",
+        "South_Pole",
+        "Vostok",
+        "Casey",
+        "Rothera",
+        "Palmer",
+        "Mawson"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/America": [
+        "Los_Angeles",
+        "New_York",
+        "Detroit",
+        "Port_of_Spain",
+        "Chicago",
+        "Adak",
+        "Tegucigalpa",
+        "Costa_Rica",
+        "Matamoros",
+        "St_Thomas",
+        "Phoenix",
+        "Havana",
+        "Louisville",
+        "Eirunepe",
+        "Nome",
+        "Blanc-Sablon",
+        "Dawson",
+        "Edmonton",
+        "Metlakatla",
+        "Creston",
+        "Dominica",
+        "Ensenada",
+        "Jamaica",
+        "Lower_Princes",
+        "Cancun",
+        "Knox_IN",
+        "Miquelon",
+        "Coral_Harbour",
+        "Halifax",
+        "Porto_Velho",
+        "Recife",
+        "Belem",
+        "Mendoza",
+        "Santa_Isabel",
+        "St_Barthelemy",
+        "Winnipeg",
+        "Toronto",
+        "Belize",
+        "Mexico_City",
+        "Cayman",
+        "Denver",
+        "Merida",
+        "Thunder_Bay",
+        "Moncton",
+        "Fort_Wayne",
+        "St_Johns",
+        "Fort_Nelson",
+        "Thule",
+        "Anchorage",
+        "St_Lucia",
+        "Manaus",
+        "Bahia",
+        "Guayaquil",
+        "Paramaribo",
+        "Boa_Vista",
+        "Hermosillo",
+        "Rankin_Inlet",
+        "Sitka",
+        "Boise",
+        "Glace_Bay",
+        "Danmarkshavn",
+        "Campo_Grande",
+        "Aruba",
+        "Shiprock",
+        "St_Vincent",
+        "Regina",
+        "Guyana",
+        "Santarem",
+        "Ojinaga",
+        "Indianapolis",
+        "Rio_Branco",
+        "Martinique",
+        "La_Paz",
+        "Managua",
+        "Inuvik",
+        "Guatemala",
+        "Asuncion",
+        "Juneau",
+        "Godthab",
+        "El_Salvador",
+        "St_Kitts",
+        "Barbados",
+        "Port-au-Prince",
+        "Puerto_Rico",
+        "Ciudad_Juarez",
+        "Fortaleza",
+        "Montreal",
+        "Bahia_Banderas",
+        "Cambridge_Bay",
+        "Resolute",
+        "Grand_Turk",
+        "Goose_Bay",
+        "Jujuy",
+        "Santo_Domingo",
+        "Catamarca",
+        "Araguaina",
+        "Anguilla",
+        "Nuuk",
+        "Monterrey",
+        "Nassau",
+        "Whitehorse",
+        "Montevideo",
+        "Buenos_Aires",
+        "Maceio",
+        "Marigot",
+        "Santiago",
+        "Kralendijk",
+        "Tijuana",
+        "Rainy_River",
+        "Nipigon",
+        "Dawson_Creek",
+        "Antigua",
+        "Bogota",
+        "Pangnirtung",
+        "Scoresbysund",
+        "Yakutat",
+        "Atka",
+        "Menominee",
+        "Lima",
+        "Curacao",
+        "Cuiaba",
+        "Noronha",
+        "Mazatlan",
+        "Iqaluit",
+        "Punta_Arenas",
+        "Cayenne",
+        "Panama",
+        "Yellowknife",
+        "Atikokan",
+        "Vancouver",
+        "Cordoba",
+        "Tortola",
+        "Virgin",
+        "Rosario",
+        "Caracas",
+        "Swift_Current",
+        "Montserrat",
+        "Guadeloupe",
+        "Sao_Paulo",
+        "Grenada",
+        "Porto_Acre",
+        "Chihuahua"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/America/Indiana": [
+        "Petersburg",
+        "Winamac",
+        "Indianapolis",
+        "Knox",
+        "Vincennes",
+        "Marengo",
+        "Tell_City",
+        "Vevay"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/America/North_Dakota": [
+        "New_Salem",
+        "Beulah",
+        "Center"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/America/Kentucky": [
+        "Monticello",
+        "Louisville"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/America/Argentina": [
+        "Salta",
+        "Ushuaia",
+        "Mendoza",
+        "San_Luis",
+        "San_Juan",
+        "La_Rioja",
+        "Rio_Gallegos",
+        "Jujuy",
+        "Catamarca",
+        "Tucuman",
+        "Buenos_Aires",
+        "ComodRivadavia",
+        "Cordoba"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Canada": [
+        "Mountain",
+        "Saskatchewan",
+        "Newfoundland",
+        "Pacific",
+        "Central",
+        "Yukon",
+        "Atlantic",
+        "Eastern"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Africa": [
+        "Kampala",
+        "Johannesburg",
+        "Douala",
+        "Bangui",
+        "Mbabane",
+        "Asmara",
+        "Brazzaville",
+        "Tunis",
+        "Gaborone",
+        "Monrovia",
+        "Mogadishu",
+        "Lome",
+        "Windhoek",
+        "Bujumbura",
+        "Maputo",
+        "Freetown",
+        "Ceuta",
+        "Kinshasa",
+        "Lagos",
+        "Algiers",
+        "Malabo",
+        "Abidjan",
+        "Bissau",
+        "Sao_Tome",
+        "Dakar",
+        "Cairo",
+        "Lusaka",
+        "Banjul",
+        "Luanda",
+        "Accra",
+        "Porto-Novo",
+        "Ndjamena",
+        "Libreville",
+        "Juba",
+        "Tripoli",
+        "Timbuktu",
+        "Nouakchott",
+        "Dar_es_Salaam",
+        "Bamako",
+        "Kigali",
+        "Asmera",
+        "Harare",
+        "Khartoum",
+        "Lubumbashi",
+        "El_Aaiun",
+        "Addis_Ababa",
+        "Maseru",
+        "Conakry",
+        "Niamey",
+        "Djibouti",
+        "Casablanca",
+        "Ouagadougou",
+        "Nairobi",
+        "Blantyre"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Pacific": [
+        "Yap",
+        "Nauru",
+        "Funafuti",
+        "Tahiti",
+        "Galapagos",
+        "Kwajalein",
+        "Samoa",
+        "Enderbury",
+        "Apia",
+        "Tongatapu",
+        "Chatham",
+        "Gambier",
+        "Easter",
+        "Pohnpei",
+        "Niue",
+        "Guadalcanal",
+        "Norfolk",
+        "Saipan",
+        "Honolulu",
+        "Auckland",
+        "Johnston",
+        "Noumea",
+        "Tarawa",
+        "Pago_Pago",
+        "Wallis",
+        "Efate",
+        "Midway",
+        "Wake",
+        "Chuuk",
+        "Fakaofo",
+        "Kiritimati",
+        "Rarotonga",
+        "Bougainville",
+        "Majuro",
+        "Kanton",
+        "Truk",
+        "Palau",
+        "Pitcairn",
+        "Guam",
+        "Kosrae",
+        "Fiji",
+        "Marquesas",
+        "Ponape",
+        "Port_Moresby"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Brazil": [
+        "East",
+        "DeNoronha",
+        "West",
+        "Acre"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Europe": [
+        "Vatican",
+        "Isle_of_Man",
+        "Brussels",
+        "Amsterdam",
+        "Paris",
+        "Warsaw",
+        "Zaporozhye",
+        "Vienna",
+        "London",
+        "Busingen",
+        "Tallinn",
+        "Jersey",
+        "Moscow",
+        "Ljubljana",
+        "Athens",
+        "Minsk",
+        "Nicosia",
+        "Bratislava",
+        "Dublin",
+        "Bucharest",
+        "Uzhgorod",
+        "Luxembourg",
+        "Kyiv",
+        "Astrakhan",
+        "Zagreb",
+        "Oslo",
+        "Skopje",
+        "Kirov",
+        "Sofia",
+        "San_Marino",
+        "Belfast",
+        "Samara",
+        "Madrid",
+        "Kiev",
+        "Berlin",
+        "Ulyanovsk",
+        "Malta",
+        "Prague",
+        "Copenhagen",
+        "Riga",
+        "Belgrade",
+        "Volgograd",
+        "Vilnius",
+        "Tirane",
+        "Tiraspol",
+        "Guernsey",
+        "Chisinau",
+        "Gibraltar",
+        "Zurich",
+        "Andorra",
+        "Monaco",
+        "Budapest",
+        "Saratov",
+        "Vaduz",
+        "Rome",
+        "Simferopol",
+        "Kaliningrad",
+        "Podgorica",
+        "Stockholm",
+        "Sarajevo",
+        "Helsinki",
+        "Istanbul",
+        "Mariehamn",
+        "Lisbon"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Atlantic": [
+        "Canary",
+        "South_Georgia",
+        "Stanley",
+        "Faeroe",
+        "Jan_Mayen",
+        "Faroe",
+        "Reykjavik",
+        "Bermuda",
+        "Madeira",
+        "Cape_Verde",
+        "St_Helena",
+        "Azores"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Arctic": [
+        "Longyearbyen"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo/Asia": [
+        "Aden",
+        "Samarkand",
+        "Ashgabat",
+        "Yekaterinburg",
+        "Omsk",
+        "Kamchatka",
+        "Qatar",
+        "Tel_Aviv",
+        "Colombo",
+        "Hong_Kong",
+        "Gaza",
+        "Riyadh",
+        "Urumqi",
+        "Khandyga",
+        "Katmandu",
+        "Jakarta",
+        "Manila",
+        "Irkutsk",
+        "Krasnoyarsk",
+        "Nicosia",
+        "Famagusta",
+        "Kashgar",
+        "Qyzylorda",
+        "Kuching",
+        "Kabul",
+        "Pyongyang",
+        "Ulaanbaatar",
+        "Kuala_Lumpur",
+        "Jayapura",
+        "Aqtobe",
+        "Yerevan",
+        "Muscat",
+        "Yakutsk",
+        "Dili",
+        "Atyrau",
+        "Yangon",
+        "Magadan",
+        "Seoul",
+        "Macau",
+        "Calcutta",
+        "Sakhalin",
+        "Saigon",
+        "Qostanay",
+        "Choibalsan",
+        "Bangkok",
+        "Vientiane",
+        "Aqtau",
+        "Taipei",
+        "Dhaka",
+        "Amman",
+        "Singapore",
+        "Bishkek",
+        "Ulan_Bator",
+        "Novokuznetsk",
+        "Hebron",
+        "Harbin",
+        "Chongqing",
+        "Tbilisi",
+        "Vladivostok",
+        "Phnom_Penh",
+        "Novosibirsk",
+        "Pontianak",
+        "Hovd",
+        "Dushanbe",
+        "Baghdad",
+        "Bahrain",
+        "Ho_Chi_Minh",
+        "Tokyo",
+        "Tehran",
+        "Srednekolymsk",
+        "Baku",
+        "Ust-Nera",
+        "Kolkata",
+        "Damascus",
+        "Barnaul",
+        "Makassar",
+        "Brunei",
+        "Oral",
+        "Tomsk",
+        "Beirut",
+        "Kathmandu",
+        "Karachi",
+        "Macao",
+        "Anadyr",
+        "Ashkhabad",
+        "Dacca",
+        "Ujung_Pandang",
+        "Jerusalem",
+        "Tashkent",
+        "Thimphu",
+        "Chita",
+        "Kuwait",
+        "Thimbu",
+        "Almaty",
+        "Istanbul",
+        "Dubai",
+        "Shanghai",
+        "Rangoon",
+        "Chungking"
+    ],
+    "服服互通": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "音乐播放器": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "前置_循环获取玩家坐标": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "性能管理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "任务系统": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "入服欢迎": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "设置栏钢琴师": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "全服喇叭": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "大范围fill": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家人数限制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "物品制作器": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "简易建造": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "命令发送监视器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_玩家XUID获取": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家数据管理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "简易建造-Pro": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
+    "封禁系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "@玩家": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "tpa传送": [
+        "datas.json",
+        "__init__.py"
     ]
 }
