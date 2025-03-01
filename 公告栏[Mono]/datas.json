@@ -1,10 +1,10 @@
 {
     "author": "Mono",
-    "version": "0.0.3",
+    "version": "1.0.2",
     "description": "无",
     "limit_launcher": null,
     "pre-plugins": {
-        "基本插件功能库": "0.1.1"
+        "tpscalculator": "0.0.1"
     },
     "plugin-type": "classic",
     "plugin-id": "ad",
