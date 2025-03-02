@@ -356,6 +356,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "玩家转账": [
+        "datas.json",
+        "__init__.py"
+    ],
     "多服聊天互通": [
         "README.txt",
         "datas.json",
