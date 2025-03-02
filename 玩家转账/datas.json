@@ -1,0 +1,9 @@
+{
+  "author": "猫七街",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "玩家直接相互转账",
+  "pre-plugins": {},
+  "plugin-id": "玩家转账",
+  "enabled": true
+}
