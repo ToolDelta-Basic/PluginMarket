@@ -487,6 +487,10 @@
         "datas.json",
         "___init__.py"
     ],
+    "猫七街玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
     "巡逻": [
         "datas.json",
         "__init__.py"

@@ -255,6 +255,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "玩家互传": {
+      "name": "猫七街玩家互传",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "巡逻": {
       "name": "巡逻",
       "author": "猫七街",
