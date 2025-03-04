@@ -157,6 +157,7 @@ class NewPlugin(Plugin):
         for k, v in self.shops.items():
             temp.append(k)
             self.game_ctrl.say_to(player_name, f"{count}. 出售玩家：{v['player_name']} 商品名字：{v['shopname']} 价格：{v['shopprice']} 商品描述：{v['shopdesc']} 商品包含内容：{v['item']}")
+            count += 1
         
         while True:
             self.game_ctrl.say_to(player_name, "§b请输入要购买的商品编号，输入q退出")
@@ -182,20 +183,27 @@ class NewPlugin(Plugin):
         self.game_ctrl.say_to(player_name, self.menu_head)
         try:
             score = game_utils.getScore(self.config["使用计分板"], player_name)
-
         except:
             score = 0
         
-        if score < self.shops[target_player]["shopprice"]:
+        if score < self.shops[target_player]["shopprice"]:  # 这里正确使用 target_player
             self.game_ctrl.say_to(player_name, f"§c你的{self.config['使用计分板']}不足，购买失败")
             return
 
         pos = game_utils.getPosXYZ(player_name)
         pos = (int(pos[0]), int(pos[1]), int(pos[2]))
-        self.game_ctrl.sendwocmd(f"/structure load {self.shops[player_uuid]['structure']} {int(pos[0])} {int(pos[1])} {int(pos[2])}")
+        
+        # 修复点1：使用 target_player 访问商家结构
+        self.game_ctrl.sendwocmd(f"/structure load {self.shops[target_player]['structure']} {int(pos[0])} {int(pos[1])} {int(pos[2])}")  # 改为 target_player
+        
+        # 修复点2：使用 target_player 的商店价格
         self.game_ctrl.sendwocmd(f"/scoreboard players remove {player_name} {self.config['使用计分板']} {self.shops[target_player]['shopprice']}")
+        
         time.sleep(0.1)
+        
+        # 修复点3：删除商家结构时使用 target_player
         self.game_ctrl.sendwocmd(f"/structure delete {self.shops[target_player]['structure']}")
+        
         self.game_ctrl.say_to(player_name, f"§a购买成功")
         wait_add = load_data(os.path.join(self.data_path, "wait_add.json"))
         money = self.shops[target_player]['shopprice']
@@ -203,6 +211,8 @@ class NewPlugin(Plugin):
         money = int(money)
         wait_add[target_player] = [player_name, money]
         save_data(os.path.join(self.data_path, "wait_add.json"), wait_add)
+        
+        # 修复点4：删除商家数据时使用 target_player
         del self.shops[target_player]
         save_data(self._data_path, self.shops)
     
@@ -214,8 +224,8 @@ class NewPlugin(Plugin):
                 for k, v in players.items():
                     if v in wait_add:
                         target_player, money = wait_add[v]
-                        self.game_ctrl.say_to(k, f"{target_player} 购买了你的商品，扣除手续费后你获得 {money} {self.config["使用计分板"]}")
-                        self.game_ctrl.sendwocmd(f"/scoreboard players add {k} {self.config["使用计分板"]} {money}")
+                        self.game_ctrl.say_to(k, f"{target_player} 购买了你的商品，扣除手续费后你获得 {money} {self.config['使用计分板']}")
+                        self.game_ctrl.sendwocmd(f"/scoreboard players add {k} {self.config['使用计分板']} {money}")
                         del wait_add[v]
                         save_data(os.path.join(self.data_path, "wait_add.json"), wait_add)
 
