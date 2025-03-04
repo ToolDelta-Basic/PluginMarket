@@ -87,6 +87,12 @@
       "version": "0.0.2",
       "plugin-type": "injected"
     },
+    "玩家交易所": {
+      "name": "玩家交易所",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "机器人发言": {
       "name": "机器人发言",
       "author": "SuperScript",

@@ -70,6 +70,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "玩家交易所": [
+        "data_operation.py",
+        "datas.json",
+        "__init__.py"
+    ],
     "机器人发言": [
         "datas.json",
         "__init__.py"
