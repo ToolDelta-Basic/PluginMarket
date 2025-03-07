@@ -1,0 +1,9 @@
+{
+  "author": "猫七街",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "将白名单外的计分板全部重置",
+  "pre-plugins": {},
+  "plugin-id": "计分板重置",
+  "enabled": true
+}
