@@ -1,0 +1,11 @@
+{
+  "author": "小虫虫",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "作为前置插件支持连接到一个MySQL服务器存取数据, 也可以通过 Tool 控制台访问数据库服务器. ",
+  "pre-plugins": {
+    "pip":"0.0.1"
+  },
+  "plugin-id": "MySQL",
+  "enabled": true
+}
