@@ -516,6 +516,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "MySQL连接器": [
+        "datas.json",
+        "__init__.py"
+    ],
     "宠物背包清理": [
         "datas.json",
         "__init__.py"
@@ -603,6 +607,11 @@
         "__init__.py"
     ],
     "前置_玩家XUID获取": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "计分板重置": [
+        "data_operation.py",
         "datas.json",
         "__init__.py"
     ],

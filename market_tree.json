@@ -297,6 +297,12 @@
       "version": "0.3.0",
       "plugin-type": "classic"
     },
+    "MySQL": {
+      "name": "MySQL连接器",
+      "author": "小虫虫",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "宠物背包清理": {
       "name": "宠物背包清理",
       "author": "猫七街",
@@ -397,6 +403,12 @@
       "name": "前置_玩家XUID获取",
       "author": "System",
       "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "计分板重置": {
+      "name": "计分板重置",
+      "author": "猫七街",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "玩家数据管理": {
