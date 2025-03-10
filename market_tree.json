@@ -36,7 +36,7 @@
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "pip": {
@@ -84,8 +84,8 @@
     "超频刷屏反制": {
       "name": "超频刷屏反制",
       "author": "SuperScript",
-      "version": "0.0.2",
-      "plugin-type": "injected"
+      "version": "0.0.3",
+      "plugin-type": "classic"
     },
     "玩家交易所": {
       "name": "玩家交易所",
@@ -115,12 +115,6 @@
       "name": "游戏内显示插件报错",
       "author": "System",
       "version": "0.0.5",
-      "plugin-type": "classic"
-    },
-    "[前置]功能库-1": {
-      "name": "[前置]功能封装库-1",
-      "author": "xingchen",
-      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "进服一言": {

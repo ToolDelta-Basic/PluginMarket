@@ -91,10 +91,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "[前置]功能封装库-1": [
-        "datas.json",
-        "__init__.py"
-    ],
     "进服一言": [
         "datas.json",
         "__init__.py"
@@ -113,6 +109,10 @@
     ],
     "desperated_plugins": [],
     "desperated_plugins/地图画导入": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/[前置]功能封装库-1": [
         "datas.json",
         "__init__.py"
     ],
