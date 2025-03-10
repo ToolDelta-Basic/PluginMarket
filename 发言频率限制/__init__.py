@@ -7,7 +7,7 @@ from tooldelta.plugin_load.injected_plugin import (
     player_name,
 )
 from tooldelta.game_utils import get_all_player, is_op
-from tooldelta import plugins
+from tooldelta import tooldelta
 
 
 __plugin_meta__ = {
@@ -32,7 +32,7 @@ cfg, cfg_version = Config.getPluginConfigAndVersion(
 playerMsgTimeDict = {}
 msgSendNunMaxPerTime = cfg["时间内"]
 msgSendNumMax = cfg["在时间内达到多少条"]
-ban_plugin = plugins.get_plugin_api("封禁系统")
+ban_plugin = tooldelta.plugin_group.get_plugin_api("封禁系统")
 ban = ban_plugin.ban
 
 

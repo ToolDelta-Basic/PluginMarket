@@ -1,9 +1,8 @@
-from tooldelta import Plugin, plugins
+from tooldelta import Plugin, plugin_entry
 
 global_vars = {}
 
 
-@plugins.add_plugin_as_api("MySQL")
 class MySQLSupport(Plugin):
     name = "MySQL"
     author = "小虫虫"
@@ -17,9 +16,10 @@ class MySQLSupport(Plugin):
             "连接到MySQL服务器",
             self.on_connect,
         )
+        self.ListenPreload(self.on_def)
 
     def on_def(self):
-        self.pip = plugins.get_plugin_api("pip")
+        self.pip = self.GetPluginAPI("pip")
         self.pip.require("pymysql")
         import pymysql
 
@@ -206,3 +206,6 @@ class MySQLConnector:
             result = self.tryexec(sql, withres=True)
         self.disconnect()
         return result
+
+
+entry = plugin_entry(MySQLSupport, "MySQL")

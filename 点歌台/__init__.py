@@ -1,10 +1,10 @@
 import os
 from typing import TYPE_CHECKING, ClassVar
-from tooldelta import Utils, Plugin, plugins
+from tooldelta import utils, Plugin, Player, plugin_entry
+
 from tooldelta.game_utils import getScore, waitMsg
 
 
-@plugins.add_plugin
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
@@ -18,17 +18,20 @@ class DJTable(Plugin):
         super().__init__(frame)
         os.makedirs(self.data_path, exist_ok=True)
         os.makedirs(os.path.join(self.data_path, "音乐列表"), exist_ok=True)
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPlayerJoin(self.on_player_join)
 
     def on_def(self):
-        self.midiplayer = plugins.get_plugin_api("MIDI播放器")
-        self.chatmenu = plugins.get_plugin_api("聊天栏菜单")
+        self.midiplayer = self.GetPluginAPI("MIDI播放器")
+        self.chatmenu = self.GetPluginAPI("聊天栏菜单")
         midi_names = []
         if TYPE_CHECKING:
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
 
-            self.midiplayer = plugins.instant_plugin_api(ToolMidiMixer)
-            self.chatmenu = plugins.instant_plugin_api(ChatbarMenu)
+            self.midiplayer = self.get_typecheck_plugin_api(ToolMidiMixer)
+            self.chatmenu = self.get_typecheck_plugin_api(ChatbarMenu)
         mdir = os.path.join(self.data_path, "音乐列表")
         for i in os.listdir(mdir):
             if i.endswith(".mid"):
@@ -61,7 +64,8 @@ class DJTable(Plugin):
         )
         self.choose_music_thread()
 
-    def on_player_join(self, _):
+    def on_player_join(self, player: Player):
+        _ = player.name
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
 
     def choose_menu(self, player: str, _):
@@ -73,7 +77,7 @@ class DJTable(Plugin):
         for i, j in enumerate(song_list):
             self.game_ctrl.say_to(player, f" §b{i + 1} §f{j}")
         self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
-        if (resp := Utils.try_int(waitMsg(player))) is None:
+        if (resp := utils.try_int(waitMsg(player))) is None:
             self.game_ctrl.say_to(player, "§c选项无效")
             return
         elif resp not in range(1, len(song_list) + 1):
@@ -98,9 +102,7 @@ class DJTable(Plugin):
         if not self.musics_list == []:
             self.game_ctrl.say_to(player, "§b◎§e当前点歌♬等待列表:")
             for i, j in enumerate(self.musics_list):
-                self.game_ctrl.say_to(
-                    player, f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}"
-                )
+                self.game_ctrl.say_to(player, f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}")
         else:
             self.game_ctrl.say_to(player, "§a♬§f列表空空如也啦! ")
 
@@ -124,9 +126,14 @@ class DJTable(Plugin):
             self.game_ctrl.say_to("@a", "§e点歌§f>> §7点歌列表已空!")
         self.can_stop = False
 
-    @Utils.timer_event(10, "点歌台切歌")
+    @utils.timer_event(10, "点歌台切歌")
     def choose_music_thread(self):
         if self.musics_list != [] and not self.can_stop:
             self.can_stop = True
             song_name, player = self.musics_list.pop(0)
-            self.main_thread = Utils.createThread(self.play_music, args=(song_name, player))
+            self.main_thread = utils.createThread(
+                self.play_music, args=(song_name, player)
+            )
+
+
+entry = plugin_entry(DJTable)

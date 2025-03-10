@@ -1,11 +1,12 @@
-from tooldelta import Frame, plugins, Plugin, Utils, TYPE_CHECKING
-from tooldelta.game_utils import getTarget, is_op
-
 import time
 import math
 
+from tooldelta import Frame, Plugin, utils, TYPE_CHECKING, plugin_entry
+from tooldelta.constants import PacketIDS
+from tooldelta.game_utils import getTarget, is_op
+from tooldelta.utils.tooldelta_thread import ThreadExit
 
-@plugins.add_plugin
+
 class WorldEdit(Plugin):
     author = "SuperScript"
     version = (0, 0, 9)
@@ -15,6 +16,8 @@ class WorldEdit(Plugin):
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
+        self.ListenPreload(self.on_def)
+        self.ListenPacket(PacketIDS.IDBlockActorData, self.we_pkt56)
 
     def on_def(self):
         self.getX = None
@@ -23,16 +26,16 @@ class WorldEdit(Plugin):
         self.endX = None
         self.endY = None
         self.endZ = None
-        self.intr = plugins.get_plugin_api("前置-世界交互")
+        self.intr = self.GetPluginAPI("前置-世界交互")
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
-            self.intr = plugins.instant_plugin_api(GameInteractive)
 
-    @plugins.add_packet_listener(56)
+            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+
     def we_pkt56(self, jsonPkt: dict):
         return self._we_pkt56(jsonPkt)
 
-    @Utils.thread_func("简易建造-事件执行")
+    @utils.thread_func("简易建造-事件执行")
     def _we_pkt56(self, jsonPkt: dict):
         if "NBTData" in jsonPkt and "id" in jsonPkt["NBTData"]:
             if not (jsonPkt["NBTData"]["id"] == "Sign"):
@@ -57,7 +60,7 @@ class WorldEdit(Plugin):
 
     def handler(self, x: int, y: int, z: int, op: str, opStr: str):
         opStrs = opStr.split()
-        Utils.fill_list_index(opStrs, ["", ""])
+        utils.fill_list_index(opStrs, ["", ""])
         if opStrs == []:
             return True
         match opStrs[0]:
@@ -123,14 +126,22 @@ class WorldEdit(Plugin):
                 )
             case "qt" | "球体":
                 sx, sy, sz, ex, ey, ez = self.assert_se(op)
-                self.ball(x, y - 1, z, sx, sy, sz, round(math.hypot(ex - sx, ey - sy, ez - sz)))
+                self.ball(
+                    x,
+                    y - 1,
+                    z,
+                    sx,
+                    sy,
+                    sz,
+                    round(math.hypot(ex - sx, ey - sy, ez - sz)),
+                )
             case "tc" | "填充":
                 self.showto(op, "填充命令正在执行")
-                self.fill_horizon(x, y-1, z)
+                self.fill_horizon(x, y - 1, z)
                 self.showto(op, "填充命令执行完毕")
         return True
 
-    @Utils.thread_func("简易建造-填充")
+    @utils.thread_func("简易建造-填充")
     def cube_fill(self, bx, by, bz, sx, sy, sz, dx, dy, dz, op):
         def p2n(n):
             return 1 if n >= 0 else -1
@@ -148,7 +159,7 @@ class WorldEdit(Plugin):
                     time.sleep(0.005)
         self.showto(op, "填充完成")
 
-    @Utils.thread_func("简易建造-画线")
+    @utils.thread_func("简易建造-画线")
     def lineTo(
         self,
         sx: int,
@@ -180,10 +191,10 @@ class WorldEdit(Plugin):
             dz = processor(math.cos(math.asin(dx1 / r)) * r)
             dx = dx // 2
             self.game_ctrl.sendwocmd(
-                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx+dx} {cy} {cz+dz}"
+                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz + dz}"
             )
             self.game_ctrl.sendwocmd(
-                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx+dx} {cy} {cz-dz}"
+                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz - dz}"
             )
             time.sleep(delay)
         for dz in range(-2 * r, 2 * r + 1):
@@ -191,10 +202,10 @@ class WorldEdit(Plugin):
             dx = processor(math.cos(math.asin(dz1 / r)) * r)
             dz = dz // 2
             self.game_ctrl.sendwocmd(
-                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx+dx} {cy} {cz+dz}"
+                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz + dz}"
             )
             self.game_ctrl.sendwocmd(
-                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx-dx} {cy} {cz+dz}"
+                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx - dx} {cy} {cz + dz}"
             )
             time.sleep(delay)
 
@@ -239,7 +250,7 @@ class WorldEdit(Plugin):
             or ez is None
         ):
             self.showto(op, "§6还未设置起点或终点...")
-            raise Utils.ThreadExit
+            raise ThreadExit
         return gx, gy, gz, ex, ey, ez
 
     def column(
@@ -263,7 +274,11 @@ class WorldEdit(Plugin):
             mapping.append([])
             for z in range(64):
                 b = area.get_block((x, 0, z))
-                mapping[x].append(BLOCK_AIR if (b.name.endswith("air") or b.name.endswith("light_block")) else BLOCK_BORDER)
+                mapping[x].append(
+                    BLOCK_AIR
+                    if (b.name.endswith("air") or b.name.endswith("light_block"))
+                    else BLOCK_BORDER
+                )
         mapping[32][32] = BLOCK_FILL
         has_air = True
         while has_air:
@@ -281,13 +296,16 @@ class WorldEdit(Plugin):
                             self.send_clone_pos(bx, by, bz, destx, by, destz)
                             time.sleep(0.002)
 
-
     @staticmethod
     def make_clone_pos(bx: int, by: int, bz: int, destx: int, desty: int, destz: int):
         return f"{bx} {by} {bz} {bx} {by} {bz} {destx} {desty} {destz}"
 
-    def send_clone_pos(self, bx: int, by: int, bz: int, destx: int, desty: int, destz: int):
-        self.game_ctrl.sendwocmd(f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run clone {bx} {by} {bz} {bx} {by} {bz} {destx} {desty} {destz}')
+    def send_clone_pos(
+        self, bx: int, by: int, bz: int, destx: int, desty: int, destz: int
+    ):
+        self.game_ctrl.sendwocmd(
+            f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run clone {bx} {by} {bz} {bx} {by} {bz} {destx} {desty} {destz}'
+        )
 
     @staticmethod
     def get_blocks_num(sx: int, sy: int, sz: int, ex: int, ey: int, ez: int):
@@ -297,12 +315,14 @@ class WorldEdit(Plugin):
     def get_midval(start: int, end: int, prog: float):
         return int(start + (end - start) * prog)
 
-
     @staticmethod
     def is_in_fill(mapping: list[list[int]], x: int, z: int):
         result: list[tuple[int, int]] = []
-        for posx, posz in (x-1, z), (x+1, z), (x, z-1), (x, z+1):
+        for posx, posz in (x - 1, z), (x + 1, z), (x, z - 1), (x, z + 1):
             if 0 <= posx < 64 and 0 <= posz < 64:
                 if mapping[posx][posz] == 0:
                     result.append((posx, posz))
         return result
+
+
+entry = plugin_entry(WorldEdit)

@@ -3,27 +3,33 @@ import traceback
 from typing import Literal
 from collections.abc import Callable
 from dataclasses import dataclass
-from tooldelta import Plugin, plugins, Config, Utils, Print, game_utils, TYPE_CHECKING
+from tooldelta import (
+    Plugin,
+    Config,
+    utils,
+    Print,
+    game_utils,
+    TYPE_CHECKING,
+    Player,
+    plugin_entry,
+)
+
 import threading
 
 _source_lock = threading.Lock()
 snowmenu_lock_list: list[str] = []
-
 # class AcquiredLock:
 #     def __init__(self, sys: "SnowMenu"):
 #         self.sys = sys
-
 #     def __enter__(self):
 #         self.sys._dbg("[L] Acquring lock..")
 #         _source_lock.acquire()
 #         self.sys._dbg("[L] Acquring lock..ok")
-
 #     def __exit__(self, a, b, c):
 #         _source_lock.release()
 #         self.sys._dbg("[L] Releasing lock.")
-
-
 DBG_MODE = False
+
 
 @dataclass
 class Page:
@@ -81,13 +87,10 @@ class MultiPage:
 
 PAGE_OBJ = Page | MultiPage
 "菜单类"
-
 PAGE_DISPLAY_OBJ = str | Callable[[str, int], str | None]
 "显示菜单页"
-
 menu_patterns = [0, "undefined", "undefined", "undefined", "undefined"]
 "菜单最大页码数, 菜单头, 菜单选项-未被选中, 菜单选项-被选中, 菜单尾"
-
 main_page_menus: list[
     tuple[PAGE_OBJ | Callable[[str], bool], str | Callable[[str], str]]
 ] = []
@@ -99,7 +102,7 @@ def default_page_show(player: str, page: int):
     if page > max_length - 1:
         return None
     fmt_kws = {"[当前页码]": page + 1, "[总页码]": max_length, "[玩家名]": player}
-    show_texts = [Utils.SimpleFmt(fmt_kws, menu_patterns[1])]
+    show_texts = [utils.simple_fmt(fmt_kws, menu_patterns[1])]
     c = page // menu_patterns[0]
     cur_pages = main_page_menus[c * menu_patterns[0] : (c + 1) * menu_patterns[0]]
     for i in cur_pages:
@@ -108,14 +111,14 @@ def default_page_show(player: str, page: int):
         else:
             text = i[1](player)
         show_texts.append(
-            Utils.SimpleFmt(
+            utils.simple_fmt(
                 {"[选项文本]": text},
                 menu_patterns[3 if page == main_page_menus.index(i) else 2],
             )
         )
     if len(show_texts) == 1:
         show_texts.append(" §7腐竹很懒, 还没有设置菜单项哦~")
-    show_texts.append(Utils.SimpleFmt(fmt_kws, menu_patterns[4]))
+    show_texts.append(utils.simple_fmt(fmt_kws, menu_patterns[4]))
     return "\n".join(show_texts)
 
 
@@ -132,7 +135,6 @@ def default_page_okcb(player: str, page: int):
 default_page = MultiPage("default", default_page_show, default_page_okcb)
 
 
-@plugins.add_plugin_as_api("雪球菜单v2")
 class SnowMenu(Plugin):
     name = "雪球菜单v2"
     author = "SuperScript/chfwd"
@@ -140,8 +142,7 @@ class SnowMenu(Plugin):
     description = (
         "贴合租赁服原汁原味的雪球菜单！ 可以自定义雪球菜单内容， 同时也是一个API插件"
     )
-
-    "使用 plugins.get_plugin_api('雪球菜单v2').Page 来获取到这个菜单类, 下同"
+    "使用 self.GetPluginAPI('雪球菜单v2').Page 来获取到这个菜单类, 下同"
     Page = Page
     MultiPage = MultiPage
 
@@ -154,9 +155,12 @@ class SnowMenu(Plugin):
         "玩家名 -> 多页菜单页数"
         self.default_page = "default"
         self.read_cfg()
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPlayerJoin(self.on_player_join)
+        self.ListenPlayerLeave(self.on_player_leave)
 
     # ---------------- API ------------------
-
     def add_page(self, page: Page | MultiPage):
         """
         向雪球菜单添加一个页码
@@ -304,23 +308,20 @@ class SnowMenu(Plugin):
         return result
 
     # ---------------------------------------
-
     def on_def(self):
-        self.getPosXYZ = plugins.get_plugin_api(
-            "基本插件功能库", (0, 0, 7)
-        ).getPosXYZ_Int
-        self.interact = plugins.get_plugin_api("前置-世界交互", (0, 0, 2))
-        chatbar = plugins.get_plugin_api("聊天栏菜单")
-        cb2bot = plugins.get_plugin_api("Cb2Bot通信")
+        self.getPosXYZ = self.GetPluginAPI("基本插件功能库", (0, 0, 7)).getPosXYZ_Int
+        self.interact = self.GetPluginAPI("前置-世界交互", (0, 0, 2))
+        chatbar = self.GetPluginAPI("聊天栏菜单")
+        cb2bot = self.GetPluginAPI("Cb2Bot通信")
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_Cb2Bot通信 import TellrawCb2Bot
 
             self.getPosXYZ = game_utils.getPosXYZ
-            self.interact = plugins.instant_plugin_api(GameInteractive)
-            chatbar = plugins.instant_plugin_api(ChatbarMenu)
-            cb2bot = plugins.instant_plugin_api(TellrawCb2Bot)
+            self.interact = self.get_typecheck_plugin_api(GameInteractive)
+            chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
         chatbar.add_trigger(
             ["snowmenu-init"],
             None,
@@ -328,11 +329,18 @@ class SnowMenu(Plugin):
             self.place_cbs,
             op_only=True,
         )
-        cb2bot.regist_message_cb("snowball.menu.use", lambda args: self.next_page(args[0]))
-        cb2bot.regist_message_cb("snowball.menu.escape", lambda args: self.menu_escape(args[0]))
-        cb2bot.regist_message_cb("snowball.menu.confirm", lambda args: self.menu_confirm(args[0]))
+        cb2bot.regist_message_cb(
+            "snowball.menu.use", lambda args: self.next_page(args[0])
+        )
+        cb2bot.regist_message_cb(
+            "snowball.menu.escape", lambda args: self.menu_escape(args[0])
+        )
+        cb2bot.regist_message_cb(
+            "snowball.menu.confirm", lambda args: self.menu_confirm(args[0])
+        )
 
-    def on_player_join(self, player: str):
+    def on_player_join(self, playerf: Player):
+        player = playerf.name
         self.game_ctrl.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
 
     def on_inject(self):
@@ -342,19 +350,24 @@ class SnowMenu(Plugin):
         self, player: str, page: Page | MultiPage | None, page_sub_id: int = 0
     ):
         if page is None:
-            self.game_ctrl.sendwocmd(f"/tag {Utils.to_player_selector(player)} remove snowmenu")
+            self.game_ctrl.sendwocmd(
+                f"/tag {utils.to_player_selector(player)} remove snowmenu"
+            )
             if player in self.in_snowball_menu.keys():
                 del self.in_snowball_menu[player]
             if player in self.multi_snowball_page.keys():
                 del self.multi_snowball_page[player]
         else:
             if player not in self.in_snowball_menu.keys():
-                self.game_ctrl.sendwocmd(f"/tag {Utils.to_player_selector(player)} add snowmenu")
+                self.game_ctrl.sendwocmd(
+                    f"/tag {utils.to_player_selector(player)} add snowmenu"
+                )
             self.in_snowball_menu[player] = page
             if isinstance(page, MultiPage):
                 self.multi_snowball_page[player] = page_sub_id
 
-    def on_player_leave(self, player: str):
+    def on_player_leave(self, playerf: Player):
+        player = playerf.name
         if player in self.in_snowball_menu.keys():
             cb = self.in_snowball_menu[player].leave_cb
             if cb is not None:
@@ -413,12 +426,12 @@ class SnowMenu(Plugin):
     def create_menu_cb(self, menu_arg):
         def menu_cb(player: str):
             for cmd in menu_arg["执行的指令"]:
-                self.game_ctrl.sendwocmd(Utils.SimpleFmt({"[玩家名]": player}, cmd))
+                self.game_ctrl.sendwocmd(utils.simple_fmt({"[玩家名]": player}, cmd))
             return False
 
         return menu_cb
 
-    @Utils.thread_func("放置雪球菜单命令块")
+    @utils.thread_func("放置雪球菜单命令块")
     def place_cbs(self, player, _):
         x, y, z = (int(i) for i in self.getPosXYZ(player))
         for cbtype, cond, cmd in SNOWBALL_CMDS:
@@ -429,7 +442,7 @@ class SnowMenu(Plugin):
             x += 1
         self.game_ctrl.say_to(player, "雪球菜单命令方块初始化完成")
 
-    @Utils.thread_func("雪球菜单打开或切页")
+    @utils.thread_func("雪球菜单打开或切页")
     def next_page(self, player: str):
         self.game_ctrl.sendwocmd(f"/tag @a[name={player}] add snowmenu")
         self.game_ctrl.sendwocmd(
@@ -437,7 +450,9 @@ class SnowMenu(Plugin):
         )
         now_page = self.in_snowball_menu.get(player)
         if now_page is None:
-            self.game_ctrl.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
+            self.game_ctrl.sendwocmd(
+                f"/execute as @a[name={player}] at @s run tp ~~~~ 0"
+            )
             self.in_snowball_menu[player] = self.reg_pages["default"]
             self.multi_snowball_page[player] = 0
             self.show_page_thread(player)
@@ -458,7 +473,7 @@ class SnowMenu(Plugin):
                     self.game_ctrl.player_actionbar(player, r)  # type: ignore
         self.show_page(player)
 
-    @Utils.thread_func("展示雪球菜单页")
+    @utils.thread_func("展示雪球菜单页")
     def show_page_thread(self, player: str):
         if player not in self.in_snowball_menu.keys():
             Print.print_war(f"{player} 的菜单显示不正常: 可能是立刻退出了！")
@@ -481,7 +496,7 @@ class SnowMenu(Plugin):
             return
         self.game_ctrl.player_actionbar(player, page_text)
 
-    @Utils.thread_func("雪球菜单执行")
+    @utils.thread_func("雪球菜单执行")
     def menu_confirm(self, player: str):
         self._dbg(f"{player} confirmed")
         # 确认选项
@@ -496,7 +511,9 @@ class SnowMenu(Plugin):
         if res is None:
             self.remove_player_in_menu(player)
         else:
-            self.game_ctrl.sendwocmd(f"/execute as @a[name={player}] at @s run tp ~~~~ 0")
+            self.game_ctrl.sendwocmd(
+                f"/execute as @a[name={player}] at @s run tp ~~~~ 0"
+            )
             if res is True:
                 # 保留在本页
                 pass
@@ -563,3 +580,4 @@ SNOWBALL_CMDS: list[tuple[int, int, str]] = [
     (2, 1, "/tag @a[rx=-88,tag=snowmenu,tag=!snowmenu:confirm] add snowmenu:confirm"),
     (2, 0, "/tag @a[rxm=-87,tag=snowmenu:confirm] remove snowmenu:confirm"),
 ]
+entry = plugin_entry(SnowMenu, "雪球菜单v2")

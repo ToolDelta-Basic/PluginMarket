@@ -1,10 +1,9 @@
 import sys
 import importlib
 import subprocess
-from tooldelta import Plugin, plugins, Utils, Print
+from tooldelta import Plugin, Utils, Print, plugin_entry
 
 
-@plugins.add_plugin_as_api("pip")
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
@@ -19,7 +18,6 @@ class PipSupport(Plugin):
         )
 
     # -------------------------  API  -----------------------------
-
     def install(self, packages: list[str]):
         proc = subprocess.Popen(
             ["pip", "install", "--target", self.data_path, *packages],
@@ -45,7 +43,6 @@ class PipSupport(Plugin):
                 self.install([package])
 
     # -----------------------------------------------------------
-
     def on_console_pip(self, args: list[str]):
         if len(args) == 0:
             Print.print_err("请输入要安装的模块名")
@@ -72,3 +69,6 @@ class PipSupport(Plugin):
             if not line:
                 break
             Print.print_with_info(line, "§c pips §r")
+
+
+entry = plugin_entry(PipSupport, "pip")

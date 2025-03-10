@@ -1,7 +1,15 @@
-from tooldelta import Frame, Plugin, Config, Print, Builtins, plugins, Utils, game_utils
+from tooldelta import (
+    Frame,
+    Plugin,
+    Config,
+    Print,
+    utils,
+    Chat,
+    Player,
+    plugin_entry,
+)
 
 
-@plugins.add_plugin
 class kill(Plugin):
     version = (0, 0, 3)
     name = "违规名称踢出"
@@ -18,14 +26,16 @@ class kill(Plugin):
         )
         self.ci = self.cfg["踢出词"]
         self.yy = self.cfg["原因"]
+        self.ListenPlayerJoin(self.on_player_join)
+        self.ListenChat(self.on_player_message)
 
-    @Utils.thread_func("踢出违禁词玩家")
+    @utils.thread_func("踢出违禁词玩家")
     def killpl(self, player: str):
         for a in self.ci:
             if a in player:
                 self.game_ctrl.sendcmd_with_resp(f'/kick "{player}" {self.yy}')
 
-    @Utils.thread_func("踢出敏感词玩家")
+    @utils.thread_func("踢出敏感词玩家")
     def mgc_test(self, player: str):
         try:
             self.game_ctrl.sendcmd(f'/w errcmd "{player}"', True, timeout=4)
@@ -33,8 +43,15 @@ class kill(Plugin):
             Print.print_war(f"玩家 {player} 名字为敏感词, 已经踢出")
             self.game_ctrl.sendcmd_with_resp(f'/kick "{player}" {self.yy}')
 
-    def on_player_message(self, player: str, _):
+    def on_player_message(self, chat: Chat):
+        player = chat.player.name
+        _ = chat.msg
+
         self.killpl(player)
 
-    def on_player_join(self, player: str):
+    def on_player_join(self, playerf: Player):
+        player = playerf.name
         self.killpl(player)
+
+
+entry = plugin_entry(kill)

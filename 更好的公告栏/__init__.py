@@ -1,9 +1,7 @@
 import time
+from tooldelta import utils, Config, Plugin, Print, plugin_entry
 
-from tooldelta import Utils, Config, Plugin, Print, plugins
 
-
-@plugins.add_plugin
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
@@ -36,15 +34,17 @@ class BetterAnnounce(Plugin):
         if self.flush_secs < 2:
             Print.print_err("公告刷新速率不能大于 1次/2秒")
             raise SystemExit
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.tpscalc = plugins.get_plugin_api("tps计算器", (0, 0, 1), False)
+        self.tpscalc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
         self.flush_gg()
         self.flush_announcement1()
 
-    @Utils.thread_func
+    @utils.thread_func("公告刷新")
     def flush_gg(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives remove 公告")
         time.sleep(0.3)
@@ -70,7 +70,7 @@ class BetterAnnounce(Plugin):
         else:
             return "§c"
 
-    @Utils.thread_func("计分板公告刷新")
+    @utils.thread_func("计分板公告刷新")
     def flush_announcement1(self):
         scmd = self.game_ctrl.sendwocmd
         ftime = 100
@@ -82,7 +82,7 @@ class BetterAnnounce(Plugin):
                 scmd("/scoreboard players reset * 公告")
                 for text, scb_score in self.anos.items():
                     text = time.strftime(
-                        Utils.SimpleFmt(
+                        utils.simple_fmt(
                             {
                                 "[在线人数]": len(self.game_ctrl.allplayers),
                                 "[星期]": "一二三四五六日"[time.localtime().tm_wday],
@@ -93,3 +93,6 @@ class BetterAnnounce(Plugin):
                         )
                     )
                     scmd(f'/scoreboard players set "{text}" 公告 {scb_score}')
+
+
+entry = plugin_entry(BetterAnnounce)

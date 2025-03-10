@@ -1,4 +1,3 @@
-import time
 from tooldelta import Config, Print
 from tooldelta.plugin_load.injected_plugin import (
     player_left,

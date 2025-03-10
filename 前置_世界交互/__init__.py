@@ -3,14 +3,14 @@ import numpy
 from typing import Any
 from json import dumps as stringfy
 from dataclasses import dataclass
-from tooldelta import plugins, Frame, Plugin, Utils, Print
+from tooldelta import Frame, Plugin, Utils, Print, plugin_entry
+
 from tooldelta.constants import PacketIDS
+
 try:
-    from tooldelta.launch_cli import FrameEulogistLauncher
+    from tooldelta.internal.launch_cli import FrameEulogistLauncher
 except ImportError:
     FrameEulogistLauncher = None
-
-plugins.checkSystemVersion((0, 3, 20))
 
 
 @dataclass
@@ -39,7 +39,7 @@ class Structure:
         self.x, self.y, self.z = structure_json["StructureTemplate"][
             "structure_world_origin"
         ]
-        self._block_matrix = numpy.array(block_matrix, dtype=numpy.int16)
+        self._block_matrix = numpy.array(block_matrix, dtype=numpy.uint16)
         self._palette = [
             (i["name"], i["states"], i["val"], i["version"]) for i in block_palettes
         ]
@@ -54,13 +54,10 @@ class Structure:
     def get_block(self, position: tuple[int, int, int]) -> Block:
         """
         获取该结构中的一个方块的数据。
-
         Args:
             position (tuple[int, int, int]): 此方块在结构内的相对坐标
-
         Raises:
             ValueError: 超出结构尺寸
-
         Returns:
             Block: 方块数据类
         """
@@ -77,14 +74,12 @@ class Structure:
         return Block(name, states, val, version, metadata)
 
 
-# 使用 api = plugins.get_plugin_api("前置-世界交互") 来获取到这个api
-@plugins.add_plugin_as_api("前置-世界交互")
+# 使用 api = self.GetPluginAPI("前置-世界交互") 来获取到这个api
 class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript"
     description = "前置插件, 提供世界交互功能的数据包, etc."
     version = (0, 0, 5)
-
     Structure = Structure
     Block = Block
 
@@ -92,13 +87,16 @@ class GameInteractive(Plugin):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
         self.structure_cbs = {}
+        self.ListenActive(self.on_inject)
+        self.ListenPacket(
+            PacketIDS.IDStructureTemplateDataResponse, self.on_structure_pkt
+        )
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
             ["getnbt"], "[x] [y] [z]", "获取指定坐标的方块的NBT", self.on_get_nbt
         )
 
-    @plugins.add_packet_listener(PacketIDS.IDStructureTemplateDataResponse)
     def on_structure_pkt(self, pk):
         xyz = tuple(pk["StructureTemplate"]["structure_world_origin"])
         if xyz in self.structure_cbs.keys():
@@ -121,7 +119,6 @@ class GameInteractive(Plugin):
     ):
         """
         生成数据包包体
-
         Args:
             position (tuple[int, int, int]): 坐标
             command (str): 指令
@@ -132,7 +129,6 @@ class GameInteractive(Plugin):
             name (str, optional): 名称. Defaults to "".
             should_track_output (bool, optional): 是否显示输出. Defaults to True.
             execute_on_first_tick (bool, optional): 是否在第一刻执行. Defaults to True.
-
         Returns:
             _type_: _description_
         """
@@ -162,13 +158,11 @@ class GameInteractive(Plugin):
     ):
         """
         发出放置方块数据包
-
         Args:
             command_block_update_packet (_type_): 数据包包体
             facing (int, optional): 朝向. Defaults to 0.
             limit_seconds (float, optional): 从tp到放置方块的延迟. Defaults to 0.5.
             limit_seconds2 (float, optional): 从放置方块到写入命令的延迟. Defaults to 0.5.
-
         Raises:
             ValueError: _description_
         """
@@ -215,11 +209,9 @@ class GameInteractive(Plugin):
     ) -> Structure:
         """
         在 Bot 所处维度获取一个特定位置和大小的结构方块结构
-
         Args:
             position (tuple[int, int, int]): 坐标
             size (tuple[int, int, int]): 结构尺寸
-
         Returns:
             Structure: 结构数据类
         """
@@ -238,7 +230,9 @@ class GameInteractive(Plugin):
             Print.print_err(f"获取结构错误: {err}")
             return
         block = res.get_block((0, 0, 0))
-        Print.print_inf(f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:")
+        Print.print_inf(
+            f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:"
+        )
         Print.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
 
     def _request_structure_and_get(
@@ -268,12 +262,16 @@ class GameInteractive(Plugin):
         self.structure_cbs[position].append(setter)
         resp = getter(timeout)
         if resp is None:
-            raise ValueError(f"无法获取 {position} 的结构")
+            raise ValueError(f"无法获取 {position} 的 {size} 结构")
         return resp
 
     @property
     def bot_ud(self):
-        if FrameEulogistLauncher and isinstance(self.frame.launcher, FrameEulogistLauncher):
-            return self.frame.launcher.eulogist.bot_unique_id
-        else:
-            return self.frame.launcher.omega.get_bot_unique_id() # type: ignore
+        return (
+            self.frame.get_players()
+            .getPlayerByName(self.frame.game_ctrl.bot_name)
+            .unique_id # type: ignore
+        )
+
+
+entry = plugin_entry(GameInteractive, "前置-世界交互")

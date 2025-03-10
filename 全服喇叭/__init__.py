@@ -1,6 +1,6 @@
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
 from tooldelta.game_utils import is_op, rawText, sendwscmd
-from tooldelta import plugins
+from tooldelta import tooldelta
 
 __plugin_meta__ = {
     "name": "全服喇叭",
@@ -8,7 +8,7 @@ __plugin_meta__ = {
     "author": "wling",
 }
 
-plugins.get_plugin_api("聊天栏菜单").add_trigger(
+tooldelta.plugin_group.get_plugin_api("聊天栏菜单").add_trigger(
     ["喇叭"], "[消息]", "管理广播消息", None, op_only=True
 )
 

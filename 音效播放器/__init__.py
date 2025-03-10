@@ -1,9 +1,9 @@
-import os, json
-from tooldelta import Plugin, plugins, Print, ToolDelta, Utils, TYPE_CHECKING
+import os
+from tooldelta import Plugin, Print, ToolDelta, Utils, TYPE_CHECKING, plugin_entry
+
 from tooldelta.game_utils import getPosXYZ
 
 
-@plugins.add_plugin
 class SFXPlayer(Plugin):
     name = "音效播放器"
     author = "SuperScript"
@@ -13,24 +13,25 @@ class SFXPlayer(Plugin):
         super().__init__(frame)
         self.make_data_path()
         os.makedirs(os.path.join(self.data_path, "midi_backup"), exist_ok=True)
+        self.ListenPreload(self.on_def)
 
     def on_def(self):
-        self.sfx = plugins.get_plugin_api("MIDI播放器")
-        self.intract = plugins.get_plugin_api("前置-世界交互")
-        self.cb2bot = plugins.get_plugin_api("Cb2Bot通信")
+        self.sfx = self.GetPluginAPI("MIDI播放器")
+        self.intract = self.GetPluginAPI("前置-世界交互")
+        self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
         if TYPE_CHECKING:
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_世界交互 import GameInteractive
             from 前置_Cb2Bot通信 import TellrawCb2Bot
 
-            self.sfx = plugins.instant_plugin_api(ToolMidiMixer)
-            self.intract = plugins.instant_plugin_api(GameInteractive)
-            self.cb2bot = plugins.instant_plugin_api(TellrawCb2Bot)
-        self.script = plugins.get_plugin_api("ZBasic", (0, 0, 2), False)
+            self.sfx = self.get_typecheck_plugin_api(ToolMidiMixer)
+            self.intract = self.get_typecheck_plugin_api(GameInteractive)
+            self.cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+        self.script = self.GetPluginAPI("ZBasic", (0, 0, 2), False)
         if self.script and TYPE_CHECKING:
             from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
 
-            self.script = plugins.instant_plugin_api(ToolDelta_ZBasic)
+            self.script = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
         if self.script:
             self.init_script()
             Print.print_inf("音效播放器: ZBasic插件已装载, 扩展语法已自动增加")
@@ -81,14 +82,12 @@ class SFXPlayer(Plugin):
                 )
             else:
                 self.sfx.playsound_at_target(sfx_fname, f"@a[x={xp},y={yp},z={zp}]")
-
         elif len(msg) == 2:
             target, sfx_name = msg
             if sfx_name not in self.files:
                 Print.print_war(f"音效播放器: 音效文件 {sfx_name} 不存在, 无法播放音效")
             else:
                 self.sfx.playsound_at_target(sfx_name, target)
-
         return True
 
     def init_script(self):
@@ -130,3 +129,6 @@ class SFXPlayer(Plugin):
 
         intp.register_cmd_syntax("播放音效", cmd_compile_1, cmd_execute_1)
         intp.register_cmd_syntax("异步播放音效", cmd_compile_1, cmd_execute_2)
+
+
+entry = plugin_entry(SFXPlayer)

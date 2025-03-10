@@ -1,11 +1,11 @@
 import json
 from collections.abc import Callable
-from tooldelta import plugins, Plugin
+from tooldelta import Plugin, plugin_entry
+from tooldelta.constants import PacketIDS
 
 AVALIABLE_CB = Callable[[list[str]], bool | None]
 
 
-@plugins.add_plugin_as_api("Cb2Bot通信")
 class TellrawCb2Bot(Plugin):
     name = "前置-命令方块与机器人数据通信"
     author = "ToolDelta"
@@ -14,13 +14,12 @@ class TellrawCb2Bot(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         self._registered_msg_prefixs = {}
+        self.ListenPacket(PacketIDS.IDText, self.evt_handler)
 
     ########################## API ###############################
-
     def regist_message_cb(self, prefix: str, cb: AVALIABLE_CB):
         """
         注册一个消息监听器
-
         Args:
             prefix (str): 消息前缀 (tellraw 第一个 rawtext文本)
             cb (AVALIABLE_CB): 监听回调
@@ -32,7 +31,6 @@ class TellrawCb2Bot(Plugin):
 
     ##############################################################
 
-    @plugins.add_packet_listener(9)
     def evt_handler(self, pkt):
         # 激活雪球菜单
         if pkt["TextType"] == 9:
@@ -48,3 +46,6 @@ class TellrawCb2Bot(Plugin):
                     if res is None or res:
                         return True
         return False
+
+
+entry = plugin_entry(TellrawCb2Bot, "Cb2Bot通信")

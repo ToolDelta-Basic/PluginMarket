@@ -1,18 +1,19 @@
 import time
-from tooldelta import plugins, Plugin, constants
+from tooldelta import Plugin, constants, plugin_entry
 
 
-@plugins.add_plugin_as_api("tps计算器")
 class TPSCalculator(Plugin):
     name = "前置-TPS计算器"
     author = "SuperScript"
     version = (0, 0, 1)
-
     lt = time.time()
     lt1 = 0
     _tps = 20
 
-    @plugins.add_packet_listener(constants.PacketIDS.IDTickSync)
+    def __init__(self, frame):
+        super().__init__(frame)
+        self.ListenPacket(constants.PacketIDS.IDTickSync, self.listener)
+
     def listener(self, pkt):
         self.calc_tps(pkt)
         return False
@@ -30,3 +31,6 @@ class TPSCalculator(Plugin):
             return 0
         else:
             return self._tps
+
+
+entry = plugin_entry(TPSCalculator, "tps计算器")

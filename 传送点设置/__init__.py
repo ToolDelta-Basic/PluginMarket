@@ -1,14 +1,12 @@
 import os
-from tooldelta import Plugin, plugins, Utils, game_utils, Config, TYPE_CHECKING
+from tooldelta import Plugin, utils, game_utils, Config, TYPE_CHECKING, plugin_entry
 
 DIMENSIONS = ["overworld", "nether", "the_end", *(f"dim{i}" for i in range(3, 21))]
 DIMENSIONS_ZHCN = ["主世界", "下界", "末地", *(f"DIM-{i}" for i in range(3, 21))]
-
 type1 = type
 function = print
 
 
-@plugins.add_plugin
 class HomePointSet(Plugin):
     name = "Home点设置"
     author = "SuperScript"
@@ -33,22 +31,24 @@ class HomePointSet(Plugin):
             self.name, Config.auto_to_std(CONFIG), CONFIG, self.version
         )
         os.makedirs(self.format_data_path("传送点列表"), exist_ok=True)
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
-        self.snowmenu = plugins.get_plugin_api("雪球菜单v2")
-        self.xuidm = plugins.get_plugin_api("XUID获取")
+        self.funclib = self.GetPluginAPI("基本插件功能库")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.snowmenu = self.GetPluginAPI("雪球菜单v2")
+        self.xuidm = self.GetPluginAPI("XUID获取")
         if TYPE_CHECKING:
             from 前置_基本插件功能库 import BasicFunctionLib
             from 前置_聊天栏菜单 import ChatbarMenu
             from 雪球菜单 import SnowMenu
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.funclib = plugins.instant_plugin_api(BasicFunctionLib)
-            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
-            self.snowmenu = plugins.instant_plugin_api(SnowMenu)
-            self.xuidm = plugins.instant_plugin_api(XUIDGetter)
+            self.funclib = self.get_typecheck_plugin_api(BasicFunctionLib)
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.snowmenu = self.get_typecheck_plugin_api(SnowMenu)
+            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
 
     def on_inject(self):
         self.chatbar.add_trigger(
@@ -165,14 +165,17 @@ class HomePointSet(Plugin):
         dim, x, y, z = homes[goto_home]
         dim_id = DIMENSIONS[int(dim)]
         self.game_ctrl.sendwocmd(
-            f"execute as {Utils.to_player_selector(player)} at @s in {dim_id} run tp {x} {y} {z}"
+            f"execute as {utils.to_player_selector(player)} at @s in {dim_id} run tp {x} {y} {z}"
         )
         self.game_ctrl.say_to(player, f"§7[§a√§7] §a已传送到 {goto_home}")
 
     def read_homes(self, player: str) -> dict[str, list[float]]:
         path = self.format_data_path("传送点列表", self.xuidm.get_xuid_by_name(player))
-        return Utils.TMPJson.read_as_tmp(path, False, default={})
+        return utils.tempjson.load_and_read(path, False, default={})
 
     def write_homes(self, player: str, content: dict[str, list[float]]):
         path = self.format_data_path("传送点列表", self.xuidm.get_xuid_by_name(player))
-        Utils.TMPJson.write_as_tmp(path, content, False)
+        utils.tempjson.load_and_write(path, content, False)
+
+
+entry = plugin_entry(HomePointSet)

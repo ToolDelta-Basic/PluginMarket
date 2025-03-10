@@ -1,10 +1,7 @@
 import json
-from tooldelta import Plugin, plugins, Frame, Print
-
-plugins.checkSystemVersion((0, 3, 8))
+from tooldelta import Plugin, Frame, Print, plugin_entry
 
 
-@plugins.add_plugin
 class ConsoleCommands(Plugin):
     name = "控制台执行MC指令"
     author = "SuperScript"
@@ -13,6 +10,7 @@ class ConsoleCommands(Plugin):
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
+        self.ListenActive(self.on_inject)
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -52,3 +50,6 @@ class ConsoleCommands(Plugin):
 
     def SendWOCmdOnConsole(self, cmd):
         self.game_ctrl.sendwocmd(" ".join(cmd))
+
+
+entry = plugin_entry(ConsoleCommands)

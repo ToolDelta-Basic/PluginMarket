@@ -1,11 +1,14 @@
-from tooldelta import Plugin, plugins
+from tooldelta import Plugin, plugin_entry
 
 
-@plugins.add_plugin
 class NewPlugin(Plugin):
     name = "机器人发言"
     author = "SuperScript"
     version = (0, 0, 1)
+
+    def __init__(self, frame):
+        super().__init__(frame)
+        self.ListenActive(self.on_inject)
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -28,3 +31,6 @@ class NewPlugin(Plugin):
                 "PlatformChatID": "",
             },
         )
+
+
+entry = plugin_entry(NewPlugin)

@@ -1,7 +1,7 @@
 from .BDXConverter import ReadBDXFile, VisualStructs
 from .BDXConverter.Converter.FileOperation import DumpStructs
 from .scanner import POS, export_to_structures, structures_to_bdx
-from tooldelta import Plugin, plugins, game_utils, Print, TYPE_CHECKING
+from tooldelta import Plugin, game_utils, Print, TYPE_CHECKING, plugin_entry
 
 
 def get_input_pos():
@@ -30,7 +30,6 @@ def get_op_pos(allplayers: list[str]):
             return None
 
 
-@plugins.add_plugin
 class BDXExporter(Plugin):
     name = "bdx导出器"
     author = "SuperScript"
@@ -40,19 +39,19 @@ class BDXExporter(Plugin):
         super().__init__(frame)
         self.start: POS | None = None
         self.end: POS | None = None
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.intr = plugins.get_plugin_api("前置-世界交互")
+        self.intr = self.GetPluginAPI("前置-世界交互")
         if TYPE_CHECKING:
             global Structure, Block
             from 前置_世界交互 import GameInteractive, Structure, Block
 
-            self.intr = plugins.instant_plugin_api(GameInteractive)
+            self.intr = self.get_typecheck_plugin_api(GameInteractive)
 
     def on_inject(self):
-        self.frame.add_console_cmd_trigger(
-            ["export"], None, "导出 bdx", self.on_export
-        )
+        self.frame.add_console_cmd_trigger(["export"], None, "导出 bdx", self.on_export)
         self.frame.add_console_cmd_trigger(
             ["visual"], None, "转换 bdx 为可视化 json", self.on_visual
         )
@@ -68,7 +67,6 @@ class BDXExporter(Plugin):
     #         x, y, z = map(int, game_utils.getPosXYZ("SkyblueSuper"))
     #         self.end = (x, y, z)
     #         self.game_ctrl.say_to(player, "OK")
-
     def on_visual(self, args: list[str]):
         if len(args) != 1:
             Print.print_err("参数错误")
@@ -112,7 +110,10 @@ class BDXExporter(Plugin):
             if self.start is None or self.end is None:
                 Print.print_err("请先设置起点和终点")
                 return
-            name = input(Print.fmt_info("请输入导出的文件名: ")).removesuffix(".bdx") + ".bdx"
+            name = (
+                input(Print.fmt_info("请输入导出的文件名: ")).removesuffix(".bdx")
+                + ".bdx"
+            )
             self.export(self.start, self.end, name)
 
     def export(self, start: POS, end: POS, fname: str):
@@ -128,3 +129,5 @@ class BDXExporter(Plugin):
         DumpStructs(bdx, self.format_data_path(fname))
         Print.print_suc(f"导出成功: {self.format_data_path(fname)}")
 
+
+entry = plugin_entry(BDXExporter)

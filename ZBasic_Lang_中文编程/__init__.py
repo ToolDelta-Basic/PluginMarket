@@ -3,7 +3,6 @@
 # 未经作者允许, 请勿在插件以外的地方使用
 # 编译器和执行器仅供插件内部私用
 # 若需单独提取插件内的编译器和执行器, 请联系作者
-
 # 导入 ToolDelta 框架
 import os
 
@@ -15,7 +14,6 @@ import time
 # 需要的类型
 from typing import Any
 from collections.abc import Callable
-
 from basic_codes import CodeSyntaxError, CompiledCode, CustomCodeUnit
 from basic_types import (
     NUMBER,
@@ -31,7 +29,7 @@ from basic_types import (
     VAR_MAP,
     zhcn_type,
     get_zhcn_type,
-    get_typename_zhcn
+    get_typename_zhcn,
 )
 from compiler import COMPILER, EXECUTOR, compile, extend_codes, _type_assert
 from executor import run, set_game_ctrl
@@ -40,10 +38,19 @@ from executor import run, set_game_ctrl
 # 命令和函数注册器
 from syntax_compile import get_final_type, multi_parse, parse, register_func_syntax
 from syntax_lib import ConstPtr
-from tooldelta import Frame, Plugin, Print, Utils, constants, game_utils, plugins
+from tooldelta import (
+    Frame,
+    Plugin,
+    Print,
+    utils,
+    constants,
+    game_utils,
+    Chat,
+    Player,
+    plugin_entry,
+)
 
 
-@plugins.add_plugin_as_api("ZBasic")
 class ToolDelta_ZBasic(Plugin):
     name = "ZBasic-中文Basic语言"
     author = "SuperScript"
@@ -59,17 +66,20 @@ class ToolDelta_ZBasic(Plugin):
             "玩家发言": {},
             "玩家死亡": {},
         }
-        self.threads: list[Utils.createThread] = []
+        self.threads: list[utils.createThread] = []
         self.reload_cbs = []
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPlayerJoin(self.on_player_join)
+        self.ListenPlayerLeave(self.on_player_leave)
+        self.ListenChat(self.on_player_message)
 
     # ------------------------------- API ----------------------------
-
     CodeSyntaxError = CodeSyntaxError
     OptionalType = OptionalType
     CustomCodeUnit = CustomCodeUnit
     CompiledCode = CompiledCode
     ConstPtr = ConstPtr
-
     ANY = ANY
     STRING = STRING
     NUMBER = NUMBER
@@ -84,7 +94,6 @@ class ToolDelta_ZBasic(Plugin):
     def add_reload_cb(self, cb: Callable[[], None]):
         """
         添加一个重载脚本监听器
-
         Args:
             cb (Callable): 监听器
         """
@@ -93,10 +102,8 @@ class ToolDelta_ZBasic(Plugin):
     def get_type(self, syntax: Any) -> ANY_TYPE:
         """
         获取表达式的最终传出值类型
-
         Args:
             syntax (Any): 解析后的表达式
-
         Returns:
             ANY_TYPE: 类型
         """
@@ -108,11 +115,9 @@ class ToolDelta_ZBasic(Plugin):
     def parse_syntax(self, syntax: str, local_vars_register: REGISTER):
         """
         解析单个表达式字符串为表达式类
-
         Args:
             syntax (str): 表达式字符串
             local_vars_register (REGISTER): 变量命名空间
-
         Returns:
             Any: 解析完成的表达式
         """
@@ -121,11 +126,9 @@ class ToolDelta_ZBasic(Plugin):
     def parse_syntax_multi(self, syntax: str, local_vars_register: REGISTER) -> list:
         """
         解析以 ; 分隔的表达式字符串为表达式组
-
         Args:
             syntax (str): 表达式字符串
             local_vars_register (REGISTER): 变量命名空间
-
         Returns:
             Any: 解析完成的表达式列表
         """
@@ -136,14 +139,11 @@ class ToolDelta_ZBasic(Plugin):
     ) -> "CompiledCode":
         """
         编译代码
-
         Args:
             code (str): 待编译的代码
             local_vars_register (REGISTER | None): 初始全局变量类型表
-
         Returns:
             CompiledCode: 编译好的代码
-
         Raises:
             CodeSyntaxError: 编译中代码的错误
         """
@@ -154,11 +154,9 @@ class ToolDelta_ZBasic(Plugin):
     def run(self, cmp_code: CompiledCode, local_vars: VAR_MAP):
         """
         执行编译后的代码
-
         Args:
             cmp_code (CompiledCode): 编译代码
             local_vars (VAR_MAP): 初始全局变量
-
         Returns:
             Signal (int): 代码执行完毕的返回状态, 1=正常退出, 100=被迫退出
         """
@@ -167,7 +165,6 @@ class ToolDelta_ZBasic(Plugin):
     def register_cmd_syntax(self, cmd: str, compiler: COMPILER, executor: EXECUTOR):
         """
         注册一条语句
-
         Args:
             cmd (str): 语句命令
             compiler (COMPILER): 编译器, 传入参数和本地命名空间表, 传出`CodeUnit`
@@ -185,7 +182,6 @@ class ToolDelta_ZBasic(Plugin):
     ):
         """
         注册一个函数
-
         Args:
             func_name (str): 函数名
             restype (BasicType | OptionalType): 返回类型
@@ -200,10 +196,11 @@ class ToolDelta_ZBasic(Plugin):
             if t is None:
                 raise CodeSyntaxError(f"需要变量 ({varname}) 但是未定义")
             else:
-                raise CodeSyntaxError(f"变量 {varname} 需要 {get_typename_zhcn(vartype)}, 当前为 {get_typename_zhcn(t)}")
+                raise CodeSyntaxError(
+                    f"变量 {varname} 需要 {get_typename_zhcn(vartype)}, 当前为 {get_typename_zhcn(t)}"
+                )
 
     # ------------------------------------------------------------------------------
-
     def create_dirs(self):
         fdir = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, "ZBasic中文脚本语言")
         if not os.path.isdir(fdir):
@@ -291,7 +288,7 @@ class ToolDelta_ZBasic(Plugin):
             lambda x: x is None,
         )
         self.register_func_syntax(
-            "转换为整数", OptionalType(NUMBER), (STRING,), lambda x: Utils.try_int(x)
+            "转换为整数", OptionalType(NUMBER), (STRING,), lambda x: utils.try_int(x)
         )
         self.register_func_syntax("当前系统时间戳", NUMBER, (), lambda: time.time())
         self.register_func_syntax(
@@ -311,7 +308,9 @@ class ToolDelta_ZBasic(Plugin):
             (LIST[ANY], NUMBER),
             lambda ls, i: ls[int(i)] if int(i) in range(len(ls)) else None,
         )
-        self.register_func_syntax("转换为玩家选择器", STRING, (STRING,), Utils.to_player_selector)
+        self.register_func_syntax(
+            "转换为玩家选择器", STRING, (STRING,), utils.to_player_selector
+        )
 
     def init_advanced_funcs(self):
         # 注入高级Builtins函数
@@ -393,7 +392,7 @@ class ToolDelta_ZBasic(Plugin):
                 time.sleep(0.01)
                 self.threads.remove(thread)
 
-        thread = Utils.createThread(_thread, (), name)
+        thread = utils.createThread(_thread, (), name)
         self.threads.append(thread)
 
     def execute_loaded_script(self, clsfy: str, local_vars: VAR_MAP):
@@ -421,15 +420,20 @@ class ToolDelta_ZBasic(Plugin):
         self.load_scripts()
         self.new_thread("启动时执行ZBasic脚本", self.execute_init)
 
-    def on_player_join(self, player: str):
+    def on_player_join(self, playerf: Player):
+        player = playerf.name
         self.new_thread("玩家进入时执行ZBasic脚本", self.execute_player_join, (player,))
 
-    def on_player_leave(self, player: str):
+    def on_player_leave(self, playerf: Player):
+        player = playerf.name
         self.new_thread(
             "玩家退出时执行ZBasic脚本", self.execute_player_leave, (player,)
         )
 
-    def on_player_message(self, player: str, msg: str):
+    def on_player_message(self, chat: Chat):
+        player = chat.player.name
+        msg = chat.msg
+
         self.new_thread(
             "玩家发言时执行ZBasic脚本", self.execute_player_message, (player, msg)
         )
@@ -490,3 +494,6 @@ class ZBasic_TasksCounter:
         self.tasks -= 1
         if _2:
             Print.print_war(f"脚本执行线程 {self.name} 被迫中断")
+
+
+entry = plugin_entry(ToolDelta_ZBasic, "ZBasic")

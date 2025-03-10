@@ -1,4 +1,4 @@
-from tooldelta import plugins
+from tooldelta import tooldelta
 from tooldelta.plugin_load.injected_plugin import (
     player_message,
     player_message_info,
@@ -194,7 +194,7 @@ async def tpaCommand(playermessage: player_message_info):
 # plugins.get_plugin_api("聊天栏菜单").add_trigger(
 #     ["tpa"], None, "显示tpa帮助菜单", lambda player, args: run(tpaCommand(player_message_info(player," ".join(args))))
 # )
-plugins.get_plugin_api("聊天栏菜单").add_trigger(
+tooldelta.plugin_group.get_plugin_api("聊天栏菜单").add_trigger(
     ["tpa"],
     None,
     "显示tpa帮助菜单",

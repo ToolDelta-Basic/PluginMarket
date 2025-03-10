@@ -2,7 +2,8 @@ import os
 import json
 import ctypes
 from dataclasses import dataclass
-from tooldelta import Plugin, plugins, game_utils, Config, Print, Utils
+from tooldelta import Plugin, game_utils, Config, Print, utils, plugin_entry
+
 from tooldelta.neo_libs.neo_conn import LIB
 
 LIB.RenameItemWithAnvil.argtypes = [
@@ -29,7 +30,6 @@ def PyString(n: bytes):
     return n.decode() if n is not None else None
 
 
-@plugins.add_plugin
 class TDItemMaker(Plugin):
     name = "特殊物品制作器"
     author = "SuperScript"
@@ -37,6 +37,7 @@ class TDItemMaker(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
+        self.ListenActive(self.on_inject)
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -50,8 +51,8 @@ class TDItemMaker(Plugin):
             Print.print_inf("可在插件管理器界面选择该插件， 选择查看手册以查看教程")
             return
         for i, file in enumerate(fs):
-            Print.print_inf(f"{i+1} - {file}")
-        resp = Utils.try_int(input(Print.fmt_info("请输入序号以选择:")))
+            Print.print_inf(f"{i + 1} - {file}")
+        resp = utils.try_int(input(Print.fmt_info("请输入序号以选择:")))
         if resp is None or resp not in range(1, len(fs) + 1):
             Print.print_err("无效选项")
             return
@@ -64,11 +65,11 @@ class TDItemMaker(Plugin):
             return
         self.make_items(items)
 
-    @Utils.thread_func("制作特殊物品")
+    @utils.thread_func("制作特殊物品")
     def make_items(self, items: list[Item]):
         x, y, z = game_utils.getPosXYZ(self.game_ctrl.bot_name)
         x, y, z = int(x), int(y), int(z)
-        self.game_ctrl.sendwocmd(f"setblock {x} {y-1} {z} bedrock")
+        self.game_ctrl.sendwocmd(f"setblock {x} {y - 1} {z} bedrock")
         self.game_ctrl.sendwocmd(f"setblock {x} {y} {z} anvil")
         for item in items:
             if not item.name.startswith("§r"):
@@ -124,3 +125,6 @@ class TDItemMaker(Plugin):
         if err := self.rename_item(name, pos):
             Print.print_err(f"物品制作失败: {err}")
             return
+
+
+entry = plugin_entry(TDItemMaker)

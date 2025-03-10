@@ -14,10 +14,10 @@ from tooldelta.plugin_load.injected_plugin import (
     player_message_info,
     player_name,
 )
-from tooldelta import plugins, Print
+from tooldelta import tooldelta, Print
 
 try:
-    chatbar = plugins.get_plugin_api("聊天栏菜单")
+    chatbar = tooldelta.plugin_group.get_plugin_api("聊天栏菜单")
 except ImportError:
     Print.print_err("需要前置组件 聊天栏菜单")
     raise SystemExit
@@ -110,12 +110,8 @@ class Super_AFKGobangBasic:
         )
         game_ctrl.player_title(_1P, "§e游戏开始")
         game_ctrl.player_title(_2P, "§e游戏开始")
-        game_ctrl.player_subtitle(
-            _1P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子"
-        )
-        game_ctrl.player_subtitle(
-            _2P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子"
-        )
+        game_ctrl.player_subtitle(_1P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子")
+        game_ctrl.player_subtitle(_2P, "§a聊天栏输入 下子 <纵坐标> <横坐标> 即可落子")
         linked_room_uid = GobangRoom.createRoom(Super_AFKGobangBasic.Room(_1P, _2P))
         this_room: Super_AFKGobangBasic.Room = GobangRoom.rooms[linked_room_uid]
         while 1:

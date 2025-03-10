@@ -1,7 +1,7 @@
 import json
 import time
 import threading
-from tooldelta import Plugin, plugins, Utils, packets
+from tooldelta import Plugin, utils, packets, Chat, Player, plugin_entry
 
 
 def find_key_from_value(dic, val):
@@ -11,10 +11,6 @@ def find_key_from_value(dic, val):
             return k
 
 
-plugins.checkSystemVersion((0, 7, 5))
-
-
-@plugins.add_plugin_as_api("基本插件功能库")
 class BasicFunctionLib(Plugin):
     version = (0, 0, 11)
     name = "基本插件功能库"
@@ -25,13 +21,19 @@ class BasicFunctionLib(Plugin):
         super().__init__(frame)
         self.waitmsg_req = []
         self.waitmsg_result = {}
+        self.ListenPlayerLeave(self.on_player_leave)
+        self.ListenChat(self.on_player_message)
 
-    def on_player_message(self, player: str, msg: str):
+    def on_player_message(self, chat: Chat):
+        player = chat.player.name
+        msg = chat.msg
+
         if player in self.waitmsg_req:
             self.waitmsg_result[player] = msg
             self.waitmsg_req.remove(player)
 
-    def on_player_leave(self, player: str):
+    def on_player_leave(self, playerf: Player):
+        player = playerf.name
         if player in self.waitmsg_req:
             self.waitmsg_result[player] = EXC_PLAYER_LEAVE
             self.waitmsg_req.remove(player)
@@ -52,7 +54,6 @@ class BasicFunctionLib(Plugin):
     ):
         """
         向玩家在聊天栏提出列表选择请求， 并获取选项值
-
         Args:
             player (str): 玩家名
             choices_list (list[str]): 选项列表
@@ -64,7 +65,6 @@ class BasicFunctionLib(Plugin):
             if_not_int (str, optional): 玩家输入的不是有效数字时的提示. Defaults to "§c输入不是有效数字".
             if_not_in_range (str, optional): 序号不在选项范围内的提示. Defaults to "§c选项不在范围内， 已退出".
             if_list_empty (str, optional): 列表空空如也的提示. Defaults to "§c列表空空如也...".
-
         Returns:
             str: 选项
             None: 无法获得选项
@@ -80,7 +80,7 @@ class BasicFunctionLib(Plugin):
         if resp is None:
             self.game_ctrl.say_to(player, if_timeout)
             return None
-        elif (resp := Utils.try_int(resp)) is None:
+        elif (resp := utils.try_int(resp)) is None:
             self.game_ctrl.say_to(player, if_not_int)
             return None
         elif resp not in range(1, len(choices_list) + 1):
@@ -98,7 +98,7 @@ class BasicFunctionLib(Plugin):
             evt.set()
 
         for cmd in cmds:
-            Utils.createThread(_sendcmd2cb, args=(cmd,))
+            utils.createThread(_sendcmd2cb, args=(cmd,))
         for evt in evts:
             evt.wait()
         return cbs
@@ -236,7 +236,6 @@ class BasicFunctionLib(Plugin):
             .OutputMessages[0]
             .Parameters
         )
-
         if result:
             result = result[0]
             return result.split(", ")
@@ -319,3 +318,4 @@ class BasicFunctionLib(Plugin):
 
 
 EXC_PLAYER_LEAVE = OSError("Player left when waiting msg.")
+entry = plugin_entry(BasicFunctionLib, "基本插件功能库")

@@ -1,8 +1,7 @@
 import os
 import time
-import tooldelta
-import tooldelta.game_utils
 from dataclasses import dataclass
+from tooldelta import utils, game_utils, Plugin, Config, TYPE_CHECKING, plugin_entry
 
 
 @dataclass
@@ -11,16 +10,15 @@ class PlayerMusicStatus:
     now: float
     duration: float
     is_stop: bool
-    thread: tooldelta.Utils.ToolDeltaThread
+    thread: utils.ToolDeltaThread
 
 
-@tooldelta.plugins.add_plugin
-class MusicPlayer(tooldelta.Plugin):
+class MusicPlayer(Plugin):
     name = "音乐播放器"
     author = "SuperScript"
     version = (0, 0, 10)
 
-    def __init__(self, frame: tooldelta.ToolDelta):
+    def __init__(self, frame):
         super().__init__(frame)
         CFG_DEFAULT = {
             "音乐播放条格式": "§e[歌曲名] §f[当前播放时长] §7/ [总播放时长] [播放符号]\n[播放条]",
@@ -35,8 +33,8 @@ class MusicPlayer(tooldelta.Plugin):
             "查询曲目列表触发词": ["music list", "音乐列表"],
             "是否仅OP可播放音乐": False,
         }
-        CFG_STD = tooldelta.Config.auto_to_std(CFG_DEFAULT)
-        self.cfg, _ = tooldelta.Config.get_plugin_config_and_version(
+        CFG_STD = Config.auto_to_std(CFG_DEFAULT)
+        self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         _ = self.data_path
@@ -45,17 +43,19 @@ class MusicPlayer(tooldelta.Plugin):
         self.public_showbar_thread_awaked = False
         self.fmt = self.cfg["音乐播放条格式"]
         os.makedirs(os.path.join(self.data_path, "midi_backup"), exist_ok=True)
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.midiplayer = tooldelta.plugins.get_plugin_api("MIDI播放器", (0, 2, 5))
-        self.chatbar = tooldelta.plugins.get_plugin_api("聊天栏菜单", (0, 2, 3))
+        self.midiplayer = self.GetPluginAPI("MIDI播放器", (0, 2, 5))
+        self.chatbar = self.GetPluginAPI("聊天栏菜单", (0, 2, 3))
         self.song_list = []
-        if tooldelta.TYPE_CHECKING:
+        if TYPE_CHECKING:
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
 
-            self.midiplayer = tooldelta.plugins.instant_plugin_api(ToolMidiMixer)
-            self.chatbar = tooldelta.plugins.instant_plugin_api(ChatbarMenu)
+            self.midiplayer = self.get_typecheck_plugin_api(ToolMidiMixer)
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
         for i in os.listdir(self.data_path):
             if i.endswith(".mid"):
                 self.midiplayer.translate_midi_to_seq_file(
@@ -115,9 +115,9 @@ class MusicPlayer(tooldelta.Plugin):
                 return
             self.game_ctrl.say_to(player, "§a当前曲目列表：")
             for i, j in enumerate(self.song_list):
-                self.game_ctrl.say_to(player, f" §b{i+1} §f{j}")
+                self.game_ctrl.say_to(player, f" §b{i + 1} §f{j}")
             self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
-            if (resp := tooldelta.Utils.try_int(tooldelta.game_utils.waitMsg(player))) is None:
+            if (resp := utils.try_int(game_utils.waitMsg(player))) is None:
                 self.game_ctrl.say_to(player, "§c选项无效")
                 return
             elif resp not in range(1, len(self.song_list) + 1):
@@ -136,7 +136,7 @@ class MusicPlayer(tooldelta.Plugin):
                     False,
                     None,  # type: ignore
                 )
-                thread = tooldelta.Utils.ToolDeltaThread(
+                thread = utils.ToolDeltaThread(
                     self.playmusic_thread, (player, song_name, status)
                 )
                 status.thread = thread
@@ -192,17 +192,16 @@ class MusicPlayer(tooldelta.Plugin):
             self.public_showbar_thread()
 
     def format_time(self, sec: float):
-        sec = int(sec)
-        return "%.2d:%.2d" % (sec // 60, sec % 60)
+        return f"{int(sec)//60:02d}:{sec%60:02d}"
 
-    @tooldelta.Utils.thread_func("音乐播放器显示播放模块")
+    @utils.thread_func("音乐播放器显示播放模块")
     def public_showbar_thread(self):
         self.public_showbar_thread_awaked = True
         while self.players_thread:
             for player, status in self.players_thread.items():
                 self.game_ctrl.player_actionbar(
                     player,
-                    tooldelta.Utils.SimpleFmt(
+                    utils.simple_fmt(
                         {
                             "[歌曲名]": status.name,
                             "[播放符号]": ("∥", "▶")[status.is_stop],
@@ -215,3 +214,6 @@ class MusicPlayer(tooldelta.Plugin):
                 )
             time.sleep(1)
         self.public_showbar_thread_awaked = False
+
+
+entry = plugin_entry(MusicPlayer)

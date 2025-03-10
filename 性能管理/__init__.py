@@ -1,11 +1,10 @@
 import psutil
 import os
-from tooldelta import plugins, Plugin, Utils, Print, Config
+from tooldelta import Plugin, utils, Print, Config, plugin_entry
 
 BYTES2MB = 1048576
 
 
-@plugins.add_plugin
 class EmergencyMetaMana(Plugin):
     name = "性能管理"
     author = "SuperScript"
@@ -22,6 +21,7 @@ class EmergencyMetaMana(Plugin):
         )
         self.mem_warn = cfg["当内存占用超过多少百分比时提示警告"]
         self.mem_exit = cfg["当内存占用超过多少百分比时停机"]
+        self.ListenPreload(self.on_def)
 
     def on_def(self):
         self.memory_mana()
@@ -32,7 +32,7 @@ class EmergencyMetaMana(Plugin):
         )
         Print.print_inf("在控制台输入 性能 以查看当前系统的性能.")
 
-    @Utils.timer_event(20, "内存告急停机检测")
+    @utils.timer_event(20, "内存告急停机检测")
     def memory_mana(self):
         vm = psutil.virtual_memory()
         if vm.percent < self.mem_warn * 100:
@@ -50,8 +50,8 @@ class EmergencyMetaMana(Plugin):
             Print.print_err(
                 f"已超过最大可用内存限额({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%), 系统将退出"
             )
-            for k, _ in Utils.TMPJson.get_tmps():
-                Utils.TMPJson.unloadPathJson(k)
+            for k, _ in utils.TMPJson.get_tmps():
+                utils.TMPJson.unloadPathJson(k)
             os._exit(0)
 
     def chk_proc(self, args):
@@ -79,10 +79,10 @@ class EmergencyMetaMana(Plugin):
             )
             Print.print_inf(" " + "\n ".join(self.test_hc()), need_log=False)
         elif args[0] == "2":
-            if not hasattr(Utils, "get_threads_list"):
+            if not hasattr(utils, "get_threads_list"):
                 Print.print_war("该功能现在不可用")
             else:
-                lst = Utils.get_threads_list()
+                lst = utils.tooldelta_thread.get_threads_list()
                 Print.print_inf(
                     f"当前有{len(lst)}在 ToolDelta 中运行的正常线程:", need_log=False
                 )
@@ -92,4 +92,7 @@ class EmergencyMetaMana(Plugin):
                     )
 
     def test_hc(self):
-        return list(Utils.TMPJson.get_tmps().keys())
+        return list(utils.TMPJson.get_tmps().keys())
+
+
+entry = plugin_entry(EmergencyMetaMana)

@@ -1,19 +1,21 @@
 from typing import ClassVar
-from tooldelta import plugins, Plugin
+from tooldelta import Plugin, plugin_entry
+from tooldelta.constants import PacketIDS
 
 
-@plugins.add_plugin
 class SettingsPiano(Plugin):
     name = "设置栏弹钢琴v2"
     author = "SuperScript"
     version = (0, 0, 9)
     description = "调节设置栏-世界选项的前8个选项会发出不同的乐音, 第九个选项可开启或关闭钢琴弹奏和键位锁定, 重生半径可设置音高域"
-
     lock = False
     ks: ClassVar[list] = []
     base_8 = 0
 
-    @plugins.add_packet_listener(72)
+    def __init__(self, frame):
+        super().__init__(frame)
+        self.ListenPacket(PacketIDS.GameRulesChanged, self.rec)
+
     def rec(self, pkt):
         pitch = 0
         pk = pkt["GameRules"][0]["Name"]
@@ -68,12 +70,11 @@ class SettingsPiano(Plugin):
                 self.game_ctrl.sendwocmd(
                     f"/gamerule {pk} {['true', 'false'][pkt['GameRules'][0]['Value']]}"
                 )
-                cmd = f"/execute as @a at @s run playsound note.pling @s ~~~ 1 {pitch * 2 ** self.base_8}"
+                cmd = f"/execute as @a at @s run playsound note.pling @s ~~~ 1 {pitch * 2**self.base_8}"
                 self.game_ctrl.sendwocmd(cmd)
             else:
                 self.ks.remove(pk)
         return False
-
         # pvp
         # showcoordinates
         # dofiretick
@@ -83,12 +84,13 @@ class SettingsPiano(Plugin):
         # naturalregeneration
         # dotiledrops
         # doimmediaterespawn
-
         # spawnradius
-
         # dodaylightcycle
         # keepinventory
         # domobspawning
         # mobgriefing
         # doentitydrops
         # doweathercycle
+
+
+entry = plugin_entry(SettingsPiano)

@@ -1,6 +1,7 @@
 import time
 from dataclasses import dataclass
-from tooldelta import Plugin, plugins, game_utils, Utils, Print, Config
+from tooldelta import Plugin, game_utils, utils, Print, Config, plugin_entry
+from tooldelta.constants import PacketIDS
 
 
 @dataclass
@@ -14,7 +15,6 @@ class AntiPistonPos:
         return ((x - self.x) ** 2 + (y - self.y) ** 2 + (z - self.z) ** 2) < self.r**2
 
 
-@plugins.add_plugin
 class PistonLmt(Plugin):
     name = "活塞限速"
     author = "SuperScript"
@@ -43,14 +43,17 @@ class PistonLmt(Plugin):
         self.is_dyna = cfg["根据服内tps动态计算限速值"]
         self.lmt = cfg["限速速度(推/拉每10秒)"]
         self.exec_cmds = cfg["反制指令"]
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPacket(PacketIDS.IDBlockActorData, self.on_piston_pkt)
 
     def on_def(self):
-        self.get_tps = plugins.get_plugin_api("tps计算器").get_tps
+        self.get_tps = self.GetPluginAPI("tps计算器").get_tps
 
     def on_inject(self):
         self.clear_sum()
 
-    @Utils.thread_func("活塞限速计时器重置")
+    @utils.thread_func("活塞限速计时器重置")
     def clear_sum(self):
         Print.print_inf("活塞限速计时器已启动")
         while 1:
@@ -65,7 +68,6 @@ class PistonLmt(Plugin):
         else:
             return self.lmt
 
-    @plugins.add_packet_listener(56)
     def on_piston_pkt(self, jsonPkt):
         if jsonPkt["NBTData"].get("id") != "PistonArm":
             return False
@@ -85,7 +87,7 @@ class PistonLmt(Plugin):
             targets = ["???"]
         for cmd in self.exec_cmds:
             self.game_ctrl.sendwocmd(
-                Utils.simple_fmt(
+                utils.simple_fmt(
                     {
                         "[x]": x,
                         "[y]": y,
@@ -97,3 +99,6 @@ class PistonLmt(Plugin):
                 )
             )
         del self.piston_lmt[pid]
+
+
+entry = plugin_entry(PistonLmt)

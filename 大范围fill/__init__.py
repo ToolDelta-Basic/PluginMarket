@@ -1,11 +1,14 @@
-from tooldelta import plugins, Plugin, Utils, Print, game_utils, TYPE_CHECKING
+from tooldelta import Plugin, utils, Print, game_utils, TYPE_CHECKING, plugin_entry
 
 
-@plugins.add_plugin
 class LargeFill(Plugin):
     name = "大范围填充"
     author = "System"
     version = (0, 0, 1)
+
+    def __init__(self, frame):
+        super().__init__(frame)
+        self.ListenPreload(self.on_def)
 
     def on_def(self):
         self.gx: float | None = None
@@ -35,11 +38,11 @@ class LargeFill(Plugin):
         # lfset 400 -60 400
         # lfsend 500 -40 500
         # lfill diamond_ore
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
-            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
 
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
 
     def on_setpos_start(self, args: list[str]):
         try:
@@ -71,7 +74,7 @@ class LargeFill(Plugin):
 
     def get_all_pos(self, _):
         players = self.game_ctrl.allplayers
-        ress = Utils.thread_gather(
+        ress = utils.thread_gather(
             [(self.get_single_pos, (player,)) for player in players]
         )
         for player, (x, y, z) in ress:
@@ -88,7 +91,7 @@ class LargeFill(Plugin):
     def get_single_pos(self, player: str):
         return player, game_utils.getPosXYZ(player)
 
-    @Utils.thread_func("大范围填充")
+    @utils.thread_func("大范围填充")
     def thread_fill(self, fillblock_id: str):
         pos_start = self.getpos_start()
         if pos_start is None:
@@ -145,3 +148,6 @@ class LargeFill(Plugin):
     @staticmethod
     def cmp(a: int, b: int):
         return (a, b) if a < b else (b, a)
+
+
+entry = plugin_entry(LargeFill)

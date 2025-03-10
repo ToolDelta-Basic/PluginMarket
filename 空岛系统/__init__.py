@@ -1,10 +1,9 @@
 import os, threading, time  # noqa: E401
-from tooldelta import Plugin, plugins, Config, game_utils, Utils, TYPE_CHECKING
+from tooldelta import Plugin, Config, game_utils, utils, TYPE_CHECKING, plugin_entry
 
 IS_CREATE_LOCK = threading.RLock()
 
 
-@plugins.add_plugin_as_api("空岛系统")
 class SkyBlock(Plugin):
     name = "空岛系统"
     author = "SuperScript"
@@ -48,19 +47,21 @@ class SkyBlock(Plugin):
         self.ORIG_X, self.ORIG_Y, self.ORIG_Z = cfg["空岛生成坐标原点(生效后请勿更改)"]
         self.island_structures = cfg["可选空岛结构"]
         self.make_data_path()
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
-        self.intr = plugins.get_plugin_api("前置-世界交互")
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.intr = self.GetPluginAPI("前置-世界交互")
+        self.funclib = self.GetPluginAPI("基本插件功能库")
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_世界交互 import GameInteractive
             from 前置_基本插件功能库 import BasicFunctionLib
 
-            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
-            self.intr = plugins.instant_plugin_api(GameInteractive)
-            self.funclib = plugins.instant_plugin_api(BasicFunctionLib)
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+            self.funclib = self.get_typecheck_plugin_api(BasicFunctionLib)
         self.chatbar.add_trigger(
             ["is", "空岛"], None, "返回空岛或 .is help 查看空岛帮助", self.island_menu
         )
@@ -69,9 +70,9 @@ class SkyBlock(Plugin):
             "空岛记录.json",
         ):
             path = os.path.join(self.data_path, path)
-            obj = Utils.TMPJson.read_as_tmp(path, False)
+            obj = utils.TMPJson.read_as_tmp(path, False)
             if obj is None:
-                Utils.TMPJson.write(path, {})
+                utils.TMPJson.write(path, {})
 
     def on_inject(self):
         self.game_ctrl.sendwocmd("scoreboard objectives add is:data dummy 空岛主信息")
@@ -95,7 +96,7 @@ class SkyBlock(Plugin):
 
     def get_player_island_uid(self, player: str) -> int | None:
         player_path = self.data_path + "/" + "玩家记录.json"
-        player_obj = Utils.TMPJson.read_as_tmp(player_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
         res = player_obj.get(player)
         if res is None:
             return None
@@ -104,16 +105,16 @@ class SkyBlock(Plugin):
 
     def get_isdata_by_uid(self, uid: int | str):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        islands_obj = Utils.TMPJson.read_as_tmp(island_path, False) or {}
+        islands_obj = utils.TMPJson.read_as_tmp(island_path, False) or {}
         return islands_obj.get(str(uid))
 
     def set_island_data_by_uid(self, uid: int, datas, tmp=True):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        former = Utils.TMPJson.read_as_tmp(island_path, False) or {}
+        former = utils.TMPJson.read_as_tmp(island_path, False) or {}
         former[str(uid)] = datas
-        Utils.TMPJson.write_as_tmp(island_path, former, False)
+        utils.TMPJson.write_as_tmp(island_path, former, False)
         if not tmp:
-            Utils.TMPJson.flush(island_path)
+            utils.TMPJson.flush(island_path)
 
     def island_menu(self, player: str, args: list[str]):
         gc = self.game_ctrl
@@ -134,8 +135,13 @@ class SkyBlock(Plugin):
                 gc.say_to(player, "\n§r".join(helps))
             case "create":
                 if len(args) != 2:
-                    self.show_err(player, "请不要使用菜单命令发起该功能， 如果你是管理员， 那么请阅读一下该插件的手册")
-                    self.show_err(player, "手册阅读方法：插件管理器->选中该插件->查看手册")
+                    self.show_err(
+                        player,
+                        "请不要使用菜单命令发起该功能， 如果你是管理员， 那么请阅读一下该插件的手册",
+                    )
+                    self.show_err(
+                        player, "手册阅读方法：插件管理器->选中该插件->查看手册"
+                    )
                     return
                 self.is_create(player, args[1:])
             case "back" | "返回":
@@ -168,8 +174,8 @@ class SkyBlock(Plugin):
         is_struct = self.island_structures[args[0]]
         player_path = os.path.join(self.data_path, "玩家记录.json")
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        player_obj = Utils.TMPJson.read_as_tmp(player_path, False)
-        island_obj = Utils.TMPJson.read_as_tmp(island_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
         if player_obj.get(player) is not None:
             self.show_war(player, "你已经认领过空岛")
             return
@@ -198,7 +204,7 @@ class SkyBlock(Plugin):
         with IS_CREATE_LOCK:
             try:
                 resp = self.game_ctrl.sendcmd_with_resp(
-                    f"/tickingarea add {this_island_pos_x-20} 0 {this_island_pos_z-20} {this_island_pos_x+20} 0 {this_island_pos_z+20} island_cache"
+                    f"/tickingarea add {this_island_pos_x - 20} 0 {this_island_pos_z - 20} {this_island_pos_x + 20} 0 {this_island_pos_z + 20} island_cache"
                 )
                 if resp.SuccessCount == 0:
                     self.show_err(player, "无法创建常加载区生成空岛， 请告知管理员")
@@ -208,24 +214,27 @@ class SkyBlock(Plugin):
                     player, f"空岛生成中 (2/{TOTAL}) §7生成空岛结构.."
                 )
                 resp = self.game_ctrl.sendcmd_with_resp(
-                    f"structure load {is_struct['结构名']} {this_island_pos_x+px} {this_island_pos_y+py} {this_island_pos_z+pz}"
+                    f"structure load {is_struct['结构名']} {this_island_pos_x + px} {this_island_pos_y + py} {this_island_pos_z + pz}"
                 )
                 if resp.SuccessCount == 0:
-                    self.show_err(player, f"空岛结构 {is_struct['结构名']} 不存在， 请联系管理员设置结构方块")
+                    self.show_err(
+                        player,
+                        f"空岛结构 {is_struct['结构名']} 不存在， 请联系管理员设置结构方块",
+                    )
                     return
                 self.game_ctrl.sendwocmd(
-                    f"tp @a[name={player}] {this_island_pos_x} {this_island_pos_y+2} {this_island_pos_z}"
+                    f"tp @a[name={player}] {this_island_pos_x} {this_island_pos_y + 2} {this_island_pos_z}"
                 )
                 self.game_ctrl.player_actionbar(
                     player, f"空岛生成中 (3/{TOTAL}) §7设置保护.."
                 )
                 self.game_ctrl.sendwocmd(f"effect {player} resistance 10 20 true")
                 self.game_ctrl.sendwocmd(
-                    f"summon cow §9§l{player}的牛 {this_island_pos_x+1} {this_island_pos_y+2} {this_island_pos_z+1}"
+                    f"summon cow §9§l{player}的牛 {this_island_pos_x + 1} {this_island_pos_y + 2} {this_island_pos_z + 1}"
                 )
                 cb_data = self.intr.make_packet_command_block_update(
                     (this_island_pos_x, -63, this_island_pos_z),
-                    f"/tag @a[x=~-{self.ISLAND_DZ//2},y=-63,z=~-{self.ISLAND_DZ//2},dx={self.ISLAND_DZ},"
+                    f"/tag @a[x=~-{self.ISLAND_DZ // 2},y=-63,z=~-{self.ISLAND_DZ // 2},dx={self.ISLAND_DZ},"
                     f"dy=384,dz={self.ISLAND_DZ},name=!{player},tag=!robot,m=!1,tag=!is.visitor] add is.kick",
                     1,
                     tick_delay=5,
@@ -245,8 +254,8 @@ class SkyBlock(Plugin):
                             player, f"空岛生成中 (4/{TOTAL}) §6放置方块失败， 重试中.."
                         )
                         self.game_ctrl.sendcmd_with_resp(
-                        f"setblock {this_island_pos_x} -63 {this_island_pos_z} air"
-                    )
+                            f"setblock {this_island_pos_x} -63 {this_island_pos_z} air"
+                        )
                     else:
                         break
                 else:
@@ -265,10 +274,10 @@ class SkyBlock(Plugin):
                     player,
                     [this_island_pos_x, this_island_pos_y, this_island_pos_z],
                 )
-                Utils.TMPJson.write(player_path, player_obj)
-                Utils.TMPJson.write(island_path, island_obj)
-                Utils.TMPJson.flush(player_path)
-                Utils.TMPJson.flush(island_path)
+                utils.TMPJson.write(player_path, player_obj)
+                utils.TMPJson.write(island_path, island_obj)
+                utils.TMPJson.flush(player_path)
+                utils.TMPJson.flush(island_path)
                 self.game_ctrl.sendwocmd("scoreboard players add uid is:data 1")
                 self.game_ctrl.sendwocmd(
                     f"scoreboard players add posz is:data {self.ISLAND_DZ}"
@@ -276,9 +285,7 @@ class SkyBlock(Plugin):
                 self.game_ctrl.sendwocmd(
                     f"execute as @a[name={player}] at @s run spawnpoint"
                 )
-                self.game_ctrl.sendwocmd(
-                    f"gamemode 0 @a[name={player}]"
-                )
+                self.game_ctrl.sendwocmd(f"gamemode 0 @a[name={player}]")
                 self.game_ctrl.player_actionbar(
                     player, f"空岛生成中 (5/{TOTAL}) §7完成！"
                 )
@@ -289,7 +296,7 @@ class SkyBlock(Plugin):
 
     def island_kick(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
-        players_obj = Utils.TMPJson.read_as_tmp(player_path, False)
+        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
         player_data = players_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -303,9 +310,9 @@ class SkyBlock(Plugin):
         members = island_obj["members"]
         self.show_inf(player, "§6选择一个玩家以踢出空岛：")
         for i, j in enumerate(members):
-            self.game_ctrl.say_to(player, f" §a{i+1}§7 - §f{j}")
+            self.game_ctrl.say_to(player, f" §a{i + 1}§7 - §f{j}")
         self.show_inf(player, "§7输入玩家名前的§6序号§7：")
-        resp = Utils.try_int(game_utils.waitMsg(player))
+        resp = utils.try_int(game_utils.waitMsg(player))
         if resp is None:
             self.show_err(player, "序号错误， 已退出")
             return
@@ -319,7 +326,7 @@ class SkyBlock(Plugin):
             f"name=!{i}," for i in island_obj["members"] + [island_obj["owner"]]
         )
         cmd = (
-            f"/tag @a[x=~-{self.ISLAND_DZ//2},y=-63,z=~-{self.ISLAND_DZ//2},dx={self.ISLAND_DZ},"
+            f"/tag @a[x=~-{self.ISLAND_DZ // 2},y=-63,z=~-{self.ISLAND_DZ // 2},dx={self.ISLAND_DZ},"
             f"dy=384,dz={self.ISLAND_DZ},{selector}tag=!robot,m=!1] add is.kick"
         )
         is_posx, _, is_posz = island_obj["pos"]
@@ -336,15 +343,15 @@ class SkyBlock(Plugin):
         sdata = players_obj[selected]
         sdata["own_island"] = sdata["backup_island"]
         players_obj[selected] = sdata
-        Utils.TMPJson.write_as_tmp(player_path, players_obj)
+        utils.TMPJson.write_as_tmp(player_path, players_obj)
         self.set_island_data_by_uid(player_data["own_island"], island_obj, False)
         self.show_suc(player, f"已踢出 {selected}.")
 
     def island_back(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        player_obj = Utils.TMPJson.read_as_tmp(player_path, False)
-        island_obj = Utils.TMPJson.read_as_tmp(island_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
         player_data = player_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -366,8 +373,8 @@ class SkyBlock(Plugin):
     def island_l2j(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        players_obj = Utils.TMPJson.read_as_tmp(player_path, False)
-        islands_obj = Utils.TMPJson.read_as_tmp(island_path, False)
+        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        islands_obj = utils.TMPJson.read_as_tmp(island_path, False)
         onlines = self.game_ctrl.allplayers.copy()
         onlines.remove(player)
         onlines.remove(self.game_ctrl.bot_name)
@@ -383,9 +390,9 @@ class SkyBlock(Plugin):
                 onlines.remove(i)
         self.show_inf(player, "§6选择一个玩家以申请加入他的空岛：")
         for i, j in enumerate(onlines):
-            self.game_ctrl.say_to(player, f" §a{i+1}§7 - §f{j}")
+            self.game_ctrl.say_to(player, f" §a{i + 1}§7 - §f{j}")
         self.show_inf(player, "§7输入玩家名前的§6序号§7：")
-        resp = Utils.try_int(game_utils.waitMsg(player))
+        resp = utils.try_int(game_utils.waitMsg(player))
         if resp is None:
             self.show_err(player, "序号错误， 已退出")
             return
@@ -431,7 +438,7 @@ class SkyBlock(Plugin):
         is_data["members"].append(player)
         selector = "".join(f"name=!{i}," for i in is_data["members"] + [target])
         cmd = (
-            f"/tag @a[x=~-{self.ISLAND_DZ//2},y=-63,z=~-{self.ISLAND_DZ//2},dx={self.ISLAND_DZ},"
+            f"/tag @a[x=~-{self.ISLAND_DZ // 2},y=-63,z=~-{self.ISLAND_DZ // 2},dx={self.ISLAND_DZ},"
             f"dy=384,dz={self.ISLAND_DZ},{selector}tag=!robot,m=!1,scores={{is:visit=!{his_island}}}] add is.kick"
         )
         cb_data = self.intr.make_packet_command_block_update(
@@ -446,10 +453,10 @@ class SkyBlock(Plugin):
         players_obj[player]["own_island"] = None
         players_obj[player]["main_island"] = is_data["uid"]
         islands_obj[str(is_data["uid"])] = is_data
-        Utils.TMPJson.write(player_path, players_obj)
-        Utils.TMPJson.write(island_path, islands_obj)
-        Utils.TMPJson.flush(island_path)
-        Utils.TMPJson.flush(player_path)
+        utils.TMPJson.write(player_path, players_obj)
+        utils.TMPJson.write(island_path, islands_obj)
+        utils.TMPJson.flush(island_path)
+        utils.TMPJson.flush(player_path)
         self.show_suc(player, f"加入 {target} 的空岛成功")
         self.show_suc(target, f"同意 {player} 加入空岛成功")
 
@@ -482,7 +489,7 @@ class SkyBlock(Plugin):
                 f"name=!{i}," for i in island_dat["members"] + [island_dat["owner"]]
             )
             cmd = (
-                f"/tag @a[x=~-{self.ISLAND_DZ//2},y=-63,z=~-{self.ISLAND_DZ//2},dx={self.ISLAND_DZ},"
+                f"/tag @a[x=~-{self.ISLAND_DZ // 2},y=-63,z=~-{self.ISLAND_DZ // 2},dx={self.ISLAND_DZ},"
                 f"dy=384,dz={self.ISLAND_DZ},{selector}tag=!robot,m=!1,scores={{is:visit=!{island_uid}}}] add is.kick"
             )
             is_posx, _, is_posz = island_dat["pos"]
@@ -650,3 +657,6 @@ class SkyBlock(Plugin):
 
     def init_skyblock_island_data(self, uid: int, owner: str, c_pos: list[int]):
         return {"uid": uid, "pos": c_pos, "owner": owner, "members": []}
+
+
+entry = plugin_entry(SkyBlock, "空岛系统")

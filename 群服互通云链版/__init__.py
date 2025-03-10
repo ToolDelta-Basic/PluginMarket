@@ -4,7 +4,16 @@ import time
 import re
 import threading
 from collections.abc import Callable
-from tooldelta import Plugin, plugins, Config, Utils, Print
+from tooldelta import (
+    Plugin,
+    Config,
+    utils,
+    Print,
+    Chat,
+    Player,
+    plugin_entry,
+    InternalBroadcast,
+)
 
 
 class QQMsgTrigger:
@@ -77,13 +86,11 @@ def replace_cq(content: str):
     return content
 
 
-@plugins.add_plugin_as_api("群服互通")
 class QQLinker(Plugin):
     version = (0, 0, 8)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
-
     QQMsgTrigger = QQMsgTrigger
 
     def __init__(self, f):
@@ -129,9 +136,13 @@ class QQLinker(Plugin):
         ]
         self.can_exec_cmd = self.cfg["指令设置"]["可以对游戏执行指令的QQ号名单"]
         self.waitmsg_cbs = {}
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPlayerJoin(self.on_player_join)
+        self.ListenPlayerLeave(self.on_player_leave)
+        self.ListenChat(self.on_player_message)
 
     # ------------------------ API ------------------------
-
     def add_trigger(
         self,
         triggers: list[str],
@@ -149,16 +160,15 @@ class QQLinker(Plugin):
         return qqid in self.can_exec_cmd
 
     # ------------------------------------------------------
-
     def on_def(self):
-        self.tps_calc = plugins.get_plugin_api("tps计算器", (0, 0, 1), False)
+        self.tps_calc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
         self.connect_to_websocket()
         self.init_basic_triggers()
 
     def init_basic_triggers(self):
-        @Utils.thread_func("群服执行指令并获取返回")
+        @utils.thread_func("群服执行指令并获取返回")
         def sb_execute_cmd(qqid: int, cmd: list[str]):
             if self.is_qq_op(qqid):
                 res = execute_cmd_and_get_zhcn_cb(" ".join(cmd))
@@ -201,7 +211,6 @@ class QQLinker(Plugin):
                                 "😭 指令执行失败， 原因：\n"
                                 + result.OutputMessages[0].Message
                             )
-
             except IndexError as exec_err:
                 import traceback
 
@@ -249,7 +258,7 @@ class QQLinker(Plugin):
         )
         self.add_trigger(["help", "帮助"], None, "查看群服互通帮助", lookup_help)
 
-    @Utils.thread_func("云链群服连接进程")
+    @utils.thread_func("云链群服连接进程")
     def connect_to_websocket(self):
         self.ws = websocket.WebSocketApp(  # type: ignore
             self.cfg["云链地址"],
@@ -263,10 +272,10 @@ class QQLinker(Plugin):
     def on_ws_open(self, ws):
         Print.print_suc("已成功连接到群服互通")
 
-    @Utils.thread_func("群服互通消息接收线程")
+    @utils.thread_func("群服互通消息接收线程")
     def on_ws_message(self, ws, message):
         data = json.loads(message)
-        bc_recv = plugins.broadcastEvt("群服互通/数据json", data)
+        bc_recv = self.BroadcastEvent(InternalBroadcast("群服互通/数据json", data))
         if any(bc_recv):
             return
         if data.get("post_type") == "message" and data["message_type"] == "group":
@@ -287,11 +296,15 @@ class QQLinker(Plugin):
                 user_id = data["sender"]["user_id"]
                 nickname = data["sender"]["nickname"]
                 if user_id in self.waitmsg_cbs.keys():
-                    self.waitmsg_cbs[user_id](msg,)
+                    self.waitmsg_cbs[user_id](
+                        msg,
+                    )
                     return
-                bc_recv = plugins.broadcastEvt(
-                    "群服互通/链接群消息",
-                    {"QQ号": user_id, "昵称": nickname, "消息": msg},
+                bc_recv = self.BroadcastEvent(
+                    InternalBroadcast(
+                        "群服互通/链接群消息",
+                        {"QQ号": user_id, "昵称": nickname, "消息": msg},
+                    ),
                 )
                 if any(bc_recv):
                     return
@@ -299,7 +312,7 @@ class QQLinker(Plugin):
                     return
                 self.game_ctrl.say_to(
                     "@a",
-                    Utils.simple_fmt(
+                    utils.simple_fmt(
                         {
                             "[昵称]": nickname,
                             "[消息]": replace_cq(msg),
@@ -330,15 +343,20 @@ class QQLinker(Plugin):
         time.sleep(10)
         self.connect_to_websocket()
 
-    def on_player_join(self, player: str):
+    def on_player_join(self, playerf: Player):
+        player = playerf.name
         if self.ws and self.enable_game_2_group:
             self.sendmsg(self.linked_group, f"{player} 加入了游戏")
 
-    def on_player_leave(self, player: str):
+    def on_player_leave(self, playerf: Player):
+        player = playerf.name
         if self.ws and self.enable_game_2_group:
             self.sendmsg(self.linked_group, f"{player} 退出了游戏")
 
-    def on_player_message(self, player: str, msg: str):
+    def on_player_message(self, chat: Chat):
+        player = chat.player.name
+        msg = chat.msg
+
         if self.ws and self.enable_game_2_group:
             if self.game2qq_trans_chars != []:
                 can_send = False
@@ -359,7 +377,7 @@ class QQLinker(Plugin):
                 return
             self.sendmsg(
                 self.linked_group,
-                Utils.simple_fmt(
+                utils.simple_fmt(
                     {"[玩家名]": player, "[消息]": remove_cq_code(msg)},
                     self.cfg["消息转发设置"]["游戏到群"]["转发格式"],
                 ),
@@ -400,3 +418,6 @@ class QQLinker(Plugin):
             }
         )
         self.ws.send(jsondat)
+
+
+entry = plugin_entry(QQLinker, "群服互通")

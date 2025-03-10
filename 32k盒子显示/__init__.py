@@ -1,21 +1,24 @@
-from tooldelta import plugins, Frame, Plugin, Print
 import time
+from tooldelta import Plugin, Print, plugin_entry
+from tooldelta.constants import PacketIDS
 
 
-@plugins.add_plugin
 class Display32KShulkerBox(Plugin):
     name = "32k盒子显示"
     description = "检测32k盒子并反制"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
-    def __init__(self, f: Frame):
-        self.game_ctrl = f.get_game_control()
+    def __init__(self, frame):
+        super().__init__(frame)
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPacket(PacketIDS.BlockActorData, self.box_get)
 
     def on_def(self):
-        self.bas_api = plugins.get_plugin_api("基本插件功能库")
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
-        self.ban_sys = plugins.get_plugin_api("封禁系统")
+        self.bas_api = self.GetPluginAPI("基本插件功能库")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.ban_sys = self.GetPluginAPI("封禁系统")
 
     def on_inject(self):
         self.chatbar.add_trigger(
@@ -27,7 +30,6 @@ class Display32KShulkerBox(Plugin):
             True,
         )
 
-    @plugins.add_packet_listener(56)
     def box_get(self, jsonPkt):
         if "Items" in jsonPkt["NBTData"]:
             shulkerBoxPos = f"{jsonPkt['Position'][0]} {jsonPkt['Position'][1]} {jsonPkt['Position'][2]}"
@@ -101,3 +103,6 @@ class Display32KShulkerBox(Plugin):
         with open("插件数据文件/32kBoxes.txt", "a", encoding="utf-8") as f:
             f.write("\n" + structID)
             f.close()
+
+
+entry = plugin_entry(Display32KShulkerBox)

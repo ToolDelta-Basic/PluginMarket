@@ -1,15 +1,18 @@
-from tooldelta import plugins, Plugin
+from tooldelta import Plugin, ToolDelta
 from tooldelta.game_utils import getPosXYZ
 
-
-@plugins.add_plugin
 class ChunkShow(Plugin):
     name = "区块显示器"
     author = "SnowLotus"
     version = (0, 0, 2)
 
+
+    def __init__(self, frame: ToolDelta):
+        super().__init__(frame)
+        self.ListenPreload(self.on_def)
+
     def on_def(self):
-        self.chatbar_menu = plugins.get_plugin_api("聊天栏菜单")
+        self.chatbar_menu = self.GetPluginAPI("聊天栏菜单")
 
     def on_inject(self):
         self.chatbar_menu.add_trigger(

@@ -1,21 +1,25 @@
 import re
-from tooldelta import ToolDelta, Plugin, plugins, Config, Utils, Print, game_utils
-from tooldelta import TYPE_CHECKING
+from tooldelta import (
+    ToolDelta,
+    Plugin,
+    Config,
+    utils,
+    Print,
+    game_utils,
+    plugin_entry,
+    TYPE_CHECKING,
+)
 
-plugins.checkSystemVersion((0, 7, 1))
 
-@plugins.add_plugin
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
     version = (0, 0, 6)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
-
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
     scb_replace_simple_rule = re.compile(r"\[计分板替换:([^\[\(\)\]]+)\(([^\)]+)\)\]")
     scb_replace_next_rule = re.compile(r"([0-9~]+):([^ ]+)")
-
     _counter = 0
 
     def __init__(self, frame: ToolDelta):
@@ -28,7 +32,7 @@ class CustomChatbarMenu(Plugin):
                     "功能简介": str,
                     "需要的参数数量": Config.NNInt,
                     "触发后执行的指令": Config.JsonList(str),
-                    "仅OP可用": bool
+                    "仅OP可用": bool,
                 },
             )
         }
@@ -40,8 +44,11 @@ class CustomChatbarMenu(Plugin):
                     "需要的参数数量": 0,
                     "参数提示": "",
                     "功能简介": "返回重生点",
-                    "触发后执行的指令": ["/kill [玩家名]", "/title [玩家名] actionbar 自尽成功"],
-                    "仅OP可用": False
+                    "触发后执行的指令": [
+                        "/kill [玩家名]",
+                        "/title [玩家名] actionbar 自尽成功",
+                    ],
+                    "仅OP可用": False,
                 },
                 {
                     "说明": "一个测试菜单参数项的触发词菜单项",
@@ -49,8 +56,10 @@ class CustomChatbarMenu(Plugin):
                     "需要的参数数量": 2,
                     "参数提示": "[参数1] [参数2]",
                     "功能简介": "测试触发词参数",
-                    "触发后执行的指令": ["/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2]"],
-                    "仅OP可用": True
+                    "触发后执行的指令": [
+                        "/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2]"
+                    ],
+                    "仅OP可用": True,
                 },
                 {
                     "说明": "一个个人档案的示例",
@@ -63,37 +72,46 @@ class CustomChatbarMenu(Plugin):
                         "td:/show §7▶ §e金币: [计分板:金币]",
                         "td:/show §7▶ §d在线时长: [计分板:在线时长]",
                         "td:/show §7▶ §6您的性别: [计分板替换:性别(0:未知 1:男 2:女)]",
-                        "td:/show §7▶ §c金币称号: [计分板替换:金币(0~1000:平民 1001~10000:公民 10001~80000:中产 80001~150000:富婆)]"
+                        "td:/show §7▶ §c金币称号: [计分板替换:金币(0~1000:平民 1001~10000:公民 10001~80000:中产 80001~150000:富婆)]",
                     ],
-                    "仅OP可用": False
-                }
+                    "仅OP可用": False,
+                },
             ]
         }
         self.cfg, _ = Config.getPluginConfigAndVersion(
             self.name, STD_CFG, DEFAULT_CFG, self.version
         )
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
-            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
 
-    @Utils.thread_func("初始化菜单项")
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+
+    @utils.thread_func("初始化菜单项")
     def on_inject(self):
         for menu in self.cfg["菜单项"]:
             cb = self.make_cb_func(menu)
-            self.chatbar.add_trigger(menu["触发词"], menu["参数提示"], menu["功能简介"], cb, op_only=menu["仅OP可用"])
+            self.chatbar.add_trigger(
+                menu["触发词"],
+                menu["参数提示"],
+                menu["功能简介"],
+                cb,
+                op_only=menu["仅OP可用"],
+            )
 
     def make_cb_func(self, menu):
         cmds = menu["触发后执行的指令"]
 
-        @Utils.thread_func("自定义聊天栏菜单执行")
+        @utils.thread_func("自定义聊天栏菜单执行")
         def _menu_cb_func(player: str, args: list):
             if not self.check_args_len(player, args, menu["需要的参数数量"]):
                 return
             for cmd in cmds:
-                f_cmd = Utils.simple_fmt(
+                f_cmd = utils.simple_fmt(
                     {"[玩家名]": player}, self.args_replace(args, cmd, player)
                 )
                 if f_cmd.startswith("td:/show "):
@@ -111,7 +129,9 @@ class CustomChatbarMenu(Plugin):
                 sub = sub.replace(varsub, var_value)
             except IndexError:
                 Print.print_err("聊天栏菜单: 菜单的参数项提供异常!")
-                self.game_ctrl.say_to("@a", "聊天栏菜单: 菜单的参数项提供异常， 请联系管理员以修复")
+                self.game_ctrl.say_to(
+                    "@a", "聊天栏菜单: 菜单的参数项提供异常， 请联系管理员以修复"
+                )
                 raise SystemExit
         res = self.scb_simple_rule.findall(sub)
         for scb_name in res:
@@ -158,3 +178,6 @@ class CustomChatbarMenu(Plugin):
             self.game_ctrl.say_to(player, f"§c菜单参数太少， 需要 {need_len} 个")
             return False
         return True
+
+
+entry = plugin_entry(CustomChatbarMenu)

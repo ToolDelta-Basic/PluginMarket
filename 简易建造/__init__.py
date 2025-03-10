@@ -1,25 +1,28 @@
-from tooldelta import Frame, plugins, Plugin
-from tooldelta.game_utils import getTarget
-
 import time
 
+from tooldelta import Plugin, utils, plugin_entry
+from tooldelta.game_utils import getTarget
+from tooldelta.constants import PacketIDS
 
-@plugins.add_plugin
+
 class WorldEdit(Plugin):
     author = "SuperScript"
     version = (0, 0, 8)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作, 输入.we help查看说明"
 
-    def __init__(self, frame: Frame):
+    def __init__(self, frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPacket(PacketIDS.BlockActorData, self.we_pkt56)
 
     def on_def(self):
-        self.add_trigger = plugins.get_plugin_api("聊天栏菜单").add_trigger
+        self.add_trigger = self.GetPluginAPI("聊天栏菜单").add_trigger
         from 前置_聊天栏菜单 import ChatbarMenu
 
-        self.add_trigger = plugins.instant_plugin_api(ChatbarMenu).add_trigger
+        self.add_trigger = self.get_typecheck_plugin_api(ChatbarMenu).add_trigger
         self.getX = None
         self.getY = None
         self.getZ = None
@@ -35,7 +38,6 @@ class WorldEdit(Plugin):
             "简易建造，帮助你更快速地在租赁服实现快速填充等操作; 使用插件管理器的手册查看功能以查看使用说明",
         )
 
-    @plugins.add_packet_listener(56)
     def we_pkt56(self, jsonPkt: dict):
         if "NBTData" in jsonPkt and "id" in jsonPkt["NBTData"]:
             if not (jsonPkt["NBTData"]["id"] == "Sign"):
@@ -76,7 +78,6 @@ class WorldEdit(Plugin):
                         signPlayerName,
                         f"§a设置第一点: {self.getX}, {self.getY}, {self.getZ}",
                     )
-
             elif (
                 jsonPkt["NBTData"]["FrontText"]["Text"].startswith("We fill ")
                 and len(jsonPkt["NBTData"]["FrontText"]["Text"]) > 8
@@ -125,7 +126,7 @@ class WorldEdit(Plugin):
                         f"@a[x={jsonPkt['NBTData']['x']}, y={jsonPkt['NBTData']['y']}, z={jsonPkt['NBTData']['z']}, c=1, r=10]"
                     )[0]
                     if signPlayerName in getTarget("@a[m=1]"):
-                        self.frame.createThread(
+                        utils.createThread(
                             self.fillwith,
                             (
                                 self.getX,
@@ -146,6 +147,7 @@ class WorldEdit(Plugin):
     def fillwith(self, sx, sy, sz, dx, dy, dz):
         def p2n(n):
             return 1 if n >= 0 else -1
+
         fx = p2n(dx - sx)
         fy = p2n(dy - sy)
         fz = p2n(dz - sz)
@@ -156,3 +158,6 @@ class WorldEdit(Plugin):
                         f"/clone {sx} {sy} {sz} {sx} {sy} {sz} {x} {y} {z}"
                     )
                     time.sleep(0.01)
+
+
+entry = plugin_entry(WorldEdit)

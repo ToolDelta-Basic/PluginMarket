@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 
-from tooldelta import Print, Utils, constants
+from tooldelta import Print, utils, constants
 from tooldelta.plugin_load.injected_plugin import init
 from tooldelta.game_utils import sendwocmd
 
@@ -34,7 +34,7 @@ async def on_inject():
             shutil.copy(os.path.join(c_dir, file), data_path)
         Print.print_suc("定时任务: 已创建示例文件")
     read_files()
-    Utils.createThread(asyncio.run, (run_tasks(),), "计划任务主线程")
+    utils.createThread(asyncio.run, (run_tasks(),), "计划任务主线程")
 
 
 def read_files():
@@ -67,7 +67,7 @@ def parse_sth(f: str):
     spec = False
     for line in f.split("\n"):
         if line.startswith("# 定时:"):
-            s_time = Utils.try_int(line[6:])
+            s_time = utils.try_int(line[6:])
         elif line.startswith("sleep"):
             spec = True
     if s_time is None:
@@ -95,10 +95,10 @@ async def execute_task(task: Task):
             sendwocmd(cmd)
 
 
-@Utils.thread_func("特殊计划任务执行")
+@utils.thread_func("特殊计划任务执行")
 def execute_task_spec(task: Task):
     for cmd in task.cmds:
         if cmd.startswith("sleep"):
-            time.sleep(Utils.try_int(cmd[6:]) or 0)
+            time.sleep(utils.try_int(cmd[6:]) or 0)
         else:
             sendwocmd(cmd)

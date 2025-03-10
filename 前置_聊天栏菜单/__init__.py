@@ -1,10 +1,8 @@
-from tooldelta import plugins, Plugin, Config, launch_cli, Utils
+from tooldelta import Plugin, Config, Utils, Chat, plugin_entry
 
 from dataclasses import dataclass
 from collections.abc import Callable
 
-
-plugins.checkSystemVersion((0, 7, 5))
 
 @dataclass
 class ChatbarTriggersSimple:
@@ -14,6 +12,7 @@ class ChatbarTriggersSimple:
     op_only: bool
     argument_hint = ""
     args_pd = staticmethod(lambda _,: True)
+
 
 @dataclass
 class ChatbarTriggers:
@@ -25,17 +24,13 @@ class ChatbarTriggers:
     op_only: bool
 
 
-# 使用 api = plugins.get_plugin_api("聊天栏菜单") 来获取到这个api
-@plugins.add_plugin_as_api("聊天栏菜单")
+# 使用 api = self.GetPluginAPI("聊天栏菜单") 来获取到这个api
 class ChatbarMenu(Plugin):
     """
     使用如下方法对接到这个组件:
-
-    >>> menu = plugins.get_plugin_api("聊天栏菜单")
-
+    >>> menu = self.GetPluginAPI("聊天栏菜单")
     你可以用它来添加菜单触发词, 像这样:
     menu.add_trigger(["触发词1", "触发词2..."], "功能提示", "<参数提示>", 监听方法[, 参数判定方法(传入参数列表的长度)])
-
     >>> def MoYu(args):
             print("你摸了: ", " 和 ".join(args))
     >>> menu.add_trigger(["摸鱼", "摸鱼鱼"], "<鱼的名字>", "随便摸一下鱼", MoYu, lambda a: a >= 1)
@@ -63,12 +58,13 @@ class ChatbarMenu(Plugin):
             "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
             "/help触发词": Config.JsonList(str),
             "单页内最多显示数": Config.PInt,
-            "被识别为触发词的前缀(不填则为无命令前缀)": Config.JsonList(str)
+            "被识别为触发词的前缀(不填则为无命令前缀)": Config.JsonList(str),
         }
         self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, STD_CFG_TYPE, DEFAULT_CFG, (0, 0, 1)
         )
         self.prefixs = self.cfg["被识别为触发词的前缀(不填则为无命令前缀)"]
+        self.ListenChat(self.on_player_message)
 
     # ----API----
     def add_trigger(
@@ -93,7 +89,6 @@ class ChatbarMenu(Plugin):
         for tri in triggers:
             if tri.startswith("."):
                 triggers[triggers.index(tri)] = tri[1:]
-
         if func is None:
 
             def call_none(*args):
@@ -133,9 +128,7 @@ class ChatbarMenu(Plugin):
                 return None
 
             self.chatbar_triggers.append(
-                ChatbarTriggersSimple(
-                    triggers, usage, call_none, op_only
-                )
+                ChatbarTriggersSimple(triggers, usage, call_none, op_only)
             )
             return
         self.chatbar_triggers.append(
@@ -144,24 +137,10 @@ class ChatbarMenu(Plugin):
 
     # ------------
 
-    def on_def(self):
-        if isinstance(self.frame.launcher, launch_cli.FrameNeOmgAccessPoint):
-            self.is_op = lambda player: self.frame.launcher.is_op(player)
-        else:
-
-            def get_success_count(player: str) -> bool:
-                result = self.game_ctrl.sendcmd(f"/testfor @a[name={player},m=1]", True)
-                if result is not None and result.SuccessCount is not None:
-                    return bool(result.SuccessCount)
-                return False  # 或者任何你认为合适的默认值
-
-            self.is_op = get_success_count
-
-    def show_menu(self, player: str, page: int):
+    def show_menu(self, player: str, page: int, is_op: bool):
         # page min = 1
-        player_is_op = self.is_op(player)
         all_menu_args = self.chatbar_triggers
-        if not player_is_op:
+        if not is_op:
             # 仅 OP 可见的部分 过滤掉
             all_menu_args = list(filter(lambda x: not x.op_only, all_menu_args))
         lmt = self.cfg["单页内最多显示数"]
@@ -186,7 +165,9 @@ class ChatbarMenu(Plugin):
                         + " / ".join(tri.triggers)
                         + "§r",
                         "[参数提示]": (
-                            " " + tri.argument_hint if (isinstance(tri, ChatbarTriggers) and tri.argument_hint) else ""
+                            " " + tri.argument_hint
+                            if (isinstance(tri, ChatbarTriggers) and tri.argument_hint)
+                            else ""
                         ),
                         "[菜单功能说明]": (
                             "" if tri.usage is None else "以" + tri.usage
@@ -204,15 +185,18 @@ class ChatbarMenu(Plugin):
         )
 
     @Utils.thread_func("聊天栏菜单执行")
-    def on_player_message(self, player: str, msg: str):
+    def on_player_message(self, chat: Chat):
+        player = chat.player.name
+        msg = chat.msg
+
         if self.prefixs:
             for prefix in self.prefixs:
                 if msg.startswith(prefix):
-                    msg = msg[len(prefix):]
+                    msg = msg[len(prefix) :]
                     break
             else:
                 return
-        player_is_op = self.is_op(player)
+        player_is_op = chat.player.is_op()
         # 这是查看指令帮助的触发词
         for tri in self.cfg["/help触发词"]:
             if msg.startswith(tri):
@@ -220,14 +204,14 @@ class ChatbarMenu(Plugin):
                     # 这是 help 帮助的触发词
                     m = msg.split()
                     if len(m) == 1:
-                        self.show_menu(player, 1)
+                        self.show_menu(player, 1, player_is_op)
                     else:
                         if (page_num := Utils.try_int(m[1])) is None:
                             self.game_ctrl.say_to(
                                 player, "§chelp 命令应为1个参数: <页数: 正整数>"
                             )
                         else:
-                            self.show_menu(player, page_num)
+                            self.show_menu(player, page_num, player_is_op)
                 return
         # 这是一般菜单触发词
         for tri in self.chatbar_triggers:
@@ -256,3 +240,6 @@ class ChatbarMenu(Plugin):
 
     def on_menu_warn(self, player: str):
         self.game_ctrl.say_to(player, "§c退出当前菜单才能继续唤出菜单")
+
+
+entry = plugin_entry(ChatbarMenu, "聊天栏菜单")

@@ -1,9 +1,8 @@
 import json
 import os
-from tooldelta import Plugin, plugins, Print, Utils, constants
+from tooldelta import Plugin, Print, Utils, constants, plugin_entry
 
 
-@plugins.add_plugin
 class PluginCreator(Plugin):
     name = "类式插件创建器"
 
@@ -100,45 +99,45 @@ class PluginCreator(Plugin):
                 ).strip():
                     break
         config_block = (
-            "        CONFIG_STANDARD = {\n"
-            '            "整数示例": int,\n'
-            '            "小数示例": float,\n'
-            '            "嵌套示例": {\n'
-            '                "字符串示例": str,\n'
-            "            }\n"
-            "        }\n"
-            "        CONFIG_DEFAULT = {\n"
-            '            "整数示例": int,\n'
-            '            "小数示例": float,\n'
-            '            "嵌套示例": {\n'
-            '                "字符串示例": str,\n'
-            "            }\n"
-            "        }\n"
+            r"        CONFIG_STANDARD = {\n"
+            r'            "整数示例": int,\n'
+            r'            "小数示例": float,\n'
+            r'            "嵌套示例": {\n'
+            r'                "字符串示例": str,\n'
+            r"            }\n"
+            r"        }\n"
+            r"        CONFIG_DEFAULT = {\n"
+            r'            "整数示例": int,\n'
+            r'            "小数示例": float,\n'
+            r'            "嵌套示例": {\n'
+            r'                "字符串示例": str,\n'
+            r"            }\n"
+            r"        }\n"
         )
         plugin_body = (
-            "from tooldelta import Plugin, plugins"
+            "from tooldelta import Plugin, plugins, plugin_entry, Player, Chat, FrameExit"
             + (f", {', '.join(i for i in extend_modules)}" if extend_modules else "")
-            + "\n\n@plugins.add_plugin"
-            + (f'_as_api("{api_name}")' if is_api_plugin else "")
-            + "\n"
-            "class NewPlugin(Plugin):\n"
+            + "\n\n"
+            r"class NewPlugin(Plugin):\n"
             f'    name = "{pname}"\n'
             f'    author = "{pauthor}"\n'
             f"    version = ({ver_1}, {ver_2}, {ver_3})\n\n"
-            "    def __init__(self, frame):\n"
-            "        super().__init__(frame)\n"
+            r"    def __init__(self, frame):\n"
+            r"        super().__init__(frame)\n"
             + (config_block if "Config" in extend_modules else "")
             + "\n"
-            "    def on_def(self):\n"
-            "        pass\n\n"
-            "    def on_player_join(self, playername: str):\n"
-            '        self.print(f"{playername} 进入游戏")\n\n'
-            "    def on_player_leave(self, playername: str):\n"
-            '        self.print(f"{playername} 退出游戏")\n\n'
-            "    def on_player_message(self, playername: str, msg: str):\n"
-            '        self.print(f"{playername} 说: {msg}")\n\n'
-            "    def on_frame_exit(self, status_code: int, reason: str):\n"
-            '        self.print(f"系统已退出 状态码={status_code} 原因={reason}")'
+            r"    def on_def(self):\n"
+            r"        pass\n\n"
+            r"    def on_player_join(self, player: Player):\n"
+            r'        self.print(f"{player.name} 进入游戏")\n\n'
+            r"    def on_player_leave(self, player: Playe):\n"
+            r'        self.print(f"{player.name} 退出游戏")\n\n'
+            r"    def on_player_message(self, chat: Chat):\n"
+            r'        self.print(f"{chat.player.name} 说: {chat.msg}")\n\n'
+            r"    def on_frame_exit(self, evt: FrameExit):\n"
+            r'        self.print(f"系统已退出 状态码={evt.signal} 原因={evt.reason}")\n\n'
+            r"entry = plugin_entry"
+            + (r"(NewPlugin)" if not is_api_plugin else f'(NewPlugin, "{api_name}")')
         )
         datafile_body = {
             "author": pauthor,
@@ -160,3 +159,6 @@ class PluginCreator(Plugin):
             json.dump(datafile_body, f, indent=2, ensure_ascii=False)
         Print.print_suc(f"插件创建完成, 位于 {plugin_dir_path}")
         Print.print_suc("输入 §breload §r可使其生效")
+
+
+entry = plugin_entry(PluginCreator)

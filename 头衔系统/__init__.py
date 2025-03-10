@@ -1,8 +1,15 @@
 import time
-from tooldelta import Plugin, plugins, Config, TYPE_CHECKING, Utils, game_utils
+from tooldelta import (
+    Plugin,
+    Config,
+    TYPE_CHECKING,
+    utils,
+    game_utils,
+    Player,
+    plugin_entry,
+)
 
 
-@plugins.add_plugin_as_api("头衔系统")
 class Nametitle(Plugin):
     name = "头衔系统"
     author = "SuperScript"
@@ -18,23 +25,26 @@ class Nametitle(Plugin):
         self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, Config.auto_to_std(CFG), CFG, self.version
         )
+        self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
+        self.ListenPlayerJoin(self.on_player_join)
 
     def on_def(self):
-        self.chatbar = plugins.get_plugin_api("聊天栏菜单")
-        self.funclib = plugins.get_plugin_api("基本插件功能库")
-        self.intr = plugins.get_plugin_api("前置-世界交互")
-        self.xuidm = plugins.get_plugin_api("XUID获取")
-        cb2bot = plugins.get_plugin_api("Cb2Bot通信")
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.funclib = self.GetPluginAPI("基本插件功能库")
+        self.intr = self.GetPluginAPI("前置-世界交互")
+        self.xuidm = self.GetPluginAPI("XUID获取")
+        cb2bot = self.GetPluginAPI("Cb2Bot通信")
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_世界交互 import GameInteractive
             from 前置_Cb2Bot通信 import TellrawCb2Bot
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.chatbar = plugins.instant_plugin_api(ChatbarMenu)
-            self.intr = plugins.instant_plugin_api(GameInteractive)
-            cb2bot = plugins.instant_plugin_api(TellrawCb2Bot)
-            self.xuidm = plugins.instant_plugin_api(XUIDGetter)
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
         cb2bot.regist_message_cb(
             "nametitle.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )
@@ -42,7 +52,7 @@ class Nametitle(Plugin):
             "nametag.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )
 
-    def on_player_join(self, player: str):
+    def on_player_join(self, _: Player):
         self.flush_nametitles()
 
     def on_inject(self):
@@ -58,7 +68,7 @@ class Nametitle(Plugin):
         self.nmtitle_cds: dict[str, int] = {}
         self.nmtitle_cd()
 
-    @Utils.thread_func("玩家设置称号")
+    @utils.thread_func("玩家设置称号")
     def on_set_titles(self, player, ls):
         if player in self.nmtitle_cds.keys() and not game_utils.is_op(player):
             self.playsound(player, "bass", 0.707)
@@ -78,7 +88,7 @@ class Nametitle(Plugin):
                     player, f" {i + 1}. {k}： {titles.get(k, '<称号失效>')}"
                 )
             self.game_ctrl.say_to(player, "§7[§fi§7] §b输入以进行更换：")
-            resp = Utils.try_int(game_utils.waitMsg(player))
+            resp = utils.try_int(game_utils.waitMsg(player))
             if resp is None or resp - 1 not in range(len(mytitles)):
                 self.playsound(player, "bass", 0.707)
                 self.game_ctrl.say_to(player, "§c无效选项")
@@ -91,7 +101,7 @@ class Nametitle(Plugin):
                 self.playsound(player, "bass", 0.707)
                 return
         self.game_ctrl.sendwocmd(
-            f"scoreboard players reset {Utils.to_player_selector(player)} {nowtitle}"
+            f"scoreboard players reset {utils.to_player_selector(player)} {nowtitle}"
         )
         if titles.get(k) is None:
             self.show_err(player, "该称号已失效， 无法使用")
@@ -109,7 +119,7 @@ class Nametitle(Plugin):
         time.sleep(0.14)
         self.playsound(player, "bit", 2.828)
 
-    @Utils.thread_func("管理设置称号")
+    @utils.thread_func("管理设置称号")
     def on_operate_nametitle(self, player: str, ls):
         if ls:
             # 蔚蓝空域专属
@@ -266,7 +276,7 @@ class Nametitle(Plugin):
             nts.add(t)
             use_title[player] = t
             self.game_ctrl.sendwocmd(
-                f"scoreboard players set {Utils.to_player_selector(player)} {t} 1"
+                f"scoreboard players set {utils.to_player_selector(player)} {t} 1"
             )
         for t in nts:
             self.game_ctrl.sendwocmd(f"scoreboard objectives setdisplay belowname {t}")
@@ -274,14 +284,16 @@ class Nametitle(Plugin):
         time.sleep(0.3)
         scb_name = self.cfg["常显计分板名字"].strip()
         if scb_name:
-            self.game_ctrl.sendwocmd(f"scoreboard objectives setdisplay list {scb_name}")
+            self.game_ctrl.sendwocmd(
+                f"scoreboard objectives setdisplay list {scb_name}"
+            )
         else:
             self.game_ctrl.sendwocmd("scoreboard objectives add tmp dummy")
             self.game_ctrl.sendwocmd("scoreboard objectives setdisplay list tmp")
             self.game_ctrl.sendwocmd("scoreboard objectives remove tmp")
 
     def get_titles(self) -> dict[str, str]:
-        return Utils.TMPJson.read_as_tmp(
+        return utils.TMPJson.read_as_tmp(
             self.format_data_path("titles.json"), needFileExists=False, default={}
         )
 
@@ -293,29 +305,29 @@ class Nametitle(Plugin):
             return curr[0]
 
     def set_titles(self, titles: dict[str, str]):
-        return Utils.TMPJson.write_as_tmp(
+        return utils.TMPJson.write_as_tmp(
             self.format_data_path("titles.json"), titles, needFileExists=False
         )
 
     def get_player_titles(self, player: str) -> list[str]:
-        return Utils.TMPJson.read_as_tmp(
+        return utils.TMPJson.read_as_tmp(
             self.format_data_path("player_titles.json"),
             needFileExists=False,
             default={},
         ).get(self.xuidm.get_xuid_by_name(player), [])
 
     def set_player_titles(self, player: str, curr_title: str, titles: list[str]):
-        old = Utils.TMPJson.read_as_tmp(
+        old = utils.TMPJson.read_as_tmp(
             self.format_data_path("player_titles.json"),
             needFileExists=False,
             default={},
         )
         old[self.xuidm.get_xuid_by_name(player)] = [curr_title, *titles]
-        Utils.TMPJson.write_as_tmp(
+        utils.TMPJson.write_as_tmp(
             self.format_data_path("player_titles.json"), old, needFileExists=False
         )
 
-    @Utils.timer_event(20, "称号设置冷却")
+    @utils.timer_event(20, "称号设置冷却")
     def nmtitle_cd(self):
         ntime = time.time()
         for k, v in self.nmtitle_cds.copy().items():
@@ -333,6 +345,9 @@ class Nametitle(Plugin):
 
     def playsound(self, target: str, sound: str, pitch: float):
         self.game_ctrl.sendwocmd(
-            f"execute as {Utils.to_player_selector(target)} at @s"
+            f"execute as {utils.to_player_selector(target)} at @s"
             f" run playsound note.{sound} @s ~~~ 1 {pitch}"
         )
+
+
+entry = plugin_entry(Nametitle, "头衔系统")
