@@ -23,6 +23,7 @@ class HighRateChatAnti(Plugin):
         self.last_msgs: dict[str, int] = {}
         self.ListenPreload(self.on_def)
         self.ListenChat(self.on_chat)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
         self.ban = self.GetPluginAPI("封禁系统")
