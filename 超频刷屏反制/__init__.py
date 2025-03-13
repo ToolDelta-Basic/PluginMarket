@@ -5,7 +5,7 @@ from tooldelta.game_utils import get_all_player
 class HighRateChatAnti(Plugin):
     name = "超频发言反制"
     author = "SuperScript"
-    version = "0.0.3"
+    version = (0, 0, 3)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
