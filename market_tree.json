@@ -396,7 +396,7 @@
     "XUID获取": {
       "name": "前置_玩家XUID获取",
       "author": "System",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "计分板重置": {
