@@ -23,7 +23,7 @@ class CustomChatbarMenu(Plugin):
     _counter = 0
 
     def __init__(self, frame: ToolDelta):
-        self.game_ctrl = frame.get_game_control()
+        super().__init__(frame)
         STD_CFG = {
             "菜单项": Config.JsonList(
                 {
