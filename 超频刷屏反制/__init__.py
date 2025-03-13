@@ -1,4 +1,4 @@
-from tooldelta import Config, utils, ToolDelta, plugin_entry, Plugin, Chat, Player
+from tooldelta import cfg as config, utils, ToolDelta, plugin_entry, Plugin, Chat, Player
 from tooldelta.game_utils import get_all_player
 
 
@@ -14,8 +14,8 @@ class HighRateChatAnti(Plugin):
             "检测周期内最多发送多少条消息": 10,
             "反制措施": {"封禁时间(天数)": 1},
         }
-        cfg, _ = Config.get_plugin_config_and_version(
-            "超频发言限制", Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
+        cfg, _ = config.get_plugin_config_and_version(
+            "超频发言限制", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
         )
         self.detect_time = cfg["检测周期(秒)"]
         self.msg_lmt = cfg["检测周期内最多发送多少条消息"]

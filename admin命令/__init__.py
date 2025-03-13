@@ -1,4 +1,4 @@
-from tooldelta.cfg import Config
+from tooldelta import cfg as config
 from tooldelta.plugin_load.injected_plugin import player_message, player_message_info
 
 from tooldelta.game_utils import (
@@ -16,7 +16,7 @@ __plugin_meta__ = {
 cmdarea = {"指令区坐标": dict}
 DEFAULT_CFG = {"指令区坐标": {"x": 0, "y": 0, "z": 0}}
 
-cfg, cfg_version = Config.get_plugin_config_and_version(
+cfg, cfg_version = config.get_plugin_config_and_version(
     __plugin_meta__["name"],
     cmdarea,
     DEFAULT_CFG,

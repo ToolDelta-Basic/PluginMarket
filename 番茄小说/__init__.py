@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg as config,
     game_utils,
     Utils,
     Chat,
@@ -24,7 +24,7 @@ class NewPlugin(Plugin):
         CONFIG_DEFAULT = {
             "番茄小说Cookie": "请填入从番茄小说官网抓去到的Cookie。不填写则用户相关内容不可用。"
         }
-        cfg, cfg_version = Config.get_plugin_config_and_version(
+        cfg, cfg_version = config.get_plugin_config_and_version(
             self.name, CONFIG_STD, CONFIG_DEFAULT, self.version
         )
         self.fqcookie = cfg["番茄小说Cookie"]
@@ -77,7 +77,7 @@ class NewPlugin(Plugin):
                 playername, "§6请输入你需要看的章节号: \n(输入§e退出§6以退出)"
             )
             resp = game_utils.waitMsg(playername)
-            if resp == "退出":
+            if resp == "退出" or resp is None:
                 break
             elif resp.isdigit():
                 resp = int(resp)

@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, Print, utils, game_utils, plugin_entry
+from tooldelta import Plugin, cfg, Print, utils, game_utils, plugin_entry
 
 from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time
@@ -16,7 +16,7 @@ class xunluo(Plugin):
         }
         self._std_cfg = {"间隔时间（秒）": float}
         try:
-            self._cfg, _ = Config.get_plugin_config_and_version(
+            self._cfg, _ = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:

@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from tooldelta import Plugin, game_utils, utils, Print, Config, plugin_entry
+from tooldelta import Plugin, game_utils, utils, Print, cfg, plugin_entry
 from tooldelta.constants import PacketIDS
 
 
@@ -33,8 +33,8 @@ class PistonLmt(Plugin):
             ],
             "这些地方完全无法使用活塞": [{"x": -64, "y": 106, "z": -32, "半径": 100}],
         }
-        cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
+        cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
         )
         for dat in cfg["这些地方完全无法使用活塞"]:
             self.anti_pistons.append(

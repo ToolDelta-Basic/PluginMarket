@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, Print, Utils, Player, plugin_entry
+from tooldelta import Plugin, cfg, Print, Utils, Player, plugin_entry
 
 import os, json, requests, time
 from urllib.parse import quote
@@ -30,7 +30,7 @@ class CloudBlacklist(Plugin):
         }
 
         try:
-            self._cfg, self.cfg_version = Config.get_plugin_config_and_version(
+            self._cfg, self.cfg_version = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
@@ -148,7 +148,7 @@ class CloudBlacklist(Plugin):
 
             self._cfg["接入黑名单"] = selected
 
-            Config.upgrade_plugin_config(
+            cfg.upgrade_plugin_config(
                 plugin_name=self.name, configs=self._cfg, version=self.cfg_version
             )
 

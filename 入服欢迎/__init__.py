@@ -5,7 +5,7 @@ from tooldelta.plugin_load.injected_plugin import (
     player_name,
 )
 from tooldelta.game_utils import sendwscmd
-from tooldelta.frame import Config
+from tooldelta import cfg as config
 
 __plugin_meta__ = {
     "name": "入服欢迎",
@@ -25,7 +25,7 @@ DEFAULT_BAN_CFG: dict[str, list[str] | int] = {
     "登录时延迟发送": 10,
 }
 
-cfg, cfg_version = Config.get_plugin_config_and_version(
+cfg, cfg_version = config.get_plugin_config_and_version(
     __plugin_meta__["name"],
     STD_BAN_CFG,
     DEFAULT_BAN_CFG,

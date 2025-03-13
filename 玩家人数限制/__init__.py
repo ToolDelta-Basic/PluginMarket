@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, game_utils, Player, plugin_entry
+from tooldelta import Plugin, cfg as config, game_utils, Player, plugin_entry
 
 
 class NewPlugin(Plugin):
@@ -9,8 +9,8 @@ class NewPlugin(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         CFG = {"最大人数限制": 20}
-        cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CFG), CFG, self.version
+        cfg, _ = config.get_plugin_config_and_version(
+            self.name, config.auto_to_std(CFG), CFG, self.version
         )
         self.maxinum_player = cfg["最大人数限制"]
         self.ListenPlayerJoin(self.on_player_join)

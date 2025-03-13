@@ -5,7 +5,7 @@ import os
 import re
 import threading
 import sys
-from tooldelta import Plugin, plugins, Config, Utils, Print
+from tooldelta import Plugin, plugins, cfg, Utils, Print
 from cqlib import (
     config_spawn,
     cq_runner,
@@ -95,8 +95,8 @@ class QQLinker(Plugin):
                 "是否允许查看玩家列表": True,
             },
         }
-        cfg_std = Config.auto_to_std(CFG_DEFAULT)
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        cfg_std = cfg.auto_to_std(CFG_DEFAULT)
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, cfg_std, CFG_DEFAULT, self.version
         )
         self.enable_game_2_group = self.cfg["消息转发设置"]["游戏到群"]["是否启用"]
@@ -125,7 +125,7 @@ class QQLinker(Plugin):
     def prepare(self):
         if not os.path.isfile(os.path.join(self.data_path, GOCQ_EXECFILE)):
             downloader.download_gocq(self, GOCQ_EXECFILE)
-        with open(os.path.join(self.data_path, "config.yml"), "w", encoding="utf-8") as f:
+        with open(os.path.join(self.data_path, "cfg.yml"), "w", encoding="utf-8") as f:
             f.write(config_spawn.spawn_config(24009))
         self.start()
 

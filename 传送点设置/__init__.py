@@ -1,5 +1,5 @@
 import os
-from tooldelta import Plugin, utils, game_utils, Config, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, utils, game_utils, cfg, TYPE_CHECKING, plugin_entry
 
 DIMENSIONS = ["overworld", "nether", "the_end", *(f"dim{i}" for i in range(3, 21))]
 DIMENSIONS_ZHCN = ["主世界", "下界", "末地", *(f"DIM-{i}" for i in range(3, 21))]
@@ -27,8 +27,8 @@ class HomePointSet(Plugin):
                 "菜单内显示名": "传送点",
             },
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CONFIG), CONFIG, self.version
+        self.cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(CONFIG), CONFIG, self.version
         )
         os.makedirs(self.format_data_path("传送点列表"), exist_ok=True)
         self.ListenPreload(self.on_def)

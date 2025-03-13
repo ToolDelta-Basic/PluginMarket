@@ -1,4 +1,4 @@
-from tooldelta import Config, Print
+from tooldelta import cfg, Print
 from tooldelta.plugin_load.injected_plugin import (
     player_left,
     player_message,
@@ -24,8 +24,8 @@ CFG_DEFAULT = {
     ],
 }
 
-cfg, _ = Config.get_plugin_config_and_version(
-    "发言频率限制", Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
+cfg, _ = cfg.get_plugin_config_and_version(
+    "发言频率限制", cfg.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
 )
 detect_time = cfg["检测周期(秒)"]
 msg_lmt = cfg["检测周期内最多发送多少条消息"]

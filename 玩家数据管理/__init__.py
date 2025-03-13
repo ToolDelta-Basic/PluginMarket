@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, Print, Frame, Chat, plugin_entry
+from tooldelta import Plugin, cfg, Print, Frame, Chat, plugin_entry
 
 # type: ignore
 import os
@@ -25,7 +25,7 @@ class 数据管理(Plugin):
             }
         }
         try:
-            self._cfg, _ = Config.get_plugin_config_and_version(
+            self._cfg, _ = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:

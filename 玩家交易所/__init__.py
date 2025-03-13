@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     game_utils,
     utils,
     Print,
@@ -28,7 +28,7 @@ class NewPlugin(Plugin):
             "交易手续费": 0.1,
             "手续费起收金额": 0,
         }
-        self.config, _ = Config.get_plugin_config_and_version(
+        self.config, _ = cfg.get_plugin_config_and_version(
             self.name, {}, config, self.version
         )
         self.menu_head = self.config["交易所菜单头"].format(

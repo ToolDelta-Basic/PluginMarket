@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     utils,
     Print,
     game_utils,
@@ -382,8 +382,8 @@ class SnowMenu(Plugin):
             "菜单主界面格式尾": str,
             "菜单主界面选项格式(选项未选中)": str,
             "菜单主界面选项格式(选项被选中)": str,
-            "自定义主菜单内容": Config.JsonList(
-                {"显示名": str, "执行的指令": Config.JsonList(str)}
+            "自定义主菜单内容": cfg.JsonList(
+                {"显示名": str, "执行的指令": cfg.JsonList(str)}
             ),
         }
         CFG_DEFAULT = {
@@ -410,7 +410,7 @@ class SnowMenu(Plugin):
                 },
             ],
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, (0, 0, 1)
         )
         menu_patterns[:] = (

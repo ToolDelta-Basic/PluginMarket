@@ -1,5 +1,5 @@
 import os, threading, time  # noqa: E401
-from tooldelta import Plugin, Config, game_utils, utils, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, cfg as config, game_utils, utils, TYPE_CHECKING, plugin_entry
 
 IS_CREATE_LOCK = threading.RLock()
 
@@ -11,11 +11,11 @@ class SkyBlock(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        CFGPOS = Config.JsonList(int, 3)
+        CFGPOS = config.JsonList(int, 3)
         CFG_STD = {
             "空岛生成坐标原点(生效后请勿更改)": CFGPOS,
-            "空岛间距(生效后请勿更改)": Config.PInt,
-            "可选空岛结构": Config.AnyKeyValue(
+            "空岛间距(生效后请勿更改)": config.PInt,
+            "可选空岛结构": config.AnyKeyValue(
                 {"结构名": str, "介绍": str, "结构生成偏移": CFGPOS}
             ),
         }
@@ -40,7 +40,7 @@ class SkyBlock(Plugin):
                 },
             },
         }
-        cfg, _ = Config.get_plugin_config_and_version(
+        cfg, _ = config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         self.ISLAND_DZ = cfg["空岛间距(生效后请勿更改)"]

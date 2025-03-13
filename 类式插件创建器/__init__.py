@@ -72,10 +72,10 @@ class PluginCreator(Plugin):
             except Exception:
                 Print.print_err("错误的版本号格式, 应为 x.x.x")
         modules = {
-            "0": ("Config", "配置文件的读取等"),
+            "0": ("cfg", "配置文件的读取等"),
             "1": ("game_utils", "游戏内信息获取有关"),
-            "2": ("Utils", "实用方法合集"),
-            "3": ("Print", "格式化彩色输出"),
+            "2": ("utils", "实用方法合集"),
+            "3": ("fmts", "格式化彩色输出"),
             "4": ("TYPE_CHECKING", "类型检查常量"),
         }
         Print.print_inf("\n".join(f"{k}: {v[0]} ({v[1]})" for k, v in modules.items()))

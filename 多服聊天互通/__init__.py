@@ -1,6 +1,6 @@
 import websocket
 import json
-from tooldelta import Config, Print, utils, Chat, Player, plugin_entry
+from tooldelta import cfg, Print, utils, Chat, Player, plugin_entry
 
 from tooldelta import Plugin
 
@@ -56,8 +56,8 @@ class MCChatLinker(Plugin):
         super().__init__(frame)
         self.OoO = {2: self.chat_msg, 3: self.custom_msg, 10: server_resp}
         self.ws_client: websocket = None
-        self.cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(PLUGIN_CONFIG), PLUGIN_CONFIG, self.version
+        self.cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(PLUGIN_CONFIG), PLUGIN_CONFIG, self.version
         )
         self.cfg_ws_url: str = self.cfg["核心功能配置"]["ws服务端地址"]
         self.cfg_chat_channel: list = self.cfg["核心功能配置"]["加入的聊天频道"]

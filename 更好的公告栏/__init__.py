@@ -1,5 +1,5 @@
 import time
-from tooldelta import utils, Config, Plugin, Print, plugin_entry
+from tooldelta import utils, cfg as config, Plugin, Print, plugin_entry
 
 
 class BetterAnnounce(Plugin):
@@ -21,11 +21,11 @@ class BetterAnnounce(Plugin):
             "刷新频率(秒)": 20,
         }
         CFG_STD = {
-            "公告内容(公告内容:计分板数字)": Config.AnyKeyValue(int),
+            "公告内容(公告内容:计分板数字)": config.AnyKeyValue(int),
             "公告标题栏名(请注意长度)": str,
             "刷新频率(秒)": int,
         }
-        cfg, _ = Config.get_plugin_config_and_version(self.name, CFG_STD, CFG, self.version)
+        cfg, _ = config.get_plugin_config_and_version(self.name, CFG_STD, CFG, self.version)
         self.anos = cfg["公告内容(公告内容:计分板数字)"]
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]

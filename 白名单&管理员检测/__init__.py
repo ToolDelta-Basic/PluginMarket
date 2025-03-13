@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     Print,
     game_utils,
     utils,
@@ -39,7 +39,7 @@ class whitelist_and_opcheck(Plugin):
             "管理员检测": {"开启状态": bool, "提示词": str, "管理员列表": {}},
         }
         try:
-            self._cfg, _ = Config.get_plugin_config_and_version(
+            self._cfg, _ = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
@@ -133,7 +133,7 @@ class whitelist_and_opcheck(Plugin):
                     return
 
                 self._cfg["白名单"]["白名单玩家"][player_uuid] = player_name
-                Config.upgrade_plugin_config(self.name, self._cfg, self.version)
+                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
                 Print.print_suc(f"已添加玩家{player_name}到白名单")
                 return
 
@@ -149,7 +149,7 @@ class whitelist_and_opcheck(Plugin):
                     return
 
                 self._cfg["白名单"]["白名单玩家"].pop(player_uuid)
-                Config.upgrade_plugin_config(self.name, self._cfg, self.version)
+                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
                 Print.print_suc(f"已从白名单中移除玩家{player_name}")
                 return
 
@@ -185,7 +185,7 @@ class whitelist_and_opcheck(Plugin):
                     return
 
                 self._cfg["管理员检测"]["管理员列表"][player_uuid] = player_name
-                Config.upgrade_plugin_config(self.name, self._cfg, self.version)
+                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
                 Print.print_suc(f"已添加玩家{player_name}为OP")
                 return
 
@@ -202,7 +202,7 @@ class whitelist_and_opcheck(Plugin):
                     return
 
                 self._cfg["管理员检测"]["管理员列表"].pop(player_uuid)
-                Config.upgrade_plugin_config(self.name, self._cfg, self.version)
+                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
                 Print.print_inf(f"已将玩家{player_name}从OP中移除")
                 return
             Print.print_err("无效的选项")

@@ -1,7 +1,7 @@
 import os
 import time
 from dataclasses import dataclass
-from tooldelta import utils, game_utils, Plugin, Config, TYPE_CHECKING, plugin_entry
+from tooldelta import utils, game_utils, Plugin, cfg, TYPE_CHECKING, plugin_entry
 
 
 @dataclass
@@ -33,8 +33,8 @@ class MusicPlayer(Plugin):
             "查询曲目列表触发词": ["music list", "音乐列表"],
             "是否仅OP可播放音乐": False,
         }
-        CFG_STD = Config.auto_to_std(CFG_DEFAULT)
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        CFG_STD = cfg.auto_to_std(CFG_DEFAULT)
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         _ = self.data_path

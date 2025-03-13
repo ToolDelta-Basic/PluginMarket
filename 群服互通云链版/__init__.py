@@ -6,7 +6,7 @@ import threading
 from collections.abc import Callable
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     utils,
     Print,
     Chat,
@@ -119,8 +119,8 @@ class QQLinker(Plugin):
                 "是否允许查看玩家列表": True,
             },
         }
-        cfg_std = Config.auto_to_std(CFG_DEFAULT)
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        cfg_std = cfg.auto_to_std(CFG_DEFAULT)
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, cfg_std, CFG_DEFAULT, self.version
         )
         self.enable_game_2_group = self.cfg["消息转发设置"]["游戏到群"]["是否启用"]

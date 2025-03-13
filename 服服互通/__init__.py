@@ -11,7 +11,7 @@ from typing import Any
 from collections.abc import Callable
 from websockets.exceptions import ConnectionClosed
 from websockets.legacy.client import WebSocketClientProtocol
-from tooldelta import Frame, Plugin, Config, Print, utils, Chat, plugin_entry, InternalBroadcast
+from tooldelta import Frame, Plugin, cfg, Print, utils, Chat, plugin_entry, InternalBroadcast
 
 
 # CUSTOMIZE CLASSES AND FUNCS 自定义的类和方法
@@ -215,10 +215,10 @@ class SuperLink(Plugin):
             "基本互通配置": {
                 "是否转发玩家发言": bool,
                 "转发聊天到本服格式": str,
-                "屏蔽以下前缀的信息上传": Config.JsonList(str),
+                "屏蔽以下前缀的信息上传": cfg.JsonList(str),
             },
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         use_protocol: type[BasicProtocol] | None = {

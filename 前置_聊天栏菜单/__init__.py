@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, Utils, Chat, plugin_entry
+from tooldelta import Plugin, cfg, Utils, Chat, plugin_entry
 
 from dataclasses import dataclass
 from collections.abc import Callable
@@ -56,11 +56,11 @@ class ChatbarMenu(Plugin):
         }
         STD_CFG_TYPE = {
             "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
-            "/help触发词": Config.JsonList(str),
-            "单页内最多显示数": Config.PInt,
-            "被识别为触发词的前缀(不填则为无命令前缀)": Config.JsonList(str),
+            "/help触发词": cfg.JsonList(str),
+            "单页内最多显示数": cfg.PInt,
+            "被识别为触发词的前缀(不填则为无命令前缀)": cfg.JsonList(str),
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, STD_CFG_TYPE, DEFAULT_CFG, (0, 0, 1)
         )
         self.prefixs = self.cfg["被识别为触发词的前缀(不填则为无命令前缀)"]

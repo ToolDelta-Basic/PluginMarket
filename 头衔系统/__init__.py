@@ -1,7 +1,7 @@
 import time
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     TYPE_CHECKING,
     utils,
     game_utils,
@@ -22,8 +22,8 @@ class Nametitle(Plugin):
             "说明": "因为头衔系统会干扰玩家列表上的计分板，所以请设置常显计分板的名字，为空则不设置",
             "常显计分板名字": "money_show",
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CFG), CFG, self.version
+        self.cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(CFG), CFG, self.version
         )
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)

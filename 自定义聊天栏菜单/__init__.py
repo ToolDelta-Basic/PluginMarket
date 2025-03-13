@@ -2,7 +2,7 @@ import re
 from tooldelta import (
     ToolDelta,
     Plugin,
-    Config,
+    cfg,
     utils,
     Print,
     game_utils,
@@ -25,13 +25,13 @@ class CustomChatbarMenu(Plugin):
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
         STD_CFG = {
-            "菜单项": Config.JsonList(
+            "菜单项": cfg.JsonList(
                 {
-                    "触发词": Config.JsonList(str),
+                    "触发词": cfg.JsonList(str),
                     "参数提示": str,
                     "功能简介": str,
-                    "需要的参数数量": Config.NNInt,
-                    "触发后执行的指令": Config.JsonList(str),
+                    "需要的参数数量": cfg.NNInt,
+                    "触发后执行的指令": cfg.JsonList(str),
                     "仅OP可用": bool,
                 },
             )
@@ -78,7 +78,7 @@ class CustomChatbarMenu(Plugin):
                 },
             ]
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, STD_CFG, DEFAULT_CFG, self.version
         )
         self.ListenPreload(self.on_def)

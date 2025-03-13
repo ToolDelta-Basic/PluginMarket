@@ -1,6 +1,6 @@
 import psutil
 import os
-from tooldelta import Plugin, utils, Print, Config, plugin_entry
+from tooldelta import Plugin, utils, Print, cfg as config, plugin_entry
 
 BYTES2MB = 1048576
 
@@ -16,8 +16,8 @@ class EmergencyMetaMana(Plugin):
             "当内存占用超过多少百分比时提示警告": 80,
             "当内存占用超过多少百分比时停机": 95,
         }
-        cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CFG), CFG, self.version
+        cfg, _ = config.get_plugin_config_and_version(
+            self.name, config.auto_to_std(CFG), CFG, self.version
         )
         self.mem_warn = cfg["当内存占用超过多少百分比时提示警告"]
         self.mem_exit = cfg["当内存占用超过多少百分比时停机"]

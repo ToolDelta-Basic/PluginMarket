@@ -1,7 +1,5 @@
-from tooldelta import plugins, Utils
+from tooldelta import tooldelta, utils
 from tooldelta.plugin_load.injected_plugin import (
-    player_message,
-    player_message_info,
     repeat,
 )
 from tooldelta.game_utils import get_all_player, rawText, sendcmd, getTarget, waitMsg
@@ -64,7 +62,7 @@ class TpaRequest:
         tpa_requests.remove(self)
 
 
-@Utils.thread_func("tpa菜单")
+@utils.thread_func("tpa菜单")
 def tpa_menu(player: str, args: list[str]):
     if args == []:
         rawText(player, "§6玩家互传tpa功能菜单：")
@@ -119,7 +117,7 @@ def tpa_menu(player: str, args: list[str]):
             for i, j in enumerate(results):
                 rawText(player, f"§f{i+1}§7： §f{j}")
             rawText(player, f"§6输入序号§f1~{len(results)}§6以选择：")
-            resp = Utils.try_int(waitMsg(player))
+            resp = utils.try_int(waitMsg(player))
             if resp is None or resp not in range(1, len(results) + 1):
                 rawText(player, "§c序号错误或超过30s未输入， 已退出")
                 return
@@ -134,7 +132,7 @@ def tpa_menu(player: str, args: list[str]):
         tpa_requests.append(TpaRequest(player, getting, mode))
 
 
-plugins.get_plugin_api("聊天栏菜单").add_trigger(
+tooldelta.plugin_group.get_plugin_api("聊天栏菜单").add_trigger(
     ["tpa"],
     None,
     "显示tpa帮助菜单",

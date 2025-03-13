@@ -1,5 +1,5 @@
 import datetime
-from tooldelta import Plugin, utils, Config, plugin_entry
+from tooldelta import Plugin, utils, cfg as config, plugin_entry
 
 
 class ScoreboardTime(Plugin):
@@ -15,8 +15,8 @@ class ScoreboardTime(Plugin):
             "是否同步年月日": True,
             "是否同步星期": True,
         }
-        cfg, _ = Config.get_plugin_config_and_version(
-            self.name, Config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
+        cfg, _ = config.get_plugin_config_and_version(
+            self.name, config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
         )
         self.sync_gap = cfg["同步间隔秒数"]
         self.sync_scbname = cfg["同步到哪个计分板上"]

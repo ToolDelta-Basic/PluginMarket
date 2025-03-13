@@ -1,7 +1,7 @@
 from tooldelta import (
     Frame,
     Plugin,
-    Config,
+    cfg,
     Print,
     utils,
     Chat,
@@ -21,7 +21,7 @@ class kill(Plugin):
         self.game_ctrl = frame.get_game_control()
         self.make_data_path()
         CFG_DEFAULT = {"踢出词": [], "原因": ""}
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, {}, CFG_DEFAULT, self.version
         )
         self.ci = self.cfg["踢出词"]

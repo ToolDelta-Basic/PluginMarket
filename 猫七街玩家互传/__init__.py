@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     game_utils,
     utils,
     Print,
@@ -29,7 +29,7 @@ class NewPlugin(Plugin):
             "传送失败提示": "§c传送失败！",
             "请求超时提示": "§c请求超时！",
         }
-        self.config, v = Config.get_plugin_config_and_version(
+        self.config, v = cfg.get_plugin_config_and_version(
             self.name, {}, self.config, self.version
         )
         self.tpa = {}

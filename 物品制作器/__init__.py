@@ -2,7 +2,7 @@ import os
 import json
 import ctypes
 from dataclasses import dataclass
-from tooldelta import Plugin, game_utils, Config, Print, utils, plugin_entry
+from tooldelta import Plugin, game_utils, cfg, Print, utils, plugin_entry
 
 from tooldelta.neo_libs.neo_conn import LIB
 
@@ -80,12 +80,12 @@ class TDItemMaker(Plugin):
         Print.print_suc("全部物品制作完成")
 
     def parse_to_items(self, filename: str, content: str):
-        STD = Config.JsonList(
+        STD = cfg.JsonList(
             {"名称": str, "ID": str, "特殊值": int, "标签属性": (dict, type(None))}
         )
         try:
-            Config.check_auto(STD, ct := json.loads(content))
-        except (json.JSONDecodeError, Config.ConfigError) as err:
+            cfg.check_auto(STD, ct := json.loads(content))
+        except (json.JSONDecodeError, cfg.ConfigError) as err:
             raise ValueError(f"解析 {filename} 失败: {err}")
         items: list[Item] = []
         for c in ct:

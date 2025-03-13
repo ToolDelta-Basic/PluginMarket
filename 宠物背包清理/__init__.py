@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, Print, Chat, plugin_entry
+from tooldelta import Plugin, cfg, Print, Chat, plugin_entry
 
 
 class NewPlugin(Plugin):
@@ -11,7 +11,7 @@ class NewPlugin(Plugin):
         self._default_cfg = {"提示词": "清理背包"}
         self._std_cfg = {"提示词": str}
         try:
-            self._cfg, _ = Config.get_plugin_config_and_version(
+            self._cfg, _ = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:

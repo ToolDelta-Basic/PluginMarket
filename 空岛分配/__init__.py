@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     Print,
     Frame,
     game_utils,
@@ -55,7 +55,7 @@ class Sky_Island_Allocation(Plugin):
             "空岛分配上限提示": str,
         }
         try:
-            self._cfg, _ = Config.get_plugin_config_and_version(
+            self._cfg, _ = cfg.get_plugin_config_and_version(
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:

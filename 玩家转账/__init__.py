@@ -1,6 +1,6 @@
 from tooldelta import (
     Plugin,
-    Config,
+    cfg,
     game_utils,
     Utils,
     Print,
@@ -25,12 +25,12 @@ class NewPlugin(Plugin):
             "转账失败提示": "§c转账失败",
             "余额不足提示": "§c余额不足",
         }
-        self.config, version = Config.get_plugin_config_and_version(
+        self.config, version = cfg.get_plugin_config_and_version(
             self.name, {}, config, self.version
         )
         if version != self.version:
             self.config["转账头"] = "§a========转账菜单========"
-            Config.upgrade_plugin_config(self.name, self.config, self.version)
+            cfg.upgrade_plugin_config(self.name, self.config, self.version)
         self.ListenChat(self.on_player_message)
 
     def on_player_message(self, chat: Chat):

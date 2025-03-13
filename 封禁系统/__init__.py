@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import ClassVar
 from tooldelta import (
     utils,
-    Config,
+    cfg,
     Plugin,
     Print,
     game_utils,
@@ -29,7 +29,7 @@ class BanSystem(Plugin):
             "踢出玩家提示格式": "§c你因为 [ban原因]\n被系统封禁至 §6[日期时间]",
             "玩家被封禁的广播提示": "§6WARNING: §c[玩家名] 因为[ban原因] 被系统封禁至 §6[日期时间]",
         }
-        self.cfg, _ = Config.get_plugin_config_and_version(
+        self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, STD_BAN_CFG, DEFAULT_BAN_CFG, self.version
         )
         self.ListenPreload(self.on_def)
