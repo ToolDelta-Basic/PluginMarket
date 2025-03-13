@@ -78,7 +78,7 @@ class CustomChatbarMenu(Plugin):
                 },
             ]
         }
-        self.cfg, _ = Config.getPluginConfigAndVersion(
+        self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, STD_CFG, DEFAULT_CFG, self.version
         )
         self.ListenPreload(self.on_def)

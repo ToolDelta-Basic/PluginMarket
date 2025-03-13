@@ -16,7 +16,7 @@ class EmergencyMetaMana(Plugin):
             "当内存占用超过多少百分比时提示警告": 80,
             "当内存占用超过多少百分比时停机": 95,
         }
-        cfg, _ = Config.getPluginConfigAndVersion(
+        cfg, _ = Config.get_plugin_config_and_version(
             self.name, Config.auto_to_std(CFG), CFG, self.version
         )
         self.mem_warn = cfg["当内存占用超过多少百分比时提示警告"]

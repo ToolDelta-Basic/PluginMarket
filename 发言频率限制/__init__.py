@@ -22,7 +22,7 @@ DEFAULT_BAN_CFG = {
     "在时间内达到多少条": 6,
 }
 
-cfg, cfg_version = Config.getPluginConfigAndVersion(
+cfg, cfg_version = Config.get_plugin_config_and_version(
     __plugin_meta__["name"],
     STD_BAN_CFG,
     DEFAULT_BAN_CFG,

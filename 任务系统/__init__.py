@@ -100,7 +100,7 @@ class TaskSystem(Plugin):
                 "开启的新任务": Config.JsonList(str),
             },
         }
-        self.cfg, _ = Config.getPluginConfigAndVersion(
+        self.cfg, _ = Config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         total_quest_files = 0

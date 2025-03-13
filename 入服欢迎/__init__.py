@@ -25,7 +25,7 @@ DEFAULT_BAN_CFG: dict[str, list[str] | int] = {
     "登录时延迟发送": 10,
 }
 
-cfg, cfg_version = Config.getPluginConfigAndVersion(
+cfg, cfg_version = Config.get_plugin_config_and_version(
     __plugin_meta__["name"],
     STD_BAN_CFG,
     DEFAULT_BAN_CFG,
