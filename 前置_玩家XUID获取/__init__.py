@@ -6,7 +6,7 @@ from tooldelta.constants import PacketIDS
 class XUIDGetter(Plugin):
     name = "前置-玩家XUID获取"
     author = "System"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     inject_signal = False
 
     def __init__(self, frame):
@@ -17,7 +17,7 @@ class XUIDGetter(Plugin):
 
     def on_inject(self):
         path = self.format_data_path("xuids.json")
-        utils.tempjson.load_from_path(path, needFileExists=False)
+        utils.tempjson.load_from_path(path, need_file_exists=False)
         if utils.tempjson.read(path) is None:
             utils.tempjson.write(path, {})
         self.map = {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
