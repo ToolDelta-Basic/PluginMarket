@@ -192,7 +192,7 @@ class MusicPlayer(Plugin):
             self.public_showbar_thread()
 
     def format_time(self, sec: float):
-        return f"{int(sec)//60:02d}:{sec%60:02d}"
+        return f"{int(sec)//60:02d}:{int(sec)%60:02d}"
 
     @utils.thread_func("音乐播放器显示播放模块")
     def public_showbar_thread(self):
