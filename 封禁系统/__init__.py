@@ -257,21 +257,22 @@ class BanSystem(Plugin):
         else:
             Print.print_err("输入有误")
 
-    def test_ban(self, player):
-        ban_data = self.get_ban_data(player)
+    def test_ban(self, playername: str):
+        ban_data = self.get_ban_data(playername)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
         if ban_to == -1 or ban_to > time.time():
             Print.print_inf(
-                f"封禁系统: {player} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
+                f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
             self.game_ctrl.sendwocmd(
-                f"/kick {player} {self.format_msg(player, ban_to, reason, '踢出玩家提示格式')}"
+                f"/kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
             )
             self.game_ctrl.say_to(
-                "@a", self.format_msg(player, ban_to, reason, "玩家被封禁的广播提示")
+                "@a",
+                self.format_msg(playername, ban_to, reason, "玩家被封禁的广播提示"),
             )
             # 防止出现敏感词封禁原因的指令
-            self.game_ctrl.sendwocmd(f"/kick {player}")
+            self.game_ctrl.sendwocmd(f'/kick "{playername}"')
 
     def format_bantime(self, banto_time: int):
         if banto_time == -1:
