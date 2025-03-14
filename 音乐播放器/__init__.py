@@ -171,7 +171,6 @@ class MusicPlayer(Plugin):
                 scmd(
                     f"/execute as {target} at @s run playsound {instrument} @s ~~~ {vol} {pitch}"
                 )
-                print(vol)
                 now_play += delay
                 parent.now = now_play
                 if parent.is_stop:
