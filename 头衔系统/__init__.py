@@ -293,8 +293,8 @@ class Nametitle(Plugin):
             self.game_ctrl.sendwocmd("scoreboard objectives remove tmp")
 
     def get_titles(self) -> dict[str, str]:
-        return utils.TMPJson.read_as_tmp(
-            self.format_data_path("titles.json"), needFileExists=False, default={}
+        return utils.tempjson.load_and_read(
+            self.format_data_path("titles.json"), need_file_exists=False, default={}
         )
 
     def get_current_nametitle(self, player: str):
@@ -305,26 +305,26 @@ class Nametitle(Plugin):
             return curr[0]
 
     def set_titles(self, titles: dict[str, str]):
-        return utils.TMPJson.write_as_tmp(
-            self.format_data_path("titles.json"), titles, needFileExists=False
+        return utils.tempjson.load_and_write(
+            self.format_data_path("titles.json"), titles, need_file_exists=False
         )
 
     def get_player_titles(self, player: str) -> list[str]:
-        return utils.TMPJson.read_as_tmp(
+        return utils.tempjson.load_and_read(
             self.format_data_path("player_titles.json"),
-            needFileExists=False,
+            need_file_exists=False,
             default={},
         ).get(self.xuidm.get_xuid_by_name(player), [])
 
     def set_player_titles(self, player: str, curr_title: str, titles: list[str]):
-        old = utils.TMPJson.read_as_tmp(
+        old = utils.tempjson.load_and_read(
             self.format_data_path("player_titles.json"),
-            needFileExists=False,
+            need_file_exists=False,
             default={},
         )
         old[self.xuidm.get_xuid_by_name(player)] = [curr_title, *titles]
-        utils.TMPJson.write_as_tmp(
-            self.format_data_path("player_titles.json"), old, needFileExists=False
+        utils.tempjson.load_and_write(
+            self.format_data_path("player_titles.json"), old, need_file_exists=False
         )
 
     @utils.timer_event(20, "称号设置冷却")
