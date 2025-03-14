@@ -87,7 +87,7 @@ class BanSystem(Plugin):
             )
 
     # -------------- API --------------
-    def ban(self, player: str, ban_time: float, reason: str = ""):
+    def ban(self, playername: str, ban_time: float, reason: str = ""):
         """
         封禁玩家.
             player: 需要ban的玩家
@@ -100,9 +100,9 @@ class BanSystem(Plugin):
         else:
             ban_datas["BanTo"] = -1
         ban_datas["Reason"] = reason
-        self.rec_ban_data(player, ban_datas)
-        if player in self.game_ctrl.allplayers:
-            self.test_ban(player)
+        self.rec_ban_data(playername, ban_datas)
+        if playername in self.game_ctrl.allplayers:
+            self.test_ban(playername)
 
     def unban(self, player: str):
         """
@@ -264,6 +264,7 @@ class BanSystem(Plugin):
             Print.print_inf(
                 f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
+            print(f"-> /kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}")
             self.game_ctrl.sendwocmd(
                 f"/kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
             )

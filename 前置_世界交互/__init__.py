@@ -1,5 +1,4 @@
 import time
-import numpy
 from typing import Any
 from json import dumps as stringfy
 from dataclasses import dataclass
@@ -91,6 +90,15 @@ class GameInteractive(Plugin):
         self.ListenPacket(
             PacketIDS.IDStructureTemplateDataResponse, self.on_structure_pkt
         )
+
+    def on_def(self):
+        global numpy
+        pip = self.GetPluginAPI("pip")
+        if 0:
+            from pip模块支持 import PipSupport
+            pip = self.get_typecheck_plugin_api(PipSupport)
+        pip.require("numpy")
+        import numpy
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
