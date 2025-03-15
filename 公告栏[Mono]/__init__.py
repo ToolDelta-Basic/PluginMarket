@@ -1,6 +1,6 @@
 import datetime
 import time
-from tooldelta import Utils, cfg, Plugin, Print, plugin_entry
+from tooldelta import utils, cfg, Plugin, Print, plugin_entry
 
 import pytz
 from tooldelta.constants import PacketIDS
@@ -11,7 +11,7 @@ packets = PacketIDS
 class BetterAnnounce(Plugin):
     name = "公告栏"
     author = "Mono"
-    version = (1, 0, 2)
+    version = (1, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
