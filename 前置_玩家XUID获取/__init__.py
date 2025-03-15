@@ -1,12 +1,12 @@
+import threading
 from tooldelta import Plugin, utils, FrameExit, plugin_entry
-
 from tooldelta.constants import PacketIDS
 
 
 class XUIDGetter(Plugin):
     name = "前置-玩家XUID获取"
     author = "System"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     inject_signal = False
 
     def __init__(self, frame):
@@ -14,6 +14,7 @@ class XUIDGetter(Plugin):
         self.ListenActive(self.on_inject)
         self.ListenFrameExit(self.on_frame_exit)
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt)
+        self.map_init_event = threading.Event()
 
     def on_inject(self):
         path = self.format_data_path("xuids.json")
@@ -28,6 +29,7 @@ class XUIDGetter(Plugin):
         )
         for k, v in self.get_map().items():
             self.record_player_xuid(k, v[-8:])
+        self.map_init_event.set()
 
     def on_lookup_xuids(self, _):
         for k, v in self.get_map().items():
@@ -39,12 +41,11 @@ class XUIDGetter(Plugin):
         return self.map
 
     def on_frame_exit(self, evt: FrameExit):
-        _ = evt.signal
-        _2s = evt.reason
-
         utils.tempjson.unload_to_path(self.format_data_path("xuids.json"))
 
+    @utils.thread_func("处理玩家 XUID")
     def on_pkt(self, pk):
+        self.map_init_event.wait()
         is_joining = not pk["ActionType"]
         for entry in pk["Entries"]:
             playername = entry["Username"]
