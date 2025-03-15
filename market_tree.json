@@ -192,7 +192,7 @@
     "bdx-exporter": {
       "name": "bdx导出器",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "gobang_game": {

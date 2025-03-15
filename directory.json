@@ -226,96 +226,14 @@
         "datas.json",
         "scanner.py",
         "utils.py",
+        "progress_bar.py",
         "state_dump.py",
         "__init__.py"
     ],
-    "bdx导出器/nbtlib": [
-        "LICENSE",
-        "tag.py",
-        "__main__.py",
-        "__init__.py",
-        "cli.py",
-        "nbt.py",
-        "path.py",
-        "schema.py"
-    ],
-    "bdx导出器/nbtlib/literal": [
-        "__init__.py",
-        "serializer.py",
-        "parser.py"
-    ],
-    "bdx导出器/nbtlib/contrib": [
-        "__init__.py"
-    ],
-    "bdx导出器/nbtlib/contrib/minecraft": [
-        "__init__.py",
-        "structure.py"
-    ],
-    "bdx导出器/BDXConverter": [
-        "LICENSE",
-        "readme.md",
-        "__init__.py"
-    ],
-    "bdx导出器/BDXConverter/General": [
-        "GeneralClass.py",
-        "Operation.py",
-        "__init__.py",
-        "Pool.py"
-    ],
-    "bdx导出器/BDXConverter/Converter": [
-        "ErrorClassDefine.py",
-        "Converter.py",
-        "FileOperation.py",
-        "__init__.py"
-    ],
-    "bdx导出器/BDXConverter/utils": [
-        "getString.py",
-        "getByte.py",
-        "unmarshalNBT_OldVersion.py",
-        "marshalNBT_OldVersion.py",
-        "unmarshalNBT.py",
-        "__init__.py",
-        "marshalNBT.py"
-    ],
-    "bdx导出器/BDXConverter/Operation": [
-        "PlaceBlock.py",
-        "AddInt16YValue.py",
-        "AddInt8XValue.py",
-        "UseRuntimeIDPool.py",
-        "AddInt32ZValue0.py",
-        "PlaceRuntimeBlockWithCommandBlockData.py",
-        "AddInt16ZValue0.py",
-        "PlaceCommandBlockWithCommandBlockData.py",
-        "SetCommandBlockData.py",
-        "structOfChest.py",
-        "AddXValue.py",
-        "SubtractZValue.py",
-        "PlaceRuntimeBlockWithChestData.py",
-        "AddInt8ZValue.py",
-        "PlaceBlockWithBlockStatesDeprecated.py",
-        "AddZValue.py",
-        "SubtractYValue.py",
-        "AddInt16XValue.py",
-        "PlaceRuntimeBlock.py",
-        "CreateConstantString.py",
-        "AddZValue0.py",
-        "PlaceBlockWithRuntimeId.py",
-        "PlaceBlockWithChestData.py",
-        "AddInt32ZValue.py",
-        "AddInt32XValue.py",
-        "AssignDebugData.py",
-        "__init__.py",
-        "SubtractXValue.py",
-        "AddInt32YValue.py",
-        "PlaceBlockWithCommandBlockData.py",
-        "AddInt16ZValue.py",
-        "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID.py",
-        "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID.py",
-        "NOP.py",
-        "PlaceBlockWithBlockStates.py",
-        "AddInt8YValue.py",
-        "PlaceBlockWithNBTData.py",
-        "AddYValue.py"
+    "bdx导出器/bdx_utils": [
+        "structs.py",
+        "writer.py",
+        "construct_file.py"
     ],
     "五子棋小游戏": [
         "datas.json",
