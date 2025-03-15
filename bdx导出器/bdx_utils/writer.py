@@ -9,7 +9,7 @@ class BDXContentWriter(BytesIO):
         super().__init__()
 
     def write_op(self, op: int):
-        self.write(op.to_bytes())
+        self.write(op.to_bytes(1))
 
     def AddXValue(self):
         self.write_op(14)
@@ -31,15 +31,15 @@ class BDXContentWriter(BytesIO):
 
     def AddInt8XValue(self, x: int):
         self.write_op(28)
-        self.write(x.to_bytes(signed=True))
+        self.write(x.to_bytes(1, signed=True))
 
     def AddInt8YValue(self, y: int):
         self.write_op(29)
-        self.write(y.to_bytes(signed=True))
+        self.write(y.to_bytes(1, signed=True))
 
     def AddInt8ZValue(self, z: int):
         self.write_op(30)
-        self.write(z.to_bytes(signed=True))
+        self.write(z.to_bytes(1, signed=True))
 
     def AddInt16XValue(self, x: int):
         self.write_op(20)
@@ -108,10 +108,10 @@ class BDXContentWriter(BytesIO):
             + lastOutput.encode(encoding="utf-8")
             + b"\x00"
             + pack(">I", tickDelay)
-            + executeOnFirstTick.to_bytes()
-            + trackOutput.to_bytes()
-            + conditional.to_bytes()
-            + needsRedstone.to_bytes()
+            + executeOnFirstTick.to_bytes(1)
+            + trackOutput.to_bytes(1)
+            + conditional.to_bytes(1)
+            + needsRedstone.to_bytes(1)
         )
 
     def PlaceBlockWithChestData(
@@ -125,6 +125,6 @@ class BDXContentWriter(BytesIO):
         self.write(
             pack(">H", blockConstantStringID)
             + pack(">H", blockData)
-            + slotCount.to_bytes()
+            + slotCount.to_bytes(1)
         )
         data.marshal(self)
