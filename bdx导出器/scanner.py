@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING
-from tooldelta import Print
-from .BDXConverter import BDX, Operation, GeneralClass
+from time import time
+from tooldelta import fmts
+from .bdx_utils.writer import BDXContentWriter
 from .utils import snake_folding, yield_4chunks
-from .struct_loader import load_chest, load_command_block
+from .struct_loader import load_chest
 from .state_dump import dump_block_states
+from .progress_bar import progress_bar
 
 if TYPE_CHECKING:
     from . import BDXExporter
@@ -22,12 +24,12 @@ def get_structure(
     sizez: int,
 ):
     sys.game_ctrl.sendcmd(f"tp {x} {y} {z}")
-    Print.print_inf(
+    fmts.print_inf(
         f"正在获取 {x}, {y}, {z} ~ {x + sizex}, {y + sizey}, {z + sizez}       ",
         end="\r",
     )
     r = sys.intr._request_structure_and_get((x, y, z), (sizex, sizey, sizez))
-    Print.print_inf(
+    fmts.print_inf(
         f"正在解析结构 {x}, {y}, {z} ~ {x + sizex}, {y + sizey}, {z + sizez}       ",
         end="\r",
     )
@@ -63,15 +65,11 @@ def export_to_structures(
 
 
 def structures_to_bdx(structures: list[tuple["Structure", POS]]):
-    def add_operation(op: GeneralClass):
-        bdx.BDXContents.append(op)
-
-    bdx = BDX()
-    bdx.AuthorName = "TD-BdxExporter/Trim-BdxConverter"
+    bdx_content = BDXContentWriter()
     global_constants_pool: dict[str, int] = {}
     now_x, now_y, now_z = 0, None, 0
     for structure, (rel_x, rel_y, rel_z) in structures:
-        Print.print_inf(
+        fmts.print_inf(
             f"正在转换结构 {structure.x}, {structure.y}, {structure.z} ~ {structure.x + structure.sizex}, {structure.y + structure.sizey}, {structure.z + structure.sizez}       ",
             end="\r",
         )
@@ -80,67 +78,71 @@ def structures_to_bdx(structures: list[tuple["Structure", POS]]):
         if (dx := rel_x - now_x) != 0:
             if dx <= -128 or dx >= 128:
                 raise ValueError(f"Error AddIntXValue: {dx}")
-            (op := Operation.AddInt8XValue()).value = dx
-            add_operation(op)
+            bdx_content.AddInt8XValue(dx)
         if (dy := rel_y - now_y) != 0:
             if dy <= -128 or dy >= 128:
-                (op := Operation.AddInt16YValue()).value = dy
+                bdx_content.AddInt16YValue(dy)
             else:
-                (op := Operation.AddInt8YValue()).value = dy
-            add_operation(op)
+                bdx_content.AddInt8YValue(dy)
         if (dz := rel_z - now_z) != 0:
             if dz <= -128 or dz >= 128:
                 raise ValueError(f"Error AddIntZValue: {dz}")
-            (op := Operation.AddInt8ZValue()).value = dz
-            add_operation(op)
+            bdx_content.AddInt8ZValue(dz)
         now_x, now_y, now_z = write_structure_into_bdx(
-            global_constants_pool, structure, (rel_x, rel_y, rel_z), bdx
+            global_constants_pool, structure, (rel_x, rel_y, rel_z), bdx_content
         )
-    return bdx
+    return bdx_content
 
 
 def write_structure_into_bdx(
     global_constants_pool: dict[str, int],
     structure: "Structure",
     relative_pos: POS,
-    bdx: BDX,
+    bdx_content: BDXContentWriter,
 ):
     # 在使用该方法前
     # 请先把画笔移动至该区域的 (0, 0, 0) 处
-    def add_operation(op: GeneralClass):
-        bdx.BDXContents.append(op)
 
     def get_index(string: str):
         index = global_constants_pool.get(string)
         if index is None:
             index = len(global_constants_pool)
             global_constants_pool[string] = index
-            (op := Operation.CreateConstantString()).constantString = string
-            add_operation(op)
+            bdx_content.CreateConstantString(string)
         return index
 
     rx, ry, rz = relative_pos
     now_x, now_y, now_z = 0, 0, 0
+    wtime = time()
+    counter = 0
+    last_1s_counter = 0
+    size = structure.sizex * structure.sizey * structure.sizez
     for x, y, z in snake_folding(structure.sizex, structure.sizey, structure.sizez):
+        counter += 1
+        if (ntime := time()) - wtime >= 1:
+            wtime = ntime
+            fmts.print_inf(f"正在转换结构 {progress_bar(counter, size)} {counter - last_1s_counter}操作/s", end="\r")
+            last_1s_counter = counter
+
         sub_x_val = x - now_x
         sub_y_val = y - now_y
         sub_z_val = z - now_z
         if sub_x_val == 1:
-            add_operation(Operation.AddXValue())
+            bdx_content.AddXValue()
         elif sub_x_val == -1:
-            add_operation(Operation.SubtractXValue())
+            bdx_content.SubtractXValue()
         elif sub_x_val != 0:
             raise ValueError(f"SubXValue Error: {sub_x_val}")
         if sub_y_val == 1:
-            add_operation(Operation.AddYValue())
+            bdx_content.AddYValue()
         elif sub_y_val == -1:
-            add_operation(Operation.SubtractYValue())
+            bdx_content.SubtractYValue()
         elif sub_y_val != 0:
             raise ValueError(f"SubYValue Error: {sub_y_val}")
         if sub_z_val == 1:
-            add_operation(Operation.AddZValue())
+            bdx_content.AddZValue()
         elif sub_z_val == -1:
-            add_operation(Operation.SubtractZValue())
+            bdx_content.SubtractZValue()
         elif sub_z_val != 0:
             raise ValueError(f"SubZValue Error: {sub_z_val}")
         now_x, now_y, now_z = x, y, z
@@ -157,33 +159,26 @@ def write_structure_into_bdx(
             or bname.endswith("shulker_box")
         ):
             chest_data = load_chest(block.metadata)
-            op = Operation.PlaceBlockWithChestData()
-            op.blockConstantStringID = index
-            op.blockData = block.val
-            op.data = chest_data
-            op.slotCount = chest_data.slotCount
-            add_operation(op)
+            bdx_content.PlaceBlockWithChestData(index, block.val, 27, chest_data)
         # 是命令方块
         elif bname.endswith("command_block"):
-            op = load_command_block(block.metadata, block.states)
-            op.mode = {
+            cb_data = block.metadata
+            cb_states = block.states
+            mode = {
                 "minecraft:command_block": 0,
                 "minecraft:repeating_command_block": 1,
                 "minecraft:chain_command_block": 2,
             }[block.name]
-            op.data = block.val
-            add_operation(op)
+            bdx_content.PlaceCommandBlockWithCommandBlockData(
+                block.val, mode, cb_data["Command"], cb_data["CustomName"], cb_data["LastOutput"],
+                cb_data["TickDelay"], cb_data["ExecuteOnFirstTick"],  cb_data["TrackOutput"],
+                cb_states["conditional_bit"], not cb_data["auto"]
+            )
         # 其他的暂时当普通方块处理
         elif block.states:
             states_str = dump_block_states(block.states)
-            op = Operation.PlaceBlockWithBlockStates()
-            op.blockConstantStringID = index
-            op.blockStatesConstantStringID = get_index(states_str)
-            add_operation(op)
+            bdx_content.PlaceBlockWithBlockStates(index, get_index(states_str))
         else:
-            op = Operation.PlaceBlock()
-            op.blockConstantStringID = index
-            op.blockData = block.val
-            add_operation(op)
+            bdx_content.PlaceBlock(index, block.val)
 
     return rx + now_x, ry + now_y, rz + now_z

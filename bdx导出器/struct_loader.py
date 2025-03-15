@@ -1,13 +1,8 @@
-from .BDXConverter.Operation.PlaceCommandBlockWithCommandBlockData import (
-    PlaceCommandBlockWithCommandBlockData,
-)
-from .BDXConverter.Operation.structOfChest import ChestData, ChestSlot
+from .bdx_utils.structs import ChestData, ChestSlot
 
 
 def load_chest(chest_data: dict):
-    chest = ChestData()
-    # TODO: 暂定箱子槽位数为 27;
-    chest.slotCount = 27
+    chest = ChestData([])
     for items in chest_data["Items"]:
         slot = load_chest_slot(items)
         chest.chestData.append(slot)
@@ -15,29 +10,19 @@ def load_chest(chest_data: dict):
 
 
 def load_chest_slot(chest_slot_data: dict):
-    slot = ChestSlot()
-    slot.slotID = chest_slot_data["Slot"]
-    slot.itemName = chest_slot_data["Name"]
-    slot.count = chest_slot_data["Count"]
     if block_data := chest_slot_data.get("Block"):
-        slot.data = block_data["val"]
+        slot_item_data = block_data["val"]
     else:
-        slot.data = chest_slot_data["Damage"]
-    return slot
+        slot_item_data = chest_slot_data["Damage"]
+    return ChestSlot(
+        chest_slot_data["Name"],
+        chest_slot_data["Count"],
+        slot_item_data,
+        chest_slot_data["Slot"],
+    )
 
 
-def load_command_block(cb_data: dict, cb_state: dict):
-    op = PlaceCommandBlockWithCommandBlockData()
-    op.command = cb_data["Command"]
-    op.conditional = cb_state["conditional_bit"]
-    op.customName = cb_data["CustomName"]
-    op.executeOnFirstTick = cb_data["ExecuteOnFirstTick"]
-    op.lastOutput = cb_data["LastOutput"]
-    op.needsRedstone = not cb_data["auto"]
-    op.tickDelay = cb_data["TickDelay"]
-    op.trackOutput = cb_data["TrackOutput"]
-    # op.data, op.mode
-    return op
+
 
 # {
 #     "Findable": 0,
