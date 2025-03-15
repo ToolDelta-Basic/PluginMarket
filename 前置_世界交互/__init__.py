@@ -2,7 +2,7 @@ import time
 from typing import Any
 from json import dumps as stringfy
 from dataclasses import dataclass
-from tooldelta import Frame, Plugin, Utils, fmts, plugin_entry
+from tooldelta import Frame, Plugin, utils, fmts, plugin_entry
 
 from tooldelta.constants import PacketIDS
 
@@ -270,7 +270,7 @@ class GameInteractive(Plugin):
             "RequestType": 1,
         }
         self.game_ctrl.sendPacket(PacketIDS.IDStructureTemplateDataRequest, pk)
-        getter, setter = Utils.create_result_cb()
+        getter, setter = utils.create_result_cb()
         self.structure_cbs.setdefault(position, [])
         self.structure_cbs[position].append(setter)
         resp = getter(timeout)
