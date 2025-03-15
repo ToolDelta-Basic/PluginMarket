@@ -2,7 +2,7 @@ import time
 from typing import Any
 from json import dumps as stringfy
 from dataclasses import dataclass
-from tooldelta import Frame, Plugin, Utils, Print, plugin_entry
+from tooldelta import Frame, Plugin, Utils, fmts, plugin_entry
 
 from tooldelta.constants import PacketIDS
 
@@ -45,7 +45,10 @@ class Structure:
         self.sizex, self.sizey, self.sizez = structure_json["StructureTemplate"]["size"]
         self._pos_block_data = {}
         for v in structure["palette"]["default"]["block_position_data"].values():
-            v = v["block_entity_data"]
+            v = v.get("block_entity_data")
+            if v is None:
+                fmts.print_war(f"结构解析: 方块数据 {v} 无 block_entity_data")
+                continue
             self._pos_block_data[
                 (v["x"] - self.x, v["y"] - self.y, v["z"] - self.z)
             ] = v
@@ -232,18 +235,18 @@ class GameInteractive(Plugin):
         try:
             x, y, z = (int(i) for i in args)
         except ValueError:
-            Print.print_err("参数错误")
+            fmts.print_err("参数错误")
             return
         try:
             res = self.get_structure((x, y, z), (2, 2, 2))
         except Exception as err:
-            Print.print_err(f"获取结构错误: {err}")
+            fmts.print_err(f"获取结构错误: {err}")
             return
         block = res.get_block((0, 0, 0))
-        Print.print_inf(
+        fmts.print_inf(
             f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:"
         )
-        Print.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
+        fmts.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
 
     def _request_structure_and_get(
         self, position: tuple[int, int, int], size: tuple[int, int, int], timeout=5.0
