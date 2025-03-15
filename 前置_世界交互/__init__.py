@@ -86,6 +86,7 @@ class GameInteractive(Plugin):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
         self.structure_cbs = {}
+        self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPacket(
             PacketIDS.IDStructureTemplateDataResponse, self.on_structure_pkt
@@ -98,7 +99,8 @@ class GameInteractive(Plugin):
             from pip模块支持 import PipSupport
             pip = self.get_typecheck_plugin_api(PipSupport)
         pip.require("numpy")
-        import numpy
+        import numpy as np
+        numpy = np
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(

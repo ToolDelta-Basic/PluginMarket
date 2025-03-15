@@ -50,6 +50,9 @@ def export_to_structures(
     dy = endy - starty + 1
     for x, z, rel_x, rel_z in yield_4chunks(startx, startz, endx, endz):
         sizex, sizez = min(64, endx - x + 1), min(64, endz - z + 1)
+        res = sys.game_ctrl.sendwscmd_with_resp(f"tp {x} 0 {z}")
+        if res.SuccessCount == 0:
+            raise ValueError("Error RequestStructure: TP")
         structure = get_structure(sys, x, starty, z, sizex, dy, sizez)
         structures.append((structure, (rel_x, starty, rel_z)))
     return structures
