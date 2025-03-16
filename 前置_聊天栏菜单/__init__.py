@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, Utils, Chat, plugin_entry
+from tooldelta import Plugin, cfg, utils, Chat, plugin_entry
 
 from dataclasses import dataclass
 from collections.abc import Callable
@@ -159,7 +159,7 @@ class ChatbarMenu(Plugin):
         for tri in diplay_menu_args:
             self.game_ctrl.say_to(
                 player,
-                Utils.simple_fmt(
+                utils.simple_fmt(
                     {
                         "[菜单指令]": ("§e" if tri.op_only else "")
                         + " / ".join(tri.triggers)
@@ -178,13 +178,13 @@ class ChatbarMenu(Plugin):
             )
         self.game_ctrl.say_to(
             player,
-            Utils.simple_fmt(
+            utils.simple_fmt(
                 {"[当前页数]": page_split_index + 1, "[总页数]": max_page},
                 self.cfg["help菜单样式"]["菜单尾"],
             ),
         )
 
-    @Utils.thread_func("聊天栏菜单执行")
+    @utils.thread_func("聊天栏菜单执行")
     def on_player_message(self, chat: Chat):
         player = chat.player.name
         msg = chat.msg
@@ -200,13 +200,13 @@ class ChatbarMenu(Plugin):
         # 这是查看指令帮助的触发词
         for tri in self.cfg["/help触发词"]:
             if msg.startswith(tri):
-                with Utils.ChatbarLock(player, self.on_menu_warn):
+                with utils.ChatbarLock(player, self.on_menu_warn):
                     # 这是 help 帮助的触发词
                     m = msg.split()
                     if len(m) == 1:
                         self.show_menu(player, 1, player_is_op)
                     else:
-                        if (page_num := Utils.try_int(m[1])) is None:
+                        if (page_num := utils.try_int(m[1])) is None:
                             self.game_ctrl.say_to(
                                 player, "§chelp 命令应为1个参数: <页数: 正整数>"
                             )
@@ -224,7 +224,7 @@ class ChatbarMenu(Plugin):
                         return
                     args = msg.removeprefix(trigger).split()
                     if " " in trigger:
-                        with Utils.ChatbarLock(player, self.on_menu_warn):
+                        with utils.ChatbarLock(player, self.on_menu_warn):
                             tri_split_num = len(trigger.split()) - 1
                             args = args[tri_split_num:]
                             if not tri.args_pd(len(args)):
@@ -232,7 +232,7 @@ class ChatbarMenu(Plugin):
                                 return
                             tri.func(player, args)
                     else:
-                        with Utils.ChatbarLock(player, self.on_menu_warn):
+                        with utils.ChatbarLock(player, self.on_menu_warn):
                             if not tri.args_pd(len(args)):
                                 self.game_ctrl.say_to(player, "§c菜单参数数量错误")
                                 return
