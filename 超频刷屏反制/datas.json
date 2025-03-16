@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "plugin-type": "classic",
     "description": "制裁超频刷屏的玩家/锁服",
     "pre-plugins": {
