@@ -22,6 +22,7 @@ class HighRateChatAnti(Plugin):
         self.msg_lmt = cfg["检测周期内最多发送多少条消息"]
         self.ban_days = cfg["反制措施"]["封禁时间(天数)"] * 86400
         self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
         self.ListenPacket(PacketIDS.Text, self.on_text_packet)
         self.last_msgs: dict[str, int] = {}
 
