@@ -81,7 +81,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (0, 0, 5)
+    version = (1, 0, 0)
     Structure = Structure
     Block = Block
 

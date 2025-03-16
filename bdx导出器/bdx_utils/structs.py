@@ -22,9 +22,9 @@ class ChestSlot:
         writer.write(
             self.itemName.encode(encoding="utf-8")
             + b"\x00"
-            + self.count.to_bytes(1)
+            + self.count.to_bytes(length=1, byteorder="big")
             + pack(">H", self.data)
-            + self.slotID.to_bytes(1)
+            + self.slotID.to_bytes(length=1, byteorder="big")
         )
 
 

@@ -64,7 +64,7 @@ def export_to_structures(
 # 769 317 -206
 
 
-def structures_to_bdx(structures: list[tuple["Structure", POS]]):
+def structures_to_bdx(structures: list[tuple["Structure", POS]]) -> BDXContentWriter:
     bdx_content = BDXContentWriter()
     global_constants_pool: dict[str, int] = {}
     now_x, now_y, now_z = 0, None, 0

@@ -1,6 +1,6 @@
 from .bdx_utils.construct_file import write_bdx_file
 from .scanner import POS, export_to_structures, structures_to_bdx
-from tooldelta import Plugin, game_utils, fmts, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, game_utils, utils, fmts, TYPE_CHECKING, plugin_entry
 from tooldelta.constants import PacketIDS
 
 
@@ -44,7 +44,7 @@ class BDXExporter(Plugin):
         self.ListenPacket(PacketIDS.Text, self.ignore_text_10)
 
     def on_def(self):
-        self.intr = self.GetPluginAPI("前置-世界交互")
+        self.intr = self.GetPluginAPI("前置-世界交互", (1, 0, 0))
         if TYPE_CHECKING:
             global Structure, Block
             from 前置_世界交互 import GameInteractive, Structure, Block
@@ -112,6 +112,7 @@ class BDXExporter(Plugin):
             )
             self.export(self.start, self.end, name)
 
+    @utils.thread_func("bdx导出线程")
     def export(self, start: POS, end: POS, fname: str):
         try:
             open(self.format_data_path(fname), "wb").close()
