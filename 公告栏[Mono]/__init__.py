@@ -186,7 +186,7 @@ class BetterAnnounce(Plugin):
             return_value = ("未知", "f")
         return return_value
 
-    @Utils.thread_func("计分板公告文字刷新")
+    @utils.thread_func("计分板公告文字刷新")
     def flush_scoreboard_text(self):
         self.lastest_texts = []
         beijing_tz = pytz.timezone("Asia/Shanghai")
