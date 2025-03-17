@@ -201,7 +201,7 @@ class BetterAnnounce(Plugin):
             endime = time.time()
             difference = endime - self.start_time
             for text in self.ads_texts_bak:
-                text = Utils.simple_fmt(
+                text = utils.simple_fmt(
                     {
                         "{num_players}": len(self.game_ctrl.allplayers),
                         "{week_day}": "周" + "一二三四五六日"[time.localtime().tm_wday],
