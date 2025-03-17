@@ -186,7 +186,7 @@ class BetterAnnounce(Plugin):
             return_value = ("未知", "f")
         return return_value
 
-    @Utils.thread_func("计分板公告文字刷新")
+    @utils.thread_func("计分板公告文字刷新")
     def flush_scoreboard_text(self):
         self.lastest_texts = []
         beijing_tz = pytz.timezone("Asia/Shanghai")
@@ -201,7 +201,7 @@ class BetterAnnounce(Plugin):
             endime = time.time()
             difference = endime - self.start_time
             for text in self.ads_texts_bak:
-                text = Utils.simple_fmt(
+                text = utils.simple_fmt(
                     {
                         "{num_players}": len(self.game_ctrl.allplayers),
                         "{week_day}": "周" + "一二三四五六日"[time.localtime().tm_wday],
