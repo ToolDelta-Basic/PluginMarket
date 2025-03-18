@@ -1,6 +1,6 @@
 import json
 import os
-from tooldelta import Plugin, Print, Utils, constants, plugin_entry
+from tooldelta import Plugin, Print, utils, constants, plugin_entry
 
 
 class PluginCreator(Plugin):
@@ -47,7 +47,7 @@ class PluginCreator(Plugin):
                 break
             Print.print_war("插件描述不能留空")
         while 1:
-            latest_data = Utils.JsonIO.readFileFrom(self.name, "数据信息", {})
+            latest_data = utils.safe_json.read_from_plugin(self.name, "数据信息", {})
             if not latest_data:
                 pauthor = input(
                     Print.fmt_info("请输入作者名 (下一次会自动填充): ")
@@ -56,7 +56,7 @@ class PluginCreator(Plugin):
                     Print.print_war("作者名不能留空")
                     continue
                 latest_data = {"author": pauthor}
-                Utils.JsonIO.writeFileTo(self.name, "数据信息", latest_data)
+                utils.safe_json.write_to_plugin(self.name, "数据信息", latest_data)
                 break
             else:
                 pauthor = latest_data["author"]
@@ -102,45 +102,45 @@ class PluginCreator(Plugin):
                 ).strip():
                     break
         config_block = (
-            r"        CONFIG_STANDARD = {\n"
-            r'            "整数示例": int,\n'
-            r'            "小数示例": float,\n'
-            r'            "嵌套示例": {\n'
-            r'                "字符串示例": str,\n'
-            r"            }\n"
-            r"        }\n"
-            r"        CONFIG_DEFAULT = {\n"
-            r'            "整数示例": int,\n'
-            r'            "小数示例": float,\n'
-            r'            "嵌套示例": {\n'
-            r'                "字符串示例": str,\n'
-            r"            }\n"
-            r"        }\n"
+            "        CONFIG_STANDARD = {\n"
+            '            "整数示例": int,\n'
+            '            "小数示例": float,\n'
+            '            "嵌套示例": {\n'
+            '                "字符串示例": str,\n'
+            "            }\n"
+            "        }\n"
+            "        CONFIG_DEFAULT = {\n"
+            '            "整数示例": int,\n'
+            '            "小数示例": float,\n'
+            '            "嵌套示例": {\n'
+            '                "字符串示例": str,\n'
+            "            }\n"
+            "        }\n"
         )
         plugin_body = (
             "from tooldelta import Plugin, plugin_entry, Player, Chat, FrameExit"
             + (f", {', '.join(i for i in extend_modules)}" if extend_modules else "")
             + "\n\n"
-            r"class NewPlugin(Plugin):\n"
+            "class NewPlugin(Plugin):\n"
             f'    name = "{pname}"\n'
             f'    author = "{pauthor}"\n'
             f"    version = ({ver_1}, {ver_2}, {ver_3})\n\n"
-            r"    def __init__(self, frame):\n"
-            r"        super().__init__(frame)\n"
+            "    def __init__(self, frame):\n"
+            "        super().__init__(frame)\n"
             + (config_block if "Config" in extend_modules else "")
             + "\n"
-            r"    def on_def(self):\n"
-            r"        pass\n\n"
-            r"    def on_player_join(self, player: Player):\n"
-            r'        self.print(f"{player.name} 进入游戏")\n\n'
-            r"    def on_player_leave(self, player: Player):\n"
-            r'        self.print(f"{player.name} 退出游戏")\n\n'
-            r"    def on_player_message(self, chat: Chat):\n"
-            r'        self.print(f"{chat.player.name} 说: {chat.msg}")\n\n'
-            r"    def on_frame_exit(self, evt: FrameExit):\n"
-            r'        self.print(f"系统已退出 状态码={evt.signal} 原因={evt.reason}")\n\n'
-            r"entry = plugin_entry"
-            + (r"(NewPlugin)" if not is_api_plugin else f'(NewPlugin, "{api_name}")')
+            "    def on_def(self):\n"
+            "        pass\n\n"
+            "    def on_player_join(self, player: Player):\n"
+            '        self.print(f"{player.name} 进入游戏")\n\n'
+            "    def on_player_leave(self, player: Player):\n"
+            '        self.print(f"{player.name} 退出游戏")\n\n'
+            "    def on_player_message(self, chat: Chat):\n"
+            '        self.print(f"{chat.player.name} 说: {chat.msg}")\n\n'
+            "    def on_frame_exit(self, evt: FrameExit):\n"
+            '        self.print(f"系统已退出 状态码={evt.signal} 原因={evt.reason}")\n\n'
+            "entry = plugin_entry"
+            + ("(NewPlugin)" if not is_api_plugin else f'(NewPlugin, "{api_name}")')
         )
         datafile_body = {
             "author": pauthor,
