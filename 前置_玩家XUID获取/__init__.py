@@ -6,7 +6,7 @@ from tooldelta.constants import PacketIDS
 class XUIDGetter(Plugin):
     name = "前置-玩家XUID获取"
     author = "System"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     inject_signal = False
 
     def __init__(self, frame):
@@ -15,12 +15,12 @@ class XUIDGetter(Plugin):
         self.ListenFrameExit(self.on_frame_exit)
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt)
         self.map_init_event = threading.Event()
-
-    def on_inject(self):
         path = self.format_data_path("xuids.json")
         utils.tempjson.load_from_path(path, need_file_exists=False)
         if utils.tempjson.read(path) is None:
             utils.tempjson.write(path, {})
+
+    def on_inject(self):
         self.map = {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
         self.cached_playernames: dict[str, int] = {}
         self.inject_signal = True
@@ -41,7 +41,7 @@ class XUIDGetter(Plugin):
         return self.map
 
     def on_frame_exit(self, evt: FrameExit):
-        utils.tempjson.unload_to_path(self.format_data_path("xuids.json"))
+        utils.tempjson.flush(self.format_data_path("xuids.json"))
 
     @utils.thread_func("处理玩家 XUID")
     def on_pkt(self, pk):
