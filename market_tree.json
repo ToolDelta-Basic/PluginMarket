@@ -434,6 +434,12 @@
       "author": "wling",
       "version": "0.1.0",
       "plugin-type": "injected"
+    },
+    "tpa传送": {
+      "name": "举报系统",
+      "author": "帥気的男主角",
+      "version": "0.0.1",
+      "plugin-type": "injected"
     }
   },
   "Packages": {
