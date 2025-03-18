@@ -5,10 +5,13 @@ from tooldelta import Plugin, Print, Utils, constants, plugin_entry
 
 class PluginCreator(Plugin):
     name = "类式插件创建器"
+    author = "ToolDelta"
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
         self.make_data_path()
+        self.ListenPreload(self.on_def)
 
     def on_def(self):
         self.frame.add_console_cmd_trigger(
@@ -115,7 +118,7 @@ class PluginCreator(Plugin):
             r"        }\n"
         )
         plugin_body = (
-            "from tooldelta import Plugin, plugins, plugin_entry, Player, Chat, FrameExit"
+            "from tooldelta import Plugin, plugin_entry, Player, Chat, FrameExit"
             + (f", {', '.join(i for i in extend_modules)}" if extend_modules else "")
             + "\n\n"
             r"class NewPlugin(Plugin):\n"
@@ -130,7 +133,7 @@ class PluginCreator(Plugin):
             r"        pass\n\n"
             r"    def on_player_join(self, player: Player):\n"
             r'        self.print(f"{player.name} 进入游戏")\n\n'
-            r"    def on_player_leave(self, player: Playe):\n"
+            r"    def on_player_leave(self, player: Player):\n"
             r'        self.print(f"{player.name} 退出游戏")\n\n'
             r"    def on_player_message(self, chat: Chat):\n"
             r'        self.print(f"{chat.player.name} 说: {chat.msg}")\n\n'

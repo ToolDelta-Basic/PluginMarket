@@ -1,6 +1,6 @@
 {
     "author": "ToolDelta",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "使用 create 指令创建类式插件",
     "limit_launcher": null,
     "pre-plugins": {},
