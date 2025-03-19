@@ -1,25 +1,19 @@
 import threading
-from tooldelta import Plugin, utils, FrameExit, plugin_entry
+from tooldelta import Plugin, utils, plugin_entry
 from tooldelta.constants import PacketIDS
 
 
 class XUIDGetter(Plugin):
     name = "前置-玩家XUID获取"
     author = "System"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
     inject_signal = False
 
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenActive(self.on_inject)
-        self.ListenFrameExit(self.on_frame_exit)
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt)
         self.map_init_event = threading.Event()
-        path = self.format_data_path("xuids.json")
-        utils.tempjson.load_from_path(path, need_file_exists=False)
-        if utils.tempjson.read(path) is None:
-            utils.tempjson.write(path, {})
-
     def on_inject(self):
         self.map = {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
         self.cached_playernames: dict[str, int] = {}
@@ -39,9 +33,6 @@ class XUIDGetter(Plugin):
         if not self.inject_signal:
             return {k: v[-8:] for k, v in self.game_ctrl.players_uuid.copy().items()}
         return self.map
-
-    def on_frame_exit(self, evt: FrameExit):
-        utils.tempjson.flush(self.format_data_path("xuids.json"))
 
     @utils.thread_func("处理玩家 XUID")
     def on_pkt(self, pk):
@@ -102,7 +93,7 @@ class XUIDGetter(Plugin):
 
     def get_name_by_xuid_offline(self, xuid: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.read(path)
+        c = utils.tempjson.load_and_read(path)
         try:
             return c[xuid]
         except KeyError:
@@ -110,16 +101,16 @@ class XUIDGetter(Plugin):
 
     def get_xuid_by_name_offline(self, playername: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.read(path)
+        c = utils.tempjson.load_and_read(path)
         if playername not in c.values():
             raise ValueError(f"未曾记录玩家 {playername} 的XUID")
         return {v: k for k, v in c.items()}[playername]
 
     def record_player_xuid(self, playername: str, xuid: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.read(path)
+        c = utils.tempjson.load_and_read(path)
         c[xuid] = playername
-        utils.tempjson.write(path, c)
+        utils.tempjson.load_and_write(path, c)
 
     @utils.timer_event(20, "XUID缓存区")
     def cache_clean(self):
