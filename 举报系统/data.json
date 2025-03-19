@@ -1,0 +1,8 @@
+{
+  "plugin-id": "reportsystem",
+  "author": "帥気的男主角",
+  "version": "0.0.1",
+  "description": "玩家可以自行举报并踢出玩家的系统，举报的玩家会被记录在日志中，可以在日志中查看举报记录",
+  "plugin-type": "injected",
+  "pre-plugins": {}
+}
