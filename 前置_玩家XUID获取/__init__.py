@@ -93,7 +93,7 @@ class XUIDGetter(Plugin):
 
     def get_name_by_xuid_offline(self, xuid: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.load_and_read(path)
+        c = utils.tempjson.load_and_read(path, need_file_exists=False, default={})
         try:
             return c[xuid]
         except KeyError:
@@ -101,16 +101,16 @@ class XUIDGetter(Plugin):
 
     def get_xuid_by_name_offline(self, playername: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.load_and_read(path)
+        c = utils.tempjson.load_and_read(path, need_file_exists=False, default={})
         if playername not in c.values():
             raise ValueError(f"未曾记录玩家 {playername} 的XUID")
         return {v: k for k, v in c.items()}[playername]
 
     def record_player_xuid(self, playername: str, xuid: str):
         path = self.format_data_path("xuids.json")
-        c = utils.tempjson.load_and_read(path)
+        c = utils.tempjson.load_and_read(path, need_file_exists=False, default={})
         c[xuid] = playername
-        utils.tempjson.load_and_write(path, c)
+        utils.tempjson.load_and_write(path, c, need_file_exists=False)
 
     @utils.timer_event(20, "XUID缓存区")
     def cache_clean(self):
