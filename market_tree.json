@@ -267,6 +267,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "ai聊天": {
+      "name": "ai聊天",
+      "author": "机入",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "巡逻": {
       "name": "巡逻",
       "author": "猫七街",
