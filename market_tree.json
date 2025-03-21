@@ -402,7 +402,7 @@
     "XUID获取": {
       "name": "前置_玩家XUID获取",
       "author": "System",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "plugin-type": "classic"
     },
     "计分板重置": {
