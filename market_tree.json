@@ -6,7 +6,7 @@
     "skin-getter": {
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "空岛分配": {
