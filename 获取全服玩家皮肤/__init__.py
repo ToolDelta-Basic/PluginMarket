@@ -1,6 +1,4 @@
 import base64
-import PIL.Image
-
 from tooldelta import Plugin, Print, plugin_entry
 from tooldelta.constants import PacketIDS
 
@@ -27,13 +25,22 @@ cl = [
 
 class GetSkin(Plugin):
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     name = "获取全服玩家皮肤"
 
     def __init__(self, frame):
         super().__init__(frame)
         self.data_path
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt_skin)
+
+    def on_def(self):
+        global PIL
+        pip = self.GetPluginAPI("pip")
+        if 0:
+            from pip模块支持 import PipSupport
+            pip = self.get_typecheck_plugin_api(PipSupport)
+        pip.require("pillow")
+        import PIL.Image
 
     def on_pkt_skin(self, pkt):
         pls = pkt["Entries"]
