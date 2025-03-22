@@ -161,7 +161,7 @@ class BanSystem(Plugin):
         if name_part == "":
             Print.print_err("输入不能为空")
             return
-        players_xuids = utils.tempjson.read(self.xuidm.format_data_path("xuids.json"))
+        players_xuids = utils.tempjson.load_and_read(self.xuidm.format_data_path("xuids.json"))
         matched_names_and_uuids: list[tuple[str, str]] = []
         for xuid, name in players_xuids.items():
             if name_part in name:
