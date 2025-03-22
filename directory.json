@@ -300,6 +300,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "进服验证": [
+        "datas.json",
+        "__init__.py"
+    ],
     "[pkg]音乐曲目-1": [
         "datas.json"
     ],

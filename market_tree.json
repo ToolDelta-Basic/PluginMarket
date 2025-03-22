@@ -243,6 +243,12 @@
       "version": "0.0.5",
       "plugin-type": "injected"
     },
+    "PlayerJoinverify": {
+      "name": "进服验证",
+      "author": "大庆油田",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
