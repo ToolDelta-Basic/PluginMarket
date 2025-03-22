@@ -1,4 +1,4 @@
-from tooldelta import Plugin, utils, plugin_entry
+from tooldelta import Plugin, utils, plugin_entry, fmts
 from tooldelta.constants import PacketIDS
 
 
@@ -52,6 +52,7 @@ class XUIDGetter(Plugin):
             if is_joining:
                 self.player_2_xuid_map[playername] = xuid
                 self.record_player_xuid(playername, xuid)
+                fmts.print_inf(f"玩家 {playername} 的 XUID: {xuid}")
         return False
 
     def get_xuid_by_name(self, playername: str, allow_offline=False):
@@ -65,8 +66,9 @@ class XUIDGetter(Plugin):
         Returns:
             str: 玩家 XUID
         """
-        if playername in self.player_2_xuid_map.keys():
-            return self.player_2_xuid_map[playername]
+        player = self.frame.get_players().getPlayerByName(playername)
+        if player:
+            return player.xuid
         if allow_offline:
             return self.get_xuid_by_name_offline(playername)
         else:
