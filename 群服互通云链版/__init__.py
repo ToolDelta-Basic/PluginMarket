@@ -87,7 +87,7 @@ def replace_cq(content: str):
 
 
 class QQLinker(Plugin):
-    version = (0, 0, 8)
+    version = (0, 0, 9)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -141,6 +141,7 @@ class QQLinker(Plugin):
         self.ListenPlayerJoin(self.on_player_join)
         self.ListenPlayerLeave(self.on_player_leave)
         self.ListenChat(self.on_player_message)
+        self.plugin = []
 
     # ------------------------ API ------------------------
     def add_trigger(
@@ -269,6 +270,11 @@ class QQLinker(Plugin):
         self.ws.on_open = self.on_ws_open
         self.ws.run_forever()
 
+    @utils.thread_func("云链群服消息广播进程")
+    def broadcast(self,data):
+        for i in self.plugin:
+            self.GetPluginAPI(i).QQLinker_message(data)
+
     def on_ws_open(self, ws):
         Print.print_suc("已成功连接到群服互通")
 
@@ -279,6 +285,7 @@ class QQLinker(Plugin):
         if any(bc_recv):
             return
         if data.get("post_type") == "message" and data["message_type"] == "group":
+            self.broadcast(data)
             if data["group_id"] != self.linked_group:
                 return
             msg = data["message"]
