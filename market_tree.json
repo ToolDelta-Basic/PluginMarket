@@ -315,6 +315,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "基础聊天栏菜单": {
+      "name": "基础聊天栏菜单",
+      "author": "帥気的男主角",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "mcfunction-tasks": {
       "name": "MCFunction计划任务",
       "author": "SuperScript",

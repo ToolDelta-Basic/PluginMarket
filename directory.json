@@ -45,6 +45,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "举报系统": [
+        "data.json",
+        "__init__.py",
+        "Readme.md"
+    ],
     "前置_世界交互": [
         "datas.json",
         "__init__.py"
@@ -449,6 +454,12 @@
     "宠物背包清理": [
         "datas.json",
         "__init__.py"
+    ],
+    "基础聊天栏菜单": [
+        "datas.json",
+        "__init__.py",
+        "kimi.py",
+        "Readme.md"
     ],
     "MCFunction计划任务": [
         "datas.json",
