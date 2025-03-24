@@ -20,9 +20,10 @@ class WorldEdit(Plugin):
 
     def on_def(self):
         self.add_trigger = self.GetPluginAPI("聊天栏菜单").add_trigger
-        from 前置_聊天栏菜单 import ChatbarMenu
+        if 0:
+            from 前置_聊天栏菜单 import ChatbarMenu
 
-        self.add_trigger = self.get_typecheck_plugin_api(ChatbarMenu).add_trigger
+            self.add_trigger = self.get_typecheck_plugin_api(ChatbarMenu).add_trigger
         self.getX = None
         self.getY = None
         self.getZ = None
