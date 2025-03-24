@@ -4,7 +4,10 @@ import ctypes
 from dataclasses import dataclass
 from tooldelta import Plugin, game_utils, cfg, Print, utils, plugin_entry
 
-from tooldelta.neo_libs.neo_conn import LIB
+try:
+    from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
+except ImportError:
+    from tooldelta.neo_libs.neo_conn import LIB
 
 LIB.RenameItemWithAnvil.argtypes = [
     ctypes.c_int,
