@@ -4,7 +4,7 @@ from tooldelta import (
     Plugin,
     utils,
     TYPE_CHECKING,
-    cfg,
+    cfg as config,
     Print,
     game_utils,
     Player,
@@ -58,12 +58,12 @@ class TaskSystem(Plugin):
             os.makedirs(ipath, exist_ok=True)
         CFG_STD = {
             "任务设置": {
-                "任务列表显示格式": cfg.JsonList(str),
-                "接到新任务时执行的指令": cfg.JsonList(str),
+                "任务列表显示格式": config.JsonList(str),
+                "接到新任务时执行的指令": config.JsonList(str),
                 "任务无法提交的显示": {
                     "格式": str,
                 },
-                "任务完成执行的指令": cfg.JsonList(str),
+                "任务完成执行的指令": config.JsonList(str),
             }
         }
         CFG_DEFAULT = {
@@ -90,17 +90,17 @@ class TaskSystem(Plugin):
         QUEST_STD = {
             "显示名": str,
             "描述": str,
-            "检测的指令": cfg.JsonList(str),
-            "需要的物品": cfg.AnyKeyValue(cfg.JsonList((str, int))),
+            "检测的指令": config.JsonList(str),
+            "需要的物品": config.AnyKeyValue(config.JsonList((str, int))),
             "只能由命令方块触发完成": bool,
             "任务模式(-1=一次性 0=可重复做 >0为任务冷却秒数)": int,
             "任务完成": {
-                "执行的指令": cfg.JsonList(str),
-                "给予的物品": cfg.AnyKeyValue(cfg.JsonList((str, int), 2)),
-                "开启的新任务": cfg.JsonList(str),
+                "执行的指令": config.JsonList(str),
+                "给予的物品": config.AnyKeyValue(config.JsonList((str, int), 2)),
+                "开启的新任务": config.JsonList(str),
             },
         }
-        self.cfg, _ = cfg.get_plugin_config_and_version(
+        self.cfg, _ = config.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
         total_quest_files = 0
@@ -110,7 +110,7 @@ class TaskSystem(Plugin):
                 if not os.path.isdir(sub_path):
                     continue
                 for file in os.listdir(sub_path):
-                    cfg = cfg.get_cfg(os.path.join(sub_path, file), QUEST_STD)
+                    cfg = config.get_cfg(os.path.join(sub_path, file), QUEST_STD)
                     tag_name = f"{cfg_quest_dir}/{file[:-5]}"
                     self.quests[tag_name] = Quest(
                         tag_name,
@@ -126,7 +126,7 @@ class TaskSystem(Plugin):
                         cfg.get("需要完成的前置任务"),
                     )
                     total_quest_files += 1
-            except cfg.ConfigError as err:
+            except config.ConfigError as err:
                 Print.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
                 Print.print_err(err.args[0])
         for quest in self.quests.values():
@@ -134,13 +134,13 @@ class TaskSystem(Plugin):
                 try:
                     if (quest := self.get_quest(i)) is None:
                         file = i
-                        raise cfg.ConfigError(f"任务 {i} 不存在")
+                        raise config.ConfigError(f"任务 {i} 不存在")
                     if quest.need_quests_prefix:
                         for i in quest.need_quests_prefix:
                             if self.get_quest(i) is None:
                                 file = i
-                                raise cfg.ConfigError(f"要求的前置任务 {i} 不存在")
-                except cfg.ConfigError as err:
+                                raise config.ConfigError(f"要求的前置任务 {i} 不存在")
+                except config.ConfigError as err:
                     Print.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
                     Print.print_err(err.args[0])
         Print.print_with_info(

@@ -1,0 +1,9 @@
+{
+  "author": "果_k",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "限制玩家进服等级",
+  "pre-plugins": {},
+  "plugin-id": "等级限制",
+  "enabled": true
+}

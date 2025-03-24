@@ -15,7 +15,7 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "???": {
+    "home-point-setter": {
       "name": "传送点设置",
       "author": "SuperScript",
       "version": "0.0.2",
@@ -24,7 +24,7 @@
     "Cb2Bot通信": {
       "name": "前置_Cb2Bot通信",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "头衔系统": {
@@ -243,6 +243,12 @@
       "version": "0.0.5",
       "plugin-type": "injected"
     },
+    "PlayerJoinverify": {
+      "name": "进服验证",
+      "author": "大庆油田",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
@@ -259,6 +265,12 @@
       "name": "区块显示器",
       "author": "SnowLotus",
       "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "等级限制": {
+      "name": "等级检测",
+      "author": "果_k",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "玩家互传": {
@@ -306,6 +318,12 @@
     "宠物背包清理": {
       "name": "宠物背包清理",
       "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "基础聊天栏菜单": {
+      "name": "基础聊天栏菜单",
+      "author": "帥気的男主角",
       "version": "0.0.1",
       "plugin-type": "classic"
     },
