@@ -25,7 +25,7 @@ cl = [
 
 class GetSkin(Plugin):
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     name = "获取全服玩家皮肤"
 
     def __init__(self, frame):
@@ -34,13 +34,13 @@ class GetSkin(Plugin):
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt_skin)
 
     def on_def(self):
-        global PIL
+        global PILImage
         pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
             pip = self.get_typecheck_plugin_api(PipSupport)
         pip.require("pillow")
-        import PIL.Image
+        import PIL.Image as PILImage
 
     def on_pkt_skin(self, pkt):
         pls = pkt["Entries"]
@@ -52,7 +52,7 @@ class GetSkin(Plugin):
                     player["Skin"]["SkinImageWidth"],
                     player["Skin"]["SkinImageHeight"],
                 )
-                img = PIL.Image.new("RGBA", siz)
+                img = PILImage.new("RGBA", siz)
                 for xp in range(siz[0]):
                     for yp in range(siz[1]):
                         rs, gs, bs, alp = bskindata[

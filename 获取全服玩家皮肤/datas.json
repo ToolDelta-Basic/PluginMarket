@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "记录每一个登录了租赁服的玩家的皮肤, 并存储到插件数据文件夹",
     "limit_launcher": null,
     "pre-plugins": {
