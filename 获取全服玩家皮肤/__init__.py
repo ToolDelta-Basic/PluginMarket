@@ -30,7 +30,8 @@ class GetSkin(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.data_path
+        self.make_data_path()
+        self.ListenPreload(self.on_def)
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_pkt_skin)
 
     def on_def(self):
