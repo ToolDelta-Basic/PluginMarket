@@ -369,6 +369,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "demo-plugin-shop": {
+      "name": "demo-商店系统",
+      "author": "ToolDelta Demo",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "入服欢迎": {
       "name": "入服欢迎",
       "author": "wling",
