@@ -1,6 +1,6 @@
 {
     "author": "ToolDelta Demo",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "plugin-type": "classic",
     "description": "ToolDelta 的示例教学插件 - 可以在配置文件自定义出售和收购的商品",
     "pre-plugins": {

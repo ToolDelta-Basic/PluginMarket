@@ -4,7 +4,7 @@ from tooldelta import Plugin, Config, game_utils, Utils, plugin_entry
 class Shop(Plugin):
     name = "demo-商店系统"
     author = "作者名"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -119,6 +119,9 @@ class Shop(Plugin):
             )
         else:
             self.game_ctrl.sendwocmd(f'give "{playername}" {good_id} {buy_count}')
+            self.game_ctrl.sendwocmd(
+                f'scoreboard players remove "{playername}" {self.money_scb_name} {price_total}'
+            )
             self.game_ctrl.say_to(
                 playername, f"§a你成功购买了 {buy_count} 个 {good_to_buy}"
             )
