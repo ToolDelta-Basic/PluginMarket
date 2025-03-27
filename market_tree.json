@@ -372,7 +372,7 @@
     "demo-plugin-shop": {
       "name": "demo-商店系统",
       "author": "ToolDelta Demo",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "入服欢迎": {
