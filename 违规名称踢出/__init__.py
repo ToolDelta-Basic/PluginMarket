@@ -31,17 +31,16 @@ class kill(Plugin):
 
     @utils.thread_func("踢出违禁词玩家")
     def killpl(self, player: str):
-        for a in self.ci:
-            if a in player:
-                self.game_ctrl.sendcmd_with_resp(f'/kick "{player}" {self.yy}')
-
-    @utils.thread_func("踢出敏感词玩家")
-    def mgc_test(self, player: str):
         try:
             self.game_ctrl.sendcmd(f'/w errcmd "{player}"', True, timeout=4)
         except TimeoutError:
             Print.print_war(f"玩家 {player} 名字为敏感词, 已经踢出")
-            self.game_ctrl.sendcmd_with_resp(f'/kick "{player}" {self.yy}')
+            self.game_ctrl.sendwocmd(f'/kick "{player}" {self.yy}')
+        for a in self.ci:
+            if a in player:
+                self.game_ctrl.sendwocmd(
+                f"kick {player} {self.yy}"
+            )
 
     def on_player_message(self, chat: Chat):
         player = chat.player.name
