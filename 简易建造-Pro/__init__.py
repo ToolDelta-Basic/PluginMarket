@@ -84,23 +84,23 @@ class WorldEdit(Plugin):
                 self.showto(op, f"终点已设置: {x}, {y}, {z}")
                 return False
             case "lf" | "立方":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.cube_fill(x, y - 1, z, sx, sy, sz, ex, ey, ez, op)
                 return False
             case "fz" | "复制":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.game_ctrl.sendwocmd(
                     f"clone {sx} {sy} {sz} {ex} {ey} {ez} {x} {y} {z}"
                 )
                 self.showto(op, "已复制结构")
                 return False
             case "zx" | "直线" | "xd" | "线段":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.showto(op, "画线命令已执行")
                 self.lineTo(sx, sy, sz, ex, ey, ez, x, y - 1, z)
                 return False
             case "hy" | "画圆":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 if ey != sy:
                     self.showto(op, "§6需要起始点和终止点在同一水平面")
                     return False
@@ -112,7 +112,7 @@ class WorldEdit(Plugin):
                     self.hollow_horizon_round(x, y - 1, z, sx, sy, sz, r)
                 return False
             case "yz" | "圆柱":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.column(
                     x,
                     y - 1,
@@ -124,7 +124,7 @@ class WorldEdit(Plugin):
                     ey - sy,
                 )
             case "yz1" | "圆锥":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.awl(
                     x,
                     y - 1,
@@ -136,7 +136,7 @@ class WorldEdit(Plugin):
                     ey - sy,
                 )
             case "qt" | "球体":
-                sx, sy, sz, ex, ey, ez = self.assert_se(op)
+                sx, sy, sz, ex, ey, ez = self.assert_start_and_end(op)
                 self.ball(
                     x,
                     y - 1,
@@ -229,7 +229,7 @@ class WorldEdit(Plugin):
             dz = dz // 2
             self.request_position(cx + dx, cy, cz - dz)
             self.game_ctrl.sendwocmd(
-                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx - dx} {cy} {cz + dz}"
+                f"clone {bx} {by} {bz} {bx} {by} {bz} {cx - dx} {cy} {cz - dz}"
             )
             time.sleep(delay)
 
@@ -258,7 +258,7 @@ class WorldEdit(Plugin):
     def showto(self, player: str, msg: str):
         self.game_ctrl.say_to(player, f"§7WorldEdit§f>> §e{msg}")
 
-    def assert_se(self, op: str):
+    def assert_start_and_end(self, op: str):
         gx, gy, gz, ex, ey, ez = (
             self.getX,
             self.getY,
