@@ -9,7 +9,7 @@ from tooldelta.utils.tooldelta_thread import ThreadExit
 
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 9)
+    version = (0, 0, 10)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作"
 
@@ -18,6 +18,9 @@ class WorldEdit(Plugin):
         self.game_ctrl = frame.get_game_control()
         self.ListenPreload(self.on_def)
         self.ListenPacket(PacketIDS.IDBlockActorData, self.we_pkt56)
+        self.x = -99999999999
+        self.y = -99999999999
+        self.z = -99999999999
 
     def on_def(self):
         self.getX = None
@@ -34,6 +37,14 @@ class WorldEdit(Plugin):
 
     def we_pkt56(self, jsonPkt: dict):
         return self._we_pkt56(jsonPkt)
+
+    def request_position(self, x: float, y: float, z: float):
+        if math.hypot(x - self.x, y - self.y, z - self.z) >= 32:
+            self.game_ctrl.sendcmd(f"tp {x} {y} {z}")
+            time.sleep(0.05)
+            self.x = x
+            self.y = y
+            self.z = z
 
     @utils.thread_func("简易建造-事件执行")
     def _we_pkt56(self, jsonPkt: dict):
@@ -178,6 +189,7 @@ class WorldEdit(Plugin):
             xb = self.get_midval(sx, ex, prog)
             yb = self.get_midval(sy, ey, prog)
             zb = self.get_midval(sz, ez, prog)
+            self.request_position(xb, yb, zb)
             self.game_ctrl.sendwocmd(f"clone {x} {y} {z} {x} {y} {z} {xb} {yb} {zb}")
             time.sleep(0.05)
 
@@ -190,9 +202,15 @@ class WorldEdit(Plugin):
             dx1 = dx / 2
             dz = processor(math.cos(math.asin(dx1 / r)) * r)
             dx = dx // 2
+            self.request_position(cx + dx, cy, cz + dz)
             self.game_ctrl.sendwocmd(
                 f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz + dz}"
             )
+        for dx in range(-2 * r, 2 * r + 1):
+            dx1 = dx / 2
+            dz = processor(math.cos(math.asin(dx1 / r)) * r)
+            dx = dx // 2
+            self.request_position(cx + dx, cy, cz - dz)
             self.game_ctrl.sendwocmd(
                 f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz - dz}"
             )
@@ -201,9 +219,15 @@ class WorldEdit(Plugin):
             dz1 = dz / 2
             dx = processor(math.cos(math.asin(dz1 / r)) * r)
             dz = dz // 2
+            self.request_position(cx + dx, cy, cz + dz)
             self.game_ctrl.sendwocmd(
                 f"clone {bx} {by} {bz} {bx} {by} {bz} {cx + dx} {cy} {cz + dz}"
             )
+        for dz in range(-2 * r, 2 * r + 1):
+            dz1 = dz / 2
+            dx = processor(math.cos(math.asin(dz1 / r)) * r)
+            dz = dz // 2
+            self.request_position(cx + dx, cy, cz - dz)
             self.game_ctrl.sendwocmd(
                 f"clone {bx} {by} {bz} {bx} {by} {bz} {cx - dx} {cy} {cz + dz}"
             )
@@ -215,6 +239,7 @@ class WorldEdit(Plugin):
         for x in range(cx - r, cx + r + 1):
             for z in range(cz - r, cz + r + 1):
                 if math.hypot(x - cx, z - cz) <= r:
+                    self.request_position(x, cy, z)
                     self.game_ctrl.sendwocmd(
                         f"clone {self.make_clone_pos(bx, by, bz, x, cy, z)}"
                     )
@@ -225,6 +250,7 @@ class WorldEdit(Plugin):
             for y in range(cy - r, cy + r + 1):
                 for z in range(cz - r, cz + r + 1):
                     if math.hypot(x - cx, y - cy, z - cz) <= r:
+                        self.request_position(x, y, z)
                         self.game_ctrl.sendwocmd(
                             f"clone {self.make_clone_pos(bx, by, bz, x, y, z)}"
                         )
