@@ -36,7 +36,8 @@ class WorldEdit(Plugin):
             self.intr = self.get_typecheck_plugin_api(GameInteractive)
 
     def we_pkt56(self, jsonPkt: dict):
-        return self._we_pkt56(jsonPkt)
+        self._we_pkt56(jsonPkt)
+        return False
 
     def request_position(self, x: float, y: float, z: float):
         if math.hypot(x - self.x, y - self.y, z - self.z) >= 32:
