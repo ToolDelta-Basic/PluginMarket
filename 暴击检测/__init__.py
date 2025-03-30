@@ -37,8 +37,7 @@ class NewPlugin(Plugin):
         self.message_stats = defaultdict(
             lambda: defaultdict(lambda: {'times': [], 'count': 0})
         )
-        self.cleanup_thread = threading.Thread(target=self.cleanup_loop, daemon=True)
-        self.cleanup_thread.start()
+        self.cleanup_thread = utils.createThread(self.cleanup_loop,usage="暴击检测定时") #更换为td的线程
     def Onpack(self,packet):
         try:
             action_type = packet['ActionType']
