@@ -13,11 +13,13 @@ class NewPlugin(Plugin):
             "踢出理由": "等级过低,无法加入服务器",
             "延迟踢出时间": 4,
             "最低限制等级": 12,
+            "踢出前执行指令": "/say 玩家 {username} 未满足等级限制",
         }
         CONFIG_STD = {
             "踢出理由": str,
             "延迟踢出时间": Config.NNInt,
             "最低限制等级": Config.NNInt,
+            "踢出前执行指令": str,
         }
         cfg, cfg_version = Config.get_plugin_config_and_version(
             self.name, CONFIG_STD, CONFIG_DEFAULT, self.version
@@ -25,6 +27,7 @@ class NewPlugin(Plugin):
         self.min_level = cfg["最低限制等级"]
         self.kick_reason = cfg["踢出理由"]
         self.kick_time = cfg["延迟踢出时间"]
+        self.last_kick = cfg["踢出前执行指令"]
         self.ListenPacket(PacketIDS.PlayerList, self.on_playerlist)
 
     def on_playerlist(self, packet):
@@ -49,8 +52,12 @@ class NewPlugin(Plugin):
             return None
     def kick_player(self,username,level_player):
         if level_player < self.min_level:
-            print(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
-            time.sleep(self.kick_time)
-            self.game_ctrl.sendcmd(f"/kick {username} {self.kick_reason}")
+            if is_op(username):   #跳过op
+                return
+            else:
+                print(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
+                time.sleep(self.kick_time)
+                self.game_ctrl.sendcmd("{self.last_kick}")
+                self.game_ctrl.sendcmd(f"/kick \"{username}\" {self.kick_reason}")
         
 entry = plugin_entry(NewPlugin)
