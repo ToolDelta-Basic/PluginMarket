@@ -5,7 +5,7 @@ from tooldelta import Config
 import threading
 from collections import defaultdict
 
-class NewPlugin(Plugin):
+class CritLimit(Plugin):
     name = "暴击限制"
     author = "果_k"
     version = (0, 0, 1)
