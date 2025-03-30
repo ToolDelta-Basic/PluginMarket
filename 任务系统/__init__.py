@@ -1,4 +1,4 @@
-import os, time, json  # noqa: E401
+import os, time  # noqa: E401
 from dataclasses import dataclass
 from tooldelta import (
     Plugin,
@@ -10,7 +10,6 @@ from tooldelta import (
     Player,
     plugin_entry,
 )
-from tooldelta.constants import PacketIDS
 
 
 @dataclass
@@ -45,13 +44,13 @@ class Quest:
 class TaskSystem(Plugin):
     name = "任务系统"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
         self.QUEST_PATH = os.path.join(self.data_path, "任务")
         self.QUEST_DATA_PATH = os.path.join(self.data_path, "任务数据")
-        self.tmpjson = utils.TMPJson
+        self.tmpjson = utils.tempjson
         self.in_plot_running = {}
         self.quests: dict[str, Quest] = {}
         for ipath in [self.QUEST_PATH, self.QUEST_DATA_PATH]:
@@ -149,19 +148,21 @@ class TaskSystem(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
-        self.ListenPacket(PacketIDS.IDText, self.recv_data_from_server)
 
     def on_def(self):
         self.interper = self.GetPluginAPI("ZBasic", (0, 0, 1), False)
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
         if TYPE_CHECKING:
-            from 前置_基本插件功能库 import BasicFunctionLib
             from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
             from 前置_聊天栏菜单 import ChatbarMenu
+            from 前置_Cb2Bot通信 import TellrawCb2Bot
 
-            self.funclib = self.get_typecheck_plugin_api(BasicFunctionLib)
             self.interper = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
             self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+        self.cb2bot.regist_message_cb("quest.ok", self.on_quest_ok)
+        self.cb2bot.regist_message_cb("quest.start", self.on_quest_start)
 
     def show_succ(self, player, msg):
         self.game_ctrl.say_to(player, f"§7<§a§o√§r§7> §a{msg}")
@@ -200,38 +201,21 @@ class TaskSystem(Plugin):
         player = playerf.name
         self.init_player(player)
 
-    def recv_data_from_server(self, pkt):
-        try:
-            if pkt["TextType"] == 9:
-                msg = json.loads(pkt["Message"].strip("\n"))
-                return self.handleServerMsg(msg)
-        except Exception as err:
-            Print.print_err(f"处理服务端信息错误 {msg}: {err}")
-        return False
+    def on_quest_ok(self, args: list[str]):
+        target, quest_name = args
+        quest = self.get_quest(quest_name)
+        if quest is not None:
+            self.quest_ok(target, quest)
 
-    def handleServerMsg(self, msg):
-        try:
-            dats = [i["text"] for i in msg["rawtext"]]
-        except Exception:
-            return False
-        match dats[0]:
-            case r"quest.ok":
-                target, quest_name = dats[1:3]
-                quest = self.get_quest(quest_name)
-                if quest is not None:
-                    self.quest_ok(target, quest)
-            case r"quest.start":
-                target, quest_name = dats[1:3]
-                quest = self.get_quest(quest_name)
-                if quest is not None:
-                    self.add_quest(target, quest)
-            case _:
-                return False
-        return True
+    def on_quest_start(self, args: list[str]):
+        target, quest_name = args
+        quest = self.get_quest(quest_name)
+        if quest is not None:
+            self.add_quest(target, quest)
 
     def init_player(self, player: str):
         quest_path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
-        o = self.tmpjson.read_as_tmp(quest_path, False)
+        o = self.tmpjson.load_and_read(quest_path, False)
         if o is None:
             self.tmpjson.write(quest_path, self.init_quest_file())
 
@@ -239,7 +223,7 @@ class TaskSystem(Plugin):
         return {"in_quests": [], "quests_ok": {}}
 
     def read_quests(self, player: str) -> list[Quest]:
-        o = self.tmpjson.read_as_tmp(
+        o = self.tmpjson.load_and_read(
             os.path.join(self.QUEST_DATA_PATH, player + ".json")
         )
         output = []
@@ -249,7 +233,7 @@ class TaskSystem(Plugin):
         return output
 
     def read_quests_finished(self, player: str) -> dict[Quest, int]:
-        o = self.tmpjson.read_as_tmp(
+        o = self.tmpjson.load_and_read(
             os.path.join(self.QUEST_DATA_PATH, player + ".json")
         )
         output = {}
@@ -334,7 +318,7 @@ class TaskSystem(Plugin):
                 )
                 self.game_ctrl.sendwocmd(s_cmd)
             path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
-            o = self.tmpjson.read_as_tmp(path)
+            o = self.tmpjson.load_and_read(path)
             o["in_quests"].append(quest.tag_name)
             self.tmpjson.write(path, o)
             return 1
@@ -418,7 +402,7 @@ class TaskSystem(Plugin):
                     self.cfg["任务设置"]["任务列表显示格式"][2],
                 ),
             )
-            resp = self.funclib.waitMsg(player)
+            resp = game_utils.waitMsg(player)
             if resp is None:
                 return
             resp = utils.try_int(resp.strip("[]"))
@@ -456,7 +440,7 @@ class TaskSystem(Plugin):
             self.game_ctrl.sendwocmd(f"give @a[name={player}] {item_id} {count}")
             self.game_ctrl.say_to(player, f" §7 + {count}x§f{item_name}")
         path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
-        o = self.tmpjson.read_as_tmp(path)
+        o = self.tmpjson.load_and_read(path)
         o["quests_ok"][quest.tag_name] = int(time.time())
         o["in_quests"].remove(quest.tag_name)
         self.tmpjson.write(path, o)
