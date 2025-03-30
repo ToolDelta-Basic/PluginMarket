@@ -231,6 +231,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "reload": {
+      "name": "重启",
+      "author": "大庆油田",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "admin_cmd": {
       "name": "admin命令",
       "author": "wling/Hadwin",
