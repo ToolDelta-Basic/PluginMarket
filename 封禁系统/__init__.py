@@ -5,6 +5,7 @@ from typing import ClassVar
 from tooldelta import (
     utils,
     cfg,
+    constants,
     Plugin,
     Print,
     game_utils,
@@ -17,7 +18,7 @@ from tooldelta import (
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 0, 11)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
     BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
@@ -35,6 +36,7 @@ class BanSystem(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
+        self.ListenPacket(constants.PacketIDS.PlayerList, self.on_packet_playerlist)
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单", (0, 0, 1))
@@ -112,6 +114,14 @@ class BanSystem(Plugin):
         self.del_ban_data(player)
 
     # ----------------------------------
+    def on_packet_playerlist(self, pk: dict):
+        is_joining = not pk["ActionType"]
+        if is_joining:
+            for entry in pk["Entries"]:
+                username = entry["Username"]
+                self.test_ban(username)
+        return False
+
     @utils.thread_func("封禁系统测试 ban")
     def on_player_join(self, playerf: Player):
         player = playerf.name
