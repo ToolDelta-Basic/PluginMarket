@@ -456,7 +456,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.10",
+      "version": "0.0.11",
       "plugin-type": "classic"
     },
     "@玩家": {
