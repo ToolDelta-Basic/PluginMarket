@@ -366,7 +366,7 @@
     "QuestSystem": {
       "name": "任务系统",
       "author": "任务系统",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "demo-plugin-shop": {
