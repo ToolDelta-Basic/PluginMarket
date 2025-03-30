@@ -1,0 +1,10 @@
+{
+  "author": "大庆油田",
+  "version": "0.0.1",
+  "description": "允许在游戏内重启tooldelta服务",
+  "limit_launcher": null,
+  "pre-plugins": {
+  },
+  "plugin-type": "classic",
+  "plugin-id": "reload"
+}
