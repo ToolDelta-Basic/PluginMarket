@@ -57,7 +57,7 @@ class NewPlugin(Plugin):
             else:
                 print(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
                 time.sleep(self.kick_time)
-                self.game_ctrl.sendcmd("{self.last_kick}")
+                self.game_ctrl.sendcmd(f"{self.last_kick}")
                 self.game_ctrl.sendcmd(f"/kick \"{username}\" {self.kick_reason}")
         
 entry = plugin_entry(NewPlugin)
