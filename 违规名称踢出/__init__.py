@@ -35,7 +35,12 @@ class kill(Plugin):
         is_joining = not pk["ActionType"]
         if is_joining:
             for entry in pk["Entries"]:
-                self.killpl(entry["Username"])
+                player = entry["Username"]
+                for a in self.ci:
+                    if a in player:
+                        self.game_ctrl.sendwocmd(
+                        f"kick {player} {self.yy}"
+                    )
         return False
 
     def killpl(self, player: str):
