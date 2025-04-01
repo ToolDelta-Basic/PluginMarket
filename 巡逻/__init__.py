@@ -1,5 +1,4 @@
-from tooldelta import Plugin, cfg, fmts, utils, game_utils, plugin_entry
-
+from tooldelta import Plugin, cfg, fmts, utils, game_utils, plugin_entry, constants
 from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time
 
@@ -7,7 +6,7 @@ import time
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -22,7 +21,13 @@ class xunluo(Plugin):
         except Exception as e:
             fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
+
+        # 屏蔽 TextType:10 的刷屏。
+        def on_filter(packet) -> bool:
+            return packet["TextType"] == 10
+
         self.ListenActive(self.on_inject)
+        self.ListenPacket(constants.PacketIDS.Text, on_filter)
 
     def get_neomega(self):
         if isinstance(self.frame.launcher, FrameNeOmgAccessPoint):
