@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, Print, utils, game_utils, plugin_entry
+from tooldelta import Plugin, cfg, fmts, utils, game_utils, plugin_entry
 
 from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time
@@ -7,7 +7,7 @@ import time
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -20,7 +20,7 @@ class xunluo(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"加载配置文件出错: {e}")
+            fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
         self.ListenActive(self.on_inject)
 
@@ -40,11 +40,22 @@ class xunluo(Plugin):
                 for player in players:
                     if player == bot_name:
                         continue
-                    pos = game_utils.getPosXYZ(utils.to_player_selector(player))
-                    self.game_ctrl.sendwocmd(f"tp {pos[0]} 320 {pos[2]}")
+                    if player not in self.game_ctrl.allplayers:
+                        # 由 空白 (1279170334) 赞助 fix
+                        fmts.print_war(f"巡逻插件: 玩家已下线: {player}, 跳过")
+                        continue
+                    try:
+                        pos = game_utils.getPosXYZ(utils.to_player_selector(player))
+                    except TimeoutError:
+                        fmts.print_war(f"巡逻: 无法获取玩家 {player} 的坐标")
+                        continue
+                    # 由 空白 (1279170334) 赞助 fix
+                    self.game_ctrl.sendwocmd(
+                        f'tp @a[name="{self.game_ctrl.bot_name}"] {pos[0]} 320 {pos[2]}'
+                    )
                     time.sleep(self._cfg["间隔时间（秒）"])
             except Exception as e:
-                Print.print_err(f"巡逻出错: {e}")
+                fmts.print_err(f"巡逻出错: {e}")
 
     def on_inject(self):
         utils.createThread(self._patrol_loop, (), "巡逻")
