@@ -1,4 +1,5 @@
 from tooldelta import (
+    constants,
     Frame,
     Plugin,
     cfg,
@@ -11,7 +12,7 @@ from tooldelta import (
 
 
 class kill(Plugin):
-    version = (0, 0, 3)
+    version = (0, 0, 5)
     name = "违规名称踢出"
     author = "大庆油田"
     description = "简单的违规名称踢出"
@@ -26,10 +27,17 @@ class kill(Plugin):
         )
         self.ci = self.cfg["踢出词"]
         self.yy = self.cfg["原因"]
+        self.ListenPacket(constants.PacketIDS.PlayerList, self.on_prejoin)
         self.ListenPlayerJoin(self.on_player_join)
         self.ListenChat(self.on_player_message)
 
-    @utils.thread_func("踢出违禁词玩家")
+    def on_prejoin(self, pk: dict):
+        is_joining = not pk["ActionType"]
+        if is_joining:
+            for entry in pk["Entries"]:
+                self.killpl(entry["Username"])
+        return False
+
     def killpl(self, player: str):
         try:
             self.game_ctrl.sendcmd(f'/w errcmd "{player}"', True, timeout=4)
