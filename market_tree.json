@@ -276,8 +276,8 @@
     "发言频率限制v2": {
       "name": "发言频率限制v2",
       "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "injected"
+      "version": "0.0.6",
+      "plugin-type": "classic"
     },
     "chunk-show": {
       "name": "区块显示器",
