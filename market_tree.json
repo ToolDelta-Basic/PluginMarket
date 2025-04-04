@@ -33,6 +33,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "cmd-debugger": {
+      "name": "指令调试器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
