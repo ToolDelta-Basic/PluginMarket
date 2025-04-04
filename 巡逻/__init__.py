@@ -6,7 +6,7 @@ import time
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -29,16 +29,8 @@ class xunluo(Plugin):
         self.ListenActive(self.on_inject)
         self.ListenPacket(constants.PacketIDS.Text, on_filter)
 
-    def get_neomega(self):
-        if isinstance(self.frame.launcher, FrameNeOmgAccessPoint):
-            return self.frame.launcher.omega
-        else:
-            raise ValueError("此启动框架无法使用 NeOmega API")
-
     def _patrol_loop(self):
-        neomega = self.get_neomega()
-        bot_info = neomega.get_bot_basic_info()
-        bot_name = bot_info.BotName
+        bot_name = self.frame.get_players().getBotInfo().name
         while True:
             try:
                 players = game_utils.getTarget("@e[type=player]")
@@ -51,7 +43,7 @@ class xunluo(Plugin):
                         continue
                     # 由 空白 (1279170334) 赞助 fix
                     self.game_ctrl.sendwocmd(
-                        f'tp @a[name="{self.game_ctrl.bot_name}"] @a[name="{player}"]'
+                        f'execute as @a[name="{player}"] at @s run tp @a[name="{self.game_ctrl.bot_name}"] ~ 325 ~'
                     )
                     time.sleep(self._cfg["间隔时间（秒）"])
             except Exception as e:
