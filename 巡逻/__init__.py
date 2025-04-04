@@ -6,7 +6,7 @@ import time
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -49,14 +49,9 @@ class xunluo(Plugin):
                         # 由 空白 (1279170334) 赞助 fix
                         fmts.print_war(f"巡逻插件: 玩家已下线: {player}, 跳过")
                         continue
-                    try:
-                        pos = game_utils.getPosXYZ(utils.to_player_selector(player))
-                    except TimeoutError:
-                        fmts.print_war(f"巡逻: 无法获取玩家 {player} 的坐标")
-                        continue
                     # 由 空白 (1279170334) 赞助 fix
                     self.game_ctrl.sendwocmd(
-                        f'tp @a[name="{self.game_ctrl.bot_name}"] {pos[0]} 320 {pos[2]}'
+                        f'tp @a[name="{self.game_ctrl.bot_name}"] @a[name="{player}"]'
                     )
                     time.sleep(self._cfg["间隔时间（秒）"])
             except Exception as e:
