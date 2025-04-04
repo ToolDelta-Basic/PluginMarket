@@ -1,4 +1,4 @@
-from tooldelta import Plugin, ToolDelta, cfg, utils, Chat, Player
+from tooldelta import Plugin, ToolDelta, cfg, plugin_entry, utils, Chat, Player
 
 
 class AntiTooFastMessage_V2(Plugin):
@@ -73,3 +73,6 @@ class AntiTooFastMessage_V2(Plugin):
         if player in self.last_msgs:
             del self.last_msgs[player]
             self.print(f"{player.name} 离开服务器, 发言限制已重置")
+
+
+entry = plugin_entry(AntiTooFastMessage_V2)
