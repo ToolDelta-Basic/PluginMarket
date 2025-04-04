@@ -306,7 +306,7 @@
     "巡逻": {
       "name": "巡逻",
       "author": "猫七街",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "发言频率限制": {
