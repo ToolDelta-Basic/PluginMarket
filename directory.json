@@ -305,6 +305,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "死亡点返回": [
+        "datas.json",
+        "__init__.py"
+    ],
     "admin命令": [
         "datas.json",
         "__init__.py"

@@ -243,6 +243,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "死亡点返回": {
+      "name": "死亡点返回",
+      "author": "果_k",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "admin_cmd": {
       "name": "admin命令",
       "author": "wling/Hadwin",
@@ -282,7 +288,7 @@
     "等级限制": {
       "name": "等级检测",
       "author": "果_k",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "玩家互传": {
