@@ -432,7 +432,7 @@
     "item-maker": {
       "name": "物品制作器",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "简易建造": {
