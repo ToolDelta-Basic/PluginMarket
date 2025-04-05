@@ -282,7 +282,7 @@
     "发言频率限制v2": {
       "name": "发言频率限制v2",
       "author": "SuperScript",
-      "version": "0.0.6",
+      "version": "0.0.8",
       "plugin-type": "classic"
     },
     "chunk-show": {
