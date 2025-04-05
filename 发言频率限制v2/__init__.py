@@ -34,7 +34,7 @@ class AntiTooFastMessage_V2(Plugin):
         self.ListenChat(self.player_msg)
 
     def on_active(self):
-        utils.timer_event(self.detect_time, "发言频率限制v2")(self.clear_message_lmt)
+        utils.timer_event(self.detect_time, "发言频率限制v2")(self.clear_message_lmt)()
 
     def is_too_fast(self, player: Player) -> bool:
         return self.last_msgs.get(player.name, 0) > self.msg_lmt
@@ -55,7 +55,6 @@ class AntiTooFastMessage_V2(Plugin):
            return
 
         if len(msg) > self.msg_length_limit:
-            print("乐")
             self.game_ctrl.sendwocmd(
                 f'kick "{player.name}" §c发言长度太长， 您已被踢出租赁服'
             )
