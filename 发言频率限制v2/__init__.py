@@ -4,7 +4,7 @@ from tooldelta import Plugin, ToolDelta, cfg, plugin_entry, utils, Chat, Player
 class AntiTooFastMessage_V2(Plugin):
     name = "发言频率限制v2"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -46,17 +46,13 @@ class AntiTooFastMessage_V2(Plugin):
         player = msg_info.player
         msg = msg_info.msg
 
-        print(player in self.frame.get_players().getAllPlayers())
-
         if player not in self.frame.get_players().getAllPlayers():
             return
 
         self.last_msgs.setdefault(player.name, 0)
         self.last_msgs[player.name] += 1
-        #if player.is_op():
-        #    return
-
-        print(len(msg), self.msg_length_limit)
+        if player.is_op():
+           return
 
         if len(msg) > self.msg_length_limit:
             print("乐")
