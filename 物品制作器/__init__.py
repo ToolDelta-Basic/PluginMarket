@@ -4,22 +4,6 @@ import ctypes
 from dataclasses import dataclass
 from tooldelta import Plugin, game_utils, cfg, Print, utils, plugin_entry
 
-try:
-    from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
-except ImportError:
-    from tooldelta.neo_libs.neo_conn import LIB
-
-LIB.RenameItemWithAnvil.argtypes = [
-    ctypes.c_int,
-    ctypes.c_int,
-    ctypes.c_int,
-    ctypes.c_int32,
-    ctypes.c_int,
-    ctypes.c_char_p,
-]
-LIB.RenameItemWithAnvil.restype = ctypes.c_char_p
-LIB.GetBlockRuntimeID.restype = ctypes.c_int32
-
 
 @dataclass
 class Item:
@@ -36,7 +20,7 @@ def PyString(n: bytes):
 class TDItemMaker(Plugin):
     name = "特殊物品制作器"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -46,6 +30,23 @@ class TDItemMaker(Plugin):
         self.frame.add_console_cmd_trigger(
             ["mkitem", "制作物品"], None, "以制作物品", self.on_menu
         )
+        self.load_lib()
+
+    def load_lib(self):
+        from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
+
+        LIB.RenameItemWithAnvil.argtypes = [
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int32,
+            ctypes.c_int,
+            ctypes.c_char_p,
+        ]
+        LIB.RenameItemWithAnvil.restype = ctypes.c_char_p
+        LIB.GetBlockRuntimeID.restype = ctypes.c_int32
+
+        self.LIB = LIB
 
     def on_menu(self, _):
         fs = os.listdir(self.data_path)
@@ -97,10 +98,10 @@ class TDItemMaker(Plugin):
 
     def rename_item(self, item_new_name: str, pos: tuple[int, int, int]):
         x, y, z = pos
-        anvil_runtimeid = LIB.GetBlockRuntimeID(b"anvil")
+        anvil_runtimeid = self.LIB.GetBlockRuntimeID(b"anvil")
         assert anvil_runtimeid != -1
         return PyString(
-            LIB.RenameItemWithAnvil(
+            self.LIB.RenameItemWithAnvil(
                 x,
                 y,
                 z,
