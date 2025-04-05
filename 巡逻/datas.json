@@ -1,6 +1,6 @@
 {
   "author": "猫七街",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "plugin-type": "classic",
   "description": "让机器人在玩家头上巡逻\n§c注意: 此插件为防止刷屏会拦截 TextType=10 的 Text 数据包。",
   "pre-plugins": {},

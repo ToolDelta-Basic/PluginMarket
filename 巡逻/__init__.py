@@ -1,12 +1,11 @@
 from tooldelta import Plugin, cfg, fmts, utils, game_utils, plugin_entry, constants
-from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time
 
 
 class xunluo(Plugin):
     name = "巡逻"
     author = "猫七街"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -30,7 +29,7 @@ class xunluo(Plugin):
         self.ListenPacket(constants.PacketIDS.Text, on_filter)
 
     def _patrol_loop(self):
-        bot_name = self.frame.get_players().getBotInfo().name
+        bot_name = self.frame.launcher.get_bot_name()
         while True:
             try:
                 players = game_utils.getTarget("@e[type=player]")
