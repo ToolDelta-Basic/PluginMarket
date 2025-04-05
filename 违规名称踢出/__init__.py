@@ -4,7 +4,6 @@ from tooldelta import (
     Plugin,
     cfg,
     Print,
-    utils,
     Chat,
     Player,
     plugin_entry,
@@ -38,9 +37,7 @@ class kill(Plugin):
                 player = entry["Username"]
                 for a in self.ci:
                     if a in player:
-                        self.game_ctrl.sendwocmd(
-                        f"kick {player} {self.yy}"
-                    )
+                        self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
         return False
 
     def killpl(self, player: str):
@@ -51,9 +48,7 @@ class kill(Plugin):
             self.game_ctrl.sendwocmd(f'/kick "{player}" {self.yy}')
         for a in self.ci:
             if a in player:
-                self.game_ctrl.sendwocmd(
-                f"kick {player} {self.yy}"
-            )
+                self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
 
     def on_player_message(self, chat: Chat):
         player = chat.player.name
