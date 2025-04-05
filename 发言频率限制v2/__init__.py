@@ -4,7 +4,7 @@ from tooldelta import Plugin, ToolDelta, cfg, plugin_entry, utils, Chat, Player
 class AntiTooFastMessage_V2(Plugin):
     name = "发言频率限制v2"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -27,7 +27,7 @@ class AntiTooFastMessage_V2(Plugin):
         self.msg_lmt_anti = config["发言太快反制措施"]
         self.msg_length_limit = config["多长的消息判定为刷屏"]
         self.msg_lines_limit = config["多少个换行判定为刷屏"]
-        self.last_msgs: dict[Player, int] = {}
+        self.last_msgs: dict[str, int] = {}
 
         self.ListenActive(self.on_active)
         self.ListenPlayerLeave(self.player_leave)
@@ -37,7 +37,7 @@ class AntiTooFastMessage_V2(Plugin):
         utils.timer_event(self.detect_time, "发言频率限制v2")(self.clear_message_lmt)
 
     def is_too_fast(self, player: Player) -> bool:
-        return self.last_msgs.get(player, 0) > self.msg_lmt
+        return self.last_msgs.get(player.name, 0) > self.msg_lmt
 
     def clear_message_lmt(self):
         self.last_msgs.clear()
@@ -46,32 +46,37 @@ class AntiTooFastMessage_V2(Plugin):
         player = msg_info.player
         msg = msg_info.msg
 
+        print(player in self.frame.get_players().getAllPlayers())
+
         if player not in self.frame.get_players().getAllPlayers():
             return
 
-        self.last_msgs.setdefault(player, 0)
-        self.last_msgs[player] += 1
-        if player.is_op():
-            return
+        self.last_msgs.setdefault(player.name, 0)
+        self.last_msgs[player.name] += 1
+        #if player.is_op():
+        #    return
+
+        print(len(msg), self.msg_length_limit)
 
         if len(msg) > self.msg_length_limit:
+            print("乐")
             self.game_ctrl.sendwocmd(
-                f'kick "{player}" §c发言长度太长， 您已被踢出租赁服'
+                f'kick "{player.name}" §c发言长度太长， 您已被踢出租赁服'
             )
-            self.print(f"§6玩家 {player} 发言长度太长({len(msg)}), 已被踢出租赁服")
+            self.print(f"§6玩家 {player.name} 发言长度太长({len(msg)}), 已被踢出租赁服")
         elif (lines := msg.count("\n")) > self.msg_lines_limit:
             self.game_ctrl.sendwocmd(
-                f'kick "{player}" §c发言行数太多， 您已被踢出租赁服'
+                f'kick "{player.name}" §c发言行数太多， 您已被踢出租赁服'
             )
-            self.print(f"§6玩家 {player} 发言行数太多({lines}), 已被踢出租赁服")
+            self.print(f"§6玩家 {player.name} 发言行数太多({lines}), 已被踢出租赁服")
         elif self.is_too_fast(player):
             for cmd in self.msg_lmt_anti:
                 self.game_ctrl.sendwocmd(cmd.replace("[玩家名]", player.name))
             pass
 
     def player_leave(self, player: Player):
-        if player in self.last_msgs:
-            del self.last_msgs[player]
+        if player.name in self.last_msgs:
+            del self.last_msgs[player.name]
             self.print(f"{player.name} 离开服务器, 发言限制已重置")
 
 
