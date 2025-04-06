@@ -593,6 +593,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "命令方块代发言支持": [
+        "datas.json",
+        "__init__.py"
+    ],
     "tpa传送": [
         "datas.json",
         "__init__.py"

@@ -483,6 +483,12 @@
       "version": "0.0.4",
       "plugin-type": "injected"
     },
+    "cb-say-supporter": {
+      "name": "命令方块代发言支持",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "tpa传送": {
       "name": "tpa传送",
       "author": "wling",
