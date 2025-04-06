@@ -1,0 +1,9 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "ToolDelta 在 1.0.4 版本拦截了所有可能伪造的发言。\n会导致一些命令方块 execute 玩家发言全部失效。\n此插件正是修复此问题。\n§c安装此插件后, ToolDelta 将不再对发言进行辨伪！",
+  "pre-plugins": {},
+  "plugin-id": "cb-say-supporter",
+  "enabled": true
+}
