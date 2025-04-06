@@ -9,7 +9,6 @@ class NewPlugin(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenPacket(constants.PacketIDS.Text, self.on_chat_pk)
-        self.ListenChat(lambda chat: print("Chat", chat.msg))
 
     def on_chat_pk(self, pk: dict):
         sender, msg, verified = packet_transition.get_playername_and_msg_from_text_packet(self.frame, pk)
