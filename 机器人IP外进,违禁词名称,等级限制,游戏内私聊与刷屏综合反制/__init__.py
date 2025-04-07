@@ -15,14 +15,14 @@ class BattleEye(Plugin):  # 插件主类
             "是否启用等级限制": True,
             "是否启用网易屏蔽词名称反制": True,
             "是否启用自定义违禁词名称反制": True,
-            "名称违禁词列表": ["狂笑","要猫","药猫","妖猫","幺猫","要儿","药儿","妖儿","幺儿","孙政","guiwow","吴旭淳","九重天","XTS","天庭","白墙","跑路","runaway","导入","busj","万花筒","购买","出售"],
-            "反制白名单": ["style_天枢","style_天璇","..."],
+            "名称违禁词列表": ["狂笑", "要猫", "药猫", "妖猫", "幺猫", "要儿", "药儿", "妖儿", "幺儿", "孙政", "guiwow", "吴旭淳", "九重天", "XTS", "天庭", "白墙", "跑路", "runaway", "导入", "busj", "万花筒", "购买", "出售"],
+            "反制白名单": ["style_天枢", "style_天璇", "..."],
             "服务器准入等级": 1,
             "是否禁止游戏内私聊(tell,msg,w命令)": True,
             "禁止私聊时允许私聊机器人": True,
             "是否禁止游戏内me命令": True,
             "是否启用黑名单词检测": True,
-            "黑名单词列表": ["白墙","跑路","runaway"],
+            "黑名单词列表": ["白墙", "跑路", "runaway"],
             "发言检测周期(秒)": 10,
             "是否启用周期内发言频率检测": True,
             "周期内发言条数限制": 10,
@@ -145,7 +145,7 @@ class BattleEye(Plugin):  # 插件主类
 
             if Username not in self.whitelist:
 
-                if self.is_detect_bot and (PremiumSkin == False or Trusted == False or CapeID == None):
+                if self.is_detect_bot and (PremiumSkin is False or Trusted is False or CapeID is None):
                     fmts.print_inf(f"§c发现 {Username} 可能为崩服机器人，正在制裁")
                     fmts.print_war(f"崩服机器人数据: {packet}")
                     self.game_ctrl.sendwocmd(f"/kick \"{Username}\" 您必须通过 Microsoft 服务身份验证。")
