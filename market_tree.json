@@ -211,7 +211,7 @@
       "name": "五子棋小游戏",
       "author": "SuperScript",
       "version": "0.0.5",
-      "plugin-type": "injected"
+      "plugin-type": "classic"
     },
     "井字棋": {
       "name": "井字棋",
