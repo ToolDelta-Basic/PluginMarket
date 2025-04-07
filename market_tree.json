@@ -249,6 +249,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制": {
+      "name": "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制",
+      "author": "style_天枢",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "死亡点返回": {
       "name": "死亡点返回",
       "author": "果_k",
