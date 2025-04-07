@@ -333,7 +333,7 @@
       "version": "1.1.0",
       "plugin-type": "classic"
     },
-    "聊天栏菜单": {
+    "chatbarmenu": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
       "version": "0.3.0",
