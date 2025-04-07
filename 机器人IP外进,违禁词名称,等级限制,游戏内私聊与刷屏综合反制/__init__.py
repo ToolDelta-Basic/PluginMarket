@@ -7,7 +7,7 @@ import json
 class BattleEye(Plugin):  # 插件主类
     name = "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制"
     author = "style_天枢"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -19,6 +19,7 @@ class BattleEye(Plugin):  # 插件主类
             "名称违禁词列表": ["狂笑", "要猫", "药猫", "妖猫", "幺猫", "要儿", "药儿", "妖儿", "幺儿", "孙政", "guiwow", "吴旭淳", "九重天", "XTS", "天庭", "白墙", "跑路", "runaway", "导入", "busj", "万花筒", "购买", "出售"],
             "反制白名单": ["style_天枢", "style_天璇", "..."],
             "服务器准入等级": 1,
+            "如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true": None,
             "是否禁止游戏内私聊(tell,msg,w命令)": True,
             "禁止私聊时允许私聊机器人": True,
             "是否禁止游戏内me命令": True,
@@ -80,7 +81,7 @@ class BattleEye(Plugin):  # 插件主类
         self.ListenPacket(PacketIDS.IDPlayerList, self.on_PlayerList)  # 监听PlayerList数据包
         self.ListenPacket(PacketIDS.IDText, self.on_Text)  # 监听Text数据包
 
-        if self.speak_speed_limit or self.repeat_message_limit :  # 创建异步计时器，用于刷新“检测发言频率”和“检测重复刷屏”的缓存
+        if self.speak_speed_limit or self.repeat_message_limit:  # 创建异步计时器，用于刷新“检测发言频率”和“检测重复刷屏”的缓存
             self.data = {}
 
             @utils.thread_func("发言周期检测计时器")
@@ -108,11 +109,12 @@ class BattleEye(Plugin):  # 插件主类
             fmts.print_inf(f"§a发现 {player} 发送的文本长度超过{self.max_speak_length}，已被踢出游戏")
 
     def message_cache_area(self, message, player):  # 将发言玩家、文本添加至缓存区
-        if self.data.get(player) is None:
-            self.data[player] = []
-        self.data[player].append(message)
-        self.speak_speed_detect(player)
-        self.repeat_message_detect(player)
+        if self.speak_speed_limit or self.repeat_message_limit:
+            if self.data.get(player) is None:
+                self.data[player] = []
+            self.data[player].append(message)
+            self.speak_speed_detect(player)
+            self.repeat_message_detect(player)
 
     def speak_speed_detect(self, player):  # 发言频率检测函数封装
         if self.speak_speed_limit and len(self.data[player]) > self.max_speak_count and player not in self.whitelist:
@@ -134,7 +136,7 @@ class BattleEye(Plugin):  # 插件主类
 
     def on_active(self):
         self.bot_name = self.frame.launcher.omega.get_bot_basic_info().BotName  # 调用Omega的API，获取机器人名字，必须等待Omega框架加载完毕后才能运行
-        fmts.print_inf("§b如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true")
+        fmts.print_inf("§b如果您需要“禁止游戏内私聊(tell,msg,w命令)”，§e请将机器人踢出游戏后启用sendcommandfeedback，§b命令为/gamerule sendcommandfeedback true")
 
     def on_PlayerList(self, packet):
 
