@@ -1,9 +1,9 @@
 {
-  "author": "SuperScript/wling",
-  "version": "0.0.6",
+  "author": "SuperScript",
+  "version": "0.0.7",
   "description": "娱乐小游戏: 3x3井字棋",
   "limit_launcher": null,
   "pre-plugins": {},
-  "plugin-type": "injected",
+  "plugin-type": "classic",
   "plugin-id": "井字棋"
 }
