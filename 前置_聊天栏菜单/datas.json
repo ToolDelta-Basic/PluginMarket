@@ -1,10 +1,10 @@
 {
     "author": "SuperScript",
     "version": "0.3.0",
-    "description": "所有使用到聊天栏菜单的组件的前置组件",
+    "description": "新聊天栏菜单, 支持参数类型检测等",
     "limit_launcher": null,
     "pre-plugins": {},
     "plugin-type": "classic",
-    "plugin-id": "聊天栏菜单",
+    "plugin-id": "chatbarmenu",
     "enabled": true
 }
