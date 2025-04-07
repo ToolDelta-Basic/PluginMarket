@@ -3,6 +3,7 @@ from tooldelta.constants import PacketIDS
 import time
 import json
 
+
 class BattleEye(Plugin):  # 插件主类
     name = "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制"
     author = "style_天枢"
@@ -36,14 +37,14 @@ class BattleEye(Plugin):  # 插件主类
             "是否启用等级限制": bool,
             "是否启用网易屏蔽词名称反制": bool,
             "是否启用自定义违禁词名称反制": bool,
-            "名称违禁词列表": cfg.JsonList(str, len_limit = -1),
-            "反制白名单": cfg.JsonList(str, len_limit = -1),
+            "名称违禁词列表": cfg.JsonList(str, len_limit=-1),
+            "反制白名单": cfg.JsonList(str, len_limit=-1),
             "服务器准入等级": cfg.PInt,
             "是否禁止游戏内私聊(tell,msg,w命令)": bool,
             "禁止私聊时允许私聊机器人": bool,
             "是否禁止游戏内me命令": bool,
             "是否启用黑名单词检测": bool,
-            "黑名单词列表": cfg.JsonList(str, len_limit = -1),
+            "黑名单词列表": cfg.JsonList(str, len_limit=-1),
             "发言检测周期(秒)": cfg.PNumber,
             "是否启用周期内发言频率检测": bool,
             "周期内发言条数限制": cfg.PInt,
@@ -81,6 +82,7 @@ class BattleEye(Plugin):  # 插件主类
 
         if self.speak_speed_limit or self.repeat_message_limit :  # 创建异步计时器，用于刷新“检测发言频率”和“检测重复刷屏”的缓存
             self.data = {}
+
             @utils.thread_func("发言周期检测计时器")
             def timer():
                 while True:
@@ -229,5 +231,6 @@ class BattleEye(Plugin):  # 插件主类
                     self.message_cache_area(message, sourcename)
             except Exception as error:
                 print(f"在解析发言数据包或me命令时出现错误 {str(error)}")
+
 
 entry = plugin_entry(BattleEye, "BattleEye")
