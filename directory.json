@@ -256,6 +256,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "清空全部玩家末影箱": [
+        "datas.json",
+        "__init__.py"
+    ],
     "群服互通云链版": [
         "datas.json",
         "__init__.py"
@@ -319,10 +323,6 @@
         "__init__.py"
     ],
     "admin命令": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "清空玩家末影箱": [
         "datas.json",
         "__init__.py"
     ],

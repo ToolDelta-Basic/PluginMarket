@@ -108,8 +108,8 @@
     "nice-tpa": {
       "name": "多功能玩家互传",
       "author": "wling/SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "injected"
+      "version": "0.1.1",
+      "plugin-type": "classic"
     },
     "anti-fast-piston": {
       "name": "活塞限速",
@@ -192,8 +192,8 @@
     "scheduled-task": {
       "name": "定时任务",
       "author": "System",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "DateTimeSync": {
       "name": "时间同步计分板",
@@ -215,9 +215,15 @@
     },
     "井字棋": {
       "name": "井字棋",
-      "author": "SuperScript/wling",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "清空玩家末影箱": {
+      "name": "清空全部玩家末影箱",
+      "author": "wling",
       "version": "0.0.6",
-      "plugin-type": "injected"
+      "plugin-type": "classic"
     },
     "cloud-qqlink": {
       "name": "群服互通云链版",
@@ -264,14 +270,8 @@
     "admin_cmd": {
       "name": "admin命令",
       "author": "wling/Hadwin",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
-    "清空玩家末影箱": {
-      "name": "清空玩家末影箱",
-      "author": "wling",
-      "version": "0.0.5",
-      "plugin-type": "injected"
+      "version": "0.0.3",
+      "plugin-type": "classic"
     },
     "PlayerJoinverify": {
       "name": "进服验证",
@@ -324,8 +324,8 @@
     "发言频率限制": {
       "name": "发言频率限制",
       "author": "wling/7912",
-      "version": "0.0.5",
-      "plugin-type": "injected"
+      "version": "0.0.6",
+      "plugin-type": "classic"
     },
     "白名单&管理员检测": {
       "name": "白名单&管理员检测",
@@ -408,8 +408,8 @@
     "入服欢迎": {
       "name": "入服欢迎",
       "author": "wling",
-      "version": "0.0.3",
-      "plugin-type": "injected"
+      "version": "0.0.4",
+      "plugin-type": "classic"
     },
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
@@ -420,8 +420,8 @@
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "largefill": {
       "name": "大范围fill",
@@ -486,8 +486,8 @@
     "@玩家": {
       "name": "@玩家",
       "author": "wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "cb-say-supporter": {
       "name": "命令方块代发言支持",
