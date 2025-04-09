@@ -5,6 +5,6 @@
     "limit_launcher": null,
     "pre-plugins": {},
     "plugin-type": "classic",
-    "plugin-id": "chatbarmenu",
+    "plugin-id": "聊天栏菜单",
     "enabled": true
 }
