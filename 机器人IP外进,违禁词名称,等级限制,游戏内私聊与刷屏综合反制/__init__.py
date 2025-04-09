@@ -118,7 +118,7 @@ class BattleEye(Plugin):
         self.ban_time_message_length_limit = config["封禁时间_发言字数检测"]
         self.ban_time_repeat_message_limit = config["封禁时间_重复消息刷屏检测"]
 
-        os.makedirs(f"{self.data_path}/玩家封禁时间数据",exist_ok=True)
+        os.makedirs(f"{self.data_path}/玩家封禁时间数据", exist_ok=True)
 
         self.ListenActive(self.on_active)
         # 监听PlayerList数据包
@@ -202,19 +202,19 @@ class BattleEye(Plugin):
             timeout=2
             )
 
-        if ban_player_data == None:
+        if ban_player_data is None:
             pre_ban_timestamp = timestamp_now
         else:
             pre_ban_timestamp = ban_player_data["ban_until_timestamp"]
 
         if pre_ban_timestamp == "Forever":
             return
-        else:
-            # ban_time == -1:永久封禁
-            if ban_time == -1:
-                tempjson.load_and_write(
-                    path,
-                    {
+
+        # ban_time == -1:永久封禁
+        if ban_time == -1:
+            tempjson.load_and_write(
+                path,
+                {
                     "xuid": xuid,
                     "name": player,
                     "ban_start": data_now,
@@ -222,23 +222,23 @@ class BattleEye(Plugin):
                     "ban_until": "Forever",
                     "ban_until_timestamp": "Forever",
                     "reason": ban_reason
-                    },
-                    need_file_exists=False,
-                    timeout=2
-                )
-                tempjson.flush(path)
+                },
+                need_file_exists=False,
+                timeout=2
+            )
+            tempjson.flush(path)
 
-            # ban_time == 0:仅踢出游戏，不作封禁，玩家可以立即重进
-            elif ban_time == 0:
-                return
+        # ban_time == 0:仅踢出游戏，不作封禁，玩家可以立即重进
+        elif ban_time == 0:
+            return
 
-            # type(ban_time) == int and ban_time > 0:封禁玩家对应时间(单位:秒)
-            elif type(ban_time) == int and ban_time > 0:
-                timestamp_until = pre_ban_timestamp + ban_time
-                data_until = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_until))
-                tempjson.load_and_write(
-                    path,
-                    {
+        # type(ban_time) == int and ban_time > 0:封禁玩家对应时间(单位:秒)
+        elif type(ban_time) is int and ban_time > 0:
+            timestamp_until = pre_ban_timestamp + ban_time
+            data_until = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_until))
+            tempjson.load_and_write(
+                path,
+                {
                     "xuid": xuid,
                     "name": player,
                     "ban_start": data_now,
@@ -246,59 +246,59 @@ class BattleEye(Plugin):
                     "ban_until": data_until,
                     "ban_until_timestamp": timestamp_until,
                     "reason": ban_reason
-                    },
-                    need_file_exists=False,
-                    timeout=2
-                )
-                tempjson.flush(path)
+                },
+                need_file_exists=False,
+                timeout=2
+            )
+            tempjson.flush(path)
 
-            # type(ban_time) == str:如果输入的是字符串，对字符串进行解析，判断是否合法，提取时间信息
-            elif type(ban_time) == str:
-                ban_time = ban_time.replace(" ", "")
-                matches_time_units = re.findall(r"(\d+)(年|月|日|时|分|秒)", ban_time)
-                if not matches_time_units:
-                    print("执行封禁操作失败：封禁时间中无法匹配到任何时间单位，合法的时间单位为(年|月|日|时|分|秒)")
+        # type(ban_time) == str:如果输入的是字符串，对字符串进行解析，判断是否合法，提取时间信息
+        elif type(ban_time) is str:
+            ban_time = ban_time.replace(" ", "")
+            matches_time_units = re.findall(r"(\d+)(年|月|日|时|分|秒)", ban_time)
+            if not matches_time_units:
+                print("执行封禁操作失败：封禁时间中无法匹配到任何时间单位，合法的时间单位为(年|月|日|时|分|秒)")
+                return
+
+            ban_time_after_matched = "".join(f"{value}{unit}" for value, unit in matches_time_units)
+            if ban_time_after_matched != ban_time:
+                print("执行封禁操作失败：封禁时间中存在无法解析的字符")
+                return
+
+            time_units = {}
+            for value_str, unit in matches_time_units:
+                if unit in time_units:
+                    print(f"执行封禁操作失败：封禁时间中存在重复的时间单位：{unit}")
                     return
-
-                ban_time_after_matched = "".join(f"{value}{unit}" for value, unit in matches_time_units)
-                if ban_time_after_matched != ban_time:
-                    print("执行封禁操作失败：封禁时间中存在无法解析的字符")
-                    return
-
-                time_units = {}
-                for value_str, unit in matches_time_units:
-                    if unit in time_units:
-                        print(f"执行封禁操作失败：封禁时间中存在重复的时间单位：{unit}")
+                try:
+                    value = int(value_str)
+                    if value < 0:
+                        print("执行封禁操作失败：封禁时间值不能为负数")
                         return
-                    try:
-                        value = int(value_str)
-                        if value < 0:
-                            print("执行封禁操作失败：封禁时间值不能为负数")
-                            return
-                    except ValueError as error:
-                        print(f"执行封禁操作失败：封禁时间中存在无效的数值：{value_str} detail: {str(error)}")
-                        return
-
-                    time_units[unit] = value
-
-                years = time_units.get("年", 0)
-                months = time_units.get("月", 0)
-                days = time_units.get("天", 0)
-                hours = time_units.get("时", 0)
-                minutes = time_units.get("分", 0)
-                seconds = time_units.get("秒", 0)
-
-                total_days = years * 360 + months * 30 + days
-                total_seconds = (total_days * 86400) + hours * 3600 + minutes * 60 + seconds
-
-                if total_seconds == 0:
+                except ValueError as error:
+                    print(f"执行封禁操作失败：封禁时间中存在无效的数值：{value_str} detail: {str(error)}")
                     return
 
-                timestamp_until = pre_ban_timestamp + total_seconds
-                data_until = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_until))
-                tempjson.load_and_write(
-                    path,
-                    {
+                time_units[unit] = value
+
+            years = time_units.get("年", 0)
+            months = time_units.get("月", 0)
+            days = time_units.get("天", 0)
+            hours = time_units.get("时", 0)
+            minutes = time_units.get("分", 0)
+            seconds = time_units.get("秒", 0)
+
+            total_days = years * 360 + months * 30 + days
+            total_seconds = (total_days * 86400) + hours * 3600 + minutes * 60 + seconds
+
+            if total_seconds == 0:
+                return
+
+            timestamp_until = pre_ban_timestamp + total_seconds
+            data_until = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_until))
+            tempjson.load_and_write(
+                path,
+                {
                     "xuid": xuid,
                     "name": player,
                     "ban_start": data_now,
@@ -306,16 +306,16 @@ class BattleEye(Plugin):
                     "ban_until": data_until,
                     "ban_until_timestamp": timestamp_until,
                     "reason": ban_reason
-                    },
-                    need_file_exists=False,
-                    timeout=2
-                )
-                tempjson.flush(path)
+                },
+                need_file_exists=False,
+                timeout=2
+            )
+            tempjson.flush(path)
 
-            # 封禁时间无法被解析
-            else:
-                print("执行封禁操作失败：无法解析您输入的封禁时间")
-                return
+        # 封禁时间无法被解析
+        else:
+            print("执行封禁操作失败：无法解析您输入的封禁时间")
+            return
 
     # 玩家封禁函数封装(被封禁者再次加入游戏)
     def ban_player_when_PlayerList(self, player):
@@ -327,13 +327,12 @@ class BattleEye(Plugin):
                 need_file_exists=True,
                 timeout=2
                 )
-            if ban_player_data == None:
+            if ban_player_data is None:
                 os.remove(path)
                 return
-            else:
-                ban_until_timestamp = ban_player_data["ban_until_timestamp"]
-                ban_reason = ban_player_data["reason"]
-            if type(ban_until_timestamp) == int: 
+            ban_until_timestamp = ban_player_data["ban_until_timestamp"]
+            ban_reason = ban_player_data["reason"]
+            if type(ban_until_timestamp) is int:
                 ban_until_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ban_until_timestamp))
                 timestamp_now = int(time.time())
                 if ban_until_timestamp > timestamp_now:
