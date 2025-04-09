@@ -29,11 +29,11 @@ def __init__(self, frame):
             "封禁时间_发言字数检测": 60
         }
 ```
-<span style="color: grey">· 封禁时间=-1 代表永久封禁</span>  
-<span style="color: grey">· 封禁时间=0 仅踢出游戏，不作封禁，玩家可以立即重进</span>  
-<span style="color: grey">· 封禁时间=60 代表封禁60秒，即1分钟</span>  
-<span style="color: grey">· 封禁时间=86400 代表封禁86400秒，即1日</span>  
-<span style="color: grey">· 封禁时间="0年0月0日0时10分0秒" 代表封禁10分钟</span>  
+<span style="color: grey;">· 封禁时间=-1 代表永久封禁</span>  
+<span style="color: grey;">· 封禁时间=0 仅踢出游戏，不作封禁，玩家可以立即重进</span>  
+<span style="color: grey;">· 封禁时间=60 代表封禁60秒，即1分钟</span>  
+<span style="color: grey;">· 封禁时间=86400 代表封禁86400秒，即1日</span>  
+<span style="color: grey;">· 封禁时间="0年0月0日0时10分0秒" 代表封禁10分钟</span>  
   
 ★ 请注意：在本插件中，1月=30日，1年=360日，不考虑闰年、夏令时、冬令时、月份之间日期数量不等的情况 
 ★ 您只能输入"-1","0","正整数","字符串"中的其中一种。如果您输入了正整数，封禁时间单位为“秒”；如果您输入了字符串，请确保符合上述格式规范；如果您输入的内容无法被解析，程序将会抛出异常
