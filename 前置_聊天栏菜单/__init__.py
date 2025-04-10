@@ -105,7 +105,7 @@ class StandardChatbarTriggers:
                 except ValueError as e:
                     return (), e
         default_args = [default for _, _2, default in self.argument_hints]
-        utils.fill_list_index(args_parsed, list(default_args))
+        utils.fill_list_index(args_parsed, default_args)
         return tuple(args_parsed), None
 
     def _check_argument_hint(self):
