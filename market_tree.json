@@ -240,7 +240,7 @@
     "玩家转账": {
       "name": "玩家转账",
       "author": "猫七街",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "MCChatLinker-TD": {
