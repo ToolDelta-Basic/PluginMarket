@@ -2,10 +2,8 @@ from tooldelta import (
     Plugin,
     cfg,
     game_utils,
-    Utils,
-    Print,
-    TYPE_CHECKING,
     Chat,
+    utils,
     plugin_entry,
 )
 
@@ -13,7 +11,7 @@ from tooldelta import (
 class NewPlugin(Plugin):
     name = "玩家转账"
     author = "猫七街"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -73,7 +71,7 @@ class NewPlugin(Plugin):
                 have_money = game_utils.getScore(
                     self.config["货币计分板名称"], player_name
                 )
-            except:
+            except Exception:
                 have_money = 0
             money = int(money)
             if have_money < money:
@@ -81,7 +79,7 @@ class NewPlugin(Plugin):
                 return
             player_to_transfer = players[int(choice) - 1]
             flag = game_utils.isCmdSuccess(
-                f"/scoreboard players add {player_to_transfer} {self.config['货币计分板名称']} {money}"
+                f"/scoreboard players add {utils.to_player_selector(player_to_transfer)} {self.config['货币计分板名称']} {money}"
             )
             if flag:
                 self.game_ctrl.say_to(player_name, self.config["转账成功提示"])
@@ -90,7 +88,7 @@ class NewPlugin(Plugin):
                     f"§a{player_name} 给你转账 {money} {self.config['货币计分板名称']}",
                 )
                 self.game_ctrl.sendwocmd(
-                    f"/scoreboard players remove {player_name} {self.config['货币计分板名称']} {money}"
+                    f"/scoreboard players remove {utils.to_player_selector(player_name)} {self.config['货币计分板名称']} {money}"
                 )
                 return
             self.game_ctrl.say_to(player_name, "对方已下线")
