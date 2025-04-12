@@ -5,20 +5,25 @@ from collections.abc import Callable
 
 VALID_ARGUMENT_HINT_TYPES = type[str | int | bool | float] | tuple[str]
 VALID_ARG_VALUE = str | int | float | None
+VALID_ARG_WITHOUT_NONE = str | int | float
 ARGUMENT_HINT = list[tuple[str, VALID_ARGUMENT_HINT_TYPES, VALID_ARG_VALUE]]
 
 
-def parse_arg(arg: str, argtype: type[str | int | bool | float]):
+def parse_arg(
+    arg: str, argtype: type[str | int | bool | float]
+) -> VALID_ARG_WITHOUT_NONE:
     if argtype is str:
         return arg
     elif argtype is int:
         val = utils.try_convert(arg, int)
         if val is None:
             raise ValueError(f"{arg} 不是一个整数")
+        return val
     elif argtype is float:
         val = utils.try_convert(arg, float)
         if val is None:
             raise ValueError(f"{arg} 不是一个整数或小数")
+        return val
     elif argtype is bool:
         if arg == "true":
             return True
@@ -76,11 +81,15 @@ class StandardChatbarTriggers:
 
     @property
     def argument_hints_str(self) -> str:
-        return " ".join(
-            f"{hint}:{''.join(atype) if isinstance(atype, tuple) else type_str(atype)}"
-            + (f"{'=' + str(default)}" if default is not None else "")
-            for hint, atype, default in self.argument_hints
-        )
+        outputs = []
+        for hint, atype, default in self.argument_hints:
+            if default is not None:
+                outputs.append(f"[{hint}={default}]")
+            else:
+                outputs.append(
+                    f"{hint}:{''.join(atype) if isinstance(atype, tuple) else type_str(atype)}"
+                )
+        return " ".join(outputs)
 
     def _parse_args(self, args: list[str]) -> tuple[tuple, Exception | None]:
         if len(args) > len(self.argument_hints):
@@ -91,7 +100,7 @@ class StandardChatbarTriggers:
             return (), ValueError(
                 f"参数个数错误， 至少需要 {self.no_default_args_num} 个参数"
             )
-        args_parsed: list[VALID_ARG_VALUE] = []
+        args_parsed: list[VALID_ARG_WITHOUT_NONE] = []
         for i, arg_str in enumerate(args):
             hint, argtype, _ = self.argument_hints[i]
             if isinstance(argtype, tuple):
@@ -104,7 +113,9 @@ class StandardChatbarTriggers:
                     args_parsed.append(parse_arg(arg_str, argtype))
                 except ValueError as e:
                     return (), e
-        default_args = [default for _, _2, default in self.argument_hints]
+        default_args = [
+            default for _, _2, default in self.argument_hints if default is not None
+        ]
         utils.fill_list_index(args_parsed, default_args)
         return tuple(args_parsed), None
 
@@ -142,7 +153,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript"
-    version = (0, 3, 0)
+    version = (0, 3, 1)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -152,26 +163,55 @@ class ChatbarMenu(Plugin):
             "help菜单样式": {
                 "菜单头": "§7>>> §l§bＴｏｏｌＤｅｌｔａ\n§r§l===============================",
                 "菜单列表": " - [菜单指令][参数提示] §7§o[菜单功能说明]",
-                "菜单尾": "§r§l==========[[当前页数] §7/ [总页数]§f]===========\n§r>>> §7输入 .help <页数> 可以跳转到该页",
+                "菜单尾": "§r§l============[[当前页数] §7/ [总页数]§f]=============\n§r>>> §7输入 .help <页数> 可以跳转到该页",
+                "管理选项": {
+                    "格式化": "[是否为管理员]",
+                    "为管理员": "§a[管理命令√]",
+                    "不为管理员": "§c[管理命令×]",
+                },
             },
             "/help触发词": ["help"],
             "被识别为触发词的前缀(不填则为无命令前缀)": [".", "。", "·"],
             "单页内最多显示数": 6,
         }
         STD_CFG_TYPE = {
-            "help菜单样式": {"菜单头": str, "菜单列表": str, "菜单尾": str},
+            "help菜单样式": {
+                "菜单头": str,
+                "菜单列表": str,
+                "菜单尾": str,
+                "管理选项": {
+                    "格式化": str,
+                    "为管理员": str,
+                    "不为管理员": str,
+                },
+            },
             "/help触发词": cfg.JsonList(str),
             "单页内最多显示数": cfg.PInt,
             "被识别为触发词的前缀(不填则为无命令前缀)": cfg.JsonList(str),
         }
-        self.cfg, _ = cfg.get_plugin_config_and_version(
-            self.name, STD_CFG_TYPE, DEFAULT_CFG, (0, 0, 1)
+        self.cfg, ver = cfg.get_plugin_config_and_version(
+            self.name, {}, DEFAULT_CFG, self.version
+        )
+
+        if ver < (0, 3, 1) and self.cfg.get("help菜单样式"):
+            self.cfg["help菜单样式"]["管理选项"] = DEFAULT_CFG["help菜单样式"][
+                "管理选项"
+            ]
+            cfg.upgrade_plugin_config(self.name, self.cfg, self.version)
+            self.print("§a配置文件已升级: 管理选项")
+
+
+        self.cfg, ver = cfg.get_plugin_config_and_version(
+            self.name, STD_CFG_TYPE, DEFAULT_CFG, self.version
         )
         self.prefixs = self.cfg["被识别为触发词的前缀(不填则为无命令前缀)"]
+        self.op_format = self.cfg["help菜单样式"]["管理选项"]["格式化"]
+        self.is_op_format = self.cfg["help菜单样式"]["管理选项"]["为管理员"]
+        self.isnot_op_format = self.cfg["help菜单样式"]["管理选项"]["不为管理员"]
         self.ListenChat(lambda chat: self.on_player_message(chat) and None)
         self.add_new_trigger(
             self.cfg["/help触发词"],
-            [("page", int, 1)],
+            [("页数", int, 1)],
             "展示命令帮助菜单",
             self.show_help,
         )
@@ -238,6 +278,22 @@ class ChatbarMenu(Plugin):
             OldChatbarTriggers(triggers, argument_hint, usage, func, args_pd, op_only)
         )
 
+    # Desperated
+    def add_simple_trigger(
+        self,
+        triggers: list[str],
+        usage: str,
+        func: Callable[[str, list[str]], Any],
+        op_only=False,
+    ):
+        self.add_trigger(
+            triggers,
+            None,
+            usage,
+            func,
+            op_only=op_only,
+        )
+
     # ------------
 
     def show_help(self, player: Player, args):
@@ -259,7 +315,16 @@ class ChatbarMenu(Plugin):
         diplay_menu_args = all_menu_args[
             page_split_index * lmt : (page_split_index + 1) * lmt
         ]
-        player.show(self.cfg["help菜单样式"]["菜单头"])
+        player.show(
+            utils.simple_fmt(
+                {
+                    self.op_format: self.is_op_format
+                    if player.is_op()
+                    else self.isnot_op_format,
+                },
+                self.cfg["help菜单样式"]["菜单头"],
+            )
+        )
         if self.prefixs != []:
             first_prefix = self.prefixs[0]
         else:
