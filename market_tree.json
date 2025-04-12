@@ -336,7 +336,7 @@
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "plugin-type": "classic"
     },
     "MySQL": {
