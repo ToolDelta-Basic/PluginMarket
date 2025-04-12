@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Player, cfg, utils, Chat, plugin_entry
+from tooldelta import Plugin, Player, cfg as config, utils, Chat, plugin_entry
 from typing import Any
 from dataclasses import dataclass
 from collections.abc import Callable
@@ -64,12 +64,14 @@ class StandardChatbarTriggers:
         usage: str,
         func: Callable[[Player, tuple], None],
         op_only: bool,
+        cfg: dict,
     ):
         self.triggers = triggers
         self.argument_hints = argument_hints
         self.usage = usage
         self.func = func
         self.op_only = op_only
+        self.cfg = cfg
         self._check_argument_hint()
 
     def execute(self, player: Player, args: list[str]):
@@ -84,10 +86,26 @@ class StandardChatbarTriggers:
         outputs = []
         for hint, atype, default in self.argument_hints:
             if default is not None:
-                outputs.append(f"[{hint}={default}]")
+                outputs.append(
+                    utils.simple_fmt(
+                        {
+                            "[提示词]": hint,
+                            "[默认值]": default,
+                        },
+                        self.cfg["help菜单样式"]["参数提示配置"]["参数提示格式"],
+                    )
+                )
             else:
                 outputs.append(
-                    f"{hint}:{''.join(atype) if isinstance(atype, tuple) else type_str(atype)}"
+                    utils.simple_fmt(
+                        {
+                            "[提示词]": hint,
+                            "[默认值]": "".join(atype)
+                            if isinstance(atype, tuple)
+                            else type_str(atype),
+                        },
+                        self.cfg["help菜单样式"]["参数提示配置"]["参数提示格式"],
+                    )
                 )
         return " ".join(outputs)
 
@@ -152,8 +170,8 @@ class StandardChatbarTriggers:
 
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
-    author = "SuperScript"
-    version = (0, 3, 1)
+    author = "SuperScript/猫猫"
+    version = (0, 3, 2)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -161,13 +179,34 @@ class ChatbarMenu(Plugin):
         self.chatbar_triggers: list[OldChatbarTriggers | StandardChatbarTriggers] = []
         DEFAULT_CFG = {
             "help菜单样式": {
-                "菜单头": "§7>>> §l§bＴｏｏｌＤｅｌｔａ\n§r§l===============================",
-                "菜单列表": " - [菜单指令][参数提示] §7§o[菜单功能说明]",
-                "菜单尾": "§r§l============[[当前页数] §7/ [总页数]§f]=============\n§r>>> §7输入 .help <页数> 可以跳转到该页",
+                "菜单头": "§r========== §bＴｏｏｌＤｅｌｔａ§r ==========\n§r§d§l❒ §r§d权限: [是否为管理员] [是否为创造] [是否为成员]",
+                "菜单列表": " §f< [菜单指令]§f > [参数提示] §7>>> §f§o[菜单功能说明]§r§7",
+                "菜单尾": "§r§f============§7[§a[当前页数] §7/ §a[总页数]§7]§f=============\n§r>>> §7输入 .help <页数> 可以跳转到该页",
                 "管理选项": {
                     "格式化": "[是否为管理员]",
-                    "为管理员": "§a[管理命令√]",
-                    "不为管理员": "§c[管理命令×]",
+                    "为管理员": "§r[§a管理选项§l✔§r]",
+                    "不为管理员": "§r[§c管理选项§l✘§r]",
+                },
+                "创造选项": {
+                    "格式化": "[是否为创造]",
+                    "为创造": "§r[§a创造选项§l✔§r]",
+                    "不为创造": "§r[§c创造选项§l✘§r]",
+                },
+                "成员选项": {
+                    "格式化": "[是否为成员]",
+                    "为成员": "§r[§a成员选项§l✔§r]",
+                    "不为成员": "§r[§c成员选项§l✘§r]",
+                },
+                "菜单指令配置": {
+                    "指令分隔符": " §r§7| ",
+                    "指令配色": {
+                        "管理": "§a",
+                        "成员": "§a",
+                    },
+                },
+                "参数提示配置": {
+                    "参数间隔符": " ",
+                    "参数提示格式": "[§6[提示词]§r]",
                 },
             },
             "/help触发词": ["help"],
@@ -184,30 +223,63 @@ class ChatbarMenu(Plugin):
                     "为管理员": str,
                     "不为管理员": str,
                 },
+                "创造选项": {
+                    "格式化": str,
+                    "为创造": str,
+                    "不为创造": str,
+                },
+                "成员选项": {
+                    "格式化": str,
+                    "为成员": str,
+                    "不为成员": str,
+                },
+                "菜单指令配置": {
+                    "指令分隔符": str,
+                    "指令配色": {
+                        "管理": str,
+                        "成员": str,
+                    },
+                },
+                "参数提示配置": {
+                    "参数间隔符": str,
+                    "参数提示格式": str,
+                },
             },
-            "/help触发词": cfg.JsonList(str),
-            "单页内最多显示数": cfg.PInt,
-            "被识别为触发词的前缀(不填则为无命令前缀)": cfg.JsonList(str),
+            "/help触发词": config.JsonList(str),
+            "单页内最多显示数": config.PInt,
+            "被识别为触发词的前缀(不填则为无命令前缀)": config.JsonList(str),
         }
-        self.cfg, ver = cfg.get_plugin_config_and_version(
+        self.cfg, ver = config.get_plugin_config_and_version(
             self.name, {}, DEFAULT_CFG, self.version
         )
 
-        if ver < (0, 3, 1) and self.cfg.get("help菜单样式"):
-            self.cfg["help菜单样式"]["管理选项"] = DEFAULT_CFG["help菜单样式"][
-                "管理选项"
+        if ver < (0, 3, 2) and self.cfg.get("help菜单样式"):
+            updateCfg = [
+                "管理选项",
+                "创造选项",
+                "成员选项",
+                "菜单指令配置",
+                "参数提示配置",
             ]
-            cfg.upgrade_plugin_config(self.name, self.cfg, self.version)
-            self.print("§a配置文件已升级: 管理选项")
+            for cfg in updateCfg:
+                if cfg in DEFAULT_CFG["help菜单样式"]:
+                    self.cfg["help菜单样式"][cfg] = DEFAULT_CFG["help菜单样式"][cfg]
+            config.upgrade_plugin_config(self.name, self.cfg, self.version)
+            self.print("§a配置文件已升级: " + ",".join(updateCfg))
 
-
-        self.cfg, ver = cfg.get_plugin_config_and_version(
+        self.cfg, ver = config.get_plugin_config_and_version(
             self.name, STD_CFG_TYPE, DEFAULT_CFG, self.version
         )
         self.prefixs = self.cfg["被识别为触发词的前缀(不填则为无命令前缀)"]
         self.op_format = self.cfg["help菜单样式"]["管理选项"]["格式化"]
         self.is_op_format = self.cfg["help菜单样式"]["管理选项"]["为管理员"]
         self.isnot_op_format = self.cfg["help菜单样式"]["管理选项"]["不为管理员"]
+        self.create_format = self.cfg["help菜单样式"]["创造选项"]["格式化"]
+        self.is_create_format = self.cfg["help菜单样式"]["创造选项"]["为创造"]
+        self.isnot_create_format = self.cfg["help菜单样式"]["创造选项"]["不为创造"]
+        self.member_format = self.cfg["help菜单样式"]["成员选项"]["格式化"]
+        self.is_member_format = self.cfg["help菜单样式"]["成员选项"]["为成员"]
+        self.isnot_member_format = self.cfg["help菜单样式"]["成员选项"]["不为成员"]
         self.ListenChat(lambda chat: self.on_player_message(chat) and None)
         self.add_new_trigger(
             self.cfg["/help触发词"],
@@ -238,7 +310,9 @@ class ChatbarMenu(Plugin):
             if tri.startswith("."):
                 triggers[triggers.index(tri)] = tri[1:]
         self.chatbar_triggers.append(
-            StandardChatbarTriggers(triggers, argument_hint, usage, func, op_only)
+            StandardChatbarTriggers(
+                triggers, argument_hint, usage, func, op_only, self.cfg
+            )
         )
 
     def add_trigger(
@@ -315,12 +389,21 @@ class ChatbarMenu(Plugin):
         diplay_menu_args = all_menu_args[
             page_split_index * lmt : (page_split_index + 1) * lmt
         ]
+        isCreate = bool(
+            self.game_ctrl.sendcmd_with_resp(
+                "/querytarget @a[name=" + player.name + ",m=creative]", 1
+            ).SuccessCount
+        )
         player.show(
             utils.simple_fmt(
                 {
                     self.op_format: self.is_op_format
                     if player.is_op()
                     else self.isnot_op_format,
+                    self.create_format: self.is_create_format
+                    if isCreate
+                    else self.isnot_create_format,
+                    self.member_format: self.is_member_format,  # 没想到怎么检测是否为成员
                 },
                 self.cfg["help菜单样式"]["菜单头"],
             )
@@ -333,8 +416,25 @@ class ChatbarMenu(Plugin):
             player.show(
                 utils.simple_fmt(
                     {
-                        "[菜单指令]": ("§e" if tri.op_only else "")
-                        + " / ".join([first_prefix + i for i in tri.triggers])
+                        "[菜单指令]": (
+                            self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"]["管理"]
+                            if tri.op_only
+                            else self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"][
+                                "成员"
+                            ]
+                        )
+                        + (
+                            self.cfg["help菜单样式"]["菜单指令配置"]["指令分隔符"]
+                            + (
+                                self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"][
+                                    "管理"
+                                ]
+                                if tri.op_only
+                                else self.cfg["help菜单样式"]["菜单指令配置"][
+                                    "指令配色"
+                                ]["成员"]
+                            )
+                        ).join([first_prefix + i for i in tri.triggers])
                         + "§r",
                         "[参数提示]": (
                             " " + tri.argument_hints_str
