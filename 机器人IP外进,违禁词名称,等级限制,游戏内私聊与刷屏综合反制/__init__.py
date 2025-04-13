@@ -440,7 +440,7 @@ class BattleEye(Plugin):
                                     "您必须通过 Microsoft 服务身份验证。",
                                 )
                             break
-                        
+
                         try_api_sleep_time = random.randint(
                             15 * try_time, 30 * try_time
                         )
