@@ -440,14 +440,14 @@ class BattleEye(Plugin):
                                     "您必须通过 Microsoft 服务身份验证。",
                                 )
                             break
-                        else:
-                            try_api_sleep_time = random.randint(
-                                15 * try_time, 30 * try_time
-                            )
-                            fmts.print_inf(
-                                f"§c在网易启动器搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
-                            )
-                            time.sleep(try_api_sleep_time)
+                        
+                        try_api_sleep_time = random.randint(
+                            15 * try_time, 30 * try_time
+                        )
+                        fmts.print_inf(
+                            f"§c在网易启动器搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                        )
+                        time.sleep(try_api_sleep_time)
 
                     elif userdata_from_netease.status_code == 200:
                         userdata_from_netease = userdata_from_netease.json()
@@ -504,14 +504,14 @@ class BattleEye(Plugin):
                                 "您必须通过 Microsoft 服务身份验证。",
                             )
                         break
-                    else:
-                        try_api_sleep_time = random.randint(
-                            15 * try_time, 30 * try_time
-                        )
-                        fmts.print_inf(
-                            f"§c在网易启动器搜索玩家 {Username} 失败，原因：请求网易启动器玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
-                        )
-                        time.sleep(try_api_sleep_time)
+
+                    try_api_sleep_time = random.randint(
+                        15 * try_time, 30 * try_time
+                    )
+                    fmts.print_inf(
+                        f"§c在网易启动器搜索玩家 {Username} 失败，原因：请求网易启动器玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                    )
+                    time.sleep(try_api_sleep_time)
 
                 except requests.exceptions.HTTPError as http_error:
                     print(f"HTTP异常信息：{http_error}")
