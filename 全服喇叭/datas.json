@@ -1,11 +1,11 @@
 {
   "author": "wling",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "全体请注意！身为管理的我要装*了！",
   "limit_launcher": null,
   "pre-plugins": {
     "聊天栏菜单": "0.1.13"
   },
-  "plugin-type": "injected",
+  "plugin-type": "classic",
   "plugin-id": "全服喇叭"
 }

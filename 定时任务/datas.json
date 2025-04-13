@@ -1,7 +1,7 @@
 {
     "author": "System",
-    "version": "0.0.4",
-    "plugin-type": "injected",
+    "version": "0.0.5",
+    "plugin-type": "classic",
     "description": "教程请打开插件手册查看",
     "pre-plugins": {},
     "plugin-id": "scheduled-task"

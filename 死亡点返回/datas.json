@@ -1,0 +1,9 @@
+{
+  "author": "果_k",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "支持多维度的返回死亡点",
+  "pre-plugins": {},
+  "plugin-id": "死亡点返回",
+  "enabled": true
+}

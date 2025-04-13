@@ -1,61 +1,56 @@
 import time
-from tooldelta.frame import cfg
-from tooldelta.plugin_load.injected_plugin import (
-    player_left,
-    player_message,
-    player_message_info,
-    player_name,
-)
-from tooldelta.game_utils import get_all_player, is_op
-from tooldelta import tooldelta
+from tooldelta import ToolDelta, cfg, Chat, Player, Plugin, plugin_entry, TYPE_CHECKING
 
 
-__plugin_meta__ = {
-    "name": "发言频率",
-    "version": "0.0.5",
-    "author": "wling/7912",
-}
+class ChatFreqLimit(Plugin):
+    name = "发言频率限制v1"
+    author = "wling/7912"
+    version = (0, 0, 6)
 
-STD_BAN_CFG = {"时间内": int, "在时间内达到多少条": int}
-DEFAULT_BAN_CFG = {
-    "时间内": 3,
-    "在时间内达到多少条": 6,
-}
+    def __init__(self, frame: ToolDelta):
+        super().__init__(frame)
+        STD_BAN_CFG = {"时间内": int, "在时间内达到多少条": int}
+        DEFAULT_BAN_CFG = {
+            "时间内": 3,
+            "在时间内达到多少条": 6,
+        }
+        self.cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, STD_BAN_CFG, DEFAULT_BAN_CFG, self.version
+        )
+        self.playerMsgTimeDict = {}
+        self.msgSendNunMaxPerTime = self.cfg["时间内"]
+        self.msgSendNumMax = self.cfg["在时间内达到多少条"]
+        self.ListenPreload(self.on_preload)
+        self.ListenChat(self.on_chat)
+        self.ListenPlayerLeave(self.on_player_leave)
 
-cfg, cfg_version = cfg.get_plugin_config_and_version(
-    __plugin_meta__["name"],
-    STD_BAN_CFG,
-    DEFAULT_BAN_CFG,
-    __plugin_meta__["version"].split("."), # type: ignore
-)
+    def on_preload(self):
+        ban_plugin = self.GetPluginAPI("封禁系统")
+        if TYPE_CHECKING:
+            from 封禁系统 import BanSystem
 
-playerMsgTimeDict = {}
-msgSendNunMaxPerTime = cfg["时间内"]
-msgSendNumMax = cfg["在时间内达到多少条"]
-ban_plugin = tooldelta.plugin_group.get_plugin_api("封禁系统")
-ban = ban_plugin.ban
+            ban_plugin = self.get_typecheck_plugin_api(BanSystem)
+        self.ban = ban_plugin.ban
 
+    def on_chat(self, chat: Chat):
+        playername = chat.player.name
+        if not chat.player.is_op():
+            msgSendTime = time.time()
+            if playername not in self.playerMsgTimeDict:
+                self.playerMsgTimeDict[playername] = []
+            for i in self.playerMsgTimeDict[playername][:]:
+                if i <= msgSendTime - self.msgSendNunMaxPerTime:
+                    self.playerMsgTimeDict[playername].remove(i)
+            self.playerMsgTimeDict[playername].append(msgSendTime)
+            if len(self.playerMsgTimeDict[playername]) >= self.msgSendNumMax:
+                # 生成时间戳，比现在多五分钟，传参给
+                # ban(playername, int(time.time()) + 300, "发信息过快")
+                self.ban(playername, int(time.time()) + 300, "发信息过快")
+                self.playerMsgTimeDict[playername] = []
 
-@player_message()
-async def _(playermessage: player_message_info):
-    playername = playermessage.playername
-    if is_op(playername) and playername in get_all_player():
-        msgSendTime = time.time()
-        if playername not in playerMsgTimeDict:
-            playerMsgTimeDict[playername] = []
-        for i in playerMsgTimeDict[playername][:]:
-            if i <= msgSendTime - msgSendNunMaxPerTime:
-                playerMsgTimeDict[playername].remove(i)
-        playerMsgTimeDict[playername].append(msgSendTime)
-        if len(playerMsgTimeDict[playername]) >= msgSendNumMax:
-            # 生成时间戳，比现在多五分钟，传参给
-            # ban(playername, int(time.time()) + 300, "发信息过快")
-            ban(playername, int(time.time()) + 300, "发信息过快")
-            playerMsgTimeDict[playername] = []
+    def on_player_leave(self, player: Player):
+        if player.name in self.playerMsgTimeDict:
+            del self.playerMsgTimeDict[player.name]
 
 
-@player_left()
-async def _(playermessage: player_name):
-    playername = playermessage.playername
-    if playername in playerMsgTimeDict:
-        del playerMsgTimeDict[playername]
+entry = plugin_entry(ChatFreqLimit)

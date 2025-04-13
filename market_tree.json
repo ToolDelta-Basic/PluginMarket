@@ -33,6 +33,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "cmd-debugger": {
+      "name": "指令调试器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "32k盒子显示": {
       "name": "32k盒子显示",
       "author": "SuperScript",
@@ -102,8 +108,8 @@
     "nice-tpa": {
       "name": "多功能玩家互传",
       "author": "wling/SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "injected"
+      "version": "0.1.1",
+      "plugin-type": "classic"
     },
     "anti-fast-piston": {
       "name": "活塞限速",
@@ -186,8 +192,8 @@
     "scheduled-task": {
       "name": "定时任务",
       "author": "System",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "DateTimeSync": {
       "name": "时间同步计分板",
@@ -205,13 +211,19 @@
       "name": "五子棋小游戏",
       "author": "SuperScript",
       "version": "0.0.5",
-      "plugin-type": "injected"
+      "plugin-type": "classic"
     },
     "井字棋": {
       "name": "井字棋",
-      "author": "SuperScript/wling",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "清空玩家末影箱": {
+      "name": "清空全部玩家末影箱",
+      "author": "wling",
       "version": "0.0.6",
-      "plugin-type": "injected"
+      "plugin-type": "classic"
     },
     "cloud-qqlink": {
       "name": "群服互通云链版",
@@ -228,7 +240,7 @@
     "玩家转账": {
       "name": "玩家转账",
       "author": "猫七街",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "MCChatLinker-TD": {
@@ -243,17 +255,23 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制": {
+      "name": "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制",
+      "author": "style_天枢",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "死亡点返回": {
+      "name": "死亡点返回",
+      "author": "果_k",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "admin_cmd": {
       "name": "admin命令",
       "author": "wling/Hadwin",
-      "version": "0.0.2",
-      "plugin-type": "injected"
-    },
-    "清空玩家末影箱": {
-      "name": "清空玩家末影箱",
-      "author": "wling",
-      "version": "0.0.5",
-      "plugin-type": "injected"
+      "version": "0.0.3",
+      "plugin-type": "classic"
     },
     "PlayerJoinverify": {
       "name": "进服验证",
@@ -270,8 +288,8 @@
     "发言频率限制v2": {
       "name": "发言频率限制v2",
       "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "injected"
+      "version": "0.0.8",
+      "plugin-type": "classic"
     },
     "chunk-show": {
       "name": "区块显示器",
@@ -282,7 +300,7 @@
     "等级限制": {
       "name": "等级检测",
       "author": "果_k",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "玩家互传": {
@@ -300,14 +318,14 @@
     "巡逻": {
       "name": "巡逻",
       "author": "猫七街",
-      "version": "0.0.4",
+      "version": "0.0.7",
       "plugin-type": "classic"
     },
     "发言频率限制": {
       "name": "发言频率限制",
       "author": "wling/7912",
-      "version": "0.0.5",
-      "plugin-type": "injected"
+      "version": "0.0.6",
+      "plugin-type": "classic"
     },
     "白名单&管理员检测": {
       "name": "白名单&管理员检测",
@@ -318,7 +336,7 @@
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.3.0",
+      "version": "0.3.2",
       "plugin-type": "classic"
     },
     "MySQL": {
@@ -390,8 +408,8 @@
     "入服欢迎": {
       "name": "入服欢迎",
       "author": "wling",
-      "version": "0.0.3",
-      "plugin-type": "injected"
+      "version": "0.0.4",
+      "plugin-type": "classic"
     },
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
@@ -402,8 +420,8 @@
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
     "largefill": {
       "name": "大范围fill",
@@ -420,7 +438,7 @@
     "item-maker": {
       "name": "物品制作器",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "简易建造": {
@@ -468,14 +486,14 @@
     "@玩家": {
       "name": "@玩家",
       "author": "wling",
-      "version": "0.0.4",
-      "plugin-type": "injected"
+      "version": "0.0.5",
+      "plugin-type": "classic"
     },
-    "tpa传送": {
-      "name": "tpa传送",
-      "author": "wling",
-      "version": "0.1.0",
-      "plugin-type": "injected"
+    "cb-say-supporter": {
+      "name": "命令方块代发言支持",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
     }
   },
   "Packages": {

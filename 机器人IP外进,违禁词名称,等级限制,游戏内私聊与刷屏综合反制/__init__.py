@@ -355,7 +355,6 @@ class BattleEye(Plugin):
         fmts.print_inf("§e如果您想要解封玩家，请删除\"插件数据文件/机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制/玩家封禁时间数据/XUID.json\"；如果您想要修改玩家封禁时间，请修改文件中的\"ban_until_timestamp\"，这是封禁结束时的时间戳，代表(UTC)1970年1月1日至此时的总秒数，您可以在各种时间戳转换网站上得到您需要的时间戳！注意，修改文件中的日期是无效的，您必须修改时间戳！")
 
     def on_PlayerList(self, packet):
-
         if packet["ActionType"] == 0:
             Username = packet["Entries"][0]["Username"]
             PremiumSkin = packet["Entries"][0]["Skin"]["PremiumSkin"]
@@ -364,7 +363,6 @@ class BattleEye(Plugin):
             GrowthLevels = packet["GrowthLevels"][0]
 
             if Username not in self.whitelist:
-
                 if self.is_detect_bot and (PremiumSkin is False or Trusted is False or CapeID is None):
                     fmts.print_inf(f"§c发现 {Username} 可能为崩服机器人，正在制裁")
                     fmts.print_war(f"崩服机器人数据: {packet}")

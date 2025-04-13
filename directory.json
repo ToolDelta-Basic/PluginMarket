@@ -19,6 +19,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "指令调试器": [
+        "datas.json",
+        "__init__.py"
+    ],
     "32k盒子显示": [
         "datas.json",
         "__init__.py"
@@ -252,6 +256,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "清空全部玩家末影箱": [
+        "datas.json",
+        "__init__.py"
+    ],
     "群服互通云链版": [
         "datas.json",
         "__init__.py"
@@ -305,11 +313,16 @@
         "datas.json",
         "__init__.py"
     ],
-    "admin命令": [
+    "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制": [
+        "datas.json",
+        "README.md",
+        "__init__.py"
+    ],
+    "死亡点返回": [
         "datas.json",
         "__init__.py"
     ],
-    "清空玩家末影箱": [
+    "admin命令": [
         "datas.json",
         "__init__.py"
     ],
@@ -457,6 +470,7 @@
     ],
     "前置_聊天栏菜单": [
         "datas.json",
+        "使用方法.md",
         "__init__.py"
     ],
     "MySQL连接器": [
@@ -585,7 +599,7 @@
         "datas.json",
         "__init__.py"
     ],
-    "tpa传送": [
+    "命令方块代发言支持": [
         "datas.json",
         "__init__.py"
     ]

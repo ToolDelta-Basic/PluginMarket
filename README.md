@@ -38,9 +38,7 @@
     - "plugin-id" 值: 字符串, 插件英文ID(是不是英文ID都行, 但是以后不能再更改, 是插件特殊标识)
     - "author" 值: 字符串, 作者名
     - "plugin-type" 值:
-        - 如果是 原 DotCS 插件: "dotcs"
         - 如果是 ToolDelta 组合式插件: "classic"
-        - 如果是 ToolDelta 注入式插件: "injected"
     - "description" 值: 插件的简介(功能摘要)
     - "pre-plugins" 值: 前置插件的ID与最低需求版本的键值对, 都为string, 没有前置插件则为 `{}`, 插件ID可在`plugin_ids_map.json`内查找
     - "version" 值: 插件版本字符串(更新后别人使用插件市场下载你的插件会提示有新版本)
