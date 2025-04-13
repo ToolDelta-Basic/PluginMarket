@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Config, game_utils, Utils, plugin_entry
+from tooldelta import Plugin, Config, game_utils, utils, plugin_entry
 
 
 class Shop(Plugin):
@@ -92,7 +92,7 @@ class Shop(Plugin):
             return
         # 如果选项不合法
         # 回应不是数字; 或者不在范围内
-        resp = Utils.try_int(resp)
+        resp = utils.try_int(resp)
         if resp is None or resp not in range(1, len(sells_list) + 1):
             self.game_ctrl.say_to(playername, "§c选项不合法， 已退出")
             return
@@ -101,7 +101,7 @@ class Shop(Plugin):
         good_price = self.sells[good_to_buy]["价格"]
         # 询问需要购买多少个商品
         self.game_ctrl.say_to(playername, f"§6你需要购买多少个{good_to_buy}？")
-        buy_count = Utils.try_int(game_utils.waitMsg(playername))
+        buy_count = utils.try_int(game_utils.waitMsg(playername))
         if buy_count is None:
             self.game_ctrl.say_to(playername, "§c输入有误， 已退出")
             return
@@ -142,7 +142,7 @@ class Shop(Plugin):
         elif len(resp) > 10:
             self.game_ctrl.say_to(playername, "§c输入过长， 已退出")
             return
-        resp = Utils.try_int(resp)
+        resp = utils.try_int(resp)
         if resp is None or resp not in range(1, len(buys_list) + 1):
             self.game_ctrl.say_to(playername, "§c输入不合法， 已退出")
             return
@@ -151,7 +151,7 @@ class Shop(Plugin):
         good_price = self.buys[good_to_buy]["价格"]
         # 询问需要出售多少个物品
         self.game_ctrl.say_to(playername, f"§6你需要出售多少个{good_to_buy}？")
-        sell_count = Utils.try_int(game_utils.waitMsg(playername))
+        sell_count = utils.try_int(game_utils.waitMsg(playername))
         if sell_count is None:
             self.game_ctrl.say_to(playername, "§c输入有误， 已退出")
             return
