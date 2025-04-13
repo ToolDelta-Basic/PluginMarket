@@ -61,6 +61,7 @@
   "mcfunction-tasks": "MCFunction计划任务",
   "ad": "公告栏[Mono]",
   "server-link": "服服互通",
+  "循环替换拒绝方块": "循环替换拒绝方块",
   "MusicPlayer": "音乐播放器",
   "global-player-pos-get": "前置_循环获取玩家坐标",
   "prof_manager": "性能管理",
