@@ -1,6 +1,6 @@
 {
   "author": "style_天枢",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "可用于反制机器人外进、违禁词名称玩家、等级限制、反制游戏内私聊(tell,msg,w命令)和me命令、自定义黑名单词汇、反制超长发言、反制超快发言、反制重复消息刷屏",
   "pre-plugins": {"XUID获取": "0.0.7"},
