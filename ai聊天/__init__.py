@@ -52,27 +52,27 @@ class NewPlugin(Plugin):
                 }],
                 "stream": False
                 }
-            player.show("§l[§a租聘服§aAI§f] §e等待接口响应。")
+            player.show("§l[§a租赁服§aAI§f] §e等待接口响应。")
             msg = requests.post(self.url, headers=het, data=json.dumps(data))
             xx = json.loads(msg.text)
             if msg.status_code == 200:
-                player.show("§l[§a租聘服§aAI§f] §f" + xx["choices"][0]["message"]["content"])
+                player.show("§l[§a租赁服§aAI§f] §f" + xx["choices"][0]["message"]["content"])
             elif msg.status_code == 400:
-                player.show("§l[§a租聘服§aAI§f] 请求格式错误")
+                player.show("§l[§a租赁服§aAI§f] 请求格式错误")
             elif msg.status_code == 401:
-                player.show("§l[§a租聘服§aAI§f] apikey错误 请更改后再试")
+                player.show("§l[§a租赁服§aAI§f] apikey错误 请更改后再试")
             else:
-                player.show(f"§l[§a租聘服§aAI§f] 请求失败状态码 §e{msg.status_code}")
+                player.show(f"§l[§a租赁服§aAI§f] 请求失败状态码 §e{msg.status_code}")
                 return
         except Exception:
-          print("未知原因")
+          self.print("未知原因")
 
     def service(self):
         memu = self.GetPluginAPI("聊天栏菜单")
         memu.add_trigger(
             ["ai"], 
             None, 
-            "在租聘服和deepseek进行聊天对话", 
+            "在租赁服和deepseek进行聊天对话", 
             self.transfer
         )
 
