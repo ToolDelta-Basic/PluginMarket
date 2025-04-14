@@ -8,7 +8,7 @@ BYTES2MB = 1048576
 class EmergencyMetaMana(Plugin):
     name = "性能管理"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, f):
         super().__init__(f)
@@ -19,8 +19,8 @@ class EmergencyMetaMana(Plugin):
         cfg, _ = config.get_plugin_config_and_version(
             self.name, config.auto_to_std(CFG), CFG, self.version
         )
-        self.mem_warn = cfg["当内存占用超过多少百分比时提示警告"]
-        self.mem_exit = cfg["当内存占用超过多少百分比时停机"]
+        self.mem_warn_percent = cfg["当内存占用超过多少百分比时提示警告"] / 100
+        self.mem_exit_percent = cfg["当内存占用超过多少百分比时停机"] / 100
         self.ListenPreload(self.on_def)
 
     def on_def(self):
@@ -35,10 +35,10 @@ class EmergencyMetaMana(Plugin):
     @utils.timer_event(20, "内存告急停机检测")
     def memory_mana(self):
         vm = psutil.virtual_memory()
-        if vm.percent < self.mem_warn * 100:
+        if vm.percent < self.mem_warn_percent:
             self.warn_lck = False
             self.hi_used = 0
-        elif vm.percent > self.mem_warn and (
+        elif vm.percent > self.mem_warn_percent and (
             not self.warn_lck or vm.percent > self.hi_used
         ):
             self.hi_used = vm.percent
@@ -46,7 +46,7 @@ class EmergencyMetaMana(Plugin):
             fmts.print_war(
                 f"系统可用内存告急({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%)"
             )
-        if vm.percent > self.mem_exit:
+        if vm.percent > self.mem_exit_percent:
             fmts.print_err(
                 f"已超过最大可用内存限额({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%), 系统将退出"
             )
