@@ -36,14 +36,14 @@ class Levelcheck(Plugin):
             fmts.print_err("level_player 不存在")
             return
         if 'Entries' in packet and isinstance(packet['Entries'], list):
-            for entry in packet['Entries']:
-                username = self.get_username(entry)  # 获取玩家名
+            for entry_user in packet['Entries']:
+                username = self.get_username(entry_user)  # 获取玩家名
                 if username is None:
                     continue
         self.kick_player(username,level_player)
-    def get_username(self,entry):
-        if 'Username' in entry:
-            return entry['Username']
+    def get_username(self,entry_user):
+        if 'Username' in entry_user:
+            return entry_user['Username']
         else:
             fmts.print_err("没有 Username 数据")
             return None
