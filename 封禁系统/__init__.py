@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 from typing import ClassVar
+
 from tooldelta import (
     utils,
     cfg,
@@ -117,8 +118,8 @@ class BanSystem(Plugin):
     def on_packet_playerlist(self, pk: dict):
         is_joining = not pk["ActionType"]
         if is_joining:
-            for entry in pk["Entries"]:
-                username = entry["Username"]
+            for entry_user in pk["Entries"]:
+                username = entry_user["Username"]
                 self.test_ban(username)
         return False
 
@@ -171,7 +172,9 @@ class BanSystem(Plugin):
         if name_part == "":
             Print.print_err("输入不能为空")
             return
-        players_xuids = utils.tempjson.load_and_read(self.xuidm.format_data_path("xuids.json"))
+        players_xuids = utils.tempjson.load_and_read(
+            self.xuidm.format_data_path("xuids.json")
+        )
         matched_names_and_uuids: list[tuple[str, str]] = []
         for xuid, name in players_xuids.items():
             if name_part in name:
@@ -274,9 +277,11 @@ class BanSystem(Plugin):
             Print.print_inf(
                 f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
-            print(f"-> /kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}")
+            self.print(
+                f"-> kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
+            )
             self.game_ctrl.sendwocmd(
-                f"/kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
+                f'/kick "{playername}" {self.format_msg(playername, ban_to, reason, "踢出玩家提示格式")}'
             )
             self.game_ctrl.say_to(
                 "@a",
