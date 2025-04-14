@@ -78,8 +78,9 @@ class whitelist_and_opcheck(Plugin):
 
         if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
             self.game_ctrl.sendwocmd(
-                f"/kick {player_name} " + self._cfg["白名单"]["踢出提示词"]
+                f'/kick "{player_name}" ' + self._cfg["白名单"]["踢出提示词"]
             )
+            self.game_ctrl.sendwocmd(f'/kick "{player_name}"')
             return
 
         return
@@ -108,28 +109,27 @@ class whitelist_and_opcheck(Plugin):
         return
 
     def whitelist_console_set(self, args: list):
-        Print.print_inf("选择你要进行的操作：")
-        Print.print_inf("1. 添加玩家到白名单")
-        Print.print_inf("2. 从白名单中移除玩家")
-        Print.print_inf("q. 退出操作")
+        Print.print_inf("选择你要进行的操作：", False)
+        Print.print_inf("1. 添加玩家到白名单", False)
+        Print.print_inf("2. 从白名单中移除玩家", False)
+        Print.print_inf("q. 退出操作", False)
         while True:
             choice = input()
             if choice == "q":
-                Print.print_inf("已退出操作")
+                Print.print_inf("已退出操作", False)
                 return
 
             if choice == "1":
-                Print.print_inf("请输入要添加的玩家昵称：")
-                player_name = input()
+                player_name = input(Print.fmt_info("请输入要添加的玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
-                    Print.print_err("玩家未加入过服务器")
+                    Print.print_err("玩家未加入过服务器", False)
                     return
 
                 if player_uuid in self._cfg["白名单"]["白名单玩家"]:
-                    Print.print_inf("玩家已存在白名单中")
+                    Print.print_inf("玩家已存在白名单中", False)
                     return
 
                 self._cfg["白名单"]["白名单玩家"][player_uuid] = player_name
@@ -138,14 +138,14 @@ class whitelist_and_opcheck(Plugin):
                 return
 
             if choice == "2":
-                player_name = input("请输入玩家昵称：")
+                player_name = input(Print.fmt_info("请输入玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
                     player_uuid = ""
                 if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
-                    Print.print_inf("玩家不存在白名单中")
+                    Print.print_inf("玩家不存在白名单中", False)
                     return
 
                 self._cfg["白名单"]["白名单玩家"].pop(player_uuid)
@@ -153,35 +153,34 @@ class whitelist_and_opcheck(Plugin):
                 Print.print_suc(f"已从白名单中移除玩家{player_name}")
                 return
 
-            Print.print_err("无效的选项")
-            Print.print_inf("选择你要进行的操作：")
-            Print.print_inf("1. 添加玩家到白名单")
-            Print.print_inf("2. 从白名单中移除玩家")
-            Print.print_inf("q. 退出操作")
+            Print.print_err("无效的选项", False)
+            Print.print_inf("选择你要进行的操作：", False)
+            Print.print_inf("1. 添加玩家到白名单", False)
+            Print.print_inf("2. 从白名单中移除玩家", False)
+            Print.print_inf("q. 退出操作", False)
 
     def operation_console(self, args: list):
-        Print.print_inf("选择你要进行的操作：")
-        Print.print_inf("1. 添加OP")
-        Print.print_inf("2. 移除OP")
-        Print.print_inf("q. 退出操作")
+        Print.print_inf("选择你要进行的操作：", False)
+        Print.print_inf("1. 添加OP", False)
+        Print.print_inf("2. 移除OP", False)
+        Print.print_inf("q. 退出操作", False)
         while True:
             choice = input()
             if choice == "q":
-                Print.print_inf("已退出操作")
+                Print.print_inf("已退出操作", False)
                 return
 
             if choice == "1":
-                Print.print_inf("请输入要添加的玩家昵称：")
-                player_name = input()
+                player_name = input(Print.fmt_info("请输入要添加的玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
-                    Print.print_err("玩家未加入过服务器")
+                    Print.print_err("玩家未加入过服务器", False)
                     return
 
                 if player_uuid in self._cfg["管理员检测"]["管理员列表"]:
-                    Print.print_err("玩家已经是OP")
+                    Print.print_err("玩家已经是OP", False)
                     return
 
                 self._cfg["管理员检测"]["管理员列表"][player_uuid] = player_name
@@ -190,7 +189,7 @@ class whitelist_and_opcheck(Plugin):
                 return
 
             if choice == "2":
-                player_name = input("请输入玩家昵称：")
+                player_name = input(Print.fmt_info("请输入玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
@@ -198,18 +197,18 @@ class whitelist_and_opcheck(Plugin):
                     player_uuid = ""
 
                 if player_uuid not in self._cfg["管理员检测"]["管理员列表"]:
-                    Print.print_inf("玩家不是OP")
+                    Print.print_inf("玩家不是OP", False)
                     return
 
                 self._cfg["管理员检测"]["管理员列表"].pop(player_uuid)
                 cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
                 Print.print_inf(f"已将玩家{player_name}从OP中移除")
                 return
-            Print.print_err("无效的选项")
-            Print.print_inf("选择你要进行的操作：")
-            Print.print_inf("1. 添加OP")
-            Print.print_inf("2. 移除OP")
-            Print.print_inf("q. 退出操作")
+            Print.print_err("无效的选项", False)
+            Print.print_inf("选择你要进行的操作：", False)
+            Print.print_inf("1. 添加OP", False)
+            Print.print_inf("2. 移除OP", False)
+            Print.print_inf("q. 退出操作", False)
 
     def auto_check(self):
         while True:
