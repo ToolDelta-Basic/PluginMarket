@@ -365,8 +365,9 @@ class CloudBlacklist(Plugin):
             return
         if player_uuid in black_list:
             self.game_ctrl.sendwocmd(
-                f"kick {player_name} 您被禁止加入服务器\n原因：处于黑名单列表"
+                f'kick "{player_name}" 您被禁止加入服务器\n原因：处于云黑名单中'
             )
+            self.game_ctrl.sendwocmd(f'kick "{player_name}"')
             if black_list[player_uuid] != player_name:
                 black_list[player_uuid] = player_name
                 with open(data_path, "w", encoding="utf-8") as f:
