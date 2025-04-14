@@ -2,8 +2,6 @@ import os
 from typing import TYPE_CHECKING, ClassVar
 from tooldelta import utils, Plugin, Player, plugin_entry
 
-from tooldelta.game_utils import getScore, waitMsg
-
 
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
@@ -25,7 +23,7 @@ class DJTable(Plugin):
     def on_def(self):
         self.midiplayer = self.GetPluginAPI("MIDI播放器")
         self.chatmenu = self.GetPluginAPI("聊天栏菜单")
-        midi_names = []
+        midi_names: list[str] = []
         if TYPE_CHECKING:
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
@@ -51,10 +49,10 @@ class DJTable(Plugin):
     def on_inject(self):
         self.game_ctrl.sendcmd("/scoreboard objectives add song_point dummy 音乐点")
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
-        self.chatmenu.add_trigger(
-            ["点歌列表"], None, "查看点歌台点歌列表", self.lookup_songs_list
+        self.chatmenu.add_new_trigger(
+            ["点歌列表"], [], "查看点歌台点歌列表", self.lookup_songs_list
         )
-        self.chatmenu.add_trigger(["点歌"], "", "点歌", self.choose_menu)
+        self.chatmenu.add_new_trigger(["点歌"], [("歌名", str, "")], "点歌", self.choose_menu)
         self.chatmenu.add_trigger(
             ["停止当前曲目"],
             None,
@@ -68,50 +66,57 @@ class DJTable(Plugin):
         _ = player.name
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
 
-    def choose_menu(self, player: str, _):
+    def choose_menu(self, player: Player, args: tuple):
         song_list = self.midis_list
         if song_list == []:
-            self.game_ctrl.say_to(player, "§6曲目列表空空如也...")
+            player.show("§6曲目列表空空如也...")
             return
-        self.game_ctrl.say_to(player, "§a当前曲目列表：")
-        for i, j in enumerate(song_list):
-            self.game_ctrl.say_to(player, f" §b{i + 1} §f{j}")
-        self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
-        if (resp := utils.try_int(waitMsg(player))) is None:
-            self.game_ctrl.say_to(player, "§c选项无效")
-            return
-        elif resp not in range(1, len(song_list) + 1):
-            self.game_ctrl.say_to(player, "§c选项不在范围内")
-            return
-        music_name = song_list[resp - 1].replace(".midseq", "")
+        choose_song_name: str = args[0]
+        if choose_song_name == "":
+            player.show("§a当前曲目列表：")
+            for i, j in enumerate(song_list):
+                player.show(f" §b{i + 1} §f{j}")
+            if (resp := utils.try_int(player.input("§a请输入序号选择曲目："))) is None:
+                player.show("§c选项无效")
+                return
+            elif resp not in range(1, len(song_list) + 1):
+                player.show("§c选项不在范围内")
+                return
+            music_name = song_list[resp - 1].removesuffix(".midseq")
+        else:
+            for song_name in song_list:
+                if song_name.removesuffix(".midseq") == choose_song_name:
+                    music_name = song_name.removesuffix(".midseq")
+                    break
+            else:
+                player.show("§c没有找到音乐")
+                return
         if len(self.musics_list) >= self.MAX_SONGS_QUEUED:
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c等待列表已满，请等待这首歌播放完")
-        elif getScore("song_point", player) <= 0:
-            self.game_ctrl.say_to(
-                player, "§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点"
-            )
+        elif player.getScore("song_point") <= 0:
+            player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
         else:
             self.musics_list.append((music_name, player))
-            self.game_ctrl.say_to(player, "§e点歌§f>> §a点歌成功，消耗1点音乐点")
+            player.show("§e点歌§f>> §a点歌成功， 消耗1点音乐点")
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players remove {player} song_point 1"
             )
             self.game_ctrl.say_to("@a", f"§e点歌§f>> §e{player}§a成功点歌:{music_name}")
 
-    def lookup_songs_list(self, player: str, _):
+    def lookup_songs_list(self, player: Player, _):
         if not self.musics_list == []:
-            self.game_ctrl.say_to(player, "§b◎§e当前点歌♬等待列表:")
+            player.show("§b◎§e当前点歌♬等待列表:")
             for i, j in enumerate(self.musics_list):
-                self.game_ctrl.say_to(player, f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}")
+                player.show(f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}")
         else:
-            self.game_ctrl.say_to(player, "§a♬§f列表空空如也啦! ")
+            player.show("§a♬§f列表空空如也啦! ")
 
     def force_stop_current(self, player, _):
         if self.can_stop:
             self.main_thread.stop()
             self.game_ctrl.say_to("@a", "§e点歌§f>> §6管理员已停止当前点歌曲目")
         else:
-            self.game_ctrl.say_to(player, "§e点歌§f>> §6当前没有在播放曲目啦！")
+            player.show("§e点歌§f>> §6当前没有在播放曲目啦！")
 
     def play_music(self, song_name, player):
         self.game_ctrl.say_to(
