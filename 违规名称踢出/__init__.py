@@ -37,7 +37,8 @@ class kill(Plugin):
                 player = entry["Username"]
                 for a in self.ci:
                     if a in player:
-                        self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
+                        self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
+                        self.game_ctrl.sendwocmd(f'kick "{player}"')
         return False
 
     def killpl(self, player: str):
@@ -46,9 +47,11 @@ class kill(Plugin):
         except TimeoutError:
             Print.print_war(f"玩家 {player} 名字为敏感词, 已经踢出")
             self.game_ctrl.sendwocmd(f'/kick "{player}" {self.yy}')
+            self.game_ctrl.sendwocmd(f'/kick "{player}"')
         for a in self.ci:
             if a in player:
-                self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
+                self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
+                self.game_ctrl.sendwocmd(f'kick "{player}"')
 
     def on_player_message(self, chat: Chat):
         player = chat.player.name
