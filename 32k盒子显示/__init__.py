@@ -54,17 +54,17 @@ class Display32KShulkerBox(Plugin):
                 self.game_ctrl.sendcmd(
                     f"/structure save {structID} {shulkerBoxPos} {shulkerBoxPos} disk"
                 )
-                self.game_ctrl.sendcmd(f"/setblock {shulkerBoxPos} bedrock")
+                self.game_ctrl.sendcmd(f"/setblock {shulkerBoxPos} reinforced_deepslate")
                 self.game_ctrl.say_to(
                     "@a",
                     f"§4警报 §c发现坐标§e({shulkerBoxPos.replace(' ', ',')})§c的32k潜影盒，已自动保存并清除，最近玩家：{playerNearest}，结构方块结构名：",
                 )
-                self.game_ctrl.sendcmd(f"/tag {playerNearest} add ban")
+                self.game_ctrl.sendcmd(f'/tag "{playerNearest}" add ban')
                 self.game_ctrl.say_to(
                     "@a[m=1]", "§6" + structID + "§6，给予玩家的标签是ban"
                 )
                 self.ban_sys.ban(
-                    playerNearest, time.time() + 1000000000, "使用 32k 潜影盒"
+                    playerNearest, -1, "使用 32k 潜影盒"
                 )
                 Print.print_war(
                     f"!!! 发现含32k的潜影盒, 坐标: {shulkerBoxPos}, 结构id: {structID}"
@@ -77,10 +77,10 @@ class Display32KShulkerBox(Plugin):
         if boxes:
             for i in boxes:
                 self.game_ctrl.sendcmd(
-                    f"/execute as {player} run structure load {i} ~~~"
+                    f'/execute as "{player}" run structure load {i} ~~~'
                 )
                 self.game_ctrl.sendcmd(
-                    f"/execute as {player} run setblock ~~~ air 0 destroy"
+                    f'/execute as "{player}" run setblock ~~~ air 0 destroy'
                 )
                 self.game_ctrl.sendcmd("/structure delete " + i)
                 time.sleep(0.05)
