@@ -13,7 +13,7 @@ import random
 class BattleEye(Plugin):
     name = "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制"
     author = "style_天枢"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -48,6 +48,9 @@ class BattleEye(Plugin):
                 "购买",
                 "出售",
             ],
+            "是否自动记录玩家设备号(机器人在玩家登录时需tp至玩家处，请避免和巡逻插件一起使用)": True,
+            "--如果记录玩家设备号，是否根据设备号来封禁违规玩家": True,
+            "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": 3,
             "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": True,
             "--如果在网易启动器无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": False,
             "--如果在网易启动器搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": True,
@@ -94,6 +97,9 @@ class BattleEye(Plugin):
             "--网易屏蔽词名称检测等待时间(秒)": cfg.PNumber,
             "是否启用自定义违禁词名称反制": bool,
             "名称违禁词列表": cfg.JsonList(str, len_limit=-1),
+            "是否自动记录玩家设备号(机器人在玩家登录时需tp至玩家处，请避免和巡逻插件一起使用)": bool,
+            "--如果记录玩家设备号，是否根据设备号来封禁违规玩家": bool,
+            "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": cfg.PInt,
             "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": bool,
             "--如果在网易启动器无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": bool,
             "--如果在网易启动器搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": bool,
@@ -138,6 +144,15 @@ class BattleEye(Plugin):
         ]
         self.is_detect_self_banned_word = config["是否启用自定义违禁词名称反制"]
         self.banned_word_list = config["名称违禁词列表"]
+        self.is_record_device_id = config[
+            "是否自动记录玩家设备号(机器人在玩家登录时需tp至玩家处，请避免和巡逻插件一起使用)"
+        ]
+        self.is_ban_player_by_device_id = config[
+            "--如果记录玩家设备号，是否根据设备号来封禁违规玩家"
+        ]
+        self.record_device_id_try_time = config[
+            "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)"
+        ]
         self.is_check_player_info = config[
             "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)"
         ]
@@ -181,6 +196,10 @@ class BattleEye(Plugin):
         self.ban_time_speak_speed_limit = config["封禁时间_发言频率检测"]
         self.ban_time_message_length_limit = config["封禁时间_发言字数检测"]
         self.ban_time_repeat_message_limit = config["封禁时间_重复消息刷屏检测"]
+
+        # 这是获取玩家设备号函数的线程锁，要求当多个玩家连续登录时逐个获取设备号，而不是连续tp最后啥也没得到
+        # 当任意玩家进入游戏后，线程锁将变为False，其他device_id线程处于等待状态，直到获取到当前玩家设备号或超时后再执行下一个线程
+        self.thread_lock_by_get_device_id = True
 
         os.makedirs(f"{self.data_path}/玩家封禁时间数据", exist_ok=True)
 
@@ -228,7 +247,8 @@ class BattleEye(Plugin):
                 self.ban_player_with_netease_banned_word(Username)
                 self.ban_player_with_self_banned_word(Username)
                 self.check_player_info(Username, GrowthLevels, packet)
-                self.ban_player_when_PlayerList(Username)
+                self.ban_player_when_PlayerList_by_xuid(Username)
+                self.ban_player_when_PlayerList_by_device_id(Username)
 
     def on_Text(self, packet):
         # "TextType"=10:监听到命令执行反馈
@@ -505,9 +525,7 @@ class BattleEye(Plugin):
                             )
                         break
 
-                    try_api_sleep_time = random.randint(
-                        15 * try_time, 30 * try_time
-                    )
+                    try_api_sleep_time = random.randint(15 * try_time, 30 * try_time)
                     fmts.print_inf(
                         f"§c在网易启动器搜索玩家 {Username} 失败，原因：请求网易启动器玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
                     )
@@ -655,6 +673,7 @@ class BattleEye(Plugin):
                     timeout=2,
                 )
                 tempjson.flush(path)
+                tempjson.unload_to_path(path)
 
             # type(ban_time) is int and ban_time > 0:封禁玩家对应时间(单位:秒)
             elif type(ban_time) is int and ban_time > 0:
@@ -677,7 +696,9 @@ class BattleEye(Plugin):
                     timeout=2,
                 )
                 tempjson.flush(path)
+                tempjson.unload_to_path(path)
 
+            # type(ban_time) is str:封禁时间为字符串，将尝试进行转换
             elif type(ban_time) is str:
                 ban_time = ban_time.replace(" ", "")
                 matches_time_units = re.findall(r"(\d+)(年|月|日|时|分|秒)", ban_time)
@@ -743,12 +764,13 @@ class BattleEye(Plugin):
                     timeout=2,
                 )
                 tempjson.flush(path)
+                tempjson.unload_to_path(path)
 
             else:
                 print("警告：无法解析您输入的封禁时间")
 
-    # 玩家封禁函数封装(被封禁者再次加入游戏)
-    def ban_player_when_PlayerList(self, player):
+    # 玩家封禁函数封装(被封禁者再次加入游戏,通过xuid判断)
+    def ban_player_when_PlayerList_by_xuid(self, player):
         xuid = self.xuid_getter.get_xuid_by_name(player, True)
         path = f"{self.data_path}/玩家封禁时间数据/{xuid}.json"
         try:
@@ -784,6 +806,197 @@ class BattleEye(Plugin):
                 fmts.print_inf(f"§a发现 {player} 被封禁，已被踢出游戏")
         except FileNotFoundError:
             return
+
+    # 玩家封禁函数封装(被封禁者再次加入游戏,通过device_id判断)
+    def ban_player_when_PlayerList_by_device_id(self, player):
+        if self.is_record_device_id:
+            while True:
+                if self.thread_lock_by_get_device_id:
+                    self.thread_lock_by_get_device_id = False
+                    try_time = 0
+                    while True:
+                        time.sleep(3.5)
+                        self.game_ctrl.sendwocmd(
+                            f'/execute at "{player}" run tp "{self.bot_name}" ~ 320 ~'
+                        )
+                        time.sleep(0.5)
+                        player_data = self.frame.launcher.omega.get_player_by_name(
+                            player
+                        )
+                        try_time += 1
+                        if player_data is None or (
+                            player_data and player_data.device_id == ""
+                        ):
+                            if try_time >= self.record_device_id_try_time:
+                                fmts.print_inf(
+                                    f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
+                                )
+                                break
+                            else:
+                                fmts.print_inf(
+                                    f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
+                                )
+                        else:
+                            device_id = player_data.device_id
+                            fmts.print_inf(f"§b玩家 {player} 的 设备号: {device_id}")
+                            xuid = self.xuid_getter.get_xuid_by_name(player, True)
+                            path_device_id = f"{self.data_path}/玩家设备号记录.json"
+                            device_id_record = tempjson.load_and_read(
+                                path_device_id,
+                                need_file_exists=False,
+                                default={},
+                                timeout=2,
+                            )
+                            if device_id not in device_id_record:
+                                device_id_record[device_id] = {}
+
+                            device_id_record[device_id][xuid] = player
+                            tempjson.load_and_write(
+                                path_device_id,
+                                device_id_record,
+                                need_file_exists=False,
+                                timeout=2,
+                            )
+                            tempjson.flush(path_device_id)
+                            tempjson.unload_to_path(path_device_id)
+
+                            if self.is_ban_player_by_device_id:
+                                for k, v in device_id_record.items():
+                                    if k == device_id:
+                                        for x, n in v.items():
+                                            if x != xuid:
+                                                try:
+                                                    path_ban_time = f"{self.data_path}/玩家封禁时间数据/{x}.json"
+                                                    ban_record = tempjson.load_and_read(
+                                                        path_ban_time,
+                                                        need_file_exists=True,
+                                                        timeout=2,
+                                                    )
+                                                    tempjson.unload_to_path(
+                                                        path_ban_time
+                                                    )
+                                                    if ban_record is None:
+                                                        os.remove(path_ban_time)
+                                                    else:
+                                                        ban_start = ban_record[
+                                                            "ban_start"
+                                                        ]
+                                                        ban_start_timestamp = (
+                                                            ban_record[
+                                                                "ban_start_timestamp"
+                                                            ]
+                                                        )
+                                                        ban_until = ban_record[
+                                                            "ban_until"
+                                                        ]
+                                                        ban_until_timestamp = (
+                                                            ban_record[
+                                                                "ban_until_timestamp"
+                                                            ]
+                                                        )
+                                                        ban_reason = ban_record[
+                                                            "ban_reason"
+                                                        ]
+
+                                                        if (
+                                                            type(ban_until_timestamp)
+                                                            is int
+                                                        ):
+                                                            ban_until_date = time.strftime(
+                                                                "%Y-%m-%d %H:%M:%S",
+                                                                time.localtime(
+                                                                    ban_until_timestamp
+                                                                ),
+                                                            )
+                                                            timestamp_now = int(
+                                                                time.time()
+                                                            )
+                                                            if (
+                                                                ban_until_timestamp
+                                                                > timestamp_now
+                                                            ):
+                                                                fmts.print_inf(
+                                                                    f"§c发现 {player} 被封禁且尝试开小号进入游戏 (设备号:{device_id},曾登录此设备的玩家:{n}) ，正在踢出，其解封时间为：{ban_until_date}"
+                                                                )
+                                                                self.game_ctrl.sendwocmd(
+                                                                    f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：{ban_until_date}'
+                                                                )
+                                                                fmts.print_inf(
+                                                                    f"§a发现 {player} 被封禁且尝试开小号进入游戏 (设备号:{device_id},曾登录此设备的玩家:{n}) ，已被踢出游戏"
+                                                                )
+                                                                time.sleep(2)
+                                                                path_ban_player_by_device_id = f"{self.data_path}/玩家封禁时间数据/{xuid}.json"
+                                                                tempjson.load_and_write(
+                                                                    path_ban_player_by_device_id,
+                                                                    {
+                                                                        "xuid": xuid,
+                                                                        "name": player,
+                                                                        "ban_start": ban_start,
+                                                                        "ban_start_timestamp": ban_start_timestamp,
+                                                                        "ban_until": ban_until,
+                                                                        "ban_until_timestamp": ban_until_timestamp,
+                                                                        "ban_reason": ban_reason,
+                                                                    },
+                                                                    need_file_exists=False,
+                                                                    timeout=2,
+                                                                )
+                                                                tempjson.flush(
+                                                                    path_ban_player_by_device_id
+                                                                )
+                                                                tempjson.unload_to_path(
+                                                                    path_ban_player_by_device_id
+                                                                )
+                                                                break
+                                                            else:
+                                                                os.remove(path_ban_time)
+
+                                                        elif (
+                                                            ban_until_timestamp
+                                                            == "Forever"
+                                                        ):
+                                                            fmts.print_inf(
+                                                                f"§c发现 {player} 被封禁且尝试开小号进入游戏 (设备号:{device_id},曾登录此设备的玩家:{n}) ，正在踢出，该玩家为永久封禁"
+                                                            )
+                                                            self.game_ctrl.sendwocmd(
+                                                                f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：Forever'
+                                                            )
+                                                            fmts.print_inf(
+                                                                f"§a发现 {player} 被封禁且尝试开小号进入游戏 (设备号:{device_id},曾登录此设备的玩家:{n}) ，已被踢出游戏"
+                                                            )
+                                                            time.sleep(2)
+                                                            path_ban_player_by_device_id = f"{self.data_path}/玩家封禁时间数据/{xuid}.json"
+                                                            tempjson.load_and_write(
+                                                                path_ban_player_by_device_id,
+                                                                {
+                                                                    "xuid": xuid,
+                                                                    "name": player,
+                                                                    "ban_start": ban_start,
+                                                                    "ban_start_timestamp": ban_start_timestamp,
+                                                                    "ban_until": "Forever",
+                                                                    "ban_until_timestamp": "Forever",
+                                                                    "ban_reason": ban_reason,
+                                                                },
+                                                                need_file_exists=False,
+                                                                timeout=2,
+                                                            )
+                                                            tempjson.flush(
+                                                                path_ban_player_by_device_id
+                                                            )
+                                                            tempjson.unload_to_path(
+                                                                path_ban_player_by_device_id
+                                                            )
+                                                            break
+
+                                                except FileNotFoundError:
+                                                    continue
+                                        break
+                            break
+
+                    self.thread_lock_by_get_device_id = True
+                    break
+
+                else:
+                    time.sleep(1)
 
 
 entry = plugin_entry(BattleEye, "BattleEye")

@@ -11,7 +11,8 @@
 Ⅸ 发言频率限制  
 Ⅹ 发言长度限制  
 Ⅺ 重复消息刷屏限制  
-Ⅻ 对上述行为执行封禁  
+Ⅻ 记录玩家设备号  
+ⅩⅢ 对上述行为执行封禁  
 
 ## 2.注意事项
 ① 如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true  
