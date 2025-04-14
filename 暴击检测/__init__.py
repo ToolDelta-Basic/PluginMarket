@@ -1,20 +1,8 @@
-from tooldelta import (
-    Plugin,
-    plugin_entry,
-    Player,
-    Chat,
-    FrameExit,
-    cfg,
-    game_utils,
-    utils,
-    fmts,
-    TYPE_CHECKING,
-)
-from tooldelta.constants import PacketIDS
 import time
-from tooldelta import Config
-import threading
 from collections import defaultdict
+
+from tooldelta import Config, Plugin, plugin_entry, fmts
+from tooldelta.constants import PacketIDS
 
 
 class CritLimit(Plugin):
@@ -43,9 +31,7 @@ class CritLimit(Plugin):
             "threshold": cfg["周期内触发阈值"],
         }
         self.kick_reason = cfg["踢出理由"]
-        self.message_stats = defaultdict(
-            lambda: defaultdict(lambda: [])
-        )
+        self.message_stats = defaultdict(lambda: defaultdict(lambda: []))
 
     def Onpack(self, packet):
         try:
@@ -71,7 +57,9 @@ class CritLimit(Plugin):
                     self.game_ctrl.sendwocmd(
                         f'/kick "{kick_player_name}" {self.kick_reason}'
                     )
-                    self.game_ctrl.say_to("@a", f"玩家{kick_player_name}暴击次数过多 已踢出")
+                    self.game_ctrl.say_to(
+                        "@a", f"玩家{kick_player_name}暴击次数过多 已踢出"
+                    )
 
                     self.message_stats[action_type][unique_id] = []
                     self.game_ctrl.sendwocmd(f'/kick "{kick_player_name}"')
