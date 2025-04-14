@@ -1,0 +1,9 @@
+{
+  "author": "猫猫",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "让你的每一次收杆充满惊喜\n请查看插件手册以配置插件",
+  "pre-plugins": {},
+  "plugin-id": "更好的钓鱼",
+  "enabled": true
+}
