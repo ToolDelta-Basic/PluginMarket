@@ -1,8 +1,6 @@
-from tooldelta import Plugin, Player, Chat, cfg, utils, plugin_entry, fmts, game_utils
+from tooldelta import Plugin, Player, Chat, cfg, utils, plugin_entry
 from tooldelta.utils import tempjson
-from tooldelta.constants import PacketIDS
-import random, time
-
+import random
 
 class CatFishing(Plugin):
     name = "更好的钓鱼"
@@ -192,7 +190,7 @@ class CatFishing(Plugin):
         pidr = player.getScore("玩家_钓鱼爆率")
         aidr = idr - fidr - pidr
         for i in range(len(self.quality) - 1, -1, -1):
-            aidr - self.droprate[self.quality[i]]
+            aidr -= self.droprate[self.quality[i]]
             if aidr > 0 or i:
                 continue
             quality = self.quality[i]
@@ -208,9 +206,9 @@ class CatFishing(Plugin):
             population = ["物品", "生物", "结构"]
             weights = [aiidr, aeidr, asidr]
             if all(w == 0 for w in weights):
-                weights = [1] * len(items)
+                weights = [1] * 3
             index = random.choices(population, weights=weights, k=1)[0]
-            rn = random.ranint(0, self.fishing_pool[quality][index] - 1)
+            rn = random.randint(0, self.fishing_pool[quality][index] - 1)
             item = self.fishing_pool[quality][index][rn]
             self.show_suc(
                 name,
