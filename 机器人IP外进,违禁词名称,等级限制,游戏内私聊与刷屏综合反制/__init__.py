@@ -832,10 +832,9 @@ class BattleEye(Plugin):
                                     f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
                                 )
                                 break
-                            else:
-                                fmts.print_inf(
-                                    f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
-                                )
+                            fmts.print_inf(
+                                f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
+                            )
                         else:
                             device_id = player_data.device_id
                             fmts.print_inf(f"§b玩家 {player} 的 设备号: {device_id}")
@@ -947,8 +946,8 @@ class BattleEye(Plugin):
                                                                     path_ban_player_by_device_id
                                                                 )
                                                                 break
-                                                            else:
-                                                                os.remove(path_ban_time)
+
+                                                            os.remove(path_ban_time)
 
                                                         elif (
                                                             ban_until_timestamp
@@ -995,8 +994,7 @@ class BattleEye(Plugin):
                     self.thread_lock_by_get_device_id = True
                     break
 
-                else:
-                    time.sleep(1)
+                time.sleep(1)
 
 
 entry = plugin_entry(BattleEye, "BattleEye")
