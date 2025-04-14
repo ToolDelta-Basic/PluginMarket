@@ -33,11 +33,12 @@ class kill(Plugin):
     def on_prejoin(self, pk: dict):
         is_joining = not pk["ActionType"]
         if is_joining:
-            for entry in pk["Entries"]:
-                player = entry["Username"]
+            for entry_user in pk["Entries"]:
+                player = entry_user["Username"]
                 for a in self.ci:
                     if a in player:
-                        self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
+                        self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
+                        self.game_ctrl.sendwocmd(f'kick "{player}"')
         return False
 
     def killpl(self, player: str):
@@ -46,9 +47,11 @@ class kill(Plugin):
         except TimeoutError:
             Print.print_war(f"玩家 {player} 名字为敏感词, 已经踢出")
             self.game_ctrl.sendwocmd(f'/kick "{player}" {self.yy}')
+            self.game_ctrl.sendwocmd(f'/kick "{player}"')
         for a in self.ci:
             if a in player:
-                self.game_ctrl.sendwocmd(f"kick {player} {self.yy}")
+                self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
+                self.game_ctrl.sendwocmd(f'kick "{player}"')
 
     def on_player_message(self, chat: Chat):
         player = chat.player.name
