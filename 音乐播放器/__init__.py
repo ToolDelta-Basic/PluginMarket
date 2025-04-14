@@ -1,7 +1,14 @@
 import os
 import time
 from dataclasses import dataclass
-from tooldelta import utils, game_utils, Plugin, cfg, TYPE_CHECKING, plugin_entry
+from tooldelta import (
+    utils,
+    Player,
+    Plugin,
+    cfg,
+    TYPE_CHECKING,
+    plugin_entry,
+)
 
 
 @dataclass
@@ -34,6 +41,7 @@ class MusicPlayer(Plugin):
             "是否仅OP可播放音乐": False,
         }
         CFG_STD = cfg.auto_to_std(CFG_DEFAULT)
+        CFG_STD["播放音乐、暂停和继续播放的触发词"] = cfg.JsonList(str, 4)
         self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, CFG_STD, CFG_DEFAULT, self.version
         )
@@ -74,60 +82,57 @@ class MusicPlayer(Plugin):
                 self.song_list.append(name)
 
     def on_inject(self):
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["播放音乐、暂停和继续播放的触发词"],
-            None,
+            [],
             "播放歌曲， 或停止或继续播放音乐",
             self.play_music_menu,
             op_only=self.cfg["是否仅OP可播放音乐"],
         )
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["停止播放的触发词"],
-            "[曲目名]",
+            [("曲目名", str, "")],
             "播放歌曲或停止或继续播放音乐",
             self.stop_song,
             op_only=self.cfg["是否仅OP可播放音乐"],
         )
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["查询曲目列表触发词"],
-            "[曲目名]",
-            "播放歌曲或停止或继续播放音乐",
+            [],
+            "查询所有课播放曲目",
             self.list_songs,
         )
 
-    def list_songs(self, player: str, _):
-        self.game_ctrl.say_to(player, "§e♬ §d曲目列表：")
+    def list_songs(self, player: Player, _):
+        player.show("§e♬ §d曲目列表：")
         if self.song_list == []:
-            self.game_ctrl.say_to(player, "  §7空空如也...")
-            self.game_ctrl.say_to(
-                player, "  §7将MIDI音乐文件放入 §f插件数据文件/音乐播放器 §7文件夹中吧"
-            )
+            player.show("  §7空空如也...")
+            player.show("  §7将MIDI音乐文件放入 §f插件数据文件/音乐播放器 §7文件夹中吧")
             return
         for i, name in enumerate(self.song_list):
-            self.game_ctrl.say_to(player, f" §f{i + 1} §7- §f{name}")
+            player.show(f" §f{i + 1} §7- §f{name}")
 
-    def play_music_menu(self, player: str, args: list[str]):
+    def play_music_menu(self, player: Player, args: tuple):
         if player in self.players_thread.keys():
             self.pause_or_play(player)
         else:
             if self.song_list == []:
-                self.game_ctrl.say_to(player, "§6曲目列表空空如也...")
+                player.show("§6曲目列表空空如也...")
                 return
-            self.game_ctrl.say_to(player, "§a当前曲目列表：")
+            player.show("§a当前曲目列表：")
             for i, j in enumerate(self.song_list):
-                self.game_ctrl.say_to(player, f" §b{i + 1} §f{j}")
-            self.game_ctrl.say_to(player, "§a请输入序号选择曲目：")
-            if (resp := utils.try_int(game_utils.waitMsg(player))) is None:
-                self.game_ctrl.say_to(player, "§c选项无效")
+                player.show(f" §b{i + 1} §f{j}")
+            if (resp := utils.try_int(player.input("§a请输入序号选择曲目："))) is None:
+                player.show("§c选项无效")
                 return
             elif resp not in range(1, len(self.song_list) + 1):
-                self.game_ctrl.say_to(player, "§c选项不在范围内")
+                player.show("§c选项不在范围内")
                 return
             song_name = self.song_list[resp - 1]
             if self.thread_num > self.cfg["限制最大的音乐同时播放数"]:
-                self.game_ctrl.say_to(player, "§c目前游戏内同时播放音乐数达上限")
-            elif self.players_thread.get(player):
-                self.game_ctrl.say_to(player, "§c你正在播放音乐, 请停止")
+                player.show("§c目前游戏内同时播放音乐数达上限")
+            elif self.players_thread.get(player.name):
+                player.show("§c你正在播放音乐, 请停止")
             else:
                 status = PlayerMusicStatus(
                     song_name,
@@ -140,22 +145,22 @@ class MusicPlayer(Plugin):
                     self.playmusic_thread, (player, song_name, status)
                 )
                 status.thread = thread
-                self.players_thread[player] = status
+                self.players_thread[player.name] = status
             self.wake_showbar_thread()
 
-    def stop_song(self, player: str, _):
-        if not self.players_thread.get(player):
-            self.game_ctrl.say_to(player, "§c当前你没有正在播放的音乐")
+    def stop_song(self, player: Player, _):
+        if not self.players_thread.get(player.name):
+            player.show("§c当前你没有正在播放的音乐")
         else:
-            self.players_thread[player].thread.stop()
-            del self.players_thread[player]
+            self.players_thread[player.name].thread.stop()
+            del self.players_thread[player.name]
 
-    def pause_or_play(self, player: str):
-        if not self.players_thread.get(player):
-            self.game_ctrl.say_to(player, "§c当前你没有正在播放的音乐")
+    def pause_or_play(self, player: Player):
+        if not self.players_thread.get(player.name):
+            player.show("§c当前你没有正在播放的音乐")
         else:
-            self.players_thread[player].is_stop = not self.players_thread[
-                player
+            self.players_thread[player.name].is_stop = not self.players_thread[
+                player.name
             ].is_stop
 
     def playmusic_thread(self, target: str, music_name: str, parent: PlayerMusicStatus):
@@ -191,7 +196,7 @@ class MusicPlayer(Plugin):
             self.public_showbar_thread()
 
     def format_time(self, sec: float):
-        return f"{int(sec)//60:02d}:{int(sec)%60:02d}"
+        return f"{int(sec) // 60:02d}:{int(sec) % 60:02d}"
 
     @utils.thread_func("音乐播放器显示播放模块")
     def public_showbar_thread(self):
