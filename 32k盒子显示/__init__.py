@@ -1,4 +1,5 @@
 import time
+
 from tooldelta import Plugin, Print, plugin_entry
 from tooldelta.constants import PacketIDS
 
@@ -54,7 +55,9 @@ class Display32KShulkerBox(Plugin):
                 self.game_ctrl.sendcmd(
                     f"/structure save {structID} {shulkerBoxPos} {shulkerBoxPos} disk"
                 )
-                self.game_ctrl.sendcmd(f"/setblock {shulkerBoxPos} reinforced_deepslate")
+                self.game_ctrl.sendcmd(
+                    f"/setblock {shulkerBoxPos} reinforced_deepslate"
+                )
                 self.game_ctrl.say_to(
                     "@a",
                     f"§4警报 §c发现坐标§e({shulkerBoxPos.replace(' ', ',')})§c的32k潜影盒，已自动保存并清除，最近玩家：{playerNearest}，结构方块结构名：",
