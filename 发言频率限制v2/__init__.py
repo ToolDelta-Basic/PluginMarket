@@ -59,11 +59,13 @@ class AntiTooFastMessage_V2(Plugin):
                 f'kick "{player.name}" §c发言长度太长， 您已被踢出租赁服'
             )
             self.print(f"§6玩家 {player.name} 发言长度太长({len(msg)}), 已被踢出租赁服")
+            self.game_ctrl.sendwocmd(f'kick "{player.name}"')
         elif (lines := msg.count("\n")) > self.msg_lines_limit:
             self.game_ctrl.sendwocmd(
                 f'kick "{player.name}" §c发言行数太多， 您已被踢出租赁服'
             )
             self.print(f"§6玩家 {player.name} 发言行数太多({lines}), 已被踢出租赁服")
+            self.game_ctrl.sendwocmd(f'kick "{player.name}"')
         elif self.is_too_fast(player):
             for cmd in self.msg_lmt_anti:
                 self.game_ctrl.sendwocmd(cmd.replace("[玩家名]", player.name))
