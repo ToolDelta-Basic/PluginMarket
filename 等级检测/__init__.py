@@ -29,11 +29,11 @@ class Levelcheck(Plugin):
 
     def on_playerlist(self, packet):
         if not packet['GrowthLevels']: #离开服务器
-            print("GrowthLevels 不存在")
+            fmts.print_err("GrowthLevels 不存在")
             return
         level_player = packet['GrowthLevels'][0]
         if not level_player:
-            print("level_player 不存在")
+            fmts.print_err("level_player 不存在")
             return
         if 'Entries' in packet and isinstance(packet['Entries'], list):
             for entry in packet['Entries']:
@@ -45,12 +45,13 @@ class Levelcheck(Plugin):
         if 'Username' in entry:
             return entry['Username']
         else:
-            print("没有 Username 数据")
+            fmts.print_err("没有 Username 数据")
             return None
     def kick_player(self,username,level_player):
         if level_player < self.min_level:
-            print(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
+            fmts.print_war(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
             time.sleep(self.kick_time)
-            self.game_ctrl.sendcmd(f"/kick {username} {self.kick_reason}")
+            self.game_ctrl.sendwocmd(f'/kick "{username}" {self.kick_reason}')
+            self.game_ctrl.sendwocmd(f'/kick "{username}"')
         
 entry = plugin_entry(Levelcheck)
