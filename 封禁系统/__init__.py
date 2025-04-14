@@ -274,9 +274,9 @@ class BanSystem(Plugin):
             Print.print_inf(
                 f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
-            print(f"-> /kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}")
+            self.print(f"-> kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}")
             self.game_ctrl.sendwocmd(
-                f"/kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
+                f'/kick "{playername}" {self.format_msg(playername, ban_to, reason, "踢出玩家提示格式")}'
             )
             self.game_ctrl.say_to(
                 "@a",
