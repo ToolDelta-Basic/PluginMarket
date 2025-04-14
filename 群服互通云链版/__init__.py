@@ -301,7 +301,7 @@ class QQLinker(Plugin):
                 raise ValueError(f"键 'message' 值不是字符串类型, 而是 {msg}")
             if self.enable_group_2_game:
                 user_id = data["sender"]["user_id"]
-                nickname = data["sender"]["nickname"]
+                nickname = data["sender"]["card"] or data["sender"]["nickname"]
                 if user_id in self.waitmsg_cbs.keys():
                     self.waitmsg_cbs[user_id](
                         msg,
