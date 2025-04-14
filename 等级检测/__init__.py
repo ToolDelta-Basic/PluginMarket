@@ -1,7 +1,10 @@
-from tooldelta import Plugin, plugin_entry, Player, Chat, FrameExit, cfg, game_utils, utils, fmts
-from tooldelta.constants import PacketIDS
-from tooldelta import Config
 import time
+
+from tooldelta import Config
+from tooldelta import Plugin, plugin_entry, fmts
+from tooldelta.constants import PacketIDS
+
+
 class Levelcheck(Plugin):
     name = "等级限制"
     author = "果_k"
@@ -28,29 +31,35 @@ class Levelcheck(Plugin):
         self.ListenPacket(PacketIDS.PlayerList, self.on_playerlist)
 
     def on_playerlist(self, packet):
-        if not packet['GrowthLevels']: #离开服务器
-            print("GrowthLevels 不存在")
+        if not packet["GrowthLevels"]:  # 离开服务器
+            fmts.print_err("GrowthLevels 不存在")
             return
-        level_player = packet['GrowthLevels'][0]
+        level_player = packet["GrowthLevels"][0]
         if not level_player:
-            print("level_player 不存在")
+            fmts.print_err("level_player 不存在")
             return
-        if 'Entries' in packet and isinstance(packet['Entries'], list):
-            for entry in packet['Entries']:
-                username = self.get_username(entry)  # 获取玩家名
+        if "Entries" in packet and isinstance(packet["Entries"], list):
+            for entry_user in packet["Entries"]:
+                username = self.get_username(entry_user)  # 获取玩家名
                 if username is None:
                     continue
-        self.kick_player(username,level_player)
-    def get_username(self,entry):
-        if 'Username' in entry:
-            return entry['Username']
+        self.kick_player(username, level_player)
+
+    def get_username(self, entry_user):
+        if "Username" in entry_user:
+            return entry_user["Username"]
         else:
-            print("没有 Username 数据")
+            fmts.print_err("没有 Username 数据")
             return None
-    def kick_player(self,username,level_player):
+
+    def kick_player(self, username, level_player):
         if level_player < self.min_level:
-            print(f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出")
+            fmts.print_war(
+                f"玩家 {username} 的等级 {level_player} 低于最小等级 {self.min_level}，进行踢出"
+            )
             time.sleep(self.kick_time)
-            self.game_ctrl.sendcmd(f"/kick {username} {self.kick_reason}")
-        
+            self.game_ctrl.sendwocmd(f'/kick "{username}" {self.kick_reason}')
+            self.game_ctrl.sendwocmd(f'/kick "{username}"')
+
+
 entry = plugin_entry(Levelcheck)
