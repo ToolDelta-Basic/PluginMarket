@@ -89,7 +89,7 @@ class BetterAnnounce(Plugin):
         while True:
             if repeat_times > 5:
                 self.print(
-                    "重试次数过多,可能无法正常显示公告栏,请确认租赁是否服流畅,这可能导致命令发送失败"
+                    "重试次数过多,可能无法正常显示公告栏,请确认租赁服是否流畅,这可能导致命令发送失败"
                 )
                 raise TimeoutError("公告栏重试失败次数过多.")
             self.print("§e尝试删除重建公告栏[1/3]")
