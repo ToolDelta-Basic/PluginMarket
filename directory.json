@@ -100,6 +100,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "更好的钓鱼": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
     "进服一言": [
         "datas.json",
         "__init__.py"
@@ -329,75 +334,6 @@
     "进服验证": [
         "datas.json",
         "__init__.py"
-    ],
-    "[pkg]音乐曲目-1": [
-        "datas.json"
-    ],
-    "[pkg]音乐曲目-1/插件数据文件": [],
-    "[pkg]音乐曲目-1/插件数据文件/点歌台": [],
-    "[pkg]音乐曲目-1/插件数据文件/点歌台/音乐列表": [
-        "春节序曲.midseq",
-        "海阔天空.midseq",
-        "Undertale.midseq",
-        "see you again.midseq"
-    ],
-    "[pkg]音乐曲目-1/插件数据文件/音乐播放器": [
-        "春节序曲.midseq",
-        "海阔天空.midseq",
-        "Undertale.midseq",
-        "see you again.midseq"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件": [
-        "音乐播放器.json"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets": [
-        "frames.py",
-        "http11.py",
-        "http.py",
-        "streams.py",
-        "exceptions.py",
-        "typing.py",
-        "speedups.cp311-win_amd64.pyd",
-        "connection.py",
-        "__main__.py",
-        "version.py",
-        "py.typed",
-        "protocol.py",
-        "client.py",
-        "utils.py",
-        "uri.py",
-        "__init__.py",
-        "datastructures.py",
-        "server.py",
-        "headers.py",
-        "auth.py",
-        "speedups.c",
-        "imports.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/sync": [
-        "messages.py",
-        "connection.py",
-        "client.py",
-        "utils.py",
-        "__init__.py",
-        "server.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/legacy": [
-        "compatibility.py",
-        "http.py",
-        "async_timeout.py",
-        "handshake.py",
-        "framing.py",
-        "protocol.py",
-        "client.py",
-        "__init__.py",
-        "server.py",
-        "auth.py"
-    ],
-    "[pkg]音乐曲目-1/插件配置文件/websockets/extensions": [
-        "base.py",
-        "__init__.py",
-        "permessage_deflate.py"
     ],
     "前置_MIDI播放器": [
         "datas.json",

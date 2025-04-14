@@ -123,6 +123,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "更好的钓鱼": {
+      "name": "更好的钓鱼",
+      "author": "猫猫",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "进服一言": {
       "name": "进服一言",
       "author": "机入",
@@ -426,7 +432,7 @@
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "largefill": {
@@ -515,12 +521,6 @@
       "description": "入门ToolDelta的插件包， 提供了ToolDelta的经典插件集\n包括一些实用插件和娱乐插件",
       "author": "SuperScript",
       "version": "0.0.2"
-    },
-    "音乐曲目-1": {
-      "plugin-ids": [],
-      "description": "为音乐播放器和点歌台增加了几首曲目: \n春节序曲\n海阔天空\nsee you again\n春节序曲\nundertale",
-      "author": "SuperScript",
-      "version": "0.0.1"
     }
   }
 }
