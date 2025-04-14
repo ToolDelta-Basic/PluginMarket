@@ -118,8 +118,8 @@ class BanSystem(Plugin):
     def on_packet_playerlist(self, pk: dict):
         is_joining = not pk["ActionType"]
         if is_joining:
-            for entry in pk["Entries"]:
-                username = entry["Username"]
+            for entry_user in pk["Entries"]:
+                username = entry_user["Username"]
                 self.test_ban(username)
         return False
 
