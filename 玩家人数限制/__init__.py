@@ -21,6 +21,7 @@ class NewPlugin(Plugin):
             self.game_ctrl.allplayers
         ) > self.maxinum_player and not game_utils.is_op(playername):
             self.game_ctrl.sendwocmd(f'kick "{playername}" 已达到租赁服最大人数限制')
+            self.game_ctrl.sendwocmd(f'kick "{playername}"')
 
 
 entry = plugin_entry(NewPlugin)
