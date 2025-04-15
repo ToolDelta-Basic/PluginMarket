@@ -390,7 +390,7 @@
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.0.10",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "global-player-pos-get": {
