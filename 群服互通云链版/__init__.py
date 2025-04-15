@@ -99,7 +99,7 @@ class QQLinker(Plugin):
         self.reloaded = False
         self.triggers: list[QQMsgTrigger] = []
         CFG_DEFAULT = {
-            "云链地址": "ws://127.0.0.1:5556",
+            "云链设置": {"地址": "ws://127.0.0.1:5556", "校验码": None},
             "消息转发设置": {
                 "链接的群聊": 194838530,
                 "游戏到群": {
@@ -261,8 +261,12 @@ class QQLinker(Plugin):
 
     @utils.thread_func("云链群服连接进程")
     def connect_to_websocket(self):
+        header = None
+        if self.cfg["云链设置"]["校验码"] is not None:
+            header = {"Authorization": f"Bearer {self.cfg['云链设置']['校验码']}"}
         self.ws = websocket.WebSocketApp(  # type: ignore
-            self.cfg["云链地址"],
+            self.cfg["云链设置"]["地址"],
+            header,
             on_message=self.on_ws_message,
             on_error=self.on_ws_error,
             on_close=self.on_ws_close,
@@ -271,7 +275,7 @@ class QQLinker(Plugin):
         self.ws.run_forever()
 
     @utils.thread_func("云链群服消息广播进程")
-    def broadcast(self,data):
+    def broadcast(self, data):
         for i in self.plugin:
             self.GetPluginAPI(i).QQLinker_message(data)
 
