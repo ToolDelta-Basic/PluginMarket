@@ -1,9 +1,0 @@
-{
-    "author": "xingchen",
-    "version": "0.0.3",
-    "description": "将部分使用功能封装成的功能库",
-    "limit_launcher": null,
-    "pre-plugins": {},
-    "plugin-type": "classic",
-    "plugin-id": "[前置]功能库-1"
-  }

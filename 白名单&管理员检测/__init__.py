@@ -1,7 +1,7 @@
 from tooldelta import (
     Plugin,
     cfg,
-    Print,
+    fmts,
     game_utils,
     utils,
     Player,
@@ -43,7 +43,7 @@ class whitelist_and_opcheck(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"加载配置文件出错: {e}")
+            fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -109,87 +109,87 @@ class whitelist_and_opcheck(Plugin):
         return
 
     def whitelist_console_set(self, args: list):
-        Print.print_inf("选择你要进行的操作：", False)
-        Print.print_inf("1. 添加玩家到白名单", False)
-        Print.print_inf("2. 从白名单中移除玩家", False)
-        Print.print_inf("q. 退出操作", False)
+        fmts.print_inf("选择你要进行的操作：")
+        fmts.print_inf("1. 添加玩家到白名单")
+        fmts.print_inf("2. 从白名单中移除玩家")
+        fmts.print_inf("q. 退出操作")
         while True:
             choice = input()
             if choice == "q":
-                Print.print_inf("已退出操作", False)
+                fmts.print_inf("已退出操作")
                 return
 
             if choice == "1":
-                player_name = input(Print.fmt_info("请输入要添加的玩家昵称："))
+                player_name = input(fmts.fmt_info("请输入要添加的玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
-                    Print.print_err("玩家未加入过服务器", False)
+                    fmts.print_err("玩家未加入过服务器")
                     return
 
                 if player_uuid in self._cfg["白名单"]["白名单玩家"]:
-                    Print.print_inf("玩家已存在白名单中", False)
+                    fmts.print_inf("玩家已存在白名单中")
                     return
 
                 self._cfg["白名单"]["白名单玩家"][player_uuid] = player_name
                 cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                Print.print_suc(f"已添加玩家{player_name}到白名单")
+                fmts.print_suc(f"已添加玩家{player_name}到白名单")
                 return
 
             if choice == "2":
-                player_name = input(Print.fmt_info("请输入玩家昵称："))
+                player_name = input(fmts.fmt_info("请输入玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
                     player_uuid = ""
                 if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
-                    Print.print_inf("玩家不存在白名单中", False)
+                    fmts.print_inf("玩家不存在白名单中")
                     return
 
                 self._cfg["白名单"]["白名单玩家"].pop(player_uuid)
                 cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                Print.print_suc(f"已从白名单中移除玩家{player_name}")
+                fmts.print_suc(f"已从白名单中移除玩家{player_name}")
                 return
 
-            Print.print_err("无效的选项", False)
-            Print.print_inf("选择你要进行的操作：", False)
-            Print.print_inf("1. 添加玩家到白名单", False)
-            Print.print_inf("2. 从白名单中移除玩家", False)
-            Print.print_inf("q. 退出操作", False)
+            fmts.print_err("无效的选项")
+            fmts.print_inf("选择你要进行的操作：")
+            fmts.print_inf("1. 添加玩家到白名单")
+            fmts.print_inf("2. 从白名单中移除玩家")
+            fmts.print_inf("q. 退出操作")
 
     def operation_console(self, args: list):
-        Print.print_inf("选择你要进行的操作：", False)
-        Print.print_inf("1. 添加OP", False)
-        Print.print_inf("2. 移除OP", False)
-        Print.print_inf("q. 退出操作", False)
+        fmts.print_inf("选择你要进行的操作：")
+        fmts.print_inf("1. 添加OP")
+        fmts.print_inf("2. 移除OP")
+        fmts.print_inf("q. 退出操作")
         while True:
             choice = input()
             if choice == "q":
-                Print.print_inf("已退出操作", False)
+                fmts.print_inf("已退出操作")
                 return
 
             if choice == "1":
-                player_name = input(Print.fmt_info("请输入要添加的玩家昵称："))
+                player_name = input(fmts.fmt_info("请输入要添加的玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
                 except:
-                    Print.print_err("玩家未加入过服务器", False)
+                    fmts.print_err("玩家未加入过服务器")
                     return
 
                 if player_uuid in self._cfg["管理员检测"]["管理员列表"]:
-                    Print.print_err("玩家已经是OP", False)
+                    fmts.print_err("玩家已经是OP")
                     return
 
                 self._cfg["管理员检测"]["管理员列表"][player_uuid] = player_name
                 cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                Print.print_suc(f"已添加玩家{player_name}为OP")
+                fmts.print_suc(f"已添加玩家{player_name}为OP")
                 return
 
             if choice == "2":
-                player_name = input(Print.fmt_info("请输入玩家昵称："))
+                player_name = input(fmts.fmt_info("请输入玩家昵称："))
                 try:
                     player_uuid = self.get_xuid.get_xuid_by_name(player_name)
 
@@ -197,18 +197,18 @@ class whitelist_and_opcheck(Plugin):
                     player_uuid = ""
 
                 if player_uuid not in self._cfg["管理员检测"]["管理员列表"]:
-                    Print.print_inf("玩家不是OP", False)
+                    fmts.print_inf("玩家不是OP")
                     return
 
                 self._cfg["管理员检测"]["管理员列表"].pop(player_uuid)
                 cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                Print.print_inf(f"已将玩家{player_name}从OP中移除")
+                fmts.print_inf(f"已将玩家{player_name}从OP中移除")
                 return
-            Print.print_err("无效的选项", False)
-            Print.print_inf("选择你要进行的操作：", False)
-            Print.print_inf("1. 添加OP", False)
-            Print.print_inf("2. 移除OP", False)
-            Print.print_inf("q. 退出操作", False)
+            fmts.print_err("无效的选项")
+            fmts.print_inf("选择你要进行的操作：")
+            fmts.print_inf("1. 添加OP")
+            fmts.print_inf("2. 移除OP")
+            fmts.print_inf("q. 退出操作")
 
     def auto_check(self):
         while True:
@@ -233,7 +233,7 @@ class whitelist_and_opcheck(Plugin):
                 if player_name in self.game_ctrl.players_uuid:
                     player_uuid = self.game_ctrl.players_uuid[player_name]
                 else:
-                    Print.print_err(f"玩家 {player_name} 未在线或不存在")
+                    fmts.print_err(f"玩家 {player_name} 未在线或不存在")
                     player_uuid = ""
             player[1] = player_uuid
             return player
@@ -246,12 +246,12 @@ class whitelist_and_opcheck(Plugin):
                 if hasattr(self, "neomega"):
                     player_name = self.neomega.get_player_by_uuid(player_uuid).name
                 else:
-                    Print.print_err(f"无效的 UUID: {player_uuid}")
+                    fmts.print_err(f"无效的 UUID: {player_uuid}")
                     player_name = ""
             player[0] = player_name
             return player
         else:
-            Print.print_err("player() 方法需要至少一个参数")
+            fmts.print_err("player() 方法需要至少一个参数")
             return [None, None]
 
     def on_inject(self):

@@ -1,7 +1,7 @@
 from tooldelta import (
     Plugin,
     cfg,
-    Print,
+    fmts,
     Frame,
     game_utils,
     utils,
@@ -59,7 +59,7 @@ class Sky_Island_Allocation(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"加载配置文件出错: {e}")
+            fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
         data_dir = self.data_path
         data_path = os.path.join(data_dir, "空岛数据.json")

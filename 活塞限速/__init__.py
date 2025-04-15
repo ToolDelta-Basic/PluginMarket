@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from tooldelta import Plugin, game_utils, utils, Print, cfg as config, plugin_entry
+from tooldelta import Plugin, game_utils, utils, fmts, cfg as config, plugin_entry
 from tooldelta.constants import PacketIDS
 
 
@@ -55,7 +55,7 @@ class PistonLmt(Plugin):
 
     @utils.thread_func("活塞限速计时器重置")
     def clear_sum(self):
-        Print.print_inf("活塞限速计时器已启动")
+        fmts.print_inf("活塞限速计时器已启动")
         while 1:
             for _ in range(20):
                 time.sleep(0.5)

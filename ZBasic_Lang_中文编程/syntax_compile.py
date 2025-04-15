@@ -13,7 +13,8 @@ from type_checker import FuncRegDatas, get_final_type
 from basic_types import *
 
 # 调试器开关, 会显示详细的表达式编译信息
-from tooldelta import Print
+from tooldelta import fmts
+
 DEBUG_CHECK = False
 
 func_names: list[str] = []
@@ -57,7 +58,7 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level=0) -
     if types_register is None:
         types_register = {}
     if DEBUG_CHECK:
-        Print.clean_print(f"[§b{level}§r] Start parsing §d{pat}")
+        fmts.clean_print(f"[§b{level}§r] Start parsing §d{pat}")
     for c in pat + "?":
         if c == '"':
             if is_str:
@@ -192,7 +193,7 @@ def parse_as_chunks(pat: str, types_register: REGISTER | None = None, level=0) -
     if is_str:
         raise SyntaxError("字符串未正确闭合")
     if DEBUG_CHECK:
-        Print.clean_print(
+        fmts.clean_print(
             f"[§9{level}§r] Parsing §2{pat}, §rok, as §d{' §6|§9 '.join(str(i) for i in opseq)}"
         )
     return opseq
@@ -288,7 +289,7 @@ def deal_syntaxgrp(grp: list):
                     arg1 = s
         prior_table = now_prior_table.copy()
     if DEBUG_CHECK:
-        Print.clean_print(f"[§9SYNTAX§r] Parsing §b{grp}§r ok, as §b{prior_table[0]}")
+        fmts.clean_print(f"[§9SYNTAX§r] Parsing §b{grp}§r ok, as §b{prior_table[0]}")
     return prior_table[0]
 
 
@@ -360,18 +361,18 @@ if __name__ == "__main__" or False:
             "转换为非空变量", lambda x: x[0].type, _de_optional_check, _de_optional
         )
         syntax = parse_as_chunks("-1+2*3+4*(5^6+7/8)/9", {"触发词参数": LIST[STRING]})
-        Print.clean_print(f"§2分割结果: §a{syntax}")
+        fmts.clean_print(f"§2分割结果: §a{syntax}")
         syntax2 = deal_syntaxgrp(syntax)
         # syntaxs = 转换为非空变量 (转换为整数 转换为非空变量 (获取列表项 触发词参数, 2), "-1")
         # syntax = syntaxs[0]
         t = get_final_type(syntax2)
-        Print.clean_print("§a-" * 25)
+        fmts.clean_print("§a-" * 25)
         print("表达式组:", syntax)
         print("表达式:", syntax2)
         print("类型:", t)
     except Exception as err:
         # print(err)
-        Print.clean_print("§cCRASHED " + "=" * 50)
+        fmts.clean_print("§cCRASHED " + "=" * 50)
         import traceback
 
         traceback.print_exc()

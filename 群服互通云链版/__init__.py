@@ -8,7 +8,7 @@ from tooldelta import (
     Plugin,
     cfg,
     utils,
-    Print,
+    fmts,
     Chat,
     Player,
     plugin_entry,
@@ -280,7 +280,7 @@ class QQLinker(Plugin):
             self.GetPluginAPI(i).QQLinker_message(data)
 
     def on_ws_open(self, ws):
-        Print.print_suc("已成功连接到群服互通")
+        fmts.print_suc("已成功连接到群服互通")
 
     @utils.thread_func("群服互通消息接收线程")
     def on_ws_message(self, ws, message):
@@ -334,10 +334,10 @@ class QQLinker(Plugin):
 
     def on_ws_error(self, ws, error):
         if not isinstance(error, Exception):
-            Print.print_inf(f"群服互通发生错误: {error}, 可能为系统退出, 已关闭")
+            fmts.print_inf(f"群服互通发生错误: {error}, 可能为系统退出, 已关闭")
             self.reloaded = True
             return
-        Print.print_err(f"群服互通发生错误: {error}, 15s后尝试重连")
+        fmts.print_err(f"群服互通发生错误: {error}, 15s后尝试重连")
         time.sleep(15)
 
     def waitMsg(self, qqid: int, timeout=60) -> str | None:
@@ -350,7 +350,7 @@ class QQLinker(Plugin):
     def on_ws_close(self, ws, _, _2):
         if self.reloaded:
             return
-        Print.print_err("群服互通被关闭, 10s后尝试重连")
+        fmts.print_err("群服互通被关闭, 10s后尝试重连")
         time.sleep(10)
         self.connect_to_websocket()
 
@@ -418,7 +418,7 @@ class QQLinker(Plugin):
         if self.ws:
             self.sendmsg(self.linked_group, " ".join(args))
         else:
-            Print.print_err("还没有连接到群服互通")
+            fmts.print_err("还没有连接到群服互通")
 
     def sendmsg(self, group: int, msg: str):
         assert self.ws

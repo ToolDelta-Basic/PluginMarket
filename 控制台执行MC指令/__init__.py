@@ -1,5 +1,5 @@
 import json
-from tooldelta import Plugin, Frame, Print, plugin_entry
+from tooldelta import Plugin, Frame, fmts, plugin_entry
 
 
 class ConsoleCommands(Plugin):
@@ -24,29 +24,29 @@ class ConsoleCommands(Plugin):
         try:
             result = self.game_ctrl.sendcmd_with_resp(" ".join(cmd), 5)
         except IndexError:
-            Print.print_err("缺少指令参数")
+            fmts.print_err("缺少指令参数")
             return
         try:
             if (result.OutputMessages[0].Message == "commands.generic.syntax") | (
                 result.OutputMessages[0].Message == "commands.generic.unknown"
             ):
-                Print.print_err("未知的MC指令， 可能是指令格式有误")
+                fmts.print_err("未知的MC指令， 可能是指令格式有误")
             else:
                 jso = json.dumps(
                     result.as_dict["OutputMessages"], indent=2, ensure_ascii=False
                 )
                 if not result.SuccessCount:
-                    Print.print_war(f"指令执行失败：\n{jso}")
+                    fmts.print_war(f"指令执行失败：\n{jso}")
                 else:
-                    Print.print_suc(f"指令执行成功： \n{jso}")
+                    fmts.print_suc(f"指令执行成功： \n{jso}")
         except IndexError:
             if result.SuccessCount:
                 jso = json.dumps(
                     result.as_dict["OutputMessages"], indent=2, ensure_ascii=False
                 )
-                Print.print_suc(f"指令执行成功： \n{jso}")
+                fmts.print_suc(f"指令执行成功： \n{jso}")
         except TimeoutError:
-            Print.print_err("[超时] 指令获取结果返回超时")
+            fmts.print_err("[超时] 指令获取结果返回超时")
 
     def SendWOCmdOnConsole(self, cmd):
         self.game_ctrl.sendwocmd(" ".join(cmd))

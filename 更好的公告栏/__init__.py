@@ -1,5 +1,5 @@
 import time
-from tooldelta import utils, cfg as config, Plugin, Print, plugin_entry
+from tooldelta import utils, cfg as config, Plugin, fmts, plugin_entry
 
 
 class BetterAnnounce(Plugin):
@@ -30,9 +30,9 @@ class BetterAnnounce(Plugin):
         self.flush_secs = cfg["刷新频率(秒)"]
         self.ano_title = cfg["公告标题栏名(请注意长度)"]
         if len(self.ano_title) >= 20:
-            Print.print_war(f"公告标题超出20字符长度: {self.ano_title}, 可能失效")
+            fmts.print_war(f"公告标题超出20字符长度: {self.ano_title}, 可能失效")
         if self.flush_secs < 2:
-            Print.print_err("公告刷新速率不能大于 1次/2秒")
+            fmts.print_err("公告刷新速率不能大于 1次/2秒")
             raise SystemExit
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)

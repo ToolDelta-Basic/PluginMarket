@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, Print, Chat, plugin_entry
+from tooldelta import Plugin, cfg, fmts, Chat, plugin_entry
 
 
 class NewPlugin(Plugin):
@@ -15,7 +15,7 @@ class NewPlugin(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"加载配置文件出错: {e}")
+            fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
         self.ListenChat(self.on_player_message)
 

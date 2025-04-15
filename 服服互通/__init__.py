@@ -11,7 +11,7 @@ from typing import Any
 from collections.abc import Callable
 from websockets.exceptions import ConnectionClosed
 from websockets.legacy.client import WebSocketClientProtocol
-from tooldelta import Frame, Plugin, cfg, Print, utils, Chat, plugin_entry, InternalBroadcast
+from tooldelta import Frame, Plugin, cfg, fmts, utils, Chat, plugin_entry, InternalBroadcast
 
 
 # CUSTOMIZE CLASSES AND FUNCS 自定义的类和方法
@@ -83,7 +83,7 @@ class SuperLinkProtocol(BasicProtocol):
     def start(self):
         if self.ws_ip == "自动选择线路":
             name, self.ws_ip = self.find_default_ips()
-            Print.print_suc(f"服服互通: 已自动选择线路 {name}")
+            fmts.print_suc(f"服服互通: 已自动选择线路 {name}")
         while 1:
             asyncio.run(self.start_ws_con())
             self.retryCount += 1
@@ -91,11 +91,11 @@ class SuperLinkProtocol(BasicProtocol):
                 self.retryTime = self.retryCount * 10
             else:
                 self.retryTime = 600
-            Print.print_war(f"服服互通断开连接, 将在 {self.retryTime}s 后重连")
+            fmts.print_war(f"服服互通断开连接, 将在 {self.retryTime}s 后重连")
             time.sleep(self.retryTime)
 
     def find_default_ips(self):
-        Print.print_war("服服互通: 正在自动获取线路中..")
+        fmts.print_war("服服互通: 正在自动获取线路中..")
         try:
             resp = requests.get(
                 "https://github.dqyt.online/raw.githubusercontent.com/ToolDelta/SuperLink/main/source.json"
@@ -104,7 +104,7 @@ class SuperLinkProtocol(BasicProtocol):
             default_name, default_ip = list(resp.json().items())[0]
             return default_name, default_ip
         except Exception as err:
-            Print.print_err(f"服服互通: 无法自动获取线路: {err}; 此插件已禁用")
+            fmts.print_err(f"服服互通: 无法自动获取线路: {err}; 此插件已禁用")
             raise SystemExit
 
     async def start_ws_con(self):
@@ -131,22 +131,22 @@ class SuperLinkProtocol(BasicProtocol):
                     login_resp_json["Type"], login_resp_json["Content"]
                 )
                 if login_resp.type == "server.auth_failed":
-                    Print.print_err(
+                    fmts.print_err(
                         f"§b服服互通: 中心服务器登录失败: {login_resp.content['Reason']}"
                     )
                 elif login_resp.type == "server.auth_success":
-                    Print.print_suc("服服互通: §f中心服务器登录成功")
+                    fmts.print_suc("服服互通: §f中心服务器登录成功")
                     self.retryCount = 0
                     while 1:
                         await self.handle(json.loads(await ws.recv()))
         except ConnectionClosed:
-            Print.print_war("服服互通: 服务器断开连接")
+            fmts.print_war("服服互通: 服务器断开连接")
         except gaierror as err:
-            Print.print_err(
+            fmts.print_err(
                 f"服服互通: 中心服务器连接失败(IP解析异常): {self.ws_ip} - {err}"
             )
         except Exception as err:
-            Print.print_err(f"服服互通: 中心服务器 ({self.ws_ip}) 连接失败: {err}")
+            fmts.print_err(f"服服互通: 中心服务器 ({self.ws_ip}) 连接失败: {err}")
         finally:
             self.active = False
 
@@ -225,7 +225,7 @@ class SuperLink(Plugin):
             "SuperLink-v4@SuperScript": SuperLinkProtocol
         }.get(self.cfg["服服互通协议"])
         if use_protocol is None:
-            Print.print_err(f"协议不受支持: {self.cfg['服服互通协议']}")
+            fmts.print_err(f"协议不受支持: {self.cfg['服服互通协议']}")
             raise SystemExit
         self.active_protocol = use_protocol(
             self.frame, self.cfg["中心服务器IP"], self.cfg["协议附加配置"]
@@ -246,7 +246,7 @@ class SuperLink(Plugin):
         self.active_protocol.start()
 
     def on_inject(self):
-        Print.print_inf("正在连接至服服互通..")
+        fmts.print_inf("正在连接至服服互通..")
         self.active()
 
     @utils.thread_func("服服互通上报消息")

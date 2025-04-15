@@ -3,7 +3,7 @@ from tooldelta import (
     cfg,
     game_utils,
     utils,
-    Print,
+    fmts,
     TYPE_CHECKING,
     plugin_entry,
 )
@@ -51,13 +51,13 @@ class NewPlugin(Plugin):
         for scoreboard, _ in data.items():
             self.game_ctrl.sendwscmd(f'/scoreboard objectives remove "{scoreboard}"')
 
-        Print.print_suc("重置完成")
+        fmts.print_suc("重置完成")
 
     def create(self, args):
         data_path = os.path.join(self.data_path, "服务器计分板.json")
         data = load_data(data_path)
         if not data:
-            Print.print_err("没有保存的计分板")
+            fmts.print_err("没有保存的计分板")
             return
 
         for scoreboard, show in data.items():
@@ -65,7 +65,7 @@ class NewPlugin(Plugin):
                 f'/scoreboard objectives add "{scoreboard}" dummy "{show}"'
             )
 
-        Print.print_suc("计分板重新创建完成")
+        fmts.print_suc("计分板重新创建完成")
         return
 
     def on_def(self):

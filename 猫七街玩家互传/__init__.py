@@ -3,7 +3,7 @@ from tooldelta import (
     cfg,
     game_utils,
     utils,
-    Print,
+    fmts,
     TYPE_CHECKING,
     Chat,
     Player,

@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, Print, Utils, Player, plugin_entry
+from tooldelta import Plugin, cfg, fmts, Utils, Player, plugin_entry
 
 import os, json, requests, time
 from urllib.parse import quote
@@ -31,7 +31,7 @@ class CloudBlacklist(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"配置加载失败: {e}")
+            fmts.print_err(f"配置加载失败: {e}")
             self._cfg = self._default_cfg.copy()
             self.cfg_version = self.version
 
@@ -99,7 +99,7 @@ class CloudBlacklist(Plugin):
             if args:
                 with open(data_path, "w") as f:
                     json.dump(new_data, f, indent=2)
-                Print.print_suc(f"成功覆盖 {len(new_data)} 条黑名单数据！")
+                fmts.print_suc(f"成功覆盖 {len(new_data)} 条黑名单数据！")
             else:
                 with open(data_path, "r+") as f:
                     try:
@@ -110,10 +110,10 @@ class CloudBlacklist(Plugin):
                     f.seek(0)
                     json.dump(current_data, f, indent=2)
                     f.truncate()
-                Print.print_suc(f"成功合并 {len(new_data)} 条黑名单数据！")
+                fmts.print_suc(f"成功合并 {len(new_data)} 条黑名单数据！")
 
         except Exception as e:
-            Print.print_err(f"拉取失败: {str(e)}")
+            fmts.print_err(f"拉取失败: {str(e)}")
 
     def Replace_list(self, args: List[str]):
         try:
@@ -121,7 +121,7 @@ class CloudBlacklist(Plugin):
             dirs = response.json()["subfolders"]
 
             for idx, name in enumerate(dirs, 1):
-                Print.print_suc(f"{idx}. {name}")
+                fmts.print_suc(f"{idx}. {name}")
 
             while True:
                 try:
@@ -134,7 +134,7 @@ class CloudBlacklist(Plugin):
                         break
                     raise ValueError
                 except:
-                    Print.print_err("输入无效，请重新输入！")
+                    fmts.print_err("输入无效，请重新输入！")
 
             encoded_dir = quote(selected, safe="")
 
@@ -150,10 +150,10 @@ class CloudBlacklist(Plugin):
             )
 
             self.Pull_Clouds_blacklist(["1"])
-            Print.print_suc(f"已切换到: {selected}")
+            fmts.print_suc(f"已切换到: {selected}")
 
         except Exception as e:
-            Print.print_err(f"切换失败: {str(e)}")
+            fmts.print_err(f"切换失败: {str(e)}")
 
     def Create_blacklist_server(self, args: List[str]):
         try:
@@ -172,12 +172,12 @@ class CloudBlacklist(Plugin):
             while True:
                 password = input("请输入管理密码（至少16位）: ").strip()
                 if len(password) < 16:
-                    Print.print_err("密码长度必须至少16位")
+                    fmts.print_err("密码长度必须至少16位")
                     continue
 
                 confirm = input("请再次输入密码确认: ").strip()
                 if password != confirm:
-                    Print.print_err("两次输入的密码不一致")
+                    fmts.print_err("两次输入的密码不一致")
                 else:
                     break
             local_blacklist_path = os.path.join(self.data_path, "blacklist.json")
@@ -196,9 +196,9 @@ class CloudBlacklist(Plugin):
 
                 result = response.json()
                 if result.get("status") == "success":
-                    Print.print_suc("云黑服务器创建成功！")
+                    fmts.print_suc("云黑服务器创建成功！")
                 else:
-                    Print.print_err(f"创建失败: {result.get('message', '未知错误')}")
+                    fmts.print_err(f"创建失败: {result.get('message', '未知错误')}")
 
             except requests.exceptions.HTTPError as e:
                 status_code = e.response.status_code
@@ -208,21 +208,21 @@ class CloudBlacklist(Plugin):
                     err_msg = "该服务器号已存在"
                 else:
                     err_msg = f"HTTP错误 ({status_code})"
-                Print.print_err(f"服务器拒绝请求: {err_msg}")
+                fmts.print_err(f"服务器拒绝请求: {err_msg}")
 
             except requests.exceptions.Timeout:
-                Print.print_err("请求超时，请检查网络连接")
+                fmts.print_err("请求超时，请检查网络连接")
 
             except requests.exceptions.RequestException as e:
-                Print.print_err(f"网络请求异常: {str(e)}")
+                fmts.print_err(f"网络请求异常: {str(e)}")
         except FileNotFoundError as e:
-            Print.print_err(f"文件未找到: {str(e)}")
+            fmts.print_err(f"文件未找到: {str(e)}")
         except json.JSONDecodeError:
-            Print.print_err("配置文件解析失败，请检查文件格式")
+            fmts.print_err("配置文件解析失败，请检查文件格式")
         except KeyError as e:
-            Print.print_err(f"配置文件缺少必要字段: {str(e)}")
+            fmts.print_err(f"配置文件缺少必要字段: {str(e)}")
         except Exception as e:
-            Print.print_err(f"未知错误: {str(e)}")
+            fmts.print_err(f"未知错误: {str(e)}")
 
     def Delete_blacklist_server(self, args: List[str]):
         try:
@@ -250,9 +250,9 @@ class CloudBlacklist(Plugin):
 
                 result = response.json()
                 if result.get("status") == "success":
-                    Print.print_suc(f"黑名单服务器 {server_number} 删除成功")
+                    fmts.print_suc(f"黑名单服务器 {server_number} 删除成功")
                 else:
-                    Print.print_err(f"删除失败: {result.get('message', '未知错误')}")
+                    fmts.print_err(f"删除失败: {result.get('message', '未知错误')}")
             except requests.exceptions.HTTPError as e:
                 status_code = e.response.status_code
                 if status_code == 400:
@@ -263,21 +263,21 @@ class CloudBlacklist(Plugin):
                     err_msg = "服务器号不存在"
                 else:
                     err_msg = f"HTTP错误 ({status_code})"
-                Print.print_err(f"服务器拒绝请求: {err_msg}")
+                fmts.print_err(f"服务器拒绝请求: {err_msg}")
 
             except requests.exceptions.Timeout:
-                Print.print_err("请求超时，请检查网络连接")
+                fmts.print_err("请求超时，请检查网络连接")
 
             except requests.exceptions.RequestException as e:
-                Print.print_err(f"网络请求异常: {str(e)}")
+                fmts.print_err(f"网络请求异常: {str(e)}")
         except FileNotFoundError as e:
-            Print.print_err(f"文件未找到: {str(e)}")
+            fmts.print_err(f"文件未找到: {str(e)}")
         except json.JSONDecodeError:
-            Print.print_err("配置文件解析失败，请检查文件格式")
+            fmts.print_err("配置文件解析失败，请检查文件格式")
         except KeyError as e:
-            Print.print_err(f"配置文件缺少必要字段: {str(e)}")
+            fmts.print_err(f"配置文件缺少必要字段: {str(e)}")
         except Exception as e:
-            Print.print_err(f"未知错误: {str(e)}")
+            fmts.print_err(f"未知错误: {str(e)}")
 
     def Update_blacklist_server(self, args: List[str]):
         try:
@@ -305,7 +305,7 @@ class CloudBlacklist(Plugin):
 
                 result = response.json()
                 if result.get("status") != "success":
-                    Print.print_err(
+                    fmts.print_err(
                         f"密码验证失败: {result.get('message', '未知错误')}"
                     )
                     return
@@ -325,23 +325,23 @@ class CloudBlacklist(Plugin):
 
                     result = response.json()
                     if result.get("status") == "success":
-                        Print.print_suc("云黑列表上传成功")
+                        fmts.print_suc("云黑列表上传成功")
                     else:
-                        Print.print_err(
+                        fmts.print_err(
                             f"上传失败: {result.get('message', '未知错误')}"
                         )
                 except requests.exceptions.RequestException as e:
-                    Print.print_err(f"上传失败: {str(e)}")
+                    fmts.print_err(f"上传失败: {str(e)}")
             except requests.exceptions.RequestException as e:
-                Print.print_err(f"密码验证失败: {str(e)}")
+                fmts.print_err(f"密码验证失败: {str(e)}")
         except FileNotFoundError as e:
-            Print.print_err(f"文件未找到: {str(e)}")
+            fmts.print_err(f"文件未找到: {str(e)}")
         except json.JSONDecodeError:
-            Print.print_err("配置文件解析失败，请检查文件格式")
+            fmts.print_err("配置文件解析失败，请检查文件格式")
         except KeyError as e:
-            Print.print_err(f"配置文件缺少必要字段: {str(e)}")
+            fmts.print_err(f"配置文件缺少必要字段: {str(e)}")
         except Exception as e:
-            Print.print_err(f"未知错误: {str(e)}")
+            fmts.print_err(f"未知错误: {str(e)}")
 
     def on_player_join(self, player: Player):
         player_name = player.name
@@ -383,14 +383,14 @@ class CloudBlacklist(Plugin):
         try:
             player_uuid = self.api_get_xuid.get_xuid_by_name(player_name, True)
         except:
-            Print.print_err("该玩家未加入过服务器")
+            fmts.print_err("该玩家未加入过服务器")
         with open(self.data_path + "/blacklist.json", "r", encoding="utf-8") as f:
             black_list = json.load(f)
 
         black_list[player_uuid] = player_name
         with open(self.data_path + "/blacklist.json", "w", encoding="utf-8") as f:
             json.dump(black_list, f, indent=4)
-            Print.print_suc("添加成功")
+            fmts.print_suc("添加成功")
 
     def remove_black_list(self, args: List[str]):
         player_name = input("请输入玩家名：")
@@ -398,7 +398,7 @@ class CloudBlacklist(Plugin):
             player_uuid = self.api_get_xuid.get_xuid_by_name(player_name, True)
 
         except:
-            Print.print_err("该玩家不存在于黑名单中")
+            fmts.print_err("该玩家不存在于黑名单中")
         with open(self.data_path + "/blacklist.json", "r", encoding="utf-8") as f:
             black_list = json.load(f)
 
@@ -406,7 +406,7 @@ class CloudBlacklist(Plugin):
             del black_list[player_uuid]
             with open(self.data_path + "/blacklist.json", "w", encoding="utf-8") as f:
                 json.dump(black_list, f, indent=4)
-                Print.print_suc("删除成功")
+                fmts.print_suc("删除成功")
 
 
 entry = plugin_entry(CloudBlacklist)

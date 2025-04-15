@@ -35,7 +35,7 @@ class PlayerJoinverify(Plugin):
         tempjson.load_and_write(self.path, data)
 
     def QQLinker_message(self, data):
-        # Print.print(f"{data}")
+        # fmts.print(f"{data}")
         if data.get("group_id") == self.group and data.get("message"):
             if data["message"].startswith("#验证"):
                 id = data["message"].split()[1]

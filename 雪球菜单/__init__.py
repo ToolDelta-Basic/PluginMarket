@@ -7,7 +7,7 @@ from tooldelta import (
     Plugin,
     cfg,
     utils,
-    Print,
+    fmts,
     game_utils,
     TYPE_CHECKING,
     Player,
@@ -476,7 +476,7 @@ class SnowMenu(Plugin):
     @utils.thread_func("展示雪球菜单页")
     def show_page_thread(self, player: str):
         if player not in self.in_snowball_menu.keys():
-            Print.print_war(f"{player} 的菜单显示不正常: 可能是立刻退出了！")
+            fmts.print_war(f"{player} 的菜单显示不正常: 可能是立刻退出了！")
         while player in self.in_snowball_menu.keys():
             self.show_page(player)
             time.sleep(1)
@@ -489,8 +489,8 @@ class SnowMenu(Plugin):
             try:
                 page_text = mp.page_cb(player, self.multi_snowball_page[player])
             except Exception:
-                Print.print_err("§4雪球菜单页面显示 出现问题:")
-                Print.print_err(traceback.format_exc())
+                fmts.print_err("§4雪球菜单页面显示 出现问题:")
+                fmts.print_err(traceback.format_exc())
                 return
         if page_text is None:
             return
@@ -501,7 +501,7 @@ class SnowMenu(Plugin):
         self._dbg(f"{player} confirmed")
         # 确认选项
         if player not in self.in_snowball_menu.keys():
-            Print.print_war(f"玩家: {player} 雪球菜单确认异常: 不在雪球菜单页内")
+            fmts.print_war(f"玩家: {player} 雪球菜单确认异常: 不在雪球菜单页内")
             return
         page = self.in_snowball_menu[player]
         if isinstance(page, Page):
@@ -531,7 +531,7 @@ class SnowMenu(Plugin):
 
     def menu_escape(self, player: str):
         if player not in self.in_snowball_menu.keys():
-            Print.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
+            fmts.print_war(f"玩家: {player} 雪球菜单退出异常: 不在雪球菜单页内")
             self.game_ctrl.sendwocmd(f"/tag @a[name={player}] remove snowmenu")
             return
         cb = self.in_snowball_menu[player].exit_cb

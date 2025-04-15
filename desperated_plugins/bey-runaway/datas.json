@@ -1,8 +1,0 @@
-{
-  "author": "大庆油田",
-  "version": "0.0.1",
-  "plugin-type": "classic",
-  "description": "一个和跑路说拜拜的插件",
-  "plugin-id": "bye_runaway",
-  "enabled": true
-}

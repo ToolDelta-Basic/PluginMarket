@@ -1,6 +1,6 @@
 import time
 
-from tooldelta import Plugin, Print, plugin_entry
+from tooldelta import Plugin, fmts, plugin_entry
 from tooldelta.constants import PacketIDS
 
 
@@ -69,7 +69,7 @@ class Display32KShulkerBox(Plugin):
                 self.ban_sys.ban(
                     playerNearest, -1, "使用 32k 潜影盒"
                 )
-                Print.print_war(
+                fmts.print_war(
                     f"!!! 发现含32k的潜影盒, 坐标: {shulkerBoxPos}, 结构id: {structID}"
                 )
                 self.write32kBox(structID)

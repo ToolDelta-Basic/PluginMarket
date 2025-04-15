@@ -1,6 +1,6 @@
 import datetime
 import time
-from tooldelta import utils, cfg, Plugin, Print, plugin_entry
+from tooldelta import utils, cfg, Plugin, fmts, plugin_entry
 
 import pytz
 from tooldelta.constants import PacketIDS

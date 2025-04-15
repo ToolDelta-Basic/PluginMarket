@@ -1,4 +1,4 @@
-from tooldelta import Plugin, Print, FrameExit, plugin_entry
+from tooldelta import Plugin, fmts, FrameExit, plugin_entry
 
 
 class CommandSenderMonitor(Plugin):
@@ -39,13 +39,13 @@ class CommandSenderMonitor(Plugin):
             self.enable_monitor()
         else:
             self.disable_monitor()
-        Print.print_suc(f"已{['关闭', '打开'][self.instant_monitor]}指令监测器")
+        fmts.print_suc(f"已{['关闭', '打开'][self.instant_monitor]}指令监测器")
 
     def special_monitor_sendcmd(
         self, cmd: str, waitForResp: bool = False, timeout: float = 30
     ):
         if self.instant_monitor:
-            Print.print_with_info(
+            fmts.print_with_info(
                 f"发送§a普通§r 指令{'<有返回>' if waitForResp else ''}: {cmd}",
                 "§b SCMD §r",
             )
@@ -55,7 +55,7 @@ class CommandSenderMonitor(Plugin):
         self, cmd: str, waitForResp: bool = False, timeout: float = 30
     ):
         if self.instant_monitor:
-            Print.print_with_info(
+            fmts.print_with_info(
                 f"发送 §bWS§r 指令{'<有返回>' if waitForResp else ''}: {cmd}",
                 "§b SCMD §r",
             )
@@ -63,7 +63,7 @@ class CommandSenderMonitor(Plugin):
 
     def special_monitor_sendwocmd(self, cmd: str):
         if self.instant_monitor:
-            Print.print_with_info(f"发送 §dWO§r 指令: {cmd}", "§b SCMD §r")
+            fmts.print_with_info(f"发送 §dWO§r 指令: {cmd}", "§b SCMD §r")
         self.cached_sendwocmd(cmd)
 
     def on_frame_exit(self, evt: FrameExit):

@@ -1,5 +1,5 @@
 import os
-from tooldelta import Plugin, Print, ToolDelta, Utils, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, fmts, ToolDelta, Utils, TYPE_CHECKING, plugin_entry
 
 from tooldelta.game_utils import getPosXYZ
 
@@ -34,7 +34,7 @@ class SFXPlayer(Plugin):
             self.script = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
         if self.script:
             self.init_script()
-            Print.print_inf("音效播放器: ZBasic插件已装载, 扩展语法已自动增加")
+            fmts.print_inf("音效播放器: ZBasic插件已装载, 扩展语法已自动增加")
             self.cb2bot.regist_message_cb("sfx.play", self.play_sfx_at)
         self.scan_files()
 
@@ -75,9 +75,9 @@ class SFXPlayer(Plugin):
             yp = Utils.try_int(yp)
             zp = Utils.try_int(zp)
             if xp is None or yp is None or zp is None:
-                Print.print_war(f"不正确的音效播放请求命令(来自命令方块): {msg}")
+                fmts.print_war(f"不正确的音效播放请求命令(来自命令方块): {msg}")
             if sfx_fname not in self.files:
-                Print.print_war(
+                fmts.print_war(
                     f"音效播放器: 音效文件 {sfx_fname} 不存在, 无法播放音效"
                 )
             else:
@@ -85,7 +85,7 @@ class SFXPlayer(Plugin):
         elif len(msg) == 2:
             target, sfx_name = msg
             if sfx_name not in self.files:
-                Print.print_war(f"音效播放器: 音效文件 {sfx_name} 不存在, 无法播放音效")
+                fmts.print_war(f"音效播放器: 音效文件 {sfx_name} 不存在, 无法播放音效")
             else:
                 self.sfx.playsound_at_target(sfx_name, target)
         return True

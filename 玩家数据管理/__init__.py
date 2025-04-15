@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, Print, Frame, Chat, plugin_entry
+from tooldelta import Plugin, cfg, fmts, Chat, plugin_entry
 
 # type: ignore
 import os
@@ -29,7 +29,7 @@ class 数据管理(Plugin):
                 self.name, self._std_cfg, self._default_cfg, self.version
             )
         except Exception as e:
-            Print.print_err(f"加载配置文件出错: {e}")
+            fmts.print_err(f"加载配置文件出错: {e}")
             self._cfg = self._default_cfg.copy()
         self.ListenActive(self.on_inject)
         self.ListenChat(self.on_player_message)
@@ -97,7 +97,7 @@ class 数据管理(Plugin):
         count = len(files)
         player_datas = []
         if count == 0:
-            Print.print_inf("没有保存的玩家数据")
+            fmts.print_inf("没有保存的玩家数据")
             return
         for file in files:
             with open(os.path.join(self.data_path, file), "r", encoding="utf-8") as f:
@@ -109,20 +109,20 @@ class 数据管理(Plugin):
             total_page = count // 10 + 1
         for i in range(10):
             out = i + (now - 1) * 10 + 1
-            Print.print_inf(
+            fmts.print_inf(
                 f"{out}.  {player_datas[out - 1]['玩家基本信息']['玩家名称']}"
             )
             if i >= count - 1:
                 break
         print()
-        Print.print_inf(f"     第 {now}/{total_page} 页")
+        fmts.print_inf(f"     第 {now}/{total_page} 页")
         while True:
             try:
                 choice = input(
                     "请输入玩家序号进行操作（输入 -/+ 上/下翻页，输入 q 退出）："
                 )
                 if choice == "q":
-                    Print.print_inf("已退出")
+                    fmts.print_inf("已退出")
                     return
                 elif choice == "+":
                     now += 1
@@ -130,42 +130,42 @@ class 数据管理(Plugin):
                     for i in range(10):
                         out = i + (now - 1) * 10 + 1
                         print(out, count)
-                        Print.print_inf(
+                        fmts.print_inf(
                             f"{out}.  {player_datas[out - 1]['玩家基本信息']['玩家名称']}"
                         )
                         if out >= count:
                             break
                     print()
-                    Print.print_inf(f"     第 {now}/{total_page} 页")
+                    fmts.print_inf(f"     第 {now}/{total_page} 页")
                     continue
                 elif choice == "-":
                     now -= 1
                     now = max(now, 1)
                     for i in range(10):
                         out = i + (now - 1) * 10 + 1
-                        Print.print_inf(
+                        fmts.print_inf(
                             f"{out}.  {player_datas[out - 1]['玩家基本信息']['玩家名称']}"
                         )
                         if i >= count - 1:
                             break
                     print()
-                    Print.print_inf(f"     第 {now}/{total_page} 页")
+                    fmts.print_inf(f"     第 {now}/{total_page} 页")
                     continue
                 else:
                     choice = int(choice)
                     if choice > 0 and choice <= count:
                         break
                     else:
-                        Print.print_err("输入错误，请重新输入！")
+                        fmts.print_err("输入错误，请重新输入！")
                         print(choice)
             except Exception as e:
                 print(e)
-                Print.print_err("输入错误，请重新输入！")
+                fmts.print_err("输入错误，请重新输入！")
         if choice == "q":
-            Print.print_inf("已退出操作")
+            fmts.print_inf("已退出操作")
             return
         player_data = player_datas[choice - 1]
-        Print.print_inf(
+        fmts.print_inf(
             f"正在操作玩家 {player_data['玩家基本信息']['玩家名称']} 的数据"
         )
         count = len(player_data["玩家计分板信息"])
@@ -173,7 +173,7 @@ class 数据管理(Plugin):
         player_uuid = player_data["玩家基本信息"]["玩家UUID"]
         player_data = player_data["玩家计分板信息"]
         if count == 0:
-            Print.print_inf("玩家没有计分板数据")
+            fmts.print_inf("玩家没有计分板数据")
             return
         if count % 10 == 0:
             total_page = count / 10
@@ -188,48 +188,48 @@ class 数据管理(Plugin):
         while True:
             for i in range(10):
                 out = i + (now - 1) * 10 + 1
-                Print.print_inf(f"{out}.   ", end="")
+                fmts.print_inf(f"{out}.   ", end="")
                 print(temp_dic[f"{out}"][0], end="")
                 print("\t\t", end="")
                 print(temp_dic[f"{out}"][1])
                 if i >= count - 1:
                     break
             print()
-            Print.print_inf(f"     第 {now}/{total_page} 页")
+            fmts.print_inf(f"     第 {now}/{total_page} 页")
             while True:
                 choice = input(
                     "请输入计分板序号进行操作（输入 -/+ 上/下翻页，输入 q 退出）："
                 )
                 if choice == "q":
-                    Print.print_inf("已退出")
+                    fmts.print_inf("已退出")
                     return
                 elif choice == "+":
                     now += 1
                     now = min(now, total_page)
                     for i in range(10):
                         out = i + (now - 1) * 10 + 1
-                        Print.print_inf(f"{out}.   ", end="")
+                        fmts.print_inf(f"{out}.   ", end="")
                         print(temp_dic[f"{out}"][0], end="")
                         print("\t\t", end="")
                         print(temp_dic[f"{out}"][1])
                         if out >= count:
                             break
                     print()
-                    Print.print_inf(f"     第 {now}/{total_page} 页")
+                    fmts.print_inf(f"     第 {now}/{total_page} 页")
                     continue
                 elif choice == "-":
                     now -= 1
                     now = max(now, 1)
                     for i in range(10):
                         out = i + (now - 1) * 10 + 1
-                        Print.print_inf(f"{out}.   ", end="")
+                        fmts.print_inf(f"{out}.   ", end="")
                         print(temp_dic[f"{out}"][0], end="")
                         print("\t\t", end="")
                         print(temp_dic[f"{out}"][1])
                         if i >= count - 1:
                             break
                     print()
-                    Print.print_inf(f"     第 {now}/{total_page} 页")
+                    fmts.print_inf(f"     第 {now}/{total_page} 页")
                     continue
                 else:
                     try:
@@ -237,11 +237,11 @@ class 数据管理(Plugin):
                         if choice > 0 and choice <= count:
                             break
                         else:
-                            Print.print_err("输入错误，请重新输入！")
+                            fmts.print_err("输入错误，请重新输入！")
                     except Exception as e:
-                        Print.print_err("输入错误，请重新输入！")
+                        fmts.print_err("输入错误，请重新输入！")
             if choice == "q":
-                Print.print_inf("已退出")
+                fmts.print_inf("已退出")
                 break
             else:
                 while True:
@@ -255,10 +255,10 @@ class 数据管理(Plugin):
                         self.player_data_delete(temp_dic[f"{out}"][0], player_uuid)
                         break
                     elif choice2 == "q":
-                        Print.print_inf("已退出")
+                        fmts.print_inf("已退出")
                         return
                     else:
-                        Print.print_err("输入错误，请重新输入！")
+                        fmts.print_err("输入错误，请重新输入！")
             break
 
     def player_data_change(self, key: str, value1: int, player_uuid: str):
@@ -269,7 +269,7 @@ class 数据管理(Plugin):
             try:
                 value = input("请输入修改后的值：(输入 q 退出)")
                 if value == "q":
-                    Print.print_inf("已退出")
+                    fmts.print_inf("已退出")
                     return
                 else:
                     value = int(value)
@@ -283,13 +283,13 @@ class 数据管理(Plugin):
                         with open(playerdata_path, "r+", encoding="utf-8") as f:
                             json.dump(player_data, f, indent=4, ensure_ascii=False)
                     else:
-                        Print.print_inf("取消修改")
+                        fmts.print_inf("取消修改")
                         return
-                    Print.print_inf("修改成功")
+                    fmts.print_inf("修改成功")
                     return
             except Exception as e:
-                Print.print_err(str(e))
-                Print.print_err("输入错误，请重新输入！")
+                fmts.print_err(str(e))
+                fmts.print_err("输入错误，请重新输入！")
 
     def player_data_delete(self, key: str, player_uuid: str):
         playerdata_path = self.format_data_path(f"{player_uuid}.json")
@@ -304,12 +304,12 @@ class 数据管理(Plugin):
                 player_data["玩家计分板信息"].pop(key)
                 with open(playerdata_path, "w", encoding="utf-8") as f:
                     json.dump(player_data, f, indent=4, ensure_ascii=False)
-                Print.print_inf("删除成功")
+                fmts.print_inf("删除成功")
             else:
-                Print.print_inf("已取消")
+                fmts.print_inf("已取消")
                 return
         else:
-            Print.print_inf("已取消")
+            fmts.print_inf("已取消")
             return
 
 

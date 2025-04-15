@@ -3,7 +3,7 @@ import os
 from typing import ClassVar
 import Musicreater
 from Musicreater.constants import MM_INSTRUMENT_DEVIATION_TABLE
-from tooldelta import Plugin, utils, Print, plugin_entry
+from tooldelta import Plugin, utils, fmts, plugin_entry
 
 
 # API 名: MIDI播放器
@@ -46,7 +46,7 @@ class ToolSoundSequence:
                 if pitch < 0:
                     pitch = 0
                 if pitch not in range(256):
-                    Print.print_err(
+                    fmts.print_err(
                         f"音高超出转换预期: {pitch} (当前乐器: {instrument})"
                     )
                 # 有些音符间隔很长
@@ -70,7 +70,7 @@ class ToolSoundSequence:
             pitch_modifier = MM_INSTRUMENT_DEVIATION_TABLE.get(instrument)
             if pitch_modifier is None:
                 pitch_modifier = 6
-                Print.print_war(f"modifier: instrument {instrument} is invalid")
+                fmts.print_war(f"modifier: instrument {instrument} is invalid")
             pitch_resized = note_pitch_shift - pitch_modifier
             vol = volume / 100
             pitch = (
@@ -120,7 +120,7 @@ class ToolMidiMixer(Plugin):
             try:
                 self.midi_seqs[as_name] = ToolSoundSequence(f.read())
             except Exception as err:
-                Print.print_err(f"读取音乐序列 {path} 失败: {err}")
+                fmts.print_err(f"读取音乐序列 {path} 失败: {err}")
                 raise SystemExit
 
     def translate_midi_to_seq_file(self, path: str, path1: str):
@@ -131,7 +131,7 @@ class ToolMidiMixer(Plugin):
             import traceback
 
             traceback.print_exc()
-            Print.print_err(f"转换音乐 {path} 失败: {err}")
+            fmts.print_err(f"转换音乐 {path} 失败: {err}")
             raise SystemExit
         with open(path1, "wb") as f:
             f.write(seq.dump_seq())
@@ -141,7 +141,7 @@ class ToolMidiMixer(Plugin):
         try:
             return read_midi_and_dump_to_seq(path)
         except Exception as err:
-            Print.print_err(f"转换音乐 {path} 失败: {err}")
+            fmts.print_err(f"转换音乐 {path} 失败: {err}")
             raise SystemExit
 
     def playsound_at_target(self, name_or_seq: str | ToolSoundSequence, target: str):
@@ -220,20 +220,20 @@ class ToolMidiMixer(Plugin):
     def play_test(self, *_):
         for i in os.listdir():
             if i.endswith(".mid"):
-                Print.print_suc(f"已找到用于示例播放的midi文件: {i}")
+                fmts.print_suc(f"已找到用于示例播放的midi文件: {i}")
                 self.load_midi_file(i, "example")
-                Print.print_suc(f"开始播放: {i}")
+                fmts.print_suc(f"开始播放: {i}")
                 self.playsound_at_target("example", "@a")
                 break
         else:
-            Print.print_war(
+            fmts.print_war(
                 "没有找到用于示例播放的任何midi文件(ToolDelta目录下), 已忽略"
             )
 
     def stop_all(self, *_):
         for k in self.playsound_threads.copy().keys():
             res = self.stop_playing(k)
-            Print.print_inf(f"停止音乐 {k} 的播放: " + ["失败", "成功"][res] + ".")
+            fmts.print_inf(f"停止音乐 {k} 的播放: " + ["失败", "成功"][res] + ".")
 
 
 entry = plugin_entry(ToolMidiMixer, "MIDI播放器")

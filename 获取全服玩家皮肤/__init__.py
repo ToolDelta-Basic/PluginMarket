@@ -1,5 +1,5 @@
 import base64
-from tooldelta import Plugin, Print, plugin_entry
+from tooldelta import Plugin, fmts, plugin_entry
 from tooldelta.constants import PacketIDS
 
 cl = [
@@ -62,7 +62,7 @@ class GetSkin(Plugin):
                         # 绘制像素点
                         img.putpixel((xp, yp), (rs, gs, bs, alp))
                 img.save(f"{self.data_path}/{name}.png", bitmap_format="png")
-                Print.print_with_info(
+                fmts.print_with_info(
                     f"皮肤信息: 宽={siz[0]} 高={siz[1]} 使用者={name}", info=" Skin "
                 )
                 img_x16 = img.crop((8, 8, 16, 16))

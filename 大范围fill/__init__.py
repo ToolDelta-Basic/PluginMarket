@@ -1,4 +1,4 @@
-from tooldelta import Plugin, utils, Print, game_utils, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, utils, fmts, game_utils, TYPE_CHECKING, plugin_entry
 
 
 class LargeFill(Plugin):
@@ -48,27 +48,27 @@ class LargeFill(Plugin):
         try:
             x, y, z = (int(i) for i in args)
         except Exception:
-            Print.print_err("菜单参数错误")
+            fmts.print_err("菜单参数错误")
             return
         self.gx = x
         self.gy = y
         self.gz = z
-        Print.print_suc(f"起点坐标设置为: {self.gx}, {self.gy}, {self.gz}")
+        fmts.print_suc(f"起点坐标设置为: {self.gx}, {self.gy}, {self.gz}")
 
     def on_setpos_end(self, args: list[str]):
         try:
             x, y, z = (int(i) for i in args)
         except Exception:
-            Print.print_err("菜单参数错误")
+            fmts.print_err("菜单参数错误")
             return
         self.ex = x
         self.ey = y
         self.ez = z
-        Print.print_suc(f"终点坐标设置为: {self.ex}, {self.ey}, {self.ez}")
+        fmts.print_suc(f"终点坐标设置为: {self.ex}, {self.ey}, {self.ez}")
 
     def on_fill(self, args: list[str]):
         if len(args) != 1:
-            Print.print_err("参数错误")
+            fmts.print_err("参数错误")
             return
         self.thread_fill(args[0])
 
@@ -78,7 +78,7 @@ class LargeFill(Plugin):
             [(self.get_single_pos, (player,)) for player in players]
         )
         for player, (x, y, z) in ress:
-            Print.print_inf(f"玩家 {player} 在 {x} {y} {z}")
+            fmts.print_inf(f"玩家 {player} 在 {x} {y} {z}")
 
     def get_super_pos1(self, _):
         x, y, z = game_utils.getPosXYZ("SkyblueSuper")
@@ -95,12 +95,12 @@ class LargeFill(Plugin):
     def thread_fill(self, fillblock_id: str):
         pos_start = self.getpos_start()
         if pos_start is None:
-            Print.print_err("还未设置起点, 使用 lfset 设置")
+            fmts.print_err("还未设置起点, 使用 lfset 设置")
             return
         _sx, _sy, _sz = pos_start
         pos_end = self.getpos_end()
         if pos_end is None:
-            Print.print_err("还未设置终点, 使用 lfsend 设置")
+            fmts.print_err("还未设置终点, 使用 lfsend 设置")
             return
         _ex, _ey, _ez = pos_end
         sx, ex = self.cmp(_sx, _ex)
@@ -112,7 +112,7 @@ class LargeFill(Plugin):
         while nowz <= ez:
             while nowx <= ex:
                 while nowy <= ey:
-                    Print.print_inf(
+                    fmts.print_inf(
                         f"大范围填充: 正在填充 {nowx}, {nowy}, {nowz} 区域     ",
                         need_log=False,
                         end="\r",
@@ -123,7 +123,7 @@ class LargeFill(Plugin):
                     self.game_ctrl.sendcmd_with_resp(
                         f"fill {nowx} {nowy} {nowz} {min(nowx + 31, ex)} {min(nowy + 31, ey)} {min(nowz + 31, ez)} {fillblock_id}"
                     )
-                    Print.print_inf(
+                    fmts.print_inf(
                         f"大范围填充: 已填充 {nowx}, {nowy}, {nowz} 区域     ",
                         need_log=False,
                         end="\r",
@@ -133,7 +133,7 @@ class LargeFill(Plugin):
                 nowx += 32
             nowx = sx
             nowz += 32
-        Print.print_suc(f"大范围填充已完成: ({sx}, {sy}, {sz}) -> ({ex}, {ey}, {ez})")
+        fmts.print_suc(f"大范围填充已完成: ({sx}, {sy}, {sz}) -> ({ex}, {ey}, {ez})")
 
     def getpos_start(self):
         if self.gx is None or self.gy is None or self.gz is None:

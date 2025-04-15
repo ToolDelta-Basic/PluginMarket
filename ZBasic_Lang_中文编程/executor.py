@@ -7,21 +7,26 @@ import time
 
 from compiler import *
 from syntax_lib import SYNTAX_PTRS
-from tooldelta import GameCtrl, Print
+from tooldelta import GameCtrl, fmts
+
 
 def set_game_ctrl(g: GameCtrl):
     global game_ctrl
     game_ctrl = g
 
+
 def print_value(sth: list[SYNTAX_PTRS], local_vars: VAR_MAP):
-    Print.print_with_info(" ".join(str(i.eval(local_vars)) for i in sth), "§f ZBas §r")
+    fmts.print_with_info(" ".join(str(i.eval(local_vars)) for i in sth), "§f ZBas §r")
+
 
 def run(compiled_code: CompiledCode, local_vars: VAR_MAP):
     # 执行编译脚本
     return _run(compiled_code, local_vars)
 
+
 _SIGN_DEFAULT = 1
 _SIGN_OUT = 100
+
 
 def _run(cmp_code: CompiledCode, local_vars: VAR_MAP):
     sign = _SIGN_DEFAULT
@@ -52,7 +57,9 @@ def _run(cmp_code: CompiledCode, local_vars: VAR_MAP):
             case OPs.EXECMD:
                 game_ctrl.sendwocmd(code_args[0].eval(local_vars))
             case OPs.SAYTO:
-                game_ctrl.say_to(code_args[0].eval(local_vars), code_args[1].eval(local_vars))
+                game_ctrl.say_to(
+                    code_args[0].eval(local_vars), code_args[1].eval(local_vars)
+                )
             case OPs.IGNORE_NULL:
                 if local_vars[code_args[0]] is None:
                     sign = _SIGN_OUT

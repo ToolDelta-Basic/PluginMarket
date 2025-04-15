@@ -2,7 +2,7 @@ import os
 import json
 import ctypes
 from dataclasses import dataclass
-from tooldelta import Plugin, game_utils, cfg, Print, utils, plugin_entry
+from tooldelta import Plugin, game_utils, cfg, fmts, utils, plugin_entry
 
 
 @dataclass
@@ -51,21 +51,21 @@ class TDItemMaker(Plugin):
     def on_menu(self, _):
         fs = os.listdir(self.data_path)
         if fs == []:
-            Print.print_inf("物品数据文件夹空空如也...")
-            Print.print_inf("可在插件管理器界面选择该插件， 选择查看手册以查看教程")
+            fmts.print_inf("物品数据文件夹空空如也...")
+            fmts.print_inf("可在插件管理器界面选择该插件， 选择查看手册以查看教程")
             return
         for i, file in enumerate(fs):
-            Print.print_inf(f"{i + 1} - {file}")
-        resp = utils.try_int(input(Print.fmt_info("请输入序号以选择:")))
+            fmts.print_inf(f"{i + 1} - {file}")
+        resp = utils.try_int(input(fmts.fmt_info("请输入序号以选择:")))
         if resp is None or resp not in range(1, len(fs) + 1):
-            Print.print_err("无效选项")
+            fmts.print_err("无效选项")
             return
         with open(os.path.join(self.data_path, fs[resp - 1]), encoding="utf-8") as f:
             content = f.read()
         try:
             items = self.parse_to_items(fs[resp - 1], content)
         except Exception as err:
-            Print.print_err(str(err))
+            fmts.print_err(str(err))
             return
         self.make_items(items)
 
@@ -81,7 +81,7 @@ class TDItemMaker(Plugin):
             self.create_new_item_and_drop(
                 (x, y, z), item.id, item.name, item.data, item.tag
             )
-        Print.print_suc("全部物品制作完成")
+        fmts.print_suc("全部物品制作完成")
 
     def parse_to_items(self, filename: str, content: str):
         STD = cfg.JsonList(
@@ -124,10 +124,10 @@ class TDItemMaker(Plugin):
             f"replaceitem entity @a[name={self.game_ctrl.bot_name}] slot.hotbar 0 {item_id} 1 {item_data} {tag_str}"
         )
         if result.SuccessCount == 0:
-            Print.print_err("§c物品制作： 制作失败, 无法执行replaceitem指令")
+            fmts.print_err("§c物品制作： 制作失败, 无法执行replaceitem指令")
             return
         if err := self.rename_item(name, pos):
-            Print.print_err(f"物品制作失败: {err}")
+            fmts.print_err(f"物品制作失败: {err}")
             return
 
 

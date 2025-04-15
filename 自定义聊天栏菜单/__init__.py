@@ -4,7 +4,7 @@ from tooldelta import (
     Plugin,
     cfg,
     utils,
-    Print,
+    fmts,
     game_utils,
     plugin_entry,
     TYPE_CHECKING,
@@ -128,7 +128,7 @@ class CustomChatbarMenu(Plugin):
                 var_value = args[int(var_arg) - 1]
                 sub = sub.replace(varsub, var_value)
             except IndexError:
-                Print.print_err("聊天栏菜单: 菜单的参数项提供异常!")
+                fmts.print_err("聊天栏菜单: 菜单的参数项提供异常!")
                 self.game_ctrl.say_to(
                     "@a", "聊天栏菜单: 菜单的参数项提供异常， 请联系管理员以修复"
                 )
@@ -139,7 +139,7 @@ class CustomChatbarMenu(Plugin):
                 score = str(game_utils.getScore(scb_name, user, 3))
             except ValueError:
                 score = "<未知>"
-                Print.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数失败")
+                fmts.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数失败")
             except TimeoutError:
                 score = "<未知>"
             sub = sub.replace(f"[计分板:{scb_name}]", score)
@@ -166,10 +166,10 @@ class CustomChatbarMenu(Plugin):
                             break
             except ValueError:
                 score = None
-                Print.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数失败")
+                fmts.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数失败")
             except TimeoutError:
                 score = None
-                Print.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数超时")
+                fmts.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数超时")
             sub = sub.replace(f"[计分板替换:{scb_name}({scb_repl})]", repl_text)
         return sub
 

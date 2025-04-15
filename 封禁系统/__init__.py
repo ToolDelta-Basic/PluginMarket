@@ -8,7 +8,7 @@ from tooldelta import (
     cfg,
     constants,
     Plugin,
-    Print,
+    fmts,
     game_utils,
     TYPE_CHECKING,
     Player,
@@ -130,17 +130,17 @@ class BanSystem(Plugin):
 
     def on_console_ban(self, _):
         allplayers = self.game_ctrl.allplayers.copy()
-        Print.print_inf("选择一个玩家进行封禁：")
+        fmts.print_inf("选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
-            Print.print_inf(f"{i + 1}: {j}")
-        resp = utils.try_int(input(Print.fmt_info("请输入序号：")))
+            fmts.print_inf(f"{i + 1}: {j}")
+        resp = utils.try_int(input(fmts.fmt_info("请输入序号：")))
         if resp and resp in range(1, len(allplayers) + 1):
             ban_player = allplayers[resp - 1]
-            reason = input(Print.fmt_info("请输入封禁理由：")) or "未知"
+            reason = input(fmts.fmt_info("请输入封禁理由：")) or "未知"
             self.ban(ban_player, -1, reason)
-            Print.print_suc(f"封禁成功: 已封禁 {ban_player}")
+            fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
         else:
-            Print.print_err("输入有误")
+            fmts.print_err("输入有误")
 
     def on_console_unban(self, _):
         all_ban_player_xuids = os.listdir(self.data_path)
@@ -154,23 +154,23 @@ class BanSystem(Plugin):
             except ValueError:
                 continue
         if all_ban_playernames == []:
-            Print.print_inf("没有封禁的玩家")
+            fmts.print_inf("没有封禁的玩家")
             return
-        Print.print_inf("选择一个玩家进行解封：")
+        fmts.print_inf("选择一个玩家进行解封：")
         for i, (name, xuid) in enumerate(all_ban_playernames):
-            Print.print_inf(f"{i + 1}: {name}")
-        resp = utils.try_int(input(Print.fmt_info("请输入序号：")))
+            fmts.print_inf(f"{i + 1}: {name}")
+        resp = utils.try_int(input(fmts.fmt_info("请输入序号：")))
         if resp and resp in range(1, len(all_ban_playernames) + 1):
             unban_player = all_ban_playernames[resp - 1][0]
             self.del_ban_data(all_ban_playernames[resp - 1][0])
-            Print.print_suc(f"解封成功: 已解封 {unban_player}")
+            fmts.print_suc(f"解封成功: 已解封 {unban_player}")
         else:
-            Print.print_err("输入有误")
+            fmts.print_err("输入有误")
 
     def on_console_ban_offline(self, _):
-        name_part = input(Print.fmt_info("请输入玩家名或部分玩家名: ")).strip()
+        name_part = input(fmts.fmt_info("请输入玩家名或部分玩家名: ")).strip()
         if name_part == "":
-            Print.print_err("输入不能为空")
+            fmts.print_err("输入不能为空")
             return
         players_xuids = utils.tempjson.load_and_read(
             self.xuidm.format_data_path("xuids.json")
@@ -180,25 +180,25 @@ class BanSystem(Plugin):
             if name_part in name:
                 matched_names_and_uuids.append((name, xuid))
         matched_names_and_uuids.sort(key=lambda x: x[0].count(name_part))
-        Print.print_inf("找到以下匹配的玩家名：")
+        fmts.print_inf("找到以下匹配的玩家名：")
         for i, (name, _) in enumerate(matched_names_and_uuids):
-            Print.print_inf(
+            fmts.print_inf(
                 f" {i + 1}. {name.replace(name_part, '§b' + name_part + '§r')}"
             )
-        resp = utils.try_int(input(Print.fmt_info("请输入序号：")))
+        resp = utils.try_int(input(fmts.fmt_info("请输入序号：")))
         if resp is None or resp not in range(1, len(matched_names_and_uuids) + 1):
-            Print.print_err("输入有误")
+            fmts.print_err("输入有误")
             return
         target, xuid = matched_names_and_uuids[resp - 1]
         ban_seconds = utils.try_int(
-            input(Print.fmt_info("请输入封禁时间(秒, 默认为永久)：") or "-1")
+            input(fmts.fmt_info("请输入封禁时间(秒, 默认为永久)：") or "-1")
         )
         if ban_seconds is None or (ban_seconds < 0 and ban_seconds != -1):
-            Print.print_err("不合法的封禁时间")
+            fmts.print_err("不合法的封禁时间")
             return
-        reason = input(Print.fmt_info("请输入封禁原因:")).strip() or "未知"
+        reason = input(fmts.fmt_info("请输入封禁原因:")).strip() or "未知"
         self.ban(target, ban_seconds, reason)
-        Print.print_suc(
+        fmts.print_suc(
             f"封禁 {target} 成功, 封禁了 {self.format_date_zhcn(ban_seconds)}"
         )
 
@@ -266,15 +266,15 @@ class BanSystem(Plugin):
                 self.game_ctrl.say_to(caller, "§6看起来你不能封禁自己..")
                 return
             self.ban(allplayers[resp - 1], -1)
-            Print.print_suc(f"封禁成功: 已封禁 {ban_player}")
+            fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
         else:
-            Print.print_err("输入有误")
+            fmts.print_err("输入有误")
 
     def test_ban(self, playername: str):
         ban_data = self.get_ban_data(playername)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
         if ban_to == -1 or ban_to > time.time():
-            Print.print_inf(
+            fmts.print_inf(
                 f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
             )
             self.print(

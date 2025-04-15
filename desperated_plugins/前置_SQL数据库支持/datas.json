@@ -1,9 +1,0 @@
-{
-    "author": "xingchen",
-    "version": "0.0.1",
-    "description": "提供更加简便的SQL数据库操作功能",
-    "limit_launcher": null,
-    "pre-plugins": {},
-    "plugin-type": "classic",
-    "plugin-id": "SQLiteLib"
-}

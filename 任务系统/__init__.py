@@ -5,7 +5,7 @@ from tooldelta import (
     utils,
     TYPE_CHECKING,
     cfg as config,
-    Print,
+    fmts,
     game_utils,
     Player,
     plugin_entry,
@@ -126,8 +126,8 @@ class TaskSystem(Plugin):
                     )
                     total_quest_files += 1
             except config.ConfigError as err:
-                Print.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
-                Print.print_err(err.args[0])
+                fmts.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
+                fmts.print_err(err.args[0])
         for quest in self.quests.values():
             for i in quest.start_quest_when_finished:
                 try:
@@ -140,9 +140,9 @@ class TaskSystem(Plugin):
                                 file = i
                                 raise config.ConfigError(f"要求的前置任务 {i} 不存在")
                 except config.ConfigError as err:
-                    Print.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
-                    Print.print_err(err.args[0])
-        Print.print_with_info(
+                    fmts.print_err(f"任务系统: 任务配置文件 {file} 出错: ")
+                    fmts.print_err(err.args[0])
+        fmts.print_with_info(
             f"§a共加载 §b{total_quest_files}§a 个任务文件.", "§b Task §r"
         )
         self.ListenPreload(self.on_def)

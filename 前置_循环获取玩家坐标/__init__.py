@@ -1,7 +1,7 @@
 import time
 import json
 import dataclasses
-from tooldelta import Plugin, Print, Utils, plugin_entry
+from tooldelta import Plugin, fmts, Utils, plugin_entry
 
 
 class RepeatGetPlayerPos(Plugin):
@@ -53,11 +53,11 @@ class RepeatGetPlayerPos(Plugin):
             try:
                 result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
                 if result.SuccessCount == 0:
-                    Print.print_err(
+                    fmts.print_err(
                         f"获取玩家坐标: 无法获取坐标: {result.OutputMessages[0].Message}"
                     )
             except TimeoutError:
-                Print.print_war("获取玩家坐标: 获取指令返回超时")
+                fmts.print_war("获取玩家坐标: 获取指令返回超时")
                 continue
             content = json.loads(result.OutputMessages[0].Parameters[0])
             for i in content:

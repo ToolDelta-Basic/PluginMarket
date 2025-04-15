@@ -41,7 +41,7 @@ from syntax_lib import ConstPtr
 from tooldelta import (
     Frame,
     Plugin,
-    Print,
+    fmts,
     utils,
     constants,
     game_utils,
@@ -253,14 +253,14 @@ class ToolDelta_ZBasic(Plugin):
                         scripts["玩家死亡"][filedir] = self.compile(
                             f.read(), {"玩家名": STRING, "击杀者": STRING}
                         )
-                Print.print_suc(f"[ZBasic] 已载入脚本 {filedir}.")
+                fmts.print_suc(f"[ZBasic] 已载入脚本 {filedir}.")
         except CodeSyntaxError as e:
             import traceback
 
             traceback.print_exc()
-            Print.print_err(f"中文脚本 {'/'.join(fn.split(os.sep)[3:])} 编译出现问题:")
-            Print.print_err(str(e))
-            Print.print_inf("修复后在控制台输入 重载脚本 即可再次载入")
+            fmts.print_err(f"中文脚本 {'/'.join(fn.split(os.sep)[3:])} 编译出现问题:")
+            fmts.print_err(str(e))
+            fmts.print_inf("修复后在控制台输入 重载脚本 即可再次载入")
         self.scripts = scripts
 
     def init(self):
@@ -318,14 +318,14 @@ class ToolDelta_ZBasic(Plugin):
             try:
                 return game_utils.getScore(s, t)
             except Exception as err:
-                Print.print_war(f"ZBasic: 获取计分板 {s} 上 {t} 的分数失败: {err}")
+                fmts.print_war(f"ZBasic: 获取计分板 {s} 上 {t} 的分数失败: {err}")
                 return None
 
         def _cmd_res(cmd: str):
             try:
                 return game_utils.isCmdSuccess(cmd)
             except TimeoutError:
-                Print.print_err(f"ZBasic: {cmd[:10]}.. 指令返回超时")
+                fmts.print_err(f"ZBasic: {cmd[:10]}.. 指令返回超时")
                 return False
 
         def _get_pos(t: str):
@@ -333,7 +333,7 @@ class ToolDelta_ZBasic(Plugin):
                 x, y, z = game_utils.getPosXYZ(t)
                 return (x, y, z)
             except Exception as e:
-                Print.print_err(f"ZBasic: 获取目标 {t} 的坐标失败: {e}")
+                fmts.print_err(f"ZBasic: 获取目标 {t} 的坐标失败: {e}")
                 return None
 
         def _say_to(target: str, msg: str):
@@ -381,7 +381,7 @@ class ToolDelta_ZBasic(Plugin):
             cb()
         self.load_scripts()
         self.new_thread("启动时执行ZBasic脚本", self.execute_init)
-        Print.print_suc("ZBasic脚本重载成功")
+        fmts.print_suc("ZBasic脚本重载成功")
 
     def new_thread(self, name: str, func: Callable, args=()):
         def _thread():
@@ -400,7 +400,7 @@ class ToolDelta_ZBasic(Plugin):
             for script_name, code in self.scripts[clsfy].items():
                 run(code, local_vars)
         except CodeSyntaxError as err:
-            Print.print_err(f"执行脚本文件 {script_name}/{clsfy} 出现问题: {err}")
+            fmts.print_err(f"执行脚本文件 {script_name}/{clsfy} 出现问题: {err}")
 
     def on_def(self):
         self.init()
@@ -446,12 +446,12 @@ class ToolDelta_ZBasic(Plugin):
         )
 
     def check_threads(self, _):
-        Print.print_inf("目前正在运行的ZBasic脚本线程:")
+        fmts.print_inf("目前正在运行的ZBasic脚本线程:")
         if self.threads == []:
-            Print.print_inf(" - 无")
+            fmts.print_inf(" - 无")
             return
         for i in self.threads:
-            Print.print_inf(f" - {i.name}")
+            fmts.print_inf(f" - {i.name}")
 
     def execute_init(self):
         with self.on_init_counter:
@@ -482,18 +482,18 @@ class ZBasic_TasksCounter:
     def __enter__(self):
         self.tasks += 1
         if self.tasks >= 15:
-            Print.print_war(
+            fmts.print_war(
                 f"ZBasic: {self.name}线程任务数大于15, 可能是脚本内有死循环"
             )
         if self.tasks >= 31:
-            Print.print_err(f"ZBasic {self.name}线程任务数大于31, 已被迫终止")
+            fmts.print_err(f"ZBasic {self.name}线程任务数大于31, 已被迫终止")
             raise SystemExit
         return self
 
     def __exit__(self, _, _2, _3):
         self.tasks -= 1
         if _2:
-            Print.print_war(f"脚本执行线程 {self.name} 被迫中断")
+            fmts.print_war(f"脚本执行线程 {self.name} 被迫中断")
 
 
 entry = plugin_entry(ToolDelta_ZBasic, "ZBasic")

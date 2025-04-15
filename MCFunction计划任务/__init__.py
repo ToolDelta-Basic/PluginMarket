@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from tooldelta import Plugin, Utils, Print, Chat, Player, plugin_entry
+from tooldelta import Plugin, Utils, fmts, Chat, Player, plugin_entry
 
 EVT_SYSTEM_LAUNCH = "系统启动"
 EVT_TIMER = "定时执行"
@@ -108,24 +108,24 @@ class MCFunctionExecutor(Plugin):
                 filename = filename[:-11]
                 kws = self.parse_comments(content)
                 if kws.get("事件") is None:
-                    Print.print_war(
+                    fmts.print_war(
                         f"Mcf文件 {filename} 没有设定事件类型, 假定为系统启动事件"
                     )
                     kws["事件"] = EVT_SYSTEM_LAUNCH
                 if kws["事件"] not in VALID_EVENTS:
-                    Print.print_war(f"Mcf文件 任务类型 {kws['事件']} 未知, 不予识别")
+                    fmts.print_war(f"Mcf文件 任务类型 {kws['事件']} 未知, 不予识别")
                     continue
                 if kws["事件"] == EVT_TIMER:
                     _timer = kws.get("间隔")
                     if _timer is None:
-                        Print.print_war(
+                        fmts.print_war(
                             f"Mcf文件 {filename} 为定时任务却没有设定间隔, 默认为60s"
                         )
                         timer = 60
                     elif _timer[-1] in ("s", "秒"):
                         _timer = _timer[-1]
                     if (timer := Utils.try_int(_timer)) is None:
-                        Print.print_err(
+                        fmts.print_err(
                             f"Mcf文件 {filename} 为定时任务, 却无法识别间隔"
                         )
                         raise SystemExit
@@ -135,7 +135,7 @@ class MCFunctionExecutor(Plugin):
                 elif kws["事件"] == EVT_MSG:
                     msg = kws.get("触发词")
                     if msg is None:
-                        Print.print_err(
+                        fmts.print_err(
                             f"Mcf文件 {filename} 为玩家发言任务却没有设定触发词"
                         )
                         raise SystemExit
@@ -146,7 +146,7 @@ class MCFunctionExecutor(Plugin):
                     self.events[EVT_SYSTEM_LAUNCH].append(
                         MCFunction(filename, content, kws["事件"], {})
                     )
-        Print.print_suc(
+        fmts.print_suc(
             f"MCF计划任务: 成功加载了 {', '.join(f'§f{len(j)}§a个{i}任务' for i, j in self.events.items())}"
         )
 

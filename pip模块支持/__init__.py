@@ -1,7 +1,7 @@
 import sys
 import importlib
 import subprocess
-from tooldelta import Plugin, Utils, Print, plugin_entry
+from tooldelta import Plugin, Utils, fmts, plugin_entry
 
 
 class PipSupport(Plugin):
@@ -28,10 +28,10 @@ class PipSupport(Plugin):
         self._readline_stderr(proc)
         returncode = proc.wait()
         if returncode != 0:
-            Print.print_err("pip安装模块时出现错误")
+            fmts.print_err("pip安装模块时出现错误")
             raise SystemExit
         importlib.invalidate_caches()
-        Print.print_suc(f"模块 {', '.join(packages)} 安装成功")
+        fmts.print_suc(f"模块 {', '.join(packages)} 安装成功")
 
     def require(self, packages: str | list[str]):
         if isinstance(packages, str):
@@ -45,7 +45,7 @@ class PipSupport(Plugin):
     # -----------------------------------------------------------
     def on_console_pip(self, args: list[str]):
         if len(args) == 0:
-            Print.print_err("请输入要安装的模块名")
+            fmts.print_err("请输入要安装的模块名")
             return
         try:
             self.install(args)
@@ -59,7 +59,7 @@ class PipSupport(Plugin):
             line = proc.stdout.readline().decode().strip()
             if not line:
                 break
-            Print.print_with_info(line, "§e pips §r")
+            fmts.print_with_info(line, "§e pips §r")
 
     @Utils.thread_func("pip安装模块错误输出")
     def _readline_stderr(self, proc: subprocess.Popen[bytes]):
@@ -68,7 +68,7 @@ class PipSupport(Plugin):
             line = proc.stderr.readline().decode().strip()
             if not line:
                 break
-            Print.print_with_info(line, "§c pips §r")
+            fmts.print_with_info(line, "§c pips §r")
 
 
 entry = plugin_entry(PipSupport, "pip")
