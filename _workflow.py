@@ -93,15 +93,15 @@ def flush_plugin_ids_map():
         json.dump(mapper, f, indent=2, ensure_ascii=False)
 
 def get_tree(basepath: str = ""):
-    dirs = []
+    dirs = {}
     for path in (os.listdir(basepath) if basepath else os.listdir()):
         new_path = os.path.join(basepath, path)
         if os.path.isfile(new_path):
-            dirs.append(path)
+            dirs[path] = 0
         else:
             if path.startswith(".") or path == "__pycache__":
                 continue
-            dirs.append({path: get_tree(new_path)})
+            dirs[path] = get_tree(new_path)
     return dirs
 
 
