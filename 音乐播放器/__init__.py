@@ -23,7 +23,7 @@ class PlayerMusicStatus:
 class MusicPlayer(Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 0, 10)
+    version = (0, 1, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -85,21 +85,21 @@ class MusicPlayer(Plugin):
         self.chatbar.add_new_trigger(
             self.cfg["播放音乐、暂停和继续播放的触发词"],
             [],
-            "播放歌曲， 或停止或继续播放音乐",
+            "播放音乐或暂停当前音乐",
             self.play_music_menu,
             op_only=self.cfg["是否仅OP可播放音乐"],
         )
         self.chatbar.add_new_trigger(
             self.cfg["停止播放的触发词"],
-            [("曲目名", str, "")],
-            "播放歌曲或停止或继续播放音乐",
+            [],
+            "停止播放当前音乐",
             self.stop_song,
             op_only=self.cfg["是否仅OP可播放音乐"],
         )
         self.chatbar.add_new_trigger(
             self.cfg["查询曲目列表触发词"],
             [],
-            "查询所有课播放曲目",
+            "查询可播放的音乐列表(不是播放选项)",
             self.list_songs,
         )
 
