@@ -19,7 +19,6 @@ class NewPlugin(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.ListenPreload(self.on_def)
         config = {"白名单计分板": ["coin"]}
         self.config, _ = cfg.get_plugin_config_and_version(
             self.name, {}, config, self.version
