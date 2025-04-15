@@ -126,66 +126,7 @@
     "plugin_ids_map.json": 0,
     "directory.json": 0,
     "desperated_plugins": {
-        "地图画导入": {
-            "datas.json": 0,
-            "__init__.py": 0
-        },
-        "[前置]功能封装库-1": {
-            "datas.json": 0,
-            "__init__.py": 0
-        },
         "性能管理": {
-            "datas.json": 0,
-            "__init__.py": 0
-        },
-        "bey-runaway": {
-            "datas.json": 0,
-            "a.cpython-311-x86_64-linux-gnu.so": 0,
-            "__init__.py": 0
-        },
-        "群服互通本地版": {
-            "datas.json": 0,
-            "websocket": {
-                "_url.py": 0,
-                "_logging.py": 0,
-                "_socket.py": 0,
-                "tests": {
-                    "test_app.py": 0,
-                    "test_cookiejar.py": 0,
-                    "echo-server.py": 0,
-                    "test_url.py": 0,
-                    "test_websocket.py": 0,
-                    "__init__.py": 0,
-                    "test_http.py": 0,
-                    "data": {
-                        "header01.txt": 0,
-                        "header03.txt": 0,
-                        "header02.txt": 0
-                    },
-                    "test_abnf.py": 0
-                },
-                "_http.py": 0,
-                "_core.py": 0,
-                "_app.py": 0,
-                "_handshake.py": 0,
-                "_abnf.py": 0,
-                "py.typed": 0,
-                "_exceptions.py": 0,
-                "_utils.py": 0,
-                "__init__.py": 0,
-                "_wsdump.py": 0,
-                "_cookiejar.py": 0,
-                "_ssl_compat.py": 0
-            },
-            "cqlib": {
-                "config_spawn.py": 0,
-                "utils.py": 0,
-                "downloader.py": 0,
-                "cq_runner.py": 0
-            },
-            "__init__.py": 0
-        },
-        "前置_SQL数据库支持": {
             "datas.json": 0,
             "__init__.py": 0
         }
