@@ -92,6 +92,18 @@ def flush_plugin_ids_map():
     with open("plugin_ids_map.json", "w", encoding="utf-8") as f:
         json.dump(mapper, f, indent=2, ensure_ascii=False)
 
+def get_tree(basepath: str = ""):
+    dirs = []
+    for path in (os.listdir(basepath) if basepath else os.listdir()):
+        new_path = os.path.join(basepath, path)
+        if os.path.isfile(new_path):
+            dirs.append(path)
+        else:
+            if path.startswith(".") or path == "__pycache__":
+                continue
+            dirs.append({path: get_tree(new_path)})
+    return dirs
+
 
 if __name__ == "__main__":
     directory = "."  # 你的仓库目录
@@ -104,6 +116,9 @@ if __name__ == "__main__":
 
     with open("latest_versions.json", "w", encoding="utf-8") as f:
         f.write(get_latest_versions(directory))
+
+    with open("directory_tree.json", "w", encoding="utf-8") as f:
+        json.dump(get_tree(), f, indent=4, ensure_ascii=False)
 
     flush_basic_datas()
     flush_plugin_ids_map()
