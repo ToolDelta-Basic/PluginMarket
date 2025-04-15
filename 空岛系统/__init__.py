@@ -1,5 +1,14 @@
 import os, threading, time  # noqa: E401
-from tooldelta import Plugin, cfg as config, game_utils, utils, TYPE_CHECKING, plugin_entry
+from tooldelta import (
+    Plugin,
+    cfg as config,
+    game_utils,
+    utils,
+    TYPE_CHECKING,
+    plugin_entry,
+    Player,
+)
+from tooldelta.constants import PacketIDS
 
 IS_CREATE_LOCK = threading.RLock()
 
@@ -7,12 +16,15 @@ IS_CREATE_LOCK = threading.RLock()
 class SkyBlock(Plugin):
     name = "空岛系统"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
         CFGPOS = config.JsonList(int, 3)
         CFG_STD = {
+            "是否启用入侵功能": bool,
+            "入侵条件判断指令": str,
+            "入侵持续时间": int,
             "空岛生成坐标原点(生效后请勿更改)": CFGPOS,
             "空岛间距(生效后请勿更改)": config.PInt,
             "可选空岛结构": config.AnyKeyValue(
@@ -20,6 +32,9 @@ class SkyBlock(Plugin):
             ),
         }
         CFG_DEFAULT = {
+            "是否启用入侵功能": False,
+            "入侵条件判断指令": "/clear @a[name=[玩家名],hasitem={item=paper,data=1000,quantity=1..,location=slot.weapon.mainhand}] paper 1000 1",
+            "入侵持续时间": 120,
             "空岛生成坐标原点(生效后请勿更改)": [0, 100, 200],
             "空岛间距(生效后请勿更改)": 160,
             "可选空岛结构": {
@@ -46,9 +61,15 @@ class SkyBlock(Plugin):
         self.ISLAND_DZ = cfg["空岛间距(生效后请勿更改)"]
         self.ORIG_X, self.ORIG_Y, self.ORIG_Z = cfg["空岛生成坐标原点(生效后请勿更改)"]
         self.island_structures = cfg["可选空岛结构"]
+        self.Invasion_Enable = cfg["是否启用入侵功能"]
+        self.Invasion_Cmd = cfg["入侵条件判断指令"]
+        self.Invasion_Time = cfg["入侵持续时间"]
+        self.Invasion_List = {}
         self.make_data_path()
+        self.players = self.frame.get_players()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenPacket(PacketIDS.IDText, self.on_player_death)
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
@@ -70,17 +91,55 @@ class SkyBlock(Plugin):
             "空岛记录.json",
         ):
             path = os.path.join(self.data_path, path)
-            obj = utils.tempjson.load_and_read(path, False)
+            obj = utils.TMPJson.read_as_tmp(path, False)
             if obj is None:
-                utils.tempjson.write(path, {})
+                utils.TMPJson.write(path, {})
 
     def on_inject(self):
         self.game_ctrl.sendwocmd("scoreboard objectives add is:data dummy 空岛主信息")
         self.game_ctrl.sendwocmd("scoreboard objectives add is:visit dummy 空岛访问uid")
+        self.game_ctrl.sendwocmd("scoreboard objectives add is:invasion dummy 入侵计时")
         self.game_ctrl.sendwocmd("scoreboard players add uid is:data 0")
         self.game_ctrl.sendwocmd("scoreboard players add posx is:data 0")
         self.game_ctrl.sendwocmd("scoreboard players add posy is:data 0")
         self.game_ctrl.sendwocmd("scoreboard players add posz is:data 0")
+        self.on_second_event()
+
+    @utils.timer_event(1, "空岛每秒事件")
+    def on_second_event(self):
+        self.game_ctrl.sendwocmd(
+            "scoreboard player remove @a[scores={is:invasion=1..}] is:invasion 1"
+        )
+        self.game_ctrl.sendwocmd(
+            "execute as @a[tag=is.visitor,scores={is:invasion=0}] run w @a[tag=robot] .is leave"
+        )
+
+    def on_player_death(self, packet):
+        if packet["TextType"] != 2:
+            return
+        if packet["Message"][:12] != "death.attack":
+            return
+        name = packet["Parameters"][1]
+        is_online = self.game_ctrl.sendcmd_with_resp(
+            f"/querytarget @a[name={name}]"
+        ).SuccessCount
+        is_death = self.game_ctrl.sendcmd_with_resp(
+            f"/querytarget @e[name={name},family=player]"
+        ).SuccessCount
+        if is_online and not is_death:
+            Intruder = self.Invasion_List.get(name)
+            if Intruder is None:
+                return
+            self.Invasion_List.pop(name)
+            self.make_player_exit(Intruder)
+
+    def on_player_leave(self, player: Player):
+        name = player.name
+        Intruder = self.Invasion_List.get(name)
+        if Intruder is None:
+            return
+        self.Invasion_List.pop(name)
+        self.make_player_exit(Intruder)
 
     def show_inf(self, player: str, msg: str):
         self.game_ctrl.say_to(player, f"§7[§f!§7] §f{msg}")
@@ -96,7 +155,7 @@ class SkyBlock(Plugin):
 
     def get_player_island_uid(self, player: str) -> int | None:
         player_path = self.data_path + "/" + "玩家记录.json"
-        player_obj = utils.tempjson.load_and_read(player_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
         res = player_obj.get(player)
         if res is None:
             return None
@@ -105,16 +164,16 @@ class SkyBlock(Plugin):
 
     def get_isdata_by_uid(self, uid: int | str):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        islands_obj = utils.tempjson.load_and_read(island_path, False) or {}
+        islands_obj = utils.TMPJson.read_as_tmp(island_path, False) or {}
         return islands_obj.get(str(uid))
 
     def set_island_data_by_uid(self, uid: int, datas, tmp=True):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        former = utils.tempjson.load_and_read(island_path, False) or {}
+        former = utils.TMPJson.read_as_tmp(island_path, False) or {}
         former[str(uid)] = datas
-        utils.tempjson.load_and_write(island_path, former, False)
+        utils.TMPJson.write_as_tmp(island_path, former, False)
         if not tmp:
-            utils.tempjson.flush(island_path)
+            utils.TMPJson.flush(island_path)
 
     def island_menu(self, player: str, args: list[str]):
         gc = self.game_ctrl
@@ -131,6 +190,7 @@ class SkyBlock(Plugin):
                     ".is visit §2<空岛ID> §7§o访问其他人的空岛",
                     ".is leave §7§o退出其他人的空岛",
                     ".is kick §7§o从自己的空岛踢出成员",
+                    ".is invade §2<玩家名> §7§o使用道具对其他玩家的空岛入侵",
                 ]
                 gc.say_to(player, "\n§r".join(helps))
             case "create":
@@ -162,6 +222,16 @@ class SkyBlock(Plugin):
                     self.island_visit(player, [resp])
                 else:
                     self.island_visit(player, args[1:])
+            case "invasion" | "入侵":
+                if len(args) != 2:
+                    self.show_inf(player, "请输入需要入侵的空岛岛主名称：")
+                    resp = game_utils.waitMsg(player)
+                    if resp is None:
+                        self.show_war(player, "无效输入")
+                        return
+                    self.island_invasion(player, [resp])
+                else:
+                    self.island_invasion(player, args[1:])
             case "leave" | "离开":
                 self.island_unvisit(player)
             case _:
@@ -174,8 +244,8 @@ class SkyBlock(Plugin):
         is_struct = self.island_structures[args[0]]
         player_path = os.path.join(self.data_path, "玩家记录.json")
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        player_obj = utils.tempjson.load_and_read(player_path, False)
-        island_obj = utils.tempjson.load_and_read(island_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
         if player_obj.get(player) is not None:
             self.show_war(player, "你已经认领过空岛")
             return
@@ -274,10 +344,10 @@ class SkyBlock(Plugin):
                     player,
                     [this_island_pos_x, this_island_pos_y, this_island_pos_z],
                 )
-                utils.tempjson.write(player_path, player_obj)
-                utils.tempjson.write(island_path, island_obj)
-                utils.tempjson.flush(player_path)
-                utils.tempjson.flush(island_path)
+                utils.TMPJson.write(player_path, player_obj)
+                utils.TMPJson.write(island_path, island_obj)
+                utils.TMPJson.flush(player_path)
+                utils.TMPJson.flush(island_path)
                 self.game_ctrl.sendwocmd("scoreboard players add uid is:data 1")
                 self.game_ctrl.sendwocmd(
                     f"scoreboard players add posz is:data {self.ISLAND_DZ}"
@@ -296,7 +366,7 @@ class SkyBlock(Plugin):
 
     def island_kick(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
-        players_obj = utils.tempjson.load_and_read(player_path, False)
+        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
         player_data = players_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -343,15 +413,15 @@ class SkyBlock(Plugin):
         sdata = players_obj[selected]
         sdata["own_island"] = sdata["backup_island"]
         players_obj[selected] = sdata
-        utils.tempjson.load_and_write(player_path, players_obj)
+        utils.TMPJson.write_as_tmp(player_path, players_obj)
         self.set_island_data_by_uid(player_data["own_island"], island_obj, False)
         self.show_suc(player, f"已踢出 {selected}.")
 
     def island_back(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        player_obj = utils.tempjson.load_and_read(player_path, False)
-        island_obj = utils.tempjson.load_and_read(island_path, False)
+        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
         player_data = player_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -373,8 +443,8 @@ class SkyBlock(Plugin):
     def island_l2j(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        players_obj = utils.tempjson.load_and_read(player_path, False)
-        islands_obj = utils.tempjson.load_and_read(island_path, False)
+        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        islands_obj = utils.TMPJson.read_as_tmp(island_path, False)
         onlines = self.game_ctrl.allplayers.copy()
         onlines.remove(player)
         onlines.remove(self.game_ctrl.bot_name)
@@ -453,10 +523,10 @@ class SkyBlock(Plugin):
         players_obj[player]["own_island"] = None
         players_obj[player]["main_island"] = is_data["uid"]
         islands_obj[str(is_data["uid"])] = is_data
-        utils.tempjson.write(player_path, players_obj)
-        utils.tempjson.write(island_path, islands_obj)
-        utils.tempjson.flush(island_path)
-        utils.tempjson.flush(player_path)
+        utils.TMPJson.write(player_path, players_obj)
+        utils.TMPJson.write(island_path, islands_obj)
+        utils.TMPJson.flush(island_path)
+        utils.TMPJson.flush(player_path)
         self.show_suc(player, f"加入 {target} 的空岛成功")
         self.show_suc(target, f"同意 {player} 加入空岛成功")
 
@@ -593,11 +663,52 @@ class SkyBlock(Plugin):
         self.show_suc(player, "输入 .is leave 可以离开此岛屿")
 
     def island_unvisit(self, player: str):
-        self.game_ctrl.sendwocmd(f"tp @a[name={player}] -64 106 -32")
+        self.island_back(player)
         self.game_ctrl.sendwocmd(f"scoreboard players set {player} is:visit 0")
         self.make_player_exit(player)
         self.game_ctrl.sendwocmd(f"clear @a[name={player}] stick 25535")
-        self.show_war(player, "已返回传送区")
+
+    def island_invasion(self, player: str, args: list[str]):
+        if not self.Invasion_Enable:
+            self.show_err(player, "当前服务器未开启入侵功能")
+            return
+        is_invasion = bool(
+            self.game_ctrl.sendcmd_with_resp(
+                utils.simple_fmt({"[玩家名]": player}, self.Invasion_Cmd)
+            ).SuccessCount
+        )
+        if not is_invasion:
+            self.show_war(player, "你没有足够的道具, 无法入侵空岛")
+            return
+        data = self.get_player_island_uid(player)
+        if data is None:
+            self.show_err(player, "你还未创建空岛, 无法入侵")
+        name = args[0]
+        uid = self.get_player_island_uid(name)
+        if uid is None:
+            self.show_war(player, "该玩家不存在")
+            return
+        island_data = self.get_isdata_by_uid(uid)
+        if island_data is None:
+            self.show_war(player, "该玩家还未创建空岛")
+            return
+        is_online = bool(
+            self.game_ctrl.sendcmd_with_resp(f"querytarget {name}", 1).SuccessCount
+        )
+        if not is_online:
+            self.show_war(player, "该玩家不在线, 无法入侵空岛")
+            return
+        perms = island_data.get("visit_permissions")
+        self.show_war(name, f"空岛被 §f{player} §6入侵, 已传送回空岛")
+        self.show_war(name, "死亡, 退出游戏, 离开空岛都将视为放弃空岛")
+        self.island_back(name)
+        self.make_player_ready_to_Invasion(player, perms)
+        self.game_ctrl.sendwocmd(f"scoreboard players set {player} is:visit {uid}")
+        self.game_ctrl.sendwocmd(
+            f"scoreboard players set {player} is:invasion {self.Invasion_Time}"
+        )
+        self.game_ctrl.sendwocmd(f"tp {player} {name}")
+        self.Invasion_List[name] = player
 
     def replace_all_hotbars(self, player: str):
         resp = self.funclib.multi_sendcmd_and_wait_resp(
@@ -631,6 +742,19 @@ class SkyBlock(Plugin):
         if not perms["attack_mob"]:
             self.game_ctrl.sendwocmd(f"effect @a[name={player}] weakness 9999 245 true")
             self.game_ctrl.sendwocmd(f"tag @a[name={player}] add weakness255")
+
+    def make_player_ready_to_Invasion(self, player: str, perms):
+        omg = self.frame.launcher.omega
+        playerdat = omg.get_player_by_name(player)
+        assert playerdat
+        playerdat.set_attack_players_permission(True)
+        playerdat.set_build_permission(False)
+        playerdat.set_mine_permission(False)
+        playerdat.set_attack_mobs_permission(bool(perms["attack_mob"]))
+        playerdat.set_containers_permission(bool(perms["container"]))
+        playerdat.set_doors_and_switches_permission(bool(perms["switch"]))
+        self.game_ctrl.sendwocmd(f"/gamemode 2 @a[name={player},m=!1]")
+        self.game_ctrl.sendwocmd(f"/tag @a[name={player},m=!1] add is.visitor")
 
     def make_player_exit(self, player: str):
         omg = self.frame.launcher.omega
