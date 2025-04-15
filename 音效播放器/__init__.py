@@ -1,5 +1,5 @@
 import os
-from tooldelta import Plugin, fmts, ToolDelta, Utils, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, fmts, ToolDelta, utils, TYPE_CHECKING, plugin_entry
 
 from tooldelta.game_utils import getPosXYZ
 
@@ -71,9 +71,9 @@ class SFXPlayer(Plugin):
     def play_sfx_at(self, msg: list[str]):
         if len(msg) == 4:
             xp, yp, zp, sfx_fname = msg
-            xp = Utils.try_int(xp)
-            yp = Utils.try_int(yp)
-            zp = Utils.try_int(zp)
+            xp = utils.try_int(xp)
+            yp = utils.try_int(yp)
+            zp = utils.try_int(zp)
             if xp is None or yp is None or zp is None:
                 fmts.print_war(f"不正确的音效播放请求命令(来自命令方块): {msg}")
             if sfx_fname not in self.files:

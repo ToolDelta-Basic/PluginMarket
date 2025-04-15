@@ -2,7 +2,7 @@ from tooldelta import (
     Plugin,
     cfg as config,
     game_utils,
-    Utils,
+    utils,
     Chat,
     Player,
     FrameExit,
@@ -63,7 +63,7 @@ class NewPlugin(Plugin):
             self.game_ctrl.say_to(playername, "  " + book_info)
         self.game_ctrl.say_to(playername, "§6请输入序号以选择: ")
         book_no = game_utils.waitMsg(playername)
-        book_no = Utils.try_int(book_no)
+        book_no = utils.try_int(book_no)
         if book_no == None:
             self.game_ctrl.say_to(playername, "§c无效输入")
             return

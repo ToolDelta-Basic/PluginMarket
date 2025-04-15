@@ -12,7 +12,7 @@ from tooldelta import (
 from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time, json, os
 
-TMPJson = utils.TMPJson
+tempjson = utils.tempjson
 
 
 class Sky_Island_Allocation(Plugin):

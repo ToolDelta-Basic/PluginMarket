@@ -1,4 +1,4 @@
-from tooldelta import Plugin, cfg, fmts, Utils, Player, plugin_entry
+from tooldelta import Plugin, cfg, fmts, utils, Player, plugin_entry
 
 import os, json, requests, time
 from urllib.parse import quote
@@ -52,7 +52,7 @@ class CloudBlacklist(Plugin):
         if self._cfg["启用同步"]:
             self.Pull_Clouds_blacklist([])
         self.bot_name = self.game_ctrl.bot_name
-        Utils.createThread(self.auto_check_blacklist, (), "黑名单检测")
+        utils.createThread(self.auto_check_blacklist, (), "黑名单检测")
 
     def on_def(self):
         self.api_get_xuid = self.GetPluginAPI("XUID获取")

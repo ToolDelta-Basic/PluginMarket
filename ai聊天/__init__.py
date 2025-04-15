@@ -1,4 +1,4 @@
-from tooldelta import plugin_entry, Plugin, ToolDelta, Player, Chat, FrameExit, Config, Utils
+from tooldelta import plugin_entry, Plugin, ToolDelta, Player, Chat, FrameExit, Config, utils
 import requests
 import json
 
@@ -29,7 +29,7 @@ class NewPlugin(Plugin):
         self.ListenPreload(self.service)
         self.players = self.frame.get_players()
 
-    @Utils.thread_func("ai聊天")
+    @utils.thread_func("ai聊天")
     def transfer(self, play: str, list) -> bool:
         try:
             player = self.players.getPlayerByName(play)

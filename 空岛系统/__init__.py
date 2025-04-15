@@ -70,9 +70,9 @@ class SkyBlock(Plugin):
             "空岛记录.json",
         ):
             path = os.path.join(self.data_path, path)
-            obj = utils.TMPJson.read_as_tmp(path, False)
+            obj = utils.tempjson.load_and_read(path, False)
             if obj is None:
-                utils.TMPJson.write(path, {})
+                utils.tempjson.write(path, {})
 
     def on_inject(self):
         self.game_ctrl.sendwocmd("scoreboard objectives add is:data dummy 空岛主信息")
@@ -96,7 +96,7 @@ class SkyBlock(Plugin):
 
     def get_player_island_uid(self, player: str) -> int | None:
         player_path = self.data_path + "/" + "玩家记录.json"
-        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        player_obj = utils.tempjson.load_and_read(player_path, False)
         res = player_obj.get(player)
         if res is None:
             return None
@@ -105,16 +105,16 @@ class SkyBlock(Plugin):
 
     def get_isdata_by_uid(self, uid: int | str):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        islands_obj = utils.TMPJson.read_as_tmp(island_path, False) or {}
+        islands_obj = utils.tempjson.load_and_read(island_path, False) or {}
         return islands_obj.get(str(uid))
 
     def set_island_data_by_uid(self, uid: int, datas, tmp=True):
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        former = utils.TMPJson.read_as_tmp(island_path, False) or {}
+        former = utils.tempjson.load_and_read(island_path, False) or {}
         former[str(uid)] = datas
-        utils.TMPJson.write_as_tmp(island_path, former, False)
+        utils.tempjson.load_and_write(island_path, former, False)
         if not tmp:
-            utils.TMPJson.flush(island_path)
+            utils.tempjson.flush(island_path)
 
     def island_menu(self, player: str, args: list[str]):
         gc = self.game_ctrl
@@ -174,8 +174,8 @@ class SkyBlock(Plugin):
         is_struct = self.island_structures[args[0]]
         player_path = os.path.join(self.data_path, "玩家记录.json")
         island_path = os.path.join(self.data_path, "空岛记录.json")
-        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
-        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
+        player_obj = utils.tempjson.load_and_read(player_path, False)
+        island_obj = utils.tempjson.load_and_read(island_path, False)
         if player_obj.get(player) is not None:
             self.show_war(player, "你已经认领过空岛")
             return
@@ -274,10 +274,10 @@ class SkyBlock(Plugin):
                     player,
                     [this_island_pos_x, this_island_pos_y, this_island_pos_z],
                 )
-                utils.TMPJson.write(player_path, player_obj)
-                utils.TMPJson.write(island_path, island_obj)
-                utils.TMPJson.flush(player_path)
-                utils.TMPJson.flush(island_path)
+                utils.tempjson.write(player_path, player_obj)
+                utils.tempjson.write(island_path, island_obj)
+                utils.tempjson.flush(player_path)
+                utils.tempjson.flush(island_path)
                 self.game_ctrl.sendwocmd("scoreboard players add uid is:data 1")
                 self.game_ctrl.sendwocmd(
                     f"scoreboard players add posz is:data {self.ISLAND_DZ}"
@@ -296,7 +296,7 @@ class SkyBlock(Plugin):
 
     def island_kick(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
-        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
+        players_obj = utils.tempjson.load_and_read(player_path, False)
         player_data = players_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -343,15 +343,15 @@ class SkyBlock(Plugin):
         sdata = players_obj[selected]
         sdata["own_island"] = sdata["backup_island"]
         players_obj[selected] = sdata
-        utils.TMPJson.write_as_tmp(player_path, players_obj)
+        utils.tempjson.load_and_write(player_path, players_obj)
         self.set_island_data_by_uid(player_data["own_island"], island_obj, False)
         self.show_suc(player, f"已踢出 {selected}.")
 
     def island_back(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        player_obj = utils.TMPJson.read_as_tmp(player_path, False)
-        island_obj = utils.TMPJson.read_as_tmp(island_path, False)
+        player_obj = utils.tempjson.load_and_read(player_path, False)
+        island_obj = utils.tempjson.load_and_read(island_path, False)
         player_data = player_obj.get(player)
         if player_data is None:
             self.show_war(player, "你还没有创建一个空岛")
@@ -373,8 +373,8 @@ class SkyBlock(Plugin):
     def island_l2j(self, player: str):
         player_path = self.data_path + "/" + "玩家记录.json"
         island_path = self.data_path + "/" + "空岛记录.json"
-        players_obj = utils.TMPJson.read_as_tmp(player_path, False)
-        islands_obj = utils.TMPJson.read_as_tmp(island_path, False)
+        players_obj = utils.tempjson.load_and_read(player_path, False)
+        islands_obj = utils.tempjson.load_and_read(island_path, False)
         onlines = self.game_ctrl.allplayers.copy()
         onlines.remove(player)
         onlines.remove(self.game_ctrl.bot_name)
@@ -453,10 +453,10 @@ class SkyBlock(Plugin):
         players_obj[player]["own_island"] = None
         players_obj[player]["main_island"] = is_data["uid"]
         islands_obj[str(is_data["uid"])] = is_data
-        utils.TMPJson.write(player_path, players_obj)
-        utils.TMPJson.write(island_path, islands_obj)
-        utils.TMPJson.flush(island_path)
-        utils.TMPJson.flush(player_path)
+        utils.tempjson.write(player_path, players_obj)
+        utils.tempjson.write(island_path, islands_obj)
+        utils.tempjson.flush(island_path)
+        utils.tempjson.flush(player_path)
         self.show_suc(player, f"加入 {target} 的空岛成功")
         self.show_suc(target, f"同意 {player} 加入空岛成功")
 

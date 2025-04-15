@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from tooldelta import Plugin, Utils, fmts, Chat, Player, plugin_entry
+from tooldelta import Plugin, utils, fmts, Chat, Player, plugin_entry
 
 EVT_SYSTEM_LAUNCH = "系统启动"
 EVT_TIMER = "定时执行"
@@ -30,7 +30,7 @@ class MCFunction:
             if cmd.strip().startswith("#"):
                 continue
             else:
-                game_ctrl.sendwocmd(Utils.simple_fmt(repls, cmd))
+                game_ctrl.sendwocmd(utils.simple_fmt(repls, cmd))
 
 
 class MCFunctionExecutor(Plugin):
@@ -124,7 +124,7 @@ class MCFunctionExecutor(Plugin):
                         timer = 60
                     elif _timer[-1] in ("s", "秒"):
                         _timer = _timer[-1]
-                    if (timer := Utils.try_int(_timer)) is None:
+                    if (timer := utils.try_int(_timer)) is None:
                         fmts.print_err(
                             f"Mcf文件 {filename} 为定时任务, 却无法识别间隔"
                         )
@@ -150,7 +150,7 @@ class MCFunctionExecutor(Plugin):
             f"MCF计划任务: 成功加载了 {', '.join(f'§f{len(j)}§a个{i}任务' for i, j in self.events.items())}"
         )
 
-    @Utils.timer_event(1, "MCFunction计划任务")
+    @utils.timer_event(1, "MCFunction计划任务")
     def execute_timer(self):
         self.time_counter += 1
         for evt in self.events[EVT_TIMER]:

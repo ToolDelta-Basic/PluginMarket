@@ -1,7 +1,7 @@
 import time
 import json
 import dataclasses
-from tooldelta import Plugin, fmts, Utils, plugin_entry
+from tooldelta import Plugin, fmts, utils, plugin_entry
 
 
 class RepeatGetPlayerPos(Plugin):
@@ -46,7 +46,7 @@ class RepeatGetPlayerPos(Plugin):
         self.CYCLE = cycle
 
     # --------------------------------------------------------------
-    @Utils.thread_func("循环获取玩家坐标")
+    @utils.thread_func("循环获取玩家坐标")
     def _main_thread(self):
         while 1:
             uuid2player = {v: k for k, v in self.game_ctrl.players_uuid.items()}

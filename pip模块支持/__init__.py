@@ -1,7 +1,7 @@
 import sys
 import importlib
 import subprocess
-from tooldelta import Plugin, Utils, fmts, plugin_entry
+from tooldelta import Plugin, utils, fmts, plugin_entry
 
 
 class PipSupport(Plugin):
@@ -52,7 +52,7 @@ class PipSupport(Plugin):
         except SystemExit:
             pass
 
-    @Utils.thread_func("pip安装模块标准输出")
+    @utils.thread_func("pip安装模块标准输出")
     def _readline_stdout(self, proc: subprocess.Popen[bytes]):
         assert proc.stdout
         while True:
@@ -61,7 +61,7 @@ class PipSupport(Plugin):
                 break
             fmts.print_with_info(line, "§e pips §r")
 
-    @Utils.thread_func("pip安装模块错误输出")
+    @utils.thread_func("pip安装模块错误输出")
     def _readline_stderr(self, proc: subprocess.Popen[bytes]):
         assert proc.stderr
         while True:
