@@ -12,9 +12,6 @@ class CloudBlacklist(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.ListenPreload(self.on_def)
-        self.ListenActive(self.on_inject)
-        self.ListenPlayerJoin(self.on_player_join)
         self._default_cfg = {
             "中心服务器": "129.204.12.111:2000",
             "接入黑名单": "官方云黑列表",
