@@ -174,11 +174,44 @@ class CatFishing(Plugin):
 
     def fishing(self, player: Player):
         name = player.name
-        ahr = random.randint(0, self.droprate["空钩概率"])
-        fahr = player.getScore("鱼竿_空钩概率")
-        pahr = player.getScore("玩家_空钩概率")
-        aahr = ahr - fahr - pahr
-        if aahr > 0:
+        (
+            fishing_airHook,
+            player_airHook,
+            fishing_itemDrop,
+            player_itemDrop,
+            fiidr,
+            feidr,
+            fsidr,
+            piidr,
+            peidr,
+            psidr,
+        ) = utils.thread_gather(
+            [
+                player.getScore,
+                ("鱼竿_空钩概率",),
+                player.getScore,
+                ("玩家_空钩概率",),
+                player.getScore,
+                ("鱼竿_钓鱼爆率",),
+                player.getScore,
+                ("玩家_钓鱼爆率",),
+                player.getScore,
+                ("鱼竿_物品爆率",),
+                player.getScore,
+                ("鱼竿_生物爆率",),
+                player.getScore,
+                ("鱼竿_结构爆率",),
+                player.getScore,
+                ("玩家_物品爆率",),
+                player.getScore,
+                ("玩家_生物爆率",),
+                player.getScore,
+                ("玩家_结构爆率",),
+            ]
+        )
+        airHook = random.randint(0, self.droprate["空钩概率"])
+        total_airHook = airHook - fishing_airHook - player_airHook
+        if total_airHook > 0:
             for cmd in self.fishing_rod["钓鱼失败执行"]:
                 self.game_ctrl.sendcmd_with_resp(
                     utils.simple_fmt(
@@ -201,14 +234,12 @@ class CatFishing(Plugin):
                     cmd,
                 )
             )
-        idr = random.randint(0, self.droprate["基础爆率"])
-        fidr = player.getScore("鱼竿_钓鱼爆率")
-        pidr = player.getScore("玩家_钓鱼爆率")
-        aidr = idr - fidr - pidr
+        itemDrop = random.randint(0, self.droprate["基础爆率"])
+        total_itemDrop = itemDrop - fishing_itemDrop - player_itemDrop
         for i in range(len(self.quality) - 1, -1, -1):
             quality = self.quality[i]
-            aidr -= self.droprate[quality]
-            if aidr > 0 and i:
+            total_itemDrop -= self.droprate[quality]
+            if total_itemDrop > 0 and i:
                 continue
             is_item = self.fishing_pool[quality].get("物品")
             is_entity = self.fishing_pool[quality].get("生物")
@@ -223,12 +254,6 @@ class CatFishing(Plugin):
                         f"/scoreboard players add {name} 玩家_钓鱼次数 1"
                     )
                 return
-            fiidr = player.getScore("鱼竿_物品爆率")
-            feidr = player.getScore("鱼竿_生物爆率")
-            fsidr = player.getScore("鱼竿_结构爆率")
-            piidr = player.getScore("玩家_物品爆率")
-            peidr = player.getScore("玩家_生物爆率")
-            psidr = player.getScore("玩家_结构爆率")
             aiidr = fiidr + piidr
             aeidr = feidr + peidr
             asidr = fsidr + psidr
@@ -250,7 +275,7 @@ class CatFishing(Plugin):
             item = self.fishing_pool[quality][index][rn]
             self.show_suc(
                 name,
-                f"§f噗噗~只钓到了 {quality} §r§f的 {item['名字']} §r真是笨蛋杂鱼呢~",
+                f"噗噗~只钓到了 {quality} §r§f的 {item['名字']} §r真是笨蛋杂鱼呢~",
             )
             if index == "物品":
                 self.game_ctrl.sendwocmd(
@@ -273,6 +298,7 @@ class CatFishing(Plugin):
             "/scoreboard players remove @a[scores={玩家_冷却计时=1..}] 玩家_冷却计时 1"
         )
 
+    @utils.thread_func("钓鱼检测")
     def on_player_message(self, chat: Chat):
         player = chat.player
         name = player.name
@@ -281,7 +307,7 @@ class CatFishing(Plugin):
             return
         isFishing = bool(
             self.game_ctrl.sendcmd_with_resp(
-                f"/tag {name} remove Cat.Fishing", 1
+                f"/tag {name} remove Cat.Fishing"
             ).SuccessCount
         )
         if not isFishing:
@@ -293,9 +319,26 @@ class CatFishing(Plugin):
             return self.show_err(
                 name, "真是杂鱼, 连只有在主世界才能钓鱼都不知道吗? 杂鱼~笨蛋杂鱼~"
             )
+        (cd_time, fishing_num, fishing_cd, player_cr, fishing_num, player_num) = (
+            utils.thread_gather(
+                [
+                    player.getScore,
+                    ("玩家_冷却计时",),
+                    player.getScore,
+                    ("玩家_钓鱼次数",),
+                    player.getScore,
+                    ("鱼竿_钓鱼冷却",),
+                    player.getScore,
+                    ("玩家_钓鱼冷却",),
+                    player.getScore,
+                    ("鱼竿_连钓次数",),
+                    player.getScore,
+                    ("玩家_连钓次数",),
+                ]
+            )
+        )
         if self.fishing_rod["是否启用冷却"]:
-            cd = player.getScore("玩家_冷却计时")
-            if cd:
+            if cd_time:
                 for cmd in self.fishing_rod["钓鱼失败执行"]:
                     self.game_ctrl.sendwocmd(
                         utils.simple_fmt(
@@ -306,12 +349,11 @@ class CatFishing(Plugin):
                         )
                     )
                 self.show_err(
-                    name, f"还在冷却呢! 笨蛋杂鱼~ 冷却还剩§f{cd}§c秒 真是杂鱼呢~"
+                    name, f"还在冷却呢! 笨蛋杂鱼~ 冷却还剩§f{cd_time}§c秒 真是杂鱼呢~"
                 )
                 return
         if self.fishing_rod["是否限制次数"]:
-            num = player.getScore("玩家_钓鱼次数")
-            if not num:
+            if not fishing_num:
                 for cmd in self.fishing_rod["钓鱼失败执行"]:
                     self.game_ctrl.sendwocmd(
                         utils.simple_fmt(
@@ -327,26 +369,21 @@ class CatFishing(Plugin):
                 f"/scoreboard players remove {name} 玩家_钓鱼次数 1"
             )
         if self.fishing_rod["是否启用冷却"]:
-            cd = player.getScore("鱼竿_钓鱼冷却")
-            cr = player.getScore("玩家_钓鱼冷却")
-            acd = cd * max(0, 1 - cr / 100)
+            acd = fishing_cd * max(0, 1 - player_cr / 100)
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players set {name} 玩家_冷却计时 {acd}"
             )
-        fnum = player.getScore("鱼竿_连钓次数")
-        pnum = player.getScore("玩家_连钓次数")
-        anum = fnum + pnum
-        for _ in range(anum):
+        total_num = fishing_num + player_num
+        for _ in range(total_num):
             self.fishing(player)
 
     def on_player_join(self, player: Player):
         isNewPlayer = bool(
             self.game_ctrl.sendcmd_with_resp(
-                f"/querytarget @a[name={player.name},tag=!Cat.initFishing]", 1
+                f"/tag {player.name} add Cat.initFishing"
             ).SuccessCount
         )
         if isNewPlayer:
-            self.game_ctrl.sendwocmd(f"/tag {player.name} add Cat.initFishing")
             for sn in self.scoreboard:
                 self.game_ctrl.sendwocmd(
                     f"/scoreboard players set {player.name} {sn} {self.scoreboard[sn]}"
