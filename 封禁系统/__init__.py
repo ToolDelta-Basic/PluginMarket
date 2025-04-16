@@ -48,9 +48,9 @@ class BanSystem(Plugin):
             from 前置_玩家XUID获取 import XUIDGetter
             from 群服互通云链版 import QQLinker
 
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
-            self.qqlink = self.get_typecheck_plugin_api(QQLinker)
+            self.chatbar: ChatbarMenu
+            self.xuidm: XUIDGetter
+            self.qqlink: QQLinker
 
     def on_inject(self):
         self.chatbar.add_trigger(

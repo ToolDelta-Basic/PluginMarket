@@ -45,10 +45,10 @@ class HomePointSet(Plugin):
             from 雪球菜单 import SnowMenu
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.funclib = self.get_typecheck_plugin_api(BasicFunctionLib)
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.snowmenu = self.get_typecheck_plugin_api(SnowMenu)
-            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
+            self.funclib: BasicFunctionLib
+            self.chatbar: ChatbarMenu
+            self.snowmenu: SnowMenu
+            self.xuidm: XUIDGetter
 
     def on_inject(self):
         self.chatbar.add_trigger(

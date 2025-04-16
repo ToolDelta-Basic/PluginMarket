@@ -41,10 +41,10 @@ class Nametitle(Plugin):
             from 前置_Cb2Bot通信 import TellrawCb2Bot
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.intr = self.get_typecheck_plugin_api(GameInteractive)
-            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
-            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
+            self.chatbar: ChatbarMenu
+            self.intr: GameInteractive
+            cb2bot: TellrawCb2Bot
+            self.xuidm: XUIDGetter
         cb2bot.regist_message_cb(
             "nametitle.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )

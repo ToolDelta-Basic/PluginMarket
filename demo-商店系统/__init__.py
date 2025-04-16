@@ -58,7 +58,7 @@ class Shop(Plugin):
 
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.chatbar: ChatbarMenu
 
     def on_inject(self):
         # 将玩家购买商品的触发词方法注册进聊天栏菜单

@@ -49,7 +49,7 @@ class BDXExporter(Plugin):
             global Structure, Block
             from 前置_世界交互 import GameInteractive, Structure, Block
 
-            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+            self.intr: GameInteractive
 
     def ignore_text_10(self, pk):
         if pk["TextType"] == 10:

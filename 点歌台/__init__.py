@@ -28,8 +28,8 @@ class DJTable(Plugin):
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
 
-            self.midiplayer = self.get_typecheck_plugin_api(ToolMidiMixer)
-            self.chatmenu = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.midiplayer: ToolMidiMixer
+            self.chatmenu: ChatbarMenu
         mdir = os.path.join(self.data_path, "音乐列表")
         for i in os.listdir(mdir):
             if i.endswith(".mid"):

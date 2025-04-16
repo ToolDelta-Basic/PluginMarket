@@ -24,14 +24,14 @@ class SFXPlayer(Plugin):
             from 前置_世界交互 import GameInteractive
             from 前置_Cb2Bot通信 import TellrawCb2Bot
 
-            self.sfx = self.get_typecheck_plugin_api(ToolMidiMixer)
-            self.intract = self.get_typecheck_plugin_api(GameInteractive)
-            self.cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+            self.sfx: ToolMidiMixer
+            self.intract: GameInteractive
+            self.cb2bot: TellrawCb2Bot
         self.script = self.GetPluginAPI("ZBasic", (0, 0, 2), False)
         if self.script and TYPE_CHECKING:
             from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
 
-            self.script = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
+            self.script: ToolDelta_ZBasic
         if self.script:
             self.init_script()
             fmts.print_inf("音效播放器: ZBasic插件已装载, 扩展语法已自动增加")

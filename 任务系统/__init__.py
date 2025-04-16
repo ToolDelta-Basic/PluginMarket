@@ -158,9 +158,9 @@ class TaskSystem(Plugin):
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_Cb2Bot通信 import TellrawCb2Bot
 
-            self.interper = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+            self.interper: ToolDelta_ZBasic
+            self.chatbar: ChatbarMenu
+            self.cb2bot: TellrawCb2Bot
         self.cb2bot.regist_message_cb("quest.ok", self.on_quest_ok)
         self.cb2bot.regist_message_cb("quest.start", self.on_quest_start)
 

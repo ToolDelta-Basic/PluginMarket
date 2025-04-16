@@ -80,9 +80,9 @@ class SkyBlock(Plugin):
             from 前置_世界交互 import GameInteractive
             from 前置_基本插件功能库 import BasicFunctionLib
 
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.intr = self.get_typecheck_plugin_api(GameInteractive)
-            self.funclib = self.get_typecheck_plugin_api(BasicFunctionLib)
+            self.chatbar: ChatbarMenu
+            self.intr: GameInteractive
+            self.funclib: BasicFunctionLib
         self.chatbar.add_trigger(
             ["is", "空岛"], None, "返回空岛或 .is help 查看空岛帮助", self.island_menu
         )

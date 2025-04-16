@@ -319,9 +319,9 @@ class SnowMenu(Plugin):
             from 前置_Cb2Bot通信 import TellrawCb2Bot
 
             self.getPosXYZ = game_utils.getPosXYZ
-            self.interact = self.get_typecheck_plugin_api(GameInteractive)
-            chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+            self.interact: GameInteractive
+            chatbar: ChatbarMenu
+            cb2bot: TellrawCb2Bot
         chatbar.add_trigger(
             ["snowmenu-init"],
             None,

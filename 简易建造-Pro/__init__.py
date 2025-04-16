@@ -33,7 +33,7 @@ class WorldEdit(Plugin):
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
 
-            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+            self.intr: GameInteractive
 
     def we_pkt56(self, jsonPkt: dict):
         self._we_pkt56(jsonPkt)

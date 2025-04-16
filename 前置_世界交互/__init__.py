@@ -100,7 +100,7 @@ class GameInteractive(Plugin):
         pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
-            pip = self.get_typecheck_plugin_api(PipSupport)
+            pip: PipSupport
         pip.require("numpy")
         import numpy as np
         numpy = np

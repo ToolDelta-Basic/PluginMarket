@@ -62,8 +62,8 @@ class MusicPlayer(Plugin):
             from 前置_MIDI播放器 import ToolMidiMixer
             from 前置_聊天栏菜单 import ChatbarMenu
 
-            self.midiplayer = self.get_typecheck_plugin_api(ToolMidiMixer)
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.midiplayer: ToolMidiMixer
+            self.chatbar: ChatbarMenu
         for i in os.listdir(self.data_path):
             if i.endswith(".mid"):
                 self.midiplayer.translate_midi_to_seq_file(

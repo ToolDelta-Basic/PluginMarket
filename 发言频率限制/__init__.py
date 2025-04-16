@@ -29,7 +29,7 @@ class ChatFreqLimit(Plugin):
         if TYPE_CHECKING:
             from 封禁系统 import BanSystem
 
-            ban_plugin = self.get_typecheck_plugin_api(BanSystem)
+            ban_plugin: BanSystem
         self.ban = ban_plugin.ban
 
     def on_chat(self, chat: Chat):

@@ -89,7 +89,7 @@ class CustomChatbarMenu(Plugin):
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
 
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.chatbar: ChatbarMenu
 
     @utils.thread_func("初始化菜单项")
     def on_inject(self):
