@@ -440,6 +440,12 @@
         "datas.json",
         "__init__.py"
     ],
+    "单方块空岛系统": [
+        "data_operation.py",
+        "player_exchange.py",
+        "datas.json",
+        "__init__.py"
+    ],
     "物品制作器": [
         "datas.json",
         "readme.txt",
