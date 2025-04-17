@@ -1,0 +1,8 @@
+{
+    "author": "猫七街",
+    "version": "0.0.1",
+    "plugin-type": "classic",
+    "description": "单方块空岛",
+    "pre-plugins": {},
+    "plugin-id": "单方块空岛系统"
+  }
