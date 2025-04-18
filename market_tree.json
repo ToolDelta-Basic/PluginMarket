@@ -522,7 +522,8 @@
         "入服欢迎",
         "better-announcebar",
         "gobang_game",
-        "choose-song"
+        "choose-song",
+        "插件接口获取修复"
       ],
       "description": "入门ToolDelta的插件包， 提供了ToolDelta的经典插件集\n包括一些实用插件和娱乐插件",
       "author": "SuperScript",
