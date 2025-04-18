@@ -1,13 +1,14 @@
-import os, time  # noqa: E401
+import os
+import time
 from dataclasses import dataclass
 from tooldelta import (
-    Plugin,
-    utils,
-    TYPE_CHECKING,
     cfg as config,
+    utils,
     fmts,
     game_utils,
+    Plugin,
     Player,
+    TYPE_CHECKING,
     plugin_entry,
 )
 
@@ -44,7 +45,7 @@ class Quest:
 class TaskSystem(Plugin):
     name = "任务系统"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -149,153 +150,53 @@ class TaskSystem(Plugin):
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
 
-    def on_def(self):
-        self.interper = self.GetPluginAPI("ZBasic", (0, 0, 1), False)
-        self.chatbar = self.GetPluginAPI("聊天栏菜单")
-        self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
-        if TYPE_CHECKING:
-            from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
-            from 前置_聊天栏菜单 import ChatbarMenu
-            from 前置_Cb2Bot通信 import TellrawCb2Bot
+    # --- API ---
 
-            self.interper: ToolDelta_ZBasic
-            self.chatbar: ChatbarMenu
-            self.cb2bot: TellrawCb2Bot
-        self.cb2bot.regist_message_cb("quest.ok", self.on_quest_ok)
-        self.cb2bot.regist_message_cb("quest.start", self.on_quest_start)
+    def get_quest(self, tag_name: str) -> Quest | None:
+        """
+        根据任务名获取任务对象
 
-    def show_succ(self, player, msg):
-        self.game_ctrl.say_to(player, f"§7<§a§o√§r§7> §a{msg}")
+        Args:
+            tag_name (str): 任务名
 
-    def show_warn(self, player, msg):
-        self.game_ctrl.say_to(player, f"§7<§6§o!§r§7> §6{msg}")
-
-    def show_fail(self, player, msg):
-        self.game_ctrl.say_to(player, f"§7<§c§o!§r§7> §c{msg}")
-
-    def show_inf(self, player, msg):
-        self.game_ctrl.say_to(player, f"§7<§f§o!§r§7> §f{msg}")
-
-    @utils.thread_func("自定义RPG-剧情与任务的游戏初始化")
-    def on_inject(self):
-        self.cmp_scripts = {}
-        self.chatbar.add_trigger(
-            [".rw", ".任务"],
-            None,
-            "查看正在进行的任务列表",
-            lambda player, _: self.list_player_quests(player),
-        )
-        self.chatbar.add_trigger(
-            [".addrw", ".添加任务"],
-            "[任务名]",
-            "向玩家添加任务",
-            self.force_add_quest_menu,
-            lambda x: x == 1,
-            True,
-        )
-        for player in self.game_ctrl.allplayers:
-            self.init_player(player)
-
-    @utils.thread_func("自定义RPG-初始化玩家剧情任务数据")
-    def on_player_join(self, playerf: Player):
-        player = playerf.name
-        self.init_player(player)
-
-    def on_quest_ok(self, args: list[str]):
-        target, quest_name = args
-        quest = self.get_quest(quest_name)
-        if quest is not None:
-            self.quest_ok(target, quest)
-
-    def on_quest_start(self, args: list[str]):
-        target, quest_name = args
-        quest = self.get_quest(quest_name)
-        if quest is not None:
-            self.add_quest(target, quest)
-
-    def init_player(self, player: str):
-        quest_path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
-        o = self.tmpjson.load_and_read(quest_path, False)
-        if o is None:
-            self.tmpjson.write(quest_path, self.init_quest_file())
-
-    def init_quest_file(self):
-        return {"in_quests": [], "quests_ok": {}}
-
-    def read_quests(self, player: str) -> list[Quest]:
-        o = self.tmpjson.load_and_read(
-            os.path.join(self.QUEST_DATA_PATH, player + ".json")
-        )
-        output = []
-        o = o or {"in_quests": []}
-        for i in o["in_quests"]:
-            output.append(self.get_quest(i))
-        return output
-
-    def read_quests_finished(self, player: str) -> dict[Quest, int]:
-        o = self.tmpjson.load_and_read(
-            os.path.join(self.QUEST_DATA_PATH, player + ".json")
-        )
-        output = {}
-        for k, v in o["quests_ok"].items():
-            quest = self.get_quest(k)
-            if quest:
-                output[quest] = v
-        return output
-
-    @utils.thread_func("管理员向玩家添加任务")
-    def force_add_quest_menu(self, player: str, args: list[str]):
-        # with utils.ChatbarLock(player, lambda _: print(utils.chatbar_lock_list)):
-        if (quest := self.get_quest(args[0])) is None:
-            self.game_ctrl.say_to(player, "§c任务标签名不存在")
-            return
-        onlines = self.game_ctrl.allplayers.copy()
-        self.show_inf(player, "§6选择一个玩家以向他添加任务：")
-        for i, j in enumerate(onlines):
-            self.game_ctrl.say_to(player, f" §a{i + 1}§7 - §f{j}")
-        resp = utils.try_int(game_utils.waitMsg(player))
-        self.show_inf(player, "§7输入玩家名前的§6序号§7：")
-        if resp is None:
-            self.game_ctrl.say_to(player, "§c序号错误， 已退出")
-            return
-        if resp not in range(1, len(onlines) + 1):
-            self.game_ctrl.say_to(player, "§c序号不在范围内， 已退出")
-            return
-        getting = onlines[resp - 1]
-        self.game_ctrl.say_to(
-            player,
-            f"§6向玩家{getting}添加任务"
-            + ["§c失败", "§a成功"][self.add_quest(getting, quest)],
-        )
-
-    def get_quest(self, tag_name: str):
+        Returns:
+            Quest | None: 任务对象 (或找不到任务)
+        """
         return self.quests.get(tag_name)
 
-    def add_quest(self, player: str, quest: Quest):
+    def add_quest(self, player: Player, quest: Quest) -> bool:
+        """
+        向玩家下发任务
+
+        Args:
+            player (Player): 玩家对象
+            quest (Quest): 任务对象
+
+        Returns:
+            bool: 是否下发成功
+        """
         quests = self.read_quests(player)
         if quest in quests:
             self.show_fail(player, "§c当前任务正在进行中， 无法重复领取")
-            return 0
+            return False
         else:
             quest_time = self.read_quests_finished(player).get(quest, None)
             quest_mode = quest.cooldown
             if quest_mode == -1 and quest_time is not None:
-                self.game_ctrl.say_to(
-                    player,
+                player.show(
                     utils.simple_fmt(
-                        {"[玩家名]": player, "[原因]": "§c你已经完成该任务"},
+                        {"[玩家名]": player.name, "[原因]": "§c你已经完成该任务"},
                         self.cfg["任务设置"]["任务无法开始的显示"]["格式"],
                     ),
                 )
-                return 0
+                return False
             elif (
                 quest_time is not None
                 and quest_mode > 0
                 and time.time() - quest_time < quest.cooldown
             ):
                 fmt_text = r"%d §c天 §6%H §c时 §6%M §c分"
-                self.game_ctrl.say_to(
-                    player,
+                player.show(
                     utils.simple_fmt(
                         {
                             "[原因]": ""
@@ -306,24 +207,34 @@ class TaskSystem(Plugin):
                         self.cfg["任务设置"]["任务无法开始的显示"]["格式"],
                     ),
                 )
-                return 0
+                return False
             for cmd in self.cfg["任务设置"]["接到新任务时执行的指令"]:
                 s_cmd = utils.simple_fmt(
                     {
                         "[任务显示名]": quest.show_name,
                         "[任务描述]": quest.description,
-                        "[玩家名]": player,
+                        "[玩家名]": player.name,
                     },
                     cmd,
                 )
                 self.game_ctrl.sendwocmd(s_cmd)
-            path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
+            path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
             o = self.tmpjson.load_and_read(path)
             o["in_quests"].append(quest.tag_name)
             self.tmpjson.write(path, o)
-            return 1
+            return True
 
-    def detect_quest(self, player, quest: Quest):
+    def detect_quest(self, player: Player, quest: Quest) -> tuple[bool, str]:
+        """
+        检测任务是否可以提交
+
+        Args:
+            player (Player): 玩家对象
+            quest (Quest): 任务对象
+
+        Returns:
+            tuple[bool, str]: 是否可提交; 无法提交的信息
+        """
         if quest.command_block_only:
             return False, "§6无法手动提交该任务"
         if quest.need_quests_prefix:
@@ -345,9 +256,7 @@ class TaskSystem(Plugin):
                 else:
                     count = ext_data[0]
                     data = 0
-                if (
-                    item_count_now := game_utils.getItem(player, item_id, data)
-                ) < count:
+                if (item_count_now := player.getItemCount(item_id, data)) < count:
                     err_strs.append(
                         f"§f{item_name} §7(§c{item_count_now}§7/§f{count}§7)"
                     )
@@ -356,90 +265,29 @@ class TaskSystem(Plugin):
         if quest.detect_cmds:
             for cmd in quest.detect_cmds:
                 if not game_utils.isCmdSuccess(
-                    utils.simple_fmt({"[玩家名]": player}, cmd)
+                    utils.simple_fmt({"[玩家名]": player.name}, cmd)
                 ):
                     return False, "§6未达成条件"
-        return True, None
+        return True, ""
 
-    @utils.thread_func("列出任务列表")
-    def list_player_quests(self, player: str):
-        # with utils.ChatbarLock(player):
-        player_quests = self.read_quests(player)
-        if not player_quests:
-            self.show_fail(player, "你没有正在进行的任务")
-            return
-        else:
-            self.game_ctrl.say_to(player, self.cfg["任务设置"]["任务列表显示格式"][0])
-            for i, quest_data in enumerate(player_quests):
-                if quest_data is None:
-                    self.game_ctrl.say_to(
-                        player,
-                        utils.simple_fmt(
-                            {
-                                "[任务显示名]": "§c<任务失效>§f",
-                                "[任务描述]": "--",
-                                "[i]": i + 1,
-                            },
-                            self.cfg["任务设置"]["任务列表显示格式"][1],
-                        ),
-                    )
-                else:
-                    self.game_ctrl.say_to(
-                        player,
-                        utils.simple_fmt(
-                            {
-                                "[任务显示名]": quest_data.show_name,
-                                "[任务描述]": quest_data.description,
-                                "[i]": i + 1,
-                            },
-                            self.cfg["任务设置"]["任务列表显示格式"][1],
-                        ),
-                    )
-            self.game_ctrl.say_to(
-                player,
-                utils.simple_fmt(
-                    {"[任务数量]": len(player_quests)},
-                    self.cfg["任务设置"]["任务列表显示格式"][2],
-                ),
-            )
-            resp = game_utils.waitMsg(player)
-            if resp is None:
-                return
-            resp = utils.try_int(resp.strip("[]"))
-            if resp is None:
-                self.game_ctrl.say_to(player, "§c序号不合法")
-                return
-            if resp not in range(1, len(player_quests) + 1):
-                self.show_fail(player, "序号超出范围")
-                return
-            getting_quest = player_quests[resp - 1]
-            if getting_quest is None:
-                self.show_fail(player, "无法完成失效的任务")
-                return
-            ok, reason = self.detect_quest(player, getting_quest)
-            if not ok:
-                self.game_ctrl.say_to(
-                    player,
-                    utils.simple_fmt(
-                        {"[玩家名]": player, "[原因]": reason},
-                        self.cfg["任务设置"]["任务无法提交的显示"]["格式"],
-                    ),
-                )
-                return
-            else:
-                self.quest_ok(player, getting_quest)
+    def finish_quest(self, player: Player, quest: Quest):
+        """
+        令玩家完成任务 (强制性, 无论条件是否满足)
 
-    def quest_ok(self, player: str, quest: Quest):
+        Args:
+            player (Player): 玩家对象
+            quest (Quest): 任务对象
+        """
         self.game_ctrl.sendwocmd(
-            f"/execute as @a[name={player}] at @s run playsound random.levelup @s"
+            f"/execute as @a[name={player.name}] at @s run playsound random.levelup @s"
         )
-        self.game_ctrl.say_to(player, "§a۞ §l任务完成 §r§e奖励已下发~")
+        player.show("§a۞ §l任务完成 §r§e奖励已下发~")
         for cmd in quest.exec_cmds_when_finished:
-            self.game_ctrl.sendwocmd(utils.simple_fmt({"[玩家名]": player}, cmd))
+            self.game_ctrl.sendwocmd(utils.simple_fmt({"[玩家名]": player.name}, cmd))
         for item_name, (item_id, count) in quest.items_give_when_finished.items():
-            self.game_ctrl.sendwocmd(f"give @a[name={player}] {item_id} {count}")
-            self.game_ctrl.say_to(player, f" §7 + {count}x§f{item_name}")
-        path = os.path.join(self.QUEST_DATA_PATH, player + ".json")
+            self.game_ctrl.sendwocmd(f"give @a[name={player.name}] {item_id} {count}")
+            player.show(f" §7 + {count}x§f{item_name}")
+        path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
         o = self.tmpjson.load_and_read(path)
         o["quests_ok"][quest.tag_name] = int(time.time())
         o["in_quests"].remove(quest.tag_name)
@@ -450,6 +298,196 @@ class TaskSystem(Plugin):
             assert new_quest
             self.add_quest(player, new_quest)
 
+    # -------------
+
+    def on_def(self):
+        self.interper = self.GetPluginAPI("ZBasic", (0, 0, 1), False)
+        self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
+        if TYPE_CHECKING:
+            from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
+            from 前置_聊天栏菜单 import ChatbarMenu
+            from 前置_Cb2Bot通信 import TellrawCb2Bot
+
+            self.interper: ToolDelta_ZBasic
+            self.chatbar: ChatbarMenu
+            self.cb2bot: TellrawCb2Bot
+        self.cb2bot.regist_message_cb("quest.ok", self.on_quest_ok)
+        self.cb2bot.regist_message_cb("quest.start", self.on_quest_start)
+
+    def show_succ(self, player: Player, msg):
+        player.show(f"§7<§a§o√§r§7> §a{msg}")
+
+    def show_warn(self, player: Player, msg):
+        player.show(f"§7<§6§o!§r§7> §6{msg}")
+
+    def show_fail(self, player: Player, msg):
+        player.show(f"§7<§c§o!§r§7> §c{msg}")
+
+    def show_inf(self, player: Player, msg):
+        player.show(f"§7<§f§o!§r§7> §f{msg}")
+
+    @utils.thread_func("任务的游戏初始化")
+    def on_inject(self):
+        self.cmp_scripts = {}
+        self.chatbar.add_new_trigger(
+            [".rw", ".任务"],
+            [],
+            "查看正在进行的任务列表",
+            lambda player, _: self.list_player_quests(player),
+        )
+        self.chatbar.add_new_trigger(
+            [".addrw", ".添加任务"],
+            [("任务标签名", str, None)],
+            "向玩家添加任务",
+            self.force_add_quest_menu,
+            op_only=True,
+        )
+        for player in self.frame.get_players().getAllPlayers():
+            self.init_player(player)
+
+    @utils.thread_func("初始化玩家剧情任务数据")
+    def on_player_join(self, player: Player):
+        self.init_player(player)
+
+    def on_quest_ok(self, args: list[str]):
+        target_name, quest_name = args
+        quest = self.get_quest(quest_name)
+        target = self.frame.get_players().getPlayerByName(target_name)
+        if target is None:
+            self.print(f"§6on_quest_ok: 玩家 {target_name} 不存在")
+            return
+        if quest is not None:
+            self.finish_quest(target, quest)
+
+    def on_quest_start(self, args: list[str]):
+        target_name, quest_name = args
+        quest = self.get_quest(quest_name)
+        target = self.frame.get_players().getPlayerByName(target_name)
+        if target is None:
+            self.print(f"§6on_quest_ok: 玩家 {target_name} 不存在")
+            return
+        if quest is not None:
+            self.add_quest(target, quest)
+
+    def init_player(self, player: Player):
+        quest_path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
+        o = self.tmpjson.load_and_read(quest_path, False)
+        if o is None:
+            self.tmpjson.write(quest_path, self.init_quest_file())
+
+    def init_quest_file(self):
+        return {"in_quests": [], "quests_ok": {}}
+
+    def read_quests(self, player: Player) -> list[Quest]:
+        o = self.tmpjson.load_and_read(
+            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
+        )
+        output = []
+        o = o or {"in_quests": []}
+        for i in o["in_quests"]:
+            output.append(self.get_quest(i))
+        return output
+
+    def read_quests_finished(self, player: Player) -> dict[Quest, int]:
+        o = self.tmpjson.load_and_read(
+            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
+        )
+        output = {}
+        for k, v in o["quests_ok"].items():
+            quest = self.get_quest(k)
+            if quest:
+                output[quest] = v
+        return output
+
+    @utils.thread_func("管理员向玩家添加任务")
+    def force_add_quest_menu(self, player: Player, args: tuple):
+        # with utils.ChatbarLock(player, lambda _: print(utils.chatbar_lock_list)):
+        (quest_tagname,) = args
+        if (quest := self.get_quest(quest_tagname)) is None:
+            player.show("§c任务标签名不存在")
+            return
+        onlines = self.frame.get_players().getAllPlayers()
+        self.show_inf(player, "§6选择一个玩家以向他添加任务：")
+        for i, j in enumerate(onlines):
+            player.show(f" §a{i + 1}§7 - §f{j.name}")
+        resp = utils.try_int(player.input())
+        self.show_inf(player, "§7输入玩家名前的§6序号§7：")
+        if resp is None:
+            player.show("§c序号错误， 已退出")
+            return
+        if resp not in range(1, len(onlines) + 1):
+            player.show("§c序号不在范围内， 已退出")
+            return
+        getting = onlines[resp - 1]
+        player.show(
+            f"§6向玩家{getting}添加任务"
+            + ["§c失败", "§a成功"][self.add_quest(getting, quest)],
+        )
+
+    @utils.thread_func("列出任务列表")
+    def list_player_quests(self, player: Player):
+        # with utils.ChatbarLock(player):
+        player_quests = self.read_quests(player)
+        if not player_quests:
+            self.show_fail(player, "你没有正在进行的任务")
+            return
+        else:
+            player.show(self.cfg["任务设置"]["任务列表显示格式"][0])
+            for i, quest_data in enumerate(player_quests):
+                if quest_data is None:
+                    player.show(
+                        utils.simple_fmt(
+                            {
+                                "[任务显示名]": "§c<任务失效>§f",
+                                "[任务描述]": "--",
+                                "[i]": i + 1,
+                            },
+                            self.cfg["任务设置"]["任务列表显示格式"][1],
+                        ),
+                    )
+                else:
+                    player.show(
+                        utils.simple_fmt(
+                            {
+                                "[任务显示名]": quest_data.show_name,
+                                "[任务描述]": quest_data.description,
+                                "[i]": i + 1,
+                            },
+                            self.cfg["任务设置"]["任务列表显示格式"][1],
+                        ),
+                    )
+            resp = player.input(
+                utils.simple_fmt(
+                    {"[任务数量]": len(player_quests)},
+                    self.cfg["任务设置"]["任务列表显示格式"][2],
+                )
+            )
+            if resp is None:
+                return
+            resp = utils.try_int(resp.strip("[]"))
+            if resp is None:
+                player.show("§c序号不合法")
+                return
+            if resp not in range(1, len(player_quests) + 1):
+                self.show_fail(player, "序号超出范围")
+                return
+            getting_quest = player_quests[resp - 1]
+            if getting_quest is None:
+                self.show_fail(player, "无法完成失效的任务")
+                return
+            ok, reason = self.detect_quest(player, getting_quest)
+            if not ok:
+                player.show(
+                    utils.simple_fmt(
+                        {"[玩家名]": player.name, "[原因]": reason},
+                        self.cfg["任务设置"]["任务无法提交的显示"]["格式"],
+                    ),
+                )
+                return
+            else:
+                self.finish_quest(player, getting_quest)
+
     def sec_to_timer(self, timesec: int, fmt: str):
         days, left = divmod(timesec, 86400)
         hrs, left = divmod(left, 3600)
@@ -459,4 +497,4 @@ class TaskSystem(Plugin):
         return utils.simple_fmt({"%d": days, "%H": hrs, "%M": mins, "%S": secs}, fmt)
 
 
-entry = plugin_entry(TaskSystem)
+entry = plugin_entry(TaskSystem, ["任务系统", "QuestSystem"], (0, 0, 1))
