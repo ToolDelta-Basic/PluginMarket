@@ -120,13 +120,15 @@ class BanSystem(Plugin):
         if is_joining:
             for entry_user in pk["Entries"]:
                 username = entry_user["Username"]
-                self.test_ban(username)
+                xuid = entry_user["XUID"]
+                self.test_ban_core(username, xuid)
         return False
 
     @utils.thread_func("封禁系统测试 ban")
     def on_player_join(self, playerf: Player):
         player = playerf.name
-        self.test_ban(player)
+        xuid = playerf.xuid
+        self.test_ban_core(player, xuid)
 
     def on_console_ban(self, _):
         allplayers = self.game_ctrl.allplayers.copy()
@@ -270,8 +272,13 @@ class BanSystem(Plugin):
         else:
             fmts.print_err("输入有误")
 
+    # for compatibility
     def test_ban(self, playername: str):
-        ban_data = self.get_ban_data(playername)
+        xuid = self.xuidm.get_xuid_by_name(playername, allow_offline=True)
+        self.test_ban_core(playername, xuid)
+
+    def test_ban_core(self, playername: str, xuid: str):
+        ban_data = self.get_ban_data_from_xuid(xuid)
         ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
         if ban_to == -1 or ban_to > time.time():
             fmts.print_inf(
@@ -281,14 +288,12 @@ class BanSystem(Plugin):
                 f"-> kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
             )
             self.game_ctrl.sendwocmd(
-                f'/kick "{playername}" {self.format_msg(playername, ban_to, reason, "踢出玩家提示格式")}'
+                f"kick {xuid} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
             )
             self.game_ctrl.say_to(
                 "@a",
                 self.format_msg(playername, ban_to, reason, "玩家被封禁的广播提示"),
             )
-            # 防止出现敏感词封禁原因的指令
-            self.game_ctrl.sendwocmd(f'/kick "{playername}"')
 
     def format_bantime(self, banto_time: int):
         if banto_time == -1:
@@ -327,16 +332,16 @@ class BanSystem(Plugin):
         if os.path.isfile(p):
             os.remove(p)
 
+    # for compatibility
     def get_ban_data(self, player: str) -> dict:
-        if os.path.isfile(
-            self.format_data_path(
-                fname := self.xuidm.get_xuid_by_name(player, allow_offline=True)
-                + ".json"
-            )
-        ):
+        fname = self.xuidm.get_xuid_by_name(player, allow_offline=True)
+        return self.get_ban_data_from_xuid(fname)
+
+    def get_ban_data_from_xuid(self, xuid: str) -> dict:
+        if os.path.isfile(self.format_data_path(f"{xuid}.json")):
             return utils.safe_json.read_from_plugin(
                 self.name,
-                fname,
+                xuid,
                 default=self.BAN_DATA_DEFAULT,
             )
         else:

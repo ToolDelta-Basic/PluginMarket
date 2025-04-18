@@ -35,33 +35,32 @@ class kill(Plugin):
         if is_joining:
             for entry_user in pk["Entries"]:
                 player = entry_user["Username"]
+                xuid = entry_user["XUID"]
                 for a in self.ci:
                     if a in player:
-                        self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
-                        self.game_ctrl.sendwocmd(f'kick "{player}"')
+                        self.game_ctrl.sendwocmd(f"kick {xuid} {self.yy}")
         return False
 
-    def killpl(self, player: str):
+    def killpl(self, player: str, xuid: str):
         try:
-            self.game_ctrl.sendcmd(f'/w errcmd "{player}"', True, timeout=4)
+            self.game_ctrl.sendcmd(f'/testfor "{player}"', True, timeout=4)
         except TimeoutError:
             Print.print_war(f"玩家 {player} 名字为敏感词, 已经踢出")
-            self.game_ctrl.sendwocmd(f'/kick "{player}" {self.yy}')
-            self.game_ctrl.sendwocmd(f'/kick "{player}"')
+            self.game_ctrl.sendwocmd(f"kick {xuid} {self.yy}")
         for a in self.ci:
             if a in player:
-                self.game_ctrl.sendwocmd(f'kick "{player}" {self.yy}')
-                self.game_ctrl.sendwocmd(f'kick "{player}"')
+                self.game_ctrl.sendwocmd(f"kick {xuid} {self.yy}")
 
     def on_player_message(self, chat: Chat):
         player = chat.player.name
-        _ = chat.msg
+        xuid = chat.player.xuid
 
-        self.killpl(player)
+        self.killpl(player, xuid)
 
     def on_player_join(self, playerf: Player):
         player = playerf.name
-        self.killpl(player)
+        xuid = playerf.xuid
+        self.killpl(player, xuid)
 
 
 entry = plugin_entry(kill)
