@@ -1,0 +1,8 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "当出现插件 API 不存在的报错时, 将尝试自动下载插件而不是直接报错退出",
+  "pre-plugins": {},
+  "plugin-id": "插件接口获取修复"
+}
