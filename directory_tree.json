@@ -37,6 +37,10 @@
         "TomatoNovelAPI.py": 0,
         "__init__.py": 0
     },
+    "插件接口获取修复": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "空岛系统": {
         "datas.json": 0,
         "readme.txt": 0,

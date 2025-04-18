@@ -57,6 +57,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "插件接口获取修复": {
+      "name": "插件接口获取修复",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "SkyblockSystem": {
       "name": "空岛系统",
       "author": "SuperScript",
