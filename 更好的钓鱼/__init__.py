@@ -1,12 +1,12 @@
-from tooldelta import Plugin, Player, Chat, cfg, utils, plugin_entry
-from tooldelta.utils import tempjson
+from tooldelta import Plugin, Player, cfg, plugin_entry
 import random
+import data_operation as data
 
 
 class CatFishing(Plugin):
     name = "更好的钓鱼"
     author = "猫猫"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     description = "让你的每一次收杆充满惊喜"
 
     def __init__(self, frame):
@@ -16,12 +16,6 @@ class CatFishing(Plugin):
             "鱼竿配置": {
                 "是否限制次数": False,
                 "是否启用冷却": True,
-                "钓鱼失败执行": [
-                    "/playsound note.bass [name] ~ ~ ~",
-                ],
-                "钓鱼成功执行": [
-                    "/playsound note.pling [name] ~ ~ ~",
-                ],
             },
             "爆率设置": {
                 "基础爆率": 500,
@@ -30,7 +24,7 @@ class CatFishing(Plugin):
                 "§r§b稀有": 30,
             },
             "初始属性": {
-                "鱼竿_钓鱼冷却": 0,
+                "鱼竿_钓鱼冷却": 20,
                 "鱼竿_钓鱼爆率": 0,
                 "鱼竿_物品爆率": 0,
                 "鱼竿_生物爆率": 0,
@@ -46,19 +40,34 @@ class CatFishing(Plugin):
                 "玩家_连钓次数": 1,
                 "玩家_空钩概率": 0,
                 "玩家_冷却计时": 0,
+                "玩家_鱼饵属性": 0,
+            },
+            "鱼饵属性": {
+                "100": {
+                    "钓鱼冷却": 0,
+                    "钓鱼爆率": 0,
+                    "物品爆率": 0,
+                    "生物爆率": 0,
+                    "结构爆率": 0,
+                    "连钓次数": 0,
+                    "空钩概率": 0,
+                }
             },
             "品质设置": [
                 "§r§f普通",
                 "§r§b稀有",
             ],
+            "对接命令方块": {
+                "物品": True,
+                "生物": False,
+                "结构": False,
+            },
         }
         STD_CFG_TYPE = {
             "奖池配置": str,
             "鱼竿配置": {
                 "是否限制次数": bool,
                 "是否启用冷却": bool,
-                "钓鱼失败执行": cfg.JsonList(str),
-                "钓鱼成功执行": cfg.JsonList(str),
             },
             "爆率设置": cfg.AnyKeyValue(int),
             "初始属性": {
@@ -78,8 +87,15 @@ class CatFishing(Plugin):
                 "玩家_连钓次数": int,
                 "玩家_空钩概率": int,
                 "玩家_冷却计时": int,
+                "玩家_鱼饵属性": int,
             },
+            "鱼饵属性": cfg.AnyKeyValue(dict),
             "品质设置": cfg.JsonList(str),
+            "对接命令方块": {
+                "物品": bool,
+                "生物": bool,
+                "结构": bool,
+            },
         }
         FISHING_CFG = {
             "§r§f普通": {
@@ -117,6 +133,11 @@ class CatFishing(Plugin):
                         "特殊值": 0,
                         "数量": 1,
                     },
+                    {
+                        "名字": "喵喵喵",
+                        "命令方块对接": True,
+                        "标签": "Cat.Fishing.普通",
+                    },
                 ],
                 "生物": [
                     {
@@ -142,23 +163,29 @@ class CatFishing(Plugin):
             self.name, STD_CFG_TYPE, DEFAULT_CFG, self.version
         )
 
-        self.fishing_pool = tempjson.load_and_read(
-            self.format_data_path(self.cfg["奖池配置"]),
-            need_file_exists=False,
-            default=FISHING_CFG,
-        )
+        self.fishing_pool = data.load_data(self.format_data_path(self.cfg["奖池配置"]))
+        if not self.fishing_pool:
+            data.save_data(self.format_data_path(self.cfg["奖池配置"]), FISHING_CFG)
+        self.fishing_Attribute = data.load_data(self.format_data_path("钓鱼属性.json"))
         self.fishing_rod = self.cfg["鱼竿配置"]
         self.droprate = self.cfg["爆率设置"]
         self.scoreboard = self.cfg["初始属性"]
         self.quality = self.cfg["品质设置"]
+        self.cmdapi = self.cfg["对接命令方块"]
+        self.bait = self.cfg["鱼饵属性"]
+        self.player = self.frame.get_players()
+        self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
-        self.ListenChat(self.on_player_message)
 
     def on_inject(self):
-        self.on_second_event()
         for sn in self.scoreboard:
             self.game_ctrl.sendwocmd(f"/scoreboard objectives add {sn} dummy")
+
+    def on_def(self):
+        self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
+        self.cb2bot.regist_message_cb("Cat.Fishing", self.on_player_message)
+        self.cb2bot.regist_message_cb("Cat.upScore", self.on_player_update)
 
     def show_inf(self, player: str, msg: str):
         self.game_ctrl.say_to(player, f"§7[§f!§7] §f{msg}")
@@ -174,68 +201,34 @@ class CatFishing(Plugin):
 
     def fishing(self, player: Player):
         name = player.name
-        (
-            fishing_airHook,
-            player_airHook,
-            fishing_itemDrop,
-            player_itemDrop,
-            fiidr,
-            feidr,
-            fsidr,
-            piidr,
-            peidr,
-            psidr,
-        ) = utils.thread_gather(
-            [
-                player.getScore,
-                ("鱼竿_空钩概率",),
-                player.getScore,
-                ("玩家_空钩概率",),
-                player.getScore,
-                ("鱼竿_钓鱼爆率",),
-                player.getScore,
-                ("玩家_钓鱼爆率",),
-                player.getScore,
-                ("鱼竿_物品爆率",),
-                player.getScore,
-                ("鱼竿_生物爆率",),
-                player.getScore,
-                ("鱼竿_结构爆率",),
-                player.getScore,
-                ("玩家_物品爆率",),
-                player.getScore,
-                ("玩家_生物爆率",),
-                player.getScore,
-                ("玩家_结构爆率",),
-            ]
-        )
+
+        fishing_airHook = self.fishing_Attribute[name]["鱼竿_空钩概率"]
+        player_airHook = self.fishing_Attribute[name]["玩家_空钩概率"]
+        f_fishingDrop = self.fishing_Attribute[name]["鱼竿_钓鱼爆率"]
+        p_fishingDrop = self.fishing_Attribute[name]["玩家_钓鱼爆率"]
+        fishing_itemDrop = self.fishing_Attribute[name]["鱼竿_物品爆率"]
+        fishing_entityDrop = self.fishing_Attribute[name]["鱼竿_生物爆率"]
+        fishing_structDrop = self.fishing_Attribute[name]["鱼竿_结构爆率"]
+        player_itemDrop = self.fishing_Attribute[name]["玩家_物品爆率"]
+        player_entityDrop = self.fishing_Attribute[name]["玩家_生物爆率"]
+        player_structDrop = self.fishing_Attribute[name]["玩家_结构爆率"]
+
+        bait = self.bait[str(self.fishing_Attribute[name]["玩家_鱼饵属性"])]
+        bait_airHook = bait["空钩概率"]
+        bait_Drop = bait["钓鱼爆率"]
+        bait_IDrop = bait["物品爆率"]
+        bait_EDrop = bait["生物爆率"]
+        bait_SDrop = bait["结构爆率"]
+
         airHook = random.randint(0, self.droprate["空钩概率"])
-        total_airHook = airHook - fishing_airHook - player_airHook
+        total_airHook = airHook - fishing_airHook - player_airHook - bait_airHook
         if total_airHook > 0:
-            for cmd in self.fishing_rod["钓鱼失败执行"]:
-                self.game_ctrl.sendcmd_with_resp(
-                    utils.simple_fmt(
-                        {
-                            "[name]": name,
-                        },
-                        cmd,
-                    )
-                )
             return self.show_err(
                 name,
                 f"啧啧啧, 杂鱼~ 连钓到{self.quality[0]}品质的垃圾都做不到吗? 笨蛋杂鱼~",
             )
-        for cmd in self.fishing_rod["钓鱼成功执行"]:
-            self.game_ctrl.sendcmd_with_resp(
-                utils.simple_fmt(
-                    {
-                        "[name]": name,
-                    },
-                    cmd,
-                )
-            )
         itemDrop = random.randint(0, self.droprate["基础爆率"])
-        total_itemDrop = itemDrop - fishing_itemDrop - player_itemDrop
+        total_itemDrop = itemDrop - f_fishingDrop - p_fishingDrop - bait_Drop
         for i in range(len(self.quality) - 1, -1, -1):
             quality = self.quality[i]
             total_itemDrop -= self.droprate[quality]
@@ -254,9 +247,9 @@ class CatFishing(Plugin):
                         f"/scoreboard players add {name} 玩家_钓鱼次数 1"
                     )
                 return
-            aiidr = fiidr + piidr
-            aeidr = feidr + peidr
-            asidr = fsidr + psidr
+            aiidr = fishing_itemDrop + player_itemDrop + bait_IDrop
+            aeidr = fishing_entityDrop + player_entityDrop + bait_EDrop
+            asidr = fishing_structDrop + player_structDrop + bait_SDrop
             population = []
             weights = []
             if is_item:
@@ -273,10 +266,14 @@ class CatFishing(Plugin):
             index = random.choices(population, weights=weights, k=1)[0]
             rn = random.randint(0, len(self.fishing_pool[quality][index]) - 1)
             item = self.fishing_pool[quality][index][rn]
-            self.show_suc(
-                name,
-                f"噗噗~只钓到了 {quality} §r§f的 {item['名字']} §r真是笨蛋杂鱼呢~",
-            )
+            if item.get("名字"):
+                self.show_suc(
+                    name,
+                    f"噗噗~只钓到了 {quality} §r§f的 {item['名字']} §r真是笨蛋杂鱼呢~",
+                )
+            if self.cmdapi[index] and item["命令方块对接"]:
+                self.game_ctrl.sendwocmd(f"/tag {name} add {item['标签']}")
+                return
             if index == "物品":
                 self.game_ctrl.sendwocmd(
                     f"/give {name} {item['英文ID']} {item['数量']} {item['特殊值']}"
@@ -292,102 +289,84 @@ class CatFishing(Plugin):
                         f"/execute as {name} at @s run structure load {item['结构名称']} ~{item['坐标偏移'][0]} ~{item['坐标偏移'][1]} ~{item['坐标偏移'][2]}"
                     )
 
-    @utils.timer_event(1, "每秒事件")
-    def on_second_event(self):
-        self.game_ctrl.sendwocmd(
-            "/scoreboard players remove @a[scores={玩家_冷却计时=1..}] 玩家_冷却计时 1"
-        )
+    def on_player_update(self, args: list[str]):
+        sn = [
+            "玩家_冷却计时",
+            "玩家_钓鱼次数",
+            "玩家_钓鱼冷却",
+            "玩家_钓鱼爆率",
+            "玩家_物品爆率",
+            "玩家_生物爆率",
+            "玩家_结构爆率",
+            "玩家_空钩概率",
+            "玩家_连钓次数",
+            "鱼竿_钓鱼冷却",
+            "鱼竿_钓鱼爆率",
+            "鱼竿_物品爆率",
+            "鱼竿_生物爆率",
+            "鱼竿_结构爆率",
+            "鱼竿_空钩概率",
+            "鱼竿_连钓次数",
+            "玩家_鱼饵属性",
+        ]
+        for index, (name, score) in enumerate(zip(args[::2], args[1::2])):
+            name = name.split(",")
+            score = score.split(",")
+            for i, n in enumerate(name):
+                if self.fishing_Attribute.get(n) is None:
+                    self.fishing_Attribute[n] = {}
+                self.fishing_Attribute[n][sn[index]] = int(score[i])
 
-    @utils.thread_func("钓鱼检测")
-    def on_player_message(self, chat: Chat):
-        player = chat.player
-        name = player.name
-        msg = chat.msg
-        if msg != "Cat.Fishing":
+    def on_player_message(self, args: list[str]):
+        name, name_ = args
+        if name != name_:
             return
-        isFishing = bool(
-            self.game_ctrl.sendcmd_with_resp(
-                f"/tag {name} remove Cat.Fishing"
-            ).SuccessCount
-        )
-        if not isFishing:
-            return self.show_war(
-                name, "笨蛋杂鱼~ 以为这样就能作弊吗? 真是差劲呐~ 垃圾杂鱼~"
-            )
-        dim, x, y, z = player.getPos()
-        if dim:
-            return self.show_err(
-                name, "真是杂鱼, 连只有在主世界才能钓鱼都不知道吗? 杂鱼~笨蛋杂鱼~"
-            )
-        (cd_time, fishing_num, fishing_cd, player_cr, fishing_num, player_num) = (
-            utils.thread_gather(
-                [
-                    player.getScore,
-                    ("玩家_冷却计时",),
-                    player.getScore,
-                    ("玩家_钓鱼次数",),
-                    player.getScore,
-                    ("鱼竿_钓鱼冷却",),
-                    player.getScore,
-                    ("玩家_钓鱼冷却",),
-                    player.getScore,
-                    ("鱼竿_连钓次数",),
-                    player.getScore,
-                    ("玩家_连钓次数",),
-                ]
-            )
-        )
+        player = self.player.getPlayerByName(name)
+        fishing_num_ = self.fishing_Attribute[name]["玩家_钓鱼次数"]
+        fishing_cd = self.fishing_Attribute[name]["鱼竿_钓鱼冷却"]
+        player_cr = self.fishing_Attribute[name]["玩家_钓鱼冷却"]
+        fishing_num = self.fishing_Attribute[name]["鱼竿_连钓次数"]
+        player_num = self.fishing_Attribute[name]["玩家_连钓次数"]
+        cd_time = self.fishing_Attribute[name]["玩家_冷却计时"]
+
+        bait = self.bait[str(self.fishing_Attribute[name]["玩家_鱼饵属性"])]
+        bait_cd = bait["钓鱼冷却"]
+        bait_num = bait["连钓次数"]
+
         if self.fishing_rod["是否启用冷却"]:
             if cd_time:
-                for cmd in self.fishing_rod["钓鱼失败执行"]:
-                    self.game_ctrl.sendwocmd(
-                        utils.simple_fmt(
-                            {
-                                "[name]": name,
-                            },
-                            cmd,
-                        )
-                    )
                 self.show_err(
                     name, f"还在冷却呢! 笨蛋杂鱼~ 冷却还剩§f{cd_time}§c秒 真是杂鱼呢~"
                 )
                 return
         if self.fishing_rod["是否限制次数"]:
-            if not fishing_num:
-                for cmd in self.fishing_rod["钓鱼失败执行"]:
-                    self.game_ctrl.sendwocmd(
-                        utils.simple_fmt(
-                            {
-                                "[name]": name,
-                            },
-                            cmd,
-                        )
-                    )
+            if not fishing_num_:
                 self.show_err(name, "剩余次数用完了! 真是杂鱼呢~ 杂鱼~")
                 return
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players remove {name} 玩家_钓鱼次数 1"
             )
+            self.fishing_Attribute[name]["玩家_钓鱼次数"] = fishing_num_
         if self.fishing_rod["是否启用冷却"]:
-            acd = fishing_cd * max(0, 1 - player_cr / 100)
+            acd = int(max(0, int(fishing_cd * max(0, 1 - player_cr / 100)) + bait_cd))
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players set {name} 玩家_冷却计时 {acd}"
             )
-        total_num = fishing_num + player_num
+            self.fishing_Attribute[name]["玩家_冷却计时"] = acd
+        total_num = fishing_num + player_num + bait_num
         for _ in range(total_num):
             self.fishing(player)
+        data.save_data(self.format_data_path("钓鱼属性.json"), self.fishing_Attribute)
 
     def on_player_join(self, player: Player):
-        isNewPlayer = bool(
-            self.game_ctrl.sendcmd_with_resp(
-                f"/tag {player.name} add Cat.initFishing"
-            ).SuccessCount
-        )
-        if isNewPlayer:
+        if self.fishing_Attribute.get(player.name) is None:
+            self.fishing_Attribute[player.name] = {}
             for sn in self.scoreboard:
+                self.fishing_Attribute[player.name][sn] = self.scoreboard[sn]
                 self.game_ctrl.sendwocmd(
                     f"/scoreboard players set {player.name} {sn} {self.scoreboard[sn]}"
                 )
+        data.save_data(self.format_data_path("钓鱼属性.json"), self.fishing_Attribute)
 
 
 entry = plugin_entry(CatFishing)

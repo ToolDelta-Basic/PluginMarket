@@ -27,6 +27,16 @@
 给予玩家Cat.Fishing的tag后让玩家私聊机器人发送Cat.Fishing即可钓鱼一次
 因此你可以自由的编写钓鱼方式
 
-奖池配置注意事项:
-不要写了品质不填写类型
-不要写了类型不添加奖励
+奖池配置:
+在配置对某一类型的命令方块对接开启后
+你可以在奖励内添加一个键值, 命令方块对接: True  标签: "喵喵喵"
+这样会使原有的给予奖励方式失效，并给玩家添加标签, 你可以设置一条命令链进行处理
+开启命令方块对接后 如果奖励设置内存在 "名称": "xxx" 插件会对玩家发送提示, 如果没有则不发送
+
+奖池注意事项: 不要写了品质不填写类型, 不要写了类型不添加奖励
+
+需要的命令:
+tellraw @a[tag=robot] {"rawtext":[{"text":"Cat.upScore"},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_冷却计时"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_钓鱼次数"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_钓鱼冷却"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_钓鱼爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_物品爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_生物爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_结构爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_空钩概率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_连钓次数"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_钓鱼冷却"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_钓鱼爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_物品爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_生物爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_结构爆率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_空钩概率"}},{"selector":"@a"},{"score":{"name":"@a","objective":"鱼竿_连钓次数"}},{"selector":"@a"},{"score":{"name":"@a","objective":"玩家_鱼饵属性"}}]}
+推荐延迟 20
+scoreboard players remove @a[scores={玩家_冷却计时=1..}] 玩家_冷却计时 1
+推荐延迟 20
