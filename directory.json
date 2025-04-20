@@ -105,6 +105,8 @@
         "__init__.py"
     ],
     "更好的钓鱼": [
+        "属性.json",
+        "data_operation.py",
         "datas.json",
         "readme.txt",
         "__init__.py"
