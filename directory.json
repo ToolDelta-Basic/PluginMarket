@@ -31,9 +31,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "[pkg]防挂插件包": [
-        "datas.json"
-    ],
     "番茄小说": [
         "datas.json",
         "TomatoNovelAPI.py",
