@@ -845,10 +845,10 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                 resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-                if resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出封禁系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -860,7 +860,7 @@ class Orion_System(Plugin):
                         fmts.print_war("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -870,9 +870,8 @@ class Orion_System(Plugin):
                         ban_player = allplayers[resp_2 - 1]
                         ban_xuid = self.xuid_getter.get_xuid_by_name(ban_player)
                         break
-                    else:
-                        fmts.print_err("§c❀ 您的输入有误")
-                        return
+                    fmts.print_err("§c❀ 您的输入有误")
+                    return
 
             fmts.print_suc(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             fmts.print_inf("§a❀ §b请按照以下格式输入封禁时间：")
@@ -880,7 +879,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
             ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -890,7 +889,7 @@ class Orion_System(Plugin):
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
             ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
 
@@ -911,7 +910,7 @@ class Orion_System(Plugin):
                         f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -965,11 +964,11 @@ class Orion_System(Plugin):
             )
             name_or_xuid = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-            if name_or_xuid == "." or name_or_xuid == "。":
+            if name_or_xuid in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
 
-            elif name_or_xuid == "list":
+            if name_or_xuid == "list":
                 if len(xuid_data) == 0:
                     fmts.print_err("§c❀ 未查询到任何xuid记录")
                     return
@@ -1006,10 +1005,10 @@ class Orion_System(Plugin):
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                     resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-                    if resp_2 == "." or resp_2 == "。":
+                    if resp_2 in (".", "。"):
                         fmts.print_suc("§a❀ 已退出封禁系统")
                         return
-                    elif resp_2 == "-":
+                    if resp_2 == "-":
                         if page > 1:
                             page -= 1
                         else:
@@ -1021,7 +1020,7 @@ class Orion_System(Plugin):
                             fmts.print_war("§6❀ 已经是最后一页啦~")
                     elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                         page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                        if page_num >= 1 and page_num <= total_pages:
+                        if 1 <= page_num <= total_pages:
                             page = page_num
                         else:
                             fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1031,14 +1030,13 @@ class Orion_System(Plugin):
                             ban_player = list(xuid_data.values())[resp_2 - 1]
                             ban_xuid = list(xuid_data.keys())[resp_2 - 1]
                             break
-                        else:
-                            fmts.print_err("§c❀ 您的输入有误")
-                            return
+                        fmts.print_err("§c❀ 您的输入有误")
+                        return
 
             else:
                 is_found_name_or_xuid = False
                 for k, v in xuid_data.items():
-                    if name_or_xuid == k or name_or_xuid == v:
+                    if name_or_xuid in (k, v):
                         ban_xuid = k
                         ban_player = v
                         is_found_name_or_xuid = True
@@ -1053,7 +1051,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
             ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -1063,7 +1061,7 @@ class Orion_System(Plugin):
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
             ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
 
@@ -1084,7 +1082,7 @@ class Orion_System(Plugin):
                         f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -1138,7 +1136,7 @@ class Orion_System(Plugin):
             )
             device_id = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-            if device_id == "." or device_id == "。":
+            if device_id in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
             if device_id == "list":
@@ -1181,10 +1179,10 @@ class Orion_System(Plugin):
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                     resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-                    if resp_2 == "." or resp_2 == "。":
+                    if resp_2 in (".", "。"):
                         fmts.print_suc("§a❀ 已退出封禁系统")
                         return
-                    elif resp_2 == "-":
+                    if resp_2 == "-":
                         if page > 1:
                             page -= 1
                         else:
@@ -1196,7 +1194,7 @@ class Orion_System(Plugin):
                             fmts.print_war("§6❀ 已经是最后一页啦~")
                     elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                         page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                        if page_num >= 1 and page_num <= total_pages:
+                        if 1 <= page_num <= total_pages:
                             page = page_num
                         else:
                             fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1208,9 +1206,8 @@ class Orion_System(Plugin):
                                 resp_2 - 1
                             ]
                             break
-                        else:
-                            fmts.print_err("§c❀ 您的输入有误")
-                            return
+                        fmts.print_err("§c❀ 您的输入有误")
+                        return
 
             elif device_id in device_id_data.keys():
                 ban_device_id = device_id
@@ -1232,7 +1229,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
             ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -1242,7 +1239,7 @@ class Orion_System(Plugin):
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
             ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
 
@@ -1263,7 +1260,7 @@ class Orion_System(Plugin):
                         f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -1300,7 +1297,7 @@ class Orion_System(Plugin):
                 f"\n§a❀ 封禁成功：已封禁设备号 {ban_device_id} 至 {date_end} (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
             )
 
-        elif resp_1 == "." or resp_1 == "。":
+        elif resp_1 in (".", "。"):
             fmts.print_suc("§a❀ 已退出封禁系统")
 
         else:
@@ -1373,10 +1370,10 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                 resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-                if resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出解封系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -1388,7 +1385,7 @@ class Orion_System(Plugin):
                         fmts.print_war("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1404,9 +1401,8 @@ class Orion_System(Plugin):
                             f"\n§a❀ 解封成功: 已解封玩家 {unban_player} (xuid:{unban_xuid})"
                         )
                         break
-                    else:
-                        fmts.print_err("§c❀ 您的输入有误")
-                        return
+                    fmts.print_err("§c❀ 您的输入有误")
+                    return
 
         elif resp_1 == "2":
             all_ban_player_device_id = os.listdir(
@@ -1472,10 +1468,10 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                 resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
-                if resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出解封系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -1487,7 +1483,7 @@ class Orion_System(Plugin):
                         fmts.print_war("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1503,11 +1499,10 @@ class Orion_System(Plugin):
                             f"\n§a❀ 解封成功: 已解封设备号 {unban_device_id} (使用此设备加入游戏的玩家xuid和名称记录:{unban_device_id_data})"
                         )
                         break
-                    else:
-                        fmts.print_err("§c❀ 您的输入有误")
-                        return
+                    fmts.print_err("§c❀ 您的输入有误")
+                    return
 
-        elif resp_1 == "." or resp_1 == "。":
+        elif resp_1 in (".", "。"):
             fmts.print_suc("§a❀ 已退出解封系统")
 
         else:
@@ -1568,10 +1563,10 @@ class Orion_System(Plugin):
                 if resp_2 is None:
                     player.show("§c❀ 回复超时！ 已退出封禁系统")
                     return
-                elif resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     player.show("§a❀ 已退出封禁系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -1583,7 +1578,7 @@ class Orion_System(Plugin):
                         player.show("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1593,9 +1588,8 @@ class Orion_System(Plugin):
                         ban_player = allplayers[resp_2 - 1]
                         ban_xuid = self.xuid_getter.get_xuid_by_name(ban_player)
                         break
-                    else:
-                        player.show("§c❀ 您的输入有误")
-                        return
+                    player.show("§c❀ 您的输入有误")
+                    return
 
             player.show(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             player.show("§a❀ §b请按照以下格式输入封禁时间：")
@@ -1605,10 +1599,10 @@ class Orion_System(Plugin):
             ban_time = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
             )
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_time is None:
+            if ban_time is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -1623,10 +1617,10 @@ class Orion_System(Plugin):
                 )
                 or "未知原因"
             )
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_reason is None:
+            if ban_reason is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
 
@@ -1647,7 +1641,7 @@ class Orion_System(Plugin):
                         f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -1706,11 +1700,11 @@ class Orion_System(Plugin):
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
             )
 
-            if name_or_xuid == "." or name_or_xuid == "。":
+            if name_or_xuid in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
 
-            elif name_or_xuid == "list":
+            if name_or_xuid == "list":
                 if len(xuid_data) == 0:
                     player.show("§c❀ 未查询到任何xuid记录")
                     return
@@ -1750,10 +1744,10 @@ class Orion_System(Plugin):
                     if resp_2 is None:
                         player.show("§c❀ 回复超时！ 已退出封禁系统")
                         return
-                    elif resp_2 == "." or resp_2 == "。":
+                    if resp_2 in (".", "。"):
                         player.show("§a❀ 已退出封禁系统")
                         return
-                    elif resp_2 == "-":
+                    if resp_2 == "-":
                         if page > 1:
                             page -= 1
                         else:
@@ -1765,7 +1759,7 @@ class Orion_System(Plugin):
                             player.show("§6❀ 已经是最后一页啦~")
                     elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                         page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                        if page_num >= 1 and page_num <= total_pages:
+                        if 1 <= page_num <= total_pages:
                             page = page_num
                         else:
                             player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1775,9 +1769,8 @@ class Orion_System(Plugin):
                             ban_player = list(xuid_data.values())[resp_2 - 1]
                             ban_xuid = list(xuid_data.keys())[resp_2 - 1]
                             break
-                        else:
-                            player.show("§c❀ 您的输入有误")
-                            return
+                        player.show("§c❀ 您的输入有误")
+                        return
 
             elif name_or_xuid is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
@@ -1786,7 +1779,7 @@ class Orion_System(Plugin):
             else:
                 is_found_name_or_xuid = False
                 for k, v in xuid_data.items():
-                    if name_or_xuid == k or name_or_xuid == v:
+                    if name_or_xuid in (k, v):
                         ban_xuid = k
                         ban_player = v
                         is_found_name_or_xuid = True
@@ -1803,10 +1796,10 @@ class Orion_System(Plugin):
             ban_time = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
             )
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_time is None:
+            if ban_time is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -1821,10 +1814,10 @@ class Orion_System(Plugin):
                 )
                 or "未知原因"
             )
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_reason is None:
+            if ban_reason is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
 
@@ -1845,7 +1838,7 @@ class Orion_System(Plugin):
                         f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -1904,10 +1897,10 @@ class Orion_System(Plugin):
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
             )
 
-            if device_id == "." or device_id == "。":
+            if device_id in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif device_id == "list":
+            if device_id == "list":
                 if len(device_id_data) == 0:
                     player.show("§c❀ 未查询到任何设备号记录")
                     return
@@ -1952,10 +1945,10 @@ class Orion_System(Plugin):
                     if resp_2 is None:
                         player.show("§c❀ 回复超时！ 已退出封禁系统")
                         return
-                    elif resp_2 == "." or resp_2 == "。":
+                    if resp_2 in (".", "。"):
                         player.show("§a❀ 已退出封禁系统")
                         return
-                    elif resp_2 == "-":
+                    if resp_2 == "-":
                         if page > 1:
                             page -= 1
                         else:
@@ -1967,7 +1960,7 @@ class Orion_System(Plugin):
                             player.show("§6❀ 已经是最后一页啦~")
                     elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                         page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                        if page_num >= 1 and page_num <= total_pages:
+                        if 1 <= page_num <= total_pages:
                             page = page_num
                         else:
                             player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -1979,9 +1972,8 @@ class Orion_System(Plugin):
                                 resp_2 - 1
                             ]
                             break
-                        else:
-                            player.show("§c❀ 您的输入有误")
-                            return
+                        player.show("§c❀ 您的输入有误")
+                        return
 
             elif device_id is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
@@ -2009,10 +2001,10 @@ class Orion_System(Plugin):
             ban_time = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
             )
-            if ban_time == "." or ban_time == "。":
+            if ban_time in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_time is None:
+            if ban_time is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
             ban_time = self.ban_time_format(ban_time)
@@ -2027,10 +2019,10 @@ class Orion_System(Plugin):
                 )
                 or "未知原因"
             )
-            if ban_reason == "." or ban_reason == "。":
+            if ban_reason in (".", "。"):
                 player.show("§a❀ 已退出封禁系统")
                 return
-            elif ban_reason is None:
+            if ban_reason is None:
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
 
@@ -2051,7 +2043,7 @@ class Orion_System(Plugin):
                         f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
                     )
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -2091,7 +2083,7 @@ class Orion_System(Plugin):
                 f"\n§a❀ [来自游戏内 {player.name} 的消息] 封禁成功：已封禁设备号 {ban_device_id} 至 {date_end} (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
             )
 
-        elif resp_1 == "." or resp_1 == "。":
+        elif resp_1 in (".", "。"):
             player.show("§a❀ 已退出封禁系统")
 
         elif resp_1 is None:
@@ -2175,10 +2167,10 @@ class Orion_System(Plugin):
                 if resp_2 is None:
                     player.show("§c❀ 回复超时！已退出解封系统")
                     return
-                elif resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     player.show("§a❀ 已退出解封系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -2190,7 +2182,7 @@ class Orion_System(Plugin):
                         player.show("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -2209,9 +2201,8 @@ class Orion_System(Plugin):
                             f"\n§a❀ [来自游戏内 {player.name} 的消息] 解封成功: 已解封玩家 {unban_player} (xuid:{unban_xuid})"
                         )
                         break
-                    else:
-                        player.show("§c❀ 您的输入有误")
-                        return
+                    player.show("§c❀ 您的输入有误")
+                    return
 
         elif resp_1 == "2":
             all_ban_player_device_id = os.listdir(
@@ -2280,10 +2271,10 @@ class Orion_System(Plugin):
                 if resp_2 is None:
                     player.show("§c❀ 回复超时！已退出解封系统")
                     return
-                elif resp_2 == "." or resp_2 == "。":
+                if resp_2 in (".", "。"):
                     player.show("§a❀ 已退出解封系统")
                     return
-                elif resp_2 == "-":
+                if resp_2 == "-":
                     if page > 1:
                         page -= 1
                     else:
@@ -2295,7 +2286,7 @@ class Orion_System(Plugin):
                         player.show("§6❀ 已经是最后一页啦~")
                 elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
                     page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
-                    if page_num >= 1 and page_num <= total_pages:
+                    if 1 <= page_num <= total_pages:
                         page = page_num
                     else:
                         player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
@@ -2314,11 +2305,10 @@ class Orion_System(Plugin):
                             f"\n§a❀ [来自游戏内 {player.name} 的消息] 解封成功: 已解封设备号 {unban_device_id} (使用此设备加入游戏的玩家xuid和名称记录:{unban_device_id_data})"
                         )
                         break
-                    else:
-                        player.show("§c❀ 您的输入有误")
-                        return
+                    player.show("§c❀ 您的输入有误")
+                    return
 
-        elif resp_1 == "." or resp_1 == "。":
+        elif resp_1 in (".", "。"):
             player.show("§a❀ 已退出解封系统")
 
         elif resp_1 is None:
@@ -2328,26 +2318,27 @@ class Orion_System(Plugin):
             player.show("§c❀ 您的输入有误")
 
     # 格式化玩家封禁时间
-    def ban_time_format(self, ban_time):
+
+    @staticmethod
+    def ban_time_format(ban_time):
         # ban_time == -1:永久封禁
-        if ban_time == -1 or ban_time == "-1" or ban_time == "Forever":
+        if ban_time in (-1, "-1", "Forever"):
             return "Forever"
 
         # ban_time == 0:仅踢出游戏，不作封禁，玩家可以立即重进
-        elif ban_time == 0 or ban_time == "0" or ban_time == "" or ban_time is None:
+        if ban_time in (0, "0", "") or ban_time is None:
             return 0
 
         # type(ban_time) is int and ban_time > 0:封禁玩家对应时间(单位:秒)
-        elif type(ban_time) is int and ban_time > 0:
+        if type(ban_time) is int and ban_time > 0:
             return ban_time
 
         # type(ban_time) is str:封禁时间为字符串，将尝试进行转换
-        elif type(ban_time) is str:
+        if type(ban_time) is str:
             try:
                 if int(ban_time) > 0:
                     return int(ban_time)
-                else:
-                    return 0
+                return 0
             except ValueError:
                 ban_time = ban_time.replace(" ", "")
                 matches_time_units = re.findall(r"(\d+)(年|月|日|时|分|秒)", ban_time)
@@ -2416,7 +2407,7 @@ class Orion_System(Plugin):
             else:
                 if ban_player_data["ban_end_timestamp"] == "Forever":
                     return
-                elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data["ban_end_timestamp"] < timestamp_now:
                     pre_ban_timestamp = timestamp_now
                 else:
                     pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
@@ -2588,7 +2579,7 @@ class Orion_System(Plugin):
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
                         return
-                    elif ban_player_data["ban_end_timestamp"] < timestamp_now:
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
                         pre_ban_timestamp = timestamp_now
                     else:
                         pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
