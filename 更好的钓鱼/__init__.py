@@ -24,13 +24,6 @@ class CatFishing(Plugin):
                 "§r§b稀有": 30,
             },
             "初始属性": {
-                "鱼竿_钓鱼冷却": 20,
-                "鱼竿_钓鱼爆率": 0,
-                "鱼竿_物品爆率": 0,
-                "鱼竿_生物爆率": 0,
-                "鱼竿_结构爆率": 0,
-                "鱼竿_连钓次数": 0,
-                "鱼竿_空钩概率": 0,
                 "玩家_钓鱼次数": 10,
                 "玩家_钓鱼冷却": 0,
                 "玩家_钓鱼爆率": 0,
@@ -41,9 +34,10 @@ class CatFishing(Plugin):
                 "玩家_空钩概率": 0,
                 "玩家_冷却计时": 0,
                 "玩家_鱼饵属性": 0,
+                "玩家_鱼竿属性": 0,
             },
             "鱼饵属性": {
-                "100": {
+                "0": {
                     "钓鱼冷却": 0,
                     "钓鱼爆率": 0,
                     "物品爆率": 0,
@@ -51,7 +45,18 @@ class CatFishing(Plugin):
                     "结构爆率": 0,
                     "连钓次数": 0,
                     "空钩概率": 0,
-                }
+                },
+            },
+            "鱼竿属性": {
+                "0": {
+                    "钓鱼冷却": 20,
+                    "钓鱼爆率": 0,
+                    "物品爆率": 0,
+                    "生物爆率": 0,
+                    "结构爆率": 0,
+                    "连钓次数": 0,
+                    "空钩概率": 0,
+                },
             },
             "品质设置": [
                 "§r§f普通",
@@ -71,13 +76,6 @@ class CatFishing(Plugin):
             },
             "爆率设置": cfg.AnyKeyValue(int),
             "初始属性": {
-                "鱼竿_钓鱼冷却": int,
-                "鱼竿_钓鱼爆率": int,
-                "鱼竿_物品爆率": int,
-                "鱼竿_生物爆率": int,
-                "鱼竿_结构爆率": int,
-                "鱼竿_连钓次数": int,
-                "鱼竿_空钩概率": int,
                 "玩家_钓鱼次数": int,
                 "玩家_钓鱼冷却": int,
                 "玩家_钓鱼爆率": int,
@@ -88,8 +86,10 @@ class CatFishing(Plugin):
                 "玩家_空钩概率": int,
                 "玩家_冷却计时": int,
                 "玩家_鱼饵属性": int,
+                "玩家_鱼竿属性": int,
             },
-            "鱼饵属性": cfg.AnyKeyValue(dict),
+            "鱼饵属性": dict,
+            "鱼竿属性": dict,
             "品质设置": cfg.JsonList(str),
             "对接命令方块": {
                 "物品": bool,
@@ -173,6 +173,7 @@ class CatFishing(Plugin):
         self.quality = self.cfg["品质设置"]
         self.cmdapi = self.cfg["对接命令方块"]
         self.bait = self.cfg["鱼饵属性"]
+        self.rod = self.cfg["鱼竿属性"]
         self.player = self.frame.get_players()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -202,13 +203,14 @@ class CatFishing(Plugin):
     def fishing(self, player: Player):
         name = player.name
 
-        fishing_airHook = self.fishing_Attribute[name]["鱼竿_空钩概率"]
+        rod = self.rod[str(self.fishing_Attribute[name]["玩家_鱼竿属性"])]
+        fishing_airHook = rod["空钩概率"]
+        f_fishingDrop = rod["钓鱼爆率"]
+        fishing_itemDrop = rod["物品爆率"]
+        fishing_entityDrop = rod["生物爆率"]
+        fishing_structDrop = rod["结构爆率"]
         player_airHook = self.fishing_Attribute[name]["玩家_空钩概率"]
-        f_fishingDrop = self.fishing_Attribute[name]["鱼竿_钓鱼爆率"]
         p_fishingDrop = self.fishing_Attribute[name]["玩家_钓鱼爆率"]
-        fishing_itemDrop = self.fishing_Attribute[name]["鱼竿_物品爆率"]
-        fishing_entityDrop = self.fishing_Attribute[name]["鱼竿_生物爆率"]
-        fishing_structDrop = self.fishing_Attribute[name]["鱼竿_结构爆率"]
         player_itemDrop = self.fishing_Attribute[name]["玩家_物品爆率"]
         player_entityDrop = self.fishing_Attribute[name]["玩家_生物爆率"]
         player_structDrop = self.fishing_Attribute[name]["玩家_结构爆率"]
@@ -300,14 +302,8 @@ class CatFishing(Plugin):
             "玩家_结构爆率",
             "玩家_空钩概率",
             "玩家_连钓次数",
-            "鱼竿_钓鱼冷却",
-            "鱼竿_钓鱼爆率",
-            "鱼竿_物品爆率",
-            "鱼竿_生物爆率",
-            "鱼竿_结构爆率",
-            "鱼竿_空钩概率",
-            "鱼竿_连钓次数",
             "玩家_鱼饵属性",
+            "玩家_鱼竿属性",
         ]
         for index, (name, score) in enumerate(zip(args[::2], args[1::2])):
             name = name.split(",")
@@ -321,11 +317,14 @@ class CatFishing(Plugin):
         name, name_ = args
         if name != name_:
             return
+
         player = self.player.getPlayerByName(name)
+
+        rod = self.rod[str(self.fishing_Attribute[name]["玩家_鱼竿属性"])]
+        fishing_cd = rod["钓鱼冷却"]
+        fishing_num = rod["连钓次数"]
         fishing_num_ = self.fishing_Attribute[name]["玩家_钓鱼次数"]
-        fishing_cd = self.fishing_Attribute[name]["鱼竿_钓鱼冷却"]
         player_cr = self.fishing_Attribute[name]["玩家_钓鱼冷却"]
-        fishing_num = self.fishing_Attribute[name]["鱼竿_连钓次数"]
         player_num = self.fishing_Attribute[name]["玩家_连钓次数"]
         cd_time = self.fishing_Attribute[name]["玩家_冷却计时"]
 

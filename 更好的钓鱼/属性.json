@@ -90,70 +90,16 @@
         {
             "score": {
                 "name": "@a",
-                "objective": "鱼竿_钓鱼冷却"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_钓鱼爆率"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_物品爆率"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_生物爆率"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_结构爆率"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_空钩概率"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
-                "objective": "鱼竿_连钓次数"
-            }
-        },
-        {
-            "selector": "@a"
-        },
-        {
-            "score": {
-                "name": "@a",
                 "objective": "玩家_鱼饵属性"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_鱼竿属性"
             }
         }
     ]
