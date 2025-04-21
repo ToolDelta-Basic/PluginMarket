@@ -213,6 +213,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "『Orion System』违规与作弊行为综合反制系统": {
+      "name": "『Orion System』违规与作弊行为综合反制系统",
+      "author": "style_天枢",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "DateTimeSync": {
       "name": "时间同步计分板",
       "author": "SuperScript",
@@ -271,12 +277,6 @@
       "name": "重启",
       "author": "大庆油田",
       "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制": {
-      "name": "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制",
-      "author": "style_天枢",
-      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "死亡点返回": {
@@ -523,7 +523,7 @@
   "Packages": {
     "防挂插件包": {
       "plugin-ids": [
-        "机器人IP外进,违禁词名称,等级限制,游戏内私聊与刷屏综合反制",
+        "『Orion System』违规与作弊行为综合反制系统",
         "暴击限制",
         "超频刷屏反制",
         "等级限制",
@@ -534,7 +534,7 @@
       ],
       "description": "收录常用的防挂插件",
       "author": "ToolDelta",
-      "version": "0.0.1"
+      "version": "0.0.2"
     },
     "新手插件包": {
       "plugin-ids": [
