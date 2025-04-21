@@ -1,4 +1,4 @@
-from tooldelta import Plugin, plugin_entry, cfg, utils, fmts, Print, TYPE_CHECKING
+from tooldelta import Plugin, Player, plugin_entry, cfg, utils, fmts, TYPE_CHECKING
 from tooldelta.constants import PacketIDS
 from tooldelta.utils import tempjson
 import time
@@ -299,16 +299,16 @@ class Orion_System(Plugin):
 
         # 在游戏内聊天栏菜单注册封禁/解封系统触发词
         if self.is_game_ban_system:
-            self.chatbar.add_trigger(
+            self.chatbar.add_new_trigger(
                 self.game_ban_trigger_words,
-                None,
+                [],
                 "封禁系统-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.ban_player_by_game,
                 op_only=True,
             )
-            self.chatbar.add_trigger(
+            self.chatbar.add_new_trigger(
                 self.game_unban_trigger_words,
-                None,
+                [],
                 "解封系统-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.unban_player_by_game,
                 op_only=True,
@@ -811,7 +811,7 @@ class Orion_System(Plugin):
             "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
         )
         fmts.print_inf("§a❀ §b输入 §e[1-3]§b 之间的数字以选择 封禁模式")
-        resp_1 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+        resp_1 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
         if resp_1 == "1":
             allplayers = self.game_ctrl.allplayers.copy()
@@ -843,7 +843,7 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                 fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                 if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出封禁系统")
@@ -878,7 +878,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = -1  §e永久封禁")
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
-            ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+            ban_time = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
             if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -888,7 +888,7 @@ class Orion_System(Plugin):
                 return
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
-            ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
+            ban_reason = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
             if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -962,7 +962,7 @@ class Orion_System(Plugin):
             fmts.print_inf(
                 "\n§a❀ §b请输入您想封禁的玩家名称、xuid或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
             )
-            name_or_xuid = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+            name_or_xuid = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
             if name_or_xuid in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
@@ -1003,7 +1003,7 @@ class Orion_System(Plugin):
                     fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                     fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                    resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                    resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                     if resp_2 in (".", "。"):
                         fmts.print_suc("§a❀ 已退出封禁系统")
@@ -1078,7 +1078,7 @@ class Orion_System(Plugin):
                     fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                     fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                    resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                    resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                     if resp_2 in (".", "。"):
                         fmts.print_suc("§a❀ 已退出封禁系统")
@@ -1114,7 +1114,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = -1  §e永久封禁")
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
-            ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+            ban_time = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
             if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -1124,7 +1124,7 @@ class Orion_System(Plugin):
                 return
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
-            ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
+            ban_reason = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
             if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -1198,7 +1198,7 @@ class Orion_System(Plugin):
             fmts.print_inf(
                 "\n§a❀ §b请输入您想封禁的设备号，输入§elist§b可查询当前服务器全部设备号记录"
             )
-            device_id = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+            device_id = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
             if device_id in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
@@ -1241,7 +1241,7 @@ class Orion_System(Plugin):
                     fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                     fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                    resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                    resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                     if resp_2 in (".", "。"):
                         fmts.print_suc("§a❀ 已退出封禁系统")
@@ -1292,7 +1292,7 @@ class Orion_System(Plugin):
             fmts.print_inf("§6 · §f封禁时间 = -1  §e永久封禁")
             fmts.print_inf("§6 · §f封禁时间 = 正整数  §e封禁<正整数>秒")
             fmts.print_inf("§6 · §f封禁时间 = 0年0月5日6时7分8秒  §e封禁对应的时间")
-            ban_time = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+            ban_time = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
             if ban_time in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -1302,7 +1302,7 @@ class Orion_System(Plugin):
                 return
             fmts.print_suc(f"\n§a❀ 您输入的封禁时间为 {ban_time}秒")
             fmts.print_inf("§a❀ §b请输入封禁原因：")
-            ban_reason = input(Print.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
+            ban_reason = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出")) or "未知原因"
             if ban_reason in (".", "。"):
                 fmts.print_suc("§a❀ 已退出封禁系统")
                 return
@@ -1379,7 +1379,7 @@ class Orion_System(Plugin):
             "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
         )
         fmts.print_inf("§a❀ §b输入 §e[1-2]§b 之间的数字以选择 解封模式")
-        resp_1 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+        resp_1 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
         if resp_1 == "1":
             all_ban_player_xuids = os.listdir(
@@ -1432,7 +1432,7 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                 fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                 if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出解封系统")
@@ -1530,7 +1530,7 @@ class Orion_System(Plugin):
                 fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
                 fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
                 fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+                resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
                 if resp_2 in (".", "。"):
                     fmts.print_suc("§a❀ 已退出解封系统")
@@ -1573,8 +1573,7 @@ class Orion_System(Plugin):
             fmts.print_err("§c❀ 您的输入有误")
 
     # 游戏内聊天栏菜单封禁玩家函数封装
-    def ban_player_by_game(self, trigger_player, _):
-        player = self.frame.get_players().getPlayerByName(trigger_player)
+    def ban_player_by_game(self, player: Player, _):
         player.show(
             "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
         )
@@ -2221,8 +2220,7 @@ class Orion_System(Plugin):
             player.show("§c❀ 您的输入有误")
 
     # 游戏内聊天栏菜单解封玩家函数封装
-    def unban_player_by_game(self, trigger_player, _):
-        player = self.frame.get_players().getPlayerByName(trigger_player)
+    def unban_player_by_game(self, player: Player, _):
         player.show(
             "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
         )
