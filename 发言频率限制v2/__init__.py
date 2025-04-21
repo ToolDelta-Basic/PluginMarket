@@ -12,7 +12,7 @@ class AntiTooFastMessage_V2(Plugin):
             "检测周期(秒)": 5,
             "检测周期内最多发送多少条消息": 5,
             "发言太快反制措施": [
-                'kick "[玩家名]" §c发言太快， 您已被踢出租赁服',
+                "kick [XUID] §c发言太快， 您已被踢出租赁服",
                 "say §6[玩家名] §c因发言太快被踢出租赁服",
             ],
             "多少个换行判定为刷屏": 6,
@@ -56,19 +56,19 @@ class AntiTooFastMessage_V2(Plugin):
 
         if len(msg) > self.msg_length_limit:
             self.game_ctrl.sendwocmd(
-                f'kick "{player.name}" §c发言长度太长， 您已被踢出租赁服'
+                f"kick {player.xuid} §c发言长度太长， 您已被踢出租赁服"
             )
             self.print(f"§6玩家 {player.name} 发言长度太长({len(msg)}), 已被踢出租赁服")
-            self.game_ctrl.sendwocmd(f'kick "{player.name}"')
         elif (lines := msg.count("\n")) > self.msg_lines_limit:
             self.game_ctrl.sendwocmd(
-                f'kick "{player.name}" §c发言行数太多， 您已被踢出租赁服'
+                f"kick {player.xuid} §c发言行数太多， 您已被踢出租赁服"
             )
             self.print(f"§6玩家 {player.name} 发言行数太多({lines}), 已被踢出租赁服")
-            self.game_ctrl.sendwocmd(f'kick "{player.name}"')
         elif self.is_too_fast(player):
             for cmd in self.msg_lmt_anti:
-                self.game_ctrl.sendwocmd(cmd.replace("[玩家名]", player.name))
+                self.game_ctrl.sendwocmd(
+                    cmd.replace("[玩家名]", player.name).replace("[XUID]", player.xuid)
+                )
             pass
 
     def player_leave(self, player: Player):

@@ -345,10 +345,10 @@ class CloudBlacklist(Plugin):
 
     def on_player_join(self, player: Player):
         player_name = player.name
-        time.sleep(4)
-        self.check_blacklist(player_name)
+        xuid = player.xuid
+        self.check_blacklist(player_name, xuid)
 
-    def check_blacklist(self, player_name: str):
+    def check_blacklist(self, player_name: str, xuid: str):
         data_path = os.path.join(self.data_path, "blacklist.json")
         black_list = {}
         with open(data_path, "r", encoding="utf-8") as f:
@@ -362,9 +362,8 @@ class CloudBlacklist(Plugin):
             return
         if player_uuid in black_list:
             self.game_ctrl.sendwocmd(
-                f'kick "{player_name}" 您被禁止加入服务器\n原因：处于云黑名单中'
+                f"kick {xuid} 您被禁止加入服务器\n原因：处于云黑名单中"
             )
-            self.game_ctrl.sendwocmd(f'kick "{player_name}"')
             if black_list[player_uuid] != player_name:
                 black_list[player_uuid] = player_name
                 with open(data_path, "w", encoding="utf-8") as f:
@@ -374,9 +373,11 @@ class CloudBlacklist(Plugin):
     def auto_check_blacklist(self):
         while True:
             time.sleep(self._cfg["检测时间（秒）"])
-            players = self.game_ctrl.allplayers
-            for player_name in players:
-                self.check_blacklist(player_name)
+            players = self.frame.get_players().getAllPlayers()
+            for player in players:
+                player_name = player.name
+                xuid = player.xuid
+                self.check_blacklist(player_name, xuid)
 
     def add_black_list(self, args: List[str]):
         player_name = input("请输入玩家名：")

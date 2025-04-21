@@ -48,18 +48,12 @@ class PlayerJoinverify(Plugin):
     def PlayerJoin(self, player: Player):
         a = self.get()
 
-        if not player.xuid:
-            self.game_ctrl.sendwocmd(
-                f'/kick "{player.name}" 您已被踢出游戏：系统内部出现问题，请稍后再试'
-            )
-            self.game_ctrl.sendwocmd(f'/kick "{player.name}"')
         if not player.xuid in a["白名单"]:
             id = int(time())
             a[id] = player.xuid
             self.game_ctrl.sendwocmd(
-                f'/kick "{player.name}" 您已被踢出游戏：在 {self.group} 发送 #验证 {id}'
+                f"kick {player.xuid} 您已被踢出游戏：在 {self.group} 发送 #验证 {id}"
             )
-            self.game_ctrl.sendwocmd(f'/kick "{player.name}"')
         self.set(a)
         return 0
 

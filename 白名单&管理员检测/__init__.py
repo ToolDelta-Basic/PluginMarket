@@ -60,17 +60,16 @@ class whitelist_and_opcheck(Plugin):
             raise ValueError("此启动框架无法使用 NeOmega API")
 
     def on_player_join(self, player: Player):
-        playername = player.name
-        time.sleep(5)
-        player_name = playername
+        player_name = player.name
+        xuid = player.xuid
 
         if self._cfg["白名单"]["开启状态"]:
-            self.whitelist_check(player_name)
+            self.whitelist_check(player_name, xuid)
 
         if self._cfg["管理员检测"]["开启状态"]:
             self.operation_check(player_name)
 
-    def whitelist_check(self, player_name: str | None):
+    def whitelist_check(self, player_name: str | None, xuid: str):
         player = self.player(player_name)
         player_uuid = player[1]
         if player_name == self.bot.BotName:
@@ -78,9 +77,8 @@ class whitelist_and_opcheck(Plugin):
 
         if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
             self.game_ctrl.sendwocmd(
-                f'/kick "{player_name}" ' + self._cfg["白名单"]["踢出提示词"]
+                f"kick {xuid} " + self._cfg["白名单"]["踢出提示词"]
             )
-            self.game_ctrl.sendwocmd(f'/kick "{player_name}"')
             return
 
         return
@@ -213,10 +211,12 @@ class whitelist_and_opcheck(Plugin):
     def auto_check(self):
         while True:
             time.sleep(self._cfg["检查时间（秒）"])
-            players = self.game_ctrl.players_uuid
-            for name, uuid in players.items():
+            players = self.frame.get_players().getAllPlayers()
+            for player in players:
+                name = player.name
+                xuid = player.xuid
                 if self._cfg["白名单"]["开启状态"]:
-                    self.whitelist_check(name)
+                    self.whitelist_check(name, xuid)
 
                 if self._cfg["管理员检测"]["开启状态"]:
                     self.operation_check(name)

@@ -78,7 +78,7 @@ class ReportSystem(Plugin):
                                     > number_of_players
                                 ):
                                     self.game_ctrl.sendwocmd(
-                                        f'/kick "{reported_player_instance.name}"'
+                                        f"kick {reported_player_instance.xuid}"
                                     )
                                     self.game_ctrl.say_to(
                                         "@a",

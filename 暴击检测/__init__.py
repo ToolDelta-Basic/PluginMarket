@@ -53,16 +53,16 @@ class CritLimit(Plugin):
                     players = self.frame.get_players()
                     kick_player = players.getPlayerByUniqueID(unique_id)
                     kick_player_name = kick_player.name
+                    kick_player_xuid = kick_player.xuid
                     fmts.print_war(f"玩家{kick_player_name}暴击次数过多 已踢出")
                     self.game_ctrl.sendwocmd(
-                        f'/kick "{kick_player_name}" {self.kick_reason}'
+                        f"kick {kick_player_xuid} {self.kick_reason}"
                     )
                     self.game_ctrl.say_to(
                         "@a", f"玩家{kick_player_name}暴击次数过多 已踢出"
                     )
 
                     self.message_stats[action_type][unique_id] = []
-                    self.game_ctrl.sendwocmd(f'/kick "{kick_player_name}"')
         except Exception as e:
             pass
 
