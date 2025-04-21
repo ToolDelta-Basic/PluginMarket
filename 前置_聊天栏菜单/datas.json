@@ -1,10 +1,9 @@
 {
     "author": "SuperScript",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "新聊天栏菜单, 支持参数类型检测等",
     "limit_launcher": null,
     "pre-plugins": {},
     "plugin-type": "classic",
-    "plugin-id": "聊天栏菜单",
-    "enabled": true
+    "plugin-id": "聊天栏菜单"
 }

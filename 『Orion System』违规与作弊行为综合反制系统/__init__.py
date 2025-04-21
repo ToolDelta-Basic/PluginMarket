@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -960,7 +960,7 @@ class Orion_System(Plugin):
                 fmts.print_err(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             fmts.print_inf(
-                "\n§a❀ §b请输入您想封禁的玩家名称或xuid，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的玩家名称、xuid或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -1033,17 +1033,81 @@ class Orion_System(Plugin):
                         fmts.print_err("§c❀ 您的输入有误")
                         return
 
+            elif name_or_xuid in xuid_data.keys():
+                ban_xuid = name_or_xuid
+                ban_player = xuid_data[name_or_xuid]
+
             else:
-                is_found_name_or_xuid = False
-                for k, v in xuid_data.items():
-                    if name_or_xuid in (k, v):
-                        ban_xuid = k
-                        ban_player = v
-                        is_found_name_or_xuid = True
-                        break
-                if is_found_name_or_xuid is False:
-                    fmts.print_err("§c❀ 找不到您输入的玩家名称或xuid")
-                    return
+                while True:
+                    matched_player: list[tuple[str, str]] = []
+                    for k, v in xuid_data.items():
+                        if name_or_xuid in v:
+                            matched_player.append((v, k))
+
+                    if matched_player == []:
+                        fmts.print_err("§c❀ 找不到您输入的玩家名称或xuid")
+                        return
+
+                    page = 1
+                    total_pages = math.ceil(
+                        len(matched_player) / self.terminal_items_per_page
+                    )
+                    start_index = (page - 1) * self.terminal_items_per_page + 1
+                    end_index = min(
+                        start_index + self.terminal_items_per_page - 1,
+                        len(matched_player),
+                    )
+                    fmts.print_inf("\n§a❀ 已匹配到以下玩家~")
+                    fmts.print_inf(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    fmts.print_inf("§l§b[ §a序号§b ] §r§a玩家名称 - xuid")
+                    for i in range(start_index, end_index + 1):
+                        fmts.print_inf(
+                            f"§l§b[ §e{i}§b ] §r§e{matched_player[i - 1][0].replace(name_or_xuid, f'§b{name_or_xuid}§e')} - {matched_player[i - 1][1]}"
+                        )
+                    fmts.print_inf(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    fmts.print_inf(
+                        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]"
+                    )
+                    fmts.print_inf(
+                        f"§a❀ §b输入 §e[{start_index}-{end_index}]§b 之间的数字以选择 封禁的玩家和xuid，或者输入玩家名称再次尝试搜索"
+                    )
+                    fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
+                    fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
+                    fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
+                    resp_2 = input(Print.fmt_info("§a❀ §b输入 §c. §b退出"))
+
+                    if resp_2 in (".", "。"):
+                        fmts.print_suc("§a❀ 已退出封禁系统")
+                        return
+                    if resp_2 == "-":
+                        if page > 1:
+                            page -= 1
+                        else:
+                            fmts.print_war("§6❀ 已经是第一页啦~")
+                    elif resp_2 == "+":
+                        if page < total_pages:
+                            page += 1
+                        else:
+                            fmts.print_war("§6❀ 已经是最后一页啦~")
+                    elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
+                        page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
+                        if 1 <= page_num <= total_pages:
+                            page = page_num
+                        else:
+                            fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
+                    else:
+                        try:
+                            resp_2 = int(resp_2)
+                            if resp_2 and resp_2 in range(start_index, end_index + 1):
+                                ban_player = matched_player[resp_2 - 1][0]
+                                ban_xuid = matched_player[resp_2 - 1][1]
+                                break
+                        except ValueError:
+                            name_or_xuid = resp_2
 
             fmts.print_suc(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             fmts.print_inf("§a❀ §b请按照以下格式输入封禁时间：")
@@ -1694,7 +1758,7 @@ class Orion_System(Plugin):
                 player.show(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             player.show(
-                "\n§a❀ §b请输入您想封禁的玩家名称或xuid，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的玩家名称、xuid或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
@@ -1776,17 +1840,81 @@ class Orion_System(Plugin):
                 player.show("§c❀ 回复超时！ 已退出封禁系统")
                 return
 
+            elif name_or_xuid in xuid_data.keys():
+                ban_xuid = name_or_xuid
+                ban_player = xuid_data[name_or_xuid]
+
             else:
-                is_found_name_or_xuid = False
-                for k, v in xuid_data.items():
-                    if name_or_xuid in (k, v):
-                        ban_xuid = k
-                        ban_player = v
-                        is_found_name_or_xuid = True
-                        break
-                if is_found_name_or_xuid is False:
-                    player.show("§c❀ 找不到您输入的玩家名称或xuid")
-                    return
+                while True:
+                    matched_player: list[tuple[str, str]] = []
+                    for k, v in xuid_data.items():
+                        if name_or_xuid in v:
+                            matched_player.append((v, k))
+
+                    if matched_player == []:
+                        player.show("§c❀ 找不到您输入的玩家名称或xuid")
+                        return
+
+                    page = 1
+                    total_pages = math.ceil(
+                        len(matched_player) / self.game_items_per_page
+                    )
+                    start_index = (page - 1) * self.game_items_per_page + 1
+                    end_index = min(
+                        start_index + self.game_items_per_page - 1,
+                        len(matched_player),
+                    )
+                    player.show("\n§a❀ 已匹配到以下玩家~")
+                    player.show(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    player.show("§l§b[ §a序号§b ] §r§a玩家名称 - xuid")
+                    for i in range(start_index, end_index + 1):
+                        player.show(
+                            f"§l§b[ §e{i}§b ] §r§e{matched_player[i - 1][0].replace(name_or_xuid, f'§b{name_or_xuid}§e')} - {matched_player[i - 1][1]}"
+                        )
+                    player.show(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    player.show(
+                        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]"
+                    )
+                    player.show(
+                        f"§a❀ §b输入 §e[{start_index}-{end_index}]§b 之间的数字以选择 封禁的玩家和xuid，或者输入玩家名称再次尝试搜索"
+                    )
+                    player.show("§a❀ §b输入 §d- §e转到上一页")
+                    player.show("§a❀ §b输入 §d+ §e转到下一页")
+                    player.show("§a❀ §b输入 §d正整数+页 §e转到对应页")
+                    resp_2 = player.input("§a❀ §b输入 §c. §b退出")
+
+                    if resp_2 in (".", "。"):
+                        player.show("§a❀ 已退出封禁系统")
+                        return
+                    if resp_2 == "-":
+                        if page > 1:
+                            page -= 1
+                        else:
+                            player.show("§6❀ 已经是第一页啦~")
+                    elif resp_2 == "+":
+                        if page < total_pages:
+                            page += 1
+                        else:
+                            player.show("§6❀ 已经是最后一页啦~")
+                    elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
+                        page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
+                        if 1 <= page_num <= total_pages:
+                            page = page_num
+                        else:
+                            player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
+                    else:
+                        try:
+                            resp_2 = int(resp_2)
+                            if resp_2 and resp_2 in range(start_index, end_index + 1):
+                                ban_player = matched_player[resp_2 - 1][0]
+                                ban_xuid = matched_player[resp_2 - 1][1]
+                                break
+                        except ValueError:
+                            name_or_xuid = resp_2
 
             player.show(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             player.show("§a❀ §b请按照以下格式输入封禁时间：")
@@ -2626,7 +2754,6 @@ class Orion_System(Plugin):
                 os.remove(path)
                 return
             ban_end_timestamp = ban_player_data["ban_end_timestamp"]
-            ban_start_timestamp = ban_player_data["ban_start_timestamp"]
             ban_end_real_time = ban_player_data["ban_end_real_time"]
             ban_reason = ban_player_data["ban_reason"]
             if type(ban_end_timestamp) is int:
@@ -2643,7 +2770,7 @@ class Orion_System(Plugin):
                     )
                     if self.jointly_ban_player:
                         self.ban_player_by_xuid(
-                            player, ban_end_timestamp - ban_start_timestamp, ban_reason
+                            player, ban_end_timestamp - timestamp_now, ban_reason
                         )
                 else:
                     os.remove(path)

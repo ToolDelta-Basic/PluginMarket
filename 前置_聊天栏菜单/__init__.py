@@ -8,6 +8,15 @@ VALID_ARG_VALUE = str | int | float | None
 VALID_ARG_WITHOUT_NONE = str | int | float
 ARGUMENT_HINT = list[tuple[str, VALID_ARGUMENT_HINT_TYPES, VALID_ARG_VALUE]]
 
+def isNaN(x: float):
+    return x != x
+
+def isInfinity(x: float):
+    return x == float("inf") or x == float("-inf")
+
+def isInvalidFloat(x: float):
+    return isNaN(x) or isInfinity(x)
+
 
 def parse_arg(
     arg: str, argtype: type[str | int | bool | float]
@@ -23,6 +32,8 @@ def parse_arg(
         val = utils.try_convert(arg, float)
         if val is None:
             raise ValueError(f"{arg} 不是一个整数或小数")
+        elif isInvalidFloat(val):
+            raise ValueError(f"{arg} 不合法")
         return val
     elif argtype is bool:
         if arg == "true":
@@ -171,7 +182,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 2)
+    version = (0, 3, 3)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
