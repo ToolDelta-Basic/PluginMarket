@@ -1038,6 +1038,7 @@ class Orion_System(Plugin):
                 ban_player = xuid_data[name_or_xuid]
 
             else:
+                page = 1
                 while True:
                     matched_player: list[tuple[str, str]] = []
                     for k, v in xuid_data.items():
@@ -1048,7 +1049,6 @@ class Orion_System(Plugin):
                         fmts.print_err("§c❀ 找不到您输入的玩家名称或xuid")
                         return
 
-                    page = 1
                     total_pages = math.ceil(
                         len(matched_player) / self.terminal_items_per_page
                     )
@@ -1106,6 +1106,8 @@ class Orion_System(Plugin):
                                 ban_player = matched_player[resp_2 - 1][0]
                                 ban_xuid = matched_player[resp_2 - 1][1]
                                 break
+                            fmts.print_err("§c❀ 您的输入有误")
+                            return
                         except ValueError:
                             name_or_xuid = resp_2
 
@@ -1844,6 +1846,7 @@ class Orion_System(Plugin):
                 ban_player = xuid_data[name_or_xuid]
 
             else:
+                page = 1
                 while True:
                     matched_player: list[tuple[str, str]] = []
                     for k, v in xuid_data.items():
@@ -1854,7 +1857,6 @@ class Orion_System(Plugin):
                         player.show("§c❀ 找不到您输入的玩家名称或xuid")
                         return
 
-                    page = 1
                     total_pages = math.ceil(
                         len(matched_player) / self.game_items_per_page
                     )
@@ -1886,6 +1888,9 @@ class Orion_System(Plugin):
                     player.show("§a❀ §b输入 §d正整数+页 §e转到对应页")
                     resp_2 = player.input("§a❀ §b输入 §c. §b退出")
 
+                    if resp_2 is None:
+                        player.show("§c❀ 回复超时！ 已退出封禁系统")
+                        return
                     if resp_2 in (".", "。"):
                         player.show("§a❀ 已退出封禁系统")
                         return
@@ -1912,6 +1917,8 @@ class Orion_System(Plugin):
                                 ban_player = matched_player[resp_2 - 1][0]
                                 ban_xuid = matched_player[resp_2 - 1][1]
                                 break
+                            player.show("§c❀ 您的输入有误")
+                            return
                         except ValueError:
                             name_or_xuid = resp_2
 
