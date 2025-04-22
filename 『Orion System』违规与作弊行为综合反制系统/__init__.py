@@ -1110,6 +1110,7 @@ class Orion_System(Plugin):
                             return
                         except ValueError:
                             name_or_xuid = resp_2
+                            page = 1
 
             fmts.print_suc(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             fmts.print_inf("§a❀ §b请按照以下格式输入封禁时间：")
@@ -1241,7 +1242,7 @@ class Orion_System(Plugin):
                         f"§a❀ §b输入 §e[{start_index}-{end_index}]§b 之间的数字以选择 封禁的设备号"
                     )
                     fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
-                    fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
+                    fmts.print_inf("§a❀ §b输入 §d+ §e转到下一")
                     fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
                     resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -1258,7 +1259,7 @@ class Orion_System(Plugin):
                             page += 1
                         else:
                             fmts.print_war("§6❀ 已经是最后一页啦~")
-                    elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
+                    elif bool(re.fullmatch(r"^[1-9]\d*$", resp_2)):
                         page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
                         if 1 <= page_num <= total_pages:
                             page = page_num
@@ -1921,6 +1922,7 @@ class Orion_System(Plugin):
                             return
                         except ValueError:
                             name_or_xuid = resp_2
+                            page = 1
 
             player.show(f"\n§a❀ 您选择了 玩家 {ban_player} (xuid:{ban_xuid})")
             player.show("§a❀ §b请按照以下格式输入封禁时间：")
