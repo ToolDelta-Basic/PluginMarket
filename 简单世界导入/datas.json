@@ -1,0 +1,9 @@
+{
+  "author": "简单世界导入",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "一个简单的世界导入实现，不实现任何关于 NBT 方块的部分",
+  "pre-plugins": {},
+  "plugin-id": "simple-bedworld-import",
+  "enabled": true
+}
