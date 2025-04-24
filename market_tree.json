@@ -447,6 +447,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "simple-bedworld-import": {
+      "name": "简单世界导入",
+      "author": "简单世界导入",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "ad": {
       "name": "公告栏[Mono]",
       "author": "Mono",

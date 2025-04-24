@@ -434,6 +434,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "简单世界导入": [
+        "datas.json",
+        "readme.txt",
+        "__init__.py"
+    ],
     "公告栏[Mono]": [
         "datas.json",
         "__init__.py"
