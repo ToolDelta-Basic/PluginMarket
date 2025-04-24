@@ -31,10 +31,10 @@ class SimpleWorldImport(Plugin):
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
             ["import/"],
-            "".join(
+            " ".join(
                 [
-                    "[存档所在文件夹之名]",
-                    "[要导入建筑物所在维度 | 0=主世界, 1=下界, 2=末地]"
+                    "[存档文件夹名(位于 插件数据文件/简易世界导入/)]",
+                    "[要导入建筑物所在维度 | 0=主世界, 1=下界, 2=末地]",
                     "[要导入建筑物在存档内的起始坐标 | 形如(x,y,z)]",
                     "[要导入建筑物在存档内的终点坐标 | 形如(x,y,z)]",
                     "[要导入到游戏的哪里 | 形如(x,y,z)]",
@@ -147,7 +147,10 @@ class SimpleWorldImport(Plugin):
     @utils.thread_func("世界导入进程")
     def do_world_import(self, cmd: list[str]):
         try:
-            world_dir_path = self.data_path
+            filename = cmd[0]
+            if not filename.endswith(".mcworld"):
+                filename.removesuffix(".mcworld")
+            world_path = self.format_data_path(filename)
             dm = bwo.Dimension(int(cmd[1]))
 
             # start_pos 和 end_pos 是原始存档中建筑物的起止坐标
@@ -163,15 +166,15 @@ class SimpleWorldImport(Plugin):
                 result_start_pos[1] + (end_pos[1] - start_pos[1]),
                 result_start_pos[2] + (end_pos[2] - start_pos[2]),
             )
-        except Exception:
-            fmts.print_err("命令参数不足或填写不正确")
+        except Exception as err:
+            fmts.print_err(f"命令参数不足或填写不正确: {err}")
             return
 
-        if not os.path.exists(world_dir_path) or not os.path.isdir(world_dir_path):
-            fmts.print_err(f"未能在 {world_dir_path} 找到存档文件夹")
+        if not os.path.isdir(world_path):
+            fmts.print_err(f"未找到路径为 {world_path} 的存档文件夹")
             return
 
-        world = bwo.new_world(world_dir_path)
+        world = bwo.new_world(world_path)
         if not world.is_valid():
             fmts.print_err(
                 "无法打开存档，请检查存档是否正被使用或 level.dat 文件是否正确"
