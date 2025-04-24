@@ -14,6 +14,7 @@ class SimpleWorldImport(Plugin):
         self.game_ctrl = frame.get_game_control()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.make_data_path()
 
     def on_def(self):
         global bwo
