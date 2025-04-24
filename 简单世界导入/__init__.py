@@ -1,5 +1,7 @@
-import os, json, time
-from tooldelta import Plugin, Frame, constants, fmts, utils, plugin_entry
+import os
+import json
+import time
+from tooldelta import Plugin, Frame, fmts, utils, plugin_entry
 
 
 class SimpleWorldImport(Plugin):
@@ -144,7 +146,7 @@ class SimpleWorldImport(Plugin):
     @utils.thread_func("世界导入进程")
     def do_world_import(self, cmd: list[str]):
         try:
-            world_dir_path = os.path.join(constants.TOOLDELTA_PLUGIN_DATA_DIR, cmd[0])
+            world_dir_path = self.data_path
             dm = bwo.Dimension(int(cmd[1]))
 
             # start_pos 和 end_pos 是原始存档中建筑物的起止坐标
@@ -160,7 +162,7 @@ class SimpleWorldImport(Plugin):
                 result_start_pos[1] + (end_pos[1] - start_pos[1]),
                 result_start_pos[2] + (end_pos[2] - start_pos[2]),
             )
-        except:
+        except Exception:
             fmts.print_err("命令参数不足或填写不正确")
             return
 
