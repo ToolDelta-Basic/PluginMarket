@@ -22,7 +22,7 @@ class SimpleWorldImport(Plugin):
 
             pip: PipSupport
 
-        pip.require("bedrock-world-operator")
+        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
         import bedrockworldoperator as bwo
 
     def on_inject(self):
