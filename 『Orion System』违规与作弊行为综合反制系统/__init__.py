@@ -470,17 +470,30 @@ class Orion_System(Plugin):
 
     # 反制Steve/Alex皮肤函数封装
 
-    @utils.thread_func("反制Steve/Alex皮肤函数封装")
+    @utils.thread_func("反制Steve/Alex皮肤函数")
     def ban_Steve_or_Alex(self, Username, SkinID):
-        if SkinID in (
-            "c18e65aa-7b21-4637-9b63-8ad63622ef01.Steve",
-            "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex",
-        ):
-            fmts.print_inf(f"§c发现 {Username} 皮肤为Steve/Alex，正在踢出")
+        if SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Steve":
+            fmts.print_inf(f"§c发现 {Username} 皮肤为Steve，正在踢出")
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 不要使用Steve/Alex皮肤噢，去换个更好的吧~'
+                f'/kick "{Username}" 不要使用Steve皮肤噢，去换个更好的吧~'
             )
-            fmts.print_inf(f"§a发现 {Username} 皮肤为Steve/Alex，已被踢出游戏")
+            fmts.print_inf(f"§a发现 {Username} 皮肤为Steve，已被踢出游戏")
+            self.ban_player_by_xuid(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+            self.ban_player_by_device_id(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+        elif SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex":
+            fmts.print_inf(f"§c发现 {Username} 皮肤为Alex，正在踢出")
+            self.game_ctrl.sendwocmd(
+                f'/kick "{Username}" 不要使用Alex皮肤噢，去换个更好的吧~'
+            )
+            fmts.print_inf(f"§a发现 {Username} 皮肤为Alex，已被踢出游戏")
             self.ban_player_by_xuid(
                 Username,
                 self.ban_time_format(self.ban_time_Steve_or_Alex),
