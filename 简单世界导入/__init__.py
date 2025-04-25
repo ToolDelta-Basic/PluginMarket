@@ -7,7 +7,7 @@ from tooldelta import Plugin, Frame, fmts, utils, plugin_entry
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -226,9 +226,19 @@ class SimpleWorldImport(Plugin):
             # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了，
             # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z)，
             # 于是我们把机器人 tp 到这个区块以做好准备
-            _ = self.game_ctrl.sendwscmd_with_resp(
-                f"tp {pen_x} {result_start_pos[1]} {pen_z}"
-            )
+            pen_position_str = f"{pen_x} {result_start_pos[1]} {pen_z}"
+            try:
+                _ = self.game_ctrl.sendwscmd_with_resp(
+                    f"tp {pen_position_str}"
+                )
+            except TimeoutError:
+                fmts.print_war(
+                    f"简易世界导入: 无法传送机器人到 {pen_position_str}, 将强制传送"
+                )
+                self.game_ctrl.sendwocmd(
+                    f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {pen_position_str}'
+                )
+                pass
 
             # 我们严格区分 区块 和 子区块，因为子区块实际上只是一个 16*16*16 的区域，
             # 但整个区块可以是 16*16*384 的区域。但不管怎么样，游戏储存区块的最细颗粒度
