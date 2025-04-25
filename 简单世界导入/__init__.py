@@ -7,7 +7,7 @@ from tooldelta import Plugin, Frame, fmts, utils, plugin_entry
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -158,8 +158,8 @@ class SimpleWorldImport(Plugin):
                 self.as_pos(cmd[2]), self.as_pos(cmd[3])
             )
 
-            # result_start_pos 是导入点，
-            # 而 result_end_pos 是计算得到的，导入后的终止坐标
+            # result_start_pos 是导入点,
+            # 而 result_end_pos 是计算得到的, 导入后的终止坐标
             result_start_pos = self.as_pos(cmd[4])
             result_end_pos = (
                 result_start_pos[0] + (end_pos[0] - start_pos[0]),
@@ -177,12 +177,12 @@ class SimpleWorldImport(Plugin):
         world = bwo.new_world(world_path)
         if not world.is_valid():
             fmts.print_err(
-                "无法打开存档，请检查存档是否正被使用或 level.dat 文件是否正确"
+                "无法打开存档, 请检查存档是否正被使用或 level.dat 文件是否正确"
             )
             return
 
-        # 我们基于要导入的建筑在原始存档的起始坐标和终点坐标，
-        # 进行蛇形区块分块，然后机器人将按照这个路径遍历原始
+        # 我们基于要导入的建筑在原始存档的起始坐标和终点坐标,
+        # 进行蛇形区块分块, 然后机器人将按照这个路径遍历原始
         # 存档里面的各个区块。
         #
         #   一个可视化图像如下。
@@ -209,7 +209,7 @@ class SimpleWorldImport(Plugin):
             chunk = world.load_chunk(origin_chunk_pos, dm)
             chunk_range = chunk.range()
             if not chunk.is_valid():
-                fmts.print_war(f"位于 {origin_chunk_pos} 的区块没有找到，跳过")
+                fmts.print_war(f"位于 {origin_chunk_pos} 的区块没有找到, 跳过")
                 continue
 
             # (sub_x, sub_z) 相对于当前正在处理的区
@@ -218,78 +218,72 @@ class SimpleWorldImport(Plugin):
             sub_z = origin_chunk_pos.z << 4
 
             # sub-start_pos 先计算出相对于原始存档的坐标。
-            # 完了后，再加上 result_start_pos 以将坐标系
+            # 完了后, 再加上 result_start_pos 以将坐标系
             # 转换到以实际导入地点为原点时的绝对坐标
             pen_x = sub_x - start_pos[0] + result_start_pos[0]
             pen_z = sub_z - start_pos[2] + result_start_pos[2]
 
-            # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了，
-            # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z)，
+            # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了,
+            # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z),
             # 于是我们把机器人 tp 到这个区块以做好准备
             pen_position_str = f"{pen_x} {result_start_pos[1]} {pen_z}"
-            try:
-                _ = self.game_ctrl.sendwscmd_with_resp(
-                    f"tp {pen_position_str}"
-                )
-            except TimeoutError:
-                fmts.print_war(
-                    f"简易世界导入: 无法传送机器人到 {pen_position_str}, 将强制传送"
-                )
-                self.game_ctrl.sendwocmd(
-                    f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {pen_position_str}'
-                )
-                pass
+            self.game_ctrl.sendwocmd(
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {pen_position_str}'
+            )
+            # 发送指令等待返回, 让机器人确保在进行下一步前租赁服已经将机器人传送到目标地点
+            # 对于租赁服较为卡顿的时候, 它的作用尤为明显
+            self.game_ctrl.sendcmd_with_resp("testforblock ~ ~ ~ air")
 
-            # 我们严格区分 区块 和 子区块，因为子区块实际上只是一个 16*16*16 的区域，
-            # 但整个区块可以是 16*16*384 的区域。但不管怎么样，游戏储存区块的最细颗粒度
-            # 是 子区块 而非 区块，这一点需要重点关注！
+            # 我们严格区分 区块 和 子区块, 因为子区块实际上只是一个 16*16*16 的区域,
+            # 但整个区块可以是 16*16*384 的区域。但不管怎么样, 游戏储存区块的最细颗粒度
+            # 是 子区块 而非 区块, 这一点需要重点关注！
             #
-            # 我们目前已经是在一个“区块”中了，然后下一步是遍历这个区块里面的所有子区块。
-            # 然而，并非这个区块里面所有的子区块都需要遍历，因为用户可能只导入其中一部分
-            # 的高度，于是我们用 start_pos[1] >> 4 得到起始子区块的 Y 坐标，然后用
-            # end_pos[1] >> 4 求出终止子区块的 Y 坐标，然后循环即可。
+            # 我们目前已经是在一个“区块”中了, 然后下一步是遍历这个区块里面的所有子区块。
+            # 然而, 并非这个区块里面所有的子区块都需要遍历, 因为用户可能只导入其中一部分
+            # 的高度, 于是我们用 start_pos[1] >> 4 得到起始子区块的 Y 坐标, 然后用
+            # end_pos[1] >> 4 求出终止子区块的 Y 坐标, 然后循环即可。
             #
-            # 需要额外关注的是，用户可能会提供超越当前区块高度范围的值，所以这里用 min 确保范围不会超限。
-            # 另外，上面说的子区块 Y 坐标并不是 方块坐标，方块坐标可以是 -64~319 之间的数，
+            # 需要额外关注的是, 用户可能会提供超越当前区块高度范围的值, 所以这里用 min 确保范围不会超限。
+            # 另外, 上面说的子区块 Y 坐标并不是 方块坐标, 方块坐标可以是 -64~319 之间的数,
             # 而子区块的 Y 坐标只可能是 -64>>4 到 319>>4 之间的数。
             # -64>>4 到 319>>4 只是个例子！因为整个区块的高度限制还取决于维度
             for sub_y_pos in range(
                 start_pos[1] >> 4,
                 min((chunk_range.end_range >> 4) + 1, (end_pos[1] >> 4) + 1),
             ):
-                # 由于每次子区块的 Y 坐标都会变化，
+                # 由于每次子区块的 Y 坐标都会变化,
                 # 所以每次都有必要重新通过转换坐标系
                 # 以得到以实际导入地点为原点时的绝对 Y 坐标。
                 #
                 # 前面的 X 和 Z 坐标只转换一次是因为
-                # 我们目前是在操作一个区块内的子区块，
+                # 我们目前是在操作一个区块内的子区块,
                 # 而不是跨区块的操作
                 sub_y = sub_y_pos << 4
                 pen_y = sub_y - start_pos[1] + result_start_pos[1]
 
-                # 上面的 min 只确保用户提供的导入范围不会高于当前区块的高度范围，
-                # 但实际上也可能低于，然后这里进行了判断。
-                # 需要明确说明的是，如果不进行范围检查，直接去请求这片无效子区块
-                # 会导致整个程序都崩掉，无论是否有使用 try 语句
+                # 上面的 min 只确保用户提供的导入范围不会高于当前区块的高度范围,
+                # 但实际上也可能低于, 然后这里进行了判断。
+                # 需要明确说明的是, 如果不进行范围检查, 直接去请求这片无效子区块
+                # 会导致整个程序都崩掉, 无论是否有使用 try 语句
                 if chunk_range.start_range > sub_y:
                     continue
 
-                # 然后，现在我们可以舒适的访问目标子区块了
+                # 然后, 现在我们可以舒适的访问目标子区块了
                 sub_chunk = chunk.sub_chunk(sub_y)
                 if not sub_chunk.is_valid():
                     fmts.print_war(
-                        f"位于 ({origin_chunk_pos.x},{sub_y_pos},{origin_chunk_pos.z}) 的子区块没有找到，跳过"
+                        f"位于 ({origin_chunk_pos.x},{sub_y_pos},{origin_chunk_pos.z}) 的子区块没有找到, 跳过"
                     )
                     continue
 
-                # 这个子区块是空的（全是空气），
+                # 这个子区块是空的（全是空气）,
                 # 所以完全安全地跳过
                 if sub_chunk.empty():
                     continue
 
-                # 现在，我们获取这个子区块前景层和背景层的方块。
-                # 正常情况下，大多数方块都集中在前景层，并且不使用背景层。
-                # 一般而言，只有含水方块会使用背景层，并且背景层就是水方块
+                # 现在, 我们获取这个子区块前景层和背景层的方块。
+                # 正常情况下, 大多数方块都集中在前景层, 并且不使用背景层。
+                # 一般而言, 只有含水方块会使用背景层, 并且背景层就是水方块
                 forceground_blocks = sub_chunk.blocks(0)
                 background_blocks = sub_chunk.blocks(1)
 
@@ -299,33 +293,33 @@ class SimpleWorldImport(Plugin):
                     #     for z in range(16):
                     #         for x in range(16):
                     #             ...
-                    # 不过这样三层套下来缩进有点太难看了，
+                    # 不过这样三层套下来缩进有点太难看了,
                     # 于是用的下面的方式来计算 x y z。
                     #
-                    # 不知道你还记不记得，我们目前正在访问的
-                    # 是一个子区块，而子区块的尺寸永远是 16*16*16，
+                    # 不知道你还记不记得, 我们目前正在访问的
+                    # 是一个子区块, 而子区块的尺寸永远是 16*16*16,
                     # 于是我们可以计算出 x y z 的值了。
                     #
-                    # 但可能你觉得下面的写法很抽象，
+                    # 但可能你觉得下面的写法很抽象,
                     # 因为全都是位运算......
-                    # 好吧，实际上它们的原版写法是这样的：
+                    # 好吧, 实际上它们的原版写法是这样的：
                     #       y = comb_pos//(16*16)
                     #       z = (comb_pos % (16*16)) // 16
                     #       x = comb_pos % 16
                     #
                     # 那为什么就变成下面的这么复杂了呢？
-                    # 因为 16*16 是 256，是 2 的 8 次幂，
+                    # 因为 16*16 是 256, 是 2 的 8 次幂,
                     # 然后就可以用移位代替整除了。
-                    # 关于模运算的部分，其实它也是类似的思维方式
+                    # 关于模运算的部分, 其实它也是类似的思维方式
                     y = comb_pos >> 8
                     z = (comb_pos - ((comb_pos >> 8) << 8)) >> 4
                     x = comb_pos - ((comb_pos >> 4) << 4)
 
-                    # 把 (pen_x, pen_y, pen_z) 加上 x y z 偏移后，
+                    # 把 (pen_x, pen_y, pen_z) 加上 x y z 偏移后,
                     # 就是当前方块实际要导入的坐标了
                     final_pos = (pen_x + x, pen_y + y, pen_z + z)
 
-                    # 这里需要检验一下当前方块的位置是否是用户要导入的区域，
+                    # 这里需要检验一下当前方块的位置是否是用户要导入的区域,
                     # 如果不是就可以直接跳过了
                     if not self.is_include(
                         final_pos,
@@ -338,16 +332,16 @@ class SimpleWorldImport(Plugin):
                     rid0 = forceground_blocks.block(x, y, z)
                     rid1 = background_blocks.block(x, y, z)
 
-                    # 如果前景层和背景层都是空气，
-                    # 那么我们可以不用管了，直接跳过
+                    # 如果前景层和背景层都是空气,
+                    # 那么我们可以不用管了, 直接跳过
                     if (
                         rid0 == bwo.AIR_BLOCK_RUNTIME_ID
                         and rid1 == bwo.AIR_BLOCK_RUNTIME_ID
                     ):
                         continue
 
-                    # 背景层不是空气，说明可能是含水方块的水方块，
-                    # 我们需要优先放置水方块，然后再放置被含的方块
+                    # 背景层不是空气, 说明可能是含水方块的水方块,
+                    # 我们需要优先放置水方块, 然后再放置被含的方块
                     if rid1 != bwo.AIR_BLOCK_RUNTIME_ID:
                         self.send_build_command(final_pos, rid1)
 
@@ -358,7 +352,7 @@ class SimpleWorldImport(Plugin):
                     # 0.001 = 1/1000
                     time.sleep(0.001)
 
-        # 一定要记得关掉打开的存档哟，
+        # 一定要记得关掉打开的存档哟,
         # 千万别忘了
         world.close_world()
         fmts.print_suc("已完成导入")
