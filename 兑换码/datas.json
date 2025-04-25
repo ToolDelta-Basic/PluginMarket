@@ -1,0 +1,8 @@
+{
+  "author": "机入",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "输入兑换码 执行指令",
+  "pre-plugins": {},
+  "plugin-id": "兑换码"
+}
