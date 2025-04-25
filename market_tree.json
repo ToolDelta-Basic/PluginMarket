@@ -519,6 +519,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "兑换码": {
+      "name": "兑换码",
+      "author": "机入",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
