@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "记录聊天栏聊天的历史记录",
+  "pre-plugins": {},
+  "plugin-id": "chat-history",
+  "enabled": true
+}
