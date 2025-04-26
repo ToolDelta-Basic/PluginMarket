@@ -29,7 +29,10 @@ class NewPlugin(Plugin):
                     "指令": "kick [player] 快哉快哉",
                     "可以使用次数": 100,
                 },
-            ]
+            ],
+            "兑换码不存在提示": "兑换码不存在",
+            "兑换码失效提示": "兑换码已失效",
+            "兑换码重复使用时提示": "您已使用过激活码"
         }
         configs = {"兑换码": cfg.JsonList(dict, len_limit=-1)}
         config, version = cfg.get_plugin_config_and_version(
@@ -64,10 +67,10 @@ class NewPlugin(Plugin):
                     write(self.dh, json.dumps(data))
                 else:
                     if player.uuid in data.get(args[0]).get("player"):
-                        player.show("§l§e你已使用过兑换码") #使用过提示
+                        player.show(self.data["兑换码重复使用时提示"]) #使用过提示
                         return
                     if data.get(args[0]).get("limit") >= key["可以使用次数"]:
-                        player.show("§l§c兑换码已失效")#激活码使用总次数上限
+                        player.show(self.data["兑换码失效提示"])#激活码使用总次数上限
                         return
                     a = data.get(args[0]).get("limit")
                     b = data.get(args[0]).get("player")
@@ -80,6 +83,6 @@ class NewPlugin(Plugin):
                 self.game_ctrl.sendwocmd(d)
                 return
         else:
-            player.show("§c兑换码错误")
+            player.show(self.data["兑换码不存在提示"])
 
 entry = plugin_entry(NewPlugin)
