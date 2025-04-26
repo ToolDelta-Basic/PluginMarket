@@ -273,6 +273,10 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "聊天历史记录": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "desperated_plugins": {
         "性能管理": {
             "datas.json": 0,

@@ -285,6 +285,12 @@
       "version": "0.0.10",
       "plugin-type": "classic"
     },
+    "chat-history": {
+      "name": "聊天历史记录",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "全服喇叭": {
       "name": "全服喇叭",
       "author": "wling",
