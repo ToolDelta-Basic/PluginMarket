@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -30,6 +30,7 @@ class Orion_System(Plugin):
             "游戏内封禁/解封系统每页显示几项": 20,
             "游戏内封禁/解封系统等待输入超时时间(秒)": 60,
             "是否启用机器人IP外进反制": True,
+            "是否启用Steve/Alex皮肤反制": True,
             "是否启用等级限制": True,
             "是否启用网易屏蔽词名称反制": True,
             "--网易屏蔽词名称检测等待时间(秒)": 2,
@@ -91,6 +92,7 @@ class Orion_System(Plugin):
             "是否根据设备号封禁玩家": True,
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": True,
             "封禁时间_机器人IP外进反制": -1,
+            "封禁时间_Steve/Alex皮肤反制": 0,
             "封禁时间_等级限制": 0,
             "封禁时间_网易屏蔽词名称反制": 0,
             "封禁时间_自定义违禁词名称反制": 0,
@@ -114,6 +116,7 @@ class Orion_System(Plugin):
             "游戏内封禁/解封系统每页显示几项": cfg.PInt,
             "游戏内封禁/解封系统等待输入超时时间(秒)": cfg.PNumber,
             "是否启用机器人IP外进反制": bool,
+            "是否启用Steve/Alex皮肤反制": bool,
             "是否启用等级限制": bool,
             "是否启用网易屏蔽词名称反制": bool,
             "--网易屏蔽词名称检测等待时间(秒)": cfg.PNumber,
@@ -144,6 +147,7 @@ class Orion_System(Plugin):
             "是否根据设备号封禁玩家": bool,
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": bool,
             "封禁时间_机器人IP外进反制": [int, str],
+            "封禁时间_Steve/Alex皮肤反制": [int, str],
             "封禁时间_等级限制": [int, str],
             "封禁时间_网易屏蔽词名称反制": [int, str],
             "封禁时间_自定义违禁词名称反制": [int, str],
@@ -172,6 +176,7 @@ class Orion_System(Plugin):
             "游戏内封禁/解封系统等待输入超时时间(秒)"
         ]
         self.is_detect_bot = config["是否启用机器人IP外进反制"]
+        self.is_ban_Steve_or_Alex = config["是否启用Steve/Alex皮肤反制"]
         self.is_level_limit = config["是否启用等级限制"]
         self.is_detect_netease_banned_word = config["是否启用网易屏蔽词名称反制"]
         self.detect_netease_banned_word_timeout = config[
@@ -220,6 +225,7 @@ class Orion_System(Plugin):
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)"
         ]
         self.ban_time_detect_bot = config["封禁时间_机器人IP外进反制"]
+        self.ban_time_Steve_or_Alex = config["封禁时间_Steve/Alex皮肤反制"]
         self.ban_time_level_limit = config["封禁时间_等级限制"]
         self.ban_time_detect_netease_banned_word = config["封禁时间_网易屏蔽词名称反制"]
         self.ban_time_detect_self_banned_word = config["封禁时间_自定义违禁词名称反制"]
@@ -237,6 +243,10 @@ class Orion_System(Plugin):
         # 这是获取玩家设备号函数的线程锁，要求当多个玩家连续登录时逐个获取设备号，而不是连续tp最后啥也没得到
         # 当连续多个玩家进入游戏后，只允许一个线程获取device_id，其他获取device_id的线程处于等待状态，直到获取到当前玩家设备号或超时后再执行下一个线程
         self.thread_lock_by_get_device_id = threading.Lock()
+
+        # 这是玩家封禁函数的线程锁，要求在封禁玩家时如果有相同路径读取操作时逐一读取磁盘，防止出现冲突或报错
+        self.thread_lock_ban_player_by_xuid = threading.Lock()
+        self.thread_lock_ban_player_by_device_id = threading.Lock()
 
         os.makedirs(f"{self.data_path}/玩家封禁时间数据(以xuid记录)", exist_ok=True)
         os.makedirs(f"{self.data_path}/玩家封禁时间数据(以设备号记录)", exist_ok=True)
@@ -320,10 +330,12 @@ class Orion_System(Plugin):
             PremiumSkin = packet["Entries"][0]["Skin"]["PremiumSkin"]
             Trusted = packet["Entries"][0]["Skin"]["Trusted"]
             CapeID = packet["Entries"][0]["Skin"]["CapeID"]
+            SkinID = packet["Entries"][0]["Skin"]["SkinID"]
             GrowthLevels = packet["GrowthLevels"][0]
 
             if Username not in self.whitelist:
                 self.ban_bot(Username, PremiumSkin, Trusted, CapeID, packet)
+                self.ban_Steve_or_Alex(Username, SkinID)
                 self.ban_player_level_too_low(Username, GrowthLevels)
                 self.ban_player_with_netease_banned_word(Username)
                 self.ban_player_with_self_banned_word(Username)
@@ -453,6 +465,43 @@ class Orion_System(Plugin):
             self.ban_player_by_device_id(
                 Username,
                 self.ban_time_format(self.ban_time_detect_bot),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+
+    # 反制Steve/Alex皮肤函数封装
+
+    @utils.thread_func("反制Steve/Alex皮肤函数")
+    def ban_Steve_or_Alex(self, Username, SkinID):
+        if SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Steve":
+            fmts.print_inf(f"§c发现 {Username} 皮肤为Steve，正在踢出")
+            self.game_ctrl.sendwocmd(
+                f'/kick "{Username}" 不要使用Steve皮肤噢，去换个更好的吧~'
+            )
+            fmts.print_inf(f"§a发现 {Username} 皮肤为Steve，已被踢出游戏")
+            self.ban_player_by_xuid(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+            self.ban_player_by_device_id(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+        elif SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex":
+            fmts.print_inf(f"§c发现 {Username} 皮肤为Alex，正在踢出")
+            self.game_ctrl.sendwocmd(
+                f'/kick "{Username}" 不要使用Alex皮肤噢，去换个更好的吧~'
+            )
+            fmts.print_inf(f"§a发现 {Username} 皮肤为Alex，已被踢出游戏")
+            self.ban_player_by_xuid(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                "您必须通过 Microsoft 服务身份验证。",
+            )
+            self.ban_player_by_device_id(
+                Username,
+                self.ban_time_format(self.ban_time_Steve_or_Alex),
                 "您必须通过 Microsoft 服务身份验证。",
             )
 
@@ -684,6 +733,8 @@ class Orion_System(Plugin):
                     break
 
     # 黑名单词检测函数封装
+
+    @utils.thread_func("黑名单词检测函数")
     def blacklist_word_detect(self, message, player):
         if self.Testfor_blacklist_word and player not in self.whitelist:
             blacklist_word_set = set(self.blacklist_word_list)
@@ -712,6 +763,8 @@ class Orion_System(Plugin):
                         )
 
     # 发言字数检测函数封装
+
+    @utils.thread_func("发言字数检测函数")
     def message_length_detect(self, message, player):
         if (
             self.message_length_limit
@@ -737,6 +790,8 @@ class Orion_System(Plugin):
             )
 
     # 将发言玩家、文本添加至缓存区
+
+    @utils.thread_func("缓存玩家发言数据函数")
     def message_cache_area(self, message, player):
         if self.speak_speed_limit or self.repeat_message_limit:
             if self.data.get(player) is None:
@@ -746,6 +801,7 @@ class Orion_System(Plugin):
             self.repeat_message_detect(player)
 
     # 发言频率检测函数封装
+    @utils.thread_func("发言频率检测函数")
     def speak_speed_detect(self, player):
         if (
             self.speak_speed_limit
@@ -771,6 +827,8 @@ class Orion_System(Plugin):
             )
 
     # 重复消息刷屏检测函数封装
+
+    @utils.thread_func("重复消息刷屏检测函数")
     def repeat_message_detect(self, player):
         if self.repeat_message_limit and player not in self.whitelist:
             counts = {}
@@ -960,7 +1018,7 @@ class Orion_System(Plugin):
                 fmts.print_err(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             fmts.print_inf(
-                "\n§a❀ §b请输入您想封禁的玩家名称、xuid或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -1199,7 +1257,7 @@ class Orion_System(Plugin):
                 fmts.print_err(f"§c❀ 查询设备号记录失败，原因：{error}")
                 return
             fmts.print_inf(
-                "\n§a❀ §b请输入您想封禁的设备号，输入§elist§b可查询当前服务器全部设备号记录"
+                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部设备号记录"
             )
             device_id = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -1281,8 +1339,95 @@ class Orion_System(Plugin):
                 ban_player_and_xuid_data = device_id_data[device_id]
 
             else:
-                fmts.print_err("§c❀ 找不到您输入的设备号")
-                return
+                page = 1
+                while True:
+                    matched_player: list[tuple[str, str]] = []
+                    for k, v in device_id_data.items():
+                        for m in v.values():
+                            for n in m:
+                                if device_id in n:
+                                    matched_player.append((k, v))
+                                    break
+                            else:
+                                continue
+                            break
+
+                    if matched_player == []:
+                        fmts.print_err("§c❀ 找不到您输入的玩家名称或设备号")
+                        return
+
+                    total_pages = math.ceil(
+                        len(matched_player) / self.terminal_items_per_page
+                    )
+                    start_index = (page - 1) * self.terminal_items_per_page + 1
+                    end_index = min(
+                        start_index + self.terminal_items_per_page - 1,
+                        len(matched_player),
+                    )
+
+                    fmts.print_inf("\n§a❀ 已匹配到以下玩家~")
+                    fmts.print_inf(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    fmts.print_inf(
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                    )
+                    for i in range(start_index, end_index + 1):
+                        colored_device_id_data = "{"
+                        for k, v in matched_player[i - 1][1].items():
+                            v = str(v).replace(device_id, f"§b{device_id}§e")
+                            colored_device_id_data = (
+                                colored_device_id_data + f"'{k}': {v}, "
+                            )
+                        colored_device_id_data = colored_device_id_data[:-2] + "}"
+                        fmts.print_inf(
+                            f"§l§b[ §e{i}§b ] §r§e{matched_player[i - 1][0]} - {colored_device_id_data}"
+                        )
+                    fmts.print_inf(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    fmts.print_inf(
+                        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]"
+                    )
+                    fmts.print_inf(
+                        f"§a❀ §b输入 §e[{start_index}-{end_index}]§b 之间的数字以选择 封禁的设备号，或者输入玩家名称再次尝试搜索"
+                    )
+                    fmts.print_inf("§a❀ §b输入 §d- §e转到上一页")
+                    fmts.print_inf("§a❀ §b输入 §d+ §e转到下一页")
+                    fmts.print_inf("§a❀ §b输入 §d正整数+页 §e转到对应页")
+                    resp_2 = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
+
+                    if resp_2 in (".", "。"):
+                        fmts.print_suc("§a❀ 已退出封禁系统")
+                        return
+                    if resp_2 == "-":
+                        if page > 1:
+                            page -= 1
+                        else:
+                            fmts.print_war("§6❀ 已经是第一页啦~")
+                    elif resp_2 == "+":
+                        if page < total_pages:
+                            page += 1
+                        else:
+                            fmts.print_war("§6❀ 已经是最后一页啦~")
+                    elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
+                        page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
+                        if 1 <= page_num <= total_pages:
+                            page = page_num
+                        else:
+                            fmts.print_war(f"§6❀ 不存在第{page_num}页！请重新输入！")
+                    else:
+                        try:
+                            resp_2 = int(resp_2)
+                            if resp_2 and resp_2 in range(start_index, end_index + 1):
+                                ban_device_id = matched_player[resp_2 - 1][0]
+                                ban_player_and_xuid_data = matched_player[resp_2 - 1][1]
+                                break
+                            fmts.print_err("§c❀ 您的输入有误")
+                            return
+                        except ValueError:
+                            device_id = resp_2
+                            page = 1
 
             ban_xuid_list = []
             for k in ban_player_and_xuid_data.keys():
@@ -1760,7 +1905,7 @@ class Orion_System(Plugin):
                 player.show(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             player.show(
-                "\n§a❀ §b请输入您想封禁的玩家名称、xuid或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
@@ -1887,7 +2032,9 @@ class Orion_System(Plugin):
                     player.show("§a❀ §b输入 §d- §e转到上一页")
                     player.show("§a❀ §b输入 §d+ §e转到下一页")
                     player.show("§a❀ §b输入 §d正整数+页 §e转到对应页")
-                    resp_2 = player.input("§a❀ §b输入 §c. §b退出")
+                    resp_2 = player.input(
+                        "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
+                    )
 
                     if resp_2 is None:
                         player.show("§c❀ 回复超时！ 已退出封禁系统")
@@ -2027,7 +2174,7 @@ class Orion_System(Plugin):
                 player.show(f"§c❀ 查询设备号记录失败，原因：{error}")
                 return
             player.show(
-                "\n§a❀ §b请输入您想封禁的设备号，输入§elist§b可查询当前服务器全部设备号记录"
+                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部设备号记录"
             )
             device_id = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
@@ -2120,8 +2267,100 @@ class Orion_System(Plugin):
                 ban_player_and_xuid_data = device_id_data[device_id]
 
             else:
-                player.show("§c❀ 找不到您输入的设备号")
-                return
+                page = 1
+                while True:
+                    matched_player: list[tuple[str, str]] = []
+                    for k, v in device_id_data.items():
+                        for m in v.values():
+                            for n in m:
+                                if device_id in n:
+                                    matched_player.append((k, v))
+                                    break
+                            else:
+                                continue
+                            break
+
+                    if matched_player == []:
+                        player.show("§c❀ 找不到您输入的玩家名称或设备号")
+                        return
+
+                    total_pages = math.ceil(
+                        len(matched_player) / self.game_items_per_page
+                    )
+                    start_index = (page - 1) * self.game_items_per_page + 1
+                    end_index = min(
+                        start_index + self.game_items_per_page - 1,
+                        len(matched_player),
+                    )
+
+                    player.show("\n§a❀ 已匹配到以下玩家~")
+                    player.show(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    player.show(
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                    )
+                    for i in range(start_index, end_index + 1):
+                        colored_device_id_data = "{"
+                        for k, v in matched_player[i - 1][1].items():
+                            v = str(v).replace(device_id, f"§b{device_id}§e")
+                            colored_device_id_data = (
+                                colored_device_id_data + f"'{k}': {v}, "
+                            )
+                        colored_device_id_data = colored_device_id_data[:-2] + "}"
+                        player.show(
+                            f"§l§b[ §e{i}§b ] §r§e{matched_player[i - 1][0]} - {colored_device_id_data}"
+                        )
+                    player.show(
+                        "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+                    )
+                    player.show(
+                        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]"
+                    )
+                    player.show(
+                        f"§a❀ §b输入 §e[{start_index}-{end_index}]§b 之间的数字以选择 封禁的设备号，或者输入玩家名称再次尝试搜索"
+                    )
+                    player.show("§a❀ §b输入 §d- §e转到上一页")
+                    player.show("§a❀ §b输入 §d+ §e转到下一页")
+                    player.show("§a❀ §b输入 §d正整数+页 §e转到对应页")
+                    resp_2 = player.input(
+                        "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
+                    )
+
+                    if resp_2 is None:
+                        player.show("§c❀ 回复超时！ 已退出封禁系统")
+                        return
+                    if resp_2 in (".", "。"):
+                        player.show("§a❀ 已退出封禁系统")
+                        return
+                    if resp_2 == "-":
+                        if page > 1:
+                            page -= 1
+                        else:
+                            player.show("§6❀ 已经是第一页啦~")
+                    elif resp_2 == "+":
+                        if page < total_pages:
+                            page += 1
+                        else:
+                            player.show("§6❀ 已经是最后一页啦~")
+                    elif bool(re.fullmatch(r"^[1-9]\d*页$", resp_2)):
+                        page_num = int(re.fullmatch(r"^([1-9]\d*)页$", resp_2).group(1))
+                        if 1 <= page_num <= total_pages:
+                            page = page_num
+                        else:
+                            player.show(f"§6❀ 不存在第{page_num}页！请重新输入！")
+                    else:
+                        try:
+                            resp_2 = int(resp_2)
+                            if resp_2 and resp_2 in range(start_index, end_index + 1):
+                                ban_device_id = matched_player[resp_2 - 1][0]
+                                ban_player_and_xuid_data = matched_player[resp_2 - 1][1]
+                                break
+                            player.show("§c❀ 您的输入有误")
+                            return
+                        except ValueError:
+                            device_id = resp_2
+                            page = 1
 
             ban_xuid_list = []
             for k in ban_player_and_xuid_data.keys():
@@ -2533,45 +2772,46 @@ class Orion_System(Plugin):
             timestamp_now = int(time.time())
             date_now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_now))
             path = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
-            ban_player_data = tempjson.load_and_read(
-                path, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path,
+                    {
+                        "xuid": xuid,
+                        "name": player,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-
-            tempjson.load_and_write(
-                path,
-                {
-                    "xuid": xuid,
-                    "name": player,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path)
-            tempjson.unload_to_path(path)
+                tempjson.flush(path)
+                tempjson.unload_to_path(path)
 
     # 玩家封禁函数封装(被封禁者再次加入游戏,通过xuid判断)
 
@@ -2580,10 +2820,11 @@ class Orion_System(Plugin):
         xuid = self.xuid_getter.get_xuid_by_name(player, True)
         path = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
         try:
-            ban_player_data = tempjson.load_and_read(
-                path, need_file_exists=True, timeout=2
-            )
-            tempjson.unload_to_path(path)
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path, need_file_exists=True, timeout=2
+                )
+                tempjson.unload_to_path(path)
             if ban_player_data is None:
                 os.remove(path)
                 return
@@ -2646,29 +2887,30 @@ class Orion_System(Plugin):
                         path_device_id = (
                             f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
                         )
-                        device_id_record = tempjson.load_and_read(
-                            path_device_id,
-                            need_file_exists=False,
-                            default={},
-                            timeout=2,
-                        )
-                        if device_id not in device_id_record:
-                            device_id_record[device_id] = {}
-                        if device_id_record[device_id].get(xuid, None) is None:
-                            device_id_record[device_id][xuid] = []
-                        device_id_record[device_id][xuid].append(player)
-                        device_id_record[device_id][xuid] = list(
-                            set(device_id_record[device_id][xuid])
-                        )
-
-                        tempjson.load_and_write(
-                            path_device_id,
-                            device_id_record,
-                            need_file_exists=False,
-                            timeout=2,
-                        )
-                        tempjson.flush(path_device_id)
-                        tempjson.unload_to_path(path_device_id)
+                        with self.thread_lock_ban_player_by_device_id:
+                            device_id_record = tempjson.load_and_read(
+                                path_device_id,
+                                need_file_exists=False,
+                                default={},
+                                timeout=2,
+                            )
+                            tempjson.unload_to_path(path_device_id)
+                            if device_id not in device_id_record:
+                                device_id_record[device_id] = {}
+                            if device_id_record[device_id].get(xuid, None) is None:
+                                device_id_record[device_id][xuid] = []
+                            device_id_record[device_id][xuid].append(player)
+                            device_id_record[device_id][xuid] = list(
+                                set(device_id_record[device_id][xuid])
+                            )
+                            tempjson.load_and_write(
+                                path_device_id,
+                                device_id_record,
+                                need_file_exists=False,
+                                timeout=2,
+                            )
+                            tempjson.flush(path_device_id)
+                            tempjson.unload_to_path(path_device_id)
 
                         self.ban_player_when_PlayerList_by_device_id(player, device_id)
 
@@ -2680,13 +2922,14 @@ class Orion_System(Plugin):
             xuid = self.xuid_getter.get_xuid_by_name(player, True)
 
             path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
-            device_id_record = tempjson.load_and_read(
-                path_device_id,
-                need_file_exists=False,
-                default={},
-                timeout=2,
-            )
-            tempjson.unload_to_path(path_device_id)
+            with self.thread_lock_ban_player_by_device_id:
+                device_id_record = tempjson.load_and_read(
+                    path_device_id,
+                    need_file_exists=False,
+                    default={},
+                    timeout=2,
+                )
+                tempjson.unload_to_path(path_device_id)
             # 收集本账号登录过的全部设备号
             device_id_list = []
             for k, v in device_id_record.items():
@@ -2705,47 +2948,49 @@ class Orion_System(Plugin):
                 path_ban_time = (
                     f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{device_id}.json"
                 )
-                ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
-                )
-
-                if ban_player_data is None:
-                    pre_ban_timestamp = timestamp_now
-                else:
-                    if ban_player_data["ban_end_timestamp"] == "Forever":
-                        return
-                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
-                        pre_ban_timestamp = timestamp_now
-                    else:
-                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
-
-                if ban_time == "Forever":
-                    timestamp_end = "Forever"
-                    date_end = "Forever"
-                else:
-                    timestamp_end = pre_ban_timestamp + ban_time
-                    date_end = time.strftime(
-                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                with self.thread_lock_ban_player_by_device_id:
+                    ban_player_data = tempjson.load_and_read(
+                        path_ban_time, need_file_exists=False, timeout=2
                     )
-                    tempjson.load_and_write(
-                        path_ban_time,
-                        {
-                            "device_id": device_id,
-                            "xuid(The latest joined in the server)": xuid,
-                            "name(The latest joined in the server)": player,
-                            "ban_start_real_time": date_now,
-                            "ban_start_timestamp": timestamp_now,
-                            "ban_end_real_time": date_end,
-                            "ban_end_timestamp": timestamp_end,
-                            "ban_reason": ban_reason,
-                        },
-                        need_file_exists=False,
-                        timeout=2,
-                    )
-                    tempjson.flush(path_ban_time)
                     tempjson.unload_to_path(path_ban_time)
 
-                time.sleep(0.5)
+                    if ban_player_data is None:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        if ban_player_data["ban_end_timestamp"] == "Forever":
+                            return
+                        if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                            pre_ban_timestamp = timestamp_now
+                        else:
+                            pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+
+                    if ban_time == "Forever":
+                        timestamp_end = "Forever"
+                        date_end = "Forever"
+                    else:
+                        timestamp_end = pre_ban_timestamp + ban_time
+                        date_end = time.strftime(
+                            "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                        )
+                        tempjson.load_and_write(
+                            path_ban_time,
+                            {
+                                "device_id": device_id,
+                                "xuid(The latest joined in the server)": xuid,
+                                "name(The latest joined in the server)": player,
+                                "ban_start_real_time": date_now,
+                                "ban_start_timestamp": timestamp_now,
+                                "ban_end_real_time": date_end,
+                                "ban_end_timestamp": timestamp_end,
+                                "ban_reason": ban_reason,
+                            },
+                            need_file_exists=False,
+                            timeout=2,
+                        )
+                        tempjson.flush(path_ban_time)
+                        tempjson.unload_to_path(path_ban_time)
+
+                time.sleep(0.2)
 
     # 玩家封禁函数封装(被封禁者再次加入游戏,通过device_id判断)
 
@@ -2753,10 +2998,11 @@ class Orion_System(Plugin):
     def ban_player_when_PlayerList_by_device_id(self, player, device_id):
         path = f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{device_id}.json"
         try:
-            ban_player_data = tempjson.load_and_read(
-                path, need_file_exists=True, timeout=2
-            )
-            tempjson.unload_to_path(path)
+            with self.thread_lock_ban_player_by_device_id:
+                ban_player_data = tempjson.load_and_read(
+                    path, need_file_exists=True, timeout=2
+                )
+                tempjson.unload_to_path(path)
             if ban_player_data is None:
                 os.remove(path)
                 return
