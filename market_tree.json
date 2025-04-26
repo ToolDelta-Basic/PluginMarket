@@ -351,6 +351,12 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "玩家历史": {
+      "name": "玩家记录",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "超频刷屏反制": {
       "name": "超频刷屏反制",
       "author": "SuperScript",
