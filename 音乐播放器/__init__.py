@@ -23,7 +23,7 @@ class PlayerMusicStatus:
 class MusicPlayer(Plugin):
     name = "音乐播放器"
     author = "SuperScript"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -113,7 +113,7 @@ class MusicPlayer(Plugin):
             player.show(f" §f{i + 1} §7- §f{name}")
 
     def play_music_menu(self, player: Player, args: tuple):
-        if player in self.players_thread.keys():
+        if player.name in self.players_thread.keys():
             self.pause_or_play(player)
         else:
             if self.song_list == []:
@@ -163,7 +163,9 @@ class MusicPlayer(Plugin):
                 player.name
             ].is_stop
 
-    def playmusic_thread(self, target: str, music_name: str, parent: PlayerMusicStatus):
+    def playmusic_thread(
+        self, target: Player, music_name: str, parent: PlayerMusicStatus
+    ):
         scmd = self.game_ctrl.sendwocmd
         self.thread_num += 1
         now_play = 0
@@ -174,7 +176,7 @@ class MusicPlayer(Plugin):
             ):
                 time.sleep(delay)
                 scmd(
-                    f"/execute as {target} at @s run playsound {instrument} @s ~~~ {vol} {pitch}"
+                    f'/execute as "{target.name}" at @s run playsound {instrument} @s ~~~ {vol} {pitch}'
                 )
                 now_play += delay
                 parent.now = now_play
@@ -183,8 +185,8 @@ class MusicPlayer(Plugin):
                         ...
         finally:
             self.thread_num -= 1
-            if target in self.players_thread.keys():
-                del self.players_thread[target]
+            if target.name in self.players_thread.keys():
+                del self.players_thread[target.name]
 
     def make_playbar(self, current, total):
         TOTAL_BAR = 30
