@@ -222,7 +222,7 @@
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
