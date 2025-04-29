@@ -78,12 +78,12 @@ class AutoSubChunkRequest(Plugin):
         Event data 示例:
             ```
             {
-                "result_code": int(...),     # 这个子区块的请求结果 (详见 tooldelta.mc_bytes_packet.sub_chunk 以查看常量)
-                "sub_chunk_pos_x": pos[0],   # 这个子区块的 X 坐标
-                "sub_chunk_pos_y": pos[1],   # 这个子区块的 Y 坐标
-                "sub_chunk_pos_z": pos[2],   # 这个子区块的 Z 坐标
-                "blocks": blocks,            # 这个子区块的方块数据 (这是网络编码形式，需要使用 bedrock-world-operator 解码)
-                "nbts": nbts,                # 这个子区块的 NBT 方块数据 (这是可以直接存入存档的 NBT 格式)
+                "result_code": int(...),       # 这个子区块的请求结果 (详见 tooldelta.mc_bytes_packet.sub_chunk 以查看常量)
+                "sub_chunk_pos_x": int(...),   # 这个子区块的 X 坐标
+                "sub_chunk_pos_y": int(...),   # 这个子区块的 Y 坐标
+                "sub_chunk_pos_z": int(...),   # 这个子区块的 Z 坐标
+                "blocks": b"...",              # 这个子区块的方块数据 (这是网络编码形式，需要使用 bedrock-world-operator 解码)
+                "nbts": b"...",                # 这个子区块的 NBT 方块数据 (这是可以直接存入存档的 NBT 格式)
             }
             ```
         """
