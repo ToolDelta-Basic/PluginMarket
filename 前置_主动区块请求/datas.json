@@ -1,0 +1,9 @@
+{
+  "author": "2B",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "NieR: Automata",
+  "pre-plugins": {},
+  "plugin-id": "auto-sub-chunk-request",
+  "enabled": true
+}
