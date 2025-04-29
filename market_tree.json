@@ -285,6 +285,12 @@
       "version": "0.0.10",
       "plugin-type": "classic"
     },
+    "auto-sub-chunk-request": {
+      "name": "前置_主动区块请求",
+      "author": "2B",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "chat-history": {
       "name": "聊天历史记录",
       "author": "ToolDelta",
