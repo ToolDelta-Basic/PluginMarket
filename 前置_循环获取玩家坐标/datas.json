@@ -1,7 +1,7 @@
 {
     "author": "ToolDelta",
-    "version": "0.0.1",
-    "description": "前置插件, 通过此插件的1s更新一次(可更改)玩家坐标可获取全服玩家的坐标",
+    "version": "0.0.2",
+    "description": "前置插件, 通过此插件的 1s 更新一次(可更改)玩家坐标可获取全服玩家的坐标",
     "plugin-type": "classic",
     "pre-plugins": {},
     "limit_launcher": null,

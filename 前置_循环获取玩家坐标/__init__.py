@@ -1,51 +1,67 @@
 import time
 import json
-import dataclasses
-from tooldelta import Plugin, fmts, utils, plugin_entry
+from tooldelta import InternalBroadcast, Plugin, fmts, utils, plugin_entry
 
 
-class RepeatGetPlayerPos(Plugin):
+class GlobalGetPlayerPos(Plugin):
     name = "前置-循环获取玩家坐标"
     author = "ToolDelta"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
     CYCLE = 1
-
-    @dataclasses.dataclass
-    class PlayerPosData:
-        x: float
-        y: float
-        z: float
-        yRot: float
-        dimension: int
 
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenActive(self.on_inject)
+        self.ListenInternalBroadcast("ggpp:set_crycle", self.set_cycle)
 
     def on_inject(self):
-        self.player_posdata: dict[str, "RepeatGetPlayerPos.PlayerPosData"] = {}
+        self.player_posdata: dict[str, dict] = {}
         self._main_thread()
 
-    # ----------------------- API ----------------------------------
-    def get_player_posdata(self, playername: str):
+    def set_cycle(self, event: InternalBroadcast):
         """
-        获取玩家的坐标信息
-        Args:
-            playername (str): 玩家名
-        Returns:
-            PlayerPosData: 玩家坐标信息
-        """
-        return self.player_posdata[playername]
+        API (ggpp:set_crycle): 更改获取坐标的周期时间
 
-    def set_cycle(self, cycle: float):
+        调用方式:
+            ```
+            InternalBroadcast(
+                "ggpp:set_crycle",
+                {"cycle": float(...)},
+            )
+            ```
         """
-        更改获取坐标的周期时间
-        Args:
-            cycle (float): 新的获取周期时间
-        """
-        self.CYCLE = cycle
+        if "cycle" in event.data:
+            self.CYCLE = float(event.data["cycle"])
 
-    # --------------------------------------------------------------
+    def publish_position(self):
+        """
+        API (ggpp:publish_player_position): 发布玩家坐标信息
+
+        Event data 示例:
+            ```
+            {
+                "Happy2018new": {
+                    "x": float(...),
+                    "y": float(...)
+                    "z": float(...),
+                    "yRot": float(...),
+                    "dimension": int(...)
+                },
+                "SuperScript": {
+                    "x": float(...),
+                    "y": float(...)
+                    "z": float(...),
+                    "yRot": float(...),
+                    "dimension": int(...)
+                },
+                ...
+            }
+            ```
+        """
+        self.BroadcastEvent(
+            InternalBroadcast("ggpp:publish_player_position", self.player_posdata)
+        )
+
     @utils.thread_func("循环获取玩家坐标")
     def _main_thread(self):
         while 1:
@@ -61,15 +77,16 @@ class RepeatGetPlayerPos(Plugin):
                 continue
             content = json.loads(result.OutputMessages[0].Parameters[0])
             for i in content:
-                content_pos = i["position"]
-                self.player_posdata[uuid2player[i["uniqueId"]]] = self.PlayerPosData(
-                    content_pos["x"],
-                    content_pos["y"],
-                    content_pos["z"],
-                    i["yRot"],
-                    i["dimension"],
-                )
+                player_name = uuid2player[i["uniqueId"]]
+                self.player_posdata[player_name] = {
+                    "x": i["position"]["x"],
+                    "y": i["position"]["y"],
+                    "z": i["position"]["z"],
+                    "yRot": i["yRot"],
+                    "dimension": int(i["dimension"]),
+                }
+            self.publish_position()
             time.sleep(self.CYCLE)
 
 
-entry = plugin_entry(RepeatGetPlayerPos, "循环获取玩家坐标")
+entry = plugin_entry(GlobalGetPlayerPos, "循环获取玩家坐标")
