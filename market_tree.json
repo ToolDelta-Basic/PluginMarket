@@ -240,7 +240,7 @@
     "global-player-pos-get": {
       "name": "前置_循环获取玩家坐标",
       "author": "ToolDelta",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "mcfunction-tasks": {
