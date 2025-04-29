@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "plugin-type": "classic",
   "description": "NieR: Automata",
-  "pre-plugins": {},
+  "pre-plugins": {
+    "循环获取玩家坐标": "0.0.2"
+  },
   "plugin-id": "auto-sub-chunk-request",
   "enabled": true
 }
