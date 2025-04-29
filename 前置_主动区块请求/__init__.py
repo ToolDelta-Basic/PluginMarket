@@ -154,6 +154,9 @@ class AutoSubChunkRequest(Plugin):
         self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, pk)
 
     def on_level_chunk(self, pk: LevelChunk) -> bool:
+        if not 0 <= pk.Dimension <= 2:
+            return False
+
         request = sub_chunk_request.SubChunkRequest(pk.Dimension)
         request.SubChunkPosX = pk.ChunkPosX
         request.SubChunkPosY = 0
@@ -172,7 +175,7 @@ class AutoSubChunkRequest(Plugin):
         return False
 
     def on_sub_chunk(self, pk: SubChunk) -> bool:
-        if len(pk.Entries) == 0:
+        if len(pk.Entries) == 0 or not 0 <= pk.Dimension <= 2:
             return False
 
         # sub_chunk_finish_states holds a list that for a sub chunk
