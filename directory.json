@@ -277,6 +277,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "世界の记忆": [
+        "readme.md",
+        "datas.json",
+        "__init__.py"
+    ],
     "desperated_plugins": [],
     "desperated_plugins/性能管理": [
         "datas.json",
