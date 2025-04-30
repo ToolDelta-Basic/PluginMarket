@@ -237,7 +237,7 @@ class HoloPsychon(Plugin):
             output_message += f"\n\t\t§e 查询成功率(命中率): §b{round(len(fixed_result) / len(hashes) * 100, 2)} §f%"
             output_message += f"\n\t\t§e要查询的子区块: §f{hashes}"
             output_message += f"\n\t\t§e镜像存档里面已有的子区块: §f{fixed_result}"
-            fmts.print_suc(output_message)
+            fmts.print_suc(output_message + "\n")
 
         return result
 
@@ -248,7 +248,7 @@ class HoloPsychon(Plugin):
                 fixed_request.append(i.hash)
             output_message = "服务者请求将子区块数据同步到磁盘"
             output_message += f"\n\t\t§e要同步到磁盘的子区块: {fixed_request}"
-            fmts.print_inf(output_message)
+            fmts.print_inf(output_message + "\n")
 
         for i in payload:
             sub_chunk_with_index = bwo.from_sub_chunk_network_payload(
@@ -351,7 +351,7 @@ class HoloPsychon(Plugin):
             output_message += (
                 f"\n\t\t§e实际变成空气的子区块: §f{sub_chunk_need_to_set_air}"
             )
-            fmts.print_suc(output_message)
+            fmts.print_suc(output_message + "\n")
 
     def _handle_server_disconnected(self) -> None:
         raise Exception(
