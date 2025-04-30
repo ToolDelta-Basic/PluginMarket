@@ -1,5 +1,7 @@
 import ctypes
+from dataclasses import dataclass
 from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
+from tooldelta import cfg as config
 from tooldelta.constants.packets import PacketIDS
 from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     HashWithPosition,
@@ -21,10 +23,28 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
 )
 
 
+@dataclass(frozen=True)
+class ChunkPosWithDimension:
+    x: int = 0
+    z: int = 0
+    dim: int = 0
+
+
+@dataclass(frozen=True)
+class SingleSubChunk:
+    ResultCode: int = 0
+    PosY: int = 0
+    Blocks: bytes = b""
+    NBTs: bytes = b""
+
+
+EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
+
+
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     LIB: ctypes.CDLL
 
@@ -34,14 +54,26 @@ class AutoSubChunkRequest(Plugin):
     bot_last_chunk_pos_z: int = 0
     request_radius: int = 4
 
+    local_cache: dict[ChunkPosWithDimension, list[SingleSubChunk]] = {}  # noqa: RUF012
+
     def __init__(self, frame: Frame):
         self.frame = frame
+        self.game_ctrl = self.frame.get_game_control()
+
+        CFG_DEFAULT = {
+            "请求半径(最大 16 半径)": 4,
+        }
+        cfg, _ = config.get_plugin_config_and_version(
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
+        )
 
         self.bot_has_position = False
         self.bot_last_dimension = 0
         self.bot_last_chunk_pos_x = 0
         self.bot_last_chunk_pos_z = 0
-        self.request_radius = 4
+        self.request_radius = min(int(cfg["请求半径(最大 16 半径)"]), 16)
+
+        self.local_cache = {}
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -56,7 +88,6 @@ class AutoSubChunkRequest(Plugin):
         _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 2))
 
     def on_inject(self):
-        self.game_ctrl = self.frame.get_game_control()
         self.blob_hash = self.game_ctrl.blob_hash_holder()
         self.load_lib()
 
@@ -69,22 +100,32 @@ class AutoSubChunkRequest(Plugin):
 
         self.LIB = LIB
 
-    def publish_chunk_data(
-        self, result_code: int, pos: tuple[int, int, int], blocks: bytes, nbts: bytes
+    def try_publish_chunk_data(
+        self,
+        result_code: int,
+        dimension: int,
+        pos: tuple[int, int, int],
+        blocks: bytes,
+        nbts: bytes,
     ):
         """
-        API (scq:publish_chunk_data): 发布区块信息
+        API (scq:publish_chunk_data): 发布区块信息，确保下面的列表中携带了这个区块的所有子区块（也就是我们发布的完整区块信息）
 
         Event data 示例:
             ```
-            {
-                "result_code": int(...),       # 这个子区块的请求结果 (详见 tooldelta.mc_bytes_packet.sub_chunk 以查看常量)
-                "sub_chunk_pos_x": int(...),   # 这个子区块的 X 坐标
-                "sub_chunk_pos_y": int(...),   # 这个子区块的 Y 坐标
-                "sub_chunk_pos_z": int(...),   # 这个子区块的 Z 坐标
-                "blocks": b"...",              # 这个子区块的方块数据 (这是网络编码形式，需要使用 bedrock-world-operator 解码)
-                "nbts": b"...",                # 这个子区块的 NBT 方块数据 (这是可以直接存入存档的 NBT 格式)
-            }
+            [
+                {
+                    "result_code": int(...),       # 这个子区块的请求结果 (详见 tooldelta.mc_bytes_packet.sub_chunk 以查看常量)
+                    "sub_chunk_pos_x": int(...),   # 这个子区块的 X 坐标
+                    "sub_chunk_pos_y": int(...),   # 这个子区块的 Y 坐标
+                    "sub_chunk_pos_z": int(...),   # 这个子区块的 Z 坐标
+                    "dimension": int(...),         # 这个子区块所在的维度
+                    "blocks": b"...",              # 这个子区块的方块数据 (这是网络编码形式，需要使用 bedrock-world-operator 解码)
+                    "nbts": b"...",                # 这个子区块的 NBT 方块数据 (这是可以直接存入存档的 NBT 格式)
+                },
+                {...},
+                ...
+            ]
             ```
         """
         bs = b""
@@ -94,19 +135,45 @@ class AutoSubChunkRequest(Plugin):
             bs = as_python_bytes(ret.bs, ret.l)
             self.LIB.FreeMem(ret.bs)
 
-        self.BroadcastEvent(
-            InternalBroadcast(
-                "scq:publish_chunk_data",
-                {
-                    "result_code": result_code,
-                    "sub_chunk_pos_x": pos[0],
-                    "sub_chunk_pos_y": pos[1],
-                    "sub_chunk_pos_z": pos[2],
-                    "blocks": blocks,
-                    "nbts": bs,
-                },
-            )
-        )
+        cp = ChunkPosWithDimension(pos[0], pos[2], dimension)
+        if cp not in self.local_cache:
+            self.local_cache[cp] = [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)]
+
+        current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
+        self.local_cache[cp][pos[1] + 4] = current_sub_chunk
+
+        chunk_is_completely = True
+        if dimension == 0:
+            for i in range(24):
+                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                    chunk_is_completely = False
+        elif dimension == 1:
+            for i in range(8):
+                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                    chunk_is_completely = False
+        elif dimension == 2:
+            for i in range(16):
+                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                    chunk_is_completely = False
+
+        if chunk_is_completely:
+            pub: list[dict] = []
+            for i in self.local_cache[cp]:
+                if i != EMPTY_SINGLE_SUB_CHUNK:
+                    pub.append(
+                        {
+                            "result_code": i.ResultCode,
+                            "sub_chunk_pos_x": cp.x,
+                            "sub_chunk_pos_y": i.PosY,
+                            "sub_chunk_pos_z": cp.z,
+                            "dimension": cp.dim,
+                            "blocks": i.Blocks,
+                            "nbts": i.NBTs,
+                        },
+                    )
+            del self.local_cache[cp]
+            if len(pub) > 0:
+                self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
 
     def on_player_position(self, event: InternalBroadcast):
         if self.game_ctrl.bot_name not in event.data:
@@ -175,7 +242,11 @@ class AutoSubChunkRequest(Plugin):
         return False
 
     def on_sub_chunk(self, pk: SubChunk) -> bool:
-        if len(pk.Entries) == 0 or not 0 <= pk.Dimension <= 2:
+        if (
+            len(pk.Entries) == 0
+            or not 0 <= pk.Dimension <= 2
+            or "blob_hash" not in self.__dict__
+        ):
             return False
 
         # sub_chunk_finish_states holds a list that for a sub chunk
@@ -198,8 +269,9 @@ class AutoSubChunkRequest(Plugin):
                 or entry.Result != SUB_CHUNK_RESULT_SUCCESS
             ):
                 sub_chunk_finish_states[index] = True
-                self.publish_chunk_data(
+                self.try_publish_chunk_data(
                     entry.Result,
+                    pk.Dimension,
                     (entry.SubChunkPosX, entry.SubChunkPosY, entry.SubChunkPosZ),
                     b"",
                     b"",
@@ -210,6 +282,9 @@ class AutoSubChunkRequest(Plugin):
                 # Firstly, we check local blob hash list.
                 # If blob hash not hit, ask blob hash holder (server side)
                 # to get payload.
+                #
+                # Note that it's possible for self.blob_hash is not exist,
+                # maybe the plugin was executed before it was injected.=
                 payload = self.blob_hash.load_blob_cache(entry.BlobHash)
                 # payload is empty bytes means that this blob hash needs
                 # us to ask blob hash holder (server side) to get.
@@ -229,8 +304,9 @@ class AutoSubChunkRequest(Plugin):
                 # When blob hash is enabled, the entry.RawPayload will
                 # only holds the Block Entity NBT data of this sub chunk.
                 sub_chunk_finish_states[index] = True
-                self.publish_chunk_data(
+                self.try_publish_chunk_data(
                     entry.Result,
+                    pk.Dimension,
                     (
                         entry.SubChunkPosX,
                         entry.SubChunkPosY,
@@ -308,8 +384,9 @@ class AutoSubChunkRequest(Plugin):
             # When blob hash is enabled, the entry.RawPayload will
             # only holds the Block Entity NBT data of this sub chunk.
             sub_chunk_finish_states[index] = True
-            self.publish_chunk_data(
+            self.try_publish_chunk_data(
                 entry.Result,
+                pk.Dimension,
                 (entry.SubChunkPosX, entry.SubChunkPosY, entry.SubChunkPosZ),
                 payload,
                 entry.NBTData.tobytes(),
@@ -333,4 +410,4 @@ class AutoSubChunkRequest(Plugin):
         return False
 
 
-entry = plugin_entry(AutoSubChunkRequest)
+entry = plugin_entry(AutoSubChunkRequest, "主动区块请求")
