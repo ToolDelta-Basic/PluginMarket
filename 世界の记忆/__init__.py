@@ -118,7 +118,7 @@ class HoloPsychon(Plugin):
         current_unix_time = int(time.time())
         if (
             current_unix_time - self.world.load_time_stamp(cp, dim) < self.nbt_sync_time
-            or not self.always_sync_nbt
+            and not self.always_sync_nbt
         ):
             return
 
