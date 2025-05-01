@@ -132,8 +132,14 @@ class AutoSubChunkRequest(Plugin):
             self.mu.acquire()
             for _ in range(len(self.multiple_pos) * self.request_chunk_per_second):
                 if len(self.requet_queue) > 0:
-                    self.game_ctrl.sendPacket(
-                        PacketIDS.IDSubChunkRequest, self.requet_queue.popleft()
+                    request = self.requet_queue.popleft()
+                    self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, request)
+                    self.request_queue_set.remove(
+                        ChunkPosWithDimension(
+                            request.SubChunkPosX,
+                            request.SubChunkPosZ,
+                            request.Dimension,
+                        )
                     )
             self.mu.release()
             time.sleep(1)
@@ -322,14 +328,16 @@ class AutoSubChunkRequest(Plugin):
 
         self.mu.acquire()
         for chunk in all_chunks:
-            if (
-                ChunkPosWithDimension(chunk[0], chunk[1], dimension)
-                not in self.request_queue_set
-            ):
+            chunk_pos_with_dim = ChunkPosWithDimension(chunk[0], chunk[1], dimension)
+
+            if chunk_pos_with_dim not in self.request_queue_set:
                 pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
+
                 for y in range(y_range[0], y_range[1] + 1):
                     pk.Offsets.append((0, y, 0))
+
                 self.requet_queue.append(pk)
+                self.request_queue_set.add(chunk_pos_with_dim)
         self.mu.release()
 
     def on_sub_chunk(self, pk: BaseBytesPacket) -> bool:
