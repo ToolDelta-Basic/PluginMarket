@@ -4,7 +4,7 @@ from tooldelta import Plugin, fmts, cfg, plugin_entry, utils, Chat, Player
 class AntiTooFastMessage_V2(Plugin):
     name = "发言频率限制v2"
     author = "SuperScript"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -18,7 +18,8 @@ class AntiTooFastMessage_V2(Plugin):
             "多少个换行判定为刷屏": 6,
             "多长的消息判定为刷屏": 100,
             cfg.KeyGroup(
-                funckey := "自定义踢出逻辑lambda函数(玩家名:str,消息:str)->(违规消息:str,为空则视为不违规)"
+                funckey
+                := "自定义踢出逻辑lambda函数(玩家名:str,消息:str)->(违规消息:str,为空则视为不违规)"
             ): "lambda playername,msg:''",
         }
 
@@ -40,7 +41,9 @@ class AntiTooFastMessage_V2(Plugin):
             fmts.print_err(f"{self.name} 插件配置文件自定义踢出逻辑函数格式错误: {e}")
             raise SystemExit
         if not callable(self.invalid_msg_checker):
-            fmts.print_err(f"{self.name} 插件配置文件自定义踢出逻辑函数: 不是一个函数对象")
+            fmts.print_err(
+                f"{self.name} 插件配置文件自定义踢出逻辑函数: 不是一个函数对象"
+            )
             raise SystemExit
         self.last_msgs: dict[str, int] = {}
 
@@ -70,9 +73,7 @@ class AntiTooFastMessage_V2(Plugin):
             return
 
         if display_str := self.invalid_msg_checker(player.name, msg):
-            self.game_ctrl.sendwocmd(
-                f"kick {player.xuid} {display_str}"
-            )
+            self.game_ctrl.sendwocmd(f'kick "{player.name}" {display_str}')
             self.print(f"§6玩家 {player.name} 被违规消息检测函数检测到: {display_str}")
         elif len(msg) > self.msg_length_limit:
             self.game_ctrl.sendwocmd(
