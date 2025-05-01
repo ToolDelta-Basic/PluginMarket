@@ -72,8 +72,9 @@ class AutoSubChunkRequest(Plugin):
     force_update_time: float
     request_chunk_per_second: int
 
-    local_cache_locker: threading.Lock
+    mu: threading.Lock
     requet_queue: deque[sub_chunk_request.SubChunkRequest]
+    request_queue_set: set[ChunkPosWithDimension]
     local_cache: dict[ChunkPosWithDimension, LocalCache]
 
     def __init__(self, frame: Frame):
@@ -94,8 +95,9 @@ class AutoSubChunkRequest(Plugin):
         self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
         self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
-        self.local_cache_locker = threading.Lock()
+        self.mu = threading.Lock()
         self.requet_queue = deque()
+        self.request_queue_set = set()
         self.local_cache = {}
 
         self.ListenPreload(self.on_def)
@@ -127,11 +129,13 @@ class AutoSubChunkRequest(Plugin):
 
     def _send_request_queue(self):
         while True:
+            self.mu.acquire()
             for _ in range(len(self.multiple_pos) * self.request_chunk_per_second):
                 if len(self.requet_queue) > 0:
                     self.game_ctrl.sendPacket(
                         PacketIDS.IDSubChunkRequest, self.requet_queue.popleft()
                     )
+            self.mu.release()
             time.sleep(1)
 
     def try_publish_chunk_data(
@@ -169,7 +173,7 @@ class AutoSubChunkRequest(Plugin):
             bs = as_python_bytes(ret.bs, ret.l)
             self.LIB.FreeMem(ret.bs)
 
-        self.local_cache_locker.acquire()
+        self.mu.acquire()
 
         cp = ChunkPosWithDimension(pos[0], pos[2], dimension)
         if cp not in self.local_cache:
@@ -182,9 +186,9 @@ class AutoSubChunkRequest(Plugin):
                 try:
                     channel.get(timeout=10)
                 except Exception:
-                    self.local_cache_locker.acquire()
+                    self.mu.acquire()
                     del self.local_cache[cp]
-                    self.local_cache_locker.release()
+                    self.mu.release()
                     fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
 
             ToolDeltaThread(
@@ -228,7 +232,7 @@ class AutoSubChunkRequest(Plugin):
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
 
-        self.local_cache_locker.release()
+        self.mu.release()
 
     def on_player_position(self, event: InternalBroadcast):
         if self.game_ctrl.bot_name not in event.data:
@@ -316,11 +320,17 @@ class AutoSubChunkRequest(Plugin):
 
         all_chunks = all_chunks[: -2 - 2 * self.request_radius]
 
+        self.mu.acquire()
         for chunk in all_chunks:
-            pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
-            for y in range(y_range[0], y_range[1] + 1):
-                pk.Offsets.append((0, y, 0))
-            self.requet_queue.append(pk)
+            if (
+                ChunkPosWithDimension(chunk[0], chunk[1], dimension)
+                not in self.request_queue_set
+            ):
+                pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
+                for y in range(y_range[0], y_range[1] + 1):
+                    pk.Offsets.append((0, y, 0))
+                self.requet_queue.append(pk)
+        self.mu.release()
 
     def on_sub_chunk(self, pk: BaseBytesPacket) -> bool:
         assert type(pk) is SubChunk, "Should Nerver happened"
