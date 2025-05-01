@@ -245,9 +245,6 @@ class AutoSubChunkRequest(Plugin):
                 )
 
     def append_to_request_queue(self, dimension: int, center: tuple[int, int]):
-        if not 0 <= dimension <= 2:
-            return
-
         y_range = (-4, 19)
         if dimension == 1:
             y_range = (0, 7)
@@ -293,11 +290,7 @@ class AutoSubChunkRequest(Plugin):
             self.requet_queue.append(pk)
 
     def on_sub_chunk(self, pk: SubChunk) -> bool:
-        if (
-            len(pk.Entries) == 0
-            or not 0 <= pk.Dimension <= 2
-            or "blob_hash" not in self.__dict__
-        ):
+        if len(pk.Entries) == 0 or "blob_hash" not in self.__dict__:
             return False
 
         # sub_chunk_finish_states holds a list that for a sub chunk
