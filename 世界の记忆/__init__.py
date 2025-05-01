@@ -23,7 +23,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     @dataclass(frozen=True)
     class chunkPos:
@@ -36,15 +36,21 @@ class HoloPsychon(Plugin):
             "世界种子号": 96,
             "显示坐标": True,
             "启用调试": False,
+            "总是同步方块实体数据(启用后方块实体同步频率失效)": True,
+            "方块实体数据同步频率(秒)": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 1)
+            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
         )
 
         self.enable_debug = bool(cfg["启用调试"])
         self.world_seed = int(cfg["世界种子号"])
         self.world_dir_name = str(cfg["存档名字"])
         self.show_coordinates = bool(cfg["显示坐标"])
+        self.always_sync_nbt = bool(
+            cfg["总是同步方块实体数据(启用后方块实体同步频率失效)"]
+        )
+        self.nbt_sync_time = int(cfg["方块实体数据同步频率(秒)"])
 
         self.frame = frame
         self.game_ctrl = self.frame.get_game_control()
@@ -104,14 +110,20 @@ class HoloPsychon(Plugin):
     def on_chunk_data(self, event: InternalBroadcast):
         nbt_blocks = BytesIO()
 
-        for i in event.data:
-            if i["result_code"] == SUB_CHUNK_RESULT_SUCCESS:
-                nbt_blocks.write(i["nbts"])
-
         cp = bwo.ChunkPos(
             event.data[0]["sub_chunk_pos_x"], event.data[0]["sub_chunk_pos_z"]
         )
         dim = bwo.Dimension(event.data[0]["dimension"])
+
+        if (
+            int(time.time()) - self.world.load_time_stamp(cp, dim) < self.nbt_sync_time
+            or not self.always_sync_nbt
+        ):
+            return
+
+        for i in event.data:
+            if i["result_code"] == SUB_CHUNK_RESULT_SUCCESS:
+                nbt_blocks.write(i["nbts"])
 
         self.world.save_nbt_payload_only(cp, nbt_blocks.getvalue(), dim)
         self.world.save_time_stamp(cp, int(time.time()), dim)

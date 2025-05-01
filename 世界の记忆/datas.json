@@ -1,6 +1,6 @@
 {
   "author": "9S, Meteora·Österreich, Altair and Echidna",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "plugin-type": "classic",
   "description": "保留世界的记忆，总是将机器人周围区域保存到一个 “世界的映像(镜像存档)” 中 (特别注意: 此插件不支持框架重载)",
   "pre-plugins": {
