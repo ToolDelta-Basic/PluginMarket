@@ -237,7 +237,7 @@
       "version": "0.0.6",
       "plugin-type": "classic"
     },
-    "global-player-pos-get": {
+    "循环获取玩家坐标": {
       "name": "前置_循环获取玩家坐标",
       "author": "ToolDelta",
       "version": "0.0.2",
@@ -285,7 +285,7 @@
       "version": "0.0.10",
       "plugin-type": "classic"
     },
-    "auto-sub-chunk-request": {
+    "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
       "version": "0.0.3",
@@ -297,7 +297,7 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "test": {
+    "世界の记忆": {
       "name": "世界の记忆",
       "author": "9S, Meteora·Österreich, Altair and Echidna",
       "version": "0.0.1",
