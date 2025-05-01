@@ -1,4 +1,5 @@
 import ctypes
+import threading
 import time
 import queue
 from collections import deque
@@ -70,6 +71,7 @@ class AutoSubChunkRequest(Plugin):
     force_update_time: float
     request_chunk_per_second: int
 
+    local_cache_locker: threading.Lock
     requet_queue: deque[sub_chunk_request.SubChunkRequest]
     local_cache: dict[ChunkPosWithDimension, LocalCache]
 
@@ -91,6 +93,7 @@ class AutoSubChunkRequest(Plugin):
         self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
         self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
+        self.local_cache_locker = threading.Lock()
         self.requet_queue = deque()
         self.local_cache = {}
 
@@ -165,6 +168,8 @@ class AutoSubChunkRequest(Plugin):
             bs = as_python_bytes(ret.bs, ret.l)
             self.LIB.FreeMem(ret.bs)
 
+        self.local_cache_locker.acquire()
+
         cp = ChunkPosWithDimension(pos[0], pos[2], dimension)
         if cp not in self.local_cache:
             channel = queue.Queue()
@@ -176,15 +181,14 @@ class AutoSubChunkRequest(Plugin):
                 try:
                     channel.get(timeout=10)
                 except Exception:
-                    # It is possible that the chunk data arrives exactly when the timeout occurs,
-                    # and maybe they has been delete this chunk from self.local_cache.
-                    try:
-                        del self.local_cache[cp]
-                    except Exception:
-                        pass
+                    self.local_cache_locker.acquire()
+                    del self.local_cache[cp]
+                    self.local_cache_locker.release()
                     fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
 
-            ToolDeltaThread(simple_chunk_waiter, usage="主动区块请求: 区块等待器")
+            ToolDeltaThread(
+                simple_chunk_waiter, usage=f"主动区块请求: 区块 {cp} 的等待器"
+            )
 
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
         self.local_cache[cp].subchunks[pos[1] + 4] = current_sub_chunk
@@ -222,6 +226,8 @@ class AutoSubChunkRequest(Plugin):
             del self.local_cache[cp]
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
+
+        self.local_cache_locker.release()
 
     def on_player_position(self, event: InternalBroadcast):
         if self.game_ctrl.bot_name not in event.data:
