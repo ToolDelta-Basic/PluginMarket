@@ -1,7 +1,8 @@
-from collections import deque
 import ctypes
-from dataclasses import dataclass
 import time
+import queue
+from collections import deque
+from dataclasses import dataclass
 from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta.constants.packets import PacketIDS
@@ -22,6 +23,7 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
     SubChunk,
 )
+from tooldelta.utils import fmts
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
@@ -46,6 +48,12 @@ class SingleSubChunk:
     NBTs: bytes = b""
 
 
+@dataclass
+class LocalCache:
+    subchunks: list[SingleSubChunk]
+    channel: queue.Queue[None]
+
+
 EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
 EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 
@@ -53,7 +61,7 @@ EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     LIB: ctypes.CDLL
 
@@ -63,7 +71,7 @@ class AutoSubChunkRequest(Plugin):
     request_chunk_per_second: int
 
     requet_queue: deque[sub_chunk_request.SubChunkRequest]
-    local_cache: dict[ChunkPosWithDimension, list[SingleSubChunk]]
+    local_cache: dict[ChunkPosWithDimension, LocalCache]
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -75,7 +83,7 @@ class AutoSubChunkRequest(Plugin):
             "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 3)
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 4)
         )
 
         self.multiple_pos = {}
@@ -159,28 +167,45 @@ class AutoSubChunkRequest(Plugin):
 
         cp = ChunkPosWithDimension(pos[0], pos[2], dimension)
         if cp not in self.local_cache:
-            self.local_cache[cp] = [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)]
+            channel = queue.Queue()
+            self.local_cache[cp] = LocalCache(
+                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], channel
+            )
+
+            def simple_chunk_waiter():
+                try:
+                    channel.get(timeout=10)
+                except Exception:
+                    # It is possible that the chunk data arrives exactly when the timeout occurs,
+                    # and maybe they has been delete this chunk from self.local_cache.
+                    try:
+                        del self.local_cache[cp]
+                    except Exception:
+                        pass
+                    fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
+
+            ToolDeltaThread(simple_chunk_waiter, usage="主动区块请求: 区块等待器")
 
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
-        self.local_cache[cp][pos[1] + 4] = current_sub_chunk
+        self.local_cache[cp].subchunks[pos[1] + 4] = current_sub_chunk
 
         chunk_is_completely = True
         if dimension == 1:
             for i in range(8):
-                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
                     chunk_is_completely = False
         elif dimension == 2:
             for i in range(16):
-                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
                     chunk_is_completely = False
         else:
             for i in range(24):
-                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
                     chunk_is_completely = False
 
         if chunk_is_completely:
             pub: list[dict] = []
-            for i in self.local_cache[cp]:
+            for i in self.local_cache[cp].subchunks:
                 if i != EMPTY_SINGLE_SUB_CHUNK:
                     pub.append(
                         {
@@ -193,6 +218,7 @@ class AutoSubChunkRequest(Plugin):
                             "nbts": i.NBTs,
                         },
                     )
+            self.local_cache[cp].channel.put(None)
             del self.local_cache[cp]
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
