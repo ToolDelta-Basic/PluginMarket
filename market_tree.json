@@ -78,7 +78,7 @@
     "发言频率限制v2": {
       "name": "发言频率限制v2",
       "author": "SuperScript",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "违规名称踢出": {
