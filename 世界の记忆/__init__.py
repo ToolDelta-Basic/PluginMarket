@@ -115,8 +115,9 @@ class HoloPsychon(Plugin):
         )
         dim = bwo.Dimension(event.data[0]["dimension"])
 
+        current_unix_time = int(time.time())
         if (
-            int(time.time()) - self.world.load_time_stamp(cp, dim) < self.nbt_sync_time
+            current_unix_time - self.world.load_time_stamp(cp, dim) < self.nbt_sync_time
             or not self.always_sync_nbt
         ):
             return
@@ -126,7 +127,7 @@ class HoloPsychon(Plugin):
                 nbt_blocks.write(i["nbts"])
 
         self.world.save_nbt_payload_only(cp, nbt_blocks.getvalue(), dim)
-        self.world.save_time_stamp(cp, int(time.time()), dim)
+        self.world.save_time_stamp(cp, current_unix_time, dim)
 
     def _handle_query_disk_hash_exist(
         self, hashes: list[HashWithPosition]
