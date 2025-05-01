@@ -74,6 +74,6 @@ Don't be afraid daybreak has come...
 
 Reference List
 
-Reference listAimer and SawanoHiroyuki[nZk] (2017). ninelie <cry-v>. [online] NetEase cloudmusic. Available at: https://music.163.com/song?id=507114412&uct2=U2FsdGVkX18i7ywRW+vlc5CoNXis/Xpn21nf021YRYs= [Accessed 30 Apr. 2025].
+Aimer and SawanoHiroyuki[nZk] (2017). ninelie <cry-v>. [online] NetEase cloudmusic. Available at: https://music.163.com/song?id=507114412&uct2=U2FsdGVkX18i7ywRW+vlc5CoNXis/Xpn21nf021YRYs= [Accessed 30 Apr. 2025].
 
 YoRHa (2017). Weight of the World/the End of YoRHa. [online] NetEase cloudmusic. Available at: https://music.163.com/song?id=468490608&uct2=U2FsdGVkX1+DoxmndPBHUYSfuBWjfFguDOgnmRTKDtg= [Accessed 30 Apr. 2025].
