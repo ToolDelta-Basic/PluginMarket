@@ -278,8 +278,8 @@
         "__init__.py"
     ],
     "世界の记忆": [
-        "readme.md",
         "datas.json",
+        "readme.txt",
         "__init__.py"
     ],
     "desperated_plugins": [],
