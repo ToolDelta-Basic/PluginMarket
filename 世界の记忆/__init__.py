@@ -56,7 +56,7 @@ class HoloPsychon(Plugin):
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 0, 2))
+        _ = self.GetPluginAPI("主动区块请求", (0, 0, 3))
 
         pip = self.GetPluginAPI("pip")
         if 0:

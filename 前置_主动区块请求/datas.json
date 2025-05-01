@@ -1,6 +1,6 @@
 {
   "author": "2B",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "自动请求区块数据，并将二进制化的数据分发给任何需要的插件",
   "pre-plugins": {

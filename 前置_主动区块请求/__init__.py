@@ -1,5 +1,7 @@
+from collections import deque
 import ctypes
 from dataclasses import dataclass
+import time
 from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta.constants.packets import PacketIDS
@@ -15,12 +17,12 @@ from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     toByteCSlice,
 )
 from tooldelta.mc_bytes_packet import sub_chunk_request
-from tooldelta.mc_bytes_packet.level_chunk import LevelChunk
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
     SubChunk,
 )
+from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 @dataclass(frozen=True)
@@ -28,6 +30,12 @@ class ChunkPosWithDimension:
     x: int = 0
     z: int = 0
     dim: int = 0
+
+
+@dataclass(frozen=True)
+class PlayerChunkPos:
+    last_update_unix_time: int
+    pos: ChunkPosWithDimension
 
 
 @dataclass(frozen=True)
@@ -39,6 +47,7 @@ class SingleSubChunk:
 
 
 EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
+EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 
 
 class AutoSubChunkRequest(Plugin):
@@ -48,13 +57,13 @@ class AutoSubChunkRequest(Plugin):
 
     LIB: ctypes.CDLL
 
-    bot_has_position: bool = False
-    bot_last_dimension: int = 0
-    bot_last_chunk_pos_x: int = 0
-    bot_last_chunk_pos_z: int = 0
-    request_radius: int = 4
+    multiple_pos: dict[str, PlayerChunkPos]
+    request_radius: int
+    force_update_time: float
+    request_chunk_per_second: int
 
-    local_cache: dict[ChunkPosWithDimension, list[SingleSubChunk]] = {}  # noqa: RUF012
+    requet_queue: deque[sub_chunk_request.SubChunkRequest]
+    local_cache: dict[ChunkPosWithDimension, list[SingleSubChunk]]
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -62,23 +71,24 @@ class AutoSubChunkRequest(Plugin):
 
         CFG_DEFAULT = {
             "请求半径(最大 16 半径)": 4,
+            "每多少秒重新请求周围区块(浮点数)": 300,
+            "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 3)
         )
 
-        self.bot_has_position = False
-        self.bot_last_dimension = 0
-        self.bot_last_chunk_pos_x = 0
-        self.bot_last_chunk_pos_z = 0
+        self.multiple_pos = {}
         self.request_radius = min(int(cfg["请求半径(最大 16 半径)"]), 16)
+        self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
+        self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
+        self.requet_queue = deque()
         self.local_cache = {}
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
 
-        self.ListenPacket(PacketIDS.LevelChunk, self.on_level_chunk)  # type: ignore
         self.ListenInternalBroadcast(
             "ggpp:publish_player_position", self.on_player_position
         )
@@ -90,6 +100,9 @@ class AutoSubChunkRequest(Plugin):
     def on_inject(self):
         self.blob_hash = self.game_ctrl.blob_hash_holder()
         self.load_lib()
+        ToolDeltaThread(
+            self._send_request_queue, usage="循环获取玩家坐标: 自动发送请求"
+        )
 
     def load_lib(self):
         from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
@@ -99,6 +112,15 @@ class AutoSubChunkRequest(Plugin):
         LIB.FreeMem.argtypes = [ctypes.c_void_p]
 
         self.LIB = LIB
+
+    def _send_request_queue(self):
+        while True:
+            for _ in range(len(self.multiple_pos) * self.request_chunk_per_second):
+                if len(self.requet_queue) > 0:
+                    self.game_ctrl.sendPacket(
+                        PacketIDS.IDSubChunkRequest, self.requet_queue.popleft()
+                    )
+            time.sleep(1)
 
     def try_publish_chunk_data(
         self,
@@ -179,33 +201,52 @@ class AutoSubChunkRequest(Plugin):
         if self.game_ctrl.bot_name not in event.data:
             return
 
-        bot_data = event.data[self.game_ctrl.bot_name]
-        current_dimension: int = bot_data["dimension"]
-        current_chunk_pos_x = int(bot_data["x"]) >> 4
-        current_chunk_pos_z = int(bot_data["z"]) >> 4
+        current_unix_time = int(time.time())
 
-        if (
-            not self.bot_has_position
-            or current_chunk_pos_x != self.bot_last_chunk_pos_x
-            or current_chunk_pos_z != self.bot_last_chunk_pos_z
-            or current_dimension != self.bot_last_dimension
-        ):
-            self.bot_last_dimension = current_dimension
-            self.bot_last_chunk_pos_x = current_chunk_pos_x
-            self.bot_last_chunk_pos_z = current_chunk_pos_z
-            self.bot_has_position = True
-            self.send_request_queue(
-                current_dimension, (current_chunk_pos_x, current_chunk_pos_z)
-            )
+        # Clean to make memory happy
+        bot_dimension: int = event.data[self.game_ctrl.bot_name]["dimension"]
+        new_mapping: dict[str, PlayerChunkPos] = {}
+        for key in event.data:
+            if event.data[key]["dimension"] != bot_dimension:
+                continue
+            if key in self.multiple_pos:
+                new_mapping[key] = self.multiple_pos[key]
+            else:
+                new_mapping[key] = PlayerChunkPos(0, EMPTY_CHUNK_POS_WITH_DIMENSION)
+        self.multiple_pos = new_mapping
 
-    def send_request_queue(self, dimension: int, center: tuple[int, int]):
+        # Actually speaking, by the way you read to here,
+        # you may know our logic is not very common.
+        # Note that this is a key point, don't let others known.
+        for key, value in self.multiple_pos.items():
+            if key not in event.data:
+                continue
+
+            current_data = event.data[key]
+            current_dimension: int = current_data["dimension"]
+            current_chunk_pos_x = int(current_data["x"]) >> 4
+            current_chunk_pos_z = int(current_data["z"]) >> 4
+
+            if (
+                current_unix_time - value.last_update_unix_time
+                >= self.force_update_time
+                or current_dimension != value.pos.dim
+                or current_chunk_pos_x != value.pos.x
+                or current_chunk_pos_z != value.pos.z
+            ):
+                self.multiple_pos[key] = PlayerChunkPos(
+                    current_unix_time,
+                    ChunkPosWithDimension(
+                        current_chunk_pos_x, current_chunk_pos_z, current_dimension
+                    ),
+                )
+                self.append_to_request_queue(
+                    current_dimension, (current_chunk_pos_x, current_chunk_pos_z)
+                )
+
+    def append_to_request_queue(self, dimension: int, center: tuple[int, int]):
         if not 0 <= dimension <= 2:
             return
-
-        pk = sub_chunk_request.SubChunkRequest(dimension)
-        pk.SubChunkPosX = center[0]
-        pk.SubChunkPosY = 0
-        pk.SubChunkPosZ = center[1]
 
         y_range = (-4, 19)
         if dimension == 1:
@@ -213,33 +254,43 @@ class AutoSubChunkRequest(Plugin):
         if dimension == 2:
             y_range = (0, 15)
 
-        for x_offset in range(-self.request_radius, self.request_radius + 1):
-            for z_offset in range(-self.request_radius, self.request_radius):
-                for i in range(y_range[0], y_range[1] + 1):
-                    pk.Offsets.append((x_offset, i, z_offset))
+        all_chunks: list[tuple[int, int]] = [(center[0], center[1])]
 
-        self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, pk)
+        last_x = center[0]
+        last_z = center[1]
+        facing_round = 0
+        facing = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
-    def on_level_chunk(self, pk: LevelChunk) -> bool:
-        if not 0 <= pk.Dimension <= 2:
-            return False
+        for current_round in range(2 * self.request_radius + 1):
+            idx = facing_round % 4
+            idx2 = (facing_round + 1) % 4
 
-        request = sub_chunk_request.SubChunkRequest(pk.Dimension)
-        request.SubChunkPosX = pk.ChunkPosX
-        request.SubChunkPosY = 0
-        request.SubChunkPosZ = pk.ChunkPosZ
+            for step_forward in range(current_round + 1):
+                zoom = step_forward + 1
+                current_x = last_x + zoom * facing[idx][0]
+                current_z = last_z + zoom * facing[idx][1]
+                all_chunks.append((current_x, current_z))
 
-        y_range = (-4, 19)
-        if pk.Dimension == 1:
-            y_range = (0, 7)
-        if pk.Dimension == 2:
-            y_range = (0, 15)
+            last_x = all_chunks[-1][0]
+            last_z = all_chunks[-1][1]
 
-        for i in range(y_range[0], y_range[1] + 1):
-            request.Offsets.append((0, i, 0))
+            for step_forward in range(current_round + 1):
+                zoom = step_forward + 1
+                current_x = last_x + zoom * facing[idx2][0]
+                current_z = last_z + zoom * facing[idx2][1]
+                all_chunks.append((current_x, current_z))
 
-        self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, request)
-        return False
+            last_x = all_chunks[-1][0]
+            last_z = all_chunks[-1][1]
+            facing_round += 2
+
+        all_chunks = all_chunks[: -2 - 2 * self.request_radius]
+
+        for chunk in all_chunks:
+            pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
+            for y in range(y_range[0], y_range[1] + 1):
+                pk.Offsets.append((0, y, 0))
+            self.requet_queue.append(pk)
 
     def on_sub_chunk(self, pk: SubChunk) -> bool:
         if (
@@ -261,14 +312,17 @@ class AutoSubChunkRequest(Plugin):
         # ask blob hash holder (server side) to get.
         pending_blob_hash: list[HashWithPosition] = []
 
+        # unloaded_sub_chunk holds a list that contains some failed sub chunk
+        # entries. These sub chunk failed is because of server has not loaded
+        # them, and will be load in the future.
+        # Therefore, we need to record these entires and reset packet.SubChunkRequest
+        # to reget them.
+        unloaded_sub_chunk: list[SubChunkPos] = []
+
         for index in range(len(pk.Entries)):
             entry = pk.Entries[index]
 
-            if (
-                entry.Result == SUB_CHUNK_RESULT_SUCCESS_ALL_AIR
-                or entry.Result != SUB_CHUNK_RESULT_SUCCESS
-            ):
-                sub_chunk_finish_states[index] = True
+            if entry.Result == SUB_CHUNK_RESULT_SUCCESS_ALL_AIR:
                 self.try_publish_chunk_data(
                     entry.Result,
                     pk.Dimension,
@@ -276,6 +330,43 @@ class AutoSubChunkRequest(Plugin):
                     b"",
                     b"",
                 )
+                sub_chunk_finish_states[index] = True
+                continue
+
+            if entry.Result != SUB_CHUNK_RESULT_SUCCESS:
+                # We compute if current sub chunk entry could reached by the bot
+                is_include = False
+                for _, value in self.multiple_pos.items():
+                    if (
+                        abs(entry.SubChunkPosX - value.pos.x) <= self.request_radius
+                        and abs(entry.SubChunkPosZ - value.pos.z) <= self.request_radius
+                        and pk.Dimension == value.pos.dim
+                    ):
+                        is_include = True
+                        break
+                # This sub chunk entry failed due to the bot is
+                # moved to another place that can't reach this sub chunk.
+                # Therefore, set result as failed immediately.
+                if not is_include:
+                    self.try_publish_chunk_data(
+                        entry.Result,
+                        pk.Dimension,
+                        (entry.SubChunkPosX, entry.SubChunkPosY, entry.SubChunkPosZ),
+                        b"",
+                        b"",
+                    )
+                # Or, this sub chunk is not loaded, and waiting server to load them.
+                # Therefore, we add to unloaded sub chunk list, and them reget them
+                # in a single packet.SubChunkRequest packet.
+                else:
+                    unloaded_sub_chunk.append(
+                        SubChunkPos(
+                            entry.SubChunkPosX, entry.SubChunkPosY, entry.SubChunkPosZ
+                        )
+                    )
+                # Although this sub chunk failed, due to we do the corresponding
+                # process, so we can set them as finished safely.
+                sub_chunk_finish_states[index] = True
                 continue
 
             if pk.CacheEnabled:
@@ -316,6 +407,19 @@ class AutoSubChunkRequest(Plugin):
                     entry.NBTData.tobytes(),
                 )
 
+        # Request these failed sub chunks due to server is still loading them.
+        if len(unloaded_sub_chunk) > 0:
+            center = unloaded_sub_chunk[0]
+            offsets: list[tuple[int, int, int]] = []
+            for i in unloaded_sub_chunk:
+                offsets.append((i.x - center.x, i.y - center.y, i.z - center.z))
+            self.game_ctrl.sendPacket(
+                PacketIDS.IDSubChunkRequest,
+                sub_chunk_request.SubChunkRequest(
+                    pk.Dimension, center.x, center.y, center.z, offsets
+                ),
+            )
+
         # Request missing blob hash from server-side blob hash holder.
         if len(pending_blob_hash) > 0:
             # Retry 3 times, due to blob hash holder may haven't started
@@ -348,9 +452,7 @@ class AutoSubChunkRequest(Plugin):
                 if len(pending_blob_hash) == 0:
                     break
 
-        has_set_center = False
-        new_sub_chunk_request_center = SubChunkPos()
-        new_sub_chunk_request_offset: list[tuple[int, int, int]] = []
+        failed_sub_chunks: list[SubChunkPos] = []
 
         # Now we get most (hash, payload) for those
         # unfinished sub chunk entry.
@@ -368,17 +470,10 @@ class AutoSubChunkRequest(Plugin):
             # For those failed sub chunk entries, we send new
             # packet.SubChunkRequest to reget those entries.
             if len(payload) == 0:
-                if not has_set_center:
-                    new_sub_chunk_request_center = SubChunkPos(
+                failed_sub_chunks.append(
+                    SubChunkPos(
                         entry.SubChunkPosX, entry.SubChunkPosY, entry.SubChunkPosZ
                     )
-                    has_set_center = True
-                new_sub_chunk_request_offset.append(
-                    (
-                        entry.SubChunkPosX - new_sub_chunk_request_center.x,
-                        entry.SubChunkPosY - new_sub_chunk_request_center.y,
-                        entry.SubChunkPosZ - new_sub_chunk_request_center.z,
-                    ),
                 )
                 continue
             # When blob hash is enabled, the entry.RawPayload will
@@ -395,15 +490,15 @@ class AutoSubChunkRequest(Plugin):
         # There is some sub chunk entries failed,
         # and here we resent sub chunk request to
         # reget them.
-        if has_set_center:
+        if len(failed_sub_chunks) > 0:
+            center = failed_sub_chunks[0]
+            offsets: list[tuple[int, int, int]] = []
+            for i in failed_sub_chunks:
+                offsets.append((i.x - center.x, i.y - center.y, i.z - center.z))
             self.game_ctrl.sendPacket(
                 PacketIDS.IDSubChunkRequest,
                 sub_chunk_request.SubChunkRequest(
-                    pk.Dimension,
-                    new_sub_chunk_request_center.x,
-                    new_sub_chunk_request_center.y,
-                    new_sub_chunk_request_center.z,
-                    new_sub_chunk_request_offset,
+                    pk.Dimension, center.x, center.y, center.z, offsets
                 ),
             )
 
