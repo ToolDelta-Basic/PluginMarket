@@ -6,6 +6,6 @@
   "pre-plugins": {
     "循环获取玩家坐标": "0.0.2"
   },
-  "plugin-id": "auto-sub-chunk-request",
+  "plugin-id": "主动区块请求",
   "enabled": true
 }

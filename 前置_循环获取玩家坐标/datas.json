@@ -5,5 +5,5 @@
     "plugin-type": "classic",
     "pre-plugins": {},
     "limit_launcher": null,
-    "plugin-id": "global-player-pos-get"
+    "plugin-id": "循环获取玩家坐标"
 }
