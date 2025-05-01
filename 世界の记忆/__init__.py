@@ -224,6 +224,7 @@ class HoloPsychon(Plugin):
                             SubChunkPos(
                                 sub_chunk_pos.x, sub_chunk_pos.y, sub_chunk_pos.z
                             ),
+                            cp.dimension,
                         ),
                         numpy.frombuffer(payload, dtype=numpy.uint8),
                     )

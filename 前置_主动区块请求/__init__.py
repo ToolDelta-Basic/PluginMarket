@@ -165,16 +165,16 @@ class AutoSubChunkRequest(Plugin):
         self.local_cache[cp][pos[1] + 4] = current_sub_chunk
 
         chunk_is_completely = True
-        if dimension == 0:
-            for i in range(24):
-                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
-                    chunk_is_completely = False
-        elif dimension == 1:
+        if dimension == 1:
             for i in range(8):
                 if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
                     chunk_is_completely = False
         elif dimension == 2:
             for i in range(16):
+                if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
+                    chunk_is_completely = False
+        else:
+            for i in range(24):
                 if self.local_cache[cp][i] == EMPTY_SINGLE_SUB_CHUNK:
                     chunk_is_completely = False
 
