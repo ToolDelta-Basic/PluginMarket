@@ -19,6 +19,7 @@ from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     toByteCSlice,
 )
 from tooldelta.mc_bytes_packet import sub_chunk_request
+from tooldelta.mc_bytes_packet.base_bytes_packet import BaseBytesPacket
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
@@ -103,7 +104,7 @@ class AutoSubChunkRequest(Plugin):
         self.ListenInternalBroadcast(
             "ggpp:publish_player_position", self.on_player_position
         )
-        self.ListenPacket(PacketIDS.SubChunk, self.on_sub_chunk)  # type: ignore
+        self.ListenBytesPacket(PacketIDS.SubChunk, self.on_sub_chunk)
 
     def on_def(self):
         _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 2))
@@ -321,7 +322,9 @@ class AutoSubChunkRequest(Plugin):
                 pk.Offsets.append((0, y, 0))
             self.requet_queue.append(pk)
 
-    def on_sub_chunk(self, pk: SubChunk) -> bool:
+    def on_sub_chunk(self, pk: BaseBytesPacket) -> bool:
+        assert type(pk) is SubChunk, "Should Nerver happened"
+
         if len(pk.Entries) == 0 or "blob_hash" not in self.__dict__:
             return False
 
