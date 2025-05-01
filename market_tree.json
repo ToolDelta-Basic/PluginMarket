@@ -288,7 +288,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "chat-history": {
