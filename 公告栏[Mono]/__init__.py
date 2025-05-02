@@ -1,7 +1,6 @@
 import datetime
 import time
 from tooldelta import utils, cfg, Plugin, fmts, plugin_entry
-
 import pytz
 from tooldelta.constants import PacketIDS
 
@@ -11,7 +10,7 @@ packets = PacketIDS
 class BetterAnnounce(Plugin):
     name = "公告栏"
     author = "Mono"
-    version = (1, 0, 3)
+    version = (1, 0, 5)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -264,21 +263,22 @@ class BetterAnnounce(Plugin):
             time.sleep(self.刷新时间)
 
     def on_setscore(self, packet: dict):
-        if packet.get("ActionType", None) is not None:
-            if packet["ActionType"] == 1:
-                for i in packet["Entries"]:
-                    if i["ObjectiveName"] == "公告":
-                        self.record_del_and_create["create"][i["EntryID"]] = i[
-                            "DisplayName"
-                        ]
-            else:
-                for i in packet["Entries"]:
-                    if i["EntryID"] in self.record_del_and_create["create"]:
-                        del self.record_del_and_create["create"][i["EntryID"]]
-            if len(self.record_del_and_create["create"]) > 3:
-                for i, v in self.record_del_and_create["create"].items():
-                    self.game_ctrl.sendwocmd(f'/scoreboard players reset "{v}" 公告')
-                self.record_del_and_create["create"] = {}
+        if isinstance(packet, dict):
+            if packet.get("ActionType", None) is not None:
+                if packet["ActionType"] == 1:
+                    for i in packet["Entries"]:
+                        if i["ObjectiveName"] == "公告":
+                            self.record_del_and_create["create"][i["EntryID"]] = i[
+                                "DisplayName"
+                            ]
+                else:
+                    for i in packet["Entries"]:
+                        if i["EntryID"] in self.record_del_and_create["create"]:
+                            del self.record_del_and_create["create"][i["EntryID"]]
+                if len(self.record_del_and_create["create"]) > 3:
+                    for i, v in list(self.record_del_and_create["create"].items()):
+                        self.game_ctrl.sendwocmd(f'/scoreboard players reset "{v}" 公告')
+                    self.record_del_and_create["create"] = {}
         return False
 
 
