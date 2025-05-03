@@ -21,7 +21,7 @@ class WorldBackup(Plugin):
             "存档名字": "World Backup",
             "世界种子号": 96,
             "显示坐标": True,
-            "启用调试": True,
+            "启用调试": False,
             "要保留多少秒前的存档": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
