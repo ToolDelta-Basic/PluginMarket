@@ -305,4 +305,4 @@ class SimpleWorldRecover(Plugin):
         self.do_world_recover(cmd)
 
 
-entry = plugin_entry(SimpleWorldRecover)
+entry = plugin_entry(SimpleWorldRecover, "简单世界恢复")
