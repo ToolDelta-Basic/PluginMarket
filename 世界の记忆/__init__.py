@@ -354,7 +354,7 @@ class HoloPsychon(Plugin):
                 success_count += len(sub_chunk_need_to_set_air[i])
             output_message = "服务者请求重置这些子区块为空气"
             output_message += (
-                f"\n\t\t§e 改变程度: §b{round(success_count / len(pos) * 100, 2)} §f%"
+                f"\n\t\t§e改变程度: §b{round(success_count / len(pos) * 100, 2)} §f%"
             )
             output_message += f"\n\t\t§e要变成空气的子区块: §f{pos}"
             output_message += (
