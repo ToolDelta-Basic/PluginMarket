@@ -12,7 +12,7 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     chunk_we_want: tuple[int, int, int]
     chunk_we_get: list[dict]
@@ -280,8 +280,13 @@ class SimpleWorldRecover(Plugin):
                     )
                     continue
 
-                chunk_sub_blocks_0 = chunk_sub.blocks(0)  # WIP: WATER !!!
+                if chunk_sub.empty() and server_sub.empty():
+                    continue
+
+                chunk_sub_blocks_0 = chunk_sub.blocks(0)
                 server_sub_blocks_0 = server_sub.blocks(0)
+                chunk_sub_blocks_1 = chunk_sub.blocks(1)
+                server_sub_blocks_1 = server_sub.blocks(1)
 
                 for comb_pos in range(4096):
                     y = comb_pos >> 8
@@ -290,6 +295,15 @@ class SimpleWorldRecover(Plugin):
 
                     chunk_sub_block_0 = chunk_sub_blocks_0.block(x, y, z)
                     server_sub_block_0 = server_sub_blocks_0.block(x, y, z)
+                    chunk_sub_block_1 = chunk_sub_blocks_1.block(x, y, z)
+                    server_sub_block_1 = server_sub_blocks_1.block(x, y, z)
+
+                    if chunk_sub_block_1 != server_sub_block_1:
+                        self.send_build_command(
+                            (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_1
+                        )
+                        recover_block_count += 1
+                        time.sleep(0.001)
 
                     if chunk_sub_block_0 != server_sub_block_0:
                         self.send_build_command(
