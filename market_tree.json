@@ -219,6 +219,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "世界备份": {
+      "name": "世界备份",
+      "author": "YoRHa and RATH",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "MusicPlayer": {
       "name": "音乐播放器",
       "author": "SuperScript",
@@ -240,7 +246,7 @@
     "循环获取玩家坐标": {
       "name": "前置_循环获取玩家坐标",
       "author": "ToolDelta",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "mcfunction-tasks": {
@@ -288,7 +294,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "chat-history": {
@@ -487,12 +493,6 @@
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
       "version": "0.0.3",
-      "plugin-type": "classic"
-    },
-    "世界备份": {
-      "name": "世界备份",
-      "author": "YoRHa and RATH",
-      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "reload": {
