@@ -6,12 +6,13 @@ from tooldelta import InternalBroadcast, Plugin, fmts, utils, plugin_entry
 class GlobalGetPlayerPos(Plugin):
     name = "前置-循环获取玩家坐标"
     author = "ToolDelta"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
     CYCLE = 1
 
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenActive(self.on_inject)
+        self.ListenInternalBroadcast("ggpp:force_update", self.force_update)
         self.ListenInternalBroadcast("ggpp:set_crycle", self.set_cycle)
 
     def on_inject(self):
@@ -32,6 +33,20 @@ class GlobalGetPlayerPos(Plugin):
         """
         if "cycle" in event.data:
             self.CYCLE = float(event.data["cycle"])
+
+    def force_update(self, _: InternalBroadcast):
+        """
+        API (ggpp:force_update): 立即请求并广播玩家坐标数据
+
+        调用方式:
+            ```
+            InternalBroadcast(
+                "ggpp:force_update",
+                {},
+            )
+            ```
+        """
+        self.get_and_publish_player_position()
 
     def publish_position(self):
         """
@@ -62,30 +77,35 @@ class GlobalGetPlayerPos(Plugin):
             InternalBroadcast("ggpp:publish_player_position", self.player_posdata)
         )
 
+    def get_and_publish_player_position(self):
+        uuid2player = {v: k for k, v in self.game_ctrl.players_uuid.items()}
+
+        try:
+            result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
+            if result.SuccessCount == 0:
+                fmts.print_err(
+                    f"获取玩家坐标: 无法获取坐标: {result.OutputMessages[0].Message}"
+                )
+        except TimeoutError:
+            fmts.print_war("获取玩家坐标: 获取指令返回超时")
+            return
+
+        content = json.loads(result.OutputMessages[0].Parameters[0])
+        for i in content:
+            player_name = uuid2player[i["uniqueId"]]
+            self.player_posdata[player_name] = {
+                "x": i["position"]["x"],
+                "y": i["position"]["y"],
+                "z": i["position"]["z"],
+                "yRot": i["yRot"],
+                "dimension": int(i["dimension"]),
+            }
+        self.publish_position()
+
     @utils.thread_func("循环获取玩家坐标")
     def _main_thread(self):
         while 1:
-            uuid2player = {v: k for k, v in self.game_ctrl.players_uuid.items()}
-            try:
-                result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
-                if result.SuccessCount == 0:
-                    fmts.print_err(
-                        f"获取玩家坐标: 无法获取坐标: {result.OutputMessages[0].Message}"
-                    )
-            except TimeoutError:
-                fmts.print_war("获取玩家坐标: 获取指令返回超时")
-                continue
-            content = json.loads(result.OutputMessages[0].Parameters[0])
-            for i in content:
-                player_name = uuid2player[i["uniqueId"]]
-                self.player_posdata[player_name] = {
-                    "x": i["position"]["x"],
-                    "y": i["position"]["y"],
-                    "z": i["position"]["z"],
-                    "yRot": i["yRot"],
-                    "dimension": int(i["dimension"]),
-                }
-            self.publish_position()
+            self.get_and_publish_player_position()
             time.sleep(self.CYCLE)
 
 

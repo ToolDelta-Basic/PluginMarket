@@ -1,10 +1,10 @@
 {
   "author": "2B",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "plugin-type": "classic",
   "description": "自动请求区块数据，并将二进制化的数据分发给任何需要的插件",
   "pre-plugins": {
-    "循环获取玩家坐标": "0.0.2"
+    "循环获取玩家坐标": "0.0.3"
   },
   "plugin-id": "主动区块请求",
   "enabled": true

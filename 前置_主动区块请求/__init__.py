@@ -63,7 +63,7 @@ EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     LIB: ctypes.CDLL
 
@@ -73,6 +73,7 @@ class AutoSubChunkRequest(Plugin):
     request_chunk_per_second: int
 
     mu: threading.Lock
+    must_chunk_position_waiter: threading.Lock
     requet_queue: deque[sub_chunk_request.SubChunkRequest]
     request_queue_set: set[ChunkPosWithDimension]
     local_cache: dict[ChunkPosWithDimension, LocalCache]
@@ -87,7 +88,7 @@ class AutoSubChunkRequest(Plugin):
             "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 4)
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
         )
 
         self.multiple_pos = {}
@@ -96,6 +97,7 @@ class AutoSubChunkRequest(Plugin):
         self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
         self.mu = threading.Lock()
+        self.must_chunk_position_waiter = threading.Lock()
         self.requet_queue = deque()
         self.request_queue_set = set()
         self.local_cache = {}
@@ -103,13 +105,14 @@ class AutoSubChunkRequest(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
 
+        self.ListenInternalBroadcast("scq:must_get_chunk", self.must_get_chunk)
         self.ListenInternalBroadcast(
             "ggpp:publish_player_position", self.on_player_position
         )
         self.ListenBytesPacket(PacketIDS.SubChunk, self.on_sub_chunk)
 
     def on_def(self):
-        _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 2))
+        _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 3))
 
     def on_inject(self):
         self.blob_hash = self.game_ctrl.blob_hash_holder()
@@ -134,7 +137,7 @@ class AutoSubChunkRequest(Plugin):
                 if len(self.requet_queue) > 0:
                     request = self.requet_queue.popleft()
                     self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, request)
-                    self.request_queue_set.remove(
+                    self.request_queue_set.discard(
                         ChunkPosWithDimension(
                             request.SubChunkPosX,
                             request.SubChunkPosZ,
@@ -143,6 +146,65 @@ class AutoSubChunkRequest(Plugin):
                     )
             self.mu.release()
             time.sleep(1)
+
+    def must_get_chunk(self, event: InternalBroadcast):
+        """
+        API (scq:must_get_chunk):
+            插件主动请求区块信息，用于保证请求的区块一定可以命中，然后插件可以通过 scq:publish_chunk_data 来侦听返回的区块数据。
+            注意，我们只保证命中(不会卡死)，但受制于机器人当前的位置，可能部分区块真的不在机器人可以请求的有效范围内，这种情况下你就会得到不完整的或者完全失败的区块结果。
+
+        Event data 示例:
+            ```
+            {
+                "dimension": int(...),             # 目标维度的 ID (必须与机器人同维度)
+                "request_chunks": [
+                    {
+                        "chunk_pos_x": int(...),   # 要请求的区块的区块 X 坐标
+                        "chunk_pos_z": int(...)    # 要请求的区块的区块 Z 坐标
+                    },
+                    {...},
+                    ...
+                ]
+            }
+            ```
+        """
+        self.must_chunk_position_waiter.acquire()
+        self.BroadcastEvent(InternalBroadcast("ggpp:force_update", {}))
+        self.must_chunk_position_waiter.acquire()
+        self.must_chunk_position_waiter.release()
+
+        dimension: int = event.data["dimension"]
+        request_chunks: list[dict] = event.data["request_chunks"]
+
+        y_range = (-4, 19)
+        if dimension == 1:
+            y_range = (0, 7)
+        if dimension == 2:
+            y_range = (0, 15)
+
+        self.mu.acquire()
+        for i in request_chunks:
+            chunk_pos_with_dimension = ChunkPosWithDimension(
+                i["chunk_pos_x"], i["chunk_pos_z"], dimension
+            )
+            if chunk_pos_with_dimension in self.request_queue_set:
+                continue
+
+            pk = sub_chunk_request.SubChunkRequest(
+                dimension, chunk_pos_with_dimension.x, 0, chunk_pos_with_dimension.z
+            )
+
+            offsets: list[tuple[int, int, int]] = []
+            for y in range(y_range[0], y_range[1] + 1):
+                offsets.append((0, y, 0))
+
+            pk.Offsets = offsets
+
+            self.requet_queue.append(pk)
+            self.request_queue_set.add(
+                ChunkPosWithDimension(pk.SubChunkPosX, pk.SubChunkPosZ, dimension)
+            )
+        self.mu.release()
 
     def try_publish_chunk_data(
         self,
@@ -193,7 +255,8 @@ class AutoSubChunkRequest(Plugin):
                     channel.get(timeout=10)
                 except Exception:
                     self.mu.acquire()
-                    del self.local_cache[cp]
+                    if cp in self.local_cache:
+                        del self.local_cache[cp]
                     self.mu.release()
                     fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
 
@@ -234,7 +297,8 @@ class AutoSubChunkRequest(Plugin):
                         },
                     )
             self.local_cache[cp].channel.put(None)
-            del self.local_cache[cp]
+            if cp in self.local_cache:
+                del self.local_cache[cp]
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
 
@@ -286,6 +350,11 @@ class AutoSubChunkRequest(Plugin):
                 self.append_to_request_queue(
                     current_dimension, (current_chunk_pos_x, current_chunk_pos_z)
                 )
+
+        if not self.must_chunk_position_waiter.acquire(timeout=0):
+            self.must_chunk_position_waiter.release()
+        else:
+            self.must_chunk_position_waiter.release()
 
     def append_to_request_queue(self, dimension: int, center: tuple[int, int]):
         y_range = (-4, 19)
