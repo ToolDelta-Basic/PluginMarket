@@ -23,12 +23,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 2)
-
-    @dataclass(frozen=True)
-    class chunkPos:
-        pos: "bwo.ChunkPos"
-        dimension: int
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -40,7 +35,7 @@ class HoloPsychon(Plugin):
             "方块实体数据同步频率(秒)": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
+            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 3)
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -373,4 +368,4 @@ class HoloPsychon(Plugin):
         )
 
 
-entry = plugin_entry(HoloPsychon)
+entry = plugin_entry(HoloPsychon, "世界の记忆")
