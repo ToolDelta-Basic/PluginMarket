@@ -243,7 +243,7 @@ class HoloPsychon(Plugin):
             for i in result:
                 fixed_result.append(i.hash)
             output_message = "处理服务者查询请求(含二进制荷载)"
-            output_message += f"\n\t\t§e 查询成功率(命中率): §b{round(len(fixed_result) / len(hashes) * 100, 2)} §f%"
+            output_message += f"\n\t\t§e查询成功率(命中率): §b{round(len(fixed_result) / len(hashes) * 100, 2)} §f%"
             output_message += f"\n\t\t§e要查询的子区块: §f{hashes}"
             output_message += f"\n\t\t§e镜像存档里面已有的子区块: §f{fixed_result}"
             fmts.print_suc(output_message + "\n")
