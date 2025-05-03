@@ -256,7 +256,7 @@ class HoloPsychon(Plugin):
             for i in payload:
                 fixed_request.append(i.hash)
             output_message = "服务者请求将子区块数据同步到磁盘"
-            output_message += f"\n\t\t§e要同步到磁盘的子区块: {fixed_request}"
+            output_message += f"\n\t\t§e要同步到磁盘的子区块: §f{fixed_request}"
             fmts.print_inf(output_message + "\n")
 
         for i in payload:
