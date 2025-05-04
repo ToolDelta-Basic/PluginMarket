@@ -165,6 +165,10 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "系统上线提示[Mono]": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "计分板重置": {
         "datas.json": 0,
         "data_operation.py": 0,

@@ -195,6 +195,12 @@
       "version": "0.0.8",
       "plugin-type": "classic"
     },
+    "system_online": {
+      "name": "系统上线提示[Mono]",
+      "author": "Mono",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "计分板重置": {
       "name": "计分板重置",
       "author": "猫七街",

@@ -162,6 +162,10 @@
         "readme.txt",
         "__init__.py"
     ],
+    "系统上线提示[Mono]": [
+        "datas.json",
+        "__init__.py"
+    ],
     "计分板重置": [
         "datas.json",
         "data_operation.py",
