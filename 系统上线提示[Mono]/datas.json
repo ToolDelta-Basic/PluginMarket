@@ -1,0 +1,9 @@
+{
+  "author": "Mono",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "系统上线提示",
+  "pre-plugins": {},
+  "plugin-id": "system_online",
+  "enabled": true
+}
