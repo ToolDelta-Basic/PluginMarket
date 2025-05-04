@@ -6,7 +6,7 @@ from tooldelta import InternalBroadcast, Plugin, fmts, utils, plugin_entry
 class GlobalGetPlayerPos(Plugin):
     name = "前置-循环获取玩家坐标"
     author = "ToolDelta"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     CYCLE = 1
 
     def __init__(self, frame):
@@ -16,7 +16,6 @@ class GlobalGetPlayerPos(Plugin):
         self.ListenInternalBroadcast("ggpp:set_crycle", self.set_cycle)
 
     def on_inject(self):
-        self.player_posdata: dict[str, dict] = {}
         self._main_thread()
 
     def set_cycle(self, event: InternalBroadcast):
@@ -48,7 +47,7 @@ class GlobalGetPlayerPos(Plugin):
         """
         self.get_and_publish_player_position()
 
-    def publish_position(self):
+    def publish_position(self, play_pos_data: dict):
         """
         API (ggpp:publish_player_position): 发布玩家坐标信息
 
@@ -74,11 +73,12 @@ class GlobalGetPlayerPos(Plugin):
             ```
         """
         self.BroadcastEvent(
-            InternalBroadcast("ggpp:publish_player_position", self.player_posdata)
+            InternalBroadcast("ggpp:publish_player_position", play_pos_data)
         )
 
     def get_and_publish_player_position(self):
         uuid2player = {v: k for k, v in self.game_ctrl.players_uuid.items()}
+        player_posdata = {}
 
         try:
             result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
@@ -93,14 +93,14 @@ class GlobalGetPlayerPos(Plugin):
         content = json.loads(result.OutputMessages[0].Parameters[0])
         for i in content:
             player_name = uuid2player[i["uniqueId"]]
-            self.player_posdata[player_name] = {
+            player_posdata[player_name] = {
                 "x": i["position"]["x"],
                 "y": i["position"]["y"],
                 "z": i["position"]["z"],
                 "yRot": i["yRot"],
                 "dimension": int(i["dimension"]),
             }
-        self.publish_position()
+        self.publish_position(player_posdata)
 
     @utils.thread_func("循环获取玩家坐标")
     def _main_thread(self):

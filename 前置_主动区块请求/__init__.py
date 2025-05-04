@@ -109,7 +109,7 @@ class AutoSubChunkRequest(Plugin):
         self.ListenBytesPacket(PacketIDS.SubChunk, self.on_sub_chunk)
 
     def on_def(self):
-        _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 3))
+        _ = self.GetPluginAPI("循环获取玩家坐标", (0, 0, 4))
 
     def on_inject(self):
         self.blob_hash = self.game_ctrl.blob_hash_holder()
