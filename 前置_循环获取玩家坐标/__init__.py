@@ -6,7 +6,7 @@ from tooldelta import InternalBroadcast, Plugin, fmts, utils, plugin_entry
 class GlobalGetPlayerPos(Plugin):
     name = "前置-循环获取玩家坐标"
     author = "ToolDelta"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     CYCLE = 1
 
     def __init__(self, frame):
@@ -79,6 +79,7 @@ class GlobalGetPlayerPos(Plugin):
 
     def get_and_publish_player_position(self):
         uuid2player = {v: k for k, v in self.game_ctrl.players_uuid.items()}
+        player_posdata = {}
 
         try:
             result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
@@ -93,13 +94,14 @@ class GlobalGetPlayerPos(Plugin):
         content = json.loads(result.OutputMessages[0].Parameters[0])
         for i in content:
             player_name = uuid2player[i["uniqueId"]]
-            self.player_posdata[player_name] = {
+            player_posdata[player_name] = {
                 "x": i["position"]["x"],
                 "y": i["position"]["y"],
                 "z": i["position"]["z"],
                 "yRot": i["yRot"],
                 "dimension": int(i["dimension"]),
             }
+        self.player_posdata = player_posdata
         self.publish_position()
 
     @utils.thread_func("循环获取玩家坐标")
