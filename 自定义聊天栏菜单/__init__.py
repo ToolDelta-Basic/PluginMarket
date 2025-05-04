@@ -1,4 +1,5 @@
 import re
+import time
 from tooldelta import (
     ToolDelta,
     Plugin,
@@ -14,7 +15,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -45,6 +46,8 @@ class CustomChatbarMenu(Plugin):
                     "参数提示": "",
                     "功能简介": "返回重生点",
                     "触发后执行的指令": [
+                        "td:/show §c5秒后准备自尽..",
+                        "sleep 5",
                         "/kill [玩家名]",
                         "/title [玩家名] actionbar 自尽成功",
                     ],
@@ -116,6 +119,8 @@ class CustomChatbarMenu(Plugin):
                 )
                 if f_cmd.startswith("td:/show "):
                     self.game_ctrl.say_to(player, f_cmd[8:])
+                elif f_cmd.startswith("sleep "):
+                    time.sleep(utils.try_int(f_cmd[6:]) or 0)
                 else:
                     self.game_ctrl.sendwscmd(f_cmd)
 
