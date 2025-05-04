@@ -219,10 +219,10 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "世界备份": {
-      "name": "世界备份",
-      "author": "YoRHa and RATH",
-      "version": "0.0.1",
+    "简单世界恢复": {
+      "name": "简单世界恢复",
+      "author": "YoRHa",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "MusicPlayer": {
@@ -294,7 +294,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.0.5",
+      "version": "0.1.0",
       "plugin-type": "classic"
     },
     "chat-history": {
@@ -493,6 +493,12 @@
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
       "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "世界备份": {
+      "name": "世界备份",
+      "author": "YoRHa and RATH",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "reload": {
