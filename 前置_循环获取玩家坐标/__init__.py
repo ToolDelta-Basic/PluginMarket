@@ -16,7 +16,6 @@ class GlobalGetPlayerPos(Plugin):
         self.ListenInternalBroadcast("ggpp:set_crycle", self.set_cycle)
 
     def on_inject(self):
-        self.player_posdata: dict[str, dict] = {}
         self._main_thread()
 
     def set_cycle(self, event: InternalBroadcast):
@@ -48,7 +47,7 @@ class GlobalGetPlayerPos(Plugin):
         """
         self.get_and_publish_player_position()
 
-    def publish_position(self):
+    def publish_position(self, play_pos_data: dict):
         """
         API (ggpp:publish_player_position): 发布玩家坐标信息
 
@@ -74,7 +73,7 @@ class GlobalGetPlayerPos(Plugin):
             ```
         """
         self.BroadcastEvent(
-            InternalBroadcast("ggpp:publish_player_position", self.player_posdata)
+            InternalBroadcast("ggpp:publish_player_position", play_pos_data)
         )
 
     def get_and_publish_player_position(self):
@@ -101,8 +100,7 @@ class GlobalGetPlayerPos(Plugin):
                 "yRot": i["yRot"],
                 "dimension": int(i["dimension"]),
             }
-        self.player_posdata = player_posdata
-        self.publish_position()
+        self.publish_position(player_posdata)
 
     @utils.thread_func("循环获取玩家坐标")
     def _main_thread(self):
