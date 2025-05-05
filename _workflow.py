@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 
 def generate_json(directory):
@@ -62,7 +63,7 @@ def flush_basic_datas():
                         "plugin-ids": dat["plugin-ids"],
                         "description": dat["description"],
                         "author": dat["author"],
-                        "version": dat["version"]
+                        "version": dat["version"],
                     }
 
     format_tree_depen = {}
@@ -92,9 +93,10 @@ def flush_plugin_ids_map():
     with open("plugin_ids_map.json", "w", encoding="utf-8") as f:
         json.dump(mapper, f, indent=2, ensure_ascii=False)
 
+
 def get_tree(basepath: str = ""):
     dirs = {}
-    for path in (os.listdir(basepath) if basepath else os.listdir()):
+    for path in os.listdir(basepath) if basepath else os.listdir():
         new_path = os.path.join(basepath, path)
         if os.path.isfile(new_path):
             dirs[path] = 0
@@ -103,6 +105,42 @@ def get_tree(basepath: str = ""):
                 continue
             dirs[path] = get_tree(new_path)
     return dirs
+
+
+def get_valid_plugins_amount():
+    amount = 0
+    for directory in Path().iterdir():
+        if (
+            directory.is_dir()
+            and directory.name != "__pycache__"
+            and (directory / "__init__.py").is_file()
+            and (directory / "datas.json").is_file()
+        ):
+            amount += 1
+    return amount
+
+
+def get_valid_plugin_packages_amount():
+    amount = 0
+    for directory in Path().iterdir():
+        if (
+            directory.is_dir()
+            and directory.name != "__pycache__"
+            and directory.name.startswith("[pkg]")
+            and (directory / "datas.json").is_file()
+        ):
+            amount += 1
+    return amount
+
+
+def modify_readme():
+    with open("README.md", encoding="utf-8") as f:
+        md_content = f.read()
+    md_content = md_content.replace(
+        "[PLUGIN_NUM]", str(get_valid_plugins_amount())
+    ).replace("[PACKAGE_NUM]", str(get_valid_plugin_packages_amount()))
+    with open("README.md", "w", encoding="utf-8") as f:
+        f.write(md_content)
 
 
 if __name__ == "__main__":
@@ -119,6 +157,8 @@ if __name__ == "__main__":
 
     with open("directory_tree.json", "w", encoding="utf-8") as f:
         json.dump(get_tree(), f, indent=4, ensure_ascii=False)
+
+    modify_readme()
 
     flush_basic_datas()
     flush_plugin_ids_map()
