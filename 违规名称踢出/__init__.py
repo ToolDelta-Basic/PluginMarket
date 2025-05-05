@@ -1,9 +1,8 @@
 from tooldelta import (
     constants,
-    Frame,
+    ToolDelta,
     Plugin,
     cfg,
-    Print,
     Chat,
     Player,
     plugin_entry,
@@ -11,24 +10,33 @@ from tooldelta import (
 
 
 class kill(Plugin):
-    version = (0, 0, 6)
+    version = (0, 0, 7)
     name = "违规名称踢出"
     author = "大庆油田"
     description = "简单的违规名称踢出"
 
-    def __init__(self, frame: Frame):
+    def __init__(self, frame: ToolDelta):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
         self.make_data_path()
-        CFG_DEFAULT = {"踢出词": [], "原因": ""}
+        CFG_DEFAULT = {
+            cfg.KeyGroup("包含以下字样的玩家将被踢出"): ["木合塔尔", "NO"],
+            "原因": "",
+        }
         self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, {}, CFG_DEFAULT, self.version
         )
-        self.ci = self.cfg["踢出词"]
+        self.ci = self.cfg.get("包含以下字样的玩家将被踢出", {})
+        self.ci.extend(self.cfg.get("踢出词", {}))
         self.yy = self.cfg["原因"]
         self.ListenPacket(constants.PacketIDS.PlayerList, self.on_prejoin)
+        self.ListenActive(self.on_active)
         self.ListenPlayerJoin(self.on_player_join)
         self.ListenChat(self.on_player_message)
+
+    def on_active(self):
+        for player in self.frame.get_players().getAllPlayers():
+            self.on_player_join(player)
 
     def on_prejoin(self, pk: dict):
         is_joining = not pk["ActionType"]
@@ -38,6 +46,7 @@ class kill(Plugin):
                 xuid = entry_user["XUID"]
                 for a in self.ci:
                     if a in player:
+                        self.print(f"§c 玩家名 {player} 包含关键字 {a}, 已被踢出")
                         self.game_ctrl.sendwocmd(f"kick {xuid} {self.yy}")
         return False
 

@@ -1,6 +1,6 @@
 {
     "author": "大庆油田",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "踢出敏感词玩家/自定义违规词玩家",
     "limit_launcher": null,
     "pre-plugins": {},
