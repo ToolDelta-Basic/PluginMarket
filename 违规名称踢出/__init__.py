@@ -21,7 +21,7 @@ class kill(Plugin):
         self.make_data_path()
         CFG_STD = {
             cfg.KeyGroup("包含以下字样的玩家将被踢出"): cfg.JsonList(str),
-            "原因": "",
+            "原因": str,
         }
         CFG_DEFAULT = {
             "包含以下字样的玩家将被踢出": ["木合塔尔", "NO"],
