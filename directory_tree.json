@@ -273,6 +273,7 @@
     },
     "前置_Cb2Bot通信": {
         "datas.json": 0,
+        "readme.txt": 0,
         "__init__.py": 0
     },
     "plugin_ids_map.json": 0,

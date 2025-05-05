@@ -270,6 +270,7 @@
     ],
     "前置_Cb2Bot通信": [
         "datas.json",
+        "readme.txt",
         "__init__.py"
     ],
     "简易建造-Pro": [
