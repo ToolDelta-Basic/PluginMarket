@@ -2,7 +2,7 @@ import ctypes
 import threading
 import time
 from dataclasses import dataclass
-from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
+from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta.constants.packets import PacketIDS
 from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
@@ -24,7 +24,7 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
     SubChunk,
 )
-from tooldelta.utils import fmts
+from tooldelta.utils import fmts, thread_func
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
@@ -62,7 +62,7 @@ EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     LIB: ctypes.CDLL
 
@@ -76,6 +76,9 @@ class AutoSubChunkRequest(Plugin):
     requet_queue: dict[ChunkPosWithDimension, sub_chunk_request.SubChunkRequest]
     local_cache: dict[ChunkPosWithDimension, LocalCache]
 
+    should_close: bool
+    close_waiter: threading.Lock
+
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = self.frame.get_game_control()
@@ -86,7 +89,7 @@ class AutoSubChunkRequest(Plugin):
             "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 1, 0)
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 1, 1)
         )
 
         self.multiple_pos = {}
@@ -99,8 +102,12 @@ class AutoSubChunkRequest(Plugin):
         self.requet_queue = {}
         self.local_cache = {}
 
+        self.should_close = False
+        self.close_waiter = threading.Lock()
+
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenFrameExit(self.on_close)
 
         self.ListenInternalBroadcast("scq:must_get_chunk", self.must_get_chunk)
         self.ListenInternalBroadcast(
@@ -114,9 +121,13 @@ class AutoSubChunkRequest(Plugin):
     def on_inject(self):
         self.blob_hash = self.game_ctrl.blob_hash_holder()
         self.load_lib()
-        ToolDeltaThread(
-            self._send_request_queue, usage="循环获取玩家坐标: 自动发送请求"
-        )
+        self._send_request_queue()
+
+    def on_close(self, _: FrameExit):
+        self.close_waiter.acquire()
+        self.should_close = True
+        self.close_waiter.acquire()
+        self.close_waiter.release()
 
     def load_lib(self):
         from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
@@ -127,21 +138,32 @@ class AutoSubChunkRequest(Plugin):
 
         self.LIB = LIB
 
+    @thread_func(
+        usage="循环获取玩家坐标: 自动发送请求", thread_level=ToolDeltaThread.SYSTEM
+    )
     def _send_request_queue(self):
         while True:
             self.mu.acquire()
+
+            if self.should_close:
+                if len(self.local_cache) == 0 and self.close_waiter.locked():
+                    self.close_waiter.release()
+                self.mu.release()
+                break
+
             count = len(self.multiple_pos) * self.request_chunk_per_second
             key_to_delete: list[ChunkPosWithDimension] = []
 
             for key, value in self.requet_queue.items():
                 if count <= 0:
-                    continue
+                    break
                 self.game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, value)
                 key_to_delete.append(key)
                 count -= 1
 
             for i in key_to_delete:
                 del self.requet_queue[i]
+
             self.mu.release()
             time.sleep(1)
 
@@ -166,6 +188,9 @@ class AutoSubChunkRequest(Plugin):
             }
             ```
         """
+        if self.should_close:
+            return
+
         self.must_chunk_position_waiter.acquire()
         self.BroadcastEvent(InternalBroadcast("ggpp:force_update", {}))
         self.must_chunk_position_waiter.acquire()
@@ -250,11 +275,16 @@ class AutoSubChunkRequest(Plugin):
                         del self.requet_queue[cp]
                     if cp in self.local_cache:
                         del self.local_cache[cp]
+                    if self.should_close and len(self.local_cache) == 0:
+                        if self.close_waiter.locked():
+                            self.close_waiter.release()
                     self.mu.release()
                     fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
 
             ToolDeltaThread(
-                simple_chunk_waiter, usage=f"主动区块请求: 区块 {cp} 的等待器"
+                simple_chunk_waiter,
+                usage=f"主动区块请求: 区块 {cp} 的等待器",
+                thread_level=ToolDeltaThread.SYSTEM,
             )
 
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
@@ -297,6 +327,9 @@ class AutoSubChunkRequest(Plugin):
                 del self.requet_queue[cp]
             if cp in self.local_cache:
                 del self.local_cache[cp]
+            if self.should_close and len(self.local_cache) == 0:
+                if self.close_waiter.locked():
+                    self.close_waiter.release()
 
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
@@ -359,6 +392,9 @@ class AutoSubChunkRequest(Plugin):
             del self.requet_queue[cp]
         if cp in self.local_cache:
             del self.local_cache[cp]
+        if self.should_close and len(self.local_cache) == 0:
+            if self.close_waiter.locked():
+                self.close_waiter.release()
 
         if len(pub) > 0:
             self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
@@ -404,6 +440,9 @@ class AutoSubChunkRequest(Plugin):
         for i in cancel_list:
             self.set_chunk_all_failed_and_publish(i.dim, (i.x, i.z))
         self.mu.release()
+
+        if self.should_close:
+            return
 
         # Actually speaking, by the way you read to here,
         # you may know our logic is not very common.
@@ -488,10 +527,17 @@ class AutoSubChunkRequest(Plugin):
         self.mu.release()
 
     def on_sub_chunk(self, pk: BaseBytesPacket) -> bool:
+        self._on_sub_chunk(pk)
+        return False
+
+    @thread_func(
+        usage="主动区块请求: 处理 Sub Chunk 数据包", thread_level=ToolDeltaThread.SYSTEM
+    )
+    def _on_sub_chunk(self, pk: BaseBytesPacket):
         assert type(pk) is SubChunk, "Should Nerver happened"
 
         if len(pk.Entries) == 0 or "blob_hash" not in self.__dict__:
-            return False
+            return
 
         # sub_chunk_finish_states holds a list that for a sub chunk
         # entry in pk.Entries[i], this sub chunk entry is
@@ -695,7 +741,7 @@ class AutoSubChunkRequest(Plugin):
                 ),
             )
 
-        return False
+        return
 
 
 entry = plugin_entry(AutoSubChunkRequest, "主动区块请求")

@@ -1,8 +1,9 @@
 import struct
+import threading
 import time
 import datetime
 from io import BytesIO
-from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
+from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
@@ -14,7 +15,7 @@ from tooldelta.utils import fmts
 class WorldBackup(Plugin):
     name = "世界备份"
     author = "YoRHa and RATH"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -25,7 +26,7 @@ class WorldBackup(Plugin):
             "要保留多少秒前的存档": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界备份", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 1)
+            "世界备份", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -34,17 +35,21 @@ class WorldBackup(Plugin):
         self.show_coordinates = bool(cfg["显示坐标"])
         self.sync_delta_time = int(cfg["要保留多少秒前的存档"])
 
+        self.should_close = False
+        self.running_mutex = threading.Lock()
+
         self.frame = frame
         self.game_ctrl = self.frame.get_game_control()
         self.make_data_path()
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
 
     def on_def(self):
         global bwo, bsdiff4, xxhash
-        _ = self.GetPluginAPI("世界の记忆", (0, 0, 3))
+        _ = self.GetPluginAPI("世界の记忆", (0, 0, 4))
 
         pip = self.GetPluginAPI("pip")
         if 0:
@@ -72,6 +77,13 @@ class WorldBackup(Plugin):
             ldt.random_seed = self.world_seed
             ldt.show_coordinates = self.show_coordinates
             self.world.modify_level_dat(ldt)
+
+    def on_close(self, _: FrameExit):
+        self.running_mutex.acquire()
+        self.should_close = True
+        if "world" in self.__dict__ and self.world.is_valid():
+            self.world.close_world()
+        self.running_mutex.release()
 
     def encode_delta_update(self, sub_chunks_bytes: list[bytes], nbt: bytes) -> bytes:
         writer = BytesIO()
@@ -178,6 +190,12 @@ class WorldBackup(Plugin):
         return f"{days}天{hours}时{minutes}分{seconds}秒"
 
     def on_chunk_data(self, event: InternalBroadcast):
+        self.running_mutex.acquire()
+        if not self.should_close:
+            self._on_chunk_data(event)
+        self.running_mutex.release()
+
+    def _on_chunk_data(self, event: InternalBroadcast):
         if not self.check_sub_chunks_all_success(event):
             return
 

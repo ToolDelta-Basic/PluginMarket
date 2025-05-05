@@ -1,19 +1,29 @@
 import os
 import json
+import threading
 import time
-from tooldelta import Plugin, Frame, fmts, utils, plugin_entry
+from tooldelta import FrameExit, Plugin, Frame, fmts, utils, plugin_entry
+from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
+
+    should_close: bool = False
+    running_mutex: threading.Lock
 
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
+
+        self.should_close = False
+        self.running_mutex = threading.Lock()
+
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenFrameExit(self.on_close)
         self.make_data_path()
 
     def on_def(self):
@@ -43,6 +53,11 @@ class SimpleWorldImport(Plugin):
             "导入存档内的建筑物",
             self.runner,
         )
+
+    def on_close(self, _: FrameExit):
+        self.should_close = True
+        self.running_mutex.acquire()
+        self.running_mutex.release()
 
     def as_pos(self, string: str) -> tuple[int, int, int]:
         """
@@ -144,8 +159,16 @@ class SimpleWorldImport(Plugin):
             f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
         )
 
-    @utils.thread_func("世界导入进程")
     def do_world_import(self, cmd: list[str]):
+        if not self.running_mutex.acquire(timeout=0):
+            fmts.print_err("同一时刻最多处理一个导入任务")
+            return
+        if not self.should_close:
+            self._do_world_import(cmd)
+        self.running_mutex.release()
+
+    @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
+    def _do_world_import(self, cmd: list[str]):
         try:
             filename = cmd[0]
             if not filename.endswith(".mcworld"):
@@ -200,6 +223,11 @@ class SimpleWorldImport(Plugin):
 
         progress = 0
         for origin_chunk_pos in bot_path:
+            # 检查用户是否重载
+            if self.should_close:
+                world.close_world()
+                return
+
             # 显示处理进度
             finish_ratio = round(progress / (len(bot_path)) * 100)
             fmts.print_inf(f"正在处理 {origin_chunk_pos} 处的区块 ({finish_ratio}%)")
@@ -251,6 +279,11 @@ class SimpleWorldImport(Plugin):
                 start_pos[1] >> 4,
                 min((chunk_range.end_range >> 4) + 1, (end_pos[1] >> 4) + 1),
             ):
+                # 检查用户是否重载
+                if self.should_close:
+                    world.close_world()
+                    return
+
                 # 由于每次子区块的 Y 坐标都会变化,
                 # 所以每次都有必要重新通过转换坐标系
                 # 以得到以实际导入地点为原点时的绝对 Y 坐标。
@@ -288,6 +321,11 @@ class SimpleWorldImport(Plugin):
                 background_blocks = sub_chunk.blocks(1)
 
                 for comb_pos in range(4096):
+                    # 检查用户是否重载
+                    if self.should_close:
+                        world.close_world()
+                        return
+
                     # 其实原来的写法是这样的
                     # for y in range(16):
                     #     for z in range(16):

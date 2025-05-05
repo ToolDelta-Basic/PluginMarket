@@ -1,8 +1,10 @@
+import threading
 import time
+import traceback
 import numpy
 from io import BytesIO
 from dataclasses import dataclass
-from tooldelta import InternalBroadcast, Plugin, Frame, plugin_entry
+from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     HashWithPosition,
@@ -11,6 +13,7 @@ from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
 )
 from tooldelta.mc_bytes_packet.sub_chunk import SUB_CHUNK_RESULT_SUCCESS
 from tooldelta.utils import fmts
+from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 class wrapper:
@@ -23,7 +26,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -35,7 +38,7 @@ class HoloPsychon(Plugin):
             "方块实体数据同步频率(秒)": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 3)
+            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 4)
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -47,17 +50,21 @@ class HoloPsychon(Plugin):
         )
         self.nbt_sync_time = int(cfg["方块实体数据同步频率(秒)"])
 
+        self.should_close = False
+        self.running_mutex = threading.Lock()
+
         self.frame = frame
         self.game_ctrl = self.frame.get_game_control()
         self.make_data_path()
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 0, 4))
+        _ = self.GetPluginAPI("主动区块请求", (0, 1, 1))
 
         pip = self.GetPluginAPI("pip")
         if 0:
@@ -73,9 +80,10 @@ class HoloPsychon(Plugin):
     def on_inject(self):
         self.world = bwo.new_world(self.format_data_path(self.world_dir_name))
         if not self.world.is_valid():
-            raise Exception(
+            fmts.print_err(
                 "世界の记忆: 打开存档失败，请检查存档是否被占用或 level.dat 正确"
             )
+            self._fatal_error("fatal error: failed to open the minecraft world, reload")
 
         ldt = self.world.get_level_dat()
         if ldt is not None:
@@ -86,10 +94,10 @@ class HoloPsychon(Plugin):
 
         blob_hash = self.game_ctrl.blob_hash_holder()
         blob_hash.as_mirror_world_side().mirror_world_handler.set_handler(
-            self._handle_query_disk_hash_exist,
-            self._handle_get_disk_hash_payload,
-            self._handle_require_sync_hash_to_disk,
-            self._handle_clean_blob_hash_and_apply_to_world,
+            self._f1,
+            self._f2,
+            self._f3,
+            self._f4,
             self._handle_server_disconnected,
         )
 
@@ -97,12 +105,41 @@ class HoloPsychon(Plugin):
             not blob_hash.get_client_function().set_holder_request()
             and not blob_hash.is_disk_holder()
         ):
-            raise Exception("世界の记忆: 请求当前结点作为镜像存档持有人失败")
+            fmts.print_err("世界の记忆: 请求当前结点作为镜像存档持有人失败")
+            self._fatal_error(
+                "fatal error: access point refused our set mirror world holder request, reload"
+            )
 
         if not blob_hash.as_mirror_world_side().register_listener():
             fmts.print_war("世界の记忆: 尝试重复注册侦听者")
 
+    def on_close(self, _: FrameExit):
+        self.running_mutex.acquire()
+        self.should_close = True
+        if "world" in self.__dict__ and self.world.is_valid():
+            self.world.close_world()
+        self.running_mutex.release()
+
     def on_chunk_data(self, event: InternalBroadcast):
+        self.running_mutex.acquire()
+        if not self.should_close:
+            self._on_chunk_data(event)
+        self.running_mutex.release()
+
+    def _fatal_error(self, err: str):
+        fmts.print_err(err + "\n")
+
+        for i in traceback.format_stack():
+            fmts.print_err(i)
+
+        ToolDeltaThread(
+            self.frame.system_exit,
+            (err,),
+            usage="fatal error",
+            thread_level=ToolDeltaThread.SYSTEM,
+        )
+
+    def _on_chunk_data(self, event: InternalBroadcast):
         nbt_blocks = BytesIO()
 
         cp = bwo.ChunkPos(
@@ -123,6 +160,17 @@ class HoloPsychon(Plugin):
 
         self.world.save_nbt_payload_only(cp, nbt_blocks.getvalue(), dim)
         self.world.save_time_stamp(cp, current_unix_time, dim)
+
+    def _f1(self, hashes: list[HashWithPosition]) -> list[bool]:
+        self.running_mutex.acquire()
+
+        if self.should_close:
+            result = [False for _ in range(len(hashes))]
+        else:
+            result = self._handle_query_disk_hash_exist(hashes)
+
+        self.running_mutex.release()
+        return result
 
     def _handle_query_disk_hash_exist(
         self, hashes: list[HashWithPosition]
@@ -172,6 +220,17 @@ class HoloPsychon(Plugin):
             if hashes[index] in fixed_result:
                 result[index] = True
 
+        return result
+
+    def _f2(self, hashes: list[HashWithPosition]) -> list[PayloadByHash]:
+        self.running_mutex.acquire()
+
+        if self.should_close:
+            result = []
+        else:
+            result = self._handle_get_disk_hash_payload(hashes)
+
+        self.running_mutex.release()
         return result
 
     def _handle_get_disk_hash_payload(
@@ -250,6 +309,12 @@ class HoloPsychon(Plugin):
 
         return result
 
+    def _f3(self, payload: list[PayloadByHash]):
+        self.running_mutex.acquire()
+        if not self.should_close:
+            self._handle_require_sync_hash_to_disk(payload)
+        self.running_mutex.release()
+
     def _handle_require_sync_hash_to_disk(self, payload: list[PayloadByHash]) -> None:
         if self.enable_debug:
             fixed_request: list[HashWithPosition] = []
@@ -284,6 +349,12 @@ class HoloPsychon(Plugin):
                 i.hash.hash,
                 bwo.Dimension(i.hash.dimension),
             )
+
+    def _f4(self, pos: list[HashWithPosition]):
+        self.running_mutex.acquire()
+        if not self.should_close:
+            self._handle_clean_blob_hash_and_apply_to_world(pos)
+        self.running_mutex.release()
 
     def _handle_clean_blob_hash_and_apply_to_world(
         self, pos: list[HashWithPosition]
@@ -363,8 +434,11 @@ class HoloPsychon(Plugin):
             fmts.print_suc(output_message + "\n")
 
     def _handle_server_disconnected(self) -> None:
-        raise Exception(
+        fmts.print_err(
             "世界の记忆: 当前结点已被 Blob hash 缓存数据集的服务者撤销镜像存档的持有人身份"
+        )
+        self._fatal_error(
+            "fatal error: access point cancelled our mirror world holder status, reload"
         )
 
 

@@ -2,22 +2,35 @@ import os
 import json
 import threading
 import time
-from tooldelta import InternalBroadcast, Plugin, Frame, fmts, utils, plugin_entry
+from tooldelta import (
+    FrameExit,
+    InternalBroadcast,
+    Plugin,
+    Frame,
+    fmts,
+    utils,
+    plugin_entry,
+)
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
 )
+from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     chunk_we_want: tuple[int, int, int]
     chunk_we_get: list[dict]
+
     not_update_got_chunk: threading.Lock
-    chunk_waiter: threading.Lock
+    chunk_waiter: threading.Event
+
+    should_close: bool
+    running_mutex: threading.Lock
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -26,19 +39,23 @@ class SimpleWorldRecover(Plugin):
 
         self.chunk_we_want = (-1, 0, 0)
         self.chunk_we_get = []
-        self.not_update_got_chunk = threading.Lock()
-        self.chunk_waiter = threading.Lock()
 
+        self.not_update_got_chunk = threading.Lock()
         self.not_update_got_chunk.acquire()
+        self.chunk_waiter = threading.Event()
+
+        self.should_close = False
+        self.running_mutex = threading.Lock()
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
+        self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
 
     def on_def(self):
         global bwo
         pip = self.GetPluginAPI("pip")
-        _ = self.GetPluginAPI("主动区块请求", (0, 0, 5))
+        _ = self.GetPluginAPI("主动区块请求", (0, 1, 1))
 
         if 0:
             from pip模块支持 import PipSupport
@@ -62,6 +79,12 @@ class SimpleWorldRecover(Plugin):
             self.runner,
         )
 
+    def on_close(self, _: FrameExit):
+        self.should_close = True
+        self.chunk_waiter.set()
+        self.running_mutex.acquire()
+        self.running_mutex.release()
+
     def on_chunk_data(self, event: InternalBroadcast):
         chunk_pos_x = event.data[0]["sub_chunk_pos_x"]
         chunk_pos_z = event.data[0]["sub_chunk_pos_z"]
@@ -74,18 +97,20 @@ class SimpleWorldRecover(Plugin):
             return
 
         self.chunk_we_get = event.data
-        self.chunk_waiter.release()
+        self.chunk_waiter.set()
 
     def get_chunk(
         self, dim: int, chunk_pox_x: int, chunk_pos_z: int
     ) -> tuple["bwo.Chunk", bool]:
+        if self.should_close:
+            return bwo.Chunk(), False
+
         self.game_ctrl.sendwocmd(
             f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {(chunk_pox_x << 4)} {0} {chunk_pos_z << 4}'
         )
         self.game_ctrl.sendwscmd_with_resp("")
 
         self.chunk_we_want = (dim, chunk_pox_x, chunk_pos_z)
-        self.chunk_waiter.acquire()
         self.not_update_got_chunk.release()
 
         self.BroadcastEvent(
@@ -103,8 +128,11 @@ class SimpleWorldRecover(Plugin):
             )
         )
 
-        self.chunk_waiter.acquire()
-        self.chunk_waiter.release()
+        self.chunk_waiter.wait()
+        self.chunk_waiter.clear()
+
+        if self.should_close:
+            return bwo.Chunk(), False
 
         for i in self.chunk_we_get:
             code = i["result_code"]
@@ -194,8 +222,16 @@ class SimpleWorldRecover(Plugin):
         content = json.loads(result.OutputMessages[0].Parameters[0])
         return int(content[0]["dimension"])
 
-    @utils.thread_func("世界恢复进程")
     def do_world_recover(self, cmd: list[str]):
+        if not self.running_mutex.acquire(timeout=0):
+            fmts.print_err("同一时刻最多处理一个恢复任务")
+            return
+        if not self.should_close:
+            self._do_world_recover(cmd)
+        self.running_mutex.release()
+
+    @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
+    def _do_world_recover(self, cmd: list[str]):
         dim_id = self.get_bot_dimension()
         if dim_id == -1:
             fmts.print_err("无法获取机器人当前维度")
@@ -236,6 +272,10 @@ class SimpleWorldRecover(Plugin):
         recover_block_count = 0
 
         for chunk_pos in bot_path:
+            if self.should_close:
+                world.close_world()
+                return
+
             finish_ratio = round(progress / (len(bot_path)) * 100)
             fmts.print_inf(f"正在处理 {chunk_pos} 处的区块 ({finish_ratio}%)")
             progress += 1
@@ -248,9 +288,14 @@ class SimpleWorldRecover(Plugin):
             success = False
 
             for i in range(3):
+                if self.should_close:
+                    world.close_world()
+                    return
+
                 server_chunk, success = self.get_chunk(
                     int(dm), chunk_pos.x, chunk_pos.z
                 )
+
                 if not success:
                     fmts.print_war(
                         f"位于 {chunk_pos} 的区块未能从服务器请求得到, 尝试重试 (第 {i}/3 次尝试)"
@@ -267,6 +312,10 @@ class SimpleWorldRecover(Plugin):
             pen_z = chunk_pos.z << 4
 
             for index in range(dm.height() >> 4):
+                if self.should_close:
+                    world.close_world()
+                    return
+
                 pen_y = server_chunk.sub_y(index)
 
                 chunk_sub = world.load_sub_chunk(
@@ -289,6 +338,10 @@ class SimpleWorldRecover(Plugin):
                 server_sub_blocks_1 = server_sub.blocks(1)
 
                 for comb_pos in range(4096):
+                    if self.should_close:
+                        world.close_world()
+                        return
+
                     y = comb_pos >> 8
                     z = (comb_pos - ((comb_pos >> 8) << 8)) >> 4
                     x = comb_pos - ((comb_pos >> 4) << 4)
