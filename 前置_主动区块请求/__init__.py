@@ -520,7 +520,7 @@ class AutoSubChunkRequest(Plugin):
         self.mu.acquire()
         for chunk in all_chunks:
             chunk_pos_with_dim = ChunkPosWithDimension(chunk[0], chunk[1], dimension)
-            if chunk_pos_with_dim not in self.local_cache:
+            if chunk_pos_with_dim not in self.requet_queue:
                 pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
                 pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
                 self.requet_queue[chunk_pos_with_dim] = pk
