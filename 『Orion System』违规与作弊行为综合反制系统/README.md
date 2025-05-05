@@ -3,11 +3,11 @@
 I 拥有精美UI页面的控制台封禁/解封系统  
 II 拥有精美UI页面的游戏内封禁/解封系统  
 III 机器人IP外进反制  
-IV Steve/Alex皮肤反制  
+IV Steve/Alex/4D皮肤反制  
 V 账号等级限制  
 VI 网易屏蔽词名称反制  
-VII 违禁词名称反制  
-VIII 网易启动器玩家数据检查  
+VII 自定义违禁词名称反制  
+VIII 网易MC客户端玩家数据检查  
 IX 禁止游戏内私聊(tell,msg,w命令)  
 X 禁止游戏内me命令  
 XI 发言黑名单词检测  

@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 2)
+    version = (0, 1, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -30,13 +30,18 @@ class Orion_System(Plugin):
             "游戏内封禁/解封系统每页显示几项": 20,
             "游戏内封禁/解封系统等待输入超时时间(秒)": 60,
             "是否启用机器人IP外进反制": True,
-            "是否启用Steve/Alex皮肤反制": True,
-            "是否启用等级限制": True,
+            "是否启用Steve/Alex皮肤反制": False,
+            "是否启用4D皮肤反制": False,
+            "是否启用账号等级限制": True,
+            "服务器准入等级": 1,
             "是否启用网易屏蔽词名称反制": True,
             "--网易屏蔽词名称检测等待时间(秒)": 2,
             "是否启用自定义违禁词名称反制": True,
+            "--名称违禁词是否区分大小写英文字母": False,
             "名称违禁词列表": [
                 "狂笑",
+                "的蛇",
+                "写散文",
                 "要猫",
                 "药猫",
                 "妖猫",
@@ -47,34 +52,86 @@ class Orion_System(Plugin):
                 "幺儿",
                 "孙政",
                 "guiwow",
-                "吴旭淳",
+                "吴旭",
+                "旭淳",
+                "川烈",
                 "九重天",
+                "五芒星",
                 "XTS",
+                "南宫",
+                "北境",
+                "SR",
+                "TZRO",
+                "STBY",
+                "AFR",
+                "SWI",
+                "EXC",
+                "DZR",
+                "ATS",
+                "地铁",
+                "生存圈",
                 "天庭",
+                "天神之庭",
+                "LunarHax",
                 "白墙",
                 "跑路",
+                "走路科技",
                 "runaway",
                 "导入",
                 "busj",
                 "万花筒",
                 "购买",
                 "出售",
+                "赞助",
+                "充值",
+                "氪金",
+                "炸服",
+                "锁服",
+                "崩服",
+                "毁服",
+                "权威",
+                "乐子",
+                "户籍",
+                "社工库",
+                "身份证",
+                "开盒",
+                "恶俗",
+                "esu",
             ],
             "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，与巡逻插件一起使用有概率获取失败，若要根据设备号封禁玩家则必须开启该项)": True,
-            "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": 3,
-            "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": False,
-            "--如果在网易启动器无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": False,
-            "--如果在网易启动器搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": True,
-            "--网易启动器检查API响应等待时间(秒)": 10,
-            "--网易启动器检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)": 3,
+            "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": 5,
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": False,
+            "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": False,
+            "--如果在网易MC客户端搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": True,
+            "--网易MC客户端检查API响应等待时间(秒)": 10,
+            "--网易MC客户端检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)": 3,
             "反制白名单": ["style_天枢", "..."],
-            "服务器准入等级": 1,
             "<<提示>>如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true": None,
             "是否禁止游戏内私聊(tell,msg,w命令)": True,
-            "禁止私聊时允许私聊机器人": True,
+            "--禁止私聊时允许私聊机器人": True,
             "是否禁止游戏内me命令": True,
-            "是否启用黑名单词检测": True,
-            "黑名单词列表": ["白墙", "跑路", "runaway"],
+            "发言反制是否区分大小写英文字母": False,
+            "是否启用发言黑名单词检测": True,
+            "发言黑名单词列表": [
+                "白墙",
+                "跑路",
+                "runaway",
+                "走路科技",
+                "busj",
+                "万花筒",
+                "炸服",
+                "锁服",
+                "崩服",
+                "毁服",
+                "权威",
+                "乐子",
+                "户籍",
+                "社工库",
+                "身份证",
+                "开盒",
+                "恶俗",
+                "esu",
+            ],
             "发言检测周期(秒)": 10,
             "是否启用周期内发言频率检测": True,
             "周期内发言条数限制": 10,
@@ -93,17 +150,21 @@ class Orion_System(Plugin):
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": True,
             "封禁时间_机器人IP外进反制": -1,
             "封禁时间_Steve/Alex皮肤反制": 0,
-            "封禁时间_等级限制": 0,
+            "封禁时间_4D皮肤反制": 0,
+            "封禁时间_账号等级限制": 0,
             "封禁时间_网易屏蔽词名称反制": 0,
             "封禁时间_自定义违禁词名称反制": 0,
-            "--封禁时间_网易启动器无法搜索到玩家": 0,
-            "--封禁时间_网易启动器搜到的玩家等级与游戏内等级不同": -1,
+            "封禁时间_网易MC客户端无法搜索到玩家": 0,
+            "封禁时间_网易MC客户端搜到的玩家等级与游戏内等级不同": -1,
             "封禁时间_游戏内私聊(tell,msg,w命令)": 60,
             "封禁时间_游戏内me命令": "0年0月0日0时1分0秒",
-            "封禁时间_黑名单词检测": "0年0月0日0时0分60秒",
+            "封禁时间_发言黑名单词检测": "0年0月0日0时0分60秒",
             "封禁时间_发言频率检测": "0年0月0日0时10分0秒",
             "封禁时间_发言字数检测": 60,
             "封禁时间_重复消息刷屏检测": "0年0月0日0时10分0秒",
+            "<<提示>>为了防止意外事件发生，请不要修改下面这一项！": None,
+            "<<提示>>此项默认为True，当新版本插件首次启动时可能会按照新版本插件的要求更新数据文件的格式，并在插件数据文件更新完毕后自动调整为False": None,
+            "插件数据文件更新按钮": True,
         }
         CONFIG_STD = {  # 配置格式要求
             "是否启用控制台封禁/解封系统": bool,
@@ -117,25 +178,28 @@ class Orion_System(Plugin):
             "游戏内封禁/解封系统等待输入超时时间(秒)": cfg.PNumber,
             "是否启用机器人IP外进反制": bool,
             "是否启用Steve/Alex皮肤反制": bool,
-            "是否启用等级限制": bool,
+            "是否启用4D皮肤反制": bool,
+            "是否启用账号等级限制": bool,
+            "服务器准入等级": cfg.PInt,
             "是否启用网易屏蔽词名称反制": bool,
             "--网易屏蔽词名称检测等待时间(秒)": cfg.PNumber,
             "是否启用自定义违禁词名称反制": bool,
+            "--名称违禁词是否区分大小写英文字母": bool,
             "名称违禁词列表": cfg.JsonList(str, len_limit=-1),
             "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，与巡逻插件一起使用有概率获取失败，若要根据设备号封禁玩家则必须开启该项)": bool,
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": cfg.PInt,
-            "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": bool,
-            "--如果在网易启动器无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": bool,
-            "--如果在网易启动器搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": bool,
-            "--网易启动器检查API响应等待时间(秒)": cfg.PNumber,
-            "--网易启动器检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)": cfg.PInt,
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": bool,
+            "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": bool,
+            "--如果在网易MC客户端搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": bool,
+            "--网易MC客户端检查API响应等待时间(秒)": cfg.PNumber,
+            "--网易MC客户端检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)": cfg.PInt,
             "反制白名单": cfg.JsonList(str, len_limit=-1),
-            "服务器准入等级": cfg.PInt,
             "是否禁止游戏内私聊(tell,msg,w命令)": bool,
-            "禁止私聊时允许私聊机器人": bool,
+            "--禁止私聊时允许私聊机器人": bool,
             "是否禁止游戏内me命令": bool,
-            "是否启用黑名单词检测": bool,
-            "黑名单词列表": cfg.JsonList(str, len_limit=-1),
+            "发言反制是否区分大小写英文字母": bool,
+            "是否启用发言黑名单词检测": bool,
+            "发言黑名单词列表": cfg.JsonList(str, len_limit=-1),
             "发言检测周期(秒)": cfg.PNumber,
             "是否启用周期内发言频率检测": bool,
             "周期内发言条数限制": cfg.PInt,
@@ -148,17 +212,19 @@ class Orion_System(Plugin):
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": bool,
             "封禁时间_机器人IP外进反制": [int, str],
             "封禁时间_Steve/Alex皮肤反制": [int, str],
-            "封禁时间_等级限制": [int, str],
+            "封禁时间_4D皮肤反制": [int, str],
+            "封禁时间_账号等级限制": [int, str],
             "封禁时间_网易屏蔽词名称反制": [int, str],
             "封禁时间_自定义违禁词名称反制": [int, str],
-            "--封禁时间_网易启动器无法搜索到玩家": [int, str],
-            "--封禁时间_网易启动器搜到的玩家等级与游戏内等级不同": [int, str],
+            "封禁时间_网易MC客户端无法搜索到玩家": [int, str],
+            "封禁时间_网易MC客户端搜到的玩家等级与游戏内等级不同": [int, str],
             "封禁时间_游戏内私聊(tell,msg,w命令)": [int, str],
             "封禁时间_游戏内me命令": [int, str],
-            "封禁时间_黑名单词检测": [int, str],
+            "封禁时间_发言黑名单词检测": [int, str],
             "封禁时间_发言频率检测": [int, str],
             "封禁时间_发言字数检测": [int, str],
             "封禁时间_重复消息刷屏检测": [int, str],
+            "插件数据文件更新按钮": bool,
         }
         # 调用配置
         config, _ = cfg.get_plugin_config_and_version(
@@ -177,41 +243,48 @@ class Orion_System(Plugin):
         ]
         self.is_detect_bot = config["是否启用机器人IP外进反制"]
         self.is_ban_Steve_or_Alex = config["是否启用Steve/Alex皮肤反制"]
-        self.is_level_limit = config["是否启用等级限制"]
+        self.is_ban_4D_skin = config["是否启用4D皮肤反制"]
+        self.is_level_limit = config["是否启用账号等级限制"]
+        self.server_level = config["服务器准入等级"]
         self.is_detect_netease_banned_word = config["是否启用网易屏蔽词名称反制"]
         self.detect_netease_banned_word_timeout = config[
             "--网易屏蔽词名称检测等待时间(秒)"
         ]
         self.is_detect_self_banned_word = config["是否启用自定义违禁词名称反制"]
+        self.is_distinguish_upper_or_lower_in_self_banned_word = config[
+            "--名称违禁词是否区分大小写英文字母"
+        ]
         self.banned_word_list = config["名称违禁词列表"]
-        self.is_record_device_id = config[
+        self.is_get_device_id = config[
             "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，与巡逻插件一起使用有概率获取失败，若要根据设备号封禁玩家则必须开启该项)"
         ]
         self.record_device_id_try_time = config[
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)"
         ]
         self.is_check_player_info = config[
-            "是否检查玩家信息与网易启动器是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)"
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)"
         ]
         self.is_ban_player_if_cannot_search = config[
-            "--如果在网易启动器无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)"
+            "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)"
         ]
         self.is_ban_player_if_different_level = config[
-            "--如果在网易启动器搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏"
+            "--如果在网易MC客户端搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏"
         ]
         self.check_player_info_api_timeout = config[
-            "--网易启动器检查API响应等待时间(秒)"
+            "--网易MC客户端检查API响应等待时间(秒)"
         ]
         self.check_player_info_api_try_time = config[
-            "--网易启动器检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)"
+            "--网易MC客户端检查API可尝试次数(最后一次尝试依然搜索失败即放弃或踢出)"
         ]
         self.whitelist = config["反制白名单"]
-        self.server_level = config["服务器准入等级"]
         self.ban_private_chat = config["是否禁止游戏内私聊(tell,msg,w命令)"]
-        self.allow_chat_with_bot = config["禁止私聊时允许私聊机器人"]
+        self.allow_chat_with_bot = config["--禁止私聊时允许私聊机器人"]
         self.ban_me_command = config["是否禁止游戏内me命令"]
-        self.Testfor_blacklist_word = config["是否启用黑名单词检测"]
-        self.blacklist_word_list = config["黑名单词列表"]
+        self.is_distinguish_upper_or_lower_on_chat = config[
+            "发言反制是否区分大小写英文字母"
+        ]
+        self.Testfor_blacklist_word = config["是否启用发言黑名单词检测"]
+        self.blacklist_word_list = config["发言黑名单词列表"]
         self.speak_detection_cycle = config["发言检测周期(秒)"]
         self.speak_speed_limit = config["是否启用周期内发言频率检测"]
         self.max_speak_count = config["周期内发言条数限制"]
@@ -226,19 +299,21 @@ class Orion_System(Plugin):
         ]
         self.ban_time_detect_bot = config["封禁时间_机器人IP外进反制"]
         self.ban_time_Steve_or_Alex = config["封禁时间_Steve/Alex皮肤反制"]
-        self.ban_time_level_limit = config["封禁时间_等级限制"]
+        self.ban_time_4D_skin = config["封禁时间_4D皮肤反制"]
+        self.ban_time_level_limit = config["封禁时间_账号等级限制"]
         self.ban_time_detect_netease_banned_word = config["封禁时间_网易屏蔽词名称反制"]
         self.ban_time_detect_self_banned_word = config["封禁时间_自定义违禁词名称反制"]
-        self.ban_time_if_cannot_search = config["--封禁时间_网易启动器无法搜索到玩家"]
+        self.ban_time_if_cannot_search = config["封禁时间_网易MC客户端无法搜索到玩家"]
         self.ban_time_if_different_level = config[
-            "--封禁时间_网易启动器搜到的玩家等级与游戏内等级不同"
+            "封禁时间_网易MC客户端搜到的玩家等级与游戏内等级不同"
         ]
         self.ban_time_private_chat = config["封禁时间_游戏内私聊(tell,msg,w命令)"]
         self.ban_time_me_command = config["封禁时间_游戏内me命令"]
-        self.ban_time_testfor_blacklist_word = config["封禁时间_黑名单词检测"]
+        self.ban_time_testfor_blacklist_word = config["封禁时间_发言黑名单词检测"]
         self.ban_time_speak_speed_limit = config["封禁时间_发言频率检测"]
         self.ban_time_message_length_limit = config["封禁时间_发言字数检测"]
         self.ban_time_repeat_message_limit = config["封禁时间_重复消息刷屏检测"]
+        self.upgrade_plugin_data_file = config["插件数据文件更新按钮"]
 
         # 这是获取玩家设备号函数的线程锁，要求当多个玩家连续登录时逐个获取设备号，而不是连续tp最后啥也没得到
         # 当连续多个玩家进入游戏后，只允许一个线程获取device_id，其他获取device_id的线程处于等待状态，直到获取到当前玩家设备号或超时后再执行下一个线程
@@ -248,8 +323,18 @@ class Orion_System(Plugin):
         self.thread_lock_ban_player_by_xuid = threading.Lock()
         self.thread_lock_ban_player_by_device_id = threading.Lock()
 
+        # 这是用于刷新“检测发言频率”和“检测重复刷屏”缓存的计时器的线程锁，防止异步资源访问时出现冲突
+        self.thread_lock_timer = threading.Lock()
+
         os.makedirs(f"{self.data_path}/玩家封禁时间数据(以xuid记录)", exist_ok=True)
         os.makedirs(f"{self.data_path}/玩家封禁时间数据(以设备号记录)", exist_ok=True)
+
+        if self.is_distinguish_upper_or_lower_in_self_banned_word is False:
+            self.banned_word_list = [word.upper() for word in self.banned_word_list]
+        if self.is_distinguish_upper_or_lower_on_chat is False:
+            self.blacklist_word_list = [
+                word.upper() for word in self.blacklist_word_list
+            ]
 
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
@@ -260,15 +345,60 @@ class Orion_System(Plugin):
 
         # 创建异步计时器，用于刷新“检测发言频率”和“检测重复刷屏”的缓存
         if self.speak_speed_limit or self.repeat_message_limit:
-            self.data = {}
+            self.message_data = {}
 
             @utils.thread_func("发言周期检测计时器")
             def timer():
                 while True:
-                    self.data = {}
-                    time.sleep(self.speak_detection_cycle)
+                    with self.thread_lock_timer:
+                        # 此处设置list是为了创建遍历字典的副本，防止在字典内删除键值对触发RuntimeError: dictionary changed size during iteration报错
+                        for k, v in list(self.message_data.items()):
+                            if v["timer"] > 0:
+                                v["timer"] -= 1
+                            else:
+                                self.message_data.pop(k, None)
+                    time.sleep(1)
 
             timer()
+
+        ##############################################！插件数据文件更新按钮作用域<HEAD>！
+        ############################################## 本次更新内容：由于设备号快速获取方式需要，将数据文件中的设备号全部改为大写，将数据文件中的|换成丨以适应Windows系统
+        if self.upgrade_plugin_data_file:
+            old_data_path = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
+            if os.path.exists(old_data_path) and not os.path.exists(path_device_id):
+                os.rename(old_data_path, path_device_id)
+            with self.thread_lock_ban_player_by_device_id:
+                device_id_data = tempjson.load_and_read(
+                    path_device_id, need_file_exists=False, default={}, timeout=2
+                )
+                tempjson.unload_to_path(path_device_id)
+                for old_device_id in list(device_id_data.keys()):
+                    device_id_data[old_device_id.upper()] = device_id_data.pop(
+                        old_device_id
+                    )
+                tempjson.load_and_write(
+                    path_device_id,
+                    device_id_data,
+                    need_file_exists=False,
+                    timeout=2,
+                )
+                tempjson.flush(path_device_id)
+                tempjson.unload_to_path(path_device_id)
+            path_ban_time = f"{self.data_path}/玩家封禁时间数据(以设备号记录)"
+            for ban_file_name in os.listdir(path_ban_time):
+                old_path = os.path.join(path_ban_time, ban_file_name)
+                if ban_file_name.endswith(".json"):
+                    main_name, ext_name = os.path.splitext(ban_file_name)
+                    new_main_name = main_name.upper()
+                    new_file_name = new_main_name + ext_name
+                    new_path = os.path.join(path_ban_time, new_file_name)
+                    if not os.path.exists(new_path):
+                        os.rename(old_path, new_path)
+            config["插件数据文件更新按钮"] = False
+            cfg.upgrade_plugin_config(self.name, config, self.version)
+        ##############################################！插件数据文件更新按钮作用域<END>！
+        ##############################################
 
     def on_preload(self):
         self.xuid_getter = self.GetPluginAPI("XUID获取")
@@ -324,24 +454,34 @@ class Orion_System(Plugin):
                 op_only=True,
             )
 
+        self.ban_player_when_plugin_active()
+
     def on_PlayerList(self, packet):
         if packet["ActionType"] == 0:
             Username = packet["Entries"][0]["Username"]
+            XUID = packet["Entries"][0]["XUID"]
             PremiumSkin = packet["Entries"][0]["Skin"]["PremiumSkin"]
             Trusted = packet["Entries"][0]["Skin"]["Trusted"]
-            CapeID = packet["Entries"][0]["Skin"]["CapeID"]
+            GeometryDataEngineVersion = packet["Entries"][0]["Skin"][
+                "GeometryDataEngineVersion"
+            ]
+            PersonaSkin = packet["Entries"][0]["Skin"]["PersonaSkin"]
             SkinID = packet["Entries"][0]["Skin"]["SkinID"]
             GrowthLevels = packet["GrowthLevels"][0]
 
+            self.get_player_device_id(Username, XUID, SkinID)
+
             if Username not in self.whitelist:
-                self.ban_bot(Username, PremiumSkin, Trusted, CapeID, packet)
-                self.ban_Steve_or_Alex(Username, SkinID)
-                self.ban_player_level_too_low(Username, GrowthLevels)
-                self.ban_player_with_netease_banned_word(Username)
-                self.ban_player_with_self_banned_word(Username)
-                self.check_player_info(Username, GrowthLevels, packet)
-                self.ban_player_when_PlayerList_by_xuid(Username)
-                self.record_player_device_id(Username)
+                self.ban_bot(Username, XUID, PremiumSkin, Trusted, packet)
+                self.ban_Steve_or_Alex(
+                    Username, XUID, SkinID, GeometryDataEngineVersion, PersonaSkin
+                )
+                self.ban_4D_skin(Username, XUID, GeometryDataEngineVersion)
+                self.ban_player_level_too_low(Username, XUID, GrowthLevels)
+                self.ban_player_with_netease_banned_word(Username, XUID)
+                self.ban_player_with_self_banned_word(Username, XUID)
+                self.check_player_info(Username, XUID, GrowthLevels, packet)
+                self.ban_player_when_PlayerList_by_xuid(Username, XUID)
 
         return False
 
@@ -379,6 +519,18 @@ class Orion_System(Plugin):
                                 fmts.print_inf(
                                     f"§a发现 {original_player} 尝试发送私聊(tell,msg,w命令)，已被踢出游戏"
                                 )
+                                self.ban_player_by_xuid(
+                                    original_player,
+                                    None,
+                                    self.ban_time_format(self.ban_time_private_chat),
+                                    "您尝试发送私聊(tell,msg,w命令)",
+                                )
+                                self.ban_player_by_device_id(
+                                    original_player,
+                                    None,
+                                    self.ban_time_format(self.ban_time_private_chat),
+                                    "您尝试发送私聊(tell,msg,w命令)",
+                                )
                         else:
                             fmts.print_inf(
                                 f"§c发现 {original_player} 尝试发送私聊(tell,msg,w命令)，正在踢出"
@@ -389,19 +541,21 @@ class Orion_System(Plugin):
                             fmts.print_inf(
                                 f"§a发现 {original_player} 尝试发送私聊(tell,msg,w命令)，已被踢出游戏"
                             )
+                            self.ban_player_by_xuid(
+                                original_player,
+                                None,
+                                self.ban_time_format(self.ban_time_private_chat),
+                                "您尝试发送私聊(tell,msg,w命令)",
+                            )
+                            self.ban_player_by_device_id(
+                                original_player,
+                                None,
+                                self.ban_time_format(self.ban_time_private_chat),
+                                "您尝试发送私聊(tell,msg,w命令)",
+                            )
                     self.blacklist_word_detect(msg_text, original_player)
                     self.message_length_detect(msg_text, original_player)
                     self.message_cache_area(msg_text, original_player)
-                    self.ban_player_by_xuid(
-                        original_player,
-                        self.ban_time_format(self.ban_time_private_chat),
-                        "您尝试发送私聊(tell,msg,w命令)",
-                    )
-                    self.ban_player_by_device_id(
-                        original_player,
-                        self.ban_time_format(self.ban_time_private_chat),
-                        "您尝试发送私聊(tell,msg,w命令)",
-                    )
             except Exception as error:
                 fmts.print_err(
                     f"在解析私聊数据包或某些命令数据包时出现错误: {str(error)}"
@@ -421,21 +575,26 @@ class Orion_System(Plugin):
                         fmts.print_inf(f"§c发现 {player} 尝试发送me命令，正在踢出")
                         self.game_ctrl.sendwocmd(f'/kick "{player}" 禁止发送me命令！')
                         fmts.print_inf(f"§a发现 {player} 尝试发送me命令，已被踢出游戏")
+                        self.ban_player_by_xuid(
+                            player,
+                            None,
+                            self.ban_time_format(self.ban_time_me_command),
+                            "您尝试发送me命令",
+                        )
+                        self.ban_player_by_device_id(
+                            player,
+                            None,
+                            self.ban_time_format(self.ban_time_me_command),
+                            "您尝试发送me命令",
+                        )
                     self.blacklist_word_detect(msg_text, player)
                     self.message_length_detect(msg_text, player)
                     self.message_cache_area(msg_text, player)
-                    self.ban_player_by_xuid(
-                        player,
-                        self.ban_time_format(self.ban_time_me_command),
-                        "您尝试发送me命令",
-                    )
-                    self.ban_player_by_device_id(
-                        player,
-                        self.ban_time_format(self.ban_time_me_command),
-                        "您尝试发送me命令",
-                    )
                 # 判断为常规发言
                 elif sourcename != "":
+                    vip_message_match = re.search(r"<([^>]+)><([^>]+)>", sourcename)
+                    if vip_message_match:
+                        sourcename = vip_message_match.group(2)
                     self.blacklist_word_detect(message, sourcename)
                     self.message_length_detect(message, sourcename)
                     self.message_cache_area(message, sourcename)
@@ -447,10 +606,8 @@ class Orion_System(Plugin):
     # 反制机器人函数封装
 
     @utils.thread_func("反制机器人函数")
-    def ban_bot(self, Username, PremiumSkin, Trusted, CapeID, packet):
-        if self.is_detect_bot and (
-            PremiumSkin is False or Trusted is False or CapeID is None
-        ):
+    def ban_bot(self, Username, XUID, PremiumSkin, Trusted, packet):
+        if self.is_detect_bot and (PremiumSkin is False or Trusted is False):
             fmts.print_inf(f"§c发现 {Username} 可能为崩服机器人，正在制裁")
             fmts.print_war(f"崩服机器人数据: {packet}")
             self.game_ctrl.sendwocmd(
@@ -459,11 +616,13 @@ class Orion_System(Plugin):
             fmts.print_inf(f"§a发现 {Username} 可能为崩服机器人，制裁已完成")
             self.ban_player_by_xuid(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_detect_bot),
                 "您必须通过 Microsoft 服务身份验证。",
             )
             self.ban_player_by_device_id(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_detect_bot),
                 "您必须通过 Microsoft 服务身份验证。",
             )
@@ -471,44 +630,65 @@ class Orion_System(Plugin):
     # 反制Steve/Alex皮肤函数封装
 
     @utils.thread_func("反制Steve/Alex皮肤函数")
-    def ban_Steve_or_Alex(self, Username, SkinID):
-        if SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Steve":
-            fmts.print_inf(f"§c发现 {Username} 皮肤为Steve，正在踢出")
-            self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 不要使用Steve皮肤噢，去换个更好的吧~'
+    def ban_Steve_or_Alex(
+        self, Username, XUID, SkinID, GeometryDataEngineVersion, PersonaSkin
+    ):
+        if self.is_ban_Steve_or_Alex and (
+            SkinID
+            in (
+                "c18e65aa-7b21-4637-9b63-8ad63622ef01.Steve",
+                "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex",
             )
-            fmts.print_inf(f"§a发现 {Username} 皮肤为Steve，已被踢出游戏")
+            # Base64 解码：MS4xNC4w → 1.14.0
+            or GeometryDataEngineVersion == "MS4xNC4w"
+            or PersonaSkin is True
+        ):
+            fmts.print_inf(f"§c发现 {Username} 皮肤为Steve/Alex，正在踢出")
+            self.game_ctrl.sendwocmd(
+                f'/kick "{Username}" 不要使用Steve/Alex皮肤噢，去换个更好的吧~'
+            )
+            fmts.print_inf(f"§a发现 {Username} 皮肤为Steve/Alex，已被踢出游戏")
             self.ban_player_by_xuid(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_Steve_or_Alex),
                 "您必须通过 Microsoft 服务身份验证。",
             )
             self.ban_player_by_device_id(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_Steve_or_Alex),
                 "您必须通过 Microsoft 服务身份验证。",
             )
-        elif SkinID == "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex":
-            fmts.print_inf(f"§c发现 {Username} 皮肤为Alex，正在踢出")
+
+    # 反制4D皮肤函数封装
+
+    @utils.thread_func("反制4D皮肤函数")
+    def ban_4D_skin(self, Username, XUID, GeometryDataEngineVersion):
+        # Base64 解码：MS4yLjU= → 1.2.5
+        if self.is_ban_4D_skin and GeometryDataEngineVersion == "MS4yLjU=":
+            fmts.print_inf(f"§c发现 {Username} 皮肤为4D皮肤，正在踢出")
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 不要使用Alex皮肤噢，去换个更好的吧~'
+                f'/kick "{Username}" 不要使用4D皮肤噢，去换一个吧~'
             )
-            fmts.print_inf(f"§a发现 {Username} 皮肤为Alex，已被踢出游戏")
+            fmts.print_inf(f"§a发现 {Username} 皮肤为4D皮肤，已被踢出游戏")
             self.ban_player_by_xuid(
                 Username,
-                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                XUID,
+                self.ban_time_format(self.ban_time_4D_skin),
                 "您必须通过 Microsoft 服务身份验证。",
             )
             self.ban_player_by_device_id(
                 Username,
-                self.ban_time_format(self.ban_time_Steve_or_Alex),
+                XUID,
+                self.ban_time_format(self.ban_time_4D_skin),
                 "您必须通过 Microsoft 服务身份验证。",
             )
 
     # 反制等级过低玩家函数封装
 
     @utils.thread_func("反制等级过低玩家函数")
-    def ban_player_level_too_low(self, Username, GrowthLevels):
+    def ban_player_level_too_low(self, Username, XUID, GrowthLevels):
         if self.is_level_limit and GrowthLevels < self.server_level:
             fmts.print_inf(
                 f"§c发现 {Username} 等级低于服务器准入等级({self.server_level}级)，正在踢出"
@@ -521,11 +701,13 @@ class Orion_System(Plugin):
             )
             self.ban_player_by_xuid(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_level_limit),
                 f"您的等级低于服务器准入等级({self.server_level}级)",
             )
             self.ban_player_by_device_id(
                 Username,
+                XUID,
                 self.ban_time_format(self.ban_time_level_limit),
                 f"您的等级低于服务器准入等级({self.server_level}级)",
             )
@@ -533,7 +715,7 @@ class Orion_System(Plugin):
     # 反制网易屏蔽词名称玩家函数封装
 
     @utils.thread_func("反制网易屏蔽词名称玩家函数")
-    def ban_player_with_netease_banned_word(self, Username):
+    def ban_player_with_netease_banned_word(self, Username, XUID):
         if self.is_detect_netease_banned_word:
             try:
                 self.game_ctrl.sendcmd(
@@ -549,11 +731,13 @@ class Orion_System(Plugin):
                 fmts.print_inf(f"§a发现 {Username} 名称为网易屏蔽词，已被踢出游戏")
                 self.ban_player_by_xuid(
                     Username,
+                    XUID,
                     self.ban_time_format(self.ban_time_detect_netease_banned_word),
                     "您的名称为网易屏蔽词",
                 )
                 self.ban_player_by_device_id(
                     Username,
+                    XUID,
                     self.ban_time_format(self.ban_time_detect_netease_banned_word),
                     "您的名称为网易屏蔽词",
                 )
@@ -561,37 +745,42 @@ class Orion_System(Plugin):
     # 反制自定义违禁词名称玩家函数封装
 
     @utils.thread_func("反制自定义违禁词名称玩家函数")
-    def ban_player_with_self_banned_word(self, Username):
+    def ban_player_with_self_banned_word(self, Username, XUID):
         if self.is_detect_self_banned_word:
             self.banned_word_set = set(self.banned_word_list)
             n = len(Username)
             for i in range(n):
                 for j in range(i + 1, n + 1):
-                    if Username[i:j] in self.banned_word_set:
+                    Username_change = Username
+                    if self.is_distinguish_upper_or_lower_in_self_banned_word is False:
+                        Username_change = Username.upper()
+                    if Username_change[i:j] in self.banned_word_set:
                         fmts.print_inf(
-                            f"§c发现 {Username} 名称为本服自定义违禁词({Username[i:j]})，正在踢出"
+                            f"§c发现 {Username} 名称包括本服自定义违禁词({Username[i:j]})，正在踢出"
                         )
                         self.game_ctrl.sendwocmd(
                             f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
                         )
                         fmts.print_inf(
-                            f"§a发现 {Username} 名称为本服自定义违禁词({Username[i:j]})，已被踢出游戏"
+                            f"§a发现 {Username} 名称包括本服自定义违禁词({Username[i:j]})，已被踢出游戏"
                         )
                         self.ban_player_by_xuid(
                             Username,
+                            XUID,
                             self.ban_time_format(self.ban_time_detect_self_banned_word),
-                            f"您的名称为本服自定义违禁词({Username[i:j]})",
+                            f"您的名称包括本服自定义违禁词({Username[i:j]})",
                         )
                         self.ban_player_by_device_id(
                             Username,
+                            XUID,
                             self.ban_time_format(self.ban_time_detect_self_banned_word),
-                            f"您的名称为本服自定义违禁词({Username[i:j]})",
+                            f"您的名称包括本服自定义违禁词({Username[i:j]})",
                         )
 
-    # 网易启动器玩家信息检查函数封装
+    # 网易MC客户端玩家信息检查函数封装
 
-    @utils.thread_func("网易启动器玩家信息检查函数")
-    def check_player_info(self, Username, GrowthLevels, packet):
+    @utils.thread_func("网易MC客户端玩家信息检查函数")
+    def check_player_info(self, Username, XUID, GrowthLevels, packet):
         if self.is_check_player_info:
             try_time = 0
             url = "http://api.tooldelta.top/api/mc"
@@ -610,20 +799,21 @@ class Orion_System(Plugin):
                     if userdata_from_netease.status_code == 404:
                         if try_time >= self.check_player_info_api_try_time:
                             fmts.print_inf(
-                                f"§c在网易启动器搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
+                                f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
                             )
                             if self.is_ban_player_if_cannot_search:
                                 fmts.print_inf(
-                                    f"§c由于我们无法在网易启动器搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
+                                    f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
                                 )
                                 self.game_ctrl.sendwocmd(
                                     f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
                                 )
                                 fmts.print_inf(
-                                    f"§a由于我们无法在网易启动器搜索到玩家 {Username} ，该玩家已被踢出游戏"
+                                    f"§a由于我们无法在网易MC客户端搜索到玩家 {Username} ，该玩家已被踢出游戏"
                                 )
                                 self.ban_player_by_xuid(
                                     Username,
+                                    XUID,
                                     self.ban_time_format(
                                         self.ban_time_if_cannot_search
                                     ),
@@ -631,6 +821,7 @@ class Orion_System(Plugin):
                                 )
                                 self.ban_player_by_device_id(
                                     Username,
+                                    XUID,
                                     self.ban_time_format(
                                         self.ban_time_if_cannot_search
                                     ),
@@ -642,7 +833,7 @@ class Orion_System(Plugin):
                             15 * try_time, 30 * try_time
                         )
                         fmts.print_inf(
-                            f"§c在网易启动器搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                            f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
                         )
                         time.sleep(try_api_sleep_time)
 
@@ -651,14 +842,14 @@ class Orion_System(Plugin):
                         for i in userdata_from_netease["data"]:
                             if i["nickname"] == Username:
                                 fmts.print_inf(
-                                    f"§a成功在网易启动器搜索到玩家 {Username} ，其启动器等级为{i['lv']}，游戏内等级为{GrowthLevels}"
+                                    f"§a成功在网易MC客户端搜索到玩家 {Username} ，其客户端等级为{i['lv']}，游戏内等级为{GrowthLevels}"
                                 )
                                 if (
                                     self.is_ban_player_if_different_level
                                     and i["lv"] != GrowthLevels
                                 ):
                                     fmts.print_inf(
-                                        f"§c由于玩家 {Username} 的启动器等级和游戏内等级不匹配，正在踢出"
+                                        f"§c由于玩家 {Username} 的客户端等级和游戏内等级不匹配，正在踢出"
                                     )
                                     fmts.print_war(
                                         f"该玩家可能通过外挂篡改游戏内等级: {packet}"
@@ -667,10 +858,11 @@ class Orion_System(Plugin):
                                         f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
                                     )
                                     fmts.print_inf(
-                                        f"§a由于玩家 {Username} 的启动器等级和游戏内等级不匹配，已被踢出游戏"
+                                        f"§a由于玩家 {Username} 的客户端等级和游戏内等级不匹配，已被踢出游戏"
                                     )
                                     self.ban_player_by_xuid(
                                         Username,
+                                        XUID,
                                         self.ban_time_format(
                                             self.ban_time_if_different_level
                                         ),
@@ -678,11 +870,13 @@ class Orion_System(Plugin):
                                     )
                                     self.ban_player_by_device_id(
                                         Username,
+                                        XUID,
                                         self.ban_time_format(
                                             self.ban_time_if_different_level
                                         ),
                                         "您必须通过 Microsoft 服务身份验证。",
                                     )
+                                break
                         break
 
                     else:
@@ -692,25 +886,27 @@ class Orion_System(Plugin):
                     try_time += 1
                     if try_time >= self.check_player_info_api_try_time:
                         fmts.print_inf(
-                            f"§c在网易启动器搜索玩家 {Username} 失败，原因：请求网易启动器玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
+                            f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
                         )
                         if self.is_ban_player_if_cannot_search:
                             fmts.print_inf(
-                                f"§c由于我们无法在网易启动器搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
+                                f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
                             )
                             self.game_ctrl.sendwocmd(
                                 f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
                             )
                             fmts.print_inf(
-                                f"§a由于我们无法在网易启动器搜索到玩家 {Username} ，该玩家已被踢出游戏"
+                                f"§a由于我们无法在网易MC客户端搜索到玩家 {Username} ，该玩家已被踢出游戏"
                             )
                             self.ban_player_by_xuid(
                                 Username,
+                                XUID,
                                 self.ban_time_format(self.ban_time_if_cannot_search),
                                 "您必须通过 Microsoft 服务身份验证。",
                             )
                             self.ban_player_by_device_id(
                                 Username,
+                                XUID,
                                 self.ban_time_format(self.ban_time_if_cannot_search),
                                 "您必须通过 Microsoft 服务身份验证。",
                             )
@@ -718,7 +914,7 @@ class Orion_System(Plugin):
 
                     try_api_sleep_time = random.randint(15 * try_time, 30 * try_time)
                     fmts.print_inf(
-                        f"§c在网易启动器搜索玩家 {Username} 失败，原因：请求网易启动器玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                        f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
                     )
                     time.sleep(try_api_sleep_time)
 
@@ -728,20 +924,23 @@ class Orion_System(Plugin):
 
                 except requests.exceptions.RequestException as error:
                     fmts.print_err(
-                        f"请求网易启动器玩家信息失败(API请求失败或玩家数据json解析失败)：{error}"
+                        f"请求网易MC客户端玩家信息失败(API请求失败或玩家数据json解析失败)：{error}"
                     )
                     break
 
-    # 黑名单词检测函数封装
+    # 发言黑名单词检测函数封装
 
-    @utils.thread_func("黑名单词检测函数")
+    @utils.thread_func("发言黑名单词检测函数")
     def blacklist_word_detect(self, message, player):
         if self.Testfor_blacklist_word and player not in self.whitelist:
             blacklist_word_set = set(self.blacklist_word_list)
             n = len(message)
             for i in range(n):
                 for j in range(i + 1, n + 1):
-                    if message[i:j] in blacklist_word_set:
+                    message_change = message
+                    if self.is_distinguish_upper_or_lower_on_chat is False:
+                        message_change = message.upper()
+                    if message_change[i:j] in blacklist_word_set:
                         fmts.print_inf(
                             f"§c发现 {player} 发送的文本触发了黑名单词({message[i:j]})，正在踢出"
                         )
@@ -753,11 +952,13 @@ class Orion_System(Plugin):
                         )
                         self.ban_player_by_xuid(
                             player,
+                            None,
                             self.ban_time_format(self.ban_time_testfor_blacklist_word),
                             f"您发送的文本触发了黑名单词({message[i:j]})",
                         )
                         self.ban_player_by_device_id(
                             player,
+                            None,
                             self.ban_time_format(self.ban_time_testfor_blacklist_word),
                             f"您发送的文本触发了黑名单词({message[i:j]})",
                         )
@@ -780,11 +981,13 @@ class Orion_System(Plugin):
             )
             self.ban_player_by_xuid(
                 player,
+                None,
                 self.ban_time_format(self.ban_time_message_length_limit),
                 f"您发送的文本长度超过{self.max_speak_length}字符限制",
             )
             self.ban_player_by_device_id(
                 player,
+                None,
                 self.ban_time_format(self.ban_time_message_length_limit),
                 f"您发送的文本长度超过{self.max_speak_length}字符限制",
             )
@@ -794,18 +997,23 @@ class Orion_System(Plugin):
     @utils.thread_func("缓存玩家发言数据函数")
     def message_cache_area(self, message, player):
         if self.speak_speed_limit or self.repeat_message_limit:
-            if self.data.get(player) is None:
-                self.data[player] = []
-            self.data[player].append(message)
-            self.speak_speed_detect(player)
-            self.repeat_message_detect(player)
+            if self.is_distinguish_upper_or_lower_on_chat is False:
+                message = message.upper()
+            with self.thread_lock_timer:
+                if self.message_data.get(player) is None:
+                    self.message_data[player] = {}
+                    self.message_data[player]["message"] = []
+                    self.message_data[player]["timer"] = self.speak_detection_cycle
+                self.message_data[player]["message"].append(message)
+                self.speak_speed_detect(player)
+                self.repeat_message_detect(player)
 
     # 发言频率检测函数封装
     @utils.thread_func("发言频率检测函数")
     def speak_speed_detect(self, player):
         if (
             self.speak_speed_limit
-            and len(self.data[player]) > self.max_speak_count
+            and len(self.message_data[player]["message"]) > self.max_speak_count
             and player not in self.whitelist
         ):
             fmts.print_inf(
@@ -817,11 +1025,13 @@ class Orion_System(Plugin):
             )
             self.ban_player_by_xuid(
                 player,
+                None,
                 self.ban_time_format(self.ban_time_speak_speed_limit),
                 f"您发送文本速度超过限制({self.max_speak_count}条/{self.speak_detection_cycle}秒)",
             )
             self.ban_player_by_device_id(
                 player,
+                None,
                 self.ban_time_format(self.ban_time_speak_speed_limit),
                 f"您发送文本速度超过限制({self.max_speak_count}条/{self.speak_detection_cycle}秒)",
             )
@@ -832,9 +1042,9 @@ class Orion_System(Plugin):
     def repeat_message_detect(self, player):
         if self.repeat_message_limit and player not in self.whitelist:
             counts = {}
-            for i in self.data[player]:
+            for i in self.message_data[player]["message"]:
                 counts[i] = counts.get(i, 0) + 1
-            for _, v in counts.items():
+            for v in counts.values():
                 if v > self.max_repeat_count:
                     fmts.print_inf(
                         f"§c发现 {player} 连续发送重复文本超出限制({self.max_repeat_count}条/{self.speak_detection_cycle}秒)，正在踢出"
@@ -847,11 +1057,13 @@ class Orion_System(Plugin):
                     )
                     self.ban_player_by_xuid(
                         player,
+                        None,
                         self.ban_time_format(self.ban_time_repeat_message_limit),
                         f"您连续发送重复文本超出限制({self.max_repeat_count}条/{self.speak_detection_cycle}秒)",
                     )
                     self.ban_player_by_device_id(
                         player,
+                        None,
                         self.ban_time_format(self.ban_time_repeat_message_limit),
                         f"您连续发送重复文本超出限制({self.max_repeat_count}条/{self.speak_detection_cycle}秒)",
                     )
@@ -956,47 +1168,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{ban_xuid}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    fmts.print_war(
-                        f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        fmts.print_war(
+                            f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "xuid": ban_xuid,
+                        "name": ban_player,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "xuid": ban_xuid,
-                    "name": ban_player,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
                 f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
             )
@@ -1007,10 +1221,11 @@ class Orion_System(Plugin):
         elif resp_1 == "2":
             path_xuid = "插件数据文件/前置-玩家XUID获取/xuids.json"
             try:
-                xuid_data = tempjson.load_and_read(
-                    path_xuid, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_xuid)
+                with self.thread_lock_ban_player_by_xuid:
+                    xuid_data = tempjson.load_and_read(
+                        path_xuid, need_file_exists=True, timeout=2
+                    )
+                    tempjson.unload_to_path(path_xuid)
             except FileNotFoundError:
                 fmts.print_err("§c❀ 未查询到任何xuid记录")
                 return
@@ -1195,47 +1410,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{ban_xuid}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    fmts.print_war(
-                        f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        fmts.print_war(
+                            f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "xuid": ban_xuid,
+                        "name": ban_player,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "xuid": ban_xuid,
-                    "name": ban_player,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
                 f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
             )
@@ -1244,12 +1461,13 @@ class Orion_System(Plugin):
             )
 
         elif resp_1 == "3":
-            path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
             try:
-                device_id_data = tempjson.load_and_read(
-                    path_device_id, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_device_id)
+                with self.thread_lock_ban_player_by_device_id:
+                    device_id_data = tempjson.load_and_read(
+                        path_device_id, need_file_exists=True, default={}, timeout=2
+                    )
+                    tempjson.unload_to_path(path_device_id)
             except FileNotFoundError:
                 fmts.print_err("§c❀ 未查询到任何设备号记录")
                 return
@@ -1284,7 +1502,7 @@ class Orion_System(Plugin):
                         "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                     )
                     fmts.print_inf(
-                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}"
                     )
                     for i in range(start_index, end_index + 1):
                         fmts.print_inf(
@@ -1370,7 +1588,7 @@ class Orion_System(Plugin):
                         "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                     )
                     fmts.print_inf(
-                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}"
                     )
                     for i in range(start_index, end_index + 1):
                         colored_device_id_data = "{"
@@ -1460,47 +1678,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{ban_device_id}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_device_id:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    fmts.print_war(
-                        f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        fmts.print_war(
+                            f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "device_id": ban_device_id,
+                        "xuid_and_player": ban_player_and_xuid_data,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "device_id": ban_device_id,
-                    "xuid_and_player": ban_player_and_xuid_data,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             for k in ban_xuid_list:
                 self.game_ctrl.sendwocmd(
                     f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
@@ -1622,12 +1842,13 @@ class Orion_System(Plugin):
             )
             all_ban_device_id: list[tuple[str, str]] = []
 
-            path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
             try:
-                device_id_data = tempjson.load_and_read(
-                    path_device_id, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_device_id)
+                with self.thread_lock_ban_player_by_device_id:
+                    device_id_data = tempjson.load_and_read(
+                        path_device_id, need_file_exists=True, default={}, timeout=2
+                    )
+                    tempjson.unload_to_path(path_device_id)
             except FileNotFoundError:
                 fmts.print_err("§c❀ 未查询到任何设备号记录")
             except Exception as error:
@@ -1660,7 +1881,7 @@ class Orion_System(Plugin):
                     "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                 )
                 fmts.print_inf(
-                    "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                    "§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}"
                 )
                 for i in range(start_index, end_index + 1):
                     fmts.print_inf(
@@ -1840,47 +2061,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{ban_xuid}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    player.show(
-                        f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        player.show(
+                            f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "xuid": ban_xuid,
+                        "name": ban_player,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "xuid": ban_xuid,
-                    "name": ban_player,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
                 f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
             )
@@ -1894,10 +2117,11 @@ class Orion_System(Plugin):
         elif resp_1 == "2":
             path_xuid = "插件数据文件/前置-玩家XUID获取/xuids.json"
             try:
-                xuid_data = tempjson.load_and_read(
-                    path_xuid, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_xuid)
+                with self.thread_lock_ban_player_by_xuid:
+                    xuid_data = tempjson.load_and_read(
+                        path_xuid, need_file_exists=True, timeout=2
+                    )
+                    tempjson.unload_to_path(path_xuid)
             except FileNotFoundError:
                 player.show("§c❀ 未查询到任何xuid记录")
                 return
@@ -2109,47 +2333,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{ban_xuid}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_xuid:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    player.show(
-                        f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        player.show(
+                            f"§6❀ 玩家 {ban_player} (xuid:{ban_xuid}) 已经为永久封禁，无需重复封禁"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "xuid": ban_xuid,
+                        "name": ban_player,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "xuid": ban_xuid,
-                    "name": ban_player,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
                 f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
             )
@@ -2161,12 +2387,13 @@ class Orion_System(Plugin):
             )
 
         elif resp_1 == "3":
-            path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
             try:
-                device_id_data = tempjson.load_and_read(
-                    path_device_id, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_device_id)
+                with self.thread_lock_ban_player_by_device_id:
+                    device_id_data = tempjson.load_and_read(
+                        path_device_id, need_file_exists=True, default={}, timeout=2
+                    )
+                    tempjson.unload_to_path(path_device_id)
             except FileNotFoundError:
                 player.show("§c❀ 未查询到任何设备号记录")
                 return
@@ -2203,7 +2430,7 @@ class Orion_System(Plugin):
                         "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                     )
                     player.show(
-                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}"
                     )
                     for i in range(start_index, end_index + 1):
                         player.show(
@@ -2298,7 +2525,7 @@ class Orion_System(Plugin):
                         "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                     )
                     player.show(
-                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}"
+                        "§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}"
                     )
                     for i in range(start_index, end_index + 1):
                         colored_device_id_data = "{"
@@ -2406,47 +2633,49 @@ class Orion_System(Plugin):
             path_ban_time = (
                 f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{ban_device_id}.json"
             )
-            ban_player_data = tempjson.load_and_read(
-                path_ban_time, need_file_exists=False, timeout=2
-            )
+            with self.thread_lock_ban_player_by_device_id:
+                ban_player_data = tempjson.load_and_read(
+                    path_ban_time, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_time)
 
-            if ban_player_data is None:
-                pre_ban_timestamp = timestamp_now
-            else:
-                if ban_player_data["ban_end_timestamp"] == "Forever":
-                    player.show(
-                        f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
-                    )
-                    return
-                if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                if ban_player_data is None:
                     pre_ban_timestamp = timestamp_now
                 else:
-                    pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
+                    if ban_player_data["ban_end_timestamp"] == "Forever":
+                        player.show(
+                            f"§6❀ 设备号 {ban_device_id} 已经为永久封禁，无需重复封禁 (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
+                        )
+                        return
+                    if ban_player_data["ban_end_timestamp"] < timestamp_now:
+                        pre_ban_timestamp = timestamp_now
+                    else:
+                        pre_ban_timestamp = ban_player_data["ban_end_timestamp"]
 
-            if ban_time == "Forever":
-                timestamp_end = "Forever"
-                date_end = "Forever"
-            else:
-                timestamp_end = pre_ban_timestamp + ban_time
-                date_end = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                if ban_time == "Forever":
+                    timestamp_end = "Forever"
+                    date_end = "Forever"
+                else:
+                    timestamp_end = pre_ban_timestamp + ban_time
+                    date_end = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(timestamp_end)
+                    )
+                tempjson.load_and_write(
+                    path_ban_time,
+                    {
+                        "device_id": ban_device_id,
+                        "xuid_and_player": ban_player_and_xuid_data,
+                        "ban_start_real_time": date_now,
+                        "ban_start_timestamp": timestamp_now,
+                        "ban_end_real_time": date_end,
+                        "ban_end_timestamp": timestamp_end,
+                        "ban_reason": ban_reason,
+                    },
+                    need_file_exists=False,
+                    timeout=2,
                 )
-            tempjson.load_and_write(
-                path_ban_time,
-                {
-                    "device_id": ban_device_id,
-                    "xuid_and_player": ban_player_and_xuid_data,
-                    "ban_start_real_time": date_now,
-                    "ban_start_timestamp": timestamp_now,
-                    "ban_end_real_time": date_end,
-                    "ban_end_timestamp": timestamp_end,
-                    "ban_reason": ban_reason,
-                },
-                need_file_exists=False,
-                timeout=2,
-            )
-            tempjson.flush(path_ban_time)
-            tempjson.unload_to_path(path_ban_time)
+                tempjson.flush(path_ban_time)
+                tempjson.unload_to_path(path_ban_time)
             for k in ban_xuid_list:
                 self.game_ctrl.sendwocmd(
                     f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
@@ -2539,7 +2768,7 @@ class Orion_System(Plugin):
                 )
 
                 if resp_2 is None:
-                    player.show("§c❀ 回复超时！已退出解封系统")
+                    player.show("§c❀ 回复超时！ 已退出解封系统")
                     return
                 if resp_2 in (".", "。"):
                     player.show("§a❀ 已退出解封系统")
@@ -2584,12 +2813,13 @@ class Orion_System(Plugin):
             )
             all_ban_device_id: list[tuple[str, str]] = []
 
-            path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
             try:
-                device_id_data = tempjson.load_and_read(
-                    path_device_id, need_file_exists=True, timeout=2
-                )
-                tempjson.unload_to_path(path_device_id)
+                with self.thread_lock_ban_player_by_device_id:
+                    device_id_data = tempjson.load_and_read(
+                        path_device_id, need_file_exists=True, default={}, timeout=2
+                    )
+                    tempjson.unload_to_path(path_device_id)
             except FileNotFoundError:
                 player.show("§c❀ 未查询到任何设备号记录")
             except Exception as error:
@@ -2621,7 +2851,7 @@ class Orion_System(Plugin):
                 player.show(
                     "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
                 )
-                player.show("§l§b[ §a序号§b ] §r§a设备号 - {xuid:[玩家名称与改名记录]}")
+                player.show("§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}")
                 for i in range(start_index, end_index + 1):
                     player.show(
                         f"§l§b[ §e{i}§b ] §r§e{all_ban_device_id[i - 1][0]} - {all_ban_device_id[i - 1][1]}"
@@ -2643,7 +2873,7 @@ class Orion_System(Plugin):
                 )
 
                 if resp_2 is None:
-                    player.show("§c❀ 回复超时！已退出解封系统")
+                    player.show("§c❀ 回复超时！ 已退出解封系统")
                     return
                 if resp_2 in (".", "。"):
                     player.show("§a❀ 已退出解封系统")
@@ -2686,7 +2916,7 @@ class Orion_System(Plugin):
             player.show("§a❀ 已退出解封系统")
 
         elif resp_1 is None:
-            player.show("§c❀ 回复超时！已退出解封系统")
+            player.show("§c❀ 回复超时！ 已退出解封系统")
 
         else:
             player.show("§c❀ 您的输入有误")
@@ -2712,6 +2942,7 @@ class Orion_System(Plugin):
             try:
                 if int(ban_time) > 0:
                     return int(ban_time)
+                fmts.print_war("警告：无法解析您输入的封禁时间")
                 return 0
             except ValueError:
                 ban_time = ban_time.replace(" ", "")
@@ -2766,9 +2997,14 @@ class Orion_System(Plugin):
             return 0
 
     # 玩家封禁函数封装(开始执行封禁,通过xuid判断)
-    def ban_player_by_xuid(self, player, ban_time, ban_reason):
+    def ban_player_by_xuid(self, player, XUID, ban_time, ban_reason):
         if self.is_ban_player_by_xuid and ban_time != 0:
-            xuid = self.xuid_getter.get_xuid_by_name(player, True)
+            try:
+                xuid = self.xuid_getter.get_xuid_by_name(player, True)
+            except ValueError:
+                if XUID is None or XUID == "":
+                    return
+                xuid = XUID
             timestamp_now = int(time.time())
             date_now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_now))
             path = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
@@ -2816,8 +3052,13 @@ class Orion_System(Plugin):
     # 玩家封禁函数封装(被封禁者再次加入游戏,通过xuid判断)
 
     @utils.thread_func("玩家封禁函数(xuid判据)")
-    def ban_player_when_PlayerList_by_xuid(self, player):
-        xuid = self.xuid_getter.get_xuid_by_name(player, True)
+    def ban_player_when_PlayerList_by_xuid(self, player, XUID):
+        try:
+            xuid = self.xuid_getter.get_xuid_by_name(player, True)
+        except ValueError:
+            if XUID is None or XUID == "":
+                return
+            xuid = XUID
         path = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
         try:
             with self.thread_lock_ban_player_by_xuid:
@@ -2854,17 +3095,41 @@ class Orion_System(Plugin):
         except FileNotFoundError:
             return
 
-    # 玩家设备号记录函数封装
+    # 玩家设备号获取函数封装
 
-    @utils.thread_func("玩家设备号记录函数")
-    def record_player_device_id(self, player):
-        if self.is_record_device_id:
+    @utils.thread_func("玩家设备号获取函数")
+    def get_player_device_id(self, player, XUID, SkinID):
+        if self.is_get_device_id:
+            device_id_from_SkinID = None
+            re_match = re.search(r"(?:CustomSlim|Custom)(.*)$", SkinID)
+            if re_match:
+                match_str = re_match.group(1)
+                if len(match_str) == 32:
+                    device_id_from_SkinID = match_str.upper()
+                    fmts.print_inf(
+                        f"§9玩家 {player} 的 设备号(快速获取方式): {device_id_from_SkinID}"
+                    )
+                    if player not in self.whitelist:
+                        self.ban_player_when_PlayerList_by_device_id(
+                            player, XUID, device_id_from_SkinID
+                        )
+            if device_id_from_SkinID is None:
+                fmts.print_inf(
+                    f"§6获取玩家 {player} 设备号失败(快速获取方式)，这可能是因为玩家使用4D皮肤或Steve/Alex皮肤或玩家为机器人，可能是正常现象，稍后将尝试慢速获取方式"
+                )
             with self.thread_lock_by_get_device_id:
                 try_time = 0
+                time.sleep(1)
+                device_id = None
                 while True:
+                    if player not in self.game_ctrl.allplayers.copy():
+                        fmts.print_inf(
+                            f"§6发现玩家 {player} 已退出游戏，终止设备号获取线程(慢速获取方式)"
+                        )
+                        break
                     time.sleep(3.5)
                     self.game_ctrl.sendwocmd(
-                        f'/execute at "{player}" run tp "{self.bot_name}" ~ 320 ~'
+                        f'/execute at "{player}" run tp "{self.bot_name}" ~ 500 ~'
                     )
                     time.sleep(0.5)
                     player_data = self.frame.launcher.omega.get_player_by_name(player)
@@ -2874,54 +3139,74 @@ class Orion_System(Plugin):
                     ):
                         if try_time >= self.record_device_id_try_time:
                             fmts.print_inf(
-                                f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
+                                f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
                             )
                             break
                         fmts.print_inf(
-                            f"§c获取玩家 {player} 设备号失败，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
+                            f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
                         )
                     else:
-                        device_id = player_data.device_id
-                        fmts.print_inf(f"§b玩家 {player} 的 设备号: {device_id}")
-                        xuid = self.xuid_getter.get_xuid_by_name(player, True)
-                        path_device_id = (
-                            f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
-                        )
-                        with self.thread_lock_ban_player_by_device_id:
-                            device_id_record = tempjson.load_and_read(
-                                path_device_id,
-                                need_file_exists=False,
-                                default={},
-                                timeout=2,
+                        device_id = player_data.device_id.upper()
+                        if device_id_from_SkinID and device_id_from_SkinID != device_id:
+                            fmts.print_inf(
+                                f"§b发现玩家 {player} 通过快速获取方式得到的设备号存在异常，已校正为(慢速获取方式): {device_id}"
                             )
-                            tempjson.unload_to_path(path_device_id)
-                            if device_id not in device_id_record:
-                                device_id_record[device_id] = {}
-                            if device_id_record[device_id].get(xuid, None) is None:
-                                device_id_record[device_id][xuid] = []
-                            device_id_record[device_id][xuid].append(player)
-                            device_id_record[device_id][xuid] = list(
-                                set(device_id_record[device_id][xuid])
+                        else:
+                            fmts.print_inf(
+                                f"§b玩家 {player} 的 设备号(慢速获取方式): {device_id}"
                             )
-                            tempjson.load_and_write(
-                                path_device_id,
-                                device_id_record,
-                                need_file_exists=False,
-                                timeout=2,
-                            )
-                            tempjson.flush(path_device_id)
-                            tempjson.unload_to_path(path_device_id)
-
-                        self.ban_player_when_PlayerList_by_device_id(player, device_id)
-
                         break
 
-    # 玩家封禁函数封装(开始执行封禁,通过device_id判断)
-    def ban_player_by_device_id(self, player, ban_time, ban_reason):
-        if self.is_ban_player_by_device_id and ban_time != 0:
-            xuid = self.xuid_getter.get_xuid_by_name(player, True)
+            if (not device_id) and (not device_id_from_SkinID):
+                return
+            if (not device_id) and device_id_from_SkinID:
+                device_id = device_id_from_SkinID
+            try:
+                xuid = self.xuid_getter.get_xuid_by_name(player, True)
+            except ValueError:
+                if XUID is None or XUID == "":
+                    return
+                xuid = XUID
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
+            with self.thread_lock_ban_player_by_device_id:
+                device_id_record = tempjson.load_and_read(
+                    path_device_id,
+                    need_file_exists=False,
+                    default={},
+                    timeout=2,
+                )
+                tempjson.unload_to_path(path_device_id)
+                if device_id not in device_id_record.keys():
+                    device_id_record[device_id] = {}
+                if device_id_record[device_id].get(xuid, None) is None:
+                    device_id_record[device_id][xuid] = []
+                device_id_record[device_id][xuid].append(player)
+                device_id_record[device_id][xuid] = list(
+                    set(device_id_record[device_id][xuid])
+                )
+                tempjson.load_and_write(
+                    path_device_id,
+                    device_id_record,
+                    need_file_exists=False,
+                    timeout=2,
+                )
+                tempjson.flush(path_device_id)
+                tempjson.unload_to_path(path_device_id)
 
-            path_device_id = f"{self.data_path}/玩家|设备号|xuid|历史名称|记录.json"
+            if (player not in self.whitelist) and (device_id_from_SkinID != device_id):
+                self.ban_player_when_PlayerList_by_device_id(player, XUID, device_id)
+
+    # 玩家封禁函数封装(开始执行封禁,通过device_id判断)
+    def ban_player_by_device_id(self, player, XUID, ban_time, ban_reason):
+        if self.is_ban_player_by_device_id and ban_time != 0:
+            try:
+                xuid = self.xuid_getter.get_xuid_by_name(player, True)
+            except ValueError:
+                if XUID is None or XUID == "":
+                    return
+                xuid = XUID
+
+            path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
             with self.thread_lock_ban_player_by_device_id:
                 device_id_record = tempjson.load_and_read(
                     path_device_id,
@@ -2995,7 +3280,7 @@ class Orion_System(Plugin):
     # 玩家封禁函数封装(被封禁者再次加入游戏,通过device_id判断)
 
     @utils.thread_func("玩家封禁函数(device_id判据)")
-    def ban_player_when_PlayerList_by_device_id(self, player, device_id):
+    def ban_player_when_PlayerList_by_device_id(self, player, XUID, device_id):
         path = f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{device_id}.json"
         try:
             with self.thread_lock_ban_player_by_device_id:
@@ -3023,7 +3308,7 @@ class Orion_System(Plugin):
                     )
                     if self.jointly_ban_player:
                         self.ban_player_by_xuid(
-                            player, ban_end_timestamp - timestamp_now, ban_reason
+                            player, XUID, ban_end_timestamp - timestamp_now, ban_reason
                         )
                 else:
                     os.remove(path)
@@ -3038,10 +3323,59 @@ class Orion_System(Plugin):
                     f"§a发现设备号 {device_id} 被封禁(当前登录玩家：{player})，已被踢出游戏"
                 )
                 if self.jointly_ban_player:
-                    self.ban_player_by_xuid(player, "Forever", ban_reason)
+                    self.ban_player_by_xuid(player, XUID, "Forever", ban_reason)
 
         except FileNotFoundError:
             return
+
+    # 检查并踢出被封禁的在线玩家
+
+    @utils.thread_func("玩家封禁函数(当插件加载或重载完成时)")
+    def ban_player_when_plugin_active(self):
+        time.sleep(0.5)
+        players_list = self.frame.get_players().getAllPlayers()
+
+        all_ban_player_xuids = os.listdir(
+            f"{self.data_path}/玩家封禁时间数据(以xuid记录)"
+        )
+        all_ban_xuid = []
+        for i in all_ban_player_xuids:
+            xuid = i.replace(".json", "")
+            try:
+                all_ban_xuid.append(xuid)
+            except ValueError:
+                continue
+
+        all_ban_player_device_id = os.listdir(
+            f"{self.data_path}/玩家封禁时间数据(以设备号记录)"
+        )
+        all_ban_device_id = []
+
+        path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
+        with self.thread_lock_ban_player_by_device_id:
+            device_id_data = tempjson.load_and_read(
+                path_device_id, need_file_exists=False, default={}, timeout=2
+            )
+            tempjson.unload_to_path(path_device_id)
+        for i in all_ban_player_device_id:
+            device_id = i.replace(".json", "")
+            try:
+                all_ban_device_id.append(list(device_id_data.get(device_id, {}).keys()))
+            except ValueError:
+                continue
+        all_ban_device_id_merge = []
+        for li in all_ban_device_id:
+            for inner_xuid in li:
+                all_ban_device_id_merge.append(inner_xuid)
+        for player in players_list:
+            if (player.xuid in all_ban_xuid) or (
+                player.xuid in all_ban_device_id_merge
+            ):
+                fmts.print_inf(f"§c发现当前在线玩家 {player.name} 被封禁，正在踢出")
+                self.game_ctrl.sendwocmd(
+                    f'/kick "{player.name}" 您必须通过 Microsoft 服务身份验证。'
+                )
+                fmts.print_inf(f"§a发现当前在线玩家 {player.name} 被封禁，已被踢出游戏")
 
 
 entry = plugin_entry(Orion_System, "Orion_System")
