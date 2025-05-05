@@ -228,7 +228,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "MusicPlayer": {
@@ -300,7 +300,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "chat-history": {
@@ -312,7 +312,7 @@
     "世界の记忆": {
       "name": "世界の记忆",
       "author": "9S, Meteora·Österreich, Altair and Echidna",
-      "version": "0.0.2",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "全服喇叭": {
@@ -486,7 +486,7 @@
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "ad": {
@@ -504,7 +504,7 @@
     "世界备份": {
       "name": "世界备份",
       "author": "YoRHa and RATH",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "reload": {
