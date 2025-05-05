@@ -207,18 +207,18 @@ class AutoSubChunkRequest(Plugin):
 
         self.mu.acquire()
         for i in request_chunks:
-            chunk_pos_with_dimension = ChunkPosWithDimension(
+            chunk_pos_with_dim = ChunkPosWithDimension(
                 i["chunk_pos_x"], i["chunk_pos_z"], dimension
             )
             if (
-                chunk_pos_with_dimension not in self.local_cache
-                and chunk_pos_with_dimension not in self.requet_queue
+                chunk_pos_with_dim not in self.local_cache
+                and chunk_pos_with_dim not in self.requet_queue
             ):
                 pk = sub_chunk_request.SubChunkRequest(
-                    dimension, chunk_pos_with_dimension.x, 0, chunk_pos_with_dimension.z
+                    dimension, chunk_pos_with_dim.x, 0, chunk_pos_with_dim.z
                 )
                 pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
-                self.requet_queue[chunk_pos_with_dimension] = pk
+                self.requet_queue[chunk_pos_with_dim] = pk
         self.mu.release()
 
     def try_publish_chunk_data(
