@@ -335,16 +335,7 @@ class ChatbarMenu(Plugin):
         args_pd: Callable[[int], bool] = lambda _: True,
         op_only=False,
     ):
-        """
-        添加菜单触发词项.
-        Args:
-            triggers (list[str]): 所有命令触发词
-            argument_hint (str | None): 提示词(命令参数)
-            usage (str): 显示的命令说明
-            func (Callable | None): 菜单触发回调, 回调参数为(玩家名: str, 命令参数: list[str])
-            args_pd ((int) -> bool): 判断方法 (参数数量:int) -> 参数数量是否合法: bool
-            op_only (bool): 是否仅op可触发; 目前认为创造模式的都是OP, 你也可以自行更改并进行PR
-        """
+        """Deprecated: 已被弃用。请使用 `add_new_trigger`"""
         for tri in triggers:
             if tri.startswith("."):
                 triggers[triggers.index(tri)] = tri[1:]
