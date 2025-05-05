@@ -4,7 +4,7 @@
   "plugin-type": "classic",
   "description": "输入兑换码 执行指令",
   "pre-plugins": {
-    "前置-聊天栏菜单": "0.0.1"
+    "聊天栏菜单": "0.0.1"
   },
   "plugin-id": "兑换码"
 }
