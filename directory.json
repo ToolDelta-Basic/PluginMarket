@@ -83,6 +83,7 @@
         "__init__.py"
     ],
     "违规名称踢出": [
+        "词库.json",
         "datas.json",
         "__init__.py"
     ],
