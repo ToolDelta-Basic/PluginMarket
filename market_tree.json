@@ -168,7 +168,7 @@
     "pip": {
       "name": "pip模块支持",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "bigchar-replace": {
