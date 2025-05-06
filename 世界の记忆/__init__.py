@@ -11,7 +11,10 @@ from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     PayloadByHash,
     SubChunkPos,
 )
-from tooldelta.mc_bytes_packet.sub_chunk import SUB_CHUNK_RESULT_SUCCESS
+from tooldelta.mc_bytes_packet.sub_chunk import (
+    SUB_CHUNK_RESULT_SUCCESS,
+    SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
+)
 from tooldelta.utils import fmts
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
@@ -26,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -38,7 +41,7 @@ class HoloPsychon(Plugin):
             "方块实体数据同步频率(秒)": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 4)
+            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -64,7 +67,7 @@ class HoloPsychon(Plugin):
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 1, 1))
+        _ = self.GetPluginAPI("主动区块请求", (0, 1, 2))
 
         pip = self.GetPluginAPI("pip")
         if 0:
@@ -153,6 +156,14 @@ class HoloPsychon(Plugin):
             and not self.always_sync_nbt
         ):
             return
+
+        for i in event.data:
+            code = i["result_code"]
+            if (
+                code != SUB_CHUNK_RESULT_SUCCESS
+                and code != SUB_CHUNK_RESULT_SUCCESS_ALL_AIR
+            ):
+                return
 
         for i in event.data:
             if i["result_code"] == SUB_CHUNK_RESULT_SUCCESS:
