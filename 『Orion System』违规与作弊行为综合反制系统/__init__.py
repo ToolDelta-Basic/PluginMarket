@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 3)
+    version = (0, 1, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -785,7 +785,7 @@ class Orion_System(Plugin):
             try_time = 0
             url = "http://api.tooldelta.top/api/mc"
             headers = {"Content-Type": "application/json"}
-            payload = {"type": "searchUser", "data": {"name": f"{Username}"}}
+            payload = {"type": "getUserInfo", "data": {"name": Username}}
             while True:
                 try:
                     userdata_from_netease = requests.post(
@@ -839,45 +839,42 @@ class Orion_System(Plugin):
 
                     elif userdata_from_netease.status_code == 200:
                         userdata_from_netease = userdata_from_netease.json()
-                        for i in userdata_from_netease["data"]:
-                            if i["nickname"] == Username:
-                                fmts.print_inf(
-                                    f"§a成功在网易MC客户端搜索到玩家 {Username} ，其客户端等级为{i['lv']}，游戏内等级为{GrowthLevels}"
-                                )
-                                if (
-                                    self.is_ban_player_if_different_level
-                                    and i["lv"] != GrowthLevels
-                                ):
-                                    fmts.print_inf(
-                                        f"§c由于玩家 {Username} 的客户端等级和游戏内等级不匹配，正在踢出"
-                                    )
-                                    fmts.print_war(
-                                        f"该玩家可能通过外挂篡改游戏内等级: {packet}"
-                                    )
-                                    self.game_ctrl.sendwocmd(
-                                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
-                                    )
-                                    fmts.print_inf(
-                                        f"§a由于玩家 {Username} 的客户端等级和游戏内等级不匹配，已被踢出游戏"
-                                    )
-                                    self.ban_player_by_xuid(
-                                        Username,
-                                        XUID,
-                                        self.ban_time_format(
-                                            self.ban_time_if_different_level
-                                        ),
-                                        "您必须通过 Microsoft 服务身份验证。",
-                                    )
-                                    self.ban_player_by_device_id(
-                                        Username,
-                                        XUID,
-                                        self.ban_time_format(
-                                            self.ban_time_if_different_level
-                                        ),
-                                        "您必须通过 Microsoft 服务身份验证。",
-                                    )
-                                break
-                        break
+                        i= userdata_from_netease["data"]
+                        fmts.print_inf(
+                            f"§a成功在网易MC客户端搜索到玩家 {Username} ，其客户端等级为{i['lv']}，游戏内等级为{GrowthLevels}"
+                        )
+                        if (
+                            self.is_ban_player_if_different_level
+                            and i["lv"] != GrowthLevels
+                        ):
+                            fmts.print_inf(
+                                f"§c由于玩家 {Username} 的客户端等级和游戏内等级不匹配，正在踢出"
+                            )
+                            fmts.print_war(
+                                f"该玩家可能通过外挂篡改游戏内等级: {packet}"
+                            )
+                            self.game_ctrl.sendwocmd(
+                                f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                            )
+                            fmts.print_inf(
+                                f"§a由于玩家 {Username} 的客户端等级和游戏内等级不匹配，已被踢出游戏"
+                            )
+                            self.ban_player_by_xuid(
+                                Username,
+                                XUID,
+                                self.ban_time_format(
+                                    self.ban_time_if_different_level
+                                ),
+                                "您必须通过 Microsoft 服务身份验证。",
+                            )
+                            self.ban_player_by_device_id(
+                                Username,
+                                XUID,
+                                self.ban_time_format(
+                                    self.ban_time_if_different_level
+                                ),
+                                "您必须通过 Microsoft 服务身份验证。",
+                            )
 
                     else:
                         break
