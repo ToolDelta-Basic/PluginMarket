@@ -1,0 +1,11 @@
+{
+  "author": "Hazelmeow",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "在控制台显示插件执行时间 (发送 'perf start' 开始分析)",
+  "pre-plugins": {
+    "聊天栏菜单": "0.3.4"
+  },
+  "plugin-id": "榛缈插件性能分析",
+  "enabled": true
+}
