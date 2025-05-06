@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "提供了 pip 安装模块的支持\n你也可以在控制台输入 pip-install <module> 来手动安装模块\n  为 ToolDelta 额外安装第三方库",
   "pre-plugins": {},

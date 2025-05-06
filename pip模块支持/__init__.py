@@ -7,12 +7,12 @@ from tooldelta import Plugin, utils, fmts, plugin_entry
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
         self.make_data_path()
-        sys.path.append(self.data_path)
+        sys.path.append(str(self.data_path))
         self.frame.add_console_cmd_trigger(
             ["pip-install"], "[模块名]", "安装 Python 模块", self.on_console_pip
         )
