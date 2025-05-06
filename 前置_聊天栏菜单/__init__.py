@@ -182,7 +182,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 3)
+    version = (0, 3, 4)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -291,7 +291,7 @@ class ChatbarMenu(Plugin):
         self.member_format = self.cfg["help菜单样式"]["成员选项"]["格式化"]
         self.is_member_format = self.cfg["help菜单样式"]["成员选项"]["为成员"]
         self.isnot_member_format = self.cfg["help菜单样式"]["成员选项"]["不为成员"]
-        self.ListenChat(lambda chat: self.on_player_message(chat) and None)
+        self.ListenChat(self.on_player_message)
         self.add_new_trigger(
             self.cfg["/help触发词"],
             [("页数", int, 1)],

@@ -1,15 +1,16 @@
-from tooldelta import Player, Plugin, ToolDelta, TYPE_CHECKING
+from tooldelta import Player, Plugin, ToolDelta, TYPE_CHECKING, plugin_entry
 from tooldelta.game_utils import getPosXYZ
 
 
 class ChunkShow(Plugin):
     name = "区块显示器"
     author = "SnowLotus"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
         self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_inject)
 
     def on_def(self):
         self.chatbar_menu = self.GetPluginAPI("聊天栏菜单")
@@ -30,7 +31,7 @@ class ChunkShow(Plugin):
         )
 
     def show_chunk(self, player: Player, _):
-        x, _, z = getPosXYZ(player)
+        x, _, z = getPosXYZ(player.name)
         chunk_start_x = int(x // 8) * 8
         chunk_start_z = int(z // 8) * 8
         player.show(f"§7§l[§f>] §r§f当前区块起始点: ({chunk_start_x}, {chunk_start_z})")
@@ -39,9 +40,11 @@ class ChunkShow(Plugin):
         )
 
     def get_map_chunk(self, player: Player, _):
-        x, y, z = getPosXYZ(player)
+        x, y, z = getPosXYZ(player.name)
         chunk_start_x = int(x // 128) * 128
         chunk_start_z = int(z // 128) * 128
         player.show(
             f"§7§l[§f>] §r§f当前地图画区块起始点: ({chunk_start_x}, {chunk_start_z})",
         )
+
+entry = plugin_entry(ChunkShow)
