@@ -50,9 +50,10 @@ class SingleSubChunk:
 
 
 @dataclass
-class LocalCache:
+class ChunkListener:
     subchunks: list[SingleSubChunk]
-    channel: threading.Lock
+    assigned_listener: bool
+    channel: threading.Event
 
 
 EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
@@ -62,7 +63,7 @@ EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     LIB: ctypes.CDLL
 
@@ -74,7 +75,7 @@ class AutoSubChunkRequest(Plugin):
     mu: threading.Lock
     must_chunk_position_waiter: threading.Lock
     requet_queue: dict[ChunkPosWithDimension, sub_chunk_request.SubChunkRequest]
-    local_cache: dict[ChunkPosWithDimension, LocalCache]
+    chunk_listener: dict[ChunkPosWithDimension, ChunkListener]
 
     should_close: bool
     close_waiter: threading.Lock
@@ -100,7 +101,7 @@ class AutoSubChunkRequest(Plugin):
         self.mu = threading.Lock()
         self.must_chunk_position_waiter = threading.Lock()
         self.requet_queue = {}
-        self.local_cache = {}
+        self.chunk_listener = {}
 
         self.should_close = False
         self.close_waiter = threading.Lock()
@@ -145,14 +146,17 @@ class AutoSubChunkRequest(Plugin):
         while True:
             self.mu.acquire()
 
-            if self.should_close:
-                if len(self.local_cache) == 0 and self.close_waiter.locked():
-                    self.close_waiter.release()
-                self.mu.release()
-                break
-
             count = len(self.multiple_pos) * self.request_chunk_per_second
             key_to_delete: list[ChunkPosWithDimension] = []
+
+            if self.should_close:
+                for _, listener in self.chunk_listener.items():
+                    listener.channel.set()
+                self.requet_queue.clear()
+                self.chunk_listener.clear()
+                self.close_waiter.release()
+                self.mu.release()
+                return
 
             for key, value in self.requet_queue.items():
                 if count <= 0:
@@ -165,7 +169,9 @@ class AutoSubChunkRequest(Plugin):
                 del self.requet_queue[i]
 
             self.mu.release()
-            time.sleep(1)
+
+            if not self.should_close:
+                time.sleep(1)
 
     def must_get_chunk(self, event: InternalBroadcast):
         """
@@ -211,14 +217,22 @@ class AutoSubChunkRequest(Plugin):
                 i["chunk_pos_x"], i["chunk_pos_z"], dimension
             )
             if (
-                chunk_pos_with_dim not in self.local_cache
-                and chunk_pos_with_dim not in self.requet_queue
+                chunk_pos_with_dim in self.chunk_listener
+                or chunk_pos_with_dim in self.requet_queue
             ):
-                pk = sub_chunk_request.SubChunkRequest(
-                    dimension, chunk_pos_with_dim.x, 0, chunk_pos_with_dim.z
-                )
-                pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
-                self.requet_queue[chunk_pos_with_dim] = pk
+                continue
+
+            pk = sub_chunk_request.SubChunkRequest(
+                dimension, chunk_pos_with_dim.x, 0, chunk_pos_with_dim.z
+            )
+            pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
+            self.requet_queue[chunk_pos_with_dim] = pk
+
+            self.chunk_listener[chunk_pos_with_dim] = ChunkListener(
+                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)],
+                False,
+                threading.Event(),
+            )
         self.mu.release()
 
     def try_publish_chunk_data(
@@ -259,27 +273,25 @@ class AutoSubChunkRequest(Plugin):
         self.mu.acquire()
 
         cp = ChunkPosWithDimension(pos[0], pos[2], dimension)
-        if cp not in self.local_cache:
-            locker = threading.Lock()
-            locker.acquire()
-            self.local_cache[cp] = LocalCache(
-                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], locker
-            )
+        if cp not in self.chunk_listener:
+            self.mu.release()
+            return
+        current_listener = self.chunk_listener[cp]
+
+        if not current_listener.assigned_listener:
 
             def simple_chunk_waiter():
                 try:
-                    locker.acquire(timeout=10)
+                    current_listener.channel.wait(timeout=10)
                 except Exception:
-                    self.mu.acquire()
-                    if cp in self.requet_queue:
-                        del self.requet_queue[cp]
-                    if cp in self.local_cache:
-                        del self.local_cache[cp]
-                    if self.should_close and len(self.local_cache) == 0:
-                        if self.close_waiter.locked():
-                            self.close_waiter.release()
-                    self.mu.release()
                     fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
+
+                self.mu.acquire()
+                if cp in self.requet_queue:
+                    del self.requet_queue[cp]
+                if cp in self.chunk_listener:
+                    del self.chunk_listener[cp]
+                self.mu.release()
 
             ToolDeltaThread(
                 simple_chunk_waiter,
@@ -287,50 +299,42 @@ class AutoSubChunkRequest(Plugin):
                 thread_level=ToolDeltaThread.SYSTEM,
             )
 
+            current_listener.assigned_listener = True
+
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
-        self.local_cache[cp].subchunks[pos[1] + 4] = current_sub_chunk
+        current_listener.subchunks[pos[1] + 4] = current_sub_chunk
+
+        y_range = range(24)
+        if dimension == 1:
+            y_range = range(8)
+        elif dimension == 2:
+            y_range = range(16)
 
         chunk_is_completely = True
-        if dimension == 1:
-            for i in range(8):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    chunk_is_completely = False
-        elif dimension == 2:
-            for i in range(16):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    chunk_is_completely = False
-        else:
-            for i in range(24):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    chunk_is_completely = False
+        for i in y_range:
+            if current_listener.subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
+                chunk_is_completely = False
+                break
 
         if chunk_is_completely:
             pub: list[dict] = []
 
-            for i in self.local_cache[cp].subchunks:
-                if i != EMPTY_SINGLE_SUB_CHUNK:
-                    pub.append(
-                        {
-                            "result_code": i.ResultCode,
-                            "sub_chunk_pos_x": cp.x,
-                            "sub_chunk_pos_y": i.PosY,
-                            "sub_chunk_pos_z": cp.z,
-                            "dimension": cp.dim,
-                            "blocks": i.Blocks,
-                            "nbts": i.NBTs,
-                        },
-                    )
+            for i in current_listener.subchunks:
+                if i == EMPTY_SINGLE_SUB_CHUNK:
+                    continue
+                pub.append(
+                    {
+                        "result_code": i.ResultCode,
+                        "sub_chunk_pos_x": cp.x,
+                        "sub_chunk_pos_y": i.PosY,
+                        "sub_chunk_pos_z": cp.z,
+                        "dimension": cp.dim,
+                        "blocks": i.Blocks,
+                        "nbts": i.NBTs,
+                    },
+                )
 
-            self.local_cache[cp].channel.release()
-
-            if cp in self.requet_queue:
-                del self.requet_queue[cp]
-            if cp in self.local_cache:
-                del self.local_cache[cp]
-            if self.should_close and len(self.local_cache) == 0:
-                if self.close_waiter.locked():
-                    self.close_waiter.release()
-
+            current_listener.channel.set()
             if len(pub) > 0:
                 self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
 
@@ -346,55 +350,44 @@ class AutoSubChunkRequest(Plugin):
         它是一个内部的实现细节，并且是线程不安全的(没有使用全局互斥锁)，主要用于撤销那些超出机器人可达范围的区块
         """
         cp = ChunkPosWithDimension(chunk_pos[0], chunk_pos[1], dimension)
-        if cp not in self.local_cache:
-            locker = threading.Lock()
-            locker.acquire()
-            self.local_cache[cp] = LocalCache(
-                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], locker
+        if cp not in self.chunk_listener:
+            return
+        current_listener = self.chunk_listener[cp]
+
+        y_range = range(24)
+        if dimension == 1:
+            y_range = range(8)
+        elif dimension == 2:
+            y_range = range(16)
+
+        for i in y_range:
+            if current_listener.subchunks[i] != EMPTY_SINGLE_SUB_CHUNK:
+                continue
+            current_listener.subchunks[i] = SingleSubChunk(
+                SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i, b"", b""
             )
 
-        if dimension == 1:
-            for i in range(8):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    self.local_cache[cp].subchunks[i] = SingleSubChunk(
-                        SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i, b"", b""
-                    )
-        elif dimension == 2:
-            for i in range(16):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    self.local_cache[cp].subchunks[i] = SingleSubChunk(
-                        SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i, b"", b""
-                    )
-        else:
-            for i in range(24):
-                if self.local_cache[cp].subchunks[i] == EMPTY_SINGLE_SUB_CHUNK:
-                    self.local_cache[cp].subchunks[i] = SingleSubChunk(
-                        SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i - 4, b"", b""
-                    )
-
         pub: list[dict] = []
-        for i in self.local_cache[cp].subchunks:
-            if i != EMPTY_SINGLE_SUB_CHUNK:
-                pub.append(
-                    {
-                        "result_code": i.ResultCode,
-                        "sub_chunk_pos_x": cp.x,
-                        "sub_chunk_pos_y": i.PosY,
-                        "sub_chunk_pos_z": cp.z,
-                        "dimension": cp.dim,
-                        "blocks": i.Blocks,
-                        "nbts": i.NBTs,
-                    },
-                )
+        for i in current_listener.subchunks:
+            if i == EMPTY_SINGLE_SUB_CHUNK:
+                continue
+            pub.append(
+                {
+                    "result_code": i.ResultCode,
+                    "sub_chunk_pos_x": cp.x,
+                    "sub_chunk_pos_y": i.PosY,
+                    "sub_chunk_pos_z": cp.z,
+                    "dimension": cp.dim,
+                    "blocks": i.Blocks,
+                    "nbts": i.NBTs,
+                },
+            )
 
-        self.local_cache[cp].channel.release()
+        current_listener.channel.set()
         if cp in self.requet_queue:
             del self.requet_queue[cp]
-        if cp in self.local_cache:
-            del self.local_cache[cp]
-        if self.should_close and len(self.local_cache) == 0:
-            if self.close_waiter.locked():
-                self.close_waiter.release()
+        if cp in self.chunk_listener:
+            del self.chunk_listener[cp]
 
         if len(pub) > 0:
             self.BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
@@ -520,13 +513,20 @@ class AutoSubChunkRequest(Plugin):
         self.mu.acquire()
         for chunk in all_chunks:
             chunk_pos_with_dim = ChunkPosWithDimension(chunk[0], chunk[1], dimension)
+
             if (
-                chunk_pos_with_dim not in self.local_cache
-                and chunk_pos_with_dim not in self.requet_queue
+                chunk_pos_with_dim in self.chunk_listener
+                or chunk_pos_with_dim in self.requet_queue
             ):
-                pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
-                pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
-                self.requet_queue[chunk_pos_with_dim] = pk
+                continue
+
+            pk = sub_chunk_request.SubChunkRequest(dimension, chunk[0], 0, chunk[1])
+            pk.Offsets = [(0, y, 0) for y in range(y_range[0], y_range[1] + 1)]
+            self.requet_queue[chunk_pos_with_dim] = pk
+
+            self.chunk_listener[chunk_pos_with_dim] = ChunkListener(
+                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], False, threading.Event()
+            )
         self.mu.release()
 
     def on_sub_chunk(self, pk: BaseBytesPacket) -> bool:
