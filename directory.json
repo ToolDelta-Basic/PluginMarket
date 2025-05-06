@@ -334,10 +334,17 @@
     ],
     "区块显示器": [
         "datas.json",
-        "___init__.py"
+        "__init__.py"
     ],
     "活塞限速": [
         "datas.json",
+        "__init__.py"
+    ],
+    "榛缈插件性能分析": [
+        "datas.json",
+        "示例3.png",
+        "示例1.png",
+        "示例2.png",
         "__init__.py"
     ],
     "猫七街玩家互传": [

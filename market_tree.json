@@ -360,12 +360,18 @@
     "chunk-show": {
       "name": "区块显示器",
       "author": "SnowLotus",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "anti-fast-piston": {
       "name": "活塞限速",
       "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "榛缈插件性能分析": {
+      "name": "榛缈插件性能分析",
+      "author": "Hazelmeow",
       "version": "0.0.1",
       "plugin-type": "classic"
     },
@@ -570,7 +576,7 @@
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "plugin-type": "classic"
     }
   },
