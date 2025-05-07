@@ -56,7 +56,11 @@ class AutoSubChunkRequestAPI:
         self.base().must_chunk_position_waiter.acquire()
         self.plugin().BroadcastEvent(InternalBroadcast("ggpp:force_update", {}))
         self.base().must_chunk_position_waiter.acquire()
-        self.base().must_chunk_position_waiter.release()
+
+        self.base().must_chunk_position_waiter_release.acquire()
+        if self.base().must_chunk_position_waiter.locked():
+            self.base().must_chunk_position_waiter.release()
+        self.base().must_chunk_position_waiter_release.release()
 
         dimension: int = event.data["dimension"]
         request_chunks: list[dict] = event.data["request_chunks"]

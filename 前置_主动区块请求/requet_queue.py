@@ -30,7 +30,15 @@ class AutoSubChunkRequetQueue:
         usage="主动区块请求: 自动请求区块", thread_level=ToolDeltaThread.SYSTEM
     )
     def send_request_queue(self):
-        self.base().injected = True
+        self.base().get_request_queue_running_states_mu.acquire()
+
+        if self.base().should_close:
+            self.base().get_request_queue_running_states_mu.release()
+            return
+        else:
+            self.base().request_queue_is_running = True
+            self.base().get_request_queue_running_states_mu.release()
+
         while True:
             self.base().mu.acquire()
 
@@ -193,7 +201,7 @@ class AutoSubChunkRequetQueue:
                     current_dimension, (current_chunk_pos_x, current_chunk_pos_z)
                 )
 
-        if not self.base().must_chunk_position_waiter.acquire(timeout=0):
+        self.base().must_chunk_position_waiter_release.acquire()
+        if self.base().must_chunk_position_waiter.locked():
             self.base().must_chunk_position_waiter.release()
-        else:
-            self.base().must_chunk_position_waiter.release()
+        self.base().must_chunk_position_waiter_release.release()

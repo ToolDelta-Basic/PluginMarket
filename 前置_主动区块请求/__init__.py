@@ -15,7 +15,7 @@ from 前置_主动区块请求.requet_queue import AutoSubChunkRequetQueue
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 2, 1)
+    version = (0, 2, 2)
 
     base: AutoSubChunkRequestBase
     api: AutoSubChunkRequestAPI
@@ -49,9 +49,12 @@ class AutoSubChunkRequest(Plugin):
         self.requet_queue.send_request_queue()
 
     def on_close(self, _: FrameExit):
-        self.base.close_waiter.acquire()
+        self.base.get_request_queue_running_states_mu.acquire()
         self.base.should_close = True
-        if self.base.injected:
+        self.base.get_request_queue_running_states_mu.release()
+
+        self.base.close_waiter.acquire()
+        if self.base.request_queue_is_running:
             self.base.close_waiter.acquire()
             self.base.close_waiter.release()
 

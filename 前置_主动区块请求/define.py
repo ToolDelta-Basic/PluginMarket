@@ -57,12 +57,14 @@ class AutoSubChunkRequestBase:
     request_chunk_per_second: int
 
     mu: threading.Lock
+    must_chunk_position_waiter_release: threading.Lock
     must_chunk_position_waiter: threading.Lock
     requet_queue: dict[ChunkPosWithDimension, sub_chunk_request.SubChunkRequest]
     chunk_listener: dict[ChunkPosWithDimension, ChunkListener]
 
     should_close: bool
-    injected: bool
+    get_request_queue_running_states_mu: threading.Lock
+    request_queue_is_running: bool
     close_waiter: threading.Lock
 
     def __init__(self, plugin: Plugin):
@@ -75,7 +77,10 @@ class AutoSubChunkRequestBase:
             "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 2, 1)
+            "主动区块请求",
+            config.auto_to_std(CFG_DEFAULT),
+            CFG_DEFAULT,
+            self.plugin.version,
         )
 
         self.multiple_pos = {}
@@ -84,10 +89,12 @@ class AutoSubChunkRequestBase:
         self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
         self.mu = threading.Lock()
+        self.must_chunk_position_waiter_release = threading.Lock()
         self.must_chunk_position_waiter = threading.Lock()
         self.requet_queue = {}
         self.chunk_listener = {}
 
         self.should_close = False
-        self.injected = False
+        self.get_request_queue_running_states_mu = threading.Lock()
+        self.request_queue_is_running = False
         self.close_waiter = threading.Lock()
