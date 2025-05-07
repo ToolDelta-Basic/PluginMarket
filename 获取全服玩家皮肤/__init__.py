@@ -40,7 +40,7 @@ class GetSkin(Plugin):
         if 0:
             from pip模块支持 import PipSupport
             pip: PipSupport
-        pip.require("pillow")
+        pip.require({"pillow": "PIL.Image"})
         import PIL.Image as PILImage
 
     def on_pkt_skin(self, pkt):
