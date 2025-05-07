@@ -10,7 +10,7 @@ class xunluo(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         self._default_cfg = {
-            "间隔时间（秒）": 15,
+            "间隔时间（秒）": float(15),
         }
         self._std_cfg = {"间隔时间（秒）": float}
         try:
