@@ -3,16 +3,22 @@ from typing import Any
 from dataclasses import dataclass
 from collections.abc import Callable
 
-VALID_ARGUMENT_HINT_TYPES = type[str | int | bool | float] | tuple[str]
+from .config_getter import DefaultMenuStyle, NBCMenuStyle, DEFAULT_CFG
+
+
+VALID_ARGUMENT_HINT_TYPES = type[str | int | bool | float]  # | tuple[str]
 VALID_ARG_VALUE = str | int | float | None
 VALID_ARG_WITHOUT_NONE = str | int | float
 ARGUMENT_HINT = list[tuple[str, VALID_ARGUMENT_HINT_TYPES, VALID_ARG_VALUE]]
 
+
 def isNaN(x: float):
     return x != x
 
+
 def isInfinity(x: float):
     return x == float("inf") or x == float("-inf")
+
 
 def isInvalidFloat(x: float):
     return isNaN(x) or isInfinity(x)
@@ -46,7 +52,59 @@ def parse_arg(
         raise TypeError(f"无法解析参数类型 {argtype.__name__}")
 
 
-def type_str(argtype: type[str | int | bool | float]):
+def arg_str(arg: str | float | bool):
+    if isinstance(arg, str | float):
+        return str(arg)
+    else:
+        return "true" if arg else "false"
+
+
+def show_args(
+    player: Player, prefix: str, arg_hints: ARGUMENT_HINT, current_arg_index: int
+):
+    args = []
+    for i, (name, type, default_val) in enumerate(arg_hints):
+        if i == current_arg_index:
+            argstr = "§b"
+        else:
+            argstr = "§7"
+        argstr += "[" + name + ":"
+        if default_val is not None:
+            argstr += arg_str(default_val)
+        else:
+            argstr += type_str(type)
+        argstr += "]"
+        args.append(argstr)
+    player.show(f"{prefix} " + " ".join(args))
+
+
+def ask_for_args(player: Player, prefix: str, arg_hints: ARGUMENT_HINT):
+    final_args = []
+    for i, (name, argtype, default_val) in enumerate(arg_hints):
+        while 1:
+            show_args(player, prefix, arg_hints, i)
+            if default_val is not None:
+                resp = player.input(f"§7请输入§f{name}§7：", timeout=240)
+            else:
+                resp = player.input(
+                    f"§7请输入§f{name}§7 （输入？使用默认值）：", timeout=240
+                )
+            if resp is None:
+                player.show("§c输入命令参数超时")
+                return None
+            elif (resp == "？" or resp == "?") and default_val is not None:
+                final_args.append(default_val)
+                break
+            try:
+                arg_parsed = parse_arg(resp, argtype)
+                final_args.append(arg_parsed)
+                break
+            except Exception as e:
+                player.show(f"§c输入参数错误： {e}")
+    return tuple(final_args)
+
+
+def type_str(argtype: VALID_ARGUMENT_HINT_TYPES):
     if argtype is str:
         return "字符串"
     elif argtype is int:
@@ -55,6 +113,8 @@ def type_str(argtype: type[str | int | bool | float]):
         return "数值"
     elif argtype is bool:
         return "[true|false]"
+    else:
+        return "未知类型"
 
 
 @dataclass
@@ -73,7 +133,7 @@ class StandardChatbarTriggers:
         triggers: list[str],
         argument_hints: ARGUMENT_HINT,
         usage: str,
-        func: Callable[[Player, tuple], None],
+        func: Callable[[Player, tuple], Any],
         op_only: bool,
         cfg: dict,
     ):
@@ -91,6 +151,12 @@ class StandardChatbarTriggers:
             player.show(f"§c{err}")
             return
         self.func(player, args_parsed)
+
+    def execute_with_no_args(self, player: Player, command_prefix: str):
+        args = ask_for_args(player, command_prefix, self.argument_hints)
+        if args is None:
+            return
+        self.func(player, args)
 
     @property
     def argument_hints_str(self) -> str:
@@ -182,84 +248,12 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 4)
+    version = (0, 3, 3)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
         super().__init__(frame)
         self.chatbar_triggers: list[OldChatbarTriggers | StandardChatbarTriggers] = []
-        DEFAULT_CFG = {
-            "help菜单样式": {
-                "菜单头": "§r========== §bＴｏｏｌＤｅｌｔａ§r ==========\n§r§d§l❒ §r§d权限: [是否为管理员] [是否为创造] [是否为成员]",
-                "菜单列表": " §f< [菜单指令]§f > [参数提示] §7>>> §f§o[菜单功能说明]§r§7",
-                "菜单尾": "§r§f============§7[§a[当前页数] §7/ §a[总页数]§7]§f=============\n§r>>> §7输入 .help <页数> 可以跳转到该页",
-                "管理选项": {
-                    "格式化": "[是否为管理员]",
-                    "为管理员": "§r[§a管理选项§l✔§r]",
-                    "不为管理员": "§r[§c管理选项§l✘§r]",
-                },
-                "创造选项": {
-                    "格式化": "[是否为创造]",
-                    "为创造": "§r[§a创造选项§l✔§r]",
-                    "不为创造": "§r[§c创造选项§l✘§r]",
-                },
-                "成员选项": {
-                    "格式化": "[是否为成员]",
-                    "为成员": "§r[§a成员选项§l✔§r]",
-                    "不为成员": "§r[§c成员选项§l✘§r]",
-                },
-                "菜单指令配置": {
-                    "指令分隔符": " §r§7| ",
-                    "指令配色": {
-                        "管理": "§a",
-                        "成员": "§a",
-                    },
-                },
-                "参数提示配置": {
-                    "参数间隔符": " ",
-                    "参数提示格式": "[§6[提示词]§r]",
-                },
-            },
-            "/help触发词": ["help"],
-            "被识别为触发词的前缀(不填则为无命令前缀)": [".", "。", "·"],
-            "单页内最多显示数": 6,
-        }
-        STD_CFG_TYPE = {
-            "help菜单样式": {
-                "菜单头": str,
-                "菜单列表": str,
-                "菜单尾": str,
-                "管理选项": {
-                    "格式化": str,
-                    "为管理员": str,
-                    "不为管理员": str,
-                },
-                "创造选项": {
-                    "格式化": str,
-                    "为创造": str,
-                    "不为创造": str,
-                },
-                "成员选项": {
-                    "格式化": str,
-                    "为成员": str,
-                    "不为成员": str,
-                },
-                "菜单指令配置": {
-                    "指令分隔符": str,
-                    "指令配色": {
-                        "管理": str,
-                        "成员": str,
-                    },
-                },
-                "参数提示配置": {
-                    "参数间隔符": str,
-                    "参数提示格式": str,
-                },
-            },
-            "/help触发词": config.JsonList(str),
-            "单页内最多显示数": config.PInt,
-            "被识别为触发词的前缀(不填则为无命令前缀)": config.JsonList(str),
-        }
         self.cfg, ver = config.get_plugin_config_and_version(
             self.name, {}, DEFAULT_CFG, self.version
         )
@@ -278,26 +272,48 @@ class ChatbarMenu(Plugin):
             config.upgrade_plugin_config(self.name, self.cfg, self.version)
             self.print("§a配置文件已升级: " + ",".join(updateCfg))
 
+        elif ver < (0, 3, 3):
+            self.cfg["是否启用指令序号式菜单样式"] = DEFAULT_CFG[
+                "是否启用指令序号式菜单样式"
+            ]
+            self.cfg["指令序号式菜单样式"] = DEFAULT_CFG["指令序号式菜单样式"]
+            config.upgrade_plugin_config(self.name, self.cfg, self.version)
+            self.print(
+                "§a配置文件已升级: 指令序号式菜单样式、是否启用指令序号式菜单样式"
+            )
+
         self.cfg, ver = config.get_plugin_config_and_version(
-            self.name, STD_CFG_TYPE, DEFAULT_CFG, self.version
+            self.name, config.auto_to_std(DEFAULT_CFG), DEFAULT_CFG, self.version
         )
         self.prefixs = self.cfg["被识别为触发词的前缀(不填则为无命令前缀)"]
-        self.op_format = self.cfg["help菜单样式"]["管理选项"]["格式化"]
-        self.is_op_format = self.cfg["help菜单样式"]["管理选项"]["为管理员"]
-        self.isnot_op_format = self.cfg["help菜单样式"]["管理选项"]["不为管理员"]
-        self.create_format = self.cfg["help菜单样式"]["创造选项"]["格式化"]
-        self.is_create_format = self.cfg["help菜单样式"]["创造选项"]["为创造"]
-        self.isnot_create_format = self.cfg["help菜单样式"]["创造选项"]["不为创造"]
-        self.member_format = self.cfg["help菜单样式"]["成员选项"]["格式化"]
-        self.is_member_format = self.cfg["help菜单样式"]["成员选项"]["为成员"]
-        self.isnot_member_format = self.cfg["help菜单样式"]["成员选项"]["不为成员"]
-        self.ListenChat(self.on_player_message)
-        self.add_new_trigger(
-            self.cfg["/help触发词"],
-            [("页数", int, 1)],
-            "展示命令帮助菜单",
-            self.show_help,
-        )
+        self.help_args_limit = self.cfg["单页内最多显示数"]
+        self.enable_nbc_format = self.cfg["是否启用指令序号式菜单样式"]
+        # default style
+        self.default_style = DefaultMenuStyle(self.cfg)
+        # num-based command menu style
+        self.nbc_style = NBCMenuStyle(self.cfg)
+        #
+        self.ListenChat(lambda chat: self.on_player_message(chat) and None)
+        if self.enable_nbc_format:
+            self.add_new_trigger(
+                self.cfg["/help触发词"],
+                [],
+                "打开菜单",
+                self.show_nbc_menu,
+            )
+            self.add_new_trigger(
+                ["test", "td"],
+                [("aint", int, None), ("bstr", str, "a"), ("cbool", bool, False)],
+                "testargs",
+                lambda a, b: a.show(f"args: {b}"),
+            )
+        else:
+            self.add_new_trigger(
+                self.cfg["/help触发词"],
+                [("页数", int, 1)],
+                "展示命令帮助菜单",
+                self.show_default_help,
+            )
 
     # ----API----
     def add_new_trigger(
@@ -305,7 +321,7 @@ class ChatbarMenu(Plugin):
         triggers: list[str],
         argument_hint: ARGUMENT_HINT,
         usage: str,
-        func: Callable[[Player, tuple], None],
+        func: Callable[[Player, tuple], Any],
         op_only: bool = False,
     ):
         """
@@ -331,11 +347,13 @@ class ChatbarMenu(Plugin):
         triggers: list[str],
         argument_hint: str | None,
         usage: str,
-        func: Callable[[str, list[str]], None] | None,
+        func: Callable[[str, list[str]], Any] | None,
         args_pd: Callable[[int], bool] = lambda _: True,
         op_only=False,
     ):
-        """Deprecated: 已被弃用。请使用 `add_new_trigger`"""
+        """
+        Deprecated: Use `add_new_trigger` instead.
+        """
         for tri in triggers:
             if tri.startswith("."):
                 triggers[triggers.index(tri)] = tri[1:]
@@ -354,34 +372,17 @@ class ChatbarMenu(Plugin):
             OldChatbarTriggers(triggers, argument_hint, usage, func, args_pd, op_only)
         )
 
-    # Desperated
-    def add_simple_trigger(
-        self,
-        triggers: list[str],
-        usage: str,
-        func: Callable[[str, list[str]], Any],
-        op_only=False,
-    ):
-        self.add_trigger(
-            triggers,
-            None,
-            usage,
-            func,
-            op_only=op_only,
-        )
-
     # ------------
 
-    def show_help(self, player: Player, args):
+    def show_default_help(self, player: Player, args):
         # page min = 1
         page: int = args[0]
         all_menu_args = self.chatbar_triggers
         if not player.is_op():
             # 仅 OP 可见的部分 过滤掉
             all_menu_args = list(filter(lambda x: not x.op_only, all_menu_args))
-        lmt = self.cfg["单页内最多显示数"]
         total = len(all_menu_args)
-        max_page = (total + lmt - 1) // lmt
+        max_page = (total + self.help_args_limit - 1) // self.help_args_limit
         if page < 1:
             page_split_index = 0
         elif page > max_page:
@@ -389,25 +390,26 @@ class ChatbarMenu(Plugin):
         else:
             page_split_index = page - 1
         diplay_menu_args = all_menu_args[
-            page_split_index * lmt : (page_split_index + 1) * lmt
+            page_split_index * self.help_args_limit : (page_split_index + 1)
+            * self.help_args_limit
         ]
         isCreate = bool(
             self.game_ctrl.sendcmd_with_resp(
-                "/querytarget @a[name=" + player.name + ",m=creative]", 1
+                '/querytarget @a[name="' + player.name + '",m=creative]', 1
             ).SuccessCount
         )
         player.show(
             utils.simple_fmt(
                 {
-                    self.op_format: self.is_op_format
+                    self.default_style.op_format: self.default_style.is_op_format
                     if player.is_op()
-                    else self.isnot_op_format,
-                    self.create_format: self.is_create_format
+                    else self.default_style.isnot_op_format,
+                    self.default_style.create_format: self.default_style.is_create_format
                     if isCreate
-                    else self.isnot_create_format,
-                    self.member_format: self.is_member_format,  # 没想到怎么检测是否为成员
+                    else self.default_style.isnot_create_format,
+                    self.default_style.member_format: self.default_style.is_member_format,  # 没想到怎么检测是否为成员
                 },
-                self.cfg["help菜单样式"]["菜单头"],
+                self.default_style.header,
             )
         )
         if self.prefixs != []:
@@ -419,22 +421,16 @@ class ChatbarMenu(Plugin):
                 utils.simple_fmt(
                     {
                         "[菜单指令]": (
-                            self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"]["管理"]
+                            self.default_style.cmd_color_op
                             if tri.op_only
-                            else self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"][
-                                "成员"
-                            ]
+                            else self.default_style.cmd_color_member
                         )
                         + (
-                            self.cfg["help菜单样式"]["菜单指令配置"]["指令分隔符"]
+                            self.default_style.cmd_sep
                             + (
-                                self.cfg["help菜单样式"]["菜单指令配置"]["指令配色"][
-                                    "管理"
-                                ]
+                                self.default_style.cmd_color_op
                                 if tri.op_only
-                                else self.cfg["help菜单样式"]["菜单指令配置"][
-                                    "指令配色"
-                                ]["成员"]
+                                else self.default_style.cmd_color_member
                             )
                         ).join([first_prefix + i for i in tri.triggers])
                         + "§r",
@@ -450,15 +446,114 @@ class ChatbarMenu(Plugin):
                             "" if tri.usage is None else "以" + tri.usage
                         ),
                     },
-                    self.cfg["help菜单样式"]["菜单列表"],
+                    self.default_style.content,
                 ),
             )
         player.show(
             utils.simple_fmt(
                 {"[当前页数]": page_split_index + 1, "[总页数]": max_page},
-                self.cfg["help菜单样式"]["菜单尾"],
+                self.default_style.footer,
             ),
         )
+
+    @utils.thread_func("打开聊天栏序号选择菜单")
+    def show_nbc_menu(self, player: Player, _):
+        all_sections = [
+            section
+            for section in self.chatbar_triggers
+            if isinstance(section, StandardChatbarTriggers)
+        ]
+        if all_sections == []:
+            player.show("§c目前菜单内一项命令都没有哦？！")
+            return
+        sections_with_blocks = utils.split_list(all_sections, self.help_args_limit)
+        max_page_num = len(sections_with_blocks)
+        is_creation_mode = bool(
+            self.game_ctrl.sendcmd_with_resp(
+                '/querytarget @a[name="' + player.name + '",m=creative]', 1
+            ).SuccessCount
+        )
+        section_page = 0
+        if self.prefixs != []:
+            first_prefix = self.prefixs[0]
+        else:
+            first_prefix = ""
+        while 1:
+            sections_now_page = sections_with_blocks[section_page]
+            player.show(
+                utils.simple_fmt(
+                    {
+                        self.nbc_style.op_format: self.nbc_style.is_op_format
+                        if player.is_op()
+                        else self.nbc_style.isnot_op_format,
+                        self.nbc_style.create_format: self.nbc_style.is_create_format
+                        if is_creation_mode
+                        else self.nbc_style.isnot_create_format,
+                        self.nbc_style.member_format: self.nbc_style.is_member_format,  # 没想到怎么检测是否为成员
+                    },
+                    self.nbc_style.header,
+                )
+            )
+            for i, tri in enumerate(sections_now_page):
+                display_index = i + 1 + section_page * self.help_args_limit
+                player.show(
+                    utils.simple_fmt(
+                        {
+                            "[序号]": display_index,
+                            "[菜单指令]": (
+                                self.nbc_style.cmd_color_op
+                                if tri.op_only
+                                else self.nbc_style.cmd_color_member
+                            )
+                            + (
+                                self.nbc_style.cmd_sep
+                                + (
+                                    self.nbc_style.cmd_color_op
+                                    if tri.op_only
+                                    else self.nbc_style.cmd_color_member
+                                )
+                            ).join([first_prefix + i for i in tri.triggers])
+                            + "§r",
+                            "[参数提示]": (
+                                " " + tri.argument_hints_str
+                                if tri.argument_hints
+                                else ""
+                            ),
+                            "[菜单功能说明]": (
+                                "" if tri.usage is None else "以" + tri.usage
+                            ),
+                        },
+                        self.nbc_style.content,
+                    ),
+                )
+            player.show(
+                utils.simple_fmt(
+                    {"[当前页数]": section_page + 1, "[总页数]": max_page_num},
+                    self.nbc_style.footer,
+                ),
+            )
+            while 1:
+                resp = player.input(timeout=300)
+                if resp is None:
+                    player.show("§c看起来你太久没有选择一项菜单项.. 已退出")
+                    return
+                resp = resp.strip()
+                if resp == "退出" or resp == "q":
+                    player.show(self.nbc_style.exit_format)
+                    return
+                elif resp == "+":
+                    section_page = min(section_page + 1, max_page_num - 1)
+                    break
+                elif resp == "-":
+                    section_page = max(section_page - 1, 0)
+                    break
+                resp_int = utils.try_int(resp)
+                if resp_int is None or resp_int not in range(1, len(all_sections) + 1):
+                    player.show(f"§c请输入 1 ~ {len(all_sections) + 1} 范围内的序号")
+                    continue
+                section = all_sections[resp_int - 1]
+                section.execute_with_no_args(player, section.triggers[0])
+                return
 
     @utils.thread_func("聊天栏菜单执行")
     def on_player_message(self, chat: Chat):
