@@ -30,6 +30,7 @@ class AutoSubChunkRequetQueue:
         usage="主动区块请求: 自动请求区块", thread_level=ToolDeltaThread.SYSTEM
     )
     def send_request_queue(self):
+        self.base().injected = True
         while True:
             self.base().mu.acquire()
 

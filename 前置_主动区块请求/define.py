@@ -63,6 +63,7 @@ class AutoSubChunkRequestBase(Plugin):
     chunk_listener: dict[ChunkPosWithDimension, ChunkListener]
 
     should_close: bool
+    injected: bool
     close_waiter: threading.Lock
 
     def __init__(self, frame: Frame):
@@ -89,4 +90,5 @@ class AutoSubChunkRequestBase(Plugin):
         self.chunk_listener = {}
 
         self.should_close = False
+        self.injected = False
         self.close_waiter = threading.Lock()

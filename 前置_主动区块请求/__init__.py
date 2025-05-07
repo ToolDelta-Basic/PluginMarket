@@ -45,8 +45,9 @@ class AutoSubChunkRequest(Plugin):
     def on_close(self, _: FrameExit):
         self.base.close_waiter.acquire()
         self.base.should_close = True
-        self.base.close_waiter.acquire()
-        self.base.close_waiter.release()
+        if self.injected:
+            self.base.close_waiter.acquire()
+            self.base.close_waiter.release()
 
     def load_lib(self):
         from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
