@@ -19,8 +19,15 @@ class PipSupport(Plugin):
 
     # -------------------------  API  -----------------------------
     def install(self, packages: list[str]):
-        proc = subprocess.Popen(
-            ["pip", "install", "--target", self.data_path, *packages],
+        proc = subprocess.Popen([
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--target",
+                self.data_path,
+                *packages
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
