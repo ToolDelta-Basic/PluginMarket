@@ -248,7 +248,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 3)
+    version = (0, 3, 5)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -272,7 +272,7 @@ class ChatbarMenu(Plugin):
             config.upgrade_plugin_config(self.name, self.cfg, self.version)
             self.print("§a配置文件已升级: " + ",".join(updateCfg))
 
-        elif ver < (0, 3, 3):
+        elif ver < (0, 3, 4):
             self.cfg["是否启用指令序号式菜单样式"] = DEFAULT_CFG[
                 "是否启用指令序号式菜单样式"
             ]
