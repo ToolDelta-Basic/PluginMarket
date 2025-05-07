@@ -451,8 +451,6 @@ class Orion_System(Plugin):
                 self.chatbar: ChatbarMenu
 
     def on_active(self):
-        # 获取机器人名字，必须等待ToolDelta框架加载完毕后才能运行
-        self.bot_name = self.game_ctrl.bot_name
         fmts.print_inf(
             "§e<『Orion System』违规与作弊行为综合反制系统> §b如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true"
         )
@@ -551,7 +549,7 @@ class Orion_System(Plugin):
                             break
                     if self.ban_private_chat:
                         if self.allow_chat_with_bot:
-                            if target_player != self.bot_name:
+                            if target_player != self.game_ctrl.bot_name:
                                 fmts.print_inf(
                                     f"§c发现 {original_player} 尝试发送私聊(tell,msg,w命令)，正在踢出"
                                 )
@@ -762,7 +760,7 @@ class Orion_System(Plugin):
         if self.is_detect_netease_banned_word:
             try:
                 self.game_ctrl.sendcmd(
-                    f'/testfor "{Username}"',
+                    f'/testfor @a[name="{Username}"]',
                     True,
                     self.detect_netease_banned_word_timeout,
                 )
@@ -1304,7 +1302,7 @@ class Orion_System(Plugin):
                         break
                     time.sleep(3.5)
                     self.game_ctrl.sendwocmd(
-                        f'/execute at "{player}" run tp "{self.bot_name}" ~ 500 ~'
+                        f'/execute at @a[name="{player}"] run tp @a[name="{self.game_ctrl.bot_name}"] ~ 500 ~'
                     )
                     time.sleep(0.5)
                     player_data = self.frame.launcher.omega.get_player_by_name(player)
@@ -1602,7 +1600,7 @@ class Orion_System(Plugin):
                     try:
                         score = player.getScore(self.ban_scoreboard_name)
                         self.game_ctrl.sendwocmd(
-                            f'/scoreboard players reset "{player.name}" "{self.ban_scoreboard_name}"'
+                            f'/scoreboard players reset @a[name="{player.name}"] "{self.ban_scoreboard_name}"'
                         )
                         fmts.print_inf(
                             f"§c发现玩家 {player.name} 通过游戏内封禁系统API被封禁，正在踢出"
