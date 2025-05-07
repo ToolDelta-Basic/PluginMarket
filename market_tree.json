@@ -576,7 +576,7 @@
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.3.3",
+      "version": "0.3.5",
       "plugin-type": "classic"
     }
   },
