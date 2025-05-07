@@ -81,7 +81,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (1, 0, 0)
+    version = (1, 0, 1)
     Structure = Structure
     Block = Block
 
@@ -92,7 +92,7 @@ class GameInteractive(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPacket(
-            PacketIDS.IDStructureTemplateDataResponse, self.on_structure_pkt
+            PacketIDS.IDStructureTemplateDataResponse, self._on_structure_pkt
         )
 
     def on_def(self):
@@ -100,7 +100,7 @@ class GameInteractive(Plugin):
         pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
-            pip: PipSupport
+            pip = self.get_typecheck_plugin_api(PipSupport)
         pip.require("numpy")
         import numpy as np
         numpy = np
@@ -110,7 +110,7 @@ class GameInteractive(Plugin):
             ["getnbt"], "[x] [y] [z]", "获取指定坐标的方块的NBT", self.on_get_nbt
         )
 
-    def on_structure_pkt(self, pk):
+    def _on_structure_pkt(self, pk):
         xyz = tuple(pk["StructureTemplate"]["structure_world_origin"])
         if xyz in self.structure_cbs.keys():
             self.structure_cbs[xyz].pop()(pk)
@@ -247,6 +247,9 @@ class GameInteractive(Plugin):
             f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:"
         )
         fmts.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
+
+    def get_block(self, x: int, y: int, z: int):
+        return self.get_structure((x, y, z), (1, 1, 1)).get_block((0, 0, 0))
 
     def _request_structure_and_get(
         self, position: tuple[int, int, int], size: tuple[int, int, int], timeout=5.0
