@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 6)
+    version = (0, 1, 7)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -64,9 +64,10 @@ class Orion_System(Plugin):
                 "川烈",
                 "九重天",
                 "五芒星",
-                "XTS",
                 "南宫",
                 "北境",
+                "共协",
+                "XTS",
                 "SR",
                 "TZRO",
                 "STBY",
@@ -75,6 +76,8 @@ class Orion_System(Plugin):
                 "EXC",
                 "DZR",
                 "ATS",
+                "WAD",
+                "UBSR",
                 "生存圈",
                 "天庭",
                 "天神之庭",
@@ -281,6 +284,7 @@ class Orion_System(Plugin):
             self.timer()
 
         self.upgrade_plugin_data()
+        self.remove_expire_ban_data()
 
     # 调用配置
     def load_config(self):
@@ -1251,6 +1255,9 @@ class Orion_System(Plugin):
                     )
                     fmts.print_inf(f"§a发现玩家 {player} 被封禁，已被踢出游戏")
                 else:
+                    fmts.print_inf(
+                        f"§b发现 玩家 {player} ({xuid}) 的封禁已到期，已解除封禁"
+                    )
                     os.remove(path)
             elif ban_end_timestamp == "Forever":
                 fmts.print_inf(
@@ -1446,6 +1453,8 @@ class Orion_System(Plugin):
             if ban_player_data is None:
                 os.remove(path)
                 return
+            ban_start_real_time = ban_player_data["ban_start_real_time"]
+            ban_start_timestamp = ban_player_data["ban_start_timestamp"]
             ban_end_timestamp = ban_player_data["ban_end_timestamp"]
             ban_end_real_time = ban_player_data["ban_end_real_time"]
             ban_reason = ban_player_data["ban_reason"]
@@ -1462,10 +1471,40 @@ class Orion_System(Plugin):
                         f"§a发现设备号 {device_id} 被封禁(当前登录玩家：{player})，已被踢出游戏"
                     )
                     if self.jointly_ban_player:
-                        self.ban_player_by_xuid(
-                            player, xuid, ban_end_timestamp - timestamp_now, ban_reason
+                        path_ban_xuid = (
+                            f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
                         )
+                        with self.thread_lock_ban_player_by_xuid:
+                            ban_xuid_data = tempjson.load_and_read(
+                                path_ban_xuid, need_file_exists=False, timeout=2
+                            )
+                            tempjson.unload_to_path(path_ban_xuid)
+                            if ban_xuid_data and (
+                                ban_xuid_data["ban_end_timestamp"] == "Forever"
+                                or ban_xuid_data["ban_end_timestamp"]
+                                >= ban_end_timestamp
+                            ):
+                                return
+                            tempjson.load_and_write(
+                                path_ban_xuid,
+                                {
+                                    "xuid": xuid,
+                                    "name": player,
+                                    "ban_start_real_time": ban_start_real_time,
+                                    "ban_start_timestamp": ban_start_timestamp,
+                                    "ban_end_real_time": ban_end_real_time,
+                                    "ban_end_timestamp": ban_end_timestamp,
+                                    "ban_reason": ban_reason,
+                                },
+                                need_file_exists=False,
+                                timeout=2,
+                            )
+                            tempjson.flush(path_ban_xuid)
+                            tempjson.unload_to_path(path_ban_xuid)
                 else:
+                    fmts.print_inf(
+                        f"§b发现 设备号 {device_id} 的封禁已到期，已解除封禁"
+                    )
                     os.remove(path)
             elif ban_end_timestamp == "Forever":
                 fmts.print_inf(
@@ -1478,7 +1517,26 @@ class Orion_System(Plugin):
                     f"§a发现设备号 {device_id} 被封禁(当前登录玩家：{player})，已被踢出游戏"
                 )
                 if self.jointly_ban_player:
-                    self.ban_player_by_xuid(player, xuid, "Forever", ban_reason)
+                    path_ban_xuid = (
+                        f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
+                    )
+                    with self.thread_lock_ban_player_by_xuid:
+                        tempjson.load_and_write(
+                            path_ban_xuid,
+                            {
+                                "xuid": xuid,
+                                "name": player,
+                                "ban_start_real_time": ban_start_real_time,
+                                "ban_start_timestamp": ban_start_timestamp,
+                                "ban_end_real_time": "Forever",
+                                "ban_end_timestamp": "Forever",
+                                "ban_reason": ban_reason,
+                            },
+                            need_file_exists=False,
+                            timeout=2,
+                        )
+                        tempjson.flush(path_ban_xuid)
+                        tempjson.unload_to_path(path_ban_xuid)
 
         except FileNotFoundError:
             return
@@ -1570,6 +1628,58 @@ class Orion_System(Plugin):
                     except TimeoutError:
                         continue
             time.sleep(self.ban_scoreboard_detect_cycle)
+
+    # 清除到期的封禁数据
+
+    @utils.thread_func("清除到期的封禁数据")
+    def remove_expire_ban_data(self):
+        all_ban_player_xuids = os.listdir(
+            f"{self.data_path}/玩家封禁时间数据(以xuid记录)"
+        )
+        for i in all_ban_player_xuids:
+            path_ban_xuid = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{i}"
+            with self.thread_lock_ban_player_by_xuid:
+                ban_xuid_data = tempjson.load_and_read(
+                    path_ban_xuid, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_xuid)
+            ban_end_timestamp_xuid = ban_xuid_data.get("ban_end_timestamp", None)
+            ban_player = ban_xuid_data.get("name", None)
+            ban_xuid = ban_xuid_data.get("xuid", None)
+            if isinstance(ban_end_timestamp_xuid, int) is False:
+                os.remove(path_ban_xuid)
+                fmts.print_inf(
+                    f"§6发现 玩家 {ban_player} (xuid:{ban_xuid}) 的封禁数据出现损坏，已自动移除"
+                )
+            elif ban_end_timestamp_xuid <= int(time.time()):
+                os.remove(path_ban_xuid)
+                fmts.print_inf(
+                    f"§b发现 玩家 {ban_player} (xuid:{ban_xuid}) 的封禁已到期，已解除封禁"
+                )
+        all_ban_player_device_id = os.listdir(
+            f"{self.data_path}/玩家封禁时间数据(以设备号记录)"
+        )
+        for i in all_ban_player_device_id:
+            path_ban_device_id = f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{i}"
+            with self.thread_lock_ban_player_by_device_id:
+                ban_device_id_data = tempjson.load_and_read(
+                    path_ban_device_id, need_file_exists=False, timeout=2
+                )
+                tempjson.unload_to_path(path_ban_device_id)
+            ban_end_timestamp_device_id = ban_device_id_data.get(
+                "ban_end_timestamp", None
+            )
+            ban_device_id = ban_device_id_data.get("device_id", None)
+            if isinstance(ban_end_timestamp_device_id, int) is False:
+                os.remove(path_ban_device_id)
+                fmts.print_inf(
+                    f"§6发现 设备号 {ban_device_id} 的封禁数据出现损坏，已自动移除"
+                )
+            elif ban_end_timestamp_device_id <= int(time.time()):
+                os.remove(path_ban_device_id)
+                fmts.print_inf(
+                    f"§b发现 设备号 {ban_device_id} 的封禁已到期，已解除封禁"
+                )
 
     # 控制台菜单封禁玩家函数封装
     def ban_player_by_terminal(self, _):
