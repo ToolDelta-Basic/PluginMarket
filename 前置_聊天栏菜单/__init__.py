@@ -272,7 +272,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 6)
+    version = (0, 3, 7)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -576,7 +576,10 @@ class ChatbarMenu(Plugin):
                     player.show(f"§c请输入 1 ~ {len(all_sections) + 1} 范围内的序号")
                     continue
                 section = all_sections[resp_int - 1]
-                section.execute_with_no_args(player, section.triggers[0])
+                if section.op_only and not player.is_op():
+                    player.show("§c你无权使用该功能")
+                else:
+                    section.execute_with_no_args(player, section.triggers[0])
                 return
 
     @utils.thread_func("聊天栏菜单执行")
