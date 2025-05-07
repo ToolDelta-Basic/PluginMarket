@@ -15,7 +15,7 @@ from tooldelta.utils import fmts
 class WorldBackup(Plugin):
     name = "世界备份"
     author = "YoRHa and RATH"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -26,7 +26,7 @@ class WorldBackup(Plugin):
             "要保留多少秒前的存档": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界备份", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 2)
+            "世界备份", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -196,6 +196,9 @@ class WorldBackup(Plugin):
         self.running_mutex.release()
 
     def _on_chunk_data(self, event: InternalBroadcast):
+        if "world" not in self.__dict__:
+            return
+
         if not self.check_sub_chunks_all_success(event):
             return
 
