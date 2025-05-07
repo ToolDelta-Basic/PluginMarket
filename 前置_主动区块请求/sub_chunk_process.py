@@ -35,7 +35,12 @@ class AutoSubChunkRequestSubChunkProcess:
     def _on_sub_chunk(self, pk: BaseBytesPacket):
         assert type(pk) is SubChunk, "Should Nerver happened"
 
-        if len(pk.Entries) == 0 or "blob_hash" not in self.base().__dict__:
+        # Note that it's possible for self.base().blob_hash is not exist,
+        # maybe the plugin was executed before it was injected.
+        if "blob_hash" not in self.base().__dict__:
+            return
+
+        if len(pk.Entries) == 0:
             return
 
         # sub_chunk_finish_states holds a list that for a sub chunk
@@ -113,9 +118,6 @@ class AutoSubChunkRequestSubChunkProcess:
                 # Firstly, we check local blob hash list.
                 # If blob hash not hit, ask blob hash holder (server side)
                 # to get payload.
-                #
-                # Note that it's possible for self.base().blob_hash is not exist,
-                # maybe the plugin was executed before it was injected.=
                 payload = self.base().blob_hash.load_blob_cache(entry.BlobHash)
                 # payload is empty bytes means that this blob hash needs
                 # us to ask blob hash holder (server side) to get.
