@@ -1,6 +1,5 @@
 import time
-
-from tooldelta import Plugin, fmts, plugin_entry
+from tooldelta import Plugin, Player, fmts, plugin_entry, TYPE_CHECKING
 from tooldelta.constants import PacketIDS
 
 
@@ -20,14 +19,20 @@ class Display32KShulkerBox(Plugin):
         self.bas_api = self.GetPluginAPI("基本插件功能库")
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         self.ban_sys = self.GetPluginAPI("封禁系统")
+        if TYPE_CHECKING:
+            from 前置_基本插件功能库 import BasicFunctionLib
+            from 前置_聊天栏菜单 import ChatbarMenu
+            from 封禁系统 import BanSystem
+            self.bas_api: BasicFunctionLib
+            self.chatbar: ChatbarMenu
+            self.ban_sys: BanSystem
 
     def on_inject(self):
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             [".32kboxes", ".32k盒"],
-            None,
+            [],
             "查看最近产生的32k潜影盒",
             self.on_menu,
-            lambda _: True,
             True,
         )
 
@@ -75,21 +80,21 @@ class Display32KShulkerBox(Plugin):
                 self.write32kBox(structID)
         return False
 
-    def on_menu(self, player: str, _):
+    def on_menu(self, player: Player, _):
         boxes = self.getAll32kBoxes()
         if boxes:
             for i in boxes:
                 self.game_ctrl.sendcmd(
-                    f'/execute as "{player}" run structure load {i} ~~~'
+                    f'/execute as "{player.name}" run structure load {i} ~~~'
                 )
                 self.game_ctrl.sendcmd(
-                    f'/execute as "{player}" run setblock ~~~ air 0 destroy'
+                    f'/execute as "{player.name}" run setblock ~~~ air 0 destroy'
                 )
                 self.game_ctrl.sendcmd("/structure delete " + i)
                 time.sleep(0.05)
-            self.game_ctrl.say_to(player, "§6检查完成.")
+            player.show("§6检查完成.")
         else:
-            self.game_ctrl.say_to(player, "§c没有检测到最近产生的32k潜影盒.")
+            player.show("§c没有检测到最近产生的32k潜影盒.")
 
     @staticmethod
     def getAll32kBoxes() -> list[str]:

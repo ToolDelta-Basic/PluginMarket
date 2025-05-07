@@ -1,6 +1,6 @@
 import time
 from typing import ClassVar
-from tooldelta import ToolDelta, Plugin, Player, Chat, utils, plugin_entry
+from tooldelta import ToolDelta, Plugin, Player, Chat, utils, plugin_entry, TYPE_CHECKING
 
 class GobangBasic:
     """
@@ -252,15 +252,18 @@ class SuperGobang(Plugin):
 
     def on_preload(self):
         chatbar = self.GetPluginAPI("聊天栏菜单")
-        chatbar.add_trigger(
+        chatbar.add_new_trigger(
             ["五子棋", "wzq"],
-            "[对手名]",
+            [("对手名", str, None)],
             "开一局五子棋游戏",
-            self.on_menu_invoked,
-            lambda x: x == 1,
+            self.on_menu_invoked
         )
+        if TYPE_CHECKING:
+            from 前置_聊天栏菜单 import ChatbarMenu
+            chatbar: ChatbarMenu
 
-    def on_menu_invoked(self, player: str, args: list[str]):
+    def on_menu_invoked(self, playerf: Player, args: tuple):
+        player = playerf.name
         _2P = args[0]
         if len(_2P) < 2:
             self.game_ctrl.say_to(player, "§c模糊搜索玩家名， 输入的名字长度必须大于1")

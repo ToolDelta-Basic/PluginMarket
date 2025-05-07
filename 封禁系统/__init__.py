@@ -7,6 +7,7 @@ from tooldelta import (
     utils,
     cfg,
     constants,
+    Player,
     Plugin,
     fmts,
     game_utils,
@@ -53,12 +54,11 @@ class BanSystem(Plugin):
             self.qqlink: QQLinker
 
     def on_inject(self):
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             ["ban", "封禁"],
-            None,
+            [],
             "封禁玩家",
             self.on_chatbar_ban,
-            lambda x: x in (0, 1),
             True,
         )
         for i in self.game_ctrl.allplayers:
@@ -255,17 +255,17 @@ class BanSystem(Plugin):
         else:
             self.qqlink.sendmsg(self.qqlink.linked_group, "输入有误")
 
-    def on_chatbar_ban(self, caller: str, _):
+    def on_chatbar_ban(self, caller: Player, _):
         allplayers = self.game_ctrl.allplayers.copy()
-        self.game_ctrl.say_to(caller, "§6选择一个玩家进行封禁：")
+        caller.show("§6选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
-            self.game_ctrl.say_to(caller, f"{i + 1}: {j}")
-        self.game_ctrl.say_to(caller, "§6请输入序号：")
-        resp = utils.try_int(game_utils.waitMsg(caller))
+            caller.show(f"{i + 1}: {j}")
+        caller.show("§6请输入序号：")
+        resp = utils.try_int(caller.input())
         if resp and resp in range(1, len(allplayers) + 1):
             ban_player = allplayers[resp - 1]
             if caller == ban_player:
-                self.game_ctrl.say_to(caller, "§6看起来你不能封禁自己..")
+                caller.show("§6看起来你不能封禁自己..")
                 return
             self.ban(allplayers[resp - 1], -1)
             fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")

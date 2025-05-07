@@ -1,5 +1,5 @@
 import os
-from tooldelta import Plugin, utils, game_utils, cfg, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, Player, utils, game_utils, cfg, TYPE_CHECKING, plugin_entry
 
 DIMENSIONS = ["overworld", "nether", "the_end", *(f"dim{i}" for i in range(3, 21))]
 DIMENSIONS_ZHCN = ["主世界", "下界", "末地", *(f"DIM-{i}" for i in range(3, 21))]
@@ -51,58 +51,43 @@ class HomePointSet(Plugin):
             self.xuidm: XUIDGetter
 
     def on_inject(self):
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["聊天栏菜单内配置"]["设置传送点触发词"],
-            "[传送点名]",
+            [("传送点名", str, None)],
             "设置传送点",
             self.on_set_home,
-            lambda x: x <= 1,
         )
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["聊天栏菜单内配置"]["删除传送点触发词"],
-            "[传送点名]",
+            [("传送点名", str, "")],
             "删除传送点",
             self.on_del_home,
-            lambda x: x <= 1,
         )
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["聊天栏菜单内配置"]["传送点列表触发词"],
-            None,
+            [],
             "传送点列表",
             self.on_list_home,
-            lambda x: x <= 1,
         )
-        self.chatbar.add_trigger(
+        self.chatbar.add_new_trigger(
             self.cfg["聊天栏菜单内配置"]["传送到传送点触发词"],
-            None,
+            [("传送点名", str, "")],
             "前往传送点",
             self.on_home,
-            lambda x: x <= 1,
         )
 
-    def on_set_home(self, player: str, args: list[str]):
+    def on_set_home(self, playerf: Player, args):
+        player = playerf.name
         homes = self.read_homes(player)
         if len(homes) >= self.cfg["最多可设置的传送点"]:
             self.game_ctrl.say_to(player, "§7[§cx§7] 传送点数量已达到上限")
             return
-        if len(args) == 0:
-            self.game_ctrl.say_to(player, "§7[§fi§7] 请输入传送点名：")
-            resp = game_utils.waitMsg(player)
-            if resp is None:
-                self.game_ctrl.say_to(player, "§7[§cx§7] 输入超时， 取消传送点设置")
-                return
-            if len(resp) > 20 or resp == "***":
-                self.game_ctrl.say_to(
-                    player, "§7[§cx§7] 不合规的传送点名， 取消传送点设置"
-                )
-                return
-        else:
-            resp = args[0]
-            if len(resp) > 20 or resp == "***":
-                self.game_ctrl.say_to(
-                    player, "§7[§cx§7] 不合规的传送点名， 取消传送点设置"
-                )
-                return
+        resp = args[0]
+        if len(resp) > 20 or resp == "***":
+            self.game_ctrl.say_to(
+                player, "§7[§cx§7] 不合规的传送点名， 取消传送点设置"
+            )
+            return
         if resp in homes:
             self.game_ctrl.say_to(player, "§7[§cx§7] 已有重命名传送点")
             return
@@ -117,7 +102,8 @@ class HomePointSet(Plugin):
         self.write_homes(player, homes)
         self.game_ctrl.say_to(player, f"§7[§a√§7] §a传送点 {resp} 设置成功")
 
-    def on_list_home(self, player: str, _):
+    def on_list_home(self, playerf: Player, _):
+        player = playerf.name
         homes = self.read_homes(player)
         if homes == {}:
             self.game_ctrl.say_to(player, "§7[§6!§7] §6你还没有设置任何一个传送点")
@@ -130,9 +116,10 @@ class HomePointSet(Plugin):
                 player, f" §7- §f{name} §6（{dim_zhcn} {x:.1f}， {y:.1f}， {z:.1f}）"
             )
 
-    def on_del_home(self, player: str, args: list[str]):
+    def on_del_home(self, playerf: Player, args: tuple):
+        player = playerf.name
         homes = self.read_homes(player)
-        if len(args) == 1:
+        if args[0] != "":
             dhome = args[0]
             if dhome not in homes.keys():
                 self.game_ctrl.say_to(player, "§7[§cx§7] §c该传送点不存在")
@@ -148,9 +135,10 @@ class HomePointSet(Plugin):
         self.write_homes(player, homes)
         self.game_ctrl.say_to(player, f"§7[§a√§7] §a传送点 {dhome} 已删除")
 
-    def on_home(self, player: str, args: list[str]):
+    def on_home(self, playerf: Player, args: tuple):
+        player = playerf.name
         homes = self.read_homes(player)
-        if len(args) == 1:
+        if args[0] != "":
             goto_home = args[0]
             if goto_home not in homes.keys():
                 self.game_ctrl.say_to(player, "§7[§cx§7] §c该传送点不存在")
