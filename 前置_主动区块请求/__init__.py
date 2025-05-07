@@ -51,9 +51,9 @@ class AutoSubChunkRequest(Plugin):
     def on_close(self, _: FrameExit):
         self.base.get_request_queue_running_states_mu.acquire()
         self.base.should_close = True
+        self.base.close_waiter.acquire()
         self.base.get_request_queue_running_states_mu.release()
 
-        self.base.close_waiter.acquire()
         if self.base.request_queue_is_running:
             self.base.close_waiter.acquire()
             self.base.close_waiter.release()
