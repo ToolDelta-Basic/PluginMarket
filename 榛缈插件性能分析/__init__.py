@@ -39,12 +39,11 @@ elif __name__ != "__main__":
             self.analyzing = False
             self.data: list[dict] = []
 
+
+        def on_preload(self):
             self.chatbar: "ChatbarMenu" = self.GetPluginAPI("聊天栏菜单", (0, 2, 3))
             self.orig_execute_chat = self.frame.plugin_group.execute_chat
             self.orig_on_player_message = self.chatbar.on_player_message
-
-
-        def on_preload(self):
             self.frame.add_console_cmd_trigger(
                 ["perf"], "<start/end>", "开始/停止 记录插件执行时间", self.on_console
             )
