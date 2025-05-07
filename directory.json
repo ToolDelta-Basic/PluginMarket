@@ -546,6 +546,7 @@
     ],
     "前置_聊天栏菜单": [
         "datas.json",
+        "config_getter.py",
         "使用方法.md",
         "__init__.py"
     ]
