@@ -1,5 +1,5 @@
 import ctypes
-from tooldelta import FrameExit, Plugin, plugin_entry
+from tooldelta import FrameExit, Plugin, ToolDelta, plugin_entry
 from tooldelta.constants.packets import PacketIDS
 from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     CBytes,
@@ -8,21 +8,27 @@ from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
 )
 from 前置_主动区块请求.api import AutoSubChunkRequestAPI
 from 前置_主动区块请求.define import AutoSubChunkRequestBase
-from 前置_主动区块请求.on_sub_chunk import AutoSubChunkRequestOnSubChunk
+from 前置_主动区块请求.sub_chunk_process import AutoSubChunkRequestSubChunkProcess
 from 前置_主动区块请求.requet_queue import AutoSubChunkRequetQueue
 
 
 class AutoSubChunkRequest(Plugin):
+    name = "NieR: Automata"
+    author = "2B"
+    version = (0, 2, 1)
+
     base: AutoSubChunkRequestBase
     api: AutoSubChunkRequestAPI
     requet_queue: AutoSubChunkRequetQueue
-    sub_chunk_process: AutoSubChunkRequestOnSubChunk
+    sub_chunk_process: AutoSubChunkRequestSubChunkProcess
 
-    def __init__(self, frame):
-        self.base = AutoSubChunkRequestBase(frame)
+    def __init__(self, frame: ToolDelta):
+        super().__init__(frame)
+
+        self.base = AutoSubChunkRequestBase(self)
         self.api = AutoSubChunkRequestAPI(self.base)
         self.requet_queue = AutoSubChunkRequetQueue(self.api)
-        self.sub_chunk_process = AutoSubChunkRequestOnSubChunk(self.api)
+        self.sub_chunk_process = AutoSubChunkRequestSubChunkProcess(self.api)
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -45,7 +51,7 @@ class AutoSubChunkRequest(Plugin):
     def on_close(self, _: FrameExit):
         self.base.close_waiter.acquire()
         self.base.should_close = True
-        if self.injected:
+        if self.base.injected:
             self.base.close_waiter.acquire()
             self.base.close_waiter.release()
 

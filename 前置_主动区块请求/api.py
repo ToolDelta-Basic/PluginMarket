@@ -1,5 +1,5 @@
 import threading
-from tooldelta import InternalBroadcast, fmts
+from tooldelta import InternalBroadcast, Plugin, fmts
 from tooldelta.mc_bytes_packet import sub_chunk_request
 from tooldelta.mc_bytes_packet.sub_chunk import SUB_CHUNK_RESULT_CHUNK_NOT_FOUND
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
@@ -26,6 +26,9 @@ class AutoSubChunkRequestAPI:
     def base(self) -> AutoSubChunkRequestBase:
         return self.auto_sub_chunk_request_base
 
+    def plugin(self) -> Plugin:
+        return self.base().plugin
+
     def must_get_chunk(self, event: InternalBroadcast):
         """
         API (scq:must_get_chunk):
@@ -51,7 +54,7 @@ class AutoSubChunkRequestAPI:
             return
 
         self.base().must_chunk_position_waiter.acquire()
-        self.base().BroadcastEvent(InternalBroadcast("ggpp:force_update", {}))
+        self.plugin().BroadcastEvent(InternalBroadcast("ggpp:force_update", {}))
         self.base().must_chunk_position_waiter.acquire()
         self.base().must_chunk_position_waiter.release()
 
@@ -189,7 +192,7 @@ class AutoSubChunkRequestAPI:
 
             current_listener.channel.set()
             if len(pub) > 0:
-                self.base().BroadcastEvent(
+                self.plugin().BroadcastEvent(
                     InternalBroadcast("scq:publish_chunk_data", pub)
                 )
 
@@ -245,4 +248,6 @@ class AutoSubChunkRequestAPI:
             del self.base().chunk_listener[cp]
 
         if len(pub) > 0:
-            self.base().BroadcastEvent(InternalBroadcast("scq:publish_chunk_data", pub))
+            self.plugin().BroadcastEvent(
+                InternalBroadcast("scq:publish_chunk_data", pub)
+            )

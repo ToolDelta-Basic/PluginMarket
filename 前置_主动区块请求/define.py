@@ -6,8 +6,8 @@ from tooldelta.internal.launch_cli.neo_libs.blob_hash.blob_hash_holder import (
     BlobHashHolder,
 )
 from tooldelta import (
+    GameCtrl,
     Plugin,
-    Frame,
     cfg as config,
 )
 
@@ -44,10 +44,9 @@ EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
 EMPTY_CHUNK_POS_WITH_DIMENSION = ChunkPosWithDimension()
 
 
-class AutoSubChunkRequestBase(Plugin):
-    name = "NieR: Automata"
-    author = "2B"
-    version = (0, 2, 0)
+class AutoSubChunkRequestBase:
+    plugin: Plugin
+    game_ctrl: GameCtrl
 
     LIB: ctypes.CDLL
     blob_hash: BlobHashHolder
@@ -66,9 +65,9 @@ class AutoSubChunkRequestBase(Plugin):
     injected: bool
     close_waiter: threading.Lock
 
-    def __init__(self, frame: Frame):
-        self.frame = frame
-        self.game_ctrl = self.frame.get_game_control()
+    def __init__(self, plugin: Plugin):
+        self.plugin = plugin
+        self.game_ctrl = plugin.game_ctrl
 
         CFG_DEFAULT = {
             "请求半径(最大 16 半径)": 4,
@@ -76,7 +75,7 @@ class AutoSubChunkRequestBase(Plugin):
             "每秒请求多少个区块(整数)": 6,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 2, 0)
+            "主动区块请求", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 2, 1)
         )
 
         self.multiple_pos = {}

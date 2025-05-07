@@ -16,7 +16,7 @@ from 前置_主动区块请求.api import AutoSubChunkRequestAPI
 from 前置_主动区块请求.define import AutoSubChunkRequestBase
 
 
-class AutoSubChunkRequestOnSubChunk:
+class AutoSubChunkRequestSubChunkProcess:
     api: AutoSubChunkRequestAPI
 
     def __init__(self, api: AutoSubChunkRequestAPI):
