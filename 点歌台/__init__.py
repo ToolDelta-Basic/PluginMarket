@@ -53,9 +53,9 @@ class DJTable(Plugin):
             ["点歌列表"], [], "查看点歌台点歌列表", self.lookup_songs_list
         )
         self.chatmenu.add_new_trigger(["点歌"], [("歌名", str, "")], "点歌", self.choose_menu)
-        self.chatmenu.add_trigger(
+        self.chatmenu.add_new_trigger(
             ["停止当前曲目"],
-            None,
+            [],
             "停止当前点歌曲目",
             self.force_stop_current,
             op_only=True,
@@ -111,7 +111,7 @@ class DJTable(Plugin):
         else:
             player.show("§a♬§f列表空空如也啦! ")
 
-    def force_stop_current(self, player, _):
+    def force_stop_current(self, player: Player, _):
         if self.can_stop:
             self.main_thread.stop()
             self.game_ctrl.say_to("@a", "§e点歌§f>> §6管理员已停止当前点歌曲目")

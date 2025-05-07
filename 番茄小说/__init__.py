@@ -1,9 +1,7 @@
 from tooldelta import (
     Plugin,
     cfg as config,
-    game_utils,
     utils,
-    Chat,
     Player,
     FrameExit,
     plugin_entry,
@@ -30,22 +28,18 @@ class NewPlugin(Plugin):
         self.fqcookie = cfg["番茄小说Cookie"]
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
-        self.ListenPlayerJoin(self.on_player_join)
-        self.ListenPlayerLeave(self.on_player_leave)
-        self.ListenChat(self.on_player_message)
         self.ListenFrameExit(self.on_frame_exit)
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
 
     def on_inject(self):
-        self.chatbar.add_trigger(
-            ["番茄小说", "fqnovel"], None, "从番茄小说网拉取小说", self.when_fqnovel_on
+        self.chatbar.add_new_trigger(
+            ["番茄小说", "fqnovel"], [], "从番茄小说网拉取小说", self.when_fqnovel_on
         )
 
-    def when_fqnovel_on(self, playername: str, args):
-        self.game_ctrl.say_to(playername, "§6请输入书名: ")
-        books_name = game_utils.waitMsg(playername)
+    def when_fqnovel_on(self, player: Player, args):
+        books_name = player.input("§6请输入书名：")
         books_list = fqapi.search_books(books_name, 0)
         books_info = []
         books_id = []
@@ -58,25 +52,23 @@ class NewPlugin(Plugin):
             )
             books_info.append(output_book_info)
             books_id.append(book_id)
-        self.game_ctrl.say_to(playername, "§6搜索到的书本列表: ")
+        player.show("§6搜索到的书本列表: ")
         for book_info in books_info:
-            self.game_ctrl.say_to(playername, "  " + book_info)
-        self.game_ctrl.say_to(playername, "§6请输入序号以选择: ")
-        book_no = game_utils.waitMsg(playername)
+            player.show("  " + book_info)
+        player.show("§6请输入序号以选择: ")
+        book_no = player.input()
         book_no = utils.try_int(book_no)
-        if book_no == None:
-            self.game_ctrl.say_to(playername, "§c无效输入")
+        if book_no is None:
+            player.show("§c无效输入")
             return
         book_id = books_id[book_no]
         book_info = fqapi.book_id_inquire(book_id)
         title_list = book_info["title_list"]
         item_id_list = book_info["item_id_list"]
-        self.game_ctrl.say_to(playername, f"§6共找到了{str(len(item_id_list))}个结果。")
+        player.show(f"§6共找到了{len(item_id_list)}个结果。")
         while True:
-            self.game_ctrl.say_to(
-                playername, "§6请输入你需要看的章节号: \n(输入§e退出§6以退出)"
-            )
-            resp = game_utils.waitMsg(playername)
+            player.show("§6请输入你需要看的章节号: \n(输入§e退出§6以退出)")
+            resp = player.input()
             if resp == "退出" or resp is None:
                 break
             elif resp.isdigit():
@@ -87,26 +79,12 @@ class NewPlugin(Plugin):
                     article = fqapi.get_content(title, item_id)
                     article = article.split("\n")
                     for paragraph in article:
-                        self.game_ctrl.say_to(playername, paragraph)
+                        player.show(paragraph)
                         time.sleep(0.1)
                 else:
-                    self.game_ctrl.say_to(playername, "§c无效输入")
+                    player.show("§c无效输入")
             else:
-                self.game_ctrl.say_to(playername, "§c无效输入")
-
-    def on_player_join(self, player: Player):
-        playername = player.name
-        pass
-
-    def on_player_leave(self, player: Player):
-        playername = player.name
-        pass
-
-    def on_player_message(self, chat: Chat):
-        playername = chat.player.name
-        msg = chat.msg
-
-        pass
+                player.show("§c无效输入")
 
     def on_frame_exit(self, evt: FrameExit):
         status_code = evt.signal

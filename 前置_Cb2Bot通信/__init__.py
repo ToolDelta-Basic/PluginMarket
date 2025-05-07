@@ -1,9 +1,10 @@
 import json
+from typing import Any
 from collections.abc import Callable
 from tooldelta import Plugin, plugin_entry
 from tooldelta.constants import PacketIDS
 
-AVALIABLE_CB = Callable[[list[str]], bool | None]
+AVALIABLE_CB = Callable[[list[str]], bool | Any]
 
 
 class TellrawCb2Bot(Plugin):
@@ -50,7 +51,8 @@ class TellrawCb2Bot(Plugin):
                     reverse=True,
                 ):
                     for func in funcs:
-                        if func(msg_table[1:]):
+                        blocked = func(msg_table[1:])
+                        if blocked is True:
                             return True
                 return True
         return False

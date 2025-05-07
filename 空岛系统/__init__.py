@@ -83,8 +83,8 @@ class SkyBlock(Plugin):
             self.chatbar: ChatbarMenu
             self.intr: GameInteractive
             self.funclib: BasicFunctionLib
-        self.chatbar.add_trigger(
-            ["is", "空岛"], None, "返回空岛或 .is help 查看空岛帮助", self.island_menu
+        self.chatbar.add_new_trigger(
+            ["is", "空岛"], ..., "返回空岛或 .is help 查看空岛帮助", self.island_menu
         )
         for path in (
             "玩家记录.json",
@@ -175,8 +175,9 @@ class SkyBlock(Plugin):
         if not tmp:
             utils.TMPJson.flush(island_path)
 
-    def island_menu(self, player: str, args: list[str]):
+    def island_menu(self, playerf: Player, args):
         gc = self.game_ctrl
+        player = playerf.name
         if args == []:
             self.island_back(player)
             return

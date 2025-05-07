@@ -322,9 +322,9 @@ class SnowMenu(Plugin):
             self.interact: GameInteractive
             chatbar: ChatbarMenu
             cb2bot: TellrawCb2Bot
-        chatbar.add_trigger(
+        chatbar.add_new_trigger(
             ["snowmenu-init"],
-            None,
+            [],
             "初始化雪球菜单所需命令方块",
             self.place_cbs,
             op_only=True,
@@ -432,15 +432,15 @@ class SnowMenu(Plugin):
         return menu_cb
 
     @utils.thread_func("放置雪球菜单命令块")
-    def place_cbs(self, player, _):
-        x, y, z = (int(i) for i in self.getPosXYZ(player))
+    def place_cbs(self, player: Player, _):
+        _, x, y, z = (int(i) for i in player.getPos())
         for cbtype, cond, cmd in SNOWBALL_CMDS:
             p = self.interact.make_packet_command_block_update(
                 (x, y, z), cmd, mode=cbtype, conditional=bool(cond)
             )
             self.interact.place_command_block(p, 5)
             x += 1
-        self.game_ctrl.say_to(player, "雪球菜单命令方块初始化完成")
+        player.show("雪球菜单命令方块初始化完成")
 
     @utils.thread_func("雪球菜单打开或切页")
     def next_page(self, player: str):

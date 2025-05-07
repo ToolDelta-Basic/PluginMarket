@@ -1,4 +1,4 @@
-from tooldelta import Plugin, ToolDelta, plugin_entry
+from tooldelta import Plugin, Player, ToolDelta, plugin_entry
 
 
 class ClearEnderChest(Plugin):
@@ -11,16 +11,16 @@ class ClearEnderChest(Plugin):
         self.ListenPreload(self.on_preload)
 
     def on_preload(self):
-        self.GetPluginAPI("聊天栏菜单").add_trigger(
+        self.GetPluginAPI("聊天栏菜单").add_new_trigger(
             ["encl", "清末影箱"],
-            "[玩家名中的关键词]",
+            [("玩家名中的关键词", str, None)],
             "清空玩家末影箱",
             self.on_menu,
             lambda x: x == 1,
             True,
         )
 
-    def on_menu(self, playername: str, args: list[str]):
+    def on_menu(self, player: Player, args: list[str]):
         clearWho = args[0]
         for i in self.game_ctrl.allplayers:
             if clearWho in i:
@@ -28,10 +28,10 @@ class ClearEnderChest(Plugin):
                     self.game_ctrl.sendwocmd(
                         f"/replaceitem entity {i} slot.enderchest {j} air"
                     )
-                self.game_ctrl.say_to(playername, text="§l§a清空末影箱  成功")
+                player.show(f"§l§a清空 {i} 的末影箱：成功")
                 return
 
-        self.game_ctrl.say_to(playername, "§l§cERROR§r §c目标玩家不存在！")
+        player.show("§l§cERROR§r §c目标玩家不存在！")
 
 
 entry = plugin_entry(ClearEnderChest)

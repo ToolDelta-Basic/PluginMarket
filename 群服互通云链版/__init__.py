@@ -3,6 +3,7 @@ import websocket
 import time
 import re
 import threading
+from typing import Any
 from collections.abc import Callable
 from tooldelta import (
     Plugin,
@@ -149,7 +150,7 @@ class QQLinker(Plugin):
         triggers: list[str],
         argument_hint: str | None,
         usage: str,
-        func: Callable[[int, list[str]], None],
+        func: Callable[[int, list[str]], Any],
         args_pd: Callable[[int], bool] = lambda _: True,
         op_only: bool = False,
     ):
@@ -267,7 +268,7 @@ class QQLinker(Plugin):
         self.ws = websocket.WebSocketApp(  # type: ignore
             self.cfg["云链设置"]["地址"],
             header,
-            on_message=self.on_ws_message,
+            on_message= lambda a, b: self.on_ws_message(a, b) and None,
             on_error=self.on_ws_error,
             on_close=self.on_ws_close,
         )

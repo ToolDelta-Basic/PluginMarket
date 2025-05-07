@@ -1,6 +1,6 @@
 import time
 
-from tooldelta import Plugin, utils, plugin_entry
+from tooldelta import Player, Plugin, utils, plugin_entry
 from tooldelta.game_utils import getTarget
 from tooldelta.constants import PacketIDS
 
@@ -19,19 +19,18 @@ class WorldEdit(Plugin):
         self.ListenPacket(PacketIDS.BlockActorData, self.we_pkt56)
 
     def on_def(self):
-        self.add_trigger = self.GetPluginAPI("聊天栏菜单").add_trigger
+        self.add_new_trigger = self.GetPluginAPI("聊天栏菜单").add_new_trigger
         self.getX = None
         self.getY = None
         self.getZ = None
 
     def on_inject(self):
-        self.add_trigger(
-            ["we help"], None, "查看 简易建造插件 的使用说明", self.description_show
+        self.add_new_trigger(
+            ["we help"], [], "查看 简易建造插件 的使用说明", self.description_show
         )
 
-    def description_show(self, who: str, _):
-        self.game_ctrl.say_to(
-            who,
+    def description_show(self, who: Player, _):
+        who.show(
             "简易建造，帮助你更快速地在租赁服实现快速填充等操作; 使用插件管理器的手册查看功能以查看使用说明",
         )
 
