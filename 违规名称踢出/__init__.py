@@ -11,7 +11,7 @@ import requests
 from tooldelta.plugin_market import url_join
 from tooldelta.utils.tempjson import load_and_read
 class kill(Plugin):
-    version = (0, 0, 9)
+    version = (0, 0, 10)
     name = "违规名称踢出"
     author = "大庆油田"
     description = "简单的违规名称踢出"
@@ -46,7 +46,7 @@ class kill(Plugin):
             except:
                 print("获取远程词库失败，将尝试使用本地词库")
                 r= load_and_read("插件文件/ToolDelta类式插件/违规名称踢出/词库.json",True,1,[])
-        self.ci.extend(r)
+            self.ci.extend(r)
         self.yy = self.cfg["原因"]
         self.ListenPacket(constants.PacketIDS.PlayerList, self.on_prejoin)
         self.ListenActive(self.on_active)
