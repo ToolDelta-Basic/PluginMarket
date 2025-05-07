@@ -1,10 +1,91 @@
 {
-    "计分板重置": {
+    "插件接口获取修复": {
         "datas.json": 0,
-        "data_operation.py": 0,
+        "__init__.py": 0
+    },
+    "空岛系统": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "游戏内显示插件报错": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "ZBasic_Lang_中文编程": {
+        "executor.py": 0,
+        "syntax_compile.py": 0,
+        "compiler.py": 0,
+        "err_str.py": 0,
+        "basic_types.py": 0,
+        "datas.json": 0,
+        "示例代码": {
+            "进服欢迎": {
+                "玩家进入.txt": 0,
+                "玩家退出.txt": 0
+            },
+            "玩家转账": {
+                "玩家发言.txt": 0
+            }
+        },
+        "readme.txt": 0,
+        "type_checker.py": 0,
+        "basic_codes.py": 0,
+        "syntax_lib.py": 0,
+        "__init__.py": 0
+    },
+    "基础聊天栏菜单": {
+        "Readme.md": 0,
+        "datas.json": 0,
+        "kimi.py": 0,
+        "__init__.py": 0
+    },
+    "任务系统": {
+        "datas.json": 0,
+        "readme.txt": 0,
         "__init__.py": 0
     },
     "宠物背包清理": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "directory.json": 0,
+    "暴击检测": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "等级检测": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "五子棋小游戏": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "bdx导出器": {
+        "state_dump.py": 0,
+        "bdx_utils": {
+            "construct_file.py": 0,
+            "structs.py": 0,
+            "writer.py": 0
+        },
+        "progress_bar.py": 0,
+        "struct_loader.py": 0,
+        "datas.json": 0,
+        "scanner.py": 0,
+        "utils.py": 0,
+        "__init__.py": 0
+    },
+    "多功能玩家互传": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "发言频率限制v2": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "违规名称踢出": {
+        "词库.json": 0,
         "datas.json": 0,
         "__init__.py": 0
     },
@@ -12,69 +93,7 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "空岛分配": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "入服欢迎": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "单方块空岛系统": {
-        "datas.json": 0,
-        "data_operation.py": 0,
-        "__init__.py": 0,
-        "player_exchange.py": 0
-    },
-    "简单世界恢复": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "五子棋小游戏": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_大字替换": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "_workflow.py": 0,
-    "指令调试器": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "系统上线提示[Mono]": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "进服验证": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "简易建造": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "头衔系统": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_主动区块请求": {
-        "sub_chunk_process.py": 0,
-        "requet_queue.py": 0,
-        "datas.json": 0,
-        "__init__.py": 0,
-        "api.py": 0,
-        "define.py": 0
-    },
-    "音乐播放器": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "进服一言": {
+    "巡逻": {
         "datas.json": 0,
         "__init__.py": 0
     },
@@ -82,112 +101,104 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "命令发送监视器": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "plugin_ids_map.json": 0,
-    "LICENSE": 0,
-    "暴击检测": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "兑换码": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "file.py": 0
-    },
-    "directory_tree.json": 0,
-    "雪球菜单": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "[pkg]防挂插件包": {
-        "datas.json": 0
-    },
-    "定时任务": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "示例定时任务": {
-            "扫地姬.mcfunction": 0
-        },
-        "readme.txt": 0
-    },
-    "传送点设置": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "时间同步计分板": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "巡逻": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_tps计算器": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "玩家转账": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "插件接口获取修复": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_MIDI播放器": {
-        "mido": {
-            "midifiles": {
-                "__init__.py": 0,
-                "meta.py": 0,
-                "midifiles.py": 0,
-                "units.py": 0,
-                "tracks.py": 0
-            },
-            "frozen.py": 0,
-            "tokenizer.py": 0,
-            "syx.py": 0,
-            "__init__.py": 0,
-            "ports.py": 0,
-            "messages": {
-                "messages.py": 0,
-                "encode.py": 0,
-                "__init__.py": 0,
-                "specs.py": 0,
-                "strings.py": 0,
-                "checks.py": 0,
-                "decode.py": 0
-            },
-            "parser.py": 0
-        },
-        "datas.json": 0,
-        "Musicreater": {
-            "constants.py": 0,
-            "types.py": 0,
-            "main.py": 0,
-            "__init__.py": 0,
-            "utils.py": 0,
-            "exceptions.py": 0,
-            "subclass.py": 0
-        },
-        "__init__.py": 0
-    },
-    "@玩家": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "market_tree.json": 0,
-    "猫七街玩家互传": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
     "demo-商店系统": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "循环替换拒绝方块": {
+    "服服互通": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "LICENSE": 0,
+    "头衔系统": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "命令发送监视器": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "进服验证": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "入服欢迎": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "进服一言": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "物品制作器": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "单方块空岛系统": {
+        "datas.json": 0,
+        "player_exchange.py": 0,
+        "data_operation.py": 0,
+        "__init__.py": 0
+    },
+    "井字棋": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "pip模块支持": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "前置_大字替换": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "自定义聊天栏菜单": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "机器人发言": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "简易建造": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "系统上线提示[Mono]": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "计分板重置": {
+        "datas.json": 0,
+        "data_operation.py": 0,
+        "__init__.py": 0
+    },
+    "番茄小说": {
+        "TomatoNovelAPI.py": 0,
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "类式插件创建器": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "死亡点返回": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "简单世界恢复": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "音乐播放器": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "控制台执行MC指令": {
         "datas.json": 0,
         "__init__.py": 0
     },
@@ -195,120 +206,99 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "前置_循环获取玩家坐标": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "MCFunction计划任务": {
+        "datas.json": 0,
+        "examples": {
+            "示例-定时任务.mcfunction": 0,
+            "示例-系统启动.mcfunction": 0,
+            "示例-触发词.mcfunction": 0
+        },
+        "__init__.py": 0
+    },
+    "[pkg]防挂插件包": {
+        "datas.json": 0
+    },
+    "点歌台": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "玩家交易所": {
+        "datas.json": 0,
+        "data_operation.py": 0,
+        "__init__.py": 0
+    },
+    "前置_MIDI播放器": {
+        "Musicreater": {
+            "constants.py": 0,
+            "main.py": 0,
+            "subclass.py": 0,
+            "types.py": 0,
+            "exceptions.py": 0,
+            "utils.py": 0,
+            "__init__.py": 0
+        },
+        "mido": {
+            "midifiles": {
+                "meta.py": 0,
+                "tracks.py": 0,
+                "midifiles.py": 0,
+                "units.py": 0,
+                "__init__.py": 0
+            },
+            "parser.py": 0,
+            "tokenizer.py": 0,
+            "syx.py": 0,
+            "messages": {
+                "strings.py": 0,
+                "encode.py": 0,
+                "decode.py": 0,
+                "messages.py": 0,
+                "checks.py": 0,
+                "specs.py": 0,
+                "__init__.py": 0
+            },
+            "ports.py": 0,
+            "frozen.py": 0,
+            "__init__.py": 0
+        },
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "音效播放器": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "前置_Cb2Bot通信": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "plugin_ids_map.json": 0,
+    "简易建造-Pro": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "前置_主动区块请求": {
+        "api.py": 0,
+        "define.py": 0,
+        "sub_chunk_process.py": 0,
+        "requet_queue.py": 0,
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "聊天历史记录": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "世界の记忆": {
         "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "pyproject.toml": 0,
-    "latest_versions.json": 0,
-    "公告栏[Mono]": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "pytz": {
-            "lazy.py": 0,
-            "tzinfo.py": 0,
-            "zoneinfo": {
-                "Asia": {
-                    "Shanghai": 0
-                }
-            },
-            "__init__.py": 0,
-            "exceptions.py": 0,
-            "tzfile.py": 0,
-            "reference.py": 0
-        }
-    },
-    "多功能玩家互传": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "README.md": 0,
-    "超频刷屏反制": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "ZBasic_Lang_中文编程": {
-        "syntax_lib.py": 0,
-        "type_checker.py": 0,
-        "datas.json": 0,
-        "compiler.py": 0,
-        "__init__.py": 0,
-        "basic_types.py": 0,
-        "err_str.py": 0,
-        "示例代码": {
-            "玩家转账": {
-                "玩家发言.txt": 0
-            },
-            "进服欢迎": {
-                "玩家退出.txt": 0,
-                "玩家进入.txt": 0
-            }
-        },
-        "basic_codes.py": 0,
-        "syntax_compile.py": 0,
         "readme.txt": 0,
-        "executor.py": 0
-    },
-    "井字棋": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_聊天栏菜单": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "使用方法.md": 0
-    },
-    "机器人发言": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "群服互通云链版": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "websocket": {
-            "py.typed": 0,
-            "_http.py": 0,
-            "_core.py": 0,
-            "_app.py": 0,
-            "_url.py": 0,
-            "_cookiejar.py": 0,
-            "_abnf.py": 0,
-            "tests": {
-                "data": {
-                    "header02.txt": 0,
-                    "header01.txt": 0,
-                    "header03.txt": 0
-                },
-                "test_cookiejar.py": 0,
-                "test_websocket.py": 0,
-                "echo-server.py": 0,
-                "__init__.py": 0,
-                "test_url.py": 0,
-                "test_app.py": 0,
-                "test_http.py": 0,
-                "test_abnf.py": 0
-            },
-            "_utils.py": 0,
-            "__init__.py": 0,
-            "_socket.py": 0,
-            "_wsdump.py": 0,
-            "_logging.py": 0,
-            "_handshake.py": 0,
-            "_ssl_compat.py": 0,
-            "_exceptions.py": 0
-        }
-    },
-    "封禁系统": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "MySQL连接器": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "类式插件创建器": {
-        "datas.json": 0,
         "__init__.py": 0
     },
     "desperated_plugins": {
@@ -317,28 +307,7 @@
             "__init__.py": 0
         }
     },
-    "音效播放器": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "pip模块支持": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "自定义聊天栏菜单": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "ai聊天": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "前置_循环获取玩家坐标": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "榛缈插件性能分析": {
+    "全服喇叭": {
         "datas.json": 0,
         "__init__.py": 0
     },
@@ -346,114 +315,51 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "区块显示器": {
+    "玩家数据管理": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "发言频率限制": {
+    "循环替换拒绝方块": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "更好的钓鱼": {
-        "datas.json": 0,
-        "data_operation.py": 0,
-        "__init__.py": 0,
-        "属性.json": 0,
-        "readme.txt": 0
-    },
-    "『Orion System』违规与作弊行为综合反制系统": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "README.md": 0
-    },
-    "白名单&管理员检测": {
+    "@玩家": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "多服聊天互通": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "README.txt": 0
-    },
-    "前置_世界交互": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "控制台执行MC指令": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "简易建造-Pro": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "活塞限速": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "聊天历史记录": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "设置栏钢琴师": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "directory.json": 0,
-    "bdx导出器": {
-        "progress_bar.py": 0,
-        "scanner.py": 0,
-        "datas.json": 0,
-        "struct_loader.py": 0,
-        "__init__.py": 0,
-        "utils.py": 0,
-        "state_dump.py": 0,
-        "bdx_utils": {
-            "writer.py": 0,
-            "construct_file.py": 0,
-            "structs.py": 0
-        }
-    },
-    "物品制作器": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "服服互通": {
+    "封禁系统": {
         "datas.json": 0,
         "__init__.py": 0
     },
     "猫七街云黑封禁": {
+        "datas.json": 0,
         "server": {
             "官方云黑列表": {
                 "blacklist.json": 0
             },
             "server.py": 0
         },
+        "__init__.py": 0
+    },
+    "区块显示器": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "番茄小说": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "TomatoNovelAPI.py": 0
-    },
-    "大范围fill": {
+    "活塞限速": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "前置_基本插件功能库": {
+    "榛缈插件性能分析": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "玩家数据管理": {
+    "猫七街玩家互传": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "32k盒子显示": {
+    "设置栏钢琴师": {
         "datas.json": 0,
+        "readme.txt": 0,
         "__init__.py": 0
     },
     "[pkg]新手插件包": {
@@ -467,68 +373,11 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "前置_Cb2Bot通信": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "发言频率限制v2": {
+    "超频刷屏反制": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "违规名称踢出": {
-        "datas.json": 0,
-        "词库.json": 0,
-        "__init__.py": 0
-    },
-    "简单世界导入": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "游戏内显示插件报错": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "空岛系统": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "readme.txt": 0
-    },
-    "举报系统": {
-        "datas.json": 0,
-        "__init__.py": 0,
-        "Readme.md": 0
-    },
-    "玩家交易所": {
-        "datas.json": 0,
-        "data_operation.py": 0,
-        "__init__.py": 0
-    },
-    "等级检测": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    ".gitignore": 0,
-    ".deepsource.toml": 0,
-    "重启": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "死亡点返回": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "MCFunction计划任务": {
-        "datas.json": 0,
-        "examples": {
-            "示例-定时任务.mcfunction": 0,
-            "示例-触发词.mcfunction": 0,
-            "示例-系统启动.mcfunction": 0
-        },
-        "__init__.py": 0
-    },
-    "全服喇叭": {
+    "前置_基本插件功能库": {
         "datas.json": 0,
         "__init__.py": 0
     },
@@ -536,11 +385,121 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "基础聊天栏菜单": {
+    "_workflow.py": 0,
+    "命令方块代发言支持": {
         "datas.json": 0,
-        "__init__.py": 0,
-        "kimi.py": 0,
-        "Readme.md": 0
+        "__init__.py": 0
+    },
+    "时间同步计分板": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "前置_tps计算器": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "定时任务": {
+        "示例定时任务": {
+            "扫地姬.mcfunction": 0
+        },
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "玩家转账": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "market_tree.json": 0,
+    "前置_世界交互": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "发言频率限制": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "多服聊天互通": {
+        "datas.json": 0,
+        "README.txt": 0,
+        "__init__.py": 0
+    },
+    "MySQL连接器": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    ".gitignore": 0,
+    ".deepsource.toml": 0,
+    "ai聊天": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "举报系统": {
+        "Readme.md": 0,
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "群服互通云链版": {
+        "websocket": {
+            "_http.py": 0,
+            "_handshake.py": 0,
+            "_ssl_compat.py": 0,
+            "_abnf.py": 0,
+            "_exceptions.py": 0,
+            "tests": {
+                "data": {
+                    "header02.txt": 0,
+                    "header01.txt": 0,
+                    "header03.txt": 0
+                },
+                "test_abnf.py": 0,
+                "echo-server.py": 0,
+                "test_http.py": 0,
+                "test_url.py": 0,
+                "test_cookiejar.py": 0,
+                "test_websocket.py": 0,
+                "test_app.py": 0,
+                "__init__.py": 0
+            },
+            "py.typed": 0,
+            "_app.py": 0,
+            "_utils.py": 0,
+            "_url.py": 0,
+            "_cookiejar.py": 0,
+            "_socket.py": 0,
+            "_logging.py": 0,
+            "_core.py": 0,
+            "_wsdump.py": 0,
+            "__init__.py": 0
+        },
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "传送点设置": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "简单世界导入": {
+        "datas.json": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "公告栏[Mono]": {
+        "pytz": {
+            "reference.py": 0,
+            "lazy.py": 0,
+            "zoneinfo": {
+                "Asia": {
+                    "Shanghai": 0
+                }
+            },
+            "tzinfo.py": 0,
+            "exceptions.py": 0,
+            "tzfile.py": 0,
+            "__init__.py": 0
+        },
+        "datas.json": 0,
+        "__init__.py": 0
     },
     "获取全服玩家皮肤": {
         "datas.json": 0,
@@ -550,17 +509,58 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "点歌台": {
+    "重启": {
         "datas.json": 0,
         "__init__.py": 0
     },
-    "命令方块代发言支持": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "任务系统": {
+    "『Orion System』违规与作弊行为综合反制系统": {
         "datas.json": 0,
         "__init__.py": 0,
-        "readme.txt": 0
+        "README.md": 0
+    },
+    "大范围fill": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "指令调试器": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "更好的钓鱼": {
+        "属性.json": 0,
+        "datas.json": 0,
+        "data_operation.py": 0,
+        "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "latest_versions.json": 0,
+    "白名单&管理员检测": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "directory_tree.json": 0,
+    "雪球菜单": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "pyproject.toml": 0,
+    "空岛分配": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "32k盒子显示": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "兑换码": {
+        "datas.json": 0,
+        "file.py": 0,
+        "__init__.py": 0
+    },
+    "README.md": 0,
+    "前置_聊天栏菜单": {
+        "datas.json": 0,
+        "使用方法.md": 0,
+        "__init__.py": 0
     }
 }
