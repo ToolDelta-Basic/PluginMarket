@@ -1,5 +1,6 @@
 from tooldelta import Plugin, Player, cfg as config, utils, Chat, plugin_entry
 from typing import Any
+from types import EllipsisType
 from dataclasses import dataclass
 from collections.abc import Callable
 
@@ -10,6 +11,7 @@ VALID_ARGUMENT_HINT_TYPES = type[str | int | bool | float]  # | tuple[str]
 VALID_ARG_VALUE = str | int | float | None
 VALID_ARG_WITHOUT_NONE = str | int | float
 ARGUMENT_HINT = list[tuple[str, VALID_ARGUMENT_HINT_TYPES, VALID_ARG_VALUE]]
+ARGUMENT_HINT_WITH_ELLIPSIS = ARGUMENT_HINT | EllipsisType
 
 
 def isNaN(x: float):
@@ -60,26 +62,38 @@ def arg_str(arg: str | float | bool):
 
 
 def show_args(
-    player: Player, prefix: str, arg_hints: ARGUMENT_HINT, current_arg_index: int
+    player: Player,
+    prefix: str,
+    arg_hints: ARGUMENT_HINT_WITH_ELLIPSIS,
+    current_arg_index: int,
 ):
-    args = []
-    for i, (name, type, default_val) in enumerate(arg_hints):
-        if i == current_arg_index:
-            argstr = "§b"
-        else:
-            argstr = "§7"
-        argstr += "[" + name + ":"
-        if default_val is not None:
-            argstr += arg_str(default_val)
-        else:
-            argstr += type_str(type)
-        argstr += "]"
-        args.append(argstr)
-    player.show(f"{prefix} " + " ".join(args))
+    if arg_hints == ...:
+        player.show(f"{prefix} §b[...]")
+    else:
+        args = []
+        for i, (name, type, default_val) in enumerate(arg_hints):
+            if i == current_arg_index:
+                argstr = "§b"
+            else:
+                argstr = "§7"
+            argstr += "[" + name + ":"
+            if default_val is not None:
+                argstr += arg_str(default_val)
+            else:
+                argstr += type_str(type)
+            argstr += "]"
+            args.append(argstr)
+        player.show(f"{prefix} " + " ".join(args))
 
 
-def ask_for_args(player: Player, prefix: str, arg_hints: ARGUMENT_HINT):
+def ask_for_args(player: Player, prefix: str, arg_hints: ARGUMENT_HINT_WITH_ELLIPSIS):
     final_args = []
+    if arg_hints == ...:
+        resp = player.input("§7请输入：", timeout=240)
+        if resp is None:
+            player.show("§c输入命令参数超时")
+            return None
+        return tuple(resp.split())
     for i, (name, argtype, default_val) in enumerate(arg_hints):
         while 1:
             show_args(player, prefix, arg_hints, i)
@@ -131,7 +145,7 @@ class StandardChatbarTriggers:
     def __init__(
         self,
         triggers: list[str],
-        argument_hints: ARGUMENT_HINT,
+        argument_hints: ARGUMENT_HINT_WITH_ELLIPSIS,
         usage: str,
         func: Callable[[Player, tuple], Any],
         op_only: bool,
@@ -161,6 +175,11 @@ class StandardChatbarTriggers:
     @property
     def argument_hints_str(self) -> str:
         outputs = []
+        if self.argument_hints == ...:
+            return utils.simple_fmt(
+                {"[提示词]": "...", "[默认值]": "任意"},
+                self.cfg["help菜单样式"]["参数提示配置"]["参数提示格式"],
+            )
         for hint, atype, default in self.argument_hints:
             if default is not None:
                 outputs.append(
@@ -187,6 +206,9 @@ class StandardChatbarTriggers:
         return " ".join(outputs)
 
     def _parse_args(self, args: list[str]) -> tuple[tuple, Exception | None]:
+        if self.argument_hints == ...:
+            # Ellipsis
+            return tuple(args), None
         if len(args) > len(self.argument_hints):
             return (), ValueError(
                 f"参数个数错误， 最多 {len(self.argument_hints)} 个参数"
@@ -217,6 +239,8 @@ class StandardChatbarTriggers:
     def _check_argument_hint(self):
         default_arg = False
         self.no_default_args_num = 0
+        if self.argument_hints == ...:
+            return
         for i, hint in enumerate(self.argument_hints):
             if len(hint) != 3:
                 raise ValueError(
@@ -248,7 +272,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 5)
+    version = (0, 3, 6)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -303,7 +327,7 @@ class ChatbarMenu(Plugin):
             )
             self.add_new_trigger(
                 ["test", "td"],
-                [("aint", int, None), ("bstr", str, "a"), ("cbool", bool, False)],
+                ...,
                 "testargs",
                 lambda a, b: a.show(f"args: {b}"),
             )
@@ -319,7 +343,7 @@ class ChatbarMenu(Plugin):
     def add_new_trigger(
         self,
         triggers: list[str],
-        argument_hint: ARGUMENT_HINT,
+        argument_hint: ARGUMENT_HINT_WITH_ELLIPSIS,
         usage: str,
         func: Callable[[Player, tuple], Any],
         op_only: bool = False,
