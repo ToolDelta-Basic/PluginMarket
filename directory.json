@@ -367,6 +367,7 @@
     ],
     "前置_世界交互": [
         "datas.json",
+        "block_palette_3.2.json",
         "__init__.py"
     ],
     "控制台执行MC指令": [

@@ -366,7 +366,7 @@
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "plugin-type": "classic"
     },
     "控制台执行MC指令": {
