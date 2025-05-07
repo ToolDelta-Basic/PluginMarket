@@ -29,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -41,7 +41,7 @@ class HoloPsychon(Plugin):
             "方块实体数据同步频率(秒)": 86400,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
+            "世界の记忆", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
         )
 
         self.enable_debug = bool(cfg["启用调试"])
@@ -143,6 +143,9 @@ class HoloPsychon(Plugin):
         )
 
     def _on_chunk_data(self, event: InternalBroadcast):
+        if "world" not in self.__dict__:
+            return
+
         nbt_blocks = BytesIO()
 
         cp = bwo.ChunkPos(
