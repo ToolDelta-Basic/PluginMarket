@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 5)
+    version = (0, 1, 6)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -268,12 +268,6 @@ class Orion_System(Plugin):
                 word.upper() for word in self.blacklist_word_list
             ]
 
-        if self.is_ban_api_in_game:
-            self.game_ctrl.sendwocmd(
-                f'/scoreboard objectives add "{self.ban_scoreboard_name}" dummy "{self.ban_scoreboard_dummy_name}"'
-            )
-            self.ban_api_in_game()
-
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         # 监听PlayerList数据包
@@ -492,6 +486,12 @@ class Orion_System(Plugin):
             )
 
         self.ban_player_when_plugin_active()
+
+        if self.is_ban_api_in_game:
+            self.game_ctrl.sendwocmd(
+                f'/scoreboard objectives add "{self.ban_scoreboard_name}" dummy "{self.ban_scoreboard_dummy_name}"'
+            )
+            self.ban_api_in_game()
 
     def on_PlayerList(self, packet):
         if packet["ActionType"] == 0:
