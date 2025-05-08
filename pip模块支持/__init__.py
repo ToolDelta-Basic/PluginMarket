@@ -7,7 +7,7 @@ from tooldelta import Plugin, utils, fmts, plugin_entry
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -19,15 +19,23 @@ class PipSupport(Plugin):
 
     # -------------------------  API  -----------------------------
     def install(self, packages: list[str]):
-        proc = subprocess.Popen([
+        pyexec = sys.executable
+        if "py" not in pyexec:
+            # 这不是 Python, 是 ToolDelta
+            install_opts = ["pip", "install", "--target", self.data_path, *packages]
+        else:
+            install_opts = [
                 sys.executable,
                 "-m",
                 "pip",
                 "install",
                 "--target",
                 self.data_path,
-                *packages
-            ],
+                *packages,
+            ]
+
+        proc = subprocess.Popen(
+            install_opts,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
