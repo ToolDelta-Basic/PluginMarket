@@ -300,7 +300,7 @@
     "pip": {
       "name": "pip模块支持",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "自定义聊天栏菜单": {
