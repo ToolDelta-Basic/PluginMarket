@@ -31,6 +31,10 @@
         "__init__.py": 0,
         "readme.txt": 0
     },
+    "00榛缈插件性能分析": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "五子棋小游戏": {
         "datas.json": 0,
         "__init__.py": 0
@@ -336,10 +340,6 @@
         "__init__.py": 0
     },
     "前置_循环获取玩家坐标": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "榛缈插件性能分析": {
         "datas.json": 0,
         "__init__.py": 0
     },

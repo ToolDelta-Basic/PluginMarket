@@ -45,6 +45,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "榛缈插件性能分析": {
+      "name": "00榛缈插件性能分析",
+      "author": "Hazelmeow",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
@@ -313,12 +319,6 @@
       "name": "前置_循环获取玩家坐标",
       "author": "ToolDelta",
       "version": "0.0.4",
-      "plugin-type": "classic"
-    },
-    "榛缈插件性能分析": {
-      "name": "榛缈插件性能分析",
-      "author": "Hazelmeow",
-      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "admin_cmd": {
