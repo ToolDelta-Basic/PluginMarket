@@ -15,7 +15,7 @@ import threading
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 7)
+    version = (0, 1, 8)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -1636,47 +1636,53 @@ class Orion_System(Plugin):
         )
         for i in all_ban_player_xuids:
             path_ban_xuid = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{i}"
-            with self.thread_lock_ban_player_by_xuid:
-                ban_xuid_data = tempjson.load_and_read(
-                    path_ban_xuid, need_file_exists=False, timeout=2
-                )
-                tempjson.unload_to_path(path_ban_xuid)
-            ban_end_timestamp_xuid = ban_xuid_data.get("ban_end_timestamp", None)
-            ban_player = ban_xuid_data.get("name", None)
-            ban_xuid = ban_xuid_data.get("xuid", None)
-            if isinstance(ban_end_timestamp_xuid, int) is False:
+            try:
+                with self.thread_lock_ban_player_by_xuid:
+                    ban_xuid_data = tempjson.load_and_read(
+                        path_ban_xuid, need_file_exists=False, timeout=2
+                    )
+                    tempjson.unload_to_path(path_ban_xuid)
+                ban_end_timestamp_xuid = ban_xuid_data["ban_end_timestamp"]
+                ban_player = ban_xuid_data["name"]
+                ban_xuid = ban_xuid_data["xuid"]
+                if (
+                    ban_end_timestamp_xuid != "Forever"
+                    and ban_end_timestamp_xuid <= int(time.time())
+                ):
+                    os.remove(path_ban_xuid)
+                    fmts.print_inf(
+                        f"§b发现 玩家 {ban_player} (xuid:{ban_xuid}) 的封禁已到期，已解除封禁"
+                    )
+            except Exception:
                 os.remove(path_ban_xuid)
                 fmts.print_inf(
-                    f"§6发现 玩家 {ban_player} (xuid:{ban_xuid}) 的封禁数据出现损坏，已自动移除"
-                )
-            elif ban_end_timestamp_xuid <= int(time.time()):
-                os.remove(path_ban_xuid)
-                fmts.print_inf(
-                    f"§b发现 玩家 {ban_player} (xuid:{ban_xuid}) 的封禁已到期，已解除封禁"
+                    f"§6发现 封禁数据 ({path_ban_xuid}) 出现损坏，已自动移除"
                 )
         all_ban_player_device_id = os.listdir(
             f"{self.data_path}/玩家封禁时间数据(以设备号记录)"
         )
         for i in all_ban_player_device_id:
             path_ban_device_id = f"{self.data_path}/玩家封禁时间数据(以设备号记录)/{i}"
-            with self.thread_lock_ban_player_by_device_id:
-                ban_device_id_data = tempjson.load_and_read(
-                    path_ban_device_id, need_file_exists=False, timeout=2
-                )
-                tempjson.unload_to_path(path_ban_device_id)
-            ban_end_timestamp_device_id = ban_device_id_data.get(
-                "ban_end_timestamp", None
-            )
-            ban_device_id = ban_device_id_data.get("device_id", None)
-            if isinstance(ban_end_timestamp_device_id, int) is False:
+            try:
+                with self.thread_lock_ban_player_by_device_id:
+                    ban_device_id_data = tempjson.load_and_read(
+                        path_ban_device_id, need_file_exists=False, timeout=2
+                    )
+                    tempjson.unload_to_path(path_ban_device_id)
+                ban_end_timestamp_device_id = ban_device_id_data["ban_end_timestamp"]
+                ban_device_id = ban_device_id_data["device_id"]
+                if (
+                    ban_end_timestamp_device_id != "Forever"
+                    and ban_end_timestamp_device_id <= int(time.time())
+                ):
+                    os.remove(path_ban_device_id)
+                    fmts.print_inf(
+                        f"§b发现 设备号 {ban_device_id} 的封禁已到期，已解除封禁"
+                    )
+            except Exception:
                 os.remove(path_ban_device_id)
                 fmts.print_inf(
-                    f"§6发现 设备号 {ban_device_id} 的封禁数据出现损坏，已自动移除"
-                )
-            elif ban_end_timestamp_device_id <= int(time.time()):
-                os.remove(path_ban_device_id)
-                fmts.print_inf(
-                    f"§b发现 设备号 {ban_device_id} 的封禁已到期，已解除封禁"
+                    f"§6发现 封禁数据 ({path_ban_device_id}) 出现损坏，已自动移除"
                 )
 
     # 控制台菜单封禁玩家函数封装
