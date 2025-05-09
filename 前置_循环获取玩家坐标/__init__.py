@@ -86,11 +86,17 @@ class GlobalGetPlayerPos(Plugin):
                 fmts.print_err(
                     f"获取玩家坐标: 无法获取坐标: {result.OutputMessages[0].Message}"
                 )
+                return
         except TimeoutError:
             fmts.print_war("获取玩家坐标: 获取指令返回超时")
             return
 
-        content = json.loads(result.OutputMessages[0].Parameters[0])
+        params = result.OutputMessages[0].Parameters
+        if not params:
+            fmts.print_war("获取玩家坐标: 指令返回异常.")
+            return
+
+        content = json.loads(params[0])
         for i in content:
             player_name = uuid2player[i["uniqueId"]]
             player_posdata[player_name] = {
