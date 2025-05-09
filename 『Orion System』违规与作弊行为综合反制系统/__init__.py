@@ -35,7 +35,7 @@ class Orion_System(Plugin):
             "是否启用游戏内封禁系统API": True,
             "--游戏内封禁记分板名称": "Ban_System",
             "--游戏内封禁记分板显示名称": "Ban_System",
-            "--游戏内封禁记分板检查周期(秒)": 2,
+            "--游戏内封禁记分板检查周期(秒)": 10,
             "是否启用机器人IP外进反制": True,
             "是否启用Steve/Alex皮肤反制": False,
             "是否启用4D皮肤反制": False,
