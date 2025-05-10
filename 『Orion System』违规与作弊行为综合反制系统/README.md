@@ -4,19 +4,20 @@ I 拥有精美UI页面的控制台封禁/解封系统
 II 拥有精美UI页面的游戏内封禁/解封系统  
 III 可通过游戏内记分板命令接入本封禁系统  
 IV 机器人IP外进反制  
-V Steve/Alex/4D皮肤反制  
-VI 账号等级限制  
-VII 网易屏蔽词名称反制  
-VIII 自定义违禁词名称反制  
-IX 网易MC客户端玩家数据检查  
-X 禁止游戏内私聊(tell,msg,w命令)  
-XI 禁止游戏内me命令  
-XII 发言黑名单词检测  
-XIII 发言频率限制  
-XIV 发言长度限制  
-XV 重复消息刷屏限制  
-XVI 记录玩家XUID/设备号/现有名称与历史改名记录  
-XVII 对上述行为执行自动封禁  
+V 皮肤数据异常反制(base64解码)  
+VI Steve/Alex/4D皮肤反制  
+VII 账号等级限制  
+VIII 网易屏蔽词名称反制  
+IX 自定义违禁词名称反制  
+X 网易MC客户端玩家数据检查  
+XI 禁止游戏内私聊(tell,msg,w命令)  
+XII 禁止游戏内me命令  
+XIII 发言黑名单词检测  
+XIV 发言频率限制  
+XV 发言长度限制  
+XVI 重复消息刷屏限制  
+XVII 记录玩家XUID/设备号/现有名称与历史改名记录  
+XVIII 对上述行为执行自动封禁  
 
 ## 2.注意事项
 ① 如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true  
