@@ -6,7 +6,7 @@ import json
 class NewPlugin(Plugin):
     name = "ai聊天"
     author = "机入"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -20,7 +20,6 @@ class NewPlugin(Plugin):
         # 注册函数
         self.ListenPreload(self.service)
         self.players = self.frame.get_players()
-        self.ListenPreload(self.on_preload)
 
     def on_preload(self):
         self.menu = self.GetPluginAPI("聊天栏菜单")
@@ -66,6 +65,7 @@ class NewPlugin(Plugin):
             self.print("未知原因")
 
     def service(self):
+        self.on_preload()
         self.menu.add_new_trigger(
             ["ai"], ..., "在租赁服和deepseek进行聊天对话", self.transfer
         )
