@@ -9,13 +9,14 @@ import requests
 import random
 import math
 import threading
+import base64
 
 
 # 插件主类
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 8)
+    version = (0, 1, 9)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -36,7 +37,9 @@ class Orion_System(Plugin):
             "--游戏内封禁记分板名称": "Ban_System",
             "--游戏内封禁记分板显示名称": "Ban_System",
             "--游戏内封禁记分板检查周期(秒)": 10,
+            "是否显示租赁服IP和端口": True,
             "是否启用机器人IP外进反制": True,
+            "是否启用锁服反制(皮肤数据异常)": True,
             "是否启用Steve/Alex皮肤反制": False,
             "是否启用4D皮肤反制": False,
             "是否启用账号等级限制": True,
@@ -109,7 +112,7 @@ class Orion_System(Plugin):
             ],
             "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，与巡逻插件一起使用有概率获取失败，若要根据设备号封禁玩家则必须开启该项)": True,
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": 5,
-            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": False,
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级)": False,
             "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": False,
             "--如果在网易MC客户端搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": True,
             "--网易MC客户端检查API响应等待时间(秒)": 10,
@@ -158,6 +161,7 @@ class Orion_System(Plugin):
             "是否根据设备号封禁玩家": True,
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": True,
             "封禁时间_机器人IP外进反制": -1,
+            "封禁时间_锁服反制(皮肤数据异常)": -1,
             "封禁时间_Steve/Alex皮肤反制": 0,
             "封禁时间_4D皮肤反制": 0,
             "封禁时间_账号等级限制": 0,
@@ -189,7 +193,9 @@ class Orion_System(Plugin):
             "--游戏内封禁记分板名称": str,
             "--游戏内封禁记分板显示名称": str,
             "--游戏内封禁记分板检查周期(秒)": cfg.PNumber,
+            "是否显示租赁服IP和端口": bool,
             "是否启用机器人IP外进反制": bool,
+            "是否启用锁服反制(皮肤数据异常)": bool,
             "是否启用Steve/Alex皮肤反制": bool,
             "是否启用4D皮肤反制": bool,
             "是否启用账号等级限制": bool,
@@ -201,7 +207,7 @@ class Orion_System(Plugin):
             "名称违禁词列表": cfg.JsonList(str, len_limit=-1),
             "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，与巡逻插件一起使用有概率获取失败，若要根据设备号封禁玩家则必须开启该项)": bool,
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": cfg.PInt,
-            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)": bool,
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级)": bool,
             "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)": bool,
             "--如果在网易MC客户端搜到的玩家等级与游戏内等级不同(说明遭到外挂篡改)，是否踢出游戏": bool,
             "--网易MC客户端检查API响应等待时间(秒)": cfg.PNumber,
@@ -224,6 +230,7 @@ class Orion_System(Plugin):
             "是否根据设备号封禁玩家": bool,
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": bool,
             "封禁时间_机器人IP外进反制": [int, str],
+            "封禁时间_锁服反制(皮肤数据异常)": [int, str],
             "封禁时间_Steve/Alex皮肤反制": [int, str],
             "封禁时间_4D皮肤反制": [int, str],
             "封禁时间_账号等级限制": [int, str],
@@ -285,6 +292,7 @@ class Orion_System(Plugin):
 
         self.upgrade_plugin_data()
         self.remove_expire_ban_data()
+        self.query_server_IP_and_port()
 
     # 调用配置
     def load_config(self):
@@ -307,7 +315,9 @@ class Orion_System(Plugin):
         self.ban_scoreboard_name = config["--游戏内封禁记分板名称"]
         self.ban_scoreboard_dummy_name = config["--游戏内封禁记分板显示名称"]
         self.ban_scoreboard_detect_cycle = config["--游戏内封禁记分板检查周期(秒)"]
+        self.is_query_IP_and_port = config["是否显示租赁服IP和端口"]
         self.is_detect_bot = config["是否启用机器人IP外进反制"]
+        self.is_detect_abnormal_skin = config["是否启用锁服反制(皮肤数据异常)"]
         self.is_ban_Steve_or_Alex = config["是否启用Steve/Alex皮肤反制"]
         self.is_ban_4D_skin = config["是否启用4D皮肤反制"]
         self.is_level_limit = config["是否启用账号等级限制"]
@@ -328,7 +338,7 @@ class Orion_System(Plugin):
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)"
         ]
         self.is_check_player_info = config[
-            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级，注意：本API不稳定，当大量玩家同时进入游戏时可能出现404或超时)"
+            "是否检查玩家信息与网易MC客户端是否一致(可用于反制外挂篡改游戏内等级)"
         ]
         self.is_ban_player_if_cannot_search = config[
             "--如果在网易MC客户端无法搜索到该玩家，是否踢出游戏(可能的原因：“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新)"
@@ -364,6 +374,7 @@ class Orion_System(Plugin):
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)"
         ]
         self.ban_time_detect_bot = config["封禁时间_机器人IP外进反制"]
+        self.ban_time_detect_abnormal_skin = config["封禁时间_锁服反制(皮肤数据异常)"]
         self.ban_time_Steve_or_Alex = config["封禁时间_Steve/Alex皮肤反制"]
         self.ban_time_4D_skin = config["封禁时间_4D皮肤反制"]
         self.ban_time_level_limit = config["封禁时间_账号等级限制"]
@@ -452,7 +463,24 @@ class Orion_System(Plugin):
 
     def on_active(self):
         fmts.print_inf(
-            "§e<『Orion System』违规与作弊行为综合反制系统> §b如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true"
+            "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+        )
+        fmts.print_inf(
+            "§l§d❐§f 『§6Orion System §d猎户座§f』 §b违规与作弊行为§e综合§a反制§d系统"
+        )
+        fmts.print_inf("§a❀ §b反制外挂の重要提示！")
+        fmts.print_inf("§a❀ §e目前较为流行的锁服方法为 §b坐骑+传送锁服")
+        fmts.print_inf(
+            "§a❀ §d反制方法： §e请在您的租赁服的常加载区域设置 §b循环命令方块：/ride @a stop_riding"
+        )
+        fmts.print_inf(
+            "§a❀ §d注意：§e由于性能原因，我们不建议通过机器人插件循环执行上述命令，§b请您在游戏中通过命令方块进行防御！"
+        )
+        fmts.print_inf(
+            "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+        )
+        fmts.print_inf(
+            "§a❀ §e如果您需要“禁止游戏内私聊(tell,msg,w命令)”，§b请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true"
         )
 
         # 在控制台菜单注册封禁/解封系统触发词
@@ -506,12 +534,18 @@ class Orion_System(Plugin):
             ]
             PersonaSkin = packet["Entries"][0]["Skin"]["PersonaSkin"]
             SkinID = packet["Entries"][0]["Skin"]["SkinID"]
+            SkinImageWidth = packet["Entries"][0]["Skin"]["SkinImageWidth"]
+            SkinImageHeight = packet["Entries"][0]["Skin"]["SkinImageHeight"]
+            SkinData = packet["Entries"][0]["Skin"]["SkinData"]
             GrowthLevels = packet["GrowthLevels"][0]
 
             self.get_player_device_id(Username, xuid, SkinID)
 
             if Username not in self.whitelist:
                 self.ban_bot(Username, xuid, PremiumSkin, Trusted, packet)
+                self.ban_abnormal_skin(
+                    Username, xuid, SkinImageWidth, SkinImageHeight, SkinData
+                )
                 self.ban_Steve_or_Alex(
                     Username, xuid, SkinID, GeometryDataEngineVersion, PersonaSkin
                 )
@@ -644,6 +678,31 @@ class Orion_System(Plugin):
 
         return False
 
+    # 查询租赁服IP和端口函数封装
+
+    @utils.thread_func("查询租赁服IP和端口函数")
+    def query_server_IP_and_port(self):
+        if self.is_query_IP_and_port:
+            try:
+                path_tooldelta_basic_config = "ToolDelta基本配置.json"
+                tooldelta_basic_config = tempjson.load_and_read(
+                    path_tooldelta_basic_config,
+                    need_file_exists=True,
+                    default={},
+                    timeout=2,
+                )
+                tempjson.unload_to_path(path_tooldelta_basic_config)
+                server_name = tooldelta_basic_config["NeOmega接入点启动模式"][
+                    "服务器号"
+                ]
+                pwd = tooldelta_basic_config["NeOmega接入点启动模式"]["密码"]
+                url = "http://198.44.179.197:5000/api/server_id"
+                data = {"server_name": server_name, "pwd": pwd}
+                result = requests.post(url, data=data)
+                fmts.print_inf(f"§b服务器号:{server_name}，本{result.text}")
+            except Exception as error:
+                fmts.print_inf(f"§c查询租赁服IP和端口失败，原因：{error}")
+
     # 反制机器人函数封装
 
     @utils.thread_func("反制机器人函数")
@@ -667,6 +726,57 @@ class Orion_System(Plugin):
                 self.ban_time_format(self.ban_time_detect_bot),
                 "您必须通过 Microsoft 服务身份验证。",
             )
+
+    # 反制锁服函数封装(皮肤数据异常)
+
+    @utils.thread_func("反制锁服函数(皮肤数据异常)")
+    def ban_abnormal_skin(
+        self, Username, xuid, SkinImageWidth, SkinImageHeight, SkinData
+    ):
+        if self.is_detect_abnormal_skin:
+            try:
+                decode_skinData = base64.b64decode(SkinData)
+                SkinData_bytes_len = len(decode_skinData)
+                if (
+                    (SkinImageWidth * SkinImageHeight * 4 != SkinData_bytes_len)
+                    or (SkinImageWidth not in (64, 128, 256, 512))
+                    or (SkinImageHeight not in (64, 128, 256, 512))
+                ):
+                    fmts.print_inf(f"§c发现 {Username} 可能尝试锁服，正在制裁")
+                    self.game_ctrl.sendwocmd(
+                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                    )
+                    fmts.print_inf(f"§a发现 {Username} 可能尝试锁服，已被踢出游戏")
+                    self.ban_player_by_xuid(
+                        Username,
+                        xuid,
+                        self.ban_time_format(self.ban_time_detect_abnormal_skin),
+                        "您必须通过 Microsoft 服务身份验证。",
+                    )
+                    self.ban_player_by_device_id(
+                        Username,
+                        xuid,
+                        self.ban_time_format(self.ban_time_detect_abnormal_skin),
+                        "您必须通过 Microsoft 服务身份验证。",
+                    )
+            except Exception:
+                fmts.print_inf(f"§c发现 {Username} 皮肤数据异常，正在制裁")
+                self.game_ctrl.sendwocmd(
+                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                )
+                fmts.print_inf(f"§a发现 {Username} 皮肤数据异常，已被踢出游戏")
+                self.ban_player_by_xuid(
+                    Username,
+                    xuid,
+                    self.ban_time_format(self.ban_time_detect_abnormal_skin),
+                    "您必须通过 Microsoft 服务身份验证。",
+                )
+                self.ban_player_by_device_id(
+                    Username,
+                    xuid,
+                    self.ban_time_format(self.ban_time_detect_abnormal_skin),
+                    "您必须通过 Microsoft 服务身份验证。",
+                )
 
     # 反制Steve/Alex皮肤函数封装
 
@@ -1179,6 +1289,8 @@ class Orion_System(Plugin):
             return 0
 
     # 玩家封禁函数封装(开始执行封禁,通过xuid判断)
+
+    @utils.thread_func("玩家封禁函数(开始执行封禁,通过xuid判断)")
     def ban_player_by_xuid(self, player, xuid, ban_time, ban_reason):
         if self.is_ban_player_by_xuid and ban_time != 0:
             timestamp_now = int(time.time())
@@ -1364,6 +1476,8 @@ class Orion_System(Plugin):
                 self.ban_player_when_PlayerList_by_device_id(player, xuid, device_id)
 
     # 玩家封禁函数封装(开始执行封禁,通过device_id判断)
+
+    @utils.thread_func("玩家封禁函数(开始执行封禁,通过device_id判断)")
     def ban_player_by_device_id(self, player, xuid, ban_time, ban_reason):
         if self.is_ban_player_by_device_id and ban_time != 0:
             path_device_id = f"{self.data_path}/玩家丨设备号丨xuid丨历史名称丨记录.json"
