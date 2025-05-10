@@ -563,8 +563,8 @@
     },
     "choose-song": {
       "name": "点歌台",
-      "author": "SuperScript",
-      "version": "0.1.7",
+      "author": "SuperScript & Zhonger-Yuansi",
+      "version": "0.2.0",
       "plugin-type": "classic"
     },
     "cb-say-supporter": {
