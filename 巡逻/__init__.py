@@ -52,8 +52,13 @@ class xunluo(Plugin):
                         f'execute as @a[name="{player}"] at @s run tp @a[name="{self.game_ctrl.bot_name}"] ~ 325 ~'
                     )
                     time.sleep(self.repeat_time)
-            except Exception as e:
-                fmts.print_err(f"巡逻出错: {e}")
+            except ValueError as exc:
+                if "未连接到游戏" == str(exc):
+                    fmts.print_inf("巡逻: 游戏关闭, 线程终止.")
+                    return # Hazelmeow qwq
+                fmts.print_err(f"巡逻出错: {exc}")
+            except Exception as exc:
+                fmts.print_err(f"巡逻出错: {exc}")
 
     def on_inject(self):
         utils.createThread(self._patrol_loop, (), "巡逻")
