@@ -39,6 +39,22 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "bdx导入&导出器": {
+        "progress_bar.py": 0,
+        "scanner.py": 0,
+        "datas.json": 0,
+        "struct_loader.py": 0,
+        "__init__.py": 0,
+        "utils.py": 0,
+        "state_dump.py": 0,
+        "bdx_utils": {
+            "writer.py": 0,
+            "reader.py": 0,
+            "construct_file.py": 0,
+            "structs.py": 0
+        },
+        "importer.py": 0
+    },
     "前置_大字替换": {
         "datas.json": 0,
         "__init__.py": 0
@@ -403,20 +419,6 @@
         "readme.txt": 0
     },
     "directory.json": 0,
-    "bdx导出器": {
-        "progress_bar.py": 0,
-        "scanner.py": 0,
-        "datas.json": 0,
-        "struct_loader.py": 0,
-        "__init__.py": 0,
-        "utils.py": 0,
-        "state_dump.py": 0,
-        "bdx_utils": {
-            "writer.py": 0,
-            "construct_file.py": 0,
-            "structs.py": 0
-        }
-    },
     "物品制作器": {
         "datas.json": 0,
         "__init__.py": 0,

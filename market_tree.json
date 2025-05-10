@@ -57,6 +57,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "bdx-exporter": {
+      "name": "bdx导入&导出器",
+      "author": "SuperScript/帥気的男主角",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
     "bigchar-replace": {
       "name": "前置_大字替换",
       "author": "ToolDelta",
@@ -397,12 +403,6 @@
       "name": "设置栏钢琴师",
       "author": "SuperScript",
       "version": "0.0.9",
-      "plugin-type": "classic"
-    },
-    "bdx-exporter": {
-      "name": "bdx导出器",
-      "author": "SuperScript",
-      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "item-maker": {
