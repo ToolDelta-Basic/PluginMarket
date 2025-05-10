@@ -1,12 +1,9 @@
 from typing import TYPE_CHECKING, Dict, List, Any
 from tooldelta import fmts, utils
 from .bdx_utils.reader import read_bdx_file
+# from .state_dump import parse_block_states
 import json
 import os
-import time  # 添加time模块导入
-
-if TYPE_CHECKING:
-    from . import BDXExporter
 
 if TYPE_CHECKING:
     from . import BDXExporter
@@ -60,28 +57,16 @@ def import_bdx_file(sys: "BDXExporter", filepath: str, import_position):
         return False
     
     try:
-        # 首先验证文件是否为BDX格式
-        with open(filepath, "rb") as f:
-            magic = f.read(4)
-            if magic != b'BDX\x00':
-                fmts.print_err(f"文件不是有效的BDX格式: {filepath}")
-                return False
-        
         fmts.print_inf(f"正在解析BDX文件 {filepath}...")
-        try:
-            author, blocks = read_bdx_file(filepath)
-            fmts.print_inf(f"文件作者: {author}")
-            fmts.print_inf(f"包含 {len(blocks)} 个方块")
-            
-            # 计算偏移量
-            import_x, import_y, import_z = import_position
-            
-            # 开始放置方块
-            return place_blocks(sys, blocks, (import_x, import_y, import_z))
-        except UnicodeDecodeError as e:
-            fmts.print_err(f"BDX文件中的文本解码失败: {e}")
-            fmts.print_err("文件可能损坏或使用了不支持的编码")
-            return False
+        author, blocks = read_bdx_file(filepath)
+        fmts.print_inf(f"文件作者: {author}")
+        fmts.print_inf(f"包含 {len(blocks)} 个方块")
+        
+        # 计算偏移量
+        import_x, import_y, import_z = import_position
+        
+        # 开始放置方块
+        return place_blocks(sys, blocks, (import_x, import_y, import_z))
         
     except Exception as e:
         fmts.print_err(f"导入BDX文件时出错: {str(e)}")
@@ -101,13 +86,6 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
     
     game_ctrl = sys.game_ctrl
     intr = sys.intr
-    
-    # 获取世界交互API
-    try:
-        world_api = sys.GetPluginAPI("前置-世界交互")
-    except Exception:
-        fmts.print_war("未找到世界交互API，将使用普通命令放置方块")
-        world_api = None
     
     # 移动到导入位置
     game_ctrl.sendcmd(f"tp {import_x} {import_y} {import_z}")
@@ -141,14 +119,14 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
         try:
             if block_type == "simple":
                 block_data = block.get("data", 0)
-                # 使用正确的方法放置方块
+                # 使用正确的方法放置方块，改用send_command
                 cmd = f"setblock {block_x} {block_y} {block_z} {block_name} {block_data}"
                 game_ctrl.sendcmd(cmd)
             elif block_type == "states":
                 block_states = block.get("states", "{}")
                 try:
                     states_dict = parse_block_states(block_states)
-                    # 根据方块状态生成命令
+                    # 改用send_command，根据方块状态生成命令
                     states_str = json.dumps(states_dict)
                     cmd = f"setblock {block_x} {block_y} {block_z} {block_name} 0 replace {states_str}"
                     game_ctrl.sendcmd(cmd)
@@ -165,7 +143,7 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
             fmts.print_err(f"放置方块 {block_name} 在 ({block_x}, {block_y}, {block_z}) 时出错: {str(e)}")
     
     # 放置带特殊数据的方块
-    # 命令方块 - 使用GameInteractive API优化
+    # 命令方块
     for block in command_blocks:
         try:
             block_name = block.get("name", "minecraft:command_block")
@@ -174,52 +152,18 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
             block_z = import_z + block.get("z", 0)
             block_data = block.get("data", 0)
             command = block.get("command", "")
-            conditional = block.get("conditional", False)
-            needs_redstone = block.get("needs_redstone", True)
             
-            if world_api:
-                # 使用API放置命令方块
-                position = (block_x, block_y, block_z)
-                mode = 0  # 默认脉冲模式
-                if "repeating" in block_name:
-                    mode = 1
-                elif "chain" in block_name:
-                    mode = 2
-                
-                # 创建命令方块数据包
-                cmd_packet = world_api.make_packet_command_block_update(
-                    position=position,
-                    command=command,
-                    mode=mode,
-                    need_redstone=needs_redstone,
-                    conditional=conditional,
-                    tick_delay=0,
-                    name="",
-                    should_track_output=True,
-                    execute_on_first_tick=True
-                )
-                
-                # 计算朝向
-                facing = block_data % 6  # 简单处理数据值为朝向
-                
-                # 放置命令方块
-                world_api.place_command_block(
-                    command_block_update_packet=cmd_packet,
-                    facing=facing,
-                    limit_seconds=0.1,  # 短延迟确保命令执行
-                    limit_seconds2=0.1
-                )
-            else:
-                # 旧方法放置命令方块
-                cmd = f"setblock {block_x} {block_y} {block_z} {block_name} {block_data}"
-                game_ctrl.sendcmd(cmd)
-                
-                # 设置命令和属性
-                conditional_str = "true" if conditional else "false"
-                auto = "false" if needs_redstone else "true"
-                
-                cmd = f'blockdata {block_x} {block_y} {block_z} {{Command:"{command}",auto:{auto},conditionMet:{conditional_str}}}'
-                game_ctrl.sendcmd(cmd)
+            # 首先放置命令方块，改用sendcmd
+            cmd = f"setblock {block_x} {block_y} {block_z} {block_name} {block_data}"
+            game_ctrl.sendcmd(cmd)
+            
+            # 然后设置其命令和属性
+            conditional = "true" if block.get("conditional", False) else "false"
+            auto = "false" if block.get("needs_redstone", True) else "true"
+            
+            # 使用blockdata设置命令方块数据
+            cmd = f'blockdata {block_x} {block_y} {block_z} {{Command:"{command}",auto:{auto},conditionMet:{conditional}}}'
+            game_ctrl.sendcmd(cmd)
             
             processed += 1
             if processed % 10 == 0:
@@ -228,7 +172,7 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
         except Exception as e:
             fmts.print_err(f"放置命令方块在 ({block_x}, {block_y}, {block_z}) 时出错: {str(e)}")
     
-    # 箱子类方块 - 使用NBT数据放置
+    # 箱子类方块
     for block in chest_blocks:
         try:
             block_name = block.get("name", "minecraft:chest")
@@ -238,59 +182,20 @@ def place_blocks(sys: "BDXExporter", blocks: List[Dict[str, Any]], position):
             block_data = block.get("data", 0)
             items = block.get("items", [])
             
-            # 先放置箱子方块
+            # 首先放置箱子，改用sendcmd
             cmd = f"setblock {block_x} {block_y} {block_z} {block_name} {block_data}"
             game_ctrl.sendcmd(cmd)
             
-            # 如果可以使用世界交互API获取方块NBT数据
-            if world_api and items:
-                # 构建物品列表NBT数据
-                items_nbt = []
-                for item in items:
-                    item_name = item.get("item", "")
-                    count = item.get("count", 1)
-                    data = item.get("data", 0)
-                    slot = item.get("slot", 0)
-                    
-                    item_nbt = {
-                        "Count": count,
-                        "Damage": data,
-                        "Name": item_name,
-                        "Slot": slot
-                    }
-                    items_nbt.append(item_nbt)
+            # 然后填充物品
+            for item in items:
+                item_name = item.get("item", "")
+                count = item.get("count", 1)
+                data = item.get("data", 0)
+                slot = item.get("slot", 0)
                 
-                # 构建完整的容器NBT数据
-                container_nbt = {
-                    "Items": items_nbt
-                }
-                
-                # 尝试使用setblock+NBT放置
-                nbt_str = json.dumps(container_nbt)
-                try:
-                    cmd = f'setblock {block_x} {block_y} {block_z} {block_name} {block_data} replace {nbt_str}'
-                    game_ctrl.sendcmd(cmd)
-                except:
-                    # 备用方案：逐个放置物品
-                    for item in items:
-                        item_name = item.get("item", "")
-                        count = item.get("count", 1)
-                        data = item.get("data", 0)
-                        slot = item.get("slot", 0)
-                        
-                        cmd = f'replaceitem block {block_x} {block_y} {block_z} slot.container {slot} {item_name} {count} {data}'
-                        game_ctrl.sendcmd(cmd)
-            else:
-                # 使用旧方法填充物品
-                for item in items:
-                    item_name = item.get("item", "")
-                    count = item.get("count", 1)
-                    data = item.get("data", 0)
-                    slot = item.get("slot", 0)
-                    
-                    # 使用replaceitem命令放置物品
-                    cmd = f'replaceitem block {block_x} {block_y} {block_z} slot.container {slot} {item_name} {count} {data}'
-                    game_ctrl.sendcmd(cmd)
+                # 使用replaceitem命令放置物品
+                cmd = f'replaceitem block {block_x} {block_y} {block_z} slot.container {slot} {item_name} {count} {data}'
+                game_ctrl.sendcmd(cmd)
             
             processed += 1
             if processed % 10 == 0:
