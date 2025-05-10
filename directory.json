@@ -549,5 +549,9 @@
         "datas.json",
         "__init__.py",
         "readme.txt"
+    ],
+    "租赁服ip查询": [
+        "datas.json",
+        "__init__.py"
     ]
 }

@@ -578,6 +578,12 @@
       "author": "任务系统",
       "version": "0.0.3",
       "plugin-type": "classic"
+    },
+    "获取服务器ip": {
+      "name": "租赁服ip查询",
+      "author": "SuperScript",
+      "version": "0.3.2",
+      "plugin-type": "classic"
     }
   },
   "Packages": {
