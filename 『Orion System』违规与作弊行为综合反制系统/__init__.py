@@ -1410,11 +1410,10 @@ class Orion_System(Plugin):
                         self.ban_player_when_PlayerList_by_device_id(
                             player, xuid, device_id_from_SkinID
                         )
-            if device_id_from_SkinID is None:
-                if not self.simplified_mode:
-                    fmts.print_inf(
-                        f"§6获取玩家 {player} 设备号失败(快速获取方式)，这可能是因为玩家使用4D皮肤或Steve/Alex皮肤或玩家为机器人，可能是正常现象，稍后将尝试慢速获取方式"
-                    )
+            if (device_id_from_SkinID is None) and (not self.simplified_mode):
+                fmts.print_inf(
+                    f"§6获取玩家 {player} 设备号失败(快速获取方式)，这可能是因为玩家使用4D皮肤或Steve/Alex皮肤或玩家为机器人，可能是正常现象，稍后将尝试慢速获取方式"
+                )
             with self.thread_lock_by_get_device_id:
                 try_time = 0
                 time.sleep(1)
