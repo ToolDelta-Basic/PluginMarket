@@ -1,0 +1,8 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "可验货/退货/支持任意物品的玩家商店\n在聊天栏菜单帮助内查看可用指令",
+  "pre-plugins": {},
+  "plugin-id": "barrelshop"
+}
