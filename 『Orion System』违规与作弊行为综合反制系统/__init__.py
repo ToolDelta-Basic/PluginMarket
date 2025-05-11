@@ -16,7 +16,7 @@ import base64
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 2, 0)
+    version = (0, 2, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -38,6 +38,7 @@ class Orion_System(Plugin):
             "--游戏内封禁记分板显示名称": "Ban_System",
             "--游戏内封禁记分板检查周期(秒)": 10,
             "是否显示租赁服IP和端口": False,
+            "是否隐藏违规行为踢出提示(可将玩家踢出提示转换成***)": False,
             "是否启用机器人IP外进反制": True,
             "是否启用锁服反制(皮肤数据异常)": True,
             "是否启用Steve/Alex皮肤反制": False,
@@ -195,6 +196,7 @@ class Orion_System(Plugin):
             "--游戏内封禁记分板显示名称": str,
             "--游戏内封禁记分板检查周期(秒)": cfg.PNumber,
             "是否显示租赁服IP和端口": bool,
+            "是否隐藏违规行为踢出提示(可将玩家踢出提示转换成***)": bool,
             "是否启用机器人IP外进反制": bool,
             "是否启用锁服反制(皮肤数据异常)": bool,
             "是否启用Steve/Alex皮肤反制": bool,
@@ -318,6 +320,9 @@ class Orion_System(Plugin):
         self.ban_scoreboard_dummy_name = config["--游戏内封禁记分板显示名称"]
         self.ban_scoreboard_detect_cycle = config["--游戏内封禁记分板检查周期(秒)"]
         self.is_query_IP_and_port = config["是否显示租赁服IP和端口"]
+        self.is_hide_ban_info = config[
+            "是否隐藏违规行为踢出提示(可将玩家踢出提示转换成***)"
+        ]
         self.is_detect_bot = config["是否启用机器人IP外进反制"]
         self.is_detect_abnormal_skin = config["是否启用锁服反制(皮肤数据异常)"]
         self.is_ban_Steve_or_Alex = config["是否启用Steve/Alex皮肤反制"]
@@ -594,7 +599,9 @@ class Orion_System(Plugin):
                                     f"§c发现 {original_player} 尝试发送私聊(tell,msg,w命令)，正在踢出"
                                 )
                                 self.game_ctrl.sendwocmd(
-                                    f'/kick "{original_player}" 禁止发送私聊(tell,msg,w命令)！'
+                                    self.try_hide_ban_info(
+                                        f'/kick "{original_player}" 禁止发送私聊(tell,msg,w命令)！'
+                                    )
                                 )
                                 fmts.print_inf(
                                     f"§a发现 {original_player} 尝试发送私聊(tell,msg,w命令)，已被踢出游戏"
@@ -616,7 +623,9 @@ class Orion_System(Plugin):
                                 f"§c发现 {original_player} 尝试发送私聊(tell,msg,w命令)，正在踢出"
                             )
                             self.game_ctrl.sendwocmd(
-                                f'/kick "{original_player}" 禁止发送私聊(tell,msg,w命令)！'
+                                self.try_hide_ban_info(
+                                    f'/kick "{original_player}" 禁止发送私聊(tell,msg,w命令)！'
+                                )
                             )
                             fmts.print_inf(
                                 f"§a发现 {original_player} 尝试发送私聊(tell,msg,w命令)，已被踢出游戏"
@@ -653,7 +662,9 @@ class Orion_System(Plugin):
                     msg_text = message_split[2]
                     if self.ban_me_command and player not in self.whitelist:
                         fmts.print_inf(f"§c发现 {player} 尝试发送me命令，正在踢出")
-                        self.game_ctrl.sendwocmd(f'/kick "{player}" 禁止发送me命令！')
+                        self.game_ctrl.sendwocmd(
+                            self.try_hide_ban_info(f'/kick "{player}" 禁止发送me命令！')
+                        )
                         fmts.print_inf(f"§a发现 {player} 尝试发送me命令，已被踢出游戏")
                         self.ban_player_by_xuid(
                             player,
@@ -718,7 +729,9 @@ class Orion_System(Plugin):
             if not self.simplified_mode:
                 fmts.print_war(f"崩服机器人数据: {packet}")
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                self.try_hide_ban_info(
+                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                )
             )
             fmts.print_inf(f"§a发现 {Username} 可能为崩服机器人，制裁已完成")
             self.ban_player_by_xuid(
@@ -751,7 +764,9 @@ class Orion_System(Plugin):
                 ):
                     fmts.print_inf(f"§c发现 {Username} 可能尝试锁服，正在制裁")
                     self.game_ctrl.sendwocmd(
-                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                        self.try_hide_ban_info(
+                            f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                        )
                     )
                     fmts.print_inf(f"§a发现 {Username} 可能尝试锁服，已被踢出游戏")
                     self.ban_player_by_xuid(
@@ -769,7 +784,9 @@ class Orion_System(Plugin):
             except Exception:
                 fmts.print_inf(f"§c发现 {Username} 皮肤数据异常，正在制裁")
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                    self.try_hide_ban_info(
+                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                    )
                 )
                 fmts.print_inf(f"§a发现 {Username} 皮肤数据异常，已被踢出游戏")
                 self.ban_player_by_xuid(
@@ -803,7 +820,9 @@ class Orion_System(Plugin):
         ):
             fmts.print_inf(f"§c发现 {Username} 皮肤为Steve/Alex，正在踢出")
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 不要使用Steve/Alex皮肤噢，去换个更好的吧~'
+                self.try_hide_ban_info(
+                    f'/kick "{Username}" 不要使用Steve/Alex皮肤噢，去换个更好的吧~'
+                )
             )
             fmts.print_inf(f"§a发现 {Username} 皮肤为Steve/Alex，已被踢出游戏")
             self.ban_player_by_xuid(
@@ -827,7 +846,9 @@ class Orion_System(Plugin):
         if self.is_ban_4D_skin and GeometryDataEngineVersion == "MS4yLjU=":
             fmts.print_inf(f"§c发现 {Username} 皮肤为4D皮肤，正在踢出")
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 不要使用4D皮肤噢，去换一个吧~'
+                self.try_hide_ban_info(
+                    f'/kick "{Username}" 不要使用4D皮肤噢，去换一个吧~'
+                )
             )
             fmts.print_inf(f"§a发现 {Username} 皮肤为4D皮肤，已被踢出游戏")
             self.ban_player_by_xuid(
@@ -852,7 +873,9 @@ class Orion_System(Plugin):
                 f"§c发现 {Username} 等级低于服务器准入等级({self.server_level}级)，正在踢出"
             )
             self.game_ctrl.sendwocmd(
-                f'/kick "{Username}" 本服准入等级为{self.server_level}级，您的等级过低，请加油升级噢！'
+                self.try_hide_ban_info(
+                    f'/kick "{Username}" 本服准入等级为{self.server_level}级，您的等级过低，请加油升级噢！'
+                )
             )
             fmts.print_inf(
                 f"§a发现 {Username} 等级低于服务器准入等级({self.server_level}级)，已被踢出游戏"
@@ -884,7 +907,9 @@ class Orion_System(Plugin):
             except TimeoutError:
                 fmts.print_inf(f"§c发现 {Username} 名称为网易屏蔽词，正在踢出")
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                    self.try_hide_ban_info(
+                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                    )
                 )
                 fmts.print_inf(f"§a发现 {Username} 名称为网易屏蔽词，已被踢出游戏")
                 self.ban_player_by_xuid(
@@ -917,7 +942,9 @@ class Orion_System(Plugin):
                             f"§c发现 {Username} 名称包括本服自定义违禁词({Username[i:j]})，正在踢出"
                         )
                         self.game_ctrl.sendwocmd(
-                            f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                            self.try_hide_ban_info(
+                                f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                            )
                         )
                         fmts.print_inf(
                             f"§a发现 {Username} 名称包括本服自定义违禁词({Username[i:j]})，已被踢出游戏"
@@ -965,7 +992,9 @@ class Orion_System(Plugin):
                                     f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
                                 )
                                 self.game_ctrl.sendwocmd(
-                                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                    self.try_hide_ban_info(
+                                        f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                    )
                                 )
                                 fmts.print_inf(
                                     f"§a由于我们无法在网易MC客户端搜索到玩家 {Username} ，该玩家已被踢出游戏"
@@ -1015,7 +1044,9 @@ class Orion_System(Plugin):
                                     f"该玩家可能通过外挂篡改游戏内等级: {packet}"
                                 )
                             self.game_ctrl.sendwocmd(
-                                f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                self.try_hide_ban_info(
+                                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                )
                             )
                             fmts.print_inf(
                                 f"§a由于玩家 {Username} 的客户端等级和游戏内等级不匹配，已被踢出游戏"
@@ -1049,7 +1080,9 @@ class Orion_System(Plugin):
                                 f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
                             )
                             self.game_ctrl.sendwocmd(
-                                f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                self.try_hide_ban_info(
+                                    f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
+                                )
                             )
                             fmts.print_inf(
                                 f"§a由于我们无法在网易MC客户端搜索到玩家 {Username} ，该玩家已被踢出游戏"
@@ -1102,7 +1135,9 @@ class Orion_System(Plugin):
                             f"§c发现 {player} 发送的文本触发了黑名单词({message[i:j]})，正在踢出"
                         )
                         self.game_ctrl.sendwocmd(
-                            f'/kick "{player}" 您发送的文本触发了黑名单词({message[i:j]})'
+                            self.try_hide_ban_info(
+                                f'/kick "{player}" 您发送的文本触发了黑名单词({message[i:j]})'
+                            )
                         )
                         fmts.print_inf(
                             f"§a发现 {player} 发送的文本触发了黑名单词({message[i:j]})，已被踢出游戏"
@@ -1132,7 +1167,9 @@ class Orion_System(Plugin):
             fmts.print_inf(
                 f"§c发现 {player} 发送的文本长度超过{self.max_speak_length}，正在踢出"
             )
-            self.game_ctrl.sendwocmd(f'/kick "{player}" 您发送的文本过长，请勿刷屏')
+            self.game_ctrl.sendwocmd(
+                self.try_hide_ban_info(f'/kick "{player}" 您发送的文本过长，请勿刷屏')
+            )
             fmts.print_inf(
                 f"§a发现 {player} 发送的文本长度超过{self.max_speak_length}，已被踢出游戏"
             )
@@ -1176,7 +1213,9 @@ class Orion_System(Plugin):
             fmts.print_inf(
                 f"§c发现 {player} 发送文本速度超过限制({self.max_speak_count}条/{self.speak_detection_cycle}秒)，正在踢出"
             )
-            self.game_ctrl.sendwocmd(f'/kick "{player}" 您发言过快，休息一下吧~')
+            self.game_ctrl.sendwocmd(
+                self.try_hide_ban_info(f'/kick "{player}" 您发言过快，休息一下吧~')
+            )
             fmts.print_inf(
                 f"§a发现 {player} 发送文本速度超过限制({self.max_speak_count}条/{self.speak_detection_cycle}秒)，已被踢出游戏"
             )
@@ -1207,7 +1246,9 @@ class Orion_System(Plugin):
                         f"§c发现 {player} 连续发送重复文本超出限制({self.max_repeat_count}条/{self.speak_detection_cycle}秒)，正在踢出"
                     )
                     self.game_ctrl.sendwocmd(
-                        f'/kick "{player}" 您重复刷屏过快，休息一下吧~'
+                        self.try_hide_ban_info(
+                            f'/kick "{player}" 您重复刷屏过快，休息一下吧~'
+                        )
                     )
                     fmts.print_inf(
                         f"§a发现 {player} 连续发送重复文本超出限制({self.max_repeat_count}条/{self.speak_detection_cycle}秒)，已被踢出游戏"
@@ -1373,7 +1414,9 @@ class Orion_System(Plugin):
                         f"§c发现玩家 {player} 被封禁，正在踢出，其解封时间为：{ban_end_real_time}"
                     )
                     self.game_ctrl.sendwocmd(
-                        f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：{ban_end_real_time}'
+                        self.try_hide_ban_info(
+                            f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：{ban_end_real_time}'
+                        )
                     )
                     fmts.print_inf(f"§a发现玩家 {player} 被封禁，已被踢出游戏")
                 else:
@@ -1386,7 +1429,9 @@ class Orion_System(Plugin):
                     f"§c发现玩家 {player} 被封禁，正在踢出，该玩家为永久封禁"
                 )
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：Forever'
+                    self.try_hide_ban_info(
+                        f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：Forever'
+                    )
                 )
                 fmts.print_inf(f"§a发现玩家 {player} 被封禁，已被踢出游戏")
         except FileNotFoundError:
@@ -1592,7 +1637,9 @@ class Orion_System(Plugin):
                         f"§c发现设备号 {device_id} 被封禁(当前登录玩家：{player})，正在踢出，其解封时间为：{ban_end_real_time}"
                     )
                     self.game_ctrl.sendwocmd(
-                        f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：{ban_end_real_time}'
+                        self.try_hide_ban_info(
+                            f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：{ban_end_real_time}'
+                        )
                     )
                     fmts.print_inf(
                         f"§a发现设备号 {device_id} 被封禁(当前登录玩家：{player})，已被踢出游戏"
@@ -1638,7 +1685,9 @@ class Orion_System(Plugin):
                     f"§c发现设备号 {device_id} 被封禁(当前登录玩家：{player})，正在踢出，该设备号为永久封禁"
                 )
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：Forever'
+                    self.try_hide_ban_info(
+                        f'/kick "{player}" 由于{ban_reason}，您被系统封禁至：Forever'
+                    )
                 )
                 fmts.print_inf(
                     f"§a发现设备号 {device_id} 被封禁(当前登录玩家：{player})，已被踢出游戏"
@@ -1714,7 +1763,9 @@ class Orion_System(Plugin):
             ):
                 fmts.print_inf(f"§c发现当前在线玩家 {player.name} 被封禁，正在踢出")
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{player.name}" 您必须通过 Microsoft 服务身份验证。'
+                    self.try_hide_ban_info(
+                        f'/kick "{player.name}" 您必须通过 Microsoft 服务身份验证。'
+                    )
                 )
                 fmts.print_inf(f"§a发现当前在线玩家 {player.name} 被封禁，已被踢出游戏")
 
@@ -1735,7 +1786,9 @@ class Orion_System(Plugin):
                             f"§c发现玩家 {player.name} 通过游戏内封禁系统API被封禁，正在踢出"
                         )
                         self.game_ctrl.sendwocmd(
-                            f'/kick "{player.name}" 您必须通过 Microsoft 服务身份验证。'
+                            self.try_hide_ban_info(
+                                f'/kick "{player.name}" 您必须通过 Microsoft 服务身份验证。'
+                            )
                         )
                         fmts.print_inf(
                             f"§a发现玩家 {player.name} 通过游戏内封禁系统API被封禁，已被踢出游戏"
@@ -1813,6 +1866,12 @@ class Orion_System(Plugin):
                 fmts.print_inf(
                     f"§6发现 封禁数据 ({path_ban_device_id}) 出现损坏，已自动移除"
                 )
+
+    # 尝试隐藏违规行为踢出提示(可将玩家踢出提示转换成***)
+    def try_hide_ban_info(self, ban_command):
+        if self.is_hide_ban_info:
+            return ban_command + "加Q"
+        return ban_command
 
     # 控制台菜单封禁玩家函数封装
     def ban_player_by_terminal(self, _):
@@ -1963,7 +2022,9 @@ class Orion_System(Plugin):
                 tempjson.flush(path_ban_time)
                 tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
-                f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                self.try_hide_ban_info(
+                    f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                )
             )
             fmts.print_suc(
                 f"\n§a❀ 封禁成功：已封禁玩家 {ban_player} (xuid:{ban_xuid}) 至 {date_end}"
@@ -2210,7 +2271,9 @@ class Orion_System(Plugin):
                 tempjson.flush(path_ban_time)
                 tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
-                f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                self.try_hide_ban_info(
+                    f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                )
             )
             fmts.print_suc(
                 f"\n§a❀ 封禁成功：已封禁玩家 {ban_player} (xuid:{ban_xuid}) 至 {date_end}"
@@ -2479,7 +2542,9 @@ class Orion_System(Plugin):
                 tempjson.unload_to_path(path_ban_time)
             for k in ban_xuid_list:
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                    self.try_hide_ban_info(
+                        f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                    )
                 )
             fmts.print_suc(
                 f"\n§a❀ 封禁成功：已封禁设备号 {ban_device_id} 至 {date_end} (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
@@ -2866,7 +2931,9 @@ class Orion_System(Plugin):
                 tempjson.flush(path_ban_time)
                 tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
-                f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                self.try_hide_ban_info(
+                    f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                )
             )
             player.show(
                 f"\n§a❀ 封禁成功：已封禁玩家 {ban_player} (xuid:{ban_xuid}) 至 {date_end}"
@@ -3143,7 +3210,9 @@ class Orion_System(Plugin):
                 tempjson.flush(path_ban_time)
                 tempjson.unload_to_path(path_ban_time)
             self.game_ctrl.sendwocmd(
-                f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                self.try_hide_ban_info(
+                    f'/kick "{ban_player}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                )
             )
             player.show(
                 f"\n§a❀ 封禁成功：已封禁玩家 {ban_player} (xuid:{ban_xuid}) 至 {date_end}"
@@ -3444,7 +3513,9 @@ class Orion_System(Plugin):
                 tempjson.unload_to_path(path_ban_time)
             for k in ban_xuid_list:
                 self.game_ctrl.sendwocmd(
-                    f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                    self.try_hide_ban_info(
+                        f'/kick "{k}" 由于{ban_reason}，您被系统封禁至：{date_end}'
+                    )
                 )
             player.show(
                 f"\n§a❀ 封禁成功：已封禁设备号 {ban_device_id} 至 {date_end} (使用此设备加入游戏的玩家xuid和名称记录:{ban_player_and_xuid_data})"
