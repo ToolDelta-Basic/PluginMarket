@@ -16,7 +16,7 @@ import base64
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 1, 9)
+    version = (0, 2, 0)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -37,7 +37,7 @@ class Orion_System(Plugin):
             "--游戏内封禁记分板名称": "Ban_System",
             "--游戏内封禁记分板显示名称": "Ban_System",
             "--游戏内封禁记分板检查周期(秒)": 10,
-            "是否显示租赁服IP和端口": True,
+            "是否显示租赁服IP和端口": False,
             "是否启用机器人IP外进反制": True,
             "是否启用锁服反制(皮肤数据异常)": True,
             "是否启用Steve/Alex皮肤反制": False,
@@ -175,6 +175,7 @@ class Orion_System(Plugin):
             "封禁时间_发言频率检测": "0年0月0日0时10分0秒",
             "封禁时间_发言字数检测": 60,
             "封禁时间_重复消息刷屏检测": "0年0月0日0时10分0秒",
+            "是否启用简约模式(开启该项后，本插件将不在控制台显示反制外挂提示、数据包信息、设备号获取失败和网易MC客户端查询失败提示)": False,
             "<<提示>>为了防止意外事件发生，请不要修改下面这一项！": None,
             "<<提示>>此项默认为True，当新版本插件首次启动时可能会按照新版本插件的要求更新数据文件的格式，并在插件数据文件更新完毕后自动调整为False": None,
             "插件数据文件更新按钮": True,
@@ -244,6 +245,7 @@ class Orion_System(Plugin):
             "封禁时间_发言频率检测": [int, str],
             "封禁时间_发言字数检测": [int, str],
             "封禁时间_重复消息刷屏检测": [int, str],
+            "是否启用简约模式(开启该项后，本插件将不在控制台显示反制外挂提示、数据包信息、设备号获取失败和网易MC客户端查询失败提示)": bool,
             "插件数据文件更新按钮": bool,
         }
 
@@ -390,6 +392,9 @@ class Orion_System(Plugin):
         self.ban_time_speak_speed_limit = config["封禁时间_发言频率检测"]
         self.ban_time_message_length_limit = config["封禁时间_发言字数检测"]
         self.ban_time_repeat_message_limit = config["封禁时间_重复消息刷屏检测"]
+        self.simplified_mode = config[
+            "是否启用简约模式(开启该项后，本插件将不在控制台显示反制外挂提示、数据包信息、设备号获取失败和网易MC客户端查询失败提示)"
+        ]
         self.upgrade_plugin_data_file = config["插件数据文件更新按钮"]
 
     # 创建发言周期检测计时器
@@ -462,26 +467,27 @@ class Orion_System(Plugin):
                 self.chatbar: ChatbarMenu
 
     def on_active(self):
-        fmts.print_inf(
-            "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
-        )
-        fmts.print_inf(
-            "§l§d❐§f 『§6Orion System §d猎户座§f』 §b违规与作弊行为§e综合§a反制§d系统"
-        )
-        fmts.print_inf("§a❀ §b反制外挂の重要提示！")
-        fmts.print_inf("§a❀ §e目前较为流行的锁服方法为 §b坐骑+传送锁服")
-        fmts.print_inf(
-            "§a❀ §d反制方法： §e请在您的租赁服的常加载区域设置 §b循环命令方块：/ride @a stop_riding"
-        )
-        fmts.print_inf(
-            "§a❀ §d注意：§e由于性能原因，我们不建议通过机器人插件循环执行上述命令，§b请您在游戏中通过命令方块进行防御！"
-        )
-        fmts.print_inf(
-            "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
-        )
-        fmts.print_inf(
-            "§a❀ §e如果您需要“禁止游戏内私聊(tell,msg,w命令)”，§b请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true"
-        )
+        if not self.simplified_mode:
+            fmts.print_inf(
+                "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+            )
+            fmts.print_inf(
+                "§l§d❐§f 『§6Orion System §d猎户座§f』 §b违规与作弊行为§e综合§a反制§d系统"
+            )
+            fmts.print_inf("§a❀ §b反制外挂の重要提示！")
+            fmts.print_inf("§a❀ §e目前较为流行的锁服方法为 §b坐骑+传送锁服")
+            fmts.print_inf(
+                "§a❀ §d反制方法： §e请在您的租赁服的常加载区域设置 §b循环命令方块：/ride @a stop_riding"
+            )
+            fmts.print_inf(
+                "§a❀ §d注意：§e由于性能原因，我们不建议通过机器人插件循环执行上述命令，§b请您在游戏中通过命令方块进行防御！"
+            )
+            fmts.print_inf(
+                "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
+            )
+            fmts.print_inf(
+                "§a❀ §e如果您需要“禁止游戏内私聊(tell,msg,w命令)”，§b请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true"
+            )
 
         # 在控制台菜单注册封禁/解封系统触发词
         if self.is_terminal_ban_system:
@@ -709,7 +715,8 @@ class Orion_System(Plugin):
     def ban_bot(self, Username, xuid, PremiumSkin, Trusted, packet):
         if self.is_detect_bot and (PremiumSkin is False or Trusted is False):
             fmts.print_inf(f"§c发现 {Username} 可能为崩服机器人，正在制裁")
-            fmts.print_war(f"崩服机器人数据: {packet}")
+            if not self.simplified_mode:
+                fmts.print_war(f"崩服机器人数据: {packet}")
             self.game_ctrl.sendwocmd(
                 f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
             )
@@ -949,9 +956,10 @@ class Orion_System(Plugin):
 
                     if userdata_from_netease.status_code == 404:
                         if try_time >= self.check_player_info_api_try_time:
-                            fmts.print_inf(
-                                f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
-                            )
+                            if not self.simplified_mode:
+                                fmts.print_inf(
+                                    f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
+                                )
                             if self.is_ban_player_if_cannot_search:
                                 fmts.print_inf(
                                     f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
@@ -983,9 +991,10 @@ class Orion_System(Plugin):
                         try_api_sleep_time = random.randint(
                             15 * try_time, 30 * try_time
                         )
-                        fmts.print_inf(
-                            f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
-                        )
+                        if not self.simplified_mode:
+                            fmts.print_inf(
+                                f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：状态码[{userdata_from_netease.status_code}]，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                            )
                         time.sleep(try_api_sleep_time)
 
                     elif userdata_from_netease.status_code == 200:
@@ -1001,9 +1010,10 @@ class Orion_System(Plugin):
                             fmts.print_inf(
                                 f"§c由于玩家 {Username} 的客户端等级和游戏内等级不匹配，正在踢出"
                             )
-                            fmts.print_war(
-                                f"该玩家可能通过外挂篡改游戏内等级: {packet}"
-                            )
+                            if not self.simplified_mode:
+                                fmts.print_war(
+                                    f"该玩家可能通过外挂篡改游戏内等级: {packet}"
+                                )
                             self.game_ctrl.sendwocmd(
                                 f'/kick "{Username}" 您必须通过 Microsoft 服务身份验证。'
                             )
@@ -1030,9 +1040,10 @@ class Orion_System(Plugin):
                 except requests.exceptions.Timeout as timeout_error:
                     try_time += 1
                     if try_time >= self.check_player_info_api_try_time:
-                        fmts.print_inf(
-                            f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
-                        )
+                        if not self.simplified_mode:
+                            fmts.print_inf(
+                                f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，这是最后一次尝试"
+                            )
                         if self.is_ban_player_if_cannot_search:
                             fmts.print_inf(
                                 f"§c由于我们无法在网易MC客户端搜索到玩家 {Username} ，正在踢出该玩家，这可能是由于“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的"
@@ -1058,9 +1069,10 @@ class Orion_System(Plugin):
                         break
 
                     try_api_sleep_time = random.randint(15 * try_time, 30 * try_time)
-                    fmts.print_inf(
-                        f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
-                    )
+                    if not self.simplified_mode:
+                        fmts.print_inf(
+                            f"§c在网易MC客户端搜索玩家 {Username} 失败，原因：请求网易MC客户端玩家信息超时：{timeout_error}，当前尝试次数{try_time}/{self.check_player_info_api_try_time}，将在{try_api_sleep_time}秒后再次尝试搜索"
+                        )
                     time.sleep(try_api_sleep_time)
 
                 except requests.exceptions.HTTPError as http_error:
@@ -1399,18 +1411,20 @@ class Orion_System(Plugin):
                             player, xuid, device_id_from_SkinID
                         )
             if device_id_from_SkinID is None:
-                fmts.print_inf(
-                    f"§6获取玩家 {player} 设备号失败(快速获取方式)，这可能是因为玩家使用4D皮肤或Steve/Alex皮肤或玩家为机器人，可能是正常现象，稍后将尝试慢速获取方式"
-                )
+                if not self.simplified_mode:
+                    fmts.print_inf(
+                        f"§6获取玩家 {player} 设备号失败(快速获取方式)，这可能是因为玩家使用4D皮肤或Steve/Alex皮肤或玩家为机器人，可能是正常现象，稍后将尝试慢速获取方式"
+                    )
             with self.thread_lock_by_get_device_id:
                 try_time = 0
                 time.sleep(1)
                 device_id = None
                 while True:
                     if player not in self.game_ctrl.allplayers.copy():
-                        fmts.print_inf(
-                            f"§6发现玩家 {player} 已退出游戏，终止设备号获取线程(慢速获取方式)"
-                        )
+                        if not self.simplified_mode:
+                            fmts.print_inf(
+                                f"§6发现玩家 {player} 已退出游戏，终止设备号获取线程(慢速获取方式)"
+                            )
                         break
                     time.sleep(3.5)
                     self.game_ctrl.sendwocmd(
@@ -1423,13 +1437,15 @@ class Orion_System(Plugin):
                         player_data and player_data.device_id == ""
                     ):
                         if try_time >= self.record_device_id_try_time:
-                            fmts.print_inf(
-                                f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
-                            )
+                            if not self.simplified_mode:
+                                fmts.print_inf(
+                                    f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，这是最后一次尝试"
+                                )
                             break
-                        fmts.print_inf(
-                            f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
-                        )
+                        if not self.simplified_mode:
+                            fmts.print_inf(
+                                f"§c获取玩家 {player} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{try_time}/{self.record_device_id_try_time}，将在4秒后再次尝试查询"
+                            )
                     else:
                         device_id = player_data.device_id.upper()
                         if device_id_from_SkinID and device_id_from_SkinID != device_id:
@@ -1693,7 +1709,7 @@ class Orion_System(Plugin):
             for inner_xuid in li:
                 all_ban_device_id_merge.append(inner_xuid)
         for player in players_list:
-            if player.name not in self.whitelist and (
+            if (player.name not in self.whitelist) and (
                 (player.xuid in all_ban_xuid)
                 or (player.xuid in all_ban_device_id_merge)
             ):
@@ -1969,7 +1985,7 @@ class Orion_System(Plugin):
                 fmts.print_err(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             fmts.print_inf(
-                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist或直接回车§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -2216,7 +2232,7 @@ class Orion_System(Plugin):
                 fmts.print_err(f"§c❀ 查询设备号记录失败，原因：{error}")
                 return
             fmts.print_inf(
-                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部设备号记录"
+                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist或直接回车§b可查询当前服务器全部设备号记录"
             )
             device_id = input(fmts.fmt_info("§a❀ §b输入 §c. §b退出"))
 
@@ -2875,7 +2891,7 @@ class Orion_System(Plugin):
                 player.show(f"§c❀ 查询xuid失败，原因：{error}")
                 return
             player.show(
-                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部玩家名称与xuid记录"
+                "\n§a❀ §b请输入您想封禁的xuid、玩家名称或部分玩家名称，输入§elist或直接回车§b可查询当前服务器全部玩家名称与xuid记录"
             )
             name_or_xuid = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
@@ -3152,7 +3168,7 @@ class Orion_System(Plugin):
                 player.show(f"§c❀ 查询设备号记录失败，原因：{error}")
                 return
             player.show(
-                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist§b可查询当前服务器全部设备号记录"
+                "\n§a❀ §b请输入您想封禁的设备号、玩家名称或部分玩家名称，输入§elist或直接回车§b可查询当前服务器全部设备号记录"
             )
             device_id = player.input(
                 "§a❀ §b输入 §c. §b退出", timeout=self.ban_player_by_game_timeout
