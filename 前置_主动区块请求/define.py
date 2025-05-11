@@ -72,7 +72,7 @@ class AutoSubChunkRequestBase:
         self.game_ctrl = plugin.game_ctrl
 
         CFG_DEFAULT = {
-            "请求半径(最大 16 半径)": 4,
+            "请求半径(最大 5 半径)": 4,
             "每多少秒重新请求周围区块(浮点数)": 300,
             "每秒请求多少个区块(整数)": 6,
         }
@@ -84,7 +84,7 @@ class AutoSubChunkRequestBase:
         )
 
         self.multiple_pos = {}
-        self.request_radius = min(int(cfg["请求半径(最大 16 半径)"]), 16)
+        self.request_radius = min(int(cfg["请求半径(最大 5 半径)"]), 5)
         self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
         self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
 
