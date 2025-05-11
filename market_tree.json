@@ -411,6 +411,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "barrelshop": {
+      "name": "木桶玩家商店-试验版",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "server-link": {
       "name": "服服互通",
       "author": "SuperScript/2401PT",
@@ -469,6 +475,12 @@
       "name": "发言频率限制v2",
       "author": "SuperScript",
       "version": "0.1.1",
+      "plugin-type": "classic"
+    },
+    "统一消息风格": {
+      "name": "前置_统一消息风格",
+      "author": "ToolDelta",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "违规名称踢出": {

@@ -424,6 +424,11 @@
         "__init__.py": 0,
         "readme.txt": 0
     },
+    "木桶玩家商店-试验版": {
+        "datas.json": 0,
+        "__init__.py": 0,
+        "shop_lib.py": 0
+    },
     "服服互通": {
         "datas.json": 0,
         "__init__.py": 0
@@ -476,6 +481,10 @@
         "readme.txt": 0
     },
     "发言频率限制v2": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
+    "前置_统一消息风格": {
         "datas.json": 0,
         "__init__.py": 0
     },
