@@ -1,0 +1,10 @@
+{
+  "author": "Hazelmeow",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "在网页管理租赁服, 使用 Flet 框架.",
+  "pre-plugins": {
+  },
+  "plugin-id": "ToolDeltaFlet",
+  "enabled": true
+}
