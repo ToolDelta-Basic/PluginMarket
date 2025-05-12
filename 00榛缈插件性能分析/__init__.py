@@ -239,7 +239,7 @@ elif __name__ != "__main__":
         def _after_func_call(plugin_data, plugin_name, exc = None):
             plugin_data[plugin_name]["end"] = time.time()
             if exc:
-                plugin_data[plugin_name]["exc"] = str(exc)
+                plugin_data[plugin_name]["exc"] = exc
 
         @staticmethod
         def _check_plugin_env(plugin, exc):
@@ -276,7 +276,11 @@ elif __name__ != "__main__":
                     string += f"\n  Blocked by plugin {plugin_name}"
 
                 if count == 1:
-                    string = f"§b[ SUM  ]{message} ({plugin_name_last}) ({time_spend_ms_total:.2f}ms)"
+                    string = f"[ SUM  ]{message} ({plugin_name_last}) ({time_spend_ms_total:.2f}ms)"
+                    if exception:
+                        string = "§c" +string
+                    else:
+                        string = "§b" +string
                 else:
                     string = f"§1§l[ SUM  ]{message} ({time_spend_ms_total:.2f}ms) (without @utils.thread_func)§r" +string
                 fmts.print_with_info(string, "§1 PERF ")
@@ -395,7 +399,8 @@ elif __name__ != "__main__":
 
             plugin = self._any(fmts)
             plugin.name = name
-            return self.analyzer(message, [(plugin, lambda *args: self._orig_import_module(name, package))], (name, package), None)[0]
+            module = self.analyzer(message, [(plugin, lambda *args: self._orig_import_module(name, package))], (name, package), None)
+            return module[0]
 
 
         def analyzer(self, message: str, func_list: list[tuple[Plugin, Callable]], param, onerr, block = False) -> list:
@@ -420,39 +425,41 @@ elif __name__ != "__main__":
             except Exception as exc:
                 if onerr is not None:
                     onerr(plugin.name, exc)
+                raise
 
             finally:
                 self._print_plugin_data(message, plugin_data, block and bool(res), False)
-                return return_list
+            return return_list
 
 
         def _analyzer(self, message, func, plugin, plugin_data, param, thread):
             args = []
+            plugin_name = plugin.name
             if thread:
                 args.append(plugin)
             if param is not None:
                 args.append(param)
 
-            self._before_func_call(plugin_data, plugin.name, thread)
+            self._before_func_call(plugin_data, plugin_name, thread)
 
             if thread and (param is not None):
                 if isinstance(param, Chat):
-                    param._plugin_data = plugin_data[plugin.name] # type: ignore
+                    param._plugin_data = plugin_data[plugin_name] # type: ignore
 
             try:
                 res = func(*args)
 
             except BaseException as exc:
-                self._after_func_call(plugin_data, plugin.name, exc)
+                self._after_func_call(plugin_data, plugin_name, exc)
                 self._check_plugin_env(plugin, exc)
                 raise
 
             else:
-                self._after_func_call(plugin_data, plugin.name)
+                self._after_func_call(plugin_data, plugin_name)
 
             finally:
                 if thread:
-                    self._print_plugin_data(message, {plugin.name: plugin_data[plugin.name]}, False, thread)
+                    self._print_plugin_data(message, {plugin_name: plugin_data[plugin_name]}, False, thread)
             return res
 
 
@@ -499,7 +506,7 @@ elif __name__ != "__main__":
 
                         except BaseException as exc:
                             submodule_data[plugin.name]["end"] = time.time()
-                            submodule_data[plugin.name]["exc"] = str(exc)
+                            submodule_data[plugin.name]["exc"] = exc
                             raise
 
                         else:
