@@ -129,6 +129,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "ToolDeltaFlet": {
+      "name": "前置_ToolDeltaFlet",
+      "author": "Hazelmeow",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "暴击限制": {
       "name": "暴击检测",
       "author": "果_k",

@@ -106,6 +106,21 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "前置_ToolDeltaFlet": {
+        "datas.json": 0,
+        "__init__.py": 0,
+        "app.py": 0,
+        "lib": {
+            "logging": {
+                "handlers.py": 0,
+                "__init__.py": 0,
+                "config.py": 0
+            },
+            "configparser.py": 0,
+            "colorsys.py": 0
+        },
+        "forwarder.py": 0
+    },
     "plugin_ids_map.json": 0,
     "LICENSE": 0,
     "暴击检测": {
