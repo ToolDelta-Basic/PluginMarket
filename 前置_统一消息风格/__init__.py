@@ -1,9 +1,10 @@
-from typing import TypeVar, LiteralString
+from tooldelta import Plugin, Player, cfg, utils, plugin_entry, TYPE_CHECKING
 from collections.abc import Callable
-from tooldelta import Plugin, Player, cfg, utils, plugin_entry
 
-T = TypeVar("T")
-LT = TypeVar("LT", bound=LiteralString)
+if TYPE_CHECKING:
+    from typing import TypeVar, LiteralString
+    T = TypeVar("T")
+    LT = TypeVar("LT", bound=LiteralString)
 
 
 class StyledPlayerPrinter:
@@ -29,18 +30,18 @@ class StyledPlayerPrinter:
         return entry.input(self.player, text)
 
     def select(
-        self, prompt: str, arguments: list[T], sections_formatter: Callable[[T], str]
-    ):
+        self, prompt: str, arguments: list[T], sections_formatter: "Callable[[T], str]"
+    ) -> "T | None":
         return entry.select(self.player, prompt, arguments, sections_formatter)
 
     def select_meta(
         self,
         prompt: str,
-        arguments: list[T],
-        sections_formatter: Callable[[T], str],
+        arguments: "list[T]",
+        sections_formatter: "Callable[[T], str]",
         extra_sections_formatter: str,
-        extra_sections: tuple[LT, ...],
-    ) -> T | LT | None:
+        extra_sections: "tuple[LT, ...]",
+    ) -> "T | LT | None":
         return entry.select_meta(
             self.player, prompt, arguments, sections_formatter, extra_sections_formatter, extra_sections
         )
@@ -49,7 +50,7 @@ class StyledPlayerPrinter:
 class OneStyleMsg(Plugin):
     name = "统一消息风格"
     author = "ToolDelta"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -114,8 +115,8 @@ class OneStyleMsg(Plugin):
         self,
         player: Player,
         prompt: str,
-        arguments: list[T],
-        sections_formatter: Callable[[T], str],
+        arguments: "list[T]",
+        sections_formatter: "Callable[[T], str]",
     ) -> T | None:
         if len(arguments) == 0:
             raise ValueError("arguments 不能为空列表")
@@ -157,11 +158,11 @@ class OneStyleMsg(Plugin):
         self,
         player: Player,
         prompt: str,
-        arguments: list[T],
-        sections_formatter: Callable[[T], str],
+        arguments: "list[T]",
+        sections_formatter: "Callable[[T], str]",
         extra_sections_prompt: str,
-        extra_sections: tuple[LT, ...],
-    ) -> T | LT | None:
+        extra_sections: "tuple[LT, ...]",
+    ) -> "T | LT | None":
         if len(arguments) == 0:
             raise ValueError("arguments 不能为空列表")
         arguments_blocks = utils.split_list(arguments, self.msg_select_index_max)
