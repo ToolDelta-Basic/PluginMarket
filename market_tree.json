@@ -486,7 +486,7 @@
     "统一消息风格": {
       "name": "前置_统一消息风格",
       "author": "ToolDelta",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "违规名称踢出": {
