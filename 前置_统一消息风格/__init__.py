@@ -30,7 +30,7 @@ class StyledPlayerPrinter:
         return entry.input(self.player, text)
 
     def select(
-        self, prompt: str, arguments: list[T], sections_formatter: "Callable[[T], str]"
+        self, prompt: str, arguments: "list[T]", sections_formatter: "Callable[[T], str]"
     ) -> "T | None":
         return entry.select(self.player, prompt, arguments, sections_formatter)
 
