@@ -42,18 +42,22 @@ async def forward_between(ws1: WS, ws2: WS):
 
 
 conn_list: list[WS] = []
-async def handle_control(ws: WS, UUID, HOST):
+async def handle_control(ws: WS, UUID, HOST, PORT):
     while True:
         msg: str = await ws.recv()  # type: ignore
         if msg.startswith("CHANNEL:"):
             channel_id = msg.split(":", 1)[1]
             fmts.print_inf(f"New session {channel_id} connected.")
-            local_ws = WSconnect("ws://localhost:7912/ws")
-            channel_ws = WSconnect(f"wss://{HOST}/ws-channel/{UUID}/{channel_id}")
+            local_ws = None
+            channel_ws = None
             try:
-                local_ws = await local_ws
+                local_ws = await WSconnect(f"ws://localhost:{PORT}/ws")
                 conn_list.append(local_ws)
-                channel_ws = await channel_ws
+            except Exception as exc:
+                fmts.print_err(f"Session {channel_id} conn failed: {exc}")
+                raise ThreadExit
+            try:
+                channel_ws = await WSconnect(f"wss://{HOST}/ws-channel/{UUID}/{channel_id}")
                 conn_list.append(channel_ws)
             except Exception as exc:
                 fmts.print_err(f"Session {channel_id} conn failed: {exc}")
@@ -75,12 +79,12 @@ async def handle_control(ws: WS, UUID, HOST):
             raise Exception(f"Unknown message {msg}")
 
 
-async def main(UUID, HOST):
+async def main(UUID, HOST, PORT):
     while True:
         try:
             fmts.print_inf(f"Register {UUID} to {HOST}...", flush = True)
             async with WSconnect(f"wss://{HOST}/register/{UUID}") as ws:
-                await handle_control(ws, UUID, HOST)
+                await handle_control(ws, UUID, HOST, PORT)
         except (ThreadExit, CancelledError):
             return
         except ConnectionClosed as exc:
@@ -92,8 +96,8 @@ async def main(UUID, HOST):
 
 
 @utils.thread_func("WebSocket Forwarder")
-def launch(UUID, HOST):
-    asyncio.run(main(UUID, HOST))
+def launch(UUID, HOST, PORT):
+    asyncio.run(main(UUID, HOST, PORT))
 
 
 def exit():

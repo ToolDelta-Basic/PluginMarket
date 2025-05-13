@@ -105,14 +105,14 @@ def main(page):
 
 
 @utils.thread_func("Flet App")
-def launch():
+def launch(port):
     os.environ["FLET_SESSION_TIMEOUT"] = "60"
     os.environ["FLET_FORCE_WEB_SERVER"] = "yes"
     # os.environ["FLET_DISPLAY_URL_PREFIX"] = "网页已成功启动于"
     signal.signal = lambda *_, **__: None
     fastapi.logger.logger.setLevel(100)
     logging.basicConfig(level = 50)
-    flet.app(target = main, port = 7912, assets_dir = ".", view = flet.AppView.WEB_BROWSER, web_renderer = flet.WebRenderer.CANVAS_KIT, use_color_emoji = True)
+    flet.app(target = main, port = port, assets_dir = ".", view = flet.AppView.WEB_BROWSER, web_renderer = flet.WebRenderer.CANVAS_KIT, use_color_emoji = True)
 
 
 def exit():
