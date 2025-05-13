@@ -17,7 +17,7 @@ elif __name__ != "__main__":
     class ToolDeltaFletPlugin(Plugin):
         name = "ToolDeltaFlet"
         author = "Hazelmeow"
-        version = (0, 0, 2)
+        version = (0, 0, 3)
 
 
         def __init__(self, frame: ToolDelta) -> None:
@@ -127,10 +127,13 @@ elif __name__ != "__main__":
             })
 
 
-            fmts.print_with_info("正在启动 Flet App", info = "§f FLET §f")
+            self.port = globals().get("_tdf_port", 7912)
+            globals()["_tdf_port"] = self.port +1
+
+            fmts.print_with_info(f"正在启动 Flet App (localhost:{self.port})", info = "§f FLET §f")
             from 前置_ToolDeltaFlet import app
             self.app = app
-            self.app.launch()
+            self.app.launch(self.port)
 
             if self.proxy_used:
                 fmts.print_with_info("正在启动 WebSocket Forwarder", info = "§f FLET §f")
@@ -138,7 +141,8 @@ elif __name__ != "__main__":
                 self.forwarder = forwarder
                 self.forwarder.launch(
                     self.uuid,
-                    self.proxy_addr
+                    self.proxy_addr,
+                    self.port
                 )
 
 
