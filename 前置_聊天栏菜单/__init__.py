@@ -317,7 +317,7 @@ class ChatbarMenu(Plugin):
         # num-based command menu style
         self.nbc_style = NBCMenuStyle(self.cfg)
         #
-        self.ListenChat(lambda chat: self.on_player_message(chat) and None)
+        self.ListenChat(self.on_player_message)
         if self.enable_nbc_format:
             self.add_new_trigger(
                 self.cfg["/help触发词"],
