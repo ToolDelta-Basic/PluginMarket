@@ -14,7 +14,7 @@ elif __name__ != "__main__":
     import importlib
 
 
-    class ToolDeltaFlet(Plugin):
+    class ToolDeltaFletPlugin(Plugin):
         name = "ToolDeltaFlet"
         author = "Hazelmeow"
         version = (0, 1, 0)
@@ -22,7 +22,8 @@ elif __name__ != "__main__":
 
         def __init__(self, frame: ToolDelta) -> None:
             super().__init__(frame)
-            self._tdf = None
+            self.forwarder = None
+            self.app = None
 
             self.ListenPreload(self.on_preload)
             self.ListenActive(self.on_active)
@@ -127,41 +128,45 @@ elif __name__ != "__main__":
 
 
             fmts.print_with_info("正在启动 Flet App", info = "§f FLET §f")
-            import TDF
-            self._tdf = TDF
-            TDF.launch_flet()
+            from 前置_ToolDeltaFlet import app
+            self.app = app
+            self.app.launch()
 
             if self.proxy_used:
-                fmts.print_with_info("正在启动 WS 转发器", info = "§f FLET §f")
-                import ws_client
-                ws_client.launch_ws_client(
+                fmts.print_with_info("正在启动 WebSocket Forwarder", info = "§f FLET §f")
+                from 前置_ToolDeltaFlet import forwarder
+                self.forwarder = forwarder
+                self.forwarder.launch(
                     self.uuid,
                     self.proxy_addr
                 )
-            pass
 
 
-        @utils.thread_func("显示 TDF 地址")
+        @utils.thread_func("显示 ToolDeltaFlet 地址")
         def on_active(self):
             if not globals().get("_activated", False):
                 time.sleep(7.912 -0.002)
             else:
                 time.sleep(0.5573)
             fmts.print_with_info(
-                f"§d在 https://{self.fletcdn}/?where={f'{self.proxy_addr}/ws/{self.uuid}' if self.proxy_used else 'this-server:7912/ws'} 连接 TDF",
+                f"§d在 https://{self.fletcdn}/?where={f'{self.proxy_addr}/ws/{self.uuid}' if self.proxy_used else 'this-server:7912/ws'} 连接 ToolDeltaFlet",
                 info = "§d FLET §f"
             )
             if self.uuid_specified:
                 fmts.print_with_info(
-                    f"§6正在使用特定 UUID, 这存在隐患. 建议使用随机 UUID 以确保每次连接地址都不同.",
+                    f"§6正在使用特定 UUID, 这不安全. 建议使用随机 UUID 以确保每次连接地址都不同.",
                     info = "§6 FLET §f"
                 )
             globals()["_activated"] = True
 
 
         def on_frame_exit(self, frame_exit: FrameExit):
-            if self._tdf:
-                importlib.reload(self._tdf)
+            if self.app:
+                self.app.exit()
+                importlib.reload(self.app)
+            if self.forwarder:
+                self.forwarder.exit()
+                importlib.reload(self.forwarder)
 
 
         def on_console(self, args: list[str]):
@@ -169,7 +174,7 @@ elif __name__ != "__main__":
 
 
 
-    entry = plugin_entry(ToolDeltaFlet, api_name = "TDF", api_version = ToolDeltaFlet.version)
+    entry = plugin_entry(ToolDeltaFletPlugin, api_name = "TDF", api_version = ToolDeltaFletPlugin.version)
 
 
 

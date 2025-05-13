@@ -19,11 +19,8 @@ import fastapi
 import logging
 
 
-fastapi.logger.logger.setLevel(logging.NOTSET)
-
-
-class TDF:
-    from 前置_TDF import entry as api
+class ToolDeltaFletApp:
+    from 前置_ToolDeltaFlet import entry as api
 
     def __init__(self, page: flet.Page) -> None:
         self.page = page
@@ -101,15 +98,21 @@ class TDF:
 
 
 def main(page):
-    TDF(page)
+    try:
+        ToolDeltaFletApp(page)
+    except (ThreadExit, CancelledError):
+        return
 
 
 @utils.thread_func("Flet App")
-def launch_flet():
+def launch():
     os.environ["FLET_SESSION_TIMEOUT"] = "60"
     os.environ["FLET_DISPLAY_URL_PREFIX"] = "网页已成功启动于"
     signal.signal = lambda *_, **__: None
-    try:
-        flet.app(target = main, port = 7912, assets_dir = ".", view = flet.AppView.WEB_BROWSER, web_renderer = flet.WebRenderer.CANVAS_KIT, use_color_emoji = True)
-    except (ThreadExit, CancelledError):
-        return
+    fastapi.logger.logger.setLevel(100)
+    logging.basicConfig(level = 50)
+    flet.app(target = main, port = 7912, assets_dir = ".", view = flet.AppView.WEB_BROWSER, web_renderer = flet.WebRenderer.CANVAS_KIT, use_color_emoji = True)
+
+
+def exit():
+    pass
