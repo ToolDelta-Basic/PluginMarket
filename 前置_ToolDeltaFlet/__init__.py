@@ -17,7 +17,7 @@ elif __name__ != "__main__":
     class ToolDeltaFletPlugin(Plugin):
         name = "ToolDeltaFlet"
         author = "Hazelmeow"
-        version = (0, 1, 0)
+        version = (0, 0, 2)
 
 
         def __init__(self, frame: ToolDelta) -> None:
@@ -30,7 +30,7 @@ elif __name__ != "__main__":
             self.ListenFrameExit(self.on_frame_exit)
             self.make_data_path()
 
-            DEFAULT_CFG_VER = (0, 0, 1)
+            DEFAULT_CFG_VER = self.version
             DEFAULT_CFG = {
                 "Flet CDN": "flet.tooldelta.com",
                 "中间服务器": "flet.tooldelta.com",
