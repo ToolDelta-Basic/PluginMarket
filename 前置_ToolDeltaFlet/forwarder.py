@@ -66,6 +66,9 @@ async def handle_control(ws: WS, UUID, HOST):
                 continue
             asyncio.create_task(forward_between(local_ws, channel_ws))
         elif msg.startswith("HEARTBEAT:"):
+            counter = int(msg.split(":", 1)[1])
+            if counter == 1:
+                fmts.print_suc("Register succeeded.")
             continue
         else:
             asyncio.create_task(ws.close())
@@ -75,15 +78,17 @@ async def handle_control(ws: WS, UUID, HOST):
 async def main(UUID, HOST):
     while True:
         try:
-            fmts.print_inf(f"Registering {UUID} to {HOST}...", flush = True)
+            fmts.print_inf(f"Register {UUID} to {HOST}...", flush = True)
             async with WSconnect(f"wss://{HOST}/register/{UUID}") as ws:
-                fmts.print_suc("Registered.")
                 await handle_control(ws, UUID, HOST)
         except (ThreadExit, CancelledError):
             return
+        except ConnectionClosed as exc:
+            fmts.print_err(f"{exc.reason if exc.reason else 'Forwarder error: disconnected'} (code {exc.code})\nRetry in 2s")
+            await asyncio.sleep(2)
         except Exception as exc:
-            fmts.print_err(f"Forwarder error: {exc}")
-            await asyncio.sleep(5)
+            fmts.print_err(f"Forwarder error: {exc}\nRetry in 2s")
+            await asyncio.sleep(2)
 
 
 @utils.thread_func("WebSocket Forwarder")

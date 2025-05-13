@@ -35,7 +35,7 @@ class ToolDeltaFletApp:
             "MCGNU": "./asset/font/Minecraft GNU.ttf", # 15.9075
             "MCAE": "./asset/font/Minecraft AE.ttf"
         }
-        self.page.title = "ToolDeltaFlet (TDF) - 租赁服远程管理网页."
+        self.page.title = "ToolDeltaFlet (TDF) - 租赁服远程管理网页"
         self.page.theme = flet.Theme(font_family = "MCGNU", color_scheme_seed = flet.colors.BLUE_100)
         self.page.dark_theme = flet.Theme(font_family = "MCGNU", color_scheme_seed = flet.colors.BLUE_900)
         self.page.theme_mode = flet.ThemeMode.SYSTEM
@@ -107,7 +107,8 @@ def main(page):
 @utils.thread_func("Flet App")
 def launch():
     os.environ["FLET_SESSION_TIMEOUT"] = "60"
-    os.environ["FLET_DISPLAY_URL_PREFIX"] = "网页已成功启动于"
+    os.environ["FLET_FORCE_WEB_SERVER"] = "yes"
+    # os.environ["FLET_DISPLAY_URL_PREFIX"] = "网页已成功启动于"
     signal.signal = lambda *_, **__: None
     fastapi.logger.logger.setLevel(100)
     logging.basicConfig(level = 50)

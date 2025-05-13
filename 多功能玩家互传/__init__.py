@@ -59,8 +59,8 @@ class TpaRequest:
 
 class TpaSystem(Plugin):
     name = "多功能tpa玩家互传"
-    author = "wling/SuperScript"
-    version = (0, 1, 1)
+    author = "wling/SuperScript/Hazelmeow"
+    version = (0, 1, 3)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -68,16 +68,16 @@ class TpaSystem(Plugin):
         self.ListenActive(self.repeater_tpa)
 
     def on_preload(self):
-        self.GetPluginAPI("聊天栏菜单").add_newtrigger(
+        self.GetPluginAPI("聊天栏菜单").add_new_trigger(
             ["tpa"],
-            [],
+            [("", str, "help")],
             "显示tpa帮助菜单",
             self.tpa_menu,
         )
 
     @utils.thread_func("tpa菜单")
     def tpa_menu(self, player: Player, args: list[str]):
-        if args == []:
+        if args[0] == "help":
             player.show( "§6玩家互传tpa功能菜单：")
             player.show( " .tpa §7§o查看互传功能命令表")
             player.show( " .tpa <玩家名> §7§o请求传送到玩家所在地")

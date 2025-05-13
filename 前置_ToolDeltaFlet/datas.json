@@ -1,9 +1,10 @@
 {
   "author": "Hazelmeow",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "plugin-type": "classic",
-  "description": "在网页管理租赁服, 使用 Flet 框架.",
+  "description": "ToolDeltaFlet (TDF) - 租赁服远程管理网页",
   "pre-plugins": {
+    "pip": "0.0.4"
   },
   "plugin-id": "ToolDeltaFlet",
   "enabled": true
