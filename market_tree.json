@@ -132,7 +132,7 @@
     "ToolDeltaFlet": {
       "name": "前置_ToolDeltaFlet",
       "author": "Hazelmeow",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "暴击限制": {
@@ -246,7 +246,7 @@
     "nice-tpa": {
       "name": "多功能玩家互传",
       "author": "wling/SuperScript",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "plugin-type": "classic"
     },
     "超频刷屏反制": {
