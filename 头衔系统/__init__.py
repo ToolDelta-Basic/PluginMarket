@@ -13,7 +13,7 @@ from tooldelta import (
 class Nametitle(Plugin):
     name = "头衔系统"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -41,10 +41,10 @@ class Nametitle(Plugin):
             from 前置_Cb2Bot通信 import TellrawCb2Bot
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.chatbar: ChatbarMenu
-            self.intr: GameInteractive
-            cb2bot: TellrawCb2Bot
-            self.xuidm: XUIDGetter
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.intr = self.get_typecheck_plugin_api(GameInteractive)
+            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
+            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
         cb2bot.regist_message_cb(
             "nametitle.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )
@@ -52,24 +52,28 @@ class Nametitle(Plugin):
             "nametag.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )
 
-    def on_player_join(self, _: Player):
+    def on_player_join(self, playerf: Player):
         self.flush_nametitles()
 
     def on_inject(self):
-        self.chatbar.add_simple_trigger(
-            ["titles", "称号"], "打开称号设置页", self.on_set_titles
+        self.chatbar.add_new_trigger(
+            ["titles", "称号"],
+            [("称号名", str, "")],
+            "打开称号设置页",
+            lambda player, args: self.on_set_titles(player.name, args),
         )
-        self.chatbar.add_simple_trigger(
+        self.chatbar.add_new_trigger(
             ["title-set", "设置称号"],
+            [("称号名", str, "")],
             "打开管理称号设置页",
-            self.on_operate_nametitle,
+            lambda player, args: self.on_operate_nametitle(player.name, args),
             True,
         )
         self.nmtitle_cds: dict[str, int] = {}
         self.nmtitle_cd()
 
     @utils.thread_func("玩家设置称号")
-    def on_set_titles(self, player, ls):
+    def on_set_titles(self, player: str, ls):
         if player in self.nmtitle_cds.keys() and not game_utils.is_op(player):
             self.playsound(player, "bass", 0.707)
             self.show_err(player, "每次设置称号后有 60s 冷却时长")
@@ -103,7 +107,7 @@ class Nametitle(Plugin):
         self.game_ctrl.sendwocmd(
             f"scoreboard players reset {utils.to_player_selector(player)} {nowtitle}"
         )
-        if titles.get(k) is None:
+        if titles.get(section) is None:
             self.show_err(player, "该称号已失效， 无法使用")
             self.playsound(player, "bass", 0.707)
             return
@@ -162,6 +166,7 @@ class Nametitle(Plugin):
                     self.playsound(player, "bass", 0.707)
                     return
                 try:
+                    self.game_ctrl.sendwocmd(f"scoreboard objectives remove {resp}")
                     if game_utils.isCmdSuccess(
                         f"scoreboard objectives add {resp} dummy", 5
                     ):
