@@ -17,7 +17,7 @@ elif __name__ != "__main__":
     class ToolDeltaFletPlugin(Plugin):
         name = "ToolDeltaFlet"
         author = "Hazelmeow"
-        version = (0, 0, 3)
+        version = (0, 0, 4)
 
 
         def __init__(self, frame: ToolDelta) -> None:

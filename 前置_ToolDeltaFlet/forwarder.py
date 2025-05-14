@@ -1,15 +1,25 @@
 import zlib
 import asyncio
 from tooldelta import fmts, utils
-from websockets.legacy.client import WebSocketClientProtocol as WS
-from websockets.legacy.client import Connect as WSconnect
+from websockets.legacy.client import WebSocketClientProtocol as WebSocket
+from websockets.legacy.client import Connect
 from websockets.exceptions import ConnectionClosed
 from tooldelta.utils.tooldelta_thread import ThreadExit
 from asyncio.exceptions import CancelledError
 
 
-async def forward_between(ws1: WS, ws2: WS):
-    async def forward(src: WS, dst: WS, zip = False, unzip = False):
+async def forward_between(local_endpoint: WebSocket, server_session_conn: Connect):
+    try:
+        server_session = await server_session_conn
+        conn_list.append(server_session)
+        del server_session_conn
+    except Exception as exc:
+        fmts.print_err(f"Session conn failed: {exc}")
+        conn_list.remove(local_endpoint)
+        asyncio.create_task(local_endpoint.close())
+        return
+
+    async def forward(src: WebSocket, dst: WebSocket, zip = False, unzip = False):
         try:
             while True:
                 if zip:
@@ -25,74 +35,68 @@ async def forward_between(ws1: WS, ws2: WS):
                     await dst.send(msg)
         except ConnectionClosed as exc:
             # fmts.print_inf(f"forward data failed: Disconnected.")
-            return
+            await src.close()
+            await dst.close()
         except Exception as exc:
             fmts.print_err(f"forward data failed: {exc}")
-            asyncio.create_task(src.close())
+            await src.close()
+            await dst.close()
         finally:
             if src in conn_list:
                 conn_list.remove(src)
+            if dst in conn_list:
+                conn_list.remove(dst)
 
-    asyncio.create_task(
-        forward(ws1, ws2, zip = True)
+    await asyncio.gather(
+        forward(local_endpoint, server_session, zip = True),
+        forward(server_session, local_endpoint, unzip = True)
     )
-    asyncio.create_task(
-        forward(ws2, ws1, unzip = True)
-    )
 
 
-conn_list: list[WS] = []
-async def handle_control(ws: WS, UUID, HOST, PORT):
+conn_list: list[WebSocket] = []
+async def process_register(server_register: WebSocket, UUID, HOST, PORT):
     while True:
-        msg: str = await ws.recv()  # type: ignore
-        if msg.startswith("CHANNEL:"):
-            channel_id = msg.split(":", 1)[1]
-            fmts.print_inf(f"New session {channel_id} connected.")
-            local_ws = None
-            channel_ws = None
+        message: str = await server_register.recv()  # type: ignore
+
+        if message.startswith("CHANNEL:"):
+            session_id = message.split(":", 1)[1]
+            fmts.print_inf(f"New session {session_id} connected.")
+            local_endpoint = None
             try:
-                local_ws = await WSconnect(f"ws://localhost:{PORT}/ws")
-                conn_list.append(local_ws)
+                local_endpoint = await Connect(f"ws://localhost:{PORT}/ws")
+                conn_list.append(local_endpoint)
             except Exception as exc:
-                fmts.print_err(f"Session {channel_id} conn failed: {exc}")
+                fmts.print_err(f"Session {session_id} conn failed: {exc}")
                 raise ThreadExit
-            try:
-                channel_ws = await WSconnect(f"wss://{HOST}/ws-channel/{UUID}/{channel_id}")
-                conn_list.append(channel_ws)
-            except Exception as exc:
-                fmts.print_err(f"Session {channel_id} conn failed: {exc}")
-                if isinstance(local_ws, WS):
-                    conn_list.remove(local_ws)
-                    asyncio.create_task(local_ws.close())
-                if isinstance(channel_ws, WS):
-                    conn_list.remove(channel_ws)
-                    asyncio.create_task(channel_ws.close())
-                continue
-            asyncio.create_task(forward_between(local_ws, channel_ws))
-        elif msg.startswith("HEARTBEAT:"):
-            counter = int(msg.split(":", 1)[1])
+            server_session = Connect(f"wss://{HOST}/ws-channel/{UUID}/{session_id}")
+            asyncio.create_task(forward_between(local_endpoint, server_session))
+
+        elif message.startswith("HEARTBEAT:"):
+            counter = int(message.split(":", 1)[1])
             if counter == 1:
                 fmts.print_suc("Register succeeded.")
             continue
+
         else:
-            asyncio.create_task(ws.close())
-            raise Exception(f"Unknown message {msg}")
+            asyncio.create_task(server_register.close())
+            raise Exception(f"Unknown message {message}")
 
 
 async def main(UUID, HOST, PORT):
     while True:
         try:
             fmts.print_inf(f"Register {UUID} to {HOST}...", flush = True)
-            async with WSconnect(f"wss://{HOST}/register/{UUID}") as ws:
-                await handle_control(ws, UUID, HOST, PORT)
+            async with Connect(f"wss://{HOST}/register/{UUID}") as server_register:
+                await process_register(server_register, UUID, HOST, PORT)
         except (ThreadExit, CancelledError):
+            exit()
             return
         except ConnectionClosed as exc:
-            fmts.print_err(f"{exc.reason if exc.reason else 'Forwarder error: disconnected'} (code {exc.code})\nRetry in 2s")
-            await asyncio.sleep(2)
+            fmts.print_err(f"{exc.reason if exc.reason else 'Forwarder error: disconnected'} (code {exc.code})\nRetry in 3s")
+            await asyncio.sleep(3)
         except Exception as exc:
-            fmts.print_err(f"Forwarder error: {exc}\nRetry in 2s")
-            await asyncio.sleep(2)
+            fmts.print_err(f"Forwarder error: {exc}\nRetry in 3s")
+            await asyncio.sleep(3)
 
 
 @utils.thread_func("WebSocket Forwarder")
