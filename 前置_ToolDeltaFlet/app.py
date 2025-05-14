@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Any, Callable, Final, Literal, Optional, TypeVar, final, ParamSpec, Self, Concatenate
+from typing import Union, Any, Callable, Final, Literal, Optional, TypeVar, final, ParamSpec, Concatenate
 import fastapi.logger
 import flet.fastapi.flet_app_manager
 from flet_core.page import PageDisconnectedException
