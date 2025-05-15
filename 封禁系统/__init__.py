@@ -1,32 +1,64 @@
 import os
 import time
+from dataclasses import dataclass
 from datetime import datetime
-from typing import ClassVar
+from hashlib import sha256
+from typing import Literal
 
 from tooldelta import (
     utils,
     cfg,
     constants,
-    Player,
     Plugin,
     fmts,
-    game_utils,
     TYPE_CHECKING,
     Player,
     plugin_entry,
 )
 
 
+@dataclass
+class BanData:
+    playername: str
+    xuid: str | None
+    device_id: str | None
+    ban_to: int
+    reason: str
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            playername=data["playername"],
+            xuid=data["xuid"],
+            device_id=data.get("device_id"),
+            ban_to=data["ban_to"],
+            reason=data["reason"],
+        )
+
+    def to_dict(self):
+        return {
+            "playername": self.playername,
+            "xuid": self.xuid,
+            "device_id": self.device_id,
+            "ban_to": self.ban_to,
+            "reason": self.reason,
+        }
+
+    def __lt__(self, other: "BanData"):
+        return self.ban_to < other.ban_to
+
+    def __gt__(self, other: "BanData"):
+        return self.ban_to > other.ban_to
+
+
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (0, 0, 11)
+    version = (1, 0, 0)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
-    BAN_DATA_DEFAULT: ClassVar[dict[str, str | float]] = {"BanTo": 0, "Reason": ""}
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.tmpjson = utils.tempjson
         STD_BAN_CFG = {"踢出玩家提示格式": str, "玩家被封禁的广播提示": str}
         DEFAULT_BAN_CFG = {
             "踢出玩家提示格式": "§c你因为 [ban原因]\n被系统封禁至 §6[日期时间]",
@@ -35,10 +67,13 @@ class BanSystem(Plugin):
         self.cfg, _ = cfg.get_plugin_config_and_version(
             self.name, STD_BAN_CFG, DEFAULT_BAN_CFG, self.version
         )
+        self.ban_player_data_db = self.data_path / "players_data.json"
+        self.ban_datas_path = self.data_path / "封禁数据"
+        os.makedirs(self.ban_datas_path, exist_ok=True)
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
-        self.ListenPacket(constants.PacketIDS.PlayerList, self.on_packet_playerlist)
+        self.ListenPacket(constants.PacketIDS.PlayerList, self.on_preban)
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单", (0, 0, 1))
@@ -47,7 +82,7 @@ class BanSystem(Plugin):
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
             from 前置_玩家XUID获取 import XUIDGetter
-            from 群服互通云链版 import QQLinker
+            from 群服互通云链版 import QQLinker  # type: ignore
 
             self.chatbar: ChatbarMenu
             self.xuidm: XUIDGetter
@@ -61,8 +96,8 @@ class BanSystem(Plugin):
             self.on_chatbar_ban,
             True,
         )
-        for i in self.game_ctrl.allplayers:
-            self.test_ban(i)
+        for player in self.game_ctrl.players:
+            self.test_ban(player)
         self.frame.add_console_cmd_trigger(
             ["ban", "封禁"], None, "封禁玩家", self.on_console_ban
         )
@@ -90,48 +125,67 @@ class BanSystem(Plugin):
             )
 
     # -------------- API --------------
-    def ban(self, playername: str, ban_time: float, reason: str = ""):
+    def ban(
+        self,
+        player_or_name: Player | str,
+        ban_time: int | Literal[-1],
+        reason: str = "",
+    ):
         """
-        封禁玩家.
-            player: 需要ban的玩家
-            ban_to_time_ticks: 将其封禁直到(时间戳, 和time.time()一样)
-            reason: 原因
-        """
-        ban_datas = self.BAN_DATA_DEFAULT.copy()
-        if ban_time != -1:
-            ban_datas["BanTo"] = time.time() + ban_time
-        else:
-            ban_datas["BanTo"] = -1
-        ban_datas["Reason"] = reason
-        self.rec_ban_data(playername, ban_datas)
-        if playername in self.game_ctrl.allplayers:
-            self.test_ban(playername)
+        封禁玩家。
 
-    def unban(self, player: str):
+        Args:
+            player_or_name (Player | str): 玩家对象 ~~或玩家名 (玩家名已被弃用)~~
+            ban_time (int | Literal[-1]): 封禁多久, 秒数 (而不是到多久)
+            reason (str, optional): 封禁原因, Defaults to "".
+        """
+        ban_to = int(time.time() + ban_time)
+        if isinstance(player_or_name, Player):
+            ban_data = BanData(
+                player_or_name.name,
+                player_or_name.xuid,
+                player_or_name.device_id,
+                ban_to,
+                reason,
+            )
+            self.ban_player(player_or_name, ban_data)
+        else:
+            ban_data = BanData(player_or_name, None, None, ban_to, reason)
+            self.ban_player_by_name(player_or_name, ban_data)
+
+    def unban(self, player_or_name: Player | str):
         """
         解封玩家.
             player: 玩家名
         """
-        self.del_ban_data(player)
+        if isinstance(player_or_name, Player):
+            self.del_ban_data(player_or_name.xuid)
+        else:
+            try:
+                xuid = self.xuidm.get_xuid_by_name(player_or_name)
+                self.del_ban_data(xuid)
+            except ValueError:
+                self.del_ban_data(self.generate_virtual_xuid(player_or_name))
 
     # ----------------------------------
-    def on_packet_playerlist(self, pk: dict):
+    def on_preban(self, pk: dict):
+        self.print(f'JOIN? = {not pk["ActionType"]}')
         is_joining = not pk["ActionType"]
         if is_joining:
             for entry_user in pk["Entries"]:
                 username = entry_user["Username"]
                 xuid = entry_user["XUID"]
+                self.print("testing\n\n\n")
                 self.test_ban_core(username, xuid)
+                self.print("testing ok\n\n\n")
         return False
 
     @utils.thread_func("封禁系统测试 ban")
-    def on_player_join(self, playerf: Player):
-        player = playerf.name
-        xuid = playerf.xuid
-        self.test_ban_core(player, xuid)
+    def on_player_join(self, player: Player):
+        self.test_ban(player)
 
     def on_console_ban(self, _):
-        allplayers = self.game_ctrl.allplayers.copy()
+        allplayers = list(self.game_ctrl.players)
         fmts.print_inf("选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
             fmts.print_inf(f"{i + 1}: {j}")
@@ -193,7 +247,7 @@ class BanSystem(Plugin):
             return
         target, xuid = matched_names_and_uuids[resp - 1]
         ban_seconds = utils.try_int(
-            input(fmts.fmt_info("请输入封禁时间(秒, 默认为永久)：") or "-1")
+            input(fmts.fmt_info("请输入封禁时间(秒, 默认为永久)：")) or "-1"
         )
         if ban_seconds is None or (ban_seconds < 0 and ban_seconds != -1):
             fmts.print_err("不合法的封禁时间")
@@ -256,7 +310,7 @@ class BanSystem(Plugin):
             self.qqlink.sendmsg(self.qqlink.linked_group, "输入有误")
 
     def on_chatbar_ban(self, caller: Player, _):
-        allplayers = self.game_ctrl.allplayers.copy()
+        allplayers = list(self.game_ctrl.players)
         caller.show("§6选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
             caller.show(f"{i + 1}: {j}")
@@ -272,80 +326,122 @@ class BanSystem(Plugin):
         else:
             fmts.print_err("输入有误")
 
+    def ban_player(self, player: Player, ban_data: BanData):
+        """
+        封禁玩家。
+
+        Args:
+            player (Player): 玩家类
+            ban_data (BanData): 封禁数据
+        """
+        record = self.get_ban_data(player.xuid)
+        if record is not None:
+            ban_data = max(record, ban_data)  # 取时间最久的封禁数据
+        self.record_ban_data(ban_data)
+        self.test_ban(player)
+
+    def ban_player_by_name(self, playername: str, ban_data: BanData):
+        """
+        根据玩家名封禁玩家。
+
+        :Deprecated: 此方法已弃用。
+        :Warning: 在万不得已的情况下最好不要这样做，因为玩家可能会更改玩家名来规避封禁问题。
+
+        Args:
+            playername (str): 玩家名
+            ban_data (BanData): 封禁数据
+        """
+        try:
+            player_xuid = self.xuidm.get_xuid_by_name(playername)
+            self.add_player_name_to_db(player_xuid, playername)
+        except ValueError:
+            player_xuid = self.generate_virtual_xuid(playername)
+        record = self.get_ban_data(player_xuid)
+        if record is not None:
+            ban_data = max(record, ban_data)  # 取时间最久的封禁数据
+        self.record_ban_data(ban_data)
+        if player := self.game_ctrl.players.getPlayerByName(playername):
+            self.test_ban(player)
+
     # for compatibility
-    def test_ban(self, playername: str):
-        xuid = self.xuidm.get_xuid_by_name(playername, allow_offline=True)
-        self.test_ban_core(playername, xuid)
+    def test_ban(self, player: Player):
+        self.test_ban_core(player.name, player.xuid)
 
     def test_ban_core(self, playername: str, xuid: str):
-        ban_data = self.get_ban_data_from_xuid(xuid)
-        ban_to, reason = ban_data["BanTo"], ban_data["Reason"]
+        ban_data = self.get_ban_data(xuid)
+        if ban_data is None:
+            # if xuid is virtual
+            ban_data = self.get_ban_data(self.generate_virtual_xuid(playername))
+            if ban_data is None:
+                return
+            return
+        ban_to = ban_data.ban_to
+        ban_reason = ban_data.reason
         if ban_to == -1 or ban_to > time.time():
+            format_time = datetime.fromtimestamp(ban_to) if ban_to > 0 else "永久"
             fmts.print_inf(
-                f"封禁系统: {playername} 被封禁至 {datetime.fromtimestamp(ban_to) if ban_to > 0 else '永久'}"
-            )
-            self.print(
-                f"-> kick {playername} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
+                f"封禁系统: {playername} 因为 {ban_to} 被封禁至 {format_time}"
             )
             self.game_ctrl.sendwocmd(
-                f"kick {xuid} {self.format_msg(playername, ban_to, reason, '踢出玩家提示格式')}"
+                f"kick {xuid} {self.format_msg(playername, ban_to, ban_reason, '踢出玩家提示格式')}"
             )
             self.game_ctrl.say_to(
                 "@a",
-                self.format_msg(playername, ban_to, reason, "玩家被封禁的广播提示"),
+                self.format_msg(playername, ban_to, ban_reason, "玩家被封禁的广播提示"),
             )
 
-    def format_bantime(self, banto_time: int):
-        if banto_time == -1:
-            return "永久"
+    def get_ban_data(self, ban_xuid: str):
+        path = self.ban_datas_path / f"{ban_xuid}.json"
+        if not path.is_file():
+            return None
         else:
-            struct_time = time.localtime(banto_time)
-            date_show = time.strftime("%Y年 %m月 %d日", struct_time)
-            time_show = time.strftime("%H : %M : %S", struct_time)
-        return date_show + "  " + time_show
+            content = utils.tempjson.load_and_read(path)
+            return BanData.from_dict(content)
 
-    def format_msg(self, player: str, ban_to_sec: int, ban_reason: str, cfg_key: str):
+    def record_ban_data(self, ban_data: BanData):
+        ban_data_xuid = ban_data.xuid or self.generate_virtual_xuid(ban_data.playername)
+        if ban_data.xuid is None:
+            self.add_player_name_to_db(ban_data_xuid, ban_data.playername)
+        path = self.ban_datas_path / f"{ban_data_xuid}.json"
+        utils.tempjson.load_and_write(path, ban_data.to_dict(), need_file_exists=False)
+        utils.tempjson.flush(path)
+
+    def del_ban_data(self, ban_xuid: str):
+        try:
+            os.remove(self.ban_datas_path / (ban_xuid + ".json"))
+        except Exception as err:
+            self.print(f"§6无法移除 XUID 为 {ban_xuid} 的封禁数据: {err}")
+
+    def add_player_device_id_to_db(self, xuid: str, deviceID: str):
+        old = utils.tempjson.load_and_read(
+            self.ban_player_data_db,
+            need_file_exists=False,
+            default={"name2xuid": {}, "deviceID2xuid": {}},
+        )
+        old["deviceID2xuid"][deviceID] = xuid
+        utils.tempjson.load_and_write(self.ban_player_data_db, old)
+
+    def add_player_name_to_db(self, xuid: str, playername: str):
+        old = utils.tempjson.load_and_read(
+            self.ban_player_data_db,
+            need_file_exists=False,
+            default={"name2xuid": {}, "deviceID2xuid": {}},
+        )
+        old["name2xuid"][playername] = xuid
+        utils.tempjson.load_and_write(self.ban_player_data_db, old)
+
+    def format_msg(
+        self, playername: str, ban_to_sec: int, ban_reason: str, cfg_key: str
+    ):
         fmt_time = self.format_bantime(ban_to_sec)
         return utils.simple_fmt(
             {
                 "[日期时间]": fmt_time,
-                "[玩家名]": player,
+                "[玩家名]": playername,
                 "[ban原因]": ban_reason or "未知",
             },
             self.cfg[cfg_key],
         )
-
-    def rec_ban_data(self, player: str, data):
-        utils.tempjson.load_and_write(
-            path := self.format_data_path(
-                self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
-            ),
-            data,
-            need_file_exists=False,
-        )
-        utils.tempjson.flush(path)
-
-    def del_ban_data(self, player: str):
-        p = self.format_data_path(
-            self.xuidm.get_xuid_by_name(player, allow_offline=True) + ".json"
-        )
-        if os.path.isfile(p):
-            os.remove(p)
-
-    # for compatibility
-    def get_ban_data(self, player: str) -> dict:
-        fname = self.xuidm.get_xuid_by_name(player, allow_offline=True)
-        return self.get_ban_data_from_xuid(fname)
-
-    def get_ban_data_from_xuid(self, xuid: str) -> dict:
-        if os.path.isfile(self.format_data_path(f"{xuid}.json")):
-            return utils.safe_json.read_from_plugin(
-                self.name,
-                xuid,
-                default=self.BAN_DATA_DEFAULT,
-            )
-        else:
-            return self.BAN_DATA_DEFAULT
 
     @staticmethod
     def format_date_zhcn(seconds: int):
@@ -357,6 +453,20 @@ class BanSystem(Plugin):
             return f"{seconds // 3600}小时{seconds % 3600 // 60}分钟{seconds % 60}秒"
         else:
             return f"{seconds // 86400}天{seconds % 86400 // 3600}小时{seconds % 3600 // 60}分钟{seconds % 60}秒"
+
+    @staticmethod
+    def generate_virtual_xuid(playername: str):
+        return sha256(playername.encode()).hexdigest()
+
+    @staticmethod
+    def format_bantime(banto_time: int):
+        if banto_time == -1:
+            return "永久"
+        else:
+            struct_time = time.localtime(banto_time)
+            date_show = time.strftime("%Y年 %m月 %d日", struct_time)
+            time_show = time.strftime("%H：%M：%S", struct_time)
+        return date_show + "  " + time_show
 
 
 entry = plugin_entry(BanSystem, "封禁系统")
