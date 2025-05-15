@@ -3,6 +3,7 @@ import time
 from tooldelta import (
     ToolDelta,
     Plugin,
+    Player,
     cfg,
     utils,
     fmts,
@@ -15,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -98,27 +99,27 @@ class CustomChatbarMenu(Plugin):
     def on_inject(self):
         for menu in self.cfg["菜单项"]:
             cb = self.make_cb_func(menu)
-            self.chatbar.add_trigger(
+            self.chatbar.add_new_trigger(
                 menu["触发词"],
-                menu["参数提示"],
+                ...,
                 menu["功能简介"],
                 cb,
                 op_only=menu["仅OP可用"],
             )
 
-    def make_cb_func(self, menu):
+    def make_cb_func(self, menu: dict):
         cmds = menu["触发后执行的指令"]
 
         @utils.thread_func("自定义聊天栏菜单执行")
-        def _menu_cb_func(player: str, args: list):
+        def _menu_cb_func(player: Player, args: tuple):
             if not self.check_args_len(player, args, menu["需要的参数数量"]):
                 return
             for cmd in cmds:
                 f_cmd = utils.simple_fmt(
-                    {"[玩家名]": player}, self.args_replace(args, cmd, player)
+                    {"[玩家名]": player}, self.args_replace(list(args), cmd, player.name)
                 )
                 if f_cmd.startswith("td:/show "):
-                    self.game_ctrl.say_to(player, f_cmd[8:])
+                    player.show(f_cmd[8:])
                 elif f_cmd.startswith("sleep "):
                     time.sleep(utils.try_int(f_cmd[6:]) or 0)
                 else:
