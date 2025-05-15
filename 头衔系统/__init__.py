@@ -13,7 +13,7 @@ from tooldelta import (
 class Nametitle(Plugin):
     name = "头衔系统"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -41,10 +41,10 @@ class Nametitle(Plugin):
             from 前置_Cb2Bot通信 import TellrawCb2Bot
             from 前置_玩家XUID获取 import XUIDGetter
 
-            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
-            self.intr = self.get_typecheck_plugin_api(GameInteractive)
-            cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
-            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
+            self.chatbar:ChatbarMenu
+            self.intr:GameInteractive
+            cb2bot:TellrawCb2Bot
+            self.xuidm: XUIDGetter
         cb2bot.regist_message_cb(
             "nametitle.set", lambda x: self.on_set_titles(x[0], [x[1]])
         )
@@ -62,13 +62,23 @@ class Nametitle(Plugin):
             "打开称号设置页",
             lambda player, args: self.on_set_titles(player.name, args),
         )
-        self.chatbar.add_new_trigger(
-            ["title-set", "设置称号"],
-            [("称号名", str, "")],
-            "打开管理称号设置页",
-            lambda player, args: self.on_operate_nametitle(player.name, args),
-            True,
-        )
+        if getattr(self.frame.launcher, "serverNumber", None) == 59141823:
+            # SkyblueRPG specific.
+            self.chatbar.add_new_trigger(
+                ["title-set", "设置称号"],
+                [("称号名", str, "")],
+                "打开管理称号设置页",
+                lambda player, args: self.on_operate_nametitle(player.name, args),
+                True,
+            )
+        else:
+            self.chatbar.add_new_trigger(
+                ["title-set", "设置称号"],
+                [],
+                "打开管理称号设置页",
+                lambda player, args: self.on_operate_nametitle(player.name, args),
+                True,
+            )
         self.nmtitle_cds: dict[str, int] = {}
         self.nmtitle_cd()
 
