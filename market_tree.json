@@ -234,7 +234,7 @@
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
-      "version": "0.0.11",
+      "version": "1.0.0",
       "plugin-type": "classic"
     },
     "暴击限制": {
