@@ -169,15 +169,12 @@ class BanSystem(Plugin):
 
     # ----------------------------------
     def on_preban(self, pk: dict):
-        self.print(f'JOIN? = {not pk["ActionType"]}')
         is_joining = not pk["ActionType"]
         if is_joining:
             for entry_user in pk["Entries"]:
                 username = entry_user["Username"]
                 xuid = entry_user["XUID"]
-                self.print("testing\n\n\n")
                 self.test_ban_core(username, xuid)
-                self.print("testing ok\n\n\n")
         return False
 
     @utils.thread_func("封禁系统测试 ban")
