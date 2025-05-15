@@ -444,7 +444,7 @@
     "头衔系统": {
       "name": "头衔系统",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "获取服务器ip": {
