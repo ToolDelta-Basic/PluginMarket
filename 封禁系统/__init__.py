@@ -22,7 +22,7 @@ class BanData:
     playername: str
     xuid: str | None
     device_id: str | None
-    ban_to: int
+    ban_to: int | Literal[-1]
     reason: str
 
     @classmethod
@@ -44,17 +44,27 @@ class BanData:
             "reason": self.reason,
         }
 
+    def in_ban(self):
+        if self.ban_to == -1:
+            return True
+        else:
+            return self.ban_to > time.time()
+
     def __lt__(self, other: "BanData"):
+        if self.ban_to == -1:
+            return False
         return self.ban_to < other.ban_to
 
     def __gt__(self, other: "BanData"):
+        if self.ban_to == -1:
+            return True
         return self.ban_to > other.ban_to
 
 
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 0)
+    version = (1, 0, 1)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -139,7 +149,7 @@ class BanSystem(Plugin):
             ban_time (int | Literal[-1]): 封禁多久, 秒数 (而不是到多久)
             reason (str, optional): 封禁原因, Defaults to "".
         """
-        ban_to = int(time.time() + ban_time)
+        ban_to = int(time.time() + ban_time) if ban_time != -1 else -1
         if isinstance(player_or_name, Player):
             ban_data = BanData(
                 player_or_name.name,
