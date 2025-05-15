@@ -100,6 +100,7 @@
         "datas.json": 0,
         "api.py": 0,
         "define.py": 0,
+        "usage_restrictions.txt": 0,
         "requet_queue.py": 0
     },
     "空岛系统": {
@@ -241,7 +242,8 @@
     "简单世界导入": {
         "readme.txt": 0,
         "__init__.py": 0,
-        "datas.json": 0
+        "datas.json": 0,
+        "usage_restrictions.txt": 0
     },
     "『Orion System』违规与作弊行为综合反制系统": {
         "__init__.py": 0,
@@ -385,7 +387,8 @@
     },
     "世界备份": {
         "__init__.py": 0,
-        "datas.json": 0
+        "datas.json": 0,
+        "usage_restrictions.txt": 0
     },
     "雪球菜单": {
         "__init__.py": 0,
@@ -474,7 +477,8 @@
     "世界の记忆": {
         "readme.txt": 0,
         "__init__.py": 0,
-        "datas.json": 0
+        "datas.json": 0,
+        "usage_restrictions.txt": 0
     },
     "更好的钓鱼": {
         "readme.txt": 0,
@@ -581,7 +585,8 @@
     "简单世界恢复": {
         "readme.txt": 0,
         "__init__.py": 0,
-        "datas.json": 0
+        "datas.json": 0,
+        "usage_restrictions.txt": 0
     },
     "[pkg]防挂插件包": {
         "datas.json": 0
