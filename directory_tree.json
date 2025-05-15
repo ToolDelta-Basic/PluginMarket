@@ -436,6 +436,10 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "权限管理": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "ai聊天": {
         "__init__.py": 0,
         "datas.json": 0

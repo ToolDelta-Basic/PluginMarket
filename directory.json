@@ -425,6 +425,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "权限管理": [
+        "__init__.py",
+        "datas.json"
+    ],
     "ai聊天": [
         "__init__.py",
         "datas.json"
