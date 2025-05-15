@@ -99,7 +99,6 @@
         "datas.json",
         "api.py",
         "define.py",
-        "usage_restrictions.txt",
         "requet_queue.py"
     ],
     "空岛系统": [
@@ -235,8 +234,7 @@
     "简单世界导入": [
         "readme.txt",
         "__init__.py",
-        "datas.json",
-        "usage_restrictions.txt"
+        "datas.json"
     ],
     "『Orion System』违规与作弊行为综合反制系统": [
         "__init__.py",
@@ -377,8 +375,7 @@
     ],
     "世界备份": [
         "__init__.py",
-        "datas.json",
-        "usage_restrictions.txt"
+        "datas.json"
     ],
     "雪球菜单": [
         "__init__.py",
@@ -466,8 +463,7 @@
     "世界の记忆": [
         "readme.txt",
         "__init__.py",
-        "datas.json",
-        "usage_restrictions.txt"
+        "datas.json"
     ],
     "更好的钓鱼": [
         "readme.txt",
@@ -571,8 +567,7 @@
     "简单世界恢复": [
         "readme.txt",
         "__init__.py",
-        "datas.json",
-        "usage_restrictions.txt"
+        "datas.json"
     ],
     "[pkg]防挂插件包": [
         "datas.json"
