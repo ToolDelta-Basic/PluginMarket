@@ -16,7 +16,7 @@ import base64
 class Orion_System(Plugin):
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢"
-    version = (0, 2, 1)
+    version = (0, 2, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -1351,11 +1351,11 @@ class Orion_System(Plugin):
             path = f"{self.data_path}/玩家封禁时间数据(以xuid记录)/{xuid}.json"
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path, need_file_exists=False, timeout=2
+                    path, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -1398,7 +1398,7 @@ class Orion_System(Plugin):
         try:
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path, need_file_exists=True, timeout=2
+                    path, need_file_exists=True, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path)
             if ban_player_data is None:
@@ -1569,11 +1569,11 @@ class Orion_System(Plugin):
                 )
                 with self.thread_lock_ban_player_by_device_id:
                     ban_player_data = tempjson.load_and_read(
-                        path_ban_time, need_file_exists=False, timeout=2
+                        path_ban_time, need_file_exists=False, default={}, timeout=2
                     )
                     tempjson.unload_to_path(path_ban_time)
 
-                    if ban_player_data is None:
+                    if ban_player_data == {}:
                         pre_ban_timestamp = timestamp_now
                     else:
                         if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -1619,7 +1619,7 @@ class Orion_System(Plugin):
         try:
             with self.thread_lock_ban_player_by_device_id:
                 ban_player_data = tempjson.load_and_read(
-                    path, need_file_exists=True, timeout=2
+                    path, need_file_exists=True, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path)
             if ban_player_data is None:
@@ -1650,7 +1650,10 @@ class Orion_System(Plugin):
                         )
                         with self.thread_lock_ban_player_by_xuid:
                             ban_xuid_data = tempjson.load_and_read(
-                                path_ban_xuid, need_file_exists=False, timeout=2
+                                path_ban_xuid,
+                                need_file_exists=False,
+                                default={},
+                                timeout=2,
                             )
                             tempjson.unload_to_path(path_ban_xuid)
                             if ban_xuid_data and (
@@ -1821,7 +1824,7 @@ class Orion_System(Plugin):
             try:
                 with self.thread_lock_ban_player_by_xuid:
                     ban_xuid_data = tempjson.load_and_read(
-                        path_ban_xuid, need_file_exists=False, timeout=2
+                        path_ban_xuid, need_file_exists=False, default={}, timeout=2
                     )
                     tempjson.unload_to_path(path_ban_xuid)
                 ban_end_timestamp_xuid = ban_xuid_data["ban_end_timestamp"]
@@ -1848,7 +1851,10 @@ class Orion_System(Plugin):
             try:
                 with self.thread_lock_ban_player_by_device_id:
                     ban_device_id_data = tempjson.load_and_read(
-                        path_ban_device_id, need_file_exists=False, timeout=2
+                        path_ban_device_id,
+                        need_file_exists=False,
+                        default={},
+                        timeout=2,
                     )
                     tempjson.unload_to_path(path_ban_device_id)
                 ban_end_timestamp_device_id = ban_device_id_data["ban_end_timestamp"]
@@ -1980,11 +1986,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -2035,7 +2041,7 @@ class Orion_System(Plugin):
             try:
                 with self.thread_lock_ban_player_by_xuid:
                     xuid_data = tempjson.load_and_read(
-                        path_xuid, need_file_exists=True, timeout=2
+                        path_xuid, need_file_exists=True, default={}, timeout=2
                     )
                     tempjson.unload_to_path(path_xuid)
             except FileNotFoundError:
@@ -2229,11 +2235,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -2499,11 +2505,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_device_id:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -2889,11 +2895,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -2947,7 +2953,7 @@ class Orion_System(Plugin):
             try:
                 with self.thread_lock_ban_player_by_xuid:
                     xuid_data = tempjson.load_and_read(
-                        path_xuid, need_file_exists=True, timeout=2
+                        path_xuid, need_file_exists=True, default={}, timeout=2
                     )
                     tempjson.unload_to_path(path_xuid)
             except FileNotFoundError:
@@ -3168,11 +3174,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_xuid:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
@@ -3470,11 +3476,11 @@ class Orion_System(Plugin):
             )
             with self.thread_lock_ban_player_by_device_id:
                 ban_player_data = tempjson.load_and_read(
-                    path_ban_time, need_file_exists=False, timeout=2
+                    path_ban_time, need_file_exists=False, default={}, timeout=2
                 )
                 tempjson.unload_to_path(path_ban_time)
 
-                if ban_player_data is None:
+                if ban_player_data == {}:
                     pre_ban_timestamp = timestamp_now
                 else:
                     if ban_player_data["ban_end_timestamp"] == "Forever":
