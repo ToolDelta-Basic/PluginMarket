@@ -417,10 +417,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "租赁服ip查询": [
-        "__init__.py",
-        "datas.json"
-    ],
     "传送点设置": [
         "__init__.py",
         "datas.json"
