@@ -32,7 +32,7 @@ def get_op_pos(allplayers: list[str]):
 
 
 class BDXExporter(Plugin):
-    name = "bdx导出/导入器"
+    name = "bdx导出器"
     author = "SuperScript/帥気的男主角"
     version = (0, 0, 2)
 

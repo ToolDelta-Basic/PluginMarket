@@ -18,15 +18,14 @@ class BDXContentReader:
             return -1  # EOF
         return int.from_bytes(op_byte, byteorder="big")
 
-    def read_string(self):
-        # 添加错误处理，使用替代字符替换无法解码的字节
-        try:
-            result = self.read_bytes(self.read_int())
-            return result.decode('utf-8', errors='replace')
-        except Exception as e:
-            # 如果解码失败，尝试使用其他编码或者返回占位符
-            fmts.print_err(f"字符串解码错误: {e}")
-            return f"[无法解码的字符串-{len(result)}字节]"
+    def read_string(self) -> str:
+        result = bytearray()
+        while True:
+            b = self.reader.read(1)
+            if b == b'\x00' or not b:
+                break
+            result.extend(b)
+        return result.decode('utf-8')
 
     def parse_content(self) -> List[Dict[str, Any]]:
         """解析BDX内容，返回所有放置的方块信息"""
@@ -166,57 +165,33 @@ class BDXContentReader:
         return blocks
 
 
-def read_bdx_file(filepath):
-    """读取BDX文件并解析成方块数据"""
-    try:
-        with open(filepath, "rb") as f:
-            # 检查文件头
-            magic = f.read(4)
-            if magic != b'BDX\x00':
-                raise ValueError("不是有效的BDX文件")
-                
-            # 读取版本号和作者信息
-            reader = BDXReader(f)
-            version = reader.read_byte()
-            author = reader.read_string()
-            
-            try:
-                # 尝试解析方块内容
-                blocks = reader.parse_content()
-                return author, blocks
-            except UnicodeDecodeError:
-                # 特别处理字符串解码错误
-                fmts.print_err("无法解析BDX文件中的文本内容，尝试使用二进制兼容模式")
-                # 重置文件指针，重新尝试读取
-                f.seek(5)  # 跳过文件头和版本号
-                author_len = struct.unpack('I', f.read(4))[0]
-                author = f.read(author_len).decode('latin1')  # 使用latin1编码，它可以处理任何字节
-                
-                # 使用二进制兼容模式解析剩余内容
-                blocks = BDXReader(f, binary_compatible=True).parse_content()
-                return author, blocks
-    except Exception as e:
-        fmts.print_err(f"读取BDX文件失败: {e}")
-        raise
-
-class BDXReader:
-    def __init__(self, file, binary_compatible=False):
-        self.file = file
-        self.binary_compatible = binary_compatible
+def read_bdx_file(file_path: str) -> Tuple[str, List[Dict[str, Any]]]:
+    """读取BDX文件，返回作者信息和所有方块信息"""
+    with open(file_path, "rb") as f:
+        header = f.read(3)
+        if header != b"BD@":
+            raise ValueError("不是有效的BDX文件")
         
-    def read_string(self):
-        length = self.read_int()
-        if length <= 0:
-            return ""
-            
-        data = self.read_bytes(length)
-        if self.binary_compatible:
-            # 使用latin1编码，它可以处理任何字节值
-            return data.decode('latin1')
+        compressed_data = f.read()
+        decompressed_data = brotli.decompress(compressed_data)
         
-        try:
-            return data.decode('utf-8')
-        except UnicodeDecodeError:
-            # 如果UTF-8解码失败，尝试使用latin1
-            fmts.print_err(f"UTF-8解码失败，切换到二进制兼容模式")
-            return data.decode('latin1')
+        if not decompressed_data.startswith(b"BDX\x00"):
+            raise ValueError("BDX文件格式错误")
+            
+        # 提取作者信息
+        author_end = decompressed_data.find(b'\x00', 4)
+        author = decompressed_data[4:author_end].decode('utf-8')
+        
+        # 提取BDX内容
+        content_start = author_end + 1
+        content_end = decompressed_data.rfind(b"XE")
+        
+        if content_end == -1:
+            content_end = len(decompressed_data)
+            
+        content = decompressed_data[content_start:content_end]
+        
+        reader = BDXContentReader(content)
+        blocks = reader.parse_content()
+        
+        return author, blocks

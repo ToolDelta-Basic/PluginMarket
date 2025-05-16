@@ -2,7 +2,7 @@
   "author": "SuperScript/帥気的男主角",
   "version": "0.0.3",
   "plugin-type": "classic",
-  "description": "导出 bdx 文件\n控制台输入 export help 查看帮助\n目前支持导入: 普通建筑、命令方块、箱子内无 NBT 物品\n导入 bdx 文件\n控制台输入 import help 查看帮助\n目前支持导入bdx导出器导出的文件",
+  "description": "导出 bdx 文件\n控制台输入 export help 查看帮助\n目前支持导入: 普通建筑、命令方块、箱子内无 NBT 物品",
   "pre-plugins": {
     "前置-世界交互": "0.0.1"
   },
