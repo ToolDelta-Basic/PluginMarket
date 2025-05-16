@@ -558,7 +558,7 @@
     "循环获取玩家坐标": {
       "name": "前置_循环获取玩家坐标",
       "author": "ToolDelta",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "sfx-player": {
