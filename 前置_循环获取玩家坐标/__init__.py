@@ -6,7 +6,7 @@ from tooldelta import InternalBroadcast, Plugin, fmts, utils, plugin_entry
 class GlobalGetPlayerPos(Plugin):
     name = "前置-循环获取玩家坐标"
     author = "ToolDelta"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     CYCLE = 1
 
     def __init__(self, frame):
@@ -81,7 +81,7 @@ class GlobalGetPlayerPos(Plugin):
         player_posdata = {}
 
         try:
-            result = self.game_ctrl.sendcmd_with_resp("/querytarget @a")
+            result = self.game_ctrl.sendwscmd_with_resp("/querytarget @a")
             if result.SuccessCount == 0:
                 fmts.print_err(
                     f"获取玩家坐标: 无法获取坐标: {result.OutputMessages[0].Message}"
