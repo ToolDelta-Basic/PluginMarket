@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 1, 0)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -30,9 +30,14 @@ class CustomChatbarMenu(Plugin):
             "菜单项": cfg.JsonList(
                 {
                     "触发词": cfg.JsonList(str),
-                    "参数提示": str,
                     "功能简介": str,
-                    "需要的参数数量": cfg.NNInt,
+                    "需要的参数(没有则填[])": cfg.JsonList(
+                        {
+                            "参数名": str,
+                            "类型": str,
+                            "默认值(没有则为null)": (int, float, str, bool, type(None)),
+                        }
+                    ),
                     "触发后执行的指令": cfg.JsonList(str),
                     "仅OP可用": bool,
                 },
@@ -43,8 +48,7 @@ class CustomChatbarMenu(Plugin):
                 {
                     "说明": "返回重生点",
                     "触发词": ["kill", "自尽"],
-                    "需要的参数数量": 0,
-                    "参数提示": "",
+                    "需要的参数(没有则填[])": [],
                     "功能简介": "返回重生点",
                     "触发后执行的指令": [
                         "td:/show §c5秒后准备自尽..",
@@ -57,19 +61,33 @@ class CustomChatbarMenu(Plugin):
                 {
                     "说明": "一个测试菜单参数项的触发词菜单项",
                     "触发词": ["测试参数"],
-                    "需要的参数数量": 2,
-                    "参数提示": "[参数1] [参数2]",
+                    "需要的参数(没有则填[])": [
+                        {
+                            "参数名": "填一个整数",
+                            "类型": "int",
+                            "默认值(没有则为null)": None
+                        },
+                        {
+                            "参数名": "随便填",
+                            "类型": "str",
+                            "默认值(没有则为null)": None
+                        },
+                        {
+                            "参数名": "填true或false，默认为false",
+                            "类型": "bool",
+                            "默认值(没有则为null)": False
+                        },
+                    ],
                     "功能简介": "测试触发词参数",
                     "触发后执行的指令": [
-                        "/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2]"
+                        "/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2], 参数3=[参数:3]"
                     ],
                     "仅OP可用": True,
                 },
                 {
                     "说明": "一个个人档案的示例",
                     "触发词": ["个人档案", "prof"],
-                    "需要的参数数量": 0,
-                    "参数提示": "",
+                    "需要的参数(没有则填[])": [],
                     "功能简介": "查看个人档案",
                     "触发后执行的指令": [
                         "td:/show §e| §l个人档案§r§e |",
@@ -98,25 +116,40 @@ class CustomChatbarMenu(Plugin):
     @utils.thread_func("初始化菜单项")
     def on_inject(self):
         for menu in self.cfg["菜单项"]:
-            cb = self.make_cb_func(menu)
-            self.chatbar.add_new_trigger(
-                menu["触发词"],
-                ...,
-                menu["功能简介"],
-                cb,
-                op_only=menu["仅OP可用"],
-            )
+            self.regist_to_menu(menu)
 
-    def make_cb_func(self, menu: dict):
+    def regist_to_menu(self, menu: dict):
         cmds = menu["触发后执行的指令"]
+
+        def generate_argument_hint():
+            hints_list = []
+            for hint_object in menu["需要的参数(没有则填[])"]:
+                hint_name: str = hint_object["参数名"]
+                hint_type_: str = hint_object["类型"]
+                hint_default = hint_object["默认值(没有则为null)"]
+                if hint_type_ not in ("str", "int", "float", "bool"):
+                    self.print(f"§e{menu['功能简介']} 的参数类型错误: '{hint_type_}'")
+                    raise SystemExit
+                hint_type: type = {
+                    "str": str,
+                    "int": int,
+                    "float": float,
+                    "bool": bool,
+                }[hint_type_]
+                if not isinstance(hint_default, hint_type | None):
+                    self.print(
+                        f"§e{menu['功能简介']} 的参数 {hint_name} 的默认值和所给类型不匹配"
+                    )
+                    raise SystemExit
+                hints_list.append((hint_name, hint_type, hint_default))
+            return hints_list
 
         @utils.thread_func("自定义聊天栏菜单执行")
         def _menu_cb_func(player: Player, args: tuple):
-            if not self.check_args_len(player, args, menu["需要的参数数量"]):
-                return
             for cmd in cmds:
                 f_cmd = utils.simple_fmt(
-                    {"[玩家名]": player}, self.args_replace(list(args), cmd, player.name)
+                    {"[玩家名]": player},
+                    self.args_replace(list(args), cmd, player.name),
                 )
                 if f_cmd.startswith("td:/show "):
                     player.show(f_cmd[8:])
@@ -125,7 +158,13 @@ class CustomChatbarMenu(Plugin):
                 else:
                     self.game_ctrl.sendwscmd(f_cmd)
 
-        return _menu_cb_func
+        self.chatbar.add_new_trigger(
+            menu["触发词"],
+            generate_argument_hint(),
+            menu["功能简介"],
+            _menu_cb_func,
+            op_only=menu["仅OP可用"],
+        )
 
     def args_replace(self, args: list, sub: str, user: str):
         res = self.args_match_rule.findall(sub)
@@ -178,12 +217,6 @@ class CustomChatbarMenu(Plugin):
                 fmts.print_war(f"自定义聊天栏菜单: 获取 {scb_name}:{user} 的分数超时")
             sub = sub.replace(f"[计分板替换:{scb_name}({scb_repl})]", repl_text)
         return sub
-
-    def check_args_len(self, player, args, need_len):
-        if len(args) < need_len:
-            self.game_ctrl.say_to(player, f"§c菜单参数太少， 需要 {need_len} 个")
-            return False
-        return True
 
 
 entry = plugin_entry(CustomChatbarMenu)
