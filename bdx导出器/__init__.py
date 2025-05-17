@@ -1,6 +1,5 @@
 from .bdx_utils.construct_file import write_bdx_file
 from .scanner import POS, export_to_structures, structures_to_bdx
-from .importer import import_bdx_file
 from tooldelta import Plugin, game_utils, utils, fmts, TYPE_CHECKING, plugin_entry
 from tooldelta.constants import PacketIDS
 
@@ -33,7 +32,7 @@ def get_op_pos(allplayers: list[str]):
 
 class BDXExporter(Plugin):
     name = "bdx导出器"
-    author = "SuperScript/帥気的男主角"
+    author = "SuperScript"
     version = (0, 0, 2)
 
     def __init__(self, frame):
@@ -58,9 +57,8 @@ class BDXExporter(Plugin):
         return False
 
     def on_inject(self):
-        # 如果export命令正常工作，那么两个命令都应该使用add_console_cmd_trigger
         self.frame.add_console_cmd_trigger(["export"], None, "导出 bdx", self.on_export)
-        self.frame.add_console_cmd_trigger(["import"], None, "导入 bdx", self.on_import)
+
     def on_export(self, args: list[str]):
         # export set 388 28 102
         # export setend 626 283 -27
@@ -103,8 +101,7 @@ class BDXExporter(Plugin):
                 fmts.print_inf("§eBDX 导出器帮助:")
                 fmts.print_inf(" - export set §7设置起点")
                 fmts.print_inf(" - export setend §7设置终点")
-                fmts.print_inf(" - export 文件名.bdx §7导出为 bdx")
-                fmts.print_inf(" - import 文件名.bdx §7导入 bdx 文件")
+                fmts.print_inf(" - export §7导出为 bdx")
         else:
             if self.start is None or self.end is None:
                 fmts.print_err("请先设置起点和终点")
@@ -129,42 +126,6 @@ class BDXExporter(Plugin):
         with open(self.format_data_path(fname), "wb") as fp:
             write_bdx_file(fp, "ToolDelta BDX Exporter", bdx_content)
         fmts.print_suc(f"导出成功: {self.format_data_path(fname)}")
-
-    def on_import(self, args: list[str]):
-        # import file.bdx
-        # import file.bdx 100 64 100
-        if args:
-            if args[0].endswith(".bdx"):
-                # 指定位置导入
-                if len(args) == 4:
-                    try:
-                        import_x, import_y, import_z = tuple(int(i) for i in args[1:])
-                        self.import_bdx(args[0], (import_x, import_y, import_z))
-                        return
-                    except Exception:
-                        fmts.print_err("输入坐标格式错误")
-                        pass
-                
-                # 让用户选择位置
-                pos_get = get_op_pos(self.game_ctrl.allplayers)
-                if pos_get is None:
-                    return
-                self.import_bdx(args[0], pos_get)
-            else:
-                self.show_import_help()
-        else:
-            self.show_import_help()
-    
-    def show_import_help(self):
-        fmts.print_inf("§eBDX 导入器帮助:")
-        fmts.print_inf(" - import 文件名.bdx §7导入指定的bdx文件，将询问导入位置")
-        fmts.print_inf(" - import 文件名.bdx x y z §7导入指定的bdx文件到指定坐标位置")
-    
-    @utils.thread_func("bdx导入线程")
-    def import_bdx(self, filename: str, position: POS):
-        """导入BDX文件到指定位置"""
-        filepath = self.format_data_path(filename)
-        import_bdx_file(self, filepath, position)
 
 
 entry = plugin_entry(BDXExporter)
