@@ -39,12 +39,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "bdx-exporter": {
-      "name": "bdx导入&导出器",
-      "author": "SuperScript/帥気的男主角",
-      "version": "0.0.3",
-      "plugin-type": "classic"
-    },
     "插件接口获取修复": {
       "name": "插件接口获取修复",
       "author": "ToolDelta",
@@ -469,6 +463,12 @@
       "name": "循环替换拒绝方块",
       "author": "心海",
       "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "bdx-exporter": {
+      "name": "bdx导出器",
+      "author": "SuperScript",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "reportsystem": {

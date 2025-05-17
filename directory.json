@@ -32,22 +32,6 @@
     "猫七街云黑封禁/server/官方云黑列表": [
         "blacklist.json"
     ],
-    "bdx导入&导出器": [
-        "state_dump.py",
-        "__init__.py",
-        "datas.json",
-        "importer.py",
-        "utils.py",
-        "progress_bar.py",
-        "scanner.py",
-        "struct_loader.py"
-    ],
-    "bdx导入&导出器/bdx_utils": [
-        "reader.py",
-        "writer.py",
-        "construct_file.py",
-        "structs.py"
-    ],
     "插件接口获取修复": [
         "__init__.py",
         "datas.json"
@@ -432,6 +416,20 @@
     "循环替换拒绝方块": [
         "__init__.py",
         "datas.json"
+    ],
+    "bdx导出器": [
+        "state_dump.py",
+        "__init__.py",
+        "datas.json",
+        "utils.py",
+        "progress_bar.py",
+        "scanner.py",
+        "struct_loader.py"
+    ],
+    "bdx导出器/bdx_utils": [
+        "writer.py",
+        "construct_file.py",
+        "structs.py"
     ],
     "举报系统": [
         "__init__.py",
