@@ -1,0 +1,9 @@
+{
+  "author": "机入",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "进入服务器之后返回随机一言",
+  "pre-plugins": {},
+  "plugin-id": "进服一言",
+  "enabled": true
+}

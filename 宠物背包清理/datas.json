@@ -1,0 +1,9 @@
+{
+  "author": "猫七街",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "用于清理玩家的宠物背包\n需要放置一个循环命令方块, 延迟20+: execute as @a at @s run w @a[tag=robot] 清理背包",
+  "pre-plugins": {},
+  "plugin-id": "宠物背包清理",
+  "enabled": true
+}

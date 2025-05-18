@@ -1,0 +1,12 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "制裁玩家放置的高频活塞！高度自定义化反制！",
+    "limit_launcher": null,
+    "pre-plugins": {
+      "tpscalculator": "0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "anti-fast-piston"
+  }
+  

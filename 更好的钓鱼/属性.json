@@ -1,0 +1,106 @@
+{
+    "rawtext": [
+        {
+            "text": "Cat.upScore"
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_冷却计时"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_钓鱼次数"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_钓鱼冷却"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_钓鱼爆率"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_物品爆率"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_生物爆率"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_结构爆率"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_空钩概率"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_连钓次数"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_鱼饵属性"
+            }
+        },
+        {
+            "selector": "@a"
+        },
+        {
+            "score": {
+                "name": "@a",
+                "objective": "玩家_鱼竿属性"
+            }
+        }
+    ]
+}

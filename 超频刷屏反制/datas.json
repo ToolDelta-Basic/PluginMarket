@@ -1,0 +1,10 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.5",
+    "plugin-type": "classic",
+    "description": "制裁超频刷屏的玩家/锁服",
+    "pre-plugins": {
+        "封禁系统": "0.0.1"
+    },
+    "plugin-id": "超频刷屏反制"
+}

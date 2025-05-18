@@ -1,0 +1,11 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.8",
+  "description": "在公告栏添加更多特殊内容, 例如本地时间和TPS等",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "tpscalculator": "0.0.1"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "better-announcebar"
+}

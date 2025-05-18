@@ -1,0 +1,13 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.5",
+  "description": "自动对任何放置在服内的32k盒子进行反制和保存",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.1.13",
+    "封禁系统": "0.0.1",
+    "基本插件功能库": "0.0.1"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "32k盒子显示"
+}

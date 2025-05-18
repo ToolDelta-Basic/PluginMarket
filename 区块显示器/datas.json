@@ -1,0 +1,11 @@
+{
+    "author": "SnowLotus",
+    "version": "0.0.3",
+    "description": "使用 显示区块 聊天栏指令来查看区块范围, 使用 地图画起点 指令来查看地图画起点",
+    "plugin-type": "classic",
+    "pre-plugins": {
+        "聊天栏菜单": "0.0.1"
+    },
+    "limit_launcher": null,
+    "plugin-id": "chunk-show"
+}

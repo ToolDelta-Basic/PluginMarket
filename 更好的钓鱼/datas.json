@@ -1,0 +1,11 @@
+{
+  "author": "猫猫",
+  "version": "0.0.3",
+  "plugin-type": "classic",
+  "description": "让你的每一次收杆充满惊喜",
+  "pre-plugins": {
+    "cb-say-supporter": "0.0.1"
+  },
+  "plugin-id": "更好的钓鱼",
+  "enabled": true
+}

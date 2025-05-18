@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.2",
+  "plugin-type": "classic",
+  "description": "统一对玩家显示的消息的风格 (如成功、失败、报错等)",
+  "pre-plugins": {},
+  "plugin-id": "统一消息风格",
+  "enabled": true
+}

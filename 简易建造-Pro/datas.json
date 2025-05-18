@@ -1,0 +1,12 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.10",
+    "description": "使用一些更简便的方法让建筑师建造服务器",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "聊天栏菜单": "0.1.13"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "简易建造-Pro",
+    "enabled": true
+}

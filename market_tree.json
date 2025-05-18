@@ -1,0 +1,638 @@
+{
+  "MarketVersion": "0.0.2",
+  "SourceName": "ToolDelta插件市场 Official",
+  "Greetings": "§a欢迎使用 §bToolDelta 插件市场.",
+  "MarketPlugins": {
+    "item-maker": {
+      "name": "物品制作器",
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "玩家交易所": {
+      "name": "玩家交易所",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "bigchar-replace": {
+      "name": "前置_大字替换",
+      "author": "ToolDelta",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "gobang_game": {
+      "name": "五子棋小游戏",
+      "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "违规名称踢出": {
+      "name": "违规名称踢出",
+      "author": "大庆油田",
+      "version": "0.0.10",
+      "plugin-type": "classic"
+    },
+    "云黑": {
+      "name": "猫七街云黑封禁",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "插件接口获取修复": {
+      "name": "插件接口获取修复",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "榛缈插件性能分析": {
+      "name": "00榛缈插件性能分析",
+      "author": "Hazelmeow",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
+    "cb-say-supporter": {
+      "name": "命令方块代发言支持",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "Cb2Bot通信": {
+      "name": "前置_Cb2Bot通信",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "玩家历史": {
+      "name": "玩家记录",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "chunk-show": {
+      "name": "区块显示器",
+      "author": "SnowLotus",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "统一消息风格": {
+      "name": "前置_统一消息风格",
+      "author": "ToolDelta",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "MusicPlayer": {
+      "name": "音乐播放器",
+      "author": "SuperScript",
+      "version": "0.1.2",
+      "plugin-type": "classic"
+    },
+    "番茄小说": {
+      "name": "番茄小说",
+      "author": "小虫虫",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "单方块空岛系统": {
+      "name": "单方块空岛系统",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "主动区块请求": {
+      "name": "前置_主动区块请求",
+      "author": "2B",
+      "version": "0.2.3",
+      "plugin-type": "classic"
+    },
+    "SkyblockSystem": {
+      "name": "空岛系统",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "ToolDeltaFlet": {
+      "name": "前置_ToolDeltaFlet",
+      "author": "Hazelmeow",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "server-link": {
+      "name": "服服互通",
+      "author": "SuperScript/2401PT",
+      "version": "0.0.9",
+      "plugin-type": "classic"
+    },
+    "anti-fast-piston": {
+      "name": "活塞限速",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "进服一言": {
+      "name": "进服一言",
+      "author": "机入",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "barrelshop": {
+      "name": "木桶玩家商店-试验版",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "DateTimeSync": {
+      "name": "时间同步计分板",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "ad": {
+      "name": "公告栏[Mono]",
+      "author": "Mono",
+      "version": "1.0.2",
+      "plugin-type": "classic"
+    },
+    "兑换码": {
+      "name": "兑换码",
+      "author": "机入",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "skin-getter": {
+      "name": "获取全服玩家皮肤",
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "mcfunction-tasks": {
+      "name": "MCFunction计划任务",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "demo-plugin-shop": {
+      "name": "demo-商店系统",
+      "author": "ToolDelta Demo",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "等级限制": {
+      "name": "等级检测",
+      "author": "果_k",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "发言频率限制": {
+      "name": "发言频率限制",
+      "author": "wling/7912",
+      "version": "0.0.6",
+      "plugin-type": "classic"
+    },
+    "简易建造": {
+      "name": "简易建造",
+      "author": "SuperScript",
+      "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "PlayerJoinverify": {
+      "name": "进服验证",
+      "author": "大庆油田",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "largefill": {
+      "name": "大范围fill",
+      "author": "System",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "全服喇叭": {
+      "name": "全服喇叭",
+      "author": "wling",
+      "version": "0.0.6",
+      "plugin-type": "classic"
+    },
+    "计分板重置": {
+      "name": "计分板重置",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "better-announcebar": {
+      "name": "更好的公告栏",
+      "author": "SuperScript",
+      "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "封禁系统": {
+      "name": "封禁系统",
+      "author": "SuperScript",
+      "version": "1.0.1",
+      "plugin-type": "classic"
+    },
+    "暴击限制": {
+      "name": "暴击检测",
+      "author": "果_k",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "自定义聊天栏菜单": {
+      "name": "自定义聊天栏菜单",
+      "author": "SuperScript",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
+    "simple-bedworld-import": {
+      "name": "简单世界导入",
+      "author": "YoRHa",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "『Orion System』违规与作弊行为综合反制系统": {
+      "name": "『Orion System』违规与作弊行为综合反制系统",
+      "author": "style_天枢",
+      "version": "0.2.2",
+      "plugin-type": "classic"
+    },
+    "玩家人数限制": {
+      "name": "玩家人数限制",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "空岛分配": {
+      "name": "空岛分配",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "玩家数据管理": {
+      "name": "玩家数据管理",
+      "author": "猫七街",
+      "version": "2.0.1",
+      "plugin-type": "classic"
+    },
+    "nice-tpa": {
+      "name": "多功能玩家互传",
+      "author": "wling/SuperScript",
+      "version": "0.1.3",
+      "plugin-type": "classic"
+    },
+    "admin_cmd": {
+      "name": "admin命令",
+      "author": "wling/Hadwin",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "reload": {
+      "name": "重启",
+      "author": "大庆油田",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "玩家转账": {
+      "name": "玩家转账",
+      "author": "猫七街",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "system_online": {
+      "name": "系统上线提示[Mono]",
+      "author": "Mono",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "清空玩家末影箱": {
+      "name": "清空全部玩家末影箱",
+      "author": "wling",
+      "version": "0.0.6",
+      "plugin-type": "classic"
+    },
+    "pip": {
+      "name": "pip模块支持",
+      "author": "SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "TD-ZBasic": {
+      "name": "ZBasic_Lang_中文编程",
+      "author": "SuperScript",
+      "version": "0.1.1",
+      "plugin-type": "classic"
+    },
+    "超频刷屏反制": {
+      "name": "超频刷屏反制",
+      "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "简易建造-Pro": {
+      "name": "简易建造-Pro",
+      "author": "SuperScript",
+      "version": "0.0.10",
+      "plugin-type": "classic"
+    },
+    "QuestSystem": {
+      "name": "任务系统",
+      "author": "任务系统",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "32k盒子显示": {
+      "name": "32k盒子显示",
+      "author": "SuperScript",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "宠物背包清理": {
+      "name": "宠物背包清理",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "MC-MIDIPlayer": {
+      "name": "前置_MIDI播放器",
+      "author": "SuperScript",
+      "version": "0.2.6",
+      "plugin-type": "classic"
+    },
+    "cmdsender-monitor": {
+      "name": "命令发送监视器",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "井字棋": {
+      "name": "井字棋",
+      "author": "SuperScript",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "chat-history": {
+      "name": "聊天历史记录",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "世界备份": {
+      "name": "世界备份",
+      "author": "YoRHa and RATH",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "雪球菜单v2": {
+      "name": "雪球菜单",
+      "author": "SuperScript",
+      "version": "0.1.7",
+      "plugin-type": "classic"
+    },
+    "入服欢迎": {
+      "name": "入服欢迎",
+      "author": "wling",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "白名单&管理员检测": {
+      "name": "白名单&管理员检测",
+      "author": "猫七街",
+      "version": "1.1.0",
+      "plugin-type": "classic"
+    },
+    "玩家互传": {
+      "name": "猫七街玩家互传",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "控制台执行MC指令": {
+      "name": "控制台执行MC指令",
+      "author": "SuperScript",
+      "version": "0.0.4",
+      "plugin-type": "classic"
+    },
+    "前置-世界交互": {
+      "name": "前置_世界交互",
+      "author": "SuperScript",
+      "version": "1.0.1",
+      "plugin-type": "classic"
+    },
+    "class-plugin-creator": {
+      "name": "类式插件创建器",
+      "author": "ToolDelta",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "基本插件功能库": {
+      "name": "前置_基本插件功能库",
+      "author": "SuperScript",
+      "version": "0.0.11",
+      "plugin-type": "classic"
+    },
+    "@玩家": {
+      "name": "@玩家",
+      "author": "wling",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "头衔系统": {
+      "name": "头衔系统",
+      "author": "SuperScript",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "home-point-setter": {
+      "name": "传送点设置",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "进服默认权限(必备)": {
+      "name": "权限管理",
+      "author": "权威-马牛逼",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "ai聊天": {
+      "name": "ai聊天",
+      "author": "机入",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "循环替换拒绝方块": {
+      "name": "循环替换拒绝方块",
+      "author": "心海",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "bdx-exporter": {
+      "name": "bdx导出器",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "reportsystem": {
+      "name": "举报系统",
+      "author": "帥気的男主角",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "死亡点返回": {
+      "name": "死亡点返回",
+      "author": "果_k",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "tpscalculator": {
+      "name": "前置_tps计算器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "基础聊天栏菜单": {
+      "name": "基础聊天栏菜单",
+      "author": "帥気的男主角",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "机器人发言": {
+      "name": "机器人发言",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "世界の记忆": {
+      "name": "世界の记忆",
+      "author": "9S, Meteora·Österreich, Altair and Echidna",
+      "version": "0.0.6",
+      "plugin-type": "classic"
+    },
+    "更好的钓鱼": {
+      "name": "更好的钓鱼",
+      "author": "猫猫",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "MySQL": {
+      "name": "MySQL连接器",
+      "author": "小虫虫",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "cloud-qqlink": {
+      "name": "群服互通云链版",
+      "author": "大庆油田/SuperScript",
+      "version": "0.0.9",
+      "plugin-type": "classic"
+    },
+    "聊天栏菜单": {
+      "name": "前置_聊天栏菜单",
+      "author": "SuperScript",
+      "version": "0.3.7",
+      "plugin-type": "classic"
+    },
+    "巡逻": {
+      "name": "巡逻",
+      "author": "猫七街",
+      "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "PianoInSettingPiano": {
+      "name": "设置栏钢琴师",
+      "author": "SuperScript",
+      "version": "0.0.9",
+      "plugin-type": "classic"
+    },
+    "MCChatLinker-TD": {
+      "name": "多服聊天互通",
+      "author": "WuMing",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "XUID获取": {
+      "name": "前置_玩家XUID获取",
+      "author": "System",
+      "version": "0.0.7",
+      "plugin-type": "classic"
+    },
+    "循环获取玩家坐标": {
+      "name": "前置_循环获取玩家坐标",
+      "author": "ToolDelta",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "sfx-player": {
+      "name": "音效播放器",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "ingame-errmsg": {
+      "name": "游戏内显示插件报错",
+      "author": "System",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "发言频率限制v2": {
+      "name": "发言频率限制v2",
+      "author": "SuperScript",
+      "version": "0.1.1",
+      "plugin-type": "classic"
+    },
+    "cmd-debugger": {
+      "name": "指令调试器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "简单世界恢复": {
+      "name": "简单世界恢复",
+      "author": "YoRHa",
+      "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "choose-song": {
+      "name": "点歌台",
+      "author": "SuperScript & Zhonger-Yuansi",
+      "version": "0.2.0",
+      "plugin-type": "classic"
+    },
+    "scheduled-task": {
+      "name": "定时任务",
+      "author": "System",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    }
+  },
+  "Packages": {
+    "新手插件包": {
+      "plugin-ids": [
+        "聊天栏菜单",
+        "自定义聊天栏菜单",
+        "入服欢迎",
+        "better-announcebar",
+        "gobang_game",
+        "choose-song",
+        "插件接口获取修复"
+      ],
+      "description": "入门ToolDelta的插件包， 提供了ToolDelta的经典插件集\n包括一些实用插件和娱乐插件",
+      "author": "SuperScript",
+      "version": "0.0.2"
+    },
+    "防挂插件包": {
+      "plugin-ids": [
+        "『Orion System』违规与作弊行为综合反制系统",
+        "暴击限制",
+        "超频刷屏反制",
+        "等级限制",
+        "reportsystem",
+        "云黑",
+        "违规名称踢出",
+        "32k盒子显示"
+      ],
+      "description": "收录常用的防挂插件",
+      "author": "ToolDelta",
+      "version": "0.0.2"
+    }
+  }
+}

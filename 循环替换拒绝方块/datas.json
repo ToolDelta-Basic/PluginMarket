@@ -1,0 +1,9 @@
+{
+    "author": "心海",
+    "version": "0.0.1",
+    "description": "将玩家y=-64附近的区域的基岩§6循环替换为拒绝方块§r\n每0.1s执行一次\n  仅限纯冒险服使用, 玩家将不能放置/破坏方块\n  除非基岩层上被放置了允许方块",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "循环替换拒绝方块"
+}

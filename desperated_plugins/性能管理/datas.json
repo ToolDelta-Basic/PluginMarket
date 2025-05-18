@@ -1,0 +1,9 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.4",
+  "description": "使用控制台命令对系统进行实时的cpu内存等监测, 更多方法请在安装插件后输入 top 命令",
+  "plugin-type": "classic",
+  "pre-plugins": {},
+  "limit_launcher": null,
+  "plugin-id": "prof_manager"
+}

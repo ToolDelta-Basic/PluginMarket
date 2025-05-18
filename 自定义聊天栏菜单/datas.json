@@ -1,0 +1,11 @@
+{
+  "author": "SuperScript",
+  "version": "0.1.0",
+  "description": "自定义ToolDelta的聊天栏菜单触发词等, 拥有高级计分板替换功能! 详情看最新自动生成的配置文件!",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.1.13"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "自定义聊天栏菜单"
+}

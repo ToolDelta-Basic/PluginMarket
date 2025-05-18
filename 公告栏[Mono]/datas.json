@@ -1,0 +1,12 @@
+{
+    "author": "Mono",
+    "version": "1.0.2",
+    "description": "无",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "tpscalculator": "0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "ad",
+    "enabled": true
+}

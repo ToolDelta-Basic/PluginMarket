@@ -1,0 +1,8 @@
+{
+  "author": "机入",
+  "version": "0.0.2",
+  "plugin-type": "classic",
+  "description": "接入deepseek进行租赁服聊天",
+  "pre-plugins": {},
+  "plugin-id": "ai聊天"
+}

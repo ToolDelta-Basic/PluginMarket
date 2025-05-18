@@ -1,0 +1,11 @@
+{
+    "author": "wling/Hadwin",
+    "version": "0.0.3",
+    "description": "管理的好帮手！",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "聊天栏菜单": "0.2.7"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "admin_cmd"
+}

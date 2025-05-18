@@ -1,0 +1,12 @@
+{
+  "author": "SuperScript",
+  "version": "1.0.1",
+  "description": "在控制台封禁/解禁玩家。记录XUID，不用担心玩家改名！",
+  "limit_launcher": null,
+  "pre-plugins": {
+    "聊天栏菜单": "0.1.13",
+    "XUID获取": "0.0.1"
+  },
+  "plugin-type": "classic",
+  "plugin-id": "封禁系统"
+}

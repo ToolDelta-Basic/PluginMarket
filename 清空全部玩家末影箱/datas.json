@@ -1,0 +1,9 @@
+{
+  "author": "wling",
+  "version": "0.0.6",
+  "description": "还在担心玩家在末影箱藏小东西吗？直接清空玩家的末影箱！",
+  "limit_launcher": null,
+  "pre-plugins": {},
+  "plugin-type": "classic",
+  "plugin-id": "清空玩家末影箱"
+}

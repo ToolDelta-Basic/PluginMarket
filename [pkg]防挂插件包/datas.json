@@ -1,0 +1,15 @@
+{
+    "plugin-ids": [
+        "『Orion System』违规与作弊行为综合反制系统",
+        "暴击限制",
+        "超频刷屏反制",
+        "等级限制",
+        "reportsystem",
+        "云黑",
+        "违规名称踢出",
+        "32k盒子显示"
+    ],
+    "description": "收录常用的防挂插件",
+    "author": "ToolDelta",
+    "version": "0.0.2"
+}
