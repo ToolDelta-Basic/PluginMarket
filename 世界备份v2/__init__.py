@@ -26,7 +26,10 @@ class WorldBackupNextGen(Plugin):
             "单个区块允许的最多时间点数量": 7,
         }
         cfg, _ = config.get_plugin_config_and_version(
-            "世界备份", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
+            "世界备份第二世代",
+            config.auto_to_std(CFG_DEFAULT),
+            CFG_DEFAULT,
+            self.version,
         )
 
         self.db_name = str(cfg["数据库名称"])
