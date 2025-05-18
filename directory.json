@@ -290,6 +290,14 @@
         "__init__.py",
         "datas.json"
     ],
+    "bdx导入器Pro": [
+        "libbdxbuilder_linux_amd64.so",
+        "__init__.py",
+        "bdx_operation.py",
+        "thisutils.py",
+        "datas.json",
+        "lib.py"
+    ],
     "简易建造-Pro": [
         "readme.txt",
         "__init__.py",
