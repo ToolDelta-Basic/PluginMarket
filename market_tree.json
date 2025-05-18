@@ -177,6 +177,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "世界备份第二世代": {
+      "name": "世界备份v2",
+      "author": "YoRHa and RATH",
+      "version": "1.0.0",
+      "plugin-type": "classic"
+    },
     "等级限制": {
       "name": "等级检测",
       "author": "果_k",

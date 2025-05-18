@@ -164,6 +164,11 @@
         "__init__.py",
         "datas.json"
     ],
+    "世界备份v2": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
     "等级检测": [
         "__init__.py",
         "datas.json"

@@ -169,6 +169,11 @@
         "datas.json": 0
     },
     "latest_versions.json": 0,
+    "世界备份v2": {
+        "readme.txt": 0,
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "等级检测": {
         "__init__.py": 0,
         "datas.json": 0
