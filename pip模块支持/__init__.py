@@ -50,7 +50,7 @@ class PipSupport(Plugin):
 
     def require(self, module_pip_name_and_imp_name: dict[str, str] | str | list[str]):
         """
-        显示需求一个 Python 模块。
+        显式需求一个 Python 模块。
 
         Args:
             package_pip_name_and_module_name (dict[str, str] | str): 模块的 pip 名与导入名
