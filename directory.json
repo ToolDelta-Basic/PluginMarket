@@ -178,6 +178,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "desperated_plugins/睡觉统计": [
+        "__init__.py",
+        "datas.json"
+    ],
     "发言频率限制": [
         "__init__.py",
         "datas.json"
@@ -383,10 +387,6 @@
         "datas.json"
     ],
     "入服欢迎": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "睡觉统计": [
         "__init__.py",
         "datas.json"
     ],
