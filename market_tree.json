@@ -637,6 +637,12 @@
       "author": "SuperScript",
       "version": "0.0.2"
     },
+    "音乐杂合包": {
+      "plugin-ids": [],
+      "description": "为音乐播放器和点歌台增加了几十首曲目，曲目适用于全年龄段（bushi",
+      "author": "super",
+      "version": "0.0.1"
+    },
     "防挂插件包": {
       "plugin-ids": [
         "『Orion System』违规与作弊行为综合反制系统",
