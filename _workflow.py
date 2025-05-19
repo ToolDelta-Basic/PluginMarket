@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from pathlib import Path
 
@@ -136,9 +137,8 @@ def get_valid_plugin_packages_amount():
 def modify_readme():
     with open("README.md", encoding="utf-8") as f:
         md_content = f.read()
-    md_content = md_content.replace(
-        "[PLUGIN_NUM]", str(get_valid_plugins_amount())
-    ).replace("[PACKAGE_NUM]", str(get_valid_plugin_packages_amount()))
+    md_content = re.compile(r"\*\*([0-9]*) 个插件\*\*").sub(md_content, str(get_valid_plugins_amount()))
+    md_content = re.compile(r"\*\*([0-9]*) 个整合包\*\*").sub(md_content, str(get_valid_plugin_packages_amount()))
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
