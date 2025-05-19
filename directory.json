@@ -382,6 +382,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "睡觉统计": [
+        "__init__.py",
+        "datas.json"
+    ],
     "白名单&管理员检测": [
         "__init__.py",
         "datas.json"

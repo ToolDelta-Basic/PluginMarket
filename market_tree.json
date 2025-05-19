@@ -405,6 +405,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "睡觉统计": {
+      "name": "睡觉统计",
+      "author": "权威-马牛逼",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "白名单&管理员检测": {
       "name": "白名单&管理员检测",
       "author": "猫七街",
