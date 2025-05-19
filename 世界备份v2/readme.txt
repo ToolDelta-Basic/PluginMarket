@@ -57,9 +57,9 @@
   -max-concurrent int
         最大并发的线程数量。设置 0 为禁用。注意，设置为 1 比设置为 0 要慢。(默认 4096 并发线程)
   -no-grow-sync
-        数据库设置: 禁用数据库增长同步 (默认启用)
+        数据库设置: 跳过截断调用 (默认启用)
   -no-sync
-        数据库设置: 禁用数据库同步 (默认启用)
+        数据库设置: 跳过 fsync 调用 (默认启用)
   -output string
         MC 存档的输出路径。
   -path string
@@ -110,11 +110,11 @@ https://github.com/TriM-Organization/bedrock-chunk-diff/blob/main/doc/Sub%20Chun
 跳过截断操作可避免硬盘空间的预分配，
 并在重映射时绕过 truncate() 和 fsync() 系统调用。
     - 另请参阅：https://github.com/boltdb/bolt/issues/284
-默认值为 False。
+默认值为不启用。
 
-设置no_sync标志将使数据库在每次提交后跳过fsync()调用。
+设置 no_sync 标志将使数据库在每次提交后跳过 fsync() 调用。
 这在批量向数据库加载数据时非常有用，如果系统故障或数据库损坏，可以重新开始批量加载。切勿在常规使用时设置此标志。
 此举并不安全，请谨慎使用。
-默认值为 False。
+默认值为不启用。
 
 高级用户可以视情况调整这两个参数，如果希望能得到更快的数据库写速度。
