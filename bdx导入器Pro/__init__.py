@@ -1,7 +1,7 @@
 import os
 import time
 from tooldelta import Plugin, cfg, fmts, utils, TYPE_CHECKING, plugin_entry
-from . import lib, bdx_operation
+from . import bdx_operation
 from .thisutils import render_bar
 
 
@@ -24,12 +24,18 @@ class BDX_BDump(Plugin):
         self.ListenActive(self.on_inject)
 
     def on_def(self):
-        lib.Init()
+        global lib
         self.interact = self.GetPluginAPI("前置-世界交互")
+        pip = self.GetPluginAPI("pip")
         if TYPE_CHECKING:
             from 前置_世界交互 import GameInteractive
+            from pip模块支持 import PipSupport
 
-            self.interact = self.get_typecheck_plugin_api(GameInteractive)
+            self.interact: GameInteractive
+            pip: PipSupport
+        pip.require("msgpack")
+        from . import lib
+        lib.Init()
 
     def on_inject(self):
         self.get_x: float | None = None
