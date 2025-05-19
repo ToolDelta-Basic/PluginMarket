@@ -197,7 +197,7 @@ class GameInteractive(Plugin):
             time.sleep(limit_seconds)
         else:
             if (
-                self.game_ctrl.sendcmd_with_resp(
+                self.game_ctrl.sendwscmd_with_resp(
                     f"/execute at @s in {in_dim} run tp "
                     + " ".join(
                         [str(i) for i in command_block_update_packet["Position"]]
@@ -206,7 +206,7 @@ class GameInteractive(Plugin):
                 == 0
             ):
                 raise ValueError("无法tp至对应坐标")
-            resp = self.game_ctrl.sendcmd_with_resp(cmd)
+            resp = self.game_ctrl.sendwscmd_with_resp(cmd)
             if (
                 resp.SuccessCount == 0
                 and "noChange" not in resp.OutputMessages[0].Message

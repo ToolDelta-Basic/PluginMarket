@@ -94,7 +94,7 @@ class BasicFunctionLib(Plugin):
 
         def _sendcmd2cb(cmd):
             evts.append(evt := threading.Event())
-            cbs[cmd] = self.game_ctrl.sendcmd_with_resp(cmd, timeout)
+            cbs[cmd] = self.game_ctrl.sendwscmd_with_resp(cmd, timeout)
             evt.set()
 
         for cmd in cmds:
@@ -155,7 +155,7 @@ class BasicFunctionLib(Plugin):
             and (not targetNameToGet.startswith("@a"))
         ):
             raise Exception("Player not found.")
-        result = self.game_ctrl.sendcmd_with_resp(
+        result = self.game_ctrl.sendwscmd_with_resp(
             "/querytarget " + targetNameToGet, timeout
         )
         if result.OutputMessages[0].Success is False:
@@ -218,7 +218,7 @@ class BasicFunctionLib(Plugin):
             and (not targetName.startswith("@a"))
         ):
             raise Exception("Player not found.")
-        result = self.game_ctrl.sendcmd_with_resp(
+        result = self.game_ctrl.sendwscmd_with_resp(
             f"/clear {targetName} {itemName} {itemSpecialID} 0"
         )
         if result.OutputMessages[0].Message == "commands.generic.syntax":
@@ -232,7 +232,7 @@ class BasicFunctionLib(Plugin):
         if not sth.startswith("@"):
             raise Exception("Minecraft Target Selector is not correct.")
         result = (
-            self.game_ctrl.sendcmd_with_resp(f"/testfor {sth}", timeout)
+            self.game_ctrl.sendwscmd_with_resp(f"/testfor {sth}", timeout)
             .OutputMessages[0]
             .Parameters
         )
@@ -243,7 +243,7 @@ class BasicFunctionLib(Plugin):
 
     def getBlockTile(self, x: int, y: int, z: int):
         "获取指定坐标的方块的ID"
-        res = self.game_ctrl.sendcmd_with_resp(f"/testforblock {x} {y} {z} air")
+        res = self.game_ctrl.sendwscmd_with_resp(f"/testforblock {x} {y} {z} air")
         if res.SuccessCount:
             return "air"
         return res.OutputMessages[0].Parameters[4].strip("%tile.").strip(".name")
@@ -313,7 +313,7 @@ class BasicFunctionLib(Plugin):
 
     def sendresultcmd(self, cmd, timeout=30):
         "返回命令执行是否成功"
-        res = self.game_ctrl.sendcmd_with_resp(cmd, timeout).SuccessCount
+        res = self.game_ctrl.sendwscmd_with_resp(cmd, timeout).SuccessCount
         return bool(res)
 
 

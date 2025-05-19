@@ -21,7 +21,7 @@ class MCCommandDebugger(Plugin):
         cmd = " ".join(args)
         sendtime = time.time()
         try:
-            res = self.game_ctrl.sendcmd_with_resp(cmd).as_dict
+            res = self.game_ctrl.sendwscmd_with_resp(cmd).as_dict
         except TimeoutError:
             self.print("§c指令返回获取超时")
             return

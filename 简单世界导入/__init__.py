@@ -260,7 +260,7 @@ class SimpleWorldImport(Plugin):
             )
             # 发送指令等待返回, 让机器人确保在进行下一步前租赁服已经将机器人传送到目标地点
             # 对于租赁服较为卡顿的时候, 它的作用尤为明显
-            self.game_ctrl.sendcmd_with_resp("testforblock ~ ~ ~ air")
+            self.game_ctrl.sendwscmd_with_resp("testforblock ~ ~ ~ air")
 
             # 我们严格区分 区块 和 子区块, 因为子区块实际上只是一个 16*16*16 的区域,
             # 但整个区块可以是 16*16*384 的区域。但不管怎么样, 游戏储存区块的最细颗粒度

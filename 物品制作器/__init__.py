@@ -120,7 +120,7 @@ class TDItemMaker(Plugin):
         item_tags: dict | None,
     ):
         tag_str = json.dumps(item_tags, ensure_ascii=False) if item_tags else ""
-        result = self.game_ctrl.sendcmd_with_resp(
+        result = self.game_ctrl.sendwscmd_with_resp(
             f"replaceitem entity @a[name={self.game_ctrl.bot_name}] slot.hotbar 0 {item_id} 1 {item_data} {tag_str}"
         )
         if result.SuccessCount == 0:

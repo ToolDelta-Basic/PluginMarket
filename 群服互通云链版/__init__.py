@@ -180,7 +180,7 @@ class QQLinker(Plugin):
 
         def execute_cmd_and_get_zhcn_cb(cmd: str):
             try:
-                result = self.game_ctrl.sendcmd_with_resp(cmd, 10)
+                result = self.game_ctrl.sendwscmd_with_resp(cmd, 10)
                 if len(result.OutputMessages) == 0:
                     return ["😅 指令执行失败", "😄 指令执行成功"][
                         bool(result.SuccessCount)

@@ -117,10 +117,10 @@ class LargeFill(Plugin):
                         need_log=False,
                         end="\r",
                     )
-                    self.game_ctrl.sendcmd_with_resp(
+                    self.game_ctrl.sendwscmd_with_resp(
                         f"tp @a[name={self.game_ctrl.bot_name}] {nowx} {nowy} {nowz}"
                     )
-                    self.game_ctrl.sendcmd_with_resp(
+                    self.game_ctrl.sendwscmd_with_resp(
                         f"fill {nowx} {nowy} {nowz} {min(nowx + 31, ex)} {min(nowy + 31, ey)} {min(nowz + 31, ez)} {fillblock_id}"
                     )
                     fmts.print_inf(

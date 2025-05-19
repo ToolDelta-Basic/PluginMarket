@@ -418,7 +418,7 @@ class ChatbarMenu(Plugin):
             * self.help_args_limit
         ]
         isCreate = bool(
-            self.game_ctrl.sendcmd_with_resp(
+            self.game_ctrl.sendwscmd_with_resp(
                 '/querytarget @a[name="' + player.name + '",m=creative]', 1
             ).SuccessCount
         )
@@ -493,7 +493,7 @@ class ChatbarMenu(Plugin):
         sections_with_blocks = utils.split_list(all_sections, self.help_args_limit)
         max_page_num = len(sections_with_blocks)
         is_creation_mode = bool(
-            self.game_ctrl.sendcmd_with_resp(
+            self.game_ctrl.sendwscmd_with_resp(
                 '/querytarget @a[name="' + player.name + '",m=creative]', 1
             ).SuccessCount
         )

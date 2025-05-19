@@ -120,10 +120,10 @@ class SkyBlock(Plugin):
         if packet["Message"][:12] != "death.attack":
             return
         name = packet["Parameters"][1]
-        is_online = self.game_ctrl.sendcmd_with_resp(
+        is_online = self.game_ctrl.sendwscmd_with_resp(
             f"/querytarget @a[name={name}]"
         ).SuccessCount
-        is_death = self.game_ctrl.sendcmd_with_resp(
+        is_death = self.game_ctrl.sendwscmd_with_resp(
             f"/querytarget @e[name={name},family=player]"
         ).SuccessCount
         if is_online and not is_death:
@@ -274,7 +274,7 @@ class SkyBlock(Plugin):
         )
         with IS_CREATE_LOCK:
             try:
-                resp = self.game_ctrl.sendcmd_with_resp(
+                resp = self.game_ctrl.sendwscmd_with_resp(
                     f"/tickingarea add {this_island_pos_x - 20} 0 {this_island_pos_z - 20} {this_island_pos_x + 20} 0 {this_island_pos_z + 20} island_cache"
                 )
                 if resp.SuccessCount == 0:
@@ -284,7 +284,7 @@ class SkyBlock(Plugin):
                 self.game_ctrl.player_actionbar(
                     player, f"空岛生成中 (2/{TOTAL}) §7生成空岛结构.."
                 )
-                resp = self.game_ctrl.sendcmd_with_resp(
+                resp = self.game_ctrl.sendwscmd_with_resp(
                     f"structure load {is_struct['结构名']} {this_island_pos_x + px} {this_island_pos_y + py} {this_island_pos_z + pz}"
                 )
                 if resp.SuccessCount == 0:
@@ -316,7 +316,7 @@ class SkyBlock(Plugin):
                 )
                 for _ in range(20):
                     if (
-                        self.game_ctrl.sendcmd_with_resp(
+                        self.game_ctrl.sendwscmd_with_resp(
                             f"setblock {this_island_pos_x} -63 {this_island_pos_z} bedrock"
                         ).SuccessCount
                         == 0
@@ -324,7 +324,7 @@ class SkyBlock(Plugin):
                         self.game_ctrl.player_actionbar(
                             player, f"空岛生成中 (4/{TOTAL}) §6放置方块失败， 重试中.."
                         )
-                        self.game_ctrl.sendcmd_with_resp(
+                        self.game_ctrl.sendwscmd_with_resp(
                             f"setblock {this_island_pos_x} -63 {this_island_pos_z} air"
                         )
                     else:
@@ -495,7 +495,7 @@ class SkyBlock(Plugin):
         self.game_ctrl.sendcmd(f"/tp {is_posx} -63 {is_posz}")
         for i in range(20):
             if (
-                self.game_ctrl.sendcmd_with_resp(
+                self.game_ctrl.sendwscmd_with_resp(
                     f"setblock {is_posx} -63 {is_posz} bedrock"
                 ).SuccessCount
                 == 0
@@ -674,7 +674,7 @@ class SkyBlock(Plugin):
             self.show_err(player, "当前服务器未开启入侵功能")
             return
         is_invasion = bool(
-            self.game_ctrl.sendcmd_with_resp(
+            self.game_ctrl.sendwscmd_with_resp(
                 utils.simple_fmt({"[玩家名]": player}, self.Invasion_Cmd)
             ).SuccessCount
         )
@@ -694,7 +694,7 @@ class SkyBlock(Plugin):
             self.show_war(player, "该玩家还未创建空岛")
             return
         is_online = bool(
-            self.game_ctrl.sendcmd_with_resp(f"querytarget {name}", 1).SuccessCount
+            self.game_ctrl.sendwscmd_with_resp(f"querytarget {name}", 1).SuccessCount
         )
         if not is_online:
             self.show_war(player, "该玩家不在线, 无法入侵空岛")

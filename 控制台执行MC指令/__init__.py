@@ -22,7 +22,7 @@ class ConsoleCommands(Plugin):
 
     def SendWSCmdOnConsole(self, cmd):
         try:
-            result = self.game_ctrl.sendcmd_with_resp(" ".join(cmd), 5)
+            result = self.game_ctrl.sendwscmd_with_resp(" ".join(cmd), 5)
         except IndexError:
             fmts.print_err("缺少指令参数")
             return
