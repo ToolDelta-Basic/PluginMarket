@@ -103,6 +103,7 @@ def do_operations(
                 Command = CommandBlockData["Command"]
                 CustomName = CommandBlockData["CustomName"]
                 # LastOutput = CommandBlockData["LastOutput"]
+                # can't deal with this
                 TickDelay = CommandBlockData["TickDelay"]
                 ExecuteOnFirstTick = CommandBlockData["ExecuteOnFirstTick"]
                 TrackOutput = CommandBlockData["TrackOutput"]
@@ -125,7 +126,7 @@ def do_operations(
                         BlockConstantStringID = operation["BlockConstantStringID"]
                         BlockID = string_pool[BlockConstantStringID]
                     else:
-                        BlockID = "command_block"
+                        BlockID = ("", "repeating_", "chain_")[Mode] + "command_block"
                     BlockData = operation["BlockData"]
                     setblock_here(BlockID, BlockData)
                     time.sleep(0.05)

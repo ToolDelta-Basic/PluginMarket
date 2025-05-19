@@ -7,7 +7,7 @@ from .thisutils import render_bar
 class BDX_BDump(Plugin):
     name = "bdx导入器Pro"
     author = "SuperScript"
-    version = (0, 1, 2)
+    version = (0, 1, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -33,8 +33,7 @@ class BDX_BDump(Plugin):
             self.interact: GameInteractive
             pip: PipSupport
         pip.require("msgpack")
-        from . import lib
-        from . import bdx_operation
+        from . import lib, bdx_operation
         lib.Init()
 
     def on_inject(self):
