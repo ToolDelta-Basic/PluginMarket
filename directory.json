@@ -418,6 +418,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "签到系统": [
+        "__init__.py",
+        "datas.json"
+    ],
     "头衔系统": [
         "__init__.py",
         "datas.json"

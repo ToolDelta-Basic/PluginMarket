@@ -453,6 +453,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "每日签到": {
+      "name": "签到系统",
+      "author": "权威-马牛逼",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "头衔系统": {
       "name": "头衔系统",
       "author": "SuperScript",
