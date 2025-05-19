@@ -250,10 +250,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "兑换码系统": [
-        "__init__.py",
-        "datas.json"
-    ],
     "重启": [
         "__init__.py",
         "datas.json"
