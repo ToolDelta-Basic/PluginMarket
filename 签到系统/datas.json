@@ -1,0 +1,8 @@
+{
+  "author": "权威-马牛逼",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "100种签到语",
+  "pre-plugins": {},
+  "plugin-id": "每日签到"
+}
