@@ -1,0 +1,9 @@
+{
+  "author": "权威-马牛逼",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "本插件，是生存服务器类型的必备，因为在游戏中机器人的原因，无法跳过夜晚，导致非常的苦恼，本插件优化了此bug",
+  "pre-plugins": {},
+  "plugin-id": "睡觉统计",
+  "enabled": true
+}
