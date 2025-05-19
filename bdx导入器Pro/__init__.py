@@ -1,5 +1,6 @@
 import os
-from tooldelta import Plugin, fmts, utils, TYPE_CHECKING, plugin_entry
+import time
+from tooldelta import Plugin, cfg, fmts, utils, TYPE_CHECKING, plugin_entry
 from . import lib, bdx_operation
 from .thisutils import render_bar
 
@@ -7,10 +8,17 @@ from .thisutils import render_bar
 class BDX_BDump(Plugin):
     name = "bdx导入器Pro"
     author = "SuperScript"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
+        CFG_DEFAULT = {
+            "最大导入速度(方块/秒)": 1000.0,
+            "自定义导入actionbar提示": "§7导入 §b[文件名] §7进度： §d[当前进度]/§7[总进度] §a[速度]方块/秒 §7预计完成时间：§e[预计完成时间]§r\n[进度条]",
+        }
+        self.cfg, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
+        )
         self.make_data_path()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -88,28 +96,55 @@ class BDX_BDump(Plugin):
         filename = os.path.basename(path).removesuffix(".bdx")
         total_blocks = lib.BDXBlocks()
         last_progress = 0
+        predict_time_rest = 0
+        start_time = time.time()
+        actionbar_format = self.cfg["自定义导入actionbar提示"]
 
         def progress_bar(progress: int):
-            nonlocal last_progress
+            nonlocal last_progress, predict_time_rest, start_time
+            if progress > last_progress:
+                averange_speed = progress / (time.time() - start_time)
+                predict_time_rest = (total_blocks - progress) / averange_speed
             if total_blocks == 0:
                 fmts.print_war("总进度为0")
                 return
-            # n = round(progress / total_blocks * 60)
-            # p = "§b" + "|" * n + "§f" + "|" * (60 - n)
-            # self.game_ctrl.player_actionbar(
-            #     "@a",
-            #     f"导入 {filename} 进度: §l{progress} §7/ {total_blocks} 速度： {progress - last_progress} 方块每秒 §r\n{p}",
-            # )
-            bar = render_bar(progress, total_blocks, "§b", "§7")
+            speed_delta = progress - last_progress
+            bar = render_bar(progress, total_blocks, "§b", "§7", 180)
             self.game_ctrl.player_actionbar(
                 "@a",
-                f"导入 {filename} 进度: §l{progress} §7/ {total_blocks} 速度： {progress - last_progress} 方块每秒 §r\n{bar}",
+                utils.simple_fmt(
+                    {
+                        "[文件名]": filename,
+                        "[当前进度]": progress,
+                        "[总进度]": total_blocks,
+                        "[进度条]": bar,
+                        "[速度]": speed_delta,
+                        "[预计完成时间]": self.format_time(int(predict_time_rest)),
+                    },
+                    actionbar_format,
+                ),
             )
             last_progress = progress
 
         bdx_operation.do_operations(self, (x, y, z), progress_bar, 1.00)
         self.game_ctrl.player_actionbar("@a", f"导入 {filename} 完成")
         fmts.print_suc("bdx 导入完成")
+
+    @staticmethod
+    def format_time(seconds: int):
+        day = seconds // 86400
+        hour = seconds % 86400 // 3600
+        minute = seconds % 3600 // 60
+        second = seconds % 60
+        output = ""
+        if day > 0:
+            output += f"{day}天 "
+        if hour > 0:
+            output += f"{hour}小时 "
+        if minute > 0:
+            output += f"{minute}分钟 "
+        output += f"{second}秒"
+        return output
 
 
 entry = plugin_entry(BDX_BDump)

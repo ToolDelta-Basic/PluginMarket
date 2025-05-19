@@ -97,7 +97,7 @@ def do_operations(
             case 24 | 25 | 30:
                 Value = operation["Value"]
                 pos_z += Value
-            case 26 | 27:
+            case 26 | 27 | 36:
                 CommandBlockData = operation["CommandBlockData"]
                 Mode = CommandBlockData["Mode"]
                 Command = CommandBlockData["Command"]
@@ -120,10 +120,14 @@ def do_operations(
                     ExecuteOnFirstTick,
                 )
                 ensure_pos()
-                if id == 27:
-                    BlockConstantStringID = operation["BlockConstantStringID"]
+                if id == 27 or id == 36:
+                    if id == 27:
+                        BlockConstantStringID = operation["BlockConstantStringID"]
+                        BlockID = string_pool[BlockConstantStringID]
+                    else:
+                        BlockID = "command_block"
                     BlockData = operation["BlockData"]
-                    setblock_here(string_pool[BlockConstantStringID], BlockData)
+                    setblock_here(BlockID, BlockData)
                     time.sleep(0.05)
                 else:
                     speed_limit()
@@ -140,20 +144,20 @@ def do_operations(
                 raise NotImplementedError(
                     "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID"
                 )
-            case 36:
-                sys.print("§6未实现: PlaceCommandBlockWithCommandBlockData")
             case 37:
                 sys.print("§6未实现: PlaceRuntimeBlockWithChestData")
             case 38:
-                raise NotImplementedError(
-                    "PlaceRuntimeBlockWithChestDataAndUint32RuntimeID"
+                sys.print(
+                    "§6未实现: PlaceRuntimeBlockWithChestDataAndUint32RuntimeID"
                 )
             case 39:
                 sys.print(f"bdx 的 debug 信息: {operation['Data']}")
             case 40:
                 sys.print("§6未实现: PlaceBlockWithChestData")
             case 41:
-                sys.print("§6未实现: PlaceBlockWithNBTData")
+                BlockConstantStringID = operation["BlockConstantStringID"]
+                BlockStatesConstantStringID = operation["BlockStatesConstantStringID"]
+                setblock_here(string_pool[BlockConstantStringID], string_pool[BlockStatesConstantStringID])
             case 88:
                 break
         if (nowtime := time.time()) - timer > progress_delay:
