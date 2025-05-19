@@ -89,11 +89,11 @@ xxx -path world_timeline.db -output mcworld
 xxx -path world_timeline.db -output mcworld -provided-unix-time 1747669458
 
 恢复 world_timeline.db 中下界(id=1)的区块到 mcworld 文件夹中，并且只恢复 (0,30) 到 (512,1000) 之间的区块。恢复到的时间点是最新的那个。
-xxx -path world_timeline.db -output mcworld -use-range -range-dimension 1 -range-start-x 0 -range-start-z 30 -range-end-x 512 -range-start-z 1000
+xxx -path world_timeline.db -output mcworld -use-range true -range-dimension 1 -range-start-x 0 -range-start-z 30 -range-end-x 512 -range-start-z 1000
 
 恢复 /happy/super.db 中的全部区块到 /lll/my_world 文件夹中，并且恢复到 2025/05/19 23:44:18 及以前最新的那个。
 如果某个区块具有时间线但其上的全部时间点都不满足 2025/05/19 23:44:18 及以前的时间限制，则挑选一个距离 2025/05/19 23:44:18 最近的时间点作为恢复用时间点。
-xxx -path /happy/super.db -output /lll/my_world -provided-unix-time 1747669458 -ensure-exist-one
+xxx -path /happy/super.db -output /lll/my_world -provided-unix-time 1747669458 -ensure-exist-one true
 ```
 
 如果你想深究我们的实现细节，参阅该论文以了解详细信息。
