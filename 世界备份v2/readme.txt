@@ -17,9 +17,8 @@
 敬请参阅 https://github.com/TriM-Organization/bedrock-chunk-diff/blob/main/README.md#recover 以了解更多信息。
 
 关于恢复工具：
-1. 目前没有提供恢复工具的编译产物，所以需要您自行编译然后使用
+1. 目前已经为恢复工具提供预构建，查看 https://github.com/TriM-Organization/bedrock-chunk-diff/releases 以了解更多信息
 2. 这是一个命令行工具，希望提供的功能应该相对全面
-3. 我会在之后提供工具的编译产物，届时本文档将会更新以体现这件事
 
 目前恢复工具提供了以下 flag
 ```
@@ -36,7 +35,7 @@
   -path string
         The path of your timeline database.
   -provided-unix-time int
-        Restore to the world closest to this time (earlier than or equal to the given time). The default value is the current time. (default 1747594226)
+        Restore to the world closest to this time (earlier than or equal to the given time). The default value is the current time.
   -range-dimension int
         Where to find these chunks (only valid when enable use-range flag)
   -range-end-x int
@@ -49,6 +48,52 @@
         The starting point Z coordinate to be restored.
   -use-range
         If you would like recover the part of the world, but not the entire.
+```
+
+相应的中文翻译是
+```
+  -ensure-exist-one
+        如果数据库中存在目标区块，但这个区块上的所有时间点都不满足给定的时间限制条件，则确保至少可以得到一个与给定时间限制最接近的时间点。(默认不启用)
+  -max-concurrent int
+        最大并发的线程数量。设置 0 为禁用。注意，设置为 1 比设置为 0 要慢。(默认 4096 并发线程)
+  -no-grow-sync
+        数据库设置: 禁用数据库增长同步 (默认启用)
+  -no-sync
+        数据库设置: 禁用数据库同步 (默认启用)
+  -output string
+        MC 存档的输出路径。
+  -path string
+        数据库的文件路径。
+  -provided-unix-time int
+        恢复到最接近此时间戳的 MC 存档（早于或等于给定时间）。默认值为当前时间。
+  -range-dimension int
+        在哪个维度查找需要恢复的区块 (进行 -use-range 启用时有用)
+  -range-end-x int
+        要恢复区域的终止 X 轴坐标 (方块坐标)
+  -range-end-z int
+        要恢复区域的终止 Z 轴坐标 (方块坐标)
+  -range-start-x int
+        要恢复区域的起始 X 轴坐标 (方块坐标)
+  -range-start-z int
+        要恢复区域的起始 Z 轴坐标 (方块坐标)
+  -use-range
+        如果你只是想恢复特定矩形区域的区块到 MC 存档，则使用该选项。
+```
+
+我们下面有一些例子
+```
+恢复 world_timeline.db 中的全部区块到 mcworld 文件夹中，并且恢复所用的时间点是最新的那个。
+xxx -path world_timeline.db -output mcworld
+
+恢复 world_timeline.db 中的全部区块到 mcworld 文件夹中，并且恢复到 2025/05/19 23:44:18 (1747669458) 及以前最新的那个。
+xxx -path world_timeline.db -output mcworld -provided-unix-time 1747669458
+
+恢复 world_timeline.db 中下界(id=1)的区块到 mcworld 文件夹中，并且只恢复 (0,30) 到 (512,1000) 之间的区块。恢复到的时间点是最新的那个。
+xxx -path world_timeline.db -output mcworld -use-range -range-dimension 1 -range-start-x 0 -range-start-z 30 -range-end-x 512 -range-start-z 1000
+
+恢复 /happy/super.db 中的全部区块到 /lll/my_world 文件夹中，并且恢复到 2025/05/19 23:44:18 及以前最新的那个。
+如果某个区块具有时间线但其上的全部时间点都不满足 2025/05/19 23:44:18 及以前的时间限制，则挑选一个距离 2025/05/19 23:44:18 最近的时间点作为恢复用时间点。
+xxx -path /happy/super.db -output /lll/my_world -provided-unix-time 1747669458 -ensure-exist-one
 ```
 
 如果你想深究我们的实现细节，参阅该论文以了解详细信息。
