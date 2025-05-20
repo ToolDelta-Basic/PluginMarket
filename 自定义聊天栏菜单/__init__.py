@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -148,7 +148,7 @@ class CustomChatbarMenu(Plugin):
         def _menu_cb_func(player: Player, args: tuple):
             for cmd in cmds:
                 f_cmd = utils.simple_fmt(
-                    {"[玩家名]": player},
+                    {"[玩家名]": player.name},
                     self.args_replace(list(args), cmd, player.name),
                 )
                 if f_cmd.startswith("td:/show "):
