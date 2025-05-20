@@ -14,7 +14,7 @@ from tooldelta.utils import fmts
 class WorldBackupNextGen(Plugin):
     name = "世界备份第二世代"
     author = "YoRHa and RATH"
-    version = (1, 0, 0)
+    version = (1, 1, 0)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -73,7 +73,7 @@ class WorldBackupNextGen(Plugin):
         )
         if not self.db.is_valid():
             raise Exception(
-                "世界备份: 打开数据库失败，请检查数据库是否被占用或是否已损坏"
+                "世界备份第二世代: 打开数据库失败，请检查数据库是否被占用或是否已损坏"
             )
 
     def on_close(self, _: FrameExit):
@@ -166,7 +166,7 @@ class WorldBackupNextGen(Plugin):
         # Get chunk timeline
         tl = self.db.new_chunk_timeline(cp, False, dim)
         if not tl.is_valid():
-            fmts.print_war(f"世界备份: 处理 {dim} {cp} 时出现未知错误")
+            fmts.print_war(f"世界备份第二世代: 处理 {dim} {cp} 时出现未知错误")
             return
         tl.set_max_limit(self.max_time_point_count)
 

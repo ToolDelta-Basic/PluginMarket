@@ -53,7 +53,7 @@
 相应的中文翻译是
 ```
   -ensure-exist-one
-        如果数据库中存在目标区块，但这个区块上的所有时间点都不满足给定的时间限制条件，则确保至少可以得到一个与给定时间限制最接近的时间点。(默认不启用)
+        如果数据库中存在目标区块，但这个区块上的所有时间点都不满足给定的时间限制条件，则确保至少可以得到一个与给定时间限制最接近的时间点。(默认启用)
   -max-concurrent int
         最大并发的线程数量。设置 0 为禁用。注意，设置为 1 比设置为 0 要慢。(默认 4096 并发线程)
   -no-grow-sync
@@ -83,21 +83,21 @@
 我们下面有一些例子
 ```
 恢复 world_timeline.db 中的全部区块到 mcworld 文件夹中，并且恢复所用的时间点是最新的那个。
-xxx -path world_timeline.db -output mcworld
+xxx -path world_timeline.db -output mcworld -ensure-exist-one=false
 
 恢复 world_timeline.db 中的全部区块到 mcworld 文件夹中，并且恢复到 2025/05/19 23:44:18 (1747669458) 及以前最新的那个。
-xxx -path world_timeline.db -output mcworld -provided-unix-time 1747669458
+xxx -path world_timeline.db -output mcworld -ensure-exist-one=false -provided-unix-time 1747669458
 
 恢复 world_timeline.db 中下界(id=1)的区块到 mcworld 文件夹中，并且只恢复 (0,30) 到 (512,1000) 之间的区块。恢复到的时间点是最新的那个。
-xxx -path world_timeline.db -output mcworld -use-range true -range-dimension 1 -range-start-x 0 -range-start-z 30 -range-end-x 512 -range-start-z 1000
+xxx -path world_timeline.db -output mcworld -ensure-exist-one=false -use-range=true -range-dimension 1 -range-start-x 0 -range-start-z 30 -range-end-x 512 -range-start-z 1000
 
 恢复 /happy/super.db 中的全部区块到 /lll/my_world 文件夹中，并且恢复到 2025/05/19 23:44:18 及以前最新的那个。
 如果某个区块具有时间线但其上的全部时间点都不满足 2025/05/19 23:44:18 及以前的时间限制，则挑选一个距离 2025/05/19 23:44:18 最近的时间点作为恢复用时间点。
-xxx -path /happy/super.db -output /lll/my_world -provided-unix-time 1747669458 -ensure-exist-one true
+xxx -path /happy/super.db -output /lll/my_world -ensure-exist-one=true -provided-unix-time 1747669458
 ```
 
-如果你想深究我们的实现细节，参阅该论文以了解详细信息。
-https://github.com/TriM-Organization/bedrock-chunk-diff/blob/main/doc/Sub%20Chunk%20Delta%20Update%20Implements%20Disscussion.pdf
+如果你想深究我们的实现细节，参阅相应的代码仓库以了解更多信息。
+https://github.com/TriM-Organization/bedrock-chunk-diff
 
 
 
