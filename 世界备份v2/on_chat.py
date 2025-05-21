@@ -1,6 +1,5 @@
 import time
 from tooldelta import (
-    FrameExit,
     InternalBroadcast,
     Player,
     Plugin,
@@ -12,6 +11,7 @@ from tooldelta.utils import tempjson, ToolDeltaThread
 from .world_backup import WorldBackupMain
 from .recover import WorldBackupRecover
 from .define import WorldBackupBase
+import contextlib
 
 
 class WorldBackupOnChat:
@@ -19,7 +19,7 @@ class WorldBackupOnChat:
     world_backup_main: WorldBackupMain
     world_backup_recover: WorldBackupRecover
 
-    def __init__(self, main: WorldBackupMain, recover: WorldBackupRecover):
+    def __init__(self, main: WorldBackupMain, recover: WorldBackupRecover) -> None:
         self.world_backup_main = main
         self.world_backup_recover = recover
         self.world_backup_base = self.world_backup_recover.base()
@@ -34,18 +34,14 @@ class WorldBackupOnChat:
         player.show(question)
         resp = game_utils.waitMsg(player.name)
         if resp is None:
-            raise Exception(
-                f"question_and_get_resp: Question time out (player={player.name})"
-            )
+            raise Exception(f"question_and_get_resp: Question time out (player={player.name})")  # noqa: TRY002
         return resp
 
-    def on_chat(self, chat: Chat):
-        try:
+    def on_chat(self, chat: Chat) -> None:
+        with contextlib.suppress(Exception):
             self._on_chat(chat)
-        except Exception:
-            pass
 
-    def _on_chat(self, chat: Chat):
+    def _on_chat(self, chat: Chat) -> None:  # noqa: C901, PLR0912, PLR0915
         message = chat.msg
         player = chat.player
 
@@ -111,30 +107,20 @@ class WorldBackupOnChat:
         ):
             while True:
                 player.show(
-                    "§e3.2.0 接下来你需要给我一个时间，然后我们将恢复到距离这个时间及以前中最近的一个版本"
+                    "§e3.2.0 接下来你需要给我一个时间，然后我们将恢复到距离这个时间及以前中最近的一个版本"  # noqa: E501
                 )
 
-                year = self.question_and_get_resp(
-                    player, "§e3.2.1 请告诉我时间的年份: "
-                )
-                month = self.question_and_get_resp(
-                    player, "§e3.2.2 请告诉我时间的月份: "
-                )
+                year = self.question_and_get_resp(player, "§e3.2.1 请告诉我时间的年份: ")
+                month = self.question_and_get_resp(player, "§e3.2.2 请告诉我时间的月份: ")
                 day = self.question_and_get_resp(player, "§e3.2.3 请告诉我时间的日期: ")
 
-                hour = self.question_and_get_resp(
-                    player, "§e3.2.4 请告诉我时间的小时: "
-                )
-                minute = self.question_and_get_resp(
-                    player, "§e3.2.5 请告诉我时间的分钟: "
-                )
-                second = self.question_and_get_resp(
-                    player, "§e3.2.5 请告诉我时间的秒钟: "
-                )
+                hour = self.question_and_get_resp(player, "§e3.2.4 请告诉我时间的小时: ")
+                minute = self.question_and_get_resp(player, "§e3.2.5 请告诉我时间的分钟: ")
+                second = self.question_and_get_resp(player, "§e3.2.5 请告诉我时间的秒钟: ")
 
                 if "n" in self.question_and_get_resp(
                     player,
-                    f"§e3.2.5 我们将恢复到距离 {year}/{month}/{day} {hour}:{minute}:{second} 及以前的最新版本，你确定吗? (yes/no): ",
+                    f"§e3.2.5 我们将恢复到距离 {year}/{month}/{day} {hour}:{minute}:{second} 及以前的最新版本，你确定吗? (yes/no): ",  # noqa: E501
                 ):
                     continue
 
@@ -151,7 +137,7 @@ class WorldBackupOnChat:
 
                 if "n" in self.question_and_get_resp(
                     player,
-                    "§e3.3 可能有的区块不满足这个时间限制(目标时间及以前)，那允许我们选择距离这个时间最近的一个吗? (yes/no): ",
+                    "§e3.3 可能有的区块不满足这个时间限制(目标时间及以前)，那允许我们选择距离这个时间最近的一个吗? (yes/no): ",  # noqa: E501
                 ):
                     cmd_config["ensure-exist-one"] = "false"
 
@@ -163,10 +149,10 @@ class WorldBackupOnChat:
 
         if "y" in self.question_and_get_resp(
             player,
-            "§e4. 要重启 ToolDelta 后再进行恢复还是现在立即恢复? (yes-重启,no-现在立即; 重启后恢复将需要您手动调用简单世界恢复来进行恢复): ",
+            "§e4. 要重启 ToolDelta 后再进行恢复还是现在立即恢复? (yes-重启,no-现在立即; 重启后恢复将需要您手动调用简单世界恢复来进行恢复): ",  # noqa: E501
         ):
             player.show(
-                "§a好的，ToolDelta 将会关闭，但本插件不支持重启，所以请您确保 ToolDelta 在关闭后可以打开，然后恢复程序将会开始工作"
+                "§a好的，ToolDelta 将会关闭，但本插件不支持重启，所以请您确保 ToolDelta 在关闭后可以打开，然后恢复程序将会开始工作"  # noqa: E501
             )
             ToolDeltaThread(
                 self.plugin().frame.system_exit,
@@ -176,9 +162,7 @@ class WorldBackupOnChat:
             )
         else:
             self.world_backup_main.do_close()
-            mcworld_path, use_range, range_start, range_end = (
-                self.world_backup_recover.recover()
-            )
+            mcworld_path, use_range, range_start, range_end = self.world_backup_recover.recover()
             self.world_backup_main.on_inject()
             self.base().should_close = False
 

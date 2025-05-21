@@ -14,7 +14,7 @@ class WorldBackupNextGen(Plugin):
     author = "YoRHa and RATH"
     version = (1, 2, 0)
 
-    def __init__(self, frame: Frame):
+    def __init__(self, frame: Frame) -> None:
         super().__init__(frame)
 
         self.world_backup_base = WorldBackupBase(self)
@@ -27,12 +27,10 @@ class WorldBackupNextGen(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.world_backup_main.on_inject)
         self.ListenFrameExit(self.world_backup_main.on_close)
-        self.ListenInternalBroadcast(
-            "scq:publish_chunk_data", self.world_backup_main.on_chunk_data
-        )
+        self.ListenInternalBroadcast("scq:publish_chunk_data", self.world_backup_main.on_chunk_data)
         self.ListenChat(self.world_backup_on_chat.on_chat)
 
-    def on_def(self):
+    def on_def(self) -> None:
         self.world_backup_recover.recover()
         self.world_backup_main.on_def()
 
