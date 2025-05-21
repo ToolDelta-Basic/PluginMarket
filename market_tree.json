@@ -612,7 +612,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript & Zhonger-Yuansi",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "scheduled-task": {
