@@ -1,13 +1,13 @@
 import os
 from typing import TYPE_CHECKING, ClassVar
-from GetFile import get_github_repo_files 
+from GetFile import get_github_repo_files
 from tooldelta import utils, Plugin, Player, plugin_entry
 
 
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 1, 7)
+    version = (0, 2, 1)
 
     musics_list: ClassVar[list] = []
     MAX_SONGS_QUEUED = 6
@@ -54,9 +54,10 @@ class DJTable(Plugin):
             # 获取文件列表和公告消息
             remote_data = get_github_repo_files(repo_url)
             original_list, self.repo_message = remote_data
-            self.remote_midis_list = [name for name in original_list if name.lower() != 'message']
-        except Exception as e:
-            self.logger.error(f"获取远程音乐列表失败: {e}")
+            self.remote_midis_list = [
+                name for name in original_list if name.lower() != "message"
+            ]
+        except Exception:
             self.remote_midis_list = []
             self.repo_message = None
 
@@ -66,10 +67,12 @@ class DJTable(Plugin):
         self.chatmenu.add_new_trigger(
             ["点歌列表"], [], "查看点歌台点歌列表", self.lookup_songs_list
         )
-        self.chatmenu.add_new_trigger(["点歌"], [("歌名", str, "")], "点歌", self.choose_menu)
+        self.chatmenu.add_new_trigger(
+            ["点歌"], [("歌名", str, "")], "点歌", self.choose_menu
+        )
         self.chatmenu.add_new_trigger(
             ["停止当前曲目"],
-            None,
+            [],
             "停止当前点歌曲目",
             self.force_stop_current,
             op_only=True,
@@ -90,11 +93,11 @@ class DJTable(Plugin):
             player.show("§a当前曲目列表：")
             for i, j in enumerate(song_list):
                 player.show(f" §b{i + 1} §f{j}")
-            if hasattr(self, 'remote_midis_list') and self.remote_midis_list:
+            if hasattr(self, "remote_midis_list") and self.remote_midis_list:
                 player.show("§a远程音乐库曲目：")
                 for i, name in enumerate(self.remote_midis_list):
                     player.show(f" §b{len(song_list) + i + 1} §f{name} §7(远程)")
-                if hasattr(self, 'repo_message'):
+                if hasattr(self, "repo_message"):
                     if self.repo_message:
                         player.show(f"§7远程仓库: {self.repo_message}")
                     else:
@@ -132,7 +135,9 @@ class DJTable(Plugin):
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players remove {player.name} song_point 1"
             )
-            self.game_ctrl.say_to("@a", f"§e点歌§f>> §e{player.name}§a成功点歌:{music_name}")
+            self.game_ctrl.say_to(
+                "@a", f"§e点歌§f>> §e{player.name}§a成功点歌:{music_name}"
+            )
 
     def lookup_songs_list(self, player: Player, _):
         if not self.musics_list == []:
@@ -141,9 +146,6 @@ class DJTable(Plugin):
                 player.show(f"§a{i + 1}§f. {j[0]} §7点歌: {j[1]}")
         else:
             player.show("§a♬§f列表空空如也啦! ")
-
-
-
 
     def force_stop_current(self, player, _):
         if self.can_stop:
@@ -179,8 +181,9 @@ class DJTable(Plugin):
         try:
             import requests
             from urllib3.exceptions import InsecureRequestWarning
+
             requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-            
+
             """
             
             清空外部缓存文件夹
@@ -194,28 +197,26 @@ class DJTable(Plugin):
                     os.remove(os.path.join(self.mdir_external, file))
                 except Exception as e:
                     self.logger.error(f"清空缓存失败: {e}")
-            
 
             url = f"https://ghproxy.net/https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
             response = requests.get(url)
-
 
             if response.status_code == 200:
                 midi_path = os.path.join(self.mdir_external, f"{music_name}.mid")
                 with open(midi_path, "wb") as file:
                     file.write(response.content)
-            
+
             midseq_path = os.path.join(self.mdir_external, f"{music_name}.midseq")
             self.midiplayer.translate_midi_to_seq_file(midi_path, midseq_path)
-            os.remove(midi_path) 
-            
+            os.remove(midi_path)
 
             self.midiplayer.load_sound_seq_file(midseq_path, music_name)
             self.musics_list.append((music_name, player))
             player.show("§e点歌§f>> §a远程曲目已加入播放队列！")
-        
+
         except Exception as e:
             self.logger.error(f"处理远程音乐异常: {e}")
             player.show(f"§c处理远程曲目失败: {str(e)}")
+
 
 entry = plugin_entry(DJTable)

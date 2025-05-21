@@ -1,6 +1,6 @@
 {
   "author": "SuperScript & Zhonger-Yuansi",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "想在在服内点歌？ 使用这个点歌台插件吧！\n歌曲MIDI文件需要放置于 §6插件数据文件/点歌台/音乐列表§f 下或者使用远程音乐仓库\n在服内输入 help 可查看点歌指令\n消耗的音乐点于计分板 song_point, 可自行添加分数",
   "limit_launcher": null,
   "pre-plugins": {
