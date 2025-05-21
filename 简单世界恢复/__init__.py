@@ -21,7 +21,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     chunk_we_want: tuple[int, int, int]
     chunk_we_get: list[dict]
@@ -51,6 +51,7 @@ class SimpleWorldRecover(Plugin):
         self.ListenActive(self.on_inject)
         self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
+        self.ListenInternalBroadcast("swr:recover_request", self.on_event)
 
     def on_def(self):
         global bwo
@@ -71,8 +72,8 @@ class SimpleWorldRecover(Plugin):
             " ".join(
                 [
                     "[存档文件夹名(位于 插件数据文件/简单世界恢复/)]",
-                    "[要恢复区域的起始坐标 | 形如(x,y,z)]",
-                    "[要恢复区域的终止坐标 | 形如(x,y,z)]",
+                    "[要恢复区域的起始坐标 | 形如(x,z)]",
+                    "[要恢复区域的终止坐标 | 形如(x,z)]",
                 ],
             ),
             "导入存档内的建筑物",
@@ -98,6 +99,24 @@ class SimpleWorldRecover(Plugin):
 
         self.chunk_we_get = event.data
         self.chunk_waiter.set()
+
+    def on_event(self, event: InternalBroadcast):
+        """
+        API (swr:recover_request): 其他插件请求恢复一片区域
+
+        调用方式:
+            ```
+            InternalBroadcast(
+                "swr:recover_request",
+                [
+                    "...",   # 存档文件夹名(位于 插件数据文件/简单世界恢复/)
+                    "...",   # 要恢复区域的起始坐标, 形如(x,z)
+                    "...",   # 要恢复区域的终止坐标, 形如(x,z)
+                ],
+            )
+            ```
+        """
+        self.do_world_recover(event.data, True)
 
     def get_chunk(
         self, dim: int, chunk_pox_x: int, chunk_pos_z: int
@@ -222,12 +241,17 @@ class SimpleWorldRecover(Plugin):
         content = json.loads(result.OutputMessages[0].Parameters[0])
         return int(content[0]["dimension"])
 
-    def do_world_recover(self, cmd: list[str]):
+    def do_world_recover(self, cmd: list[str], called_by_api: bool):
+        if not called_by_api:
+            cmd[0] = self.format_data_path(cmd[0])
+
         if not self.running_mutex.acquire(timeout=0):
             fmts.print_err("同一时刻最多处理一个恢复任务")
             return
+
         if not self.should_close:
             self._do_world_recover(cmd)
+
         self.running_mutex.release()
 
     @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
@@ -239,12 +263,7 @@ class SimpleWorldRecover(Plugin):
         dm = bwo.Dimension(dim_id)
 
         try:
-            filename = cmd[0]
-
-            if not filename.endswith(".mcworld"):
-                filename.removesuffix(".mcworld")
-            world_path = self.format_data_path(filename)
-
+            world_path = cmd[0]
             start_pos, end_pos = self.get_start_and_end_pos(
                 self.as_pos(cmd[1]), self.as_pos(cmd[2])
             )
@@ -369,7 +388,7 @@ class SimpleWorldRecover(Plugin):
         fmts.print_suc(f"已完成恢复工作, 一共恢复了 {recover_block_count} 个方块")
 
     def runner(self, cmd: list[str]):
-        self.do_world_recover(cmd)
+        self.do_world_recover(cmd, False)
 
 
 entry = plugin_entry(SimpleWorldRecover, "简单世界恢复")
