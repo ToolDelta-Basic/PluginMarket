@@ -77,7 +77,10 @@ elif __name__ != "__main__":
         plugin_entry, Plugin, ToolDelta, Player, Chat, FrameExit,
         fmts, InternalBroadcast
     )
-    from tooldelta.internal.launch_cli import FrameEulogistLauncher
+    try:
+        from tooldelta.internal.launch_cli import FrameEulogistLauncher
+    except ImportError:
+        FrameEulogistLauncher = type(None)
     from tooldelta.constants import PacketIDS
     import os
     import sys
@@ -233,11 +236,18 @@ elif __name__ != "__main__":
             else:
                 time.sleep(0.5573)
             fmts.print_with_info(
-                f"§d在 https://{self.fletcdn}/?where={ \
-                        f'{self.proxy_addr}/ws/{self.uuid}' if self.proxy_used \
-                    else 'this-server:7912/ws' \
-                } 连接 ToolDeltaFlet", info = "§d FLET §f"
+                f"§d在 https://{self.fletcdn}/?where=" \
+                        +(f'{self.proxy_addr}/ws/{self.uuid}' if self.proxy_used \
+                    else 'this-server:7912/ws') \
+                +" 连接 ToolDeltaFlet", info = "§d FLET §f"
             )
+            # Wait for Super upgrade Python to 3.12
+            # fmts.print_with_info(
+            #     f"§d在 https://{self.fletcdn}/?where={ \
+            #             f'{self.proxy_addr}/ws/{self.uuid}' if self.proxy_used \
+            #         else 'this-server:7912/ws' \
+            #     } 连接 ToolDeltaFlet", info = "§d FLET §f"
+            # )
             if self.uuid_specified:
                 fmts.print_with_info(
                     "§6正在使用特定 UUID, 这不安全. "

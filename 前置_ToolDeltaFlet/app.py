@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import (
-    Union, Any, Callable, Final, Literal, Optional, TypeVar, final,
-    ParamSpec, Self, Concatenate, NoReturn
+    Union, Any, Callable, Final, Literal, Optional, NoReturn,
+    ParamSpec, Concatenate, TypeVar, final
 )
 from asyncio.exceptions import CancelledError
 from types import GenericAlias
@@ -17,7 +17,7 @@ import traceback
 import threading
 
 from flet_core.page import PageDisconnectedException
-from flet_core.event import Event
+from flet_core.control_event import ControlEvent
 import flet
 import flet.fastapi.flet_app
 import flet.fastapi.flet_app_manager
@@ -39,6 +39,10 @@ WINDOW_WIDTH_PIXEL_MAX = 2000
 WINDOW_WIDTH_PIXEL_SHOW_NAVIBAR_MIN = 650
 WINDOW_WIDTH_PIXEL_SHOW_EXTENTIONS_MIN = 770
 WINDOW_HEIGHT_PIXEL_MIN = 320
+UPDATE_DELAY_SEC = 2
+UPDATE_PLAYERLIST_SEC = 5
+MIN_PASSWORD_LENGTH = 4
+MAX_PASSWORD_LENGTH = 24
 app_list: list[ToolDeltaFletApp] = []
 theme_color_list = [
     [flet.colors.RED_500, flet.colors.RED_900],
@@ -61,14 +65,14 @@ PT = ParamSpec("PT")
 RT = TypeVar("RT")
 SelfType = TypeVar("SelfType")
 def on_exception(
-    func_on_exc: Callable,
-    exec_after_finish: Optional[list] = None,
-    exec_after_exception: Optional[list] = None
+    func_on_exc: Callable[[ToolDeltaFletApp, str], None],
+    exec_after_finish: Optional[list[Callable[[ToolDeltaFletApp], None]]] = None,
+    exec_after_exception: Optional[list[Callable[[ToolDeltaFletApp], None]]] = None
 ) \
         -> Callable[
-            [Callable[Concatenate[SelfType, PT], RT]],
+            [Callable[Concatenate[ToolDeltaFletApp, PT], RT]],
              Callable[
-                 Concatenate[SelfType, PT],
+                 Concatenate[ToolDeltaFletApp, PT],
                  Union[tuple[None, BaseException], tuple[RT, None]]
              ]
            ]:
@@ -101,13 +105,13 @@ def on_exception(
         exec_after_finish = []
     if exec_after_exception is None:
         exec_after_exception = []
-    def wrapper(func: Callable[Concatenate[SelfType, PT], RT]) \
+    def wrapper(func: Callable[Concatenate[ToolDeltaFletApp, PT], RT]) \
             -> Callable[
-                   Concatenate[SelfType, PT],
+                   Concatenate[ToolDeltaFletApp, PT],
                    Union[tuple[None, BaseException], tuple[RT, None]]
                ]:
 
-        def executor(self: SelfType, *args: Any, **kwargs: Any) \
+        def executor(self: ToolDeltaFletApp, *args: Any, **kwargs: Any) \
             -> Union[tuple[None, BaseException], tuple[RT, None]] \
         :
             ret = None
@@ -115,17 +119,17 @@ def on_exception(
             try:
                 ret = func(self, *args, **kwargs)
 
-            # Flet 断言失败.
-            except AssertionError as exc:
-                exception = exc
-                exc_type = type(exc)
-                exc_text = f"{exc_type.__name__}: {exc}"
-                exc_text = f"Flet 框架断言失败.\n" \
-                           f"若页面响应不正常, 可重启浏览器.\n{exc_text}"
-                fmts.print_err(exc_text)
-                func_on_exc(self, exc_text)
-                for code in exec_after_exception:
-                    exec(code)
+            # # Flet 断言失败.
+            # except AssertionError as exc:
+            #     exception = exc
+            #     exc_type = type(exc)
+            #     exc_text = f"{exc_type.__name__}: {exc}"
+            #     exc_text = f"Flet 框架断言失败.\n" \
+            #                f"若页面响应不正常, 可重启浏览器.\n{exc_text}"
+            #     fmts.print_err(exc_text)
+            #     func_on_exc(self, exc_text)
+            #     for code in exec_after_exception:
+            #         exec(code)
 
             # ToolDelta 终止线程.
             except ThreadExit:
@@ -154,35 +158,33 @@ def on_exception(
                 del exc_rich, console_width, capture, exc_text_rich
 
                 # 网页显示美观的回溯.
-                if isinstance(self, ToolDeltaFletApp):
-                    page_char_width = int((self.page.width -180) //9)
-                    if page_char_width > PAGE_CHAR_WIDTH_SHOW_RICH_EXC:
-                        exc_rich = rich.traceback.Traceback.from_exception(
-                            exc_type, exc, exc.__traceback__, width = page_char_width,
-                            show_locals = True, word_wrap = True
-                        )
-                        with exception_lock, console.capture() as capture:
-                            console.print(exc_rich, width = page_char_width)
-                        exc_text_rich = re.sub(r"\x1b\[[0-9;]*m", "", capture.get())
-                        del exc_rich, capture
-                        exc_text = f"{exc_text}\n{exc_text_rich}"
-                        func_on_exc(self, exc_text)
+                page_char_width = int((self.page.width -180) //9)
+                if page_char_width > PAGE_CHAR_WIDTH_SHOW_RICH_EXC:
+                    exc_rich = rich.traceback.Traceback.from_exception(
+                        exc_type, exc, exc.__traceback__, width = page_char_width,
+                        show_locals = True, word_wrap = True
+                    )
+                    with exception_lock, console.capture() as capture:
+                        console.print(exc_rich, width = page_char_width)
+                    exc_text_rich = re.sub(r"\x1b\[[0-9;]*m", "", capture.get())
+                    del exc_rich, capture
+                    exc_text = f"{exc_text}\n{exc_text_rich}"
+                    func_on_exc(self, exc_text)
 
-                    else:
-                        exc_text = f"{exc_text}\n" \
-                            f"[详细异常回溯被隐藏, 原因: 单行字符宽度过窄. " \
-                            f"({page_char_width} <= {PAGE_CHAR_WIDTH_SHOW_RICH_EXC})]"
-                        func_on_exc(self, exc_text)
+                else:
+                    exc_text = f"{exc_text}\n" \
+                        f"[详细异常回溯被隐藏, 原因: 单行字符宽度过窄. " \
+                        f"({page_char_width} <= {PAGE_CHAR_WIDTH_SHOW_RICH_EXC})]"
+                    func_on_exc(self, exc_text)
 
             # 没有异常.
             else:
-                for code in exec_after_finish:
-                    exec(code)
+                for f in exec_after_finish:
+                    f(self)
 
             # 运行结束.
             finally:
-                if isinstance(self, ToolDeltaFletApp):
-                    self.update()
+                self.update()
 
             return ret, exception  # type: ignore  # noqa: PGH003
 
@@ -495,6 +497,25 @@ class ToolDeltaFletApp:
             ]
         )
 
+        self.excited_background_container = flet.Container(
+            expand = True, bgcolor = flet.colors.BACKGROUND,
+            alignment = flet.alignment.center,
+            padding = 0, margin = 0, opacity = 0.5,
+            content = None
+        )
+        self.exited_container = flet.Container(
+            expand = True,
+            alignment = flet.alignment.center,
+            padding = 0, margin = 0,
+            content = flet.Text(
+                "ToolDelta 已经退出, 请关闭标签页\n"
+                "若使用 reload, 需要新开页面. 刷新此页无效",
+                size = 20, color = flet.colors.ERROR,
+                bgcolor = flet.colors.ERROR_CONTAINER,
+                text_align = flet.TextAlign.CENTER,
+            )
+        )
+
         self.format = flet.Row(
             vertical_alignment = flet.CrossAxisAlignment.START,
             alignment = flet.MainAxisAlignment.CENTER,
@@ -532,15 +553,31 @@ class ToolDeltaFletApp:
         self._thread_stop()
 
 
-    def on_close(self) -> None:
-        fmts.print_inf(f"{self.page.session_id} 会话结束.")
-        if self in app_list:
-            app_list.remove(self)
-        self._orig_close()
-        assert self.page.controls is not None
+    def on_frame_exit(self) -> None:
         self.connected = False
-        self.page.controls.clear()
-        self.page.overlay.clear()
+        self._thread_stop()
+        if self.page._Page__conn is not None:  # type: ignore  # noqa: PGH003
+            self.page.overlay.clear()
+            self.page.overlay.append(
+                self.excited_background_container
+            )
+            self.page.overlay.append(
+                self.exited_container
+            )
+            self.update()
+            self.page.error("ToolDelta 已经退出, 请关闭标签页.")
+
+
+    def on_close(self) -> None:
+        if self in app_list:
+            fmts.print_inf(f"{self.page.session_id} 会话结束.")
+            app_list.remove(self)
+            self._thread_stop()
+            self._orig_close()
+            assert self.page.controls is not None
+            self.connected = False
+            self.page.controls.clear()
+            self.page.overlay.clear()
 
 
     def show_exc_on_banner(self, text: str) -> None:
@@ -684,10 +721,10 @@ class ToolDeltaFletApp:
         else:
             raise ToolDeltaFletException("处理窗口大小变化事件异常: 出现例外情况.")
 
-        if WINDOW_WIDTH_PIXEL_MIN <= self.page.width < WINDOW_WIDTH_PIXEL_SHOW_EXTENTIONS_MIN:
-            pass
-        elif WINDOW_WIDTH_PIXEL_SHOW_EXTENTIONS_MIN <= self.page.width <= WINDOW_WIDTH_PIXEL_MAX:
-            pass
+        # if WINDOW_WIDTH_PIXEL_MIN <= self.page.width < WINDOW_WIDTH_PIXEL_SHOW_EXTENTIONS_MIN:
+        #     pass
+        # elif WINDOW_WIDTH_PIXEL_SHOW_EXTENTIONS_MIN <= self.page.width <= WINDOW_WIDTH_PIXEL_MAX:
+        #     pass
 
 
         # self.pageWindowSizeIllegleFormat.height = self.page.height -4 -bottomHeight
@@ -698,27 +735,33 @@ class ToolDeltaFletApp:
         return self.format.controls[4].data
 
 
-    @on_exception(show_exc_on_banner)
-    def change_navi(self, navi_name: Optional[str] = None, evt: Any = None) -> None:
-        assert self.navi_rail.destinations
-        not_logged_in = self.api is None
-        if not_logged_in:
-            self.format.expand = False
-        else:
-            self.format.expand = True
+    def _find_navi_name_and_set_navi_index(
+        self, navi_name: Optional[str] = None
+    ) -> str:
+        if navi_name == "未登录":
+            self.navi_rail.selected_index = -1
+            return navi_name
 
+        assert self.navi_rail.destinations
         for navi_dst_index, navi_dst in enumerate(self.navi_rail.destinations):
             assert isinstance(navi_dst.label_content, flet.Text)
 
             if navi_name == navi_dst.label_content.value:
                 self.navi_rail.selected_index = navi_dst_index
                 self.navi_rail.selected_index = navi_dst_index
+                break
             if navi_name is None:
                 if self.navi_rail.selected_index == -1:
                     navi_name = "未登录"
                 if self.navi_rail.selected_index == navi_dst_index:
                     navi_name = navi_dst.label_content.value
 
+        if not isinstance(navi_name, str):
+            raise ToolDeltaFletError("切换导航栏异常: 名称不存在.")
+        return navi_name
+
+
+    def _change_navi_to_illegal_size(self, navi_name: str) -> None:
         if navi_name == "窗口过窄":
             self.page_size_illegal_text.value = \
                 f"窗口过窄, 请尝试增宽窗口至 {WINDOW_WIDTH_PIXEL_MIN}px 及以上.\n" \
@@ -737,6 +780,19 @@ class ToolDeltaFletApp:
                 f"当前高度: {self.page.height}px."
             self.format.controls[4] = self.format_page_size_illegal
             return
+        raise ToolDeltaFletError("切换导航栏异常: 名称不存在.")
+
+
+    @on_exception(show_exc_on_banner)
+    def change_navi(self, navi_name: Optional[str] = None, evt: Any = None) -> None:
+        not_logged_in = self.api is None
+        self.format.expand = not not_logged_in
+
+        navi_name = self._find_navi_name_and_set_navi_index(navi_name)
+
+        if navi_name.startswith("窗口过"):
+            self._change_navi_to_illegal_size(navi_name)
+            return
 
         illegal_change = (not self.current_navi.startswith("窗口过")) \
                      and (not_logged_in and (navi_name != "未登录"))
@@ -753,24 +809,27 @@ class ToolDeltaFletApp:
             self.format.controls[4] = self.format_unlogin
 
 
+    def reset_login_button(self) -> None:
+        self.login_button.disabled = False
+
+
     @on_exception(
         show_exc_on_banner,
-        exec_after_finish = ["self.login_button.disabled = False"]
+        exec_after_finish = [reset_login_button]
     )
     def login(self, evt: Any = None) -> None:
         self.login_button.disabled = True
-        self.login_button.text = "登录"
         self.login_password_textfeild.error_text = ""
 
         password = self.login_password_textfeild.value
         password = password or ""
         password_is_empty = not password
-        password_is_too_short = len(password) < 4
-        password_is_too_long = len(password) > 24
+        password_is_too_short = len(password) < MIN_PASSWORD_LENGTH
+        password_is_too_long = len(password) > MAX_PASSWORD_LENGTH
         can_not_login = password_is_empty \
                      or password_is_too_short \
                      or password_is_too_long
-        fmts.print_inf(f"登录按钮被点击, 密码是 {password}")
+        fmts.print_inf(f"登录按钮被点击, 密码填的是 {password}")
 
         if can_not_login:
             if password_is_empty:
@@ -794,6 +853,7 @@ class ToolDeltaFletApp:
 
             password_wrong = password != self.__api.password
             if password_wrong:
+                fmts.print_war("登录失败, 密码错误.")
                 self.login_password_textfeild.error_text = "密码错误."
                 self.login_button.text = "密码错误."
                 return
@@ -832,6 +892,7 @@ class ToolDeltaFletApp:
     def _thread_stop(self) -> None:
         for thread in self.thread_list:
             thread.stop()
+        self.thread_list.clear()
 
 
     @on_exception(show_exc_on_banner)
@@ -851,7 +912,7 @@ class ToolDeltaFletApp:
                 break
             self.update()
             time_spend = time.perf_counter() -time_start
-            time.sleep((2 -time_spend) if (time_spend < 2) else 0)
+            time.sleep(max(UPDATE_DELAY_SEC -time_spend, 0))
 
 
     @on_exception(show_exc_on_banner)
@@ -887,19 +948,20 @@ class ToolDeltaFletApp:
                     )
                 self.update()
             time_spend = time.perf_counter() -time_start
-            time.sleep((5 -time_spend) if (time_spend < 5) else 0)
+            time.sleep(max(UPDATE_PLAYERLIST_SEC -time_spend, 0))
 
 
-    @on_exception(show_exc_on_banner)
-    def _test_type_checking(self, text: str) -> int:
-        return len(text)
+    # @on_exception(show_exc_on_banner)
+    # def _test_type_checking(self, text: str) -> int:
+    #     return len(text)
 
-    def _test_type_checking2(self) -> None:
-        ret, exc = self._test_type_checking("123")
-        if exc:
-            raise exc
-        typechecking = ret, exc
-        print(typechecking)
+    # def _test_type_checking2(self) -> None:
+    #     # Pylint issue: cannot auto detect the type of self._test_type_checking
+    #     ret, exc = self._test_type_checking("123")
+    #     if exc:
+    #         raise exc
+    #     typechecking = ret, exc
+    #     print(typechecking)
 
 
 def main(page: flet.Page) -> None:
@@ -923,7 +985,6 @@ def launch(port: int) -> None:
             use_color_emoji = True
         )
     except (ThreadExit, CancelledError):
-        close()
         return
 
 
@@ -931,6 +992,9 @@ def close() -> None:
     # Flet issue: reload 时, 没有重新启动删除过期 session 的线程
     app_manager = flet.fastapi.flet_app_manager.app_manager
     app_manager._FletAppManager__evict_sessions_task = None  # type: ignore  # noqa: PGH003
+    fmts.print_with_info("终止所有页面连接...", info = "§f FLET §f")
+    for app in app_list.copy():
+        app.on_frame_exit()
     for app in app_list.copy():
         app.on_close()
-    assert not app_list
+    fmts.print_with_info("所有页面连接终止.", info = "§f FLET §f")
