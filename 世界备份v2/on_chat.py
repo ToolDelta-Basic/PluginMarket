@@ -77,7 +77,7 @@ class WorldBackupOnChat:
 
         if "n" in self.question_and_get_resp(
             player,
-            "§e2.1 要恢复整个数据库为 MC 存档还是选定一个范围 (yes-整个,no-范围; 指定范围可以现场恢复区域): ",
+            "§e2.1 要恢复整个数据库为 MC 存档还是选定一个范围 (yes-整个,no-范围; 指定范围可以现场恢复区域): ",  # noqa: E501
         ):
             cmd_config["use-range"] = "true"
 
