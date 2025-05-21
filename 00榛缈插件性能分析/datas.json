@@ -1,6 +1,6 @@
 {
   "author": "Hazelmeow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "plugin-type": "classic",
   "description": "在控制台显示插件执行时间 (发送 'perf start' 开始分析)",
   "pre-plugins": {

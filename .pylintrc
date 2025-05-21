@@ -1,0 +1,17 @@
+[MESSAGE CONTROL]
+disable =
+    C0103,  # invalid-name
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    C0209,  # consider-using-f-string
+    C0321,  # multiple-statements
+    C0415,  # import-outside-toplevel
+    W0201,  # attribute-defined-outside-init
+    W0211,  # bad-staticmethod-argument
+    W0212,  # protected-access
+    W0223,  # abstract-method
+    W0611,  # unused-import
+    W0613,  # unused-argument
+    W2402,  # non-ascii-file-name
+    R1704,  # redefined-argument-from-local

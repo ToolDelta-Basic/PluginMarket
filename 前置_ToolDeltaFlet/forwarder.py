@@ -89,7 +89,7 @@ async def main(UUID, HOST, PORT):
             async with Connect(f"wss://{HOST}/register/{UUID}") as server_register:
                 await process_register(server_register, UUID, HOST, PORT)
         except (ThreadExit, CancelledError):
-            exit()
+            close()
             return
         except ConnectionClosed as exc:
             fmts.print_err(f"{exc.reason if exc.reason else 'Forwarder error: disconnected'} (code {exc.code})\nRetry in 3s")
@@ -104,7 +104,7 @@ def launch(UUID, HOST, PORT):
     asyncio.run(main(UUID, HOST, PORT))
 
 
-def exit():
+def close():
     for ws in conn_list:
         try:
             asyncio.create_task(ws.close())
