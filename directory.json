@@ -166,8 +166,13 @@
     ],
     "世界备份v2": [
         "readme.txt",
+        "recover.py",
+        "world_backup.py",
         "__init__.py",
-        "datas.json"
+        "datas.json",
+        "on_chat.py",
+        "define.py",
+        "recover_tool_name.py"
     ],
     "等级检测": [
         "__init__.py",

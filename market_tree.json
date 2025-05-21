@@ -180,7 +180,7 @@
     "世界备份第二世代": {
       "name": "世界备份v2",
       "author": "YoRHa and RATH",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "plugin-type": "classic"
     },
     "等级限制": {
@@ -606,7 +606,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "choose-song": {

@@ -172,8 +172,13 @@
     "latest_versions.json": 0,
     "世界备份v2": {
         "readme.txt": 0,
+        "recover.py": 0,
+        "world_backup.py": 0,
         "__init__.py": 0,
-        "datas.json": 0
+        "datas.json": 0,
+        "on_chat.py": 0,
+        "define.py": 0,
+        "recover_tool_name.py": 0
     },
     "等级检测": {
         "__init__.py": 0,
