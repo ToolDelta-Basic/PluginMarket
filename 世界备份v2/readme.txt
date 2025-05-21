@@ -12,6 +12,13 @@
 
 
 
+如果你希望恢复数据库为 MC 存档并现场导入，请在租赁服发送“.存档恢复”。
+当然，这个触发词可以改，在配置文件里面。
+然后，如果你不是硬核/专业用户，那么你可以不看后面的部分。
+
+
+
+
 
 最后，关于如何将这种数据库恢复为对应的 MC 存档，你需要使用专业的恢复工具，
 敬请参阅 https://github.com/TriM-Organization/bedrock-chunk-diff/blob/main/README.md#recover 以了解更多信息。
