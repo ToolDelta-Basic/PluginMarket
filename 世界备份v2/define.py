@@ -6,7 +6,7 @@ from tooldelta import cfg as config
 class WorldBackupBase:
     plugin: Plugin
 
-    def __init__(self, plugin: Plugin):
+    def __init__(self, plugin: Plugin) -> None:
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl
 
@@ -17,6 +17,7 @@ class WorldBackupBase:
             "启用调试": False,
             "每多少秒保存一次存档": 86400,
             "单个区块允许的最多时间点数量": 7,
+            "如果区块未更改则不新增时间点": True,
             "存档恢复触发词": ".存档恢复",
             "管理员列表(这些人可以请求将数据库恢复为存档)": ["Happy2018new"],
         }
@@ -33,6 +34,7 @@ class WorldBackupBase:
         self.enable_debug = bool(cfg["启用调试"])
         self.sync_delta_time = int(cfg["每多少秒保存一次存档"])
         self.max_time_point_count = int(cfg["单个区块允许的最多时间点数量"])
+        self.no_change_when_no_change = bool(cfg["如果区块未更改则不新增时间点"])
         self.recover_trigger_str = str(cfg["存档恢复触发词"])
         self.ops_list = set(cfg["管理员列表(这些人可以请求将数据库恢复为存档)"])
 

@@ -12,12 +12,17 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
 )
 from tooldelta.utils import fmts
 from .define import WorldBackupBase
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from pip模块支持 import PipSupport
 
 
 class WorldBackupMain:
     world_backup_base: WorldBackupBase
 
-    def __init__(self, world_backup_base: WorldBackupBase):
+    def __init__(self, world_backup_base: WorldBackupBase) -> None:
         self.world_backup_base = world_backup_base
 
     def base(self) -> WorldBackupBase:
@@ -26,15 +31,13 @@ class WorldBackupMain:
     def plugin(self) -> Plugin:
         return self.base().plugin
 
-    def on_def(self):
-        global chunkdiff, bwo
+    def on_def(self) -> None:
+        global chunkdiff, bwo  # noqa: PLW0603
         _ = self.plugin().GetPluginAPI("世界の记忆", (0, 0, 4))
         _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 0, 4))
 
         pip = self.plugin().GetPluginAPI("pip")
         if 0:
-            from pip模块支持 import PipSupport
-
             pip: PipSupport
         pip.require({"bedrock-chunk-diff": "bedrockchunkdiff"})
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
@@ -42,21 +45,19 @@ class WorldBackupMain:
         import bedrockchunkdiff as chunkdiff
         import bedrockworldoperator as bwo
 
-    def on_inject(self):
+    def on_inject(self) -> None:
         self.db = chunkdiff.new_timeline_database(
             self.plugin().format_data_path(self.base().db_name),
             self.base().no_grow_sync,
             self.base().no_sync,
         )
         if not self.db.is_valid():
-            raise Exception(
-                "世界备份第二世代: 打开数据库失败，请检查数据库是否被占用或是否已损坏"
-            )
+            raise Exception("世界备份第二世代: 打开数据库失败，请检查数据库是否被占用或是否已损坏")  # noqa: TRY002
 
-    def on_close(self, _: FrameExit):
+    def on_close(self, _: FrameExit) -> None:
         self.do_close()
 
-    def do_close(self):
+    def do_close(self) -> None:
         self.base().running_mutex.acquire()
         self.base().should_close = True
         if "db" in self.__dict__ and self.db.is_valid():
@@ -66,10 +67,7 @@ class WorldBackupMain:
     def check_sub_chunks_all_success(self, event: InternalBroadcast) -> bool:
         for i in event.data:
             code = i["result_code"]
-            if (
-                code != SUB_CHUNK_RESULT_SUCCESS
-                and code != SUB_CHUNK_RESULT_SUCCESS_ALL_AIR
-            ):
+            if code not in (SUB_CHUNK_RESULT_SUCCESS, SUB_CHUNK_RESULT_SUCCESS_ALL_AIR):
                 return False
         return True
 
@@ -94,8 +92,8 @@ class WorldBackupMain:
         return sub_chunks_data, nbts.getvalue()
 
     def get_time_diff_str(self, start_time: int, end_time: int) -> str:
-        s = datetime.datetime.fromtimestamp(start_time)
-        e = datetime.datetime.fromtimestamp(end_time)
+        s = datetime.datetime.fromtimestamp(start_time)  # noqa: DTZ006
+        e = datetime.datetime.fromtimestamp(end_time)  # noqa: DTZ006
         diff = e - s
 
         days = diff.days
@@ -104,22 +102,20 @@ class WorldBackupMain:
 
         return f"{days}天{hours}时{minutes}分{seconds}秒"
 
-    def on_chunk_data(self, event: InternalBroadcast):
+    def on_chunk_data(self, event: InternalBroadcast) -> None:
         self.base().running_mutex.acquire()
         if not self.base().should_close:
             self._on_chunk_data(event)
         self.base().running_mutex.release()
 
-    def _on_chunk_data(self, event: InternalBroadcast):
+    def _on_chunk_data(self, event: InternalBroadcast) -> None:
         if "db" not in self.__dict__:
             return
 
         if not self.check_sub_chunks_all_success(event):
             return
 
-        cp = bwo.ChunkPos(
-            event.data[0]["sub_chunk_pos_x"], event.data[0]["sub_chunk_pos_z"]
-        )
+        cp = bwo.ChunkPos(event.data[0]["sub_chunk_pos_x"], event.data[0]["sub_chunk_pos_z"])
         dim = bwo.Dimension(event.data[0]["dimension"])
 
         current_unix_time = int(time.time())
@@ -134,17 +130,17 @@ class WorldBackupMain:
                     fmts.print_inf(f"{dim} {cp} 不存在时间, 直接同步到前一天存档")
                 else:
                     fmts.print_inf(
-                        f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 移动并写入"
+                        f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 移动并写入"  # noqa: E501
                     )
         else:
             if self.base().enable_debug:
                 fmts.print_inf(
-                    f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 不写入"
+                    f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 不写入"  # noqa: E501
                 )
             return
 
         # Get chunk timeline
-        tl = self.db.new_chunk_timeline(cp, False, dim)
+        tl = self.db.new_chunk_timeline(cp, read_only=False, dm=dim)
         if not tl.is_valid():
             fmts.print_war(f"世界备份第二世代: 处理 {dim} {cp} 时出现未知错误")
             return
@@ -152,7 +148,10 @@ class WorldBackupMain:
 
         # Append time point to the timeline
         sub_chunks, nbts = self.get_sub_chunks_payload_and_nbts(event)
-        tl.append_network_chunk(chunkdiff.ChunkData(sub_chunks, [nbts], dim.range()))
+        tl.append_network_chunk(
+            chunkdiff.ChunkData(sub_chunks, [nbts], dim.range()),
+            self.base().no_change_when_no_change,
+        )
 
         # Save timeline
         tl.save()
