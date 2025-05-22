@@ -1,0 +1,8 @@
+{
+  "author": "ka3mora",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "简化互传，受信任玩家免同意传送",
+  "pre-plugins": {},
+  "plugin-id": "信任玩家互传"
+}
