@@ -191,6 +191,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "信任玩家互传": [
+        "__init__.py",
+        "datas.json"
+    ],
     "简易建造": [
         "readme.txt",
         "__init__.py",

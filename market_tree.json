@@ -195,6 +195,12 @@
       "version": "0.0.6",
       "plugin-type": "classic"
     },
+    "信任玩家互传": {
+      "name": "信任玩家互传",
+      "author": "ka3mora",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "简易建造": {
       "name": "简易建造",
       "author": "SuperScript",
