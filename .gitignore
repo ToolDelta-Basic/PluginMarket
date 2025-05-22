@@ -1,3 +1,7 @@
 # neccessary ignore
 __pycache__
 .vscode
+
+# pylints
+.pylintrc
+pyproject.toml
