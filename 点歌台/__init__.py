@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 from GetFile import get_github_repo_files
 from tooldelta import utils, Plugin, Player, plugin_entry
 
@@ -7,13 +7,12 @@ from tooldelta import utils, Plugin, Player, plugin_entry
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 2, 1)
-
-    musics_list: ClassVar[list] = []
+    version = (0, 2, 2)
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
     def __init__(self, frame):
+        self.musics_list: list[tuple[str, Player]] = []
         super().__init__(frame)
         os.makedirs(self.data_path, exist_ok=True)
         os.makedirs(os.path.join(self.data_path, "音乐列表"), exist_ok=True)
@@ -130,7 +129,7 @@ class DJTable(Plugin):
         elif player.getScore("song_point") <= 0:
             player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
         else:
-            self.musics_list.append((music_name, player.name))
+            self.musics_list.append((music_name, player))
             player.show("§e点歌§f>> §a点歌成功， 消耗1点音乐点")
             self.game_ctrl.sendwocmd(
                 f"/scoreboard players remove {player.name} song_point 1"
@@ -154,7 +153,7 @@ class DJTable(Plugin):
         else:
             player.show("§e点歌§f>> §6当前没有在播放曲目啦！")
 
-    def play_music(self, song_name, player):
+    def play_music(self, song_name, player: Player):
         self.game_ctrl.say_to(
             "@a",
             f"§e点歌§f>> §7开始播放§f{song_name}§7，点歌者:§f{player.name}",
@@ -196,7 +195,8 @@ class DJTable(Plugin):
                 try:
                     os.remove(os.path.join(self.mdir_external, file))
                 except Exception as e:
-                    self.logger.error(f"清空缓存失败: {e}")
+                    pass
+                    #self.logger.error(f"清空缓存失败: {e}")
 
             url = f"https://ghproxy.net/https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
             response = requests.get(url)
@@ -215,7 +215,7 @@ class DJTable(Plugin):
             player.show("§e点歌§f>> §a远程曲目已加入播放队列！")
 
         except Exception as e:
-            self.logger.error(f"处理远程音乐异常: {e}")
+            # self.logger.error(f"处理远程音乐异常: {e}")
             player.show(f"§c处理远程曲目失败: {str(e)}")
 
 
