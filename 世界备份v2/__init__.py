@@ -12,7 +12,7 @@ from .recover import WorldBackupRecover
 class WorldBackupNextGen(Plugin):
     name = "世界备份第二世代"
     author = "YoRHa and RATH"
-    version = (1, 3, 0)
+    version = (1, 3, 1)
 
     def __init__(self, frame: Frame) -> None:
         super().__init__(frame)
@@ -27,7 +27,9 @@ class WorldBackupNextGen(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.world_backup_main.on_inject)
         self.ListenFrameExit(self.world_backup_main.on_close)
-        self.ListenInternalBroadcast("scq:publish_chunk_data", self.world_backup_main.on_chunk_data)
+        self.ListenInternalBroadcast(
+            "scq:publish_chunk_data", self.world_backup_main.on_chunk_data
+        )
         self.ListenChat(self.world_backup_on_chat.on_chat)
 
     def on_def(self) -> None:

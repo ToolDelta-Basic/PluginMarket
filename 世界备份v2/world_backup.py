@@ -32,7 +32,7 @@ class WorldBackupMain:
         return self.base().plugin
 
     def on_def(self) -> None:
-        global chunkdiff, bwo  # noqa: PLW0603
+        global chunkdiff, bwo
         _ = self.plugin().GetPluginAPI("世界の记忆", (0, 0, 4))
         _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 0, 4))
 
@@ -52,7 +52,9 @@ class WorldBackupMain:
             self.base().no_sync,
         )
         if not self.db.is_valid():
-            raise Exception("世界备份第二世代: 打开数据库失败，请检查数据库是否被占用或是否已损坏")  # noqa: TRY002
+            raise Exception(
+                "世界备份第二世代: 打开数据库失败，请检查数据库是否被占用或是否已损坏"
+            )
 
     def on_close(self, _: FrameExit) -> None:
         self.do_close()
@@ -92,8 +94,8 @@ class WorldBackupMain:
         return sub_chunks_data, nbts.getvalue()
 
     def get_time_diff_str(self, start_time: int, end_time: int) -> str:
-        s = datetime.datetime.fromtimestamp(start_time)  # noqa: DTZ006
-        e = datetime.datetime.fromtimestamp(end_time)  # noqa: DTZ006
+        s = datetime.datetime.fromtimestamp(start_time)
+        e = datetime.datetime.fromtimestamp(end_time)
         diff = e - s
 
         days = diff.days
@@ -115,8 +117,10 @@ class WorldBackupMain:
         if not self.check_sub_chunks_all_success(event):
             return
 
-        cp = bwo.ChunkPos(event.data[0]["sub_chunk_pos_x"], event.data[0]["sub_chunk_pos_z"])
-        dim = bwo.Dimension(event.data[0]["dimension"])
+        cp = chunkdiff.ChunkPos(
+            event.data[0]["sub_chunk_pos_x"], event.data[0]["sub_chunk_pos_z"]
+        )
+        dim = chunkdiff.Dimension(event.data[0]["dimension"])
 
         current_unix_time = int(time.time())
         before_unix_time = self.db.load_latest_time_point_unix_time(cp, dim)
@@ -130,12 +134,12 @@ class WorldBackupMain:
                     fmts.print_inf(f"{dim} {cp} 不存在时间, 直接同步到前一天存档")
                 else:
                     fmts.print_inf(
-                        f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 移动并写入"  # noqa: E501
+                        f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 移动并写入"
                     )
         else:
             if self.base().enable_debug:
                 fmts.print_inf(
-                    f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 不写入"  # noqa: E501
+                    f"{dim} {cp} 距离现在时间 {self.get_time_diff_str(before_unix_time, current_unix_time)}, 不写入"
                 )
             return
 

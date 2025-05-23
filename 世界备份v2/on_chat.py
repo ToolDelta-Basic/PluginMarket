@@ -34,14 +34,16 @@ class WorldBackupOnChat:
         player.show(question)
         resp = game_utils.waitMsg(player.name)
         if resp is None:
-            raise Exception(f"question_and_get_resp: Question time out (player={player.name})")  # noqa: TRY002
+            raise Exception(
+                f"question_and_get_resp: Question time out (player={player.name})"
+            )
         return resp
 
     def on_chat(self, chat: Chat) -> None:
         with contextlib.suppress(Exception):
             self._on_chat(chat)
 
-    def _on_chat(self, chat: Chat) -> None:  # noqa: C901, PLR0912, PLR0915
+    def _on_chat(self, chat: Chat) -> None:
         message = chat.msg
         player = chat.player
 
@@ -84,7 +86,7 @@ class WorldBackupOnChat:
 
         if "n" in self.question_and_get_resp(
             player,
-            "§e3.1 要恢复整个数据库为 MC 存档还是选定一个范围 (yes-整个,no-范围; 指定范围可以现场恢复区域): ",  # noqa: E501
+            "§e3.1 要恢复整个数据库为 MC 存档还是选定一个范围 (yes-整个,no-范围; 指定范围可以现场恢复区域): ",
         ):
             cmd_config["use-range"] = "true"
 
@@ -114,20 +116,30 @@ class WorldBackupOnChat:
         ):
             while True:
                 player.show(
-                    "§e4.2.0 接下来你需要给我一个时间，然后我们将恢复到距离这个时间及以前中最近的一个版本"  # noqa: E501
+                    "§e4.2.0 接下来你需要给我一个时间，然后我们将恢复到距离这个时间及以前中最近的一个版本"
                 )
 
-                year = self.question_and_get_resp(player, "§e4.2.1 请告诉我时间的年份: ")
-                month = self.question_and_get_resp(player, "§e4.2.2 请告诉我时间的月份: ")
+                year = self.question_and_get_resp(
+                    player, "§e4.2.1 请告诉我时间的年份: "
+                )
+                month = self.question_and_get_resp(
+                    player, "§e4.2.2 请告诉我时间的月份: "
+                )
                 day = self.question_and_get_resp(player, "§e4.2.3 请告诉我时间的日期: ")
 
-                hour = self.question_and_get_resp(player, "§e4.2.4 请告诉我时间的小时: ")
-                minute = self.question_and_get_resp(player, "§e4.2.5 请告诉我时间的分钟: ")
-                second = self.question_and_get_resp(player, "§e4.2.5 请告诉我时间的秒钟: ")
+                hour = self.question_and_get_resp(
+                    player, "§e4.2.4 请告诉我时间的小时: "
+                )
+                minute = self.question_and_get_resp(
+                    player, "§e4.2.5 请告诉我时间的分钟: "
+                )
+                second = self.question_and_get_resp(
+                    player, "§e4.2.5 请告诉我时间的秒钟: "
+                )
 
                 if "n" in self.question_and_get_resp(
                     player,
-                    f"§e4.2.5 我们将恢复到距离 {year}/{month}/{day} {hour}:{minute}:{second} 及以前的最新版本，你确定吗? (yes/no): ",  # noqa: E501
+                    f"§e4.2.5 我们将恢复到距离 {year}/{month}/{day} {hour}:{minute}:{second} 及以前的最新版本，你确定吗? (yes/no): ",
                 ):
                     continue
 
@@ -144,7 +156,7 @@ class WorldBackupOnChat:
 
                 if "n" in self.question_and_get_resp(
                     player,
-                    "§e4.3 可能有的区块不满足这个时间限制(目标时间及以前)，那允许我们选择距离这个时间最近的一个吗? (yes/no): ",  # noqa: E501
+                    "§e4.3 可能有的区块不满足这个时间限制(目标时间及以前)，那允许我们选择距离这个时间最近的一个吗? (yes/no): ",
                 ):
                     cmd_config["ensure-exist-one"] = "false"
 
@@ -156,10 +168,10 @@ class WorldBackupOnChat:
 
         if "y" in self.question_and_get_resp(
             player,
-            "§e5. 要重启 ToolDelta 后再进行恢复还是现在立即恢复? (yes-重启,no-现在立即; 重启后恢复将需要您手动调用简单世界恢复来进行恢复): ",  # noqa: E501
+            "§e5. 要重启 ToolDelta 后再进行恢复还是现在立即恢复? (yes-重启,no-现在立即; 重启后恢复将需要您手动调用简单世界恢复来进行恢复): ",
         ):
             player.show(
-                "§a好的，ToolDelta 将会关闭，但本插件不支持重启，所以请您确保 ToolDelta 在关闭后可以打开，然后恢复程序将会开始工作"  # noqa: E501
+                "§a好的，ToolDelta 将会关闭，但本插件不支持重启，所以请您确保 ToolDelta 在关闭后可以打开，然后恢复程序将会开始工作"
             )
             ToolDeltaThread(
                 self.plugin().frame.system_exit,
@@ -169,7 +181,9 @@ class WorldBackupOnChat:
             )
         else:
             self.world_backup_main.do_close()
-            mcworld_path, use_range, range_start, range_end = self.world_backup_recover.recover()
+            mcworld_path, use_range, range_start, range_end = (
+                self.world_backup_recover.recover()
+            )
             self.world_backup_main.on_inject()
             self.base().should_close = False
 
