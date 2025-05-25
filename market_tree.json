@@ -57,6 +57,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "Lumelta": {
+      "name": "Lua插件运行",
+      "author": "Yeah",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "Cb2Bot通信": {
       "name": "前置_Cb2Bot通信",
       "author": "SuperScript",

@@ -44,6 +44,83 @@
         "__init__.py",
         "datas.json"
     ],
+    "Lua插件运行": [
+        "__init__.py",
+        "README.md",
+        "datas.json",
+        "LICENSE"
+    ],
+    "Lua插件运行/wrap": [
+        "database.py",
+        "config.py",
+        "omega.py",
+        "__init__.py",
+        "control.py",
+        "lua.py",
+        "make.py",
+        "json.py",
+        "user_data.py",
+        "safe.py",
+        "conversion.py",
+        "loosejson.py"
+    ],
+    "Lua插件运行/wrap/builtin_plugins": [],
+    "Lua插件运行/wrap/builtin_plugins/返回死亡点": [
+        "__init__.py"
+    ],
+    "Lua插件运行/wrap/omega_sub_modules": [
+        "websocket.py",
+        "builder.py",
+        "cmds.py",
+        "menu.py",
+        "listen.py",
+        "__init__.py",
+        "cqhttp.py",
+        "bot_uq.py",
+        "bot_action.py",
+        "storage.py",
+        "system.py",
+        "players.py",
+        "async_http.py",
+        "storage_path.py",
+        "flex.py",
+        "common.py",
+        "share.py"
+    ],
+    "Lua插件运行/neomega_storage": [],
+    "Lua插件运行/neomega_storage/lang": [],
+    "Lua插件运行/neomega_storage/lang/LuaLoader": [
+        "Python系统监测.lua",
+        "后台发送命令.lua",
+        "领地.lua",
+        "coromega.lua",
+        "creator.lua",
+        "全物品商店.lua"
+    ],
+    "Lua插件运行/neomega_storage/config": [
+        "neomega框架配置.json",
+        "backend_menu.lua",
+        "game_menu.lua",
+        "cq_http_core.lua"
+    ],
+    "Lua插件运行/neomega_storage/config/全物品商店[lua]": [
+        "全物品商店[LuaLoader]-更合理的价格表.json"
+    ],
+    "Lua插件运行/neomega_storage/config/creator[lua]": [
+        "creator[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/领地[lua]": [
+        "领地[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/后台发送命令[lua]": [
+        "后台发送命令[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/返回死亡点": [
+        "返回死亡点[Built-In]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/Python系统监测[lua]": [
+        "Python系统监测[LuaLoader]-1.json"
+    ],
     "前置_Cb2Bot通信": [
         "readme.txt",
         "__init__.py",
