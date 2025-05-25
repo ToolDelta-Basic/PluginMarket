@@ -1,6 +1,6 @@
 {
     "author": "权威-马牛逼",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "plugin-type": "classic",
     "description": "计分板qx，可在在游戏中更改，如果需要更新权限，把玩家踢掉自动更新(确保你更新了分数)，0为成员1为访客2操作员3自定义",
     "pre-plugins": {},

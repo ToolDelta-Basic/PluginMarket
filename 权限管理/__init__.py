@@ -1,34 +1,34 @@
 from tooldelta import (
     Plugin,
     plugin_entry,
-    Player,
-    Chat,
-    FrameExit,
-    cfg,
-    game_utils,
-    utils,
-    TYPE_CHECKING,
+    Player
 )
 
 
 class NewPlugin(Plugin):
     name = "进服默认权限(必备)"
     author = "权威-马牛逼"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
         self.game_ctrl = frame.game_ctrl
         self.ListenPreload(self.on_def)
+        self.ListenActive(self.on_active)
         self.ListenPlayerJoin(self.on_player_join)
 
     # 注意，本权限系统需要玩家进入才能设置
     def on_def(self):
         pass
+    
+    def on_active(self):
+        self.game_ctrl.sendwocmd(
+            "/scoreboard objectives add qx dummy 权限"
+        )
 
     def on_player_join(self, player: Player):
         self.game_ctrl.sendwocmd(
-            f"/scoreboard players add @a qx 0"
+            "/scoreboard players add @a qx 0"
         )  # 在这里可以修改分数，如果调用自定义，就把它设置为3
         score = player.getScore("qx")  # 计分板名称
         self.set_permission_based_on_score(player, score)
