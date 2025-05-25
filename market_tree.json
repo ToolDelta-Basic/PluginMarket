@@ -474,7 +474,7 @@
     "进服默认权限(必备)": {
       "name": "权限管理",
       "author": "权威-马牛逼",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "ai聊天": {
