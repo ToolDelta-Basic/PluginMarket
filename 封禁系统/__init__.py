@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 1)
+    version = (1, 0, 2)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -206,16 +206,14 @@ class BanSystem(Plugin):
             fmts.print_err("输入有误")
 
     def on_console_unban(self, _):
-        all_ban_player_xuids = os.listdir(self.data_path)
+        all_ban_player_xuids = [
+            x.removesuffix(".json") for x in os.listdir(self.ban_datas_path)
+        ]
         all_ban_playernames: list[tuple[str, str]] = []
-        for i in all_ban_player_xuids:
-            xuid = i.replace(".json", "")
-            try:
-                all_ban_playernames.append(
-                    (self.xuidm.get_name_by_xuid(xuid, allow_offline=True), xuid)
-                )
-            except ValueError:
-                continue
+        db_data = self.read_db()
+        for name, xuid in db_data["name2xuid"].items():
+            if xuid in all_ban_player_xuids:
+                all_ban_playernames.append((name, xuid))
         if all_ban_playernames == []:
             fmts.print_inf("没有封禁的玩家")
             return
@@ -224,8 +222,8 @@ class BanSystem(Plugin):
             fmts.print_inf(f"{i + 1}: {name}")
         resp = utils.try_int(input(fmts.fmt_info("请输入序号：")))
         if resp and resp in range(1, len(all_ban_playernames) + 1):
-            unban_player = all_ban_playernames[resp - 1][0]
-            self.del_ban_data(all_ban_playernames[resp - 1][0])
+            unban_player, unban_player_xuid = all_ban_playernames[resp - 1]
+            self.del_ban_data(unban_player_xuid)
             fmts.print_suc(f"解封成功: 已解封 {unban_player}")
         else:
             fmts.print_err("输入有误")
@@ -242,6 +240,9 @@ class BanSystem(Plugin):
         for xuid, name in players_xuids.items():
             if name_part in name:
                 matched_names_and_uuids.append((name, xuid))
+        if not matched_names_and_uuids:
+            fmts.print_war("找不到匹配的玩家名")
+            return
         matched_names_and_uuids.sort(key=lambda x: x[0].count(name_part))
         fmts.print_inf("找到以下匹配的玩家名：")
         for i, (name, _) in enumerate(matched_names_and_uuids):
@@ -262,7 +263,7 @@ class BanSystem(Plugin):
         reason = input(fmts.fmt_info("请输入封禁原因:")).strip() or "未知"
         self.ban(target, ban_seconds, reason)
         fmts.print_suc(
-            f"封禁 {target} 成功, 封禁了 {self.format_date_zhcn(ban_seconds)}"
+            f"封禁 {target} 成功, 封禁了{self.format_date_zhcn(ban_seconds)}"
         )
 
     def on_qq_ban(self, qqid: int, args: list[str]):
@@ -428,6 +429,13 @@ class BanSystem(Plugin):
         old["deviceID2xuid"][deviceID] = xuid
         utils.tempjson.load_and_write(self.ban_player_data_db, old)
 
+    def read_db(self):
+        return utils.tempjson.load_and_read(
+            self.ban_player_data_db,
+            need_file_exists=False,
+            default={"name2xuid": {}, "deviceID2xuid": {}},
+        )
+
     def add_player_name_to_db(self, xuid: str, playername: str):
         old = utils.tempjson.load_and_read(
             self.ban_player_data_db,
@@ -452,7 +460,9 @@ class BanSystem(Plugin):
 
     @staticmethod
     def format_date_zhcn(seconds: int):
-        if seconds < 60:
+        if seconds == -1:
+            return "普朗克秒"
+        elif seconds < 60:
             return f"{seconds}秒"
         elif seconds < 3600:
             return f"{seconds // 60}分钟{seconds % 60}秒"
