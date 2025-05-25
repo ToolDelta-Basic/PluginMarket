@@ -1,0 +1,9 @@
+{
+    "描述": "Python系统监测",
+    "是否禁用": false,
+    "名称": "Python系统监测.lua",
+    "来源": "LuaLoader",
+    "配置": {
+        "Version": "0.0.1"
+    }
+}
