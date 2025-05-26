@@ -1,6 +1,6 @@
 {
   "author": "猫七街",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "云端黑名单插件",
   "limit_launcher": null,
   "pre-plugins": {

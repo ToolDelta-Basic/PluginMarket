@@ -1,14 +1,12 @@
 from tooldelta import Plugin, cfg, fmts, utils, Player, plugin_entry
-
-import os, json, requests, time
 from urllib.parse import quote
-from typing import List
-
+from typing import List  # noqa: UP035
+import os, json, requests, time  # noqa: E401
 
 class CloudBlacklist(Plugin):
     name = "云黑"
     author = "猫七街"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -385,11 +383,13 @@ class CloudBlacklist(Plugin):
             player_uuid = self.api_get_xuid.get_xuid_by_name(player_name, True)
         except:
             fmts.print_err("该玩家未加入过服务器")
-        with open(self.data_path + "/blacklist.json", "r", encoding="utf-8") as f:
+            return  # 添加 return 防止后续代码执行
+        # 使用 Path 对象拼接路径
+        blacklist_path = self.data_path / "blacklist.json"
+        with open(blacklist_path, "r", encoding="utf-8") as f:
             black_list = json.load(f)
-
         black_list[player_uuid] = player_name
-        with open(self.data_path + "/blacklist.json", "w", encoding="utf-8") as f:
+        with open(blacklist_path, "w", encoding="utf-8") as f:
             json.dump(black_list, f, indent=4)
             fmts.print_suc("添加成功")
 
@@ -397,17 +397,20 @@ class CloudBlacklist(Plugin):
         player_name = input("请输入玩家名：")
         try:
             player_uuid = self.api_get_xuid.get_xuid_by_name(player_name, True)
-
         except:
             fmts.print_err("该玩家不存在于黑名单中")
-        with open(self.data_path + "/blacklist.json", "r", encoding="utf-8") as f:
+            return  # 添加 return 防止后续代码执行
+        # 使用 Path 对象拼接路径
+        blacklist_path = self.data_path / "blacklist.json"
+        with open(blacklist_path, "r", encoding="utf-8") as f:
             black_list = json.load(f)
-
         if player_uuid in black_list:
             del black_list[player_uuid]
-            with open(self.data_path + "/blacklist.json", "w", encoding="utf-8") as f:
+            with open(blacklist_path, "w", encoding="utf-8") as f:
                 json.dump(black_list, f, indent=4)
                 fmts.print_suc("删除成功")
+        else:
+            fmts.print_err("该玩家不在黑名单中")
 
 
 entry = plugin_entry(CloudBlacklist)
