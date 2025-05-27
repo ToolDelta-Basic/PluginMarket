@@ -25,10 +25,10 @@ class HighRateChatAnti(Plugin):
             "是否忽略玩家发言合法性进行封禁": True,
         }
         CFG_STD = config.auto_to_std(CFG_DEFAULT)
-        CFG_DEFAULT[config.KeyGroup("是否忽略玩家发言合法性进行封禁")] = CFG_DEFAULT[  # type: ignore
+        CFG_STD[config.KeyGroup("是否忽略玩家发言合法性进行封禁")] = CFG_STD[  # type: ignore
             "是否忽略玩家发言合法性进行封禁"
         ]
-        del CFG_DEFAULT["是否忽略玩家发言合法性进行封禁"]
+        del CFG_STD["是否忽略玩家发言合法性进行封禁"] # type: ignore
         cfg, _ = config.get_plugin_config_and_version(
             "超频发言限制", CFG_STD, CFG_DEFAULT, self.version
         )
