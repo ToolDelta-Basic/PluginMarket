@@ -14,7 +14,7 @@ from tooldelta.utils.packet_transition import get_playername_and_msg_from_text_p
 class HighRateChatAnti(Plugin):
     name = "超频发言反制"
     author = "SuperScript"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -22,10 +22,15 @@ class HighRateChatAnti(Plugin):
             "检测周期(秒)": 5,
             "检测周期内最多发送多少条消息": 10,
             "反制措施": {"封禁时间(天数)": 1},
-            config.KeyGroup("是否忽略玩家发言合法性进行封禁"): True,
+            "是否忽略玩家发言合法性进行封禁": True,
         }
+        CFG_STD = config.auto_to_std(CFG_DEFAULT)
+        CFG_DEFAULT[config.KeyGroup("是否忽略玩家发言合法性进行封禁")] = CFG_DEFAULT[  # type: ignore
+            "是否忽略玩家发言合法性进行封禁"
+        ]
+        del CFG_DEFAULT["是否忽略玩家发言合法性进行封禁"]
         cfg, _ = config.get_plugin_config_and_version(
-            "超频发言限制", config.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, self.version
+            "超频发言限制", CFG_STD, CFG_DEFAULT, self.version
         )
         if cfg.get("是否忽略玩家发言合法性进行封禁") is None:
             cfg["是否忽略玩家发言合法性进行封禁"] = True
