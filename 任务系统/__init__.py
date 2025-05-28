@@ -45,7 +45,7 @@ class Quest:
 class TaskSystem(Plugin):
     name = "任务系统"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -219,7 +219,9 @@ class TaskSystem(Plugin):
                 )
                 self.game_ctrl.sendwocmd(s_cmd)
             path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
-            o = self.tmpjson.load_and_read(path)
+            o = self.tmpjson.load_and_read(
+                path, need_file_exists=False, default=self.init_quest_file()
+            )
             o["in_quests"].append(quest.tag_name)
             self.tmpjson.write(path, o)
             return True
@@ -288,7 +290,9 @@ class TaskSystem(Plugin):
             self.game_ctrl.sendwocmd(f"give @a[name={player.name}] {item_id} {count}")
             player.show(f" §7 + {count}x§f{item_name}")
         path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
-        o = self.tmpjson.load_and_read(path)
+        o = self.tmpjson.load_and_read(
+            path, need_file_exists=False, default=self.init_quest_file()
+        )
         o["quests_ok"][quest.tag_name] = int(time.time())
         o["in_quests"].remove(quest.tag_name)
         self.tmpjson.write(path, o)
@@ -381,7 +385,9 @@ class TaskSystem(Plugin):
 
     def read_quests(self, player: Player) -> list[Quest]:
         o = self.tmpjson.load_and_read(
-            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
+            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json"),
+            need_file_exists=False,
+            default=self.init_quest_file(),
         )
         output = []
         o = o or {"in_quests": []}

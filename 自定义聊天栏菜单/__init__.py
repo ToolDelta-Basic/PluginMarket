@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 3)
+    version = (0, 1, 4)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -112,6 +112,7 @@ class CustomChatbarMenu(Plugin):
                         "/give [玩家名] logs",
                         "/give [玩家名] quartz_block"
                     ],
+                    "仅OP可用": False,
                     "仅创造模式可用": True,
                 }
             ]
