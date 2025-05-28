@@ -74,7 +74,9 @@ class TDItemMaker(Plugin):
         x, y, z = game_utils.getPosXYZ(self.game_ctrl.bot_name)
         x, y, z = int(x), int(y), int(z)
         self.game_ctrl.sendwocmd(f"setblock {x} {y - 1} {z} bedrock")
-        self.game_ctrl.sendwocmd(f"setblock {x} {y} {z} anvil")
+        self.game_ctrl.sendwocmd(
+            f'setblock {x} {y} {z} anvil ["minecraft:cardinal_direction"="north","damage"="undamaged"]'
+        )
         for item in items:
             if not item.name.startswith("§r"):
                 item.name = "§r" + item.name
