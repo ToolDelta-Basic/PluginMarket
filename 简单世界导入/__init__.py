@@ -9,7 +9,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -159,6 +159,7 @@ class SimpleWorldImport(Plugin):
             f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
         )
 
+    @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_import(self, cmd: list[str]):
         if not self.running_mutex.acquire(timeout=0):
             fmts.print_err("同一时刻最多处理一个导入任务")
@@ -167,7 +168,6 @@ class SimpleWorldImport(Plugin):
             self._do_world_import(cmd)
         self.running_mutex.release()
 
-    @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def _do_world_import(self, cmd: list[str]):
         try:
             filename = cmd[0]
