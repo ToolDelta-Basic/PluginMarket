@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 2)
+    version = (0, 1, 3)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -40,6 +40,7 @@ class CustomChatbarMenu(Plugin):
                     ),
                     "触发后执行的指令": cfg.JsonList(str),
                     "仅OP可用": bool,
+                    cfg.KeyGroup("仅创造模式可用"): bool,
                 },
             )
         }
@@ -80,7 +81,8 @@ class CustomChatbarMenu(Plugin):
                     ],
                     "功能简介": "测试触发词参数",
                     "触发后执行的指令": [
-                        "/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2], 参数3=[参数:3]"
+                        "/w [玩家名] 触发词测试成功: 参数1=[参数:1], 参数2=[参数:2], 参数3=[参数:3]",
+                        "/w [玩家名] 这个菜单项仅供测试和学习如何使用参数， 可删除"
                     ],
                     "仅OP可用": True,
                 },
@@ -98,6 +100,20 @@ class CustomChatbarMenu(Plugin):
                     ],
                     "仅OP可用": False,
                 },
+                {
+                    "说明": "给予创造玩家一些建筑材料",
+                    "触发词": ["建材", "bblocks"],
+                    "需要的参数(没有则填[])": [],
+                    "功能简介": "查看个人档案",
+                    "触发后执行的指令": [
+                        "/give [玩家名] brick_block",
+                        "/give [玩家名] planks",
+                        "/give [玩家名] sealantern",
+                        "/give [玩家名] logs",
+                        "/give [玩家名] quartz_block"
+                    ],
+                    "仅创造模式可用": True,
+                }
             ]
         }
         self.cfg, _ = cfg.get_plugin_config_and_version(
@@ -120,6 +136,7 @@ class CustomChatbarMenu(Plugin):
 
     def regist_to_menu(self, menu: dict):
         cmds = menu["触发后执行的指令"]
+        creative_only = menu.get("仅创造模式可用", False)
 
         def generate_argument_hint():
             hints_list = []
@@ -146,6 +163,10 @@ class CustomChatbarMenu(Plugin):
 
         @utils.thread_func("自定义聊天栏菜单执行")
         def _menu_cb_func(player: Player, args: tuple):
+            if creative_only:
+                if player.name not in game_utils.getTarget("@a[m=1]"):
+                    player.show("§c该命令仅创造模式玩家可用")
+                    return
             for cmd in cmds:
                 f_cmd = utils.simple_fmt(
                     {"[玩家名]": player.name},
