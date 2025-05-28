@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 2)
+    version = (1, 0, 3)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -360,10 +360,11 @@ class BanSystem(Plugin):
             ban_data (BanData): 封禁数据
         """
         try:
-            player_xuid = self.xuidm.get_xuid_by_name(playername)
+            player_xuid = self.xuidm.get_xuid_by_name(playername, allow_offline=True)
             self.add_player_name_to_db(player_xuid, playername)
         except ValueError:
             player_xuid = self.generate_virtual_xuid(playername)
+            self.print(f"§6玩家 XUID 不在数据库中, 生成虚拟 XUID {player_xuid}")
         record = self.get_ban_data(player_xuid)
         if record is not None:
             ban_data = max(record, ban_data)  # 取时间最久的封禁数据
@@ -408,8 +409,7 @@ class BanSystem(Plugin):
 
     def record_ban_data(self, ban_data: BanData):
         ban_data_xuid = ban_data.xuid or self.generate_virtual_xuid(ban_data.playername)
-        if ban_data.xuid is None:
-            self.add_player_name_to_db(ban_data_xuid, ban_data.playername)
+        self.add_player_name_to_db(ban_data_xuid, ban_data.playername)
         path = self.ban_datas_path / f"{ban_data_xuid}.json"
         utils.tempjson.load_and_write(path, ban_data.to_dict(), need_file_exists=False)
         utils.tempjson.flush(path)
@@ -444,6 +444,7 @@ class BanSystem(Plugin):
         )
         old["name2xuid"][playername] = xuid
         utils.tempjson.load_and_write(self.ban_player_data_db, old)
+        utils.tempjson.flush(self.ban_player_data_db)
 
     def format_msg(
         self, playername: str, ban_to_sec: int, ban_reason: str, cfg_key: str
