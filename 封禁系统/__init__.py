@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 3)
+    version = (1, 0, 4)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -197,13 +197,19 @@ class BanSystem(Plugin):
         for i, j in enumerate(allplayers):
             fmts.print_inf(f"{i + 1}: {j}")
         resp = utils.try_int(input(fmts.fmt_info("请输入序号：")))
-        if resp and resp in range(1, len(allplayers) + 1):
-            ban_player = allplayers[resp - 1]
-            reason = input(fmts.fmt_info("请输入封禁理由：")) or "未知"
-            self.ban(ban_player, -1, reason)
-            fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
-        else:
+        if resp is None or resp not in range(1, len(allplayers) + 1):
             fmts.print_err("输入有误")
+            return
+        ban_player = allplayers[resp - 1]
+        ban_seconds = utils.try_int(
+            input(fmts.fmt_info("请输入封禁时间(秒, 默认为永久)：")) or "-1"
+        )
+        if ban_seconds is None or (ban_seconds < 0 and ban_seconds != -1):
+            fmts.print_err("不合法的封禁时间")
+            return
+        reason = input(fmts.fmt_info("请输入封禁理由：")) or "未知"
+        self.ban(ban_player, ban_seconds, reason)
+        fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
 
     def on_console_unban(self, _):
         all_ban_player_xuids = [
@@ -265,6 +271,7 @@ class BanSystem(Plugin):
         fmts.print_suc(
             f"封禁 {target} 成功, 封禁了{self.format_date_zhcn(ban_seconds)}"
         )
+        self.test_ban_core(target, xuid)
 
     def on_qq_ban(self, qqid: int, args: list[str]):
         utils.fill_list_index(args, ["", "永久", "未知"])

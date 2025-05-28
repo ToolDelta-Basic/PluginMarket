@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "在控制台封禁/解禁玩家。记录XUID，不用担心玩家改名！\n在控制台输入 ？ 查看使用方法",
   "limit_launcher": null,
   "pre-plugins": {
