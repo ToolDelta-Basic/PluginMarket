@@ -16,12 +16,12 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
     scb_replace_simple_rule = re.compile(r"\[计分板替换:([^\[\(\)\]]+)\(([^\)]+)\)\]")
-    scb_replace_next_rule = re.compile(r"([0-9~]+):([^ ]+)")
+    scb_replace_next_rule = re.compile(r"([0-9~\-]+):([^ ]+)")
     _counter = 0
 
     def __init__(self, frame: ToolDelta):
