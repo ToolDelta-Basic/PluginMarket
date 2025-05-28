@@ -16,7 +16,7 @@ IS_CREATE_LOCK = threading.RLock()
 class SkyBlock(Plugin):
     name = "空岛系统"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -154,7 +154,7 @@ class SkyBlock(Plugin):
         self.game_ctrl.say_to(player, f"§7[§cx§7] §c{msg}")
 
     def get_player_island_uid(self, player: str) -> int | None:
-        player_path = self.data_path + "/" + "玩家记录.json"
+        player_path = self.data_path / "玩家记录.json"
         player_obj = utils.TMPJson.read_as_tmp(player_path, False)
         res = player_obj.get(player)
         if res is None:
@@ -366,7 +366,7 @@ class SkyBlock(Plugin):
                 self.game_ctrl.sendcmd("/tickingarea remove island_cache")
 
     def island_kick(self, player: str):
-        player_path = self.data_path + "/" + "玩家记录.json"
+        player_path = self.data_path / "玩家记录.json"
         players_obj = utils.TMPJson.read_as_tmp(player_path, False)
         player_data = players_obj.get(player)
         if player_data is None:
@@ -419,8 +419,8 @@ class SkyBlock(Plugin):
         self.show_suc(player, f"已踢出 {selected}.")
 
     def island_back(self, player: str):
-        player_path = self.data_path + "/" + "玩家记录.json"
-        island_path = self.data_path + "/" + "空岛记录.json"
+        player_path = self.data_path / "玩家记录.json"
+        island_path = self.data_path / "空岛记录.json"
         player_obj = utils.TMPJson.read_as_tmp(player_path, False)
         island_obj = utils.TMPJson.read_as_tmp(island_path, False)
         player_data = player_obj.get(player)
@@ -442,8 +442,8 @@ class SkyBlock(Plugin):
         self.game_ctrl.say_to(player, "§f[§a岛屿酱§f] §a欢迎回来， Master~")
 
     def island_l2j(self, player: str):
-        player_path = self.data_path + "/" + "玩家记录.json"
-        island_path = self.data_path + "/" + "空岛记录.json"
+        player_path = self.data_path/ "玩家记录.json"
+        island_path = self.data_path / "空岛记录.json"
         players_obj = utils.TMPJson.read_as_tmp(player_path, False)
         islands_obj = utils.TMPJson.read_as_tmp(island_path, False)
         onlines = self.game_ctrl.allplayers.copy()

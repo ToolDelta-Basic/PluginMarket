@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "使用该系统便捷地制作一个空岛系统！§c一定要在写配置文件的时候查看插件手册",
   "pre-plugins": {
