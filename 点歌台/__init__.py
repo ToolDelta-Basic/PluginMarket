@@ -7,7 +7,7 @@ from tooldelta import utils, Plugin, Player, plugin_entry
 class DJTable(Plugin):
     author = "Sup3rScr1pt"
     name = "点歌台"
-    version = (0, 2, 2)
+    version = (0, 2, 3)
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
@@ -132,7 +132,7 @@ class DJTable(Plugin):
             self.musics_list.append((music_name, player))
             player.show("§e点歌§f>> §a点歌成功， 消耗1点音乐点")
             self.game_ctrl.sendwocmd(
-                f"/scoreboard players remove {player.name} song_point 1"
+                f"/scoreboard players remove {player.getSelector()} song_point 1"
             )
             self.game_ctrl.say_to(
                 "@a", f"§e点歌§f>> §e{player.name}§a成功点歌:{music_name}"
