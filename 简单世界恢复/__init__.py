@@ -2,6 +2,12 @@ import os
 import json
 import threading
 import time
+from dataclasses import dataclass
+from tooldelta.utils.tooldelta_thread import ToolDeltaThread
+from tooldelta.mc_bytes_packet.sub_chunk import (
+    SUB_CHUNK_RESULT_SUCCESS,
+    SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
+)
 from tooldelta import (
     FrameExit,
     InternalBroadcast,
@@ -11,23 +17,28 @@ from tooldelta import (
     utils,
     plugin_entry,
 )
-from tooldelta.mc_bytes_packet.sub_chunk import (
-    SUB_CHUNK_RESULT_SUCCESS,
-    SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
-)
-from tooldelta.utils.tooldelta_thread import ToolDeltaThread
+
+
+@dataclass(frozen=True)
+class chunkPos:
+    dim: int = -1
+    chunk_pos_x: int = 0
+    chunk_pos_z: int = 0
 
 
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 0, 4)
+    version = (0, 1, 0)
 
-    chunk_we_want: tuple[int, int, int]
-    chunk_we_get: list[dict]
-
-    not_update_got_chunk: threading.Lock
+    waiting_chunk_pos: chunkPos
+    waiting_chunk_data: list[dict]
+    waiting_chunk_arrived: threading.Lock
     chunk_waiter: threading.Event
+
+    chunk_cache_mu: threading.Lock
+    all_waiting_chunk: set[chunkPos]
+    chunk_cache: dict[chunkPos, list[dict]]
 
     should_close: bool
     running_mutex: threading.Lock
@@ -37,12 +48,15 @@ class SimpleWorldRecover(Plugin):
         self.game_ctrl = frame.get_game_control()
         self.make_data_path()
 
-        self.chunk_we_want = (-1, 0, 0)
-        self.chunk_we_get = []
-
-        self.not_update_got_chunk = threading.Lock()
-        self.not_update_got_chunk.acquire()
+        self.waiting_chunk_pos = chunkPos()
+        self.waiting_chunk_data = []
+        self.waiting_chunk_arrived = threading.Lock()
+        self.waiting_chunk_arrived.acquire()
         self.chunk_waiter = threading.Event()
+
+        self.chunk_cache_mu = threading.Lock()
+        self.all_waiting_chunk = set()
+        self.chunk_cache = {}
 
         self.should_close = False
         self.running_mutex = threading.Lock()
@@ -82,22 +96,52 @@ class SimpleWorldRecover(Plugin):
 
     def on_close(self, _: FrameExit):
         self.should_close = True
+        self.chunk_cache_mu.acquire()
+        self.all_waiting_chunk.clear()
+        self.chunk_cache = {}
+        self.chunk_cache_mu.release()
         self.chunk_waiter.set()
         self.running_mutex.acquire()
         self.running_mutex.release()
+
+    def check_is_completely_chunk(self, data: list[dict]) -> bool:
+        for i in data:
+            code = i["result_code"]
+            if (
+                code != SUB_CHUNK_RESULT_SUCCESS
+                and code != SUB_CHUNK_RESULT_SUCCESS_ALL_AIR
+            ):
+                return False
+        return True
 
     def on_chunk_data(self, event: InternalBroadcast):
         chunk_pos_x = event.data[0]["sub_chunk_pos_x"]
         chunk_pos_z = event.data[0]["sub_chunk_pos_z"]
         dimension = event.data[0]["dimension"]
+        cp = chunkPos(dimension, chunk_pos_x, chunk_pos_z)
 
-        if (dimension, chunk_pos_x, chunk_pos_z) == self.chunk_we_want:
-            if not self.not_update_got_chunk.acquire(timeout=0):
+        self.chunk_cache_mu.acquire()
+        if (
+            cp in self.all_waiting_chunk
+            and cp not in self.chunk_cache
+            and self.check_is_completely_chunk(event.data)
+        ):
+            cache_count = len(self.chunk_cache)
+            if cache_count >= 1024:
+                for _ in range(cache_count - 1023):
+                    for key in self.chunk_cache:
+                        break
+                    del self.chunk_cache[key]
+            self.chunk_cache[cp] = event.data
+        self.chunk_cache_mu.release()
+
+        if self.waiting_chunk_pos == cp:
+            if not self.waiting_chunk_arrived.acquire(timeout=0):
                 return
         else:
             return
 
-        self.chunk_we_get = event.data
+        self.waiting_chunk_data = event.data
         self.chunk_waiter.set()
 
     def on_event(self, event: InternalBroadcast):
@@ -129,42 +173,48 @@ class SimpleWorldRecover(Plugin):
         )
         self.game_ctrl.sendwscmd_with_resp("")
 
-        self.chunk_we_want = (dim, chunk_pox_x, chunk_pos_z)
-        self.not_update_got_chunk.release()
+        cp = chunkPos(dim, chunk_pox_x, chunk_pos_z)
+        result_chunk: list[dict] = []
 
-        self.BroadcastEvent(
-            InternalBroadcast(
-                "scq:must_get_chunk",
-                {
-                    "dimension": dim,
-                    "request_chunks": [
-                        {
-                            "chunk_pos_x": chunk_pox_x,
-                            "chunk_pos_z": chunk_pos_z,
-                        }
-                    ],
-                },
+        self.chunk_cache_mu.acquire()
+        if cp in self.chunk_cache:
+            result_chunk = self.chunk_cache[cp]
+            self.chunk_cache_mu.release()
+        else:
+            self.chunk_cache_mu.release()
+            self.waiting_chunk_pos = chunkPos(dim, chunk_pox_x, chunk_pos_z)
+            self.waiting_chunk_arrived.release()
+
+            self.BroadcastEvent(
+                InternalBroadcast(
+                    "scq:must_get_chunk",
+                    {
+                        "dimension": dim,
+                        "request_chunks": [
+                            {
+                                "chunk_pos_x": chunk_pox_x,
+                                "chunk_pos_z": chunk_pos_z,
+                            }
+                        ],
+                    },
+                )
             )
-        )
 
-        self.chunk_waiter.wait()
-        self.chunk_waiter.clear()
+            self.chunk_waiter.wait()
+            self.chunk_waiter.clear()
 
-        if self.should_close:
-            return bwo.Chunk(), False
-
-        for i in self.chunk_we_get:
-            code = i["result_code"]
-            if (
-                code != SUB_CHUNK_RESULT_SUCCESS
-                and code != SUB_CHUNK_RESULT_SUCCESS_ALL_AIR
-            ):
+            if self.should_close:
                 return bwo.Chunk(), False
+
+            result_chunk = self.waiting_chunk_data
+
+        if not self.check_is_completely_chunk(result_chunk):
+            return bwo.Chunk(), False
 
         sub_chunks: list[bwo.SubChunk] = []
         r = bwo.Dimension(dim).range()
 
-        for i in self.chunk_we_get:
+        for i in result_chunk:
             if i["result_code"] == SUB_CHUNK_RESULT_SUCCESS:
                 sub_chunk_with_index = bwo.from_sub_chunk_network_payload(
                     i["blocks"], r
@@ -241,6 +291,7 @@ class SimpleWorldRecover(Plugin):
         content = json.loads(result.OutputMessages[0].Parameters[0])
         return int(content[0]["dimension"])
 
+    @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_recover(self, cmd: list[str], called_by_api: bool):
         if not called_by_api:
             cmd[0] = self.format_data_path(cmd[0])
@@ -251,10 +302,13 @@ class SimpleWorldRecover(Plugin):
 
         if not self.should_close:
             self._do_world_recover(cmd)
+            self.chunk_cache_mu.acquire()
+            self.all_waiting_chunk.clear()
+            self.chunk_cache = {}
+            self.chunk_cache_mu.release()
 
         self.running_mutex.release()
 
-    @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def _do_world_recover(self, cmd: list[str]):
         dim_id = self.get_bot_dimension()
         if dim_id == -1:
@@ -290,10 +344,19 @@ class SimpleWorldRecover(Plugin):
         progress = 0
         recover_block_count = 0
 
+        self.chunk_cache_mu.acquire()
+        for i in bot_path:
+            self.all_waiting_chunk.add(chunkPos(int(dm), i.x, i.z))
+        self.chunk_cache_mu.release()
+
         for chunk_pos in bot_path:
             if self.should_close:
                 world.close_world()
                 return
+
+            pen_x = chunk_pos.x << 4
+            pen_z = chunk_pos.z << 4
+            server_chunk: bwo.Chunk
 
             finish_ratio = round(progress / (len(bot_path)) * 100)
             fmts.print_inf(f"正在处理 {chunk_pos} 处的区块 ({finish_ratio}%)")
@@ -303,10 +366,7 @@ class SimpleWorldRecover(Plugin):
                 fmts.print_war(f"位于 {chunk_pos} 的区块没有找到, 跳过")
                 continue
 
-            server_chunk: bwo.Chunk
-            success = False
-
-            for i in range(3):
+            while True:
                 if self.should_close:
                     world.close_world()
                     return
@@ -316,19 +376,9 @@ class SimpleWorldRecover(Plugin):
                 )
 
                 if not success:
-                    fmts.print_war(
-                        f"位于 {chunk_pos} 的区块未能从服务器请求得到, 尝试重试 (第 {i}/3 次尝试)"
-                    )
                     continue
                 else:
                     break
-
-            if not success:
-                fmts.print_war(f"位于 {chunk_pos} 的区块确实无法从服务器请求得到, 跳过")
-                continue
-
-            pen_x = chunk_pos.x << 4
-            pen_z = chunk_pos.z << 4
 
             for index in range(dm.height() >> 4):
                 if self.should_close:
