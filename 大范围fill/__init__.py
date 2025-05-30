@@ -4,7 +4,7 @@ from tooldelta import Plugin, utils, fmts, game_utils, TYPE_CHECKING, plugin_ent
 class LargeFill(Plugin):
     name = "大范围填充"
     author = "System"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -21,23 +21,22 @@ class LargeFill(Plugin):
             ["lfset"], "[x] [y] [z]", "设置大范围填充起点", self.on_setpos_start
         )
         self.frame.add_console_cmd_trigger(
-            ["lfsend"], "[x] [y] [z]", "设置大范围填充起点", self.on_setpos_end
+            ["lfsend"], "[x] [y] [z]", "设置大范围填充终点", self.on_setpos_end
         )
         self.frame.add_console_cmd_trigger(
-            ["lfill"], None, "设置大范围填充起点", self.on_fill
+            ["lfill"], None, "开始大范围填充", self.on_fill
         )
         self.frame.add_console_cmd_trigger(
             ["lfpos"], None, "获取所有人的坐标", self.get_all_pos
         )
-        self.frame.add_console_cmd_trigger(
-            ["lfp1"], None, "获取Super的坐标1", self.get_super_pos1
-        )
-        self.frame.add_console_cmd_trigger(
-            ["lfp2"], None, "获取Super的坐标2", self.get_super_pos2
-        )
-        # lfset 400 -60 400
-        # lfsend 500 -40 500
-        # lfill diamond_ore
+        # Skyblue AreaWide specific.
+        if getattr(self.frame.launcher, "serverNumber", None) in [17383329, 59141823]:
+            self.frame.add_console_cmd_trigger(
+                ["lfp1"], None, "获取Super的坐标1", self.get_super_pos1
+            )
+            self.frame.add_console_cmd_trigger(
+                ["lfp2"], None, "获取Super的坐标2", self.get_super_pos2
+            )
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         if TYPE_CHECKING:
             from 前置_聊天栏菜单 import ChatbarMenu
