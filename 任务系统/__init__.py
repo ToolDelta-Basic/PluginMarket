@@ -376,7 +376,7 @@ class TaskSystem(Plugin):
 
     def init_player(self, player: Player):
         quest_path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
-        o = self.tmpjson.load_and_read(quest_path, False)
+        o = self.tmpjson.load_and_read(quest_path, False, default=self.init_quest_file())
         if o is None:
             self.tmpjson.write(quest_path, self.init_quest_file())
 
@@ -397,7 +397,9 @@ class TaskSystem(Plugin):
 
     def read_quests_finished(self, player: Player) -> dict[Quest, int]:
         o = self.tmpjson.load_and_read(
-            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
+            os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json"),
+            need_file_exists=False,
+            default=self.init_quest_file(),
         )
         output = {}
         for k, v in o["quests_ok"].items():
