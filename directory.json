@@ -1,336 +1,15 @@
 {
-    "雪球菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "巡逻": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "控制台执行MC指令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "admin命令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "简单世界导入": [
-        "__init__.py",
+    "物品制作器": [
         "readme.txt",
-        "datas.json"
-    ],
-    "简易建造": [
         "__init__.py",
-        "readme.txt",
         "datas.json"
     ],
     "玩家交易所": [
         "__init__.py",
-        "data_operation.py",
-        "datas.json"
-    ],
-    "简单世界恢复": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "死亡点返回": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "[pkg]防挂插件包": [
-        "datas.json"
-    ],
-    "番茄小说": [
-        "__init__.py",
-        "TomatoNovelAPI.py",
-        "datas.json"
-    ],
-    "进服验证": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MySQL连接器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "系统上线提示[Mono]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器/mido": [
-        "tokenizer.py",
-        "ports.py",
-        "__init__.py",
-        "parser.py",
-        "frozen.py",
-        "syx.py"
-    ],
-    "前置_MIDI播放器/mido/midifiles": [
-        "meta.py",
-        "units.py",
-        "__init__.py",
-        "tracks.py",
-        "midifiles.py"
-    ],
-    "前置_MIDI播放器/mido/messages": [
-        "strings.py",
-        "decode.py",
-        "specs.py",
-        "messages.py",
-        "__init__.py",
-        "encode.py",
-        "checks.py"
-    ],
-    "前置_MIDI播放器/Musicreater": [
-        "subclass.py",
-        "utils.py",
-        "constants.py",
-        "__init__.py",
-        "types.py",
-        "main.py",
-        "exceptions.py"
-    ],
-    "签到系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "清空全部玩家末影箱": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "传送点设置": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "多功能玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音效播放器": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "Lua插件运行": [
-        "__init__.py",
-        "README.md",
         "datas.json",
-        "LICENSE"
+        "data_operation.py"
     ],
-    "Lua插件运行/wrap": [
-        "user_data.py",
-        "loosejson.py",
-        "lua.py",
-        "safe.py",
-        "conversion.py",
-        "config.py",
-        "omega.py",
-        "__init__.py",
-        "database.py",
-        "json.py",
-        "make.py",
-        "control.py"
-    ],
-    "Lua插件运行/wrap/builtin_plugins": [],
-    "Lua插件运行/wrap/builtin_plugins/返回死亡点": [
-        "__init__.py"
-    ],
-    "Lua插件运行/wrap/omega_sub_modules": [
-        "system.py",
-        "storage.py",
-        "builder.py",
-        "common.py",
-        "__init__.py",
-        "players.py",
-        "bot_action.py",
-        "cmds.py",
-        "websocket.py",
-        "bot_uq.py",
-        "listen.py",
-        "flex.py",
-        "async_http.py",
-        "share.py",
-        "cqhttp.py",
-        "storage_path.py",
-        "menu.py"
-    ],
-    "Lua插件运行/neomega_storage": [],
-    "Lua插件运行/neomega_storage/lang": [],
-    "Lua插件运行/neomega_storage/lang/LuaLoader": [
-        "领地.lua",
-        "Python系统监测.lua",
-        "creator.lua",
-        "全物品商店.lua",
-        "coromega.lua",
-        "后台发送命令.lua"
-    ],
-    "Lua插件运行/neomega_storage/config": [
-        "game_menu.lua",
-        "neomega框架配置.json",
-        "backend_menu.lua",
-        "cq_http_core.lua"
-    ],
-    "Lua插件运行/neomega_storage/config/Python系统监测[lua]": [
-        "Python系统监测[LuaLoader]-1.json"
-    ],
-    "Lua插件运行/neomega_storage/config/领地[lua]": [
-        "领地[LuaLoader]-1.json"
-    ],
-    "Lua插件运行/neomega_storage/config/全物品商店[lua]": [
-        "全物品商店[LuaLoader]-更合理的价格表.json"
-    ],
-    "Lua插件运行/neomega_storage/config/后台发送命令[lua]": [
-        "后台发送命令[LuaLoader]-1.json"
-    ],
-    "Lua插件运行/neomega_storage/config/返回死亡点": [
-        "返回死亡点[Built-In]-1.json"
-    ],
-    "Lua插件运行/neomega_storage/config/creator[lua]": [
-        "creator[LuaLoader]-1.json"
-    ],
-    "玩家数据管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "区块显示器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "计分板重置": [
-        "__init__.py",
-        "data_operation.py",
-        "datas.json"
-    ],
-    "32k盒子显示": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "玩家人数限制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "空岛系统": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "兑换码系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_世界交互": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_基本插件功能库": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "宠物背包清理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "点歌台": [
-        "__init__.py",
-        "GetFile.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]/pytz": [
-        "tzinfo.py",
-        "__init__.py",
-        "lazy.py",
-        "reference.py",
-        "exceptions.py",
-        "tzfile.py"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo": [],
-    "公告栏[Mono]/pytz/zoneinfo/Asia": [
-        "Shanghai"
-    ],
-    "00榛缈插件性能分析": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令发送监视器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_循环获取玩家坐标": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "大范围fill": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "『Orion System』违规与作弊行为综合反制系统": [
-        "__init__.py",
-        "README.md",
-        "datas.json"
-    ],
-    "猫七街玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "木桶玩家商店-试验版": [
-        "__init__.py",
-        "shop_lib.py",
-        "datas.json"
-    ],
-    "全服喇叭": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "超频刷屏反制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "插件接口获取修复": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "机器人发言": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务/examples": [
-        "示例-触发词.mcfunction",
-        "示例-定时任务.mcfunction",
-        "示例-系统启动.mcfunction"
-    ],
-    "兑换码": [
-        "file.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "服服互通": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "任务系统": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "封禁系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "@玩家": [
+    "前置_大字替换": [
         "__init__.py",
         "datas.json"
     ],
@@ -338,28 +17,9 @@
         "__init__.py",
         "datas.json"
     ],
-    "更好的钓鱼": [
-        "属性.json",
-        "__init__.py",
-        "data_operation.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "玩家记录": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_大字替换": [
-        "__init__.py",
-        "datas.json"
-    ],
     "违规名称踢出": [
         "__init__.py",
         "词库.json",
-        "datas.json"
-    ],
-    "活塞限速": [
-        "__init__.py",
         "datas.json"
     ],
     "猫七街云黑封禁": [
@@ -372,108 +32,146 @@
     "猫七街云黑封禁/server/官方云黑列表": [
         "blacklist.json"
     ],
-    "类式插件创建器": [
+    "插件接口获取修复": [
         "__init__.py",
         "datas.json"
     ],
-    "前置_tps计算器": [
+    "00榛缈插件性能分析": [
         "__init__.py",
         "datas.json"
     ],
-    "定时任务": [
+    "命令方块代发言支持": [
         "__init__.py",
+        "datas.json"
+    ],
+    "Lua插件运行": [
+        "__init__.py",
+        "README.md",
+        "datas.json",
+        "LICENSE"
+    ],
+    "Lua插件运行/wrap": [
+        "database.py",
+        "config.py",
+        "omega.py",
+        "__init__.py",
+        "control.py",
+        "lua.py",
+        "make.py",
+        "json.py",
+        "user_data.py",
+        "safe.py",
+        "conversion.py",
+        "loosejson.py"
+    ],
+    "Lua插件运行/wrap/builtin_plugins": [],
+    "Lua插件运行/wrap/builtin_plugins/返回死亡点": [
+        "__init__.py"
+    ],
+    "Lua插件运行/wrap/omega_sub_modules": [
+        "websocket.py",
+        "builder.py",
+        "cmds.py",
+        "menu.py",
+        "listen.py",
+        "__init__.py",
+        "cqhttp.py",
+        "bot_uq.py",
+        "bot_action.py",
+        "storage.py",
+        "system.py",
+        "players.py",
+        "async_http.py",
+        "storage_path.py",
+        "flex.py",
+        "common.py",
+        "share.py"
+    ],
+    "Lua插件运行/neomega_storage": [],
+    "Lua插件运行/neomega_storage/lang": [],
+    "Lua插件运行/neomega_storage/lang/LuaLoader": [
+        "Python系统监测.lua",
+        "后台发送命令.lua",
+        "领地.lua",
+        "coromega.lua",
+        "creator.lua",
+        "全物品商店.lua"
+    ],
+    "Lua插件运行/neomega_storage/config": [
+        "neomega框架配置.json",
+        "backend_menu.lua",
+        "game_menu.lua",
+        "cq_http_core.lua"
+    ],
+    "Lua插件运行/neomega_storage/config/全物品商店[lua]": [
+        "全物品商店[LuaLoader]-更合理的价格表.json"
+    ],
+    "Lua插件运行/neomega_storage/config/creator[lua]": [
+        "creator[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/领地[lua]": [
+        "领地[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/后台发送命令[lua]": [
+        "后台发送命令[LuaLoader]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/返回死亡点": [
+        "返回死亡点[Built-In]-1.json"
+    ],
+    "Lua插件运行/neomega_storage/config/Python系统监测[lua]": [
+        "Python系统监测[LuaLoader]-1.json"
+    ],
+    "前置_Cb2Bot通信": [
         "readme.txt",
-        "datas.json"
-    ],
-    "定时任务/示例定时任务": [
-        "扫地姬.mcfunction"
-    ],
-    "进服一言": [
         "__init__.py",
         "datas.json"
     ],
-    "获取全服玩家皮肤": [
+    "玩家记录": [
         "__init__.py",
         "datas.json"
     ],
-    "聊天历史记录": [
+    "区块显示器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_统一消息风格": [
         "__init__.py",
         "datas.json"
     ],
     "音乐播放器": [
-        "__init__.py",
         "readme.txt",
-        "datas.json"
-    ],
-    "头衔系统": [
         "__init__.py",
         "datas.json"
     ],
-    "前置_聊天栏菜单": [
-        "使用方法.md",
+    "番茄小说": [
         "__init__.py",
-        "config_getter.py",
+        "TomatoNovelAPI.py",
         "datas.json"
     ],
-    "物品制作器": [
+    "单方块空岛系统": [
         "__init__.py",
+        "player_exchange.py",
+        "datas.json",
+        "data_operation.py"
+    ],
+    "前置_主动区块请求": [
+        "sub_chunk_process.py",
+        "__init__.py",
+        "datas.json",
+        "api.py",
+        "define.py",
+        "requet_queue.py"
+    ],
+    "空岛系统": [
         "readme.txt",
-        "datas.json"
-    ],
-    "信任玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "发言频率限制v2": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "bdx导出器": [
-        "utils.py",
-        "__init__.py",
-        "progress_bar.py",
-        "scanner.py",
-        "state_dump.py",
-        "struct_loader.py",
-        "datas.json"
-    ],
-    "bdx导出器/bdx_utils": [
-        "construct_file.py",
-        "structs.py",
-        "writer.py"
-    ],
-    "井字棋": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "举报系统": [
-        "Readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "基础聊天栏菜单": [
-        "kimi.py",
-        "Readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "等级检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "白名单&管理员检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "时间同步计分板": [
         "__init__.py",
         "datas.json"
     ],
     "前置_ToolDeltaFlet": [
-        "forwarder.py",
         "__init__.py",
+        "datas.json",
         "app.py",
-        "datas.json"
+        "forwarder.py"
     ],
     "前置_ToolDeltaFlet/lib": [
         "configparser.py",
@@ -481,41 +179,80 @@
     ],
     "前置_ToolDeltaFlet/lib/logging": [
         "config.py",
-        "__init__.py",
-        "handlers.py"
+        "handlers.py",
+        "__init__.py"
     ],
-    "设置栏钢琴师": [
+    "服服互通": [
         "__init__.py",
-        "readme.txt",
+        "datas.json"
+    ],
+    "活塞限速": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "进服一言": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "木桶玩家商店-试验版": [
+        "__init__.py",
+        "datas.json",
+        "shop_lib.py"
+    ],
+    "时间同步计分板": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "公告栏[Mono]": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "公告栏[Mono]/pytz": [
+        "lazy.py",
+        "__init__.py",
+        "tzinfo.py",
+        "exceptions.py",
+        "reference.py",
+        "tzfile.py"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo": [],
+    "公告栏[Mono]/pytz/zoneinfo/Asia": [
+        "Shanghai"
+    ],
+    "兑换码": [
+        "file.py",
+        "__init__.py",
+        "datas.json"
+    ],
+    "获取全服玩家皮肤": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "MCFunction计划任务": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "MCFunction计划任务/examples": [
+        "示例-触发词.mcfunction",
+        "示例-系统启动.mcfunction",
+        "示例-定时任务.mcfunction"
+    ],
+    "demo-商店系统": [
+        "__init__.py",
         "datas.json"
     ],
     "世界备份v2": [
+        "readme.txt",
         "recover.py",
         "world_backup.py",
+        "__init__.py",
+        "datas.json",
         "on_chat.py",
-        "__init__.py",
-        "readme.txt",
         "define.py",
-        "recover_tool_name.py",
-        "datas.json"
+        "recover_tool_name.py"
     ],
-    "单方块空岛系统": [
+    "等级检测": [
         "__init__.py",
-        "data_operation.py",
-        "player_exchange.py",
-        "datas.json"
-    ],
-    "暴击检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "重启": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "多服聊天互通": [
-        "__init__.py",
-        "README.txt",
         "datas.json"
     ],
     "desperated_plugins": [],
@@ -527,57 +264,63 @@
         "__init__.py",
         "datas.json"
     ],
-    "自定义聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "指令调试器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "ZBasic_Lang_中文编程": [
-        "executor.py",
-        "syntax_lib.py",
-        "syntax_compile.py",
-        "basic_codes.py",
-        "__init__.py",
-        "type_checker.py",
-        "readme.txt",
-        "err_str.py",
-        "compiler.py",
-        "basic_types.py",
-        "datas.json"
-    ],
-    "ZBasic_Lang_中文编程/示例代码": [],
-    "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
-        "玩家进入.txt",
-        "玩家退出.txt"
-    ],
-    "ZBasic_Lang_中文编程/示例代码/玩家转账": [
-        "玩家发言.txt"
-    ],
-    "循环替换拒绝方块": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "世界の记忆": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "权限管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_统一消息风格": [
-        "__init__.py",
-        "datas.json"
-    ],
     "发言频率限制": [
         "__init__.py",
         "datas.json"
     ],
-    "入服欢迎": [
+    "信任玩家互传": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "简易建造": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "进服验证": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "大范围fill": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "全服喇叭": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "计分板重置": [
+        "__init__.py",
+        "datas.json",
+        "data_operation.py"
+    ],
+    "更好的公告栏": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "封禁系统": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "暴击检测": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "自定义聊天栏菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "简单世界导入": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "『Orion System』违规与作弊行为综合反制系统": [
+        "__init__.py",
+        "README.md",
+        "datas.json"
+    ],
+    "玩家人数限制": [
         "__init__.py",
         "datas.json"
     ],
@@ -585,211 +328,23 @@
         "__init__.py",
         "datas.json"
     ],
-    "世界备份": [
+    "玩家数据管理": [
         "__init__.py",
         "datas.json"
     ],
-    "前置_Cb2Bot通信": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
-    "群服互通云链版": [
+    "多功能玩家互传": [
         "__init__.py",
         "datas.json"
     ],
-    "群服互通云链版/websocket": [
-        "_abnf.py",
-        "_url.py",
-        "_handshake.py",
-        "_utils.py",
-        "_http.py",
-        "_app.py",
-        "_exceptions.py",
-        "_socket.py",
-        "__init__.py",
-        "_ssl_compat.py",
-        "_logging.py",
-        "_cookiejar.py",
-        "py.typed",
-        "_core.py",
-        "_wsdump.py"
-    ],
-    "群服互通云链版/websocket/tests": [
-        "test_app.py",
-        "test_cookiejar.py",
-        "test_websocket.py",
-        "test_http.py",
-        "echo-server.py",
-        "__init__.py",
-        "test_abnf.py",
-        "test_url.py"
-    ],
-    "群服互通云链版/websocket/tests/data": [
-        "header03.txt",
-        "header01.txt",
-        "header02.txt"
-    ],
-    "pip模块支持": [
+    "admin命令": [
         "__init__.py",
         "datas.json"
     ],
-    "demo-商店系统": [
+    "兑换码系统": [
         "__init__.py",
         "datas.json"
     ],
-    "ai聊天": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "bdx导入器Pro": [
-        "lib.py",
-        "libbdxbuilder_linux_amd64.so",
-        "__init__.py",
-        "thisutils.py",
-        "bdx_operation.py",
-        "datas.json"
-    ],
-    "[pkg]音乐杂合包": [
-        "datas.json"
-    ],
-    "[pkg]音乐杂合包/插件数据文件": [],
-    "[pkg]音乐杂合包/插件数据文件/点歌台": [],
-    "[pkg]音乐杂合包/插件数据文件/点歌台/音乐列表": [
-        "世界末日(Il mondo).midseq",
-        "浪人琵琶.midseq",
-        "狂妄之人.midseq",
-        "我落泪情绪零碎.midseq",
-        "稻香.midseq",
-        "你瞒我瞒.midseq",
-        "以父之名.midseq",
-        "蜡笔小新.midseq",
-        "甩葱歌.midseq",
-        "苹果香.midseq",
-        "雷欧奥特曼.midseq",
-        "宝贝别哭.midseq",
-        "苏公提.midseq",
-        "Tokyovania墨水.midseq",
-        "默哀.midseq",
-        "子弹地狱.midseq",
-        "雪花竞技场[请不要外传].schem",
-        "旋转鸡块.midseq",
-        "爱情故事.midseq",
-        "银行不妙曲.midseq",
-        "灌篮高手.midseq",
-        "突然好想你.midseq",
-        "哆啦A梦.midseq",
-        "坏苹果.midseq",
-        "小埋单轨.midseq",
-        "鸟之诗.midseq",
-        "彩虹猫.midseq",
-        "我的世界.midseq",
-        "兰亭序.midseq",
-        "卡农.midseq",
-        "空白.midseq",
-        "某科学的超电磁炮.midseq",
-        "Pvz水池.midseq",
-        "解开.midseq",
-        "转身即心痛.midseq",
-        "三重审判.midseq",
-        "星茶会.midseq",
-        "新闻联播.midseq",
-        "Undertale.midseq",
-        "极乐净土.midseq",
-        "你干吗嗨嗨呦.midseq",
-        "海阔天空.midseq",
-        "名侦探柯南.midseq",
-        "see you again.midseq",
-        "恋爱循环.midseq",
-        "天空之城.midseq",
-        "世界末日(ARMAGEDN).midseq",
-        "诀别书.midseq",
-        "新鸳鸯蝴蝶梦.midseq",
-        "百年孤寂.midseq",
-        "原神大厅音乐.midseq",
-        "爬行者.midseq",
-        "蒲公英的约定.midseq",
-        "春节序曲.midseq",
-        "桃源恋歌.midseq",
-        "僵王博士.midseq",
-        "千本樱.midseq",
-        "怪物-原神.midseq",
-        "决心鱼.midseq",
-        "玄武国.midseq",
-        "下坠Falling.midseq",
-        "退后.midseq",
-        "鱼宴Plus.midseq"
-    ],
-    "[pkg]音乐杂合包/插件数据文件/音乐播放器": [
-        "世界末日(Il mondo).midseq",
-        "浪人琵琶.midseq",
-        "狂妄之人.midseq",
-        "我落泪情绪零碎.midseq",
-        "稻香.midseq",
-        "你瞒我瞒.midseq",
-        "以父之名.midseq",
-        "蜡笔小新.midseq",
-        "甩葱歌.midseq",
-        "苹果香.midseq",
-        "雷欧奥特曼.midseq",
-        "宝贝别哭.midseq",
-        "苏公提.midseq",
-        "Tokyovania墨水.midseq",
-        "默哀.midseq",
-        "子弹地狱.midseq",
-        "雪花竞技场[请不要外传].schem",
-        "旋转鸡块.midseq",
-        "爱情故事.midseq",
-        "银行不妙曲.midseq",
-        "灌篮高手.midseq",
-        "突然好想你.midseq",
-        "哆啦A梦.midseq",
-        "坏苹果.midseq",
-        "小埋单轨.midseq",
-        "鸟之诗.midseq",
-        "彩虹猫.midseq",
-        "我的世界.midseq",
-        "兰亭序.midseq",
-        "卡农.midseq",
-        "空白.midseq",
-        "某科学的超电磁炮.midseq",
-        "Pvz水池.midseq",
-        "解开.midseq",
-        "转身即心痛.midseq",
-        "三重审判.midseq",
-        "星茶会.midseq",
-        "新闻联播.midseq",
-        "Undertale.midseq",
-        "极乐净土.midseq",
-        "你干吗嗨嗨呦.midseq",
-        "海阔天空.midseq",
-        "名侦探柯南.midseq",
-        "see you again.midseq",
-        "恋爱循环.midseq",
-        "天空之城.midseq",
-        "世界末日(ARMAGEDN).midseq",
-        "诀别书.midseq",
-        "新鸳鸯蝴蝶梦.midseq",
-        "百年孤寂.midseq",
-        "原神大厅音乐.midseq",
-        "爬行者.midseq",
-        "蒲公英的约定.midseq",
-        "春节序曲.midseq",
-        "桃源恋歌.midseq",
-        "僵王博士.midseq",
-        "千本樱.midseq",
-        "怪物-原神.midseq",
-        "决心鱼.midseq",
-        "玄武国.midseq",
-        "下坠Falling.midseq",
-        "退后.midseq",
-        "鱼宴Plus.midseq"
-    ],
-    "前置_玩家XUID获取": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令方块代发言支持": [
+    "重启": [
         "__init__.py",
         "datas.json"
     ],
@@ -797,18 +352,230 @@
         "__init__.py",
         "datas.json"
     ],
-    "前置_主动区块请求": [
-        "requet_queue.py",
-        "api.py",
+    "系统上线提示[Mono]": [
         "__init__.py",
-        "sub_chunk_process.py",
-        "define.py",
         "datas.json"
     ],
-    "简易建造-Pro": [
+    "清空全部玩家末影箱": [
         "__init__.py",
-        "readme.txt",
         "datas.json"
+    ],
+    "pip模块支持": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "ZBasic_Lang_中文编程": [
+        "compiler.py",
+        "readme.txt",
+        "type_checker.py",
+        "__init__.py",
+        "err_str.py",
+        "executor.py",
+        "basic_codes.py",
+        "datas.json",
+        "syntax_lib.py",
+        "basic_types.py",
+        "syntax_compile.py"
+    ],
+    "ZBasic_Lang_中文编程/示例代码": [],
+    "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
+        "玩家退出.txt",
+        "玩家进入.txt"
+    ],
+    "ZBasic_Lang_中文编程/示例代码/玩家转账": [
+        "玩家发言.txt"
+    ],
+    "超频刷屏反制": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导入器Pro": [
+        "libbdxbuilder_linux_amd64.so",
+        "__init__.py",
+        "bdx_operation.py",
+        "thisutils.py",
+        "datas.json",
+        "lib.py"
+    ],
+    "简易建造-Pro": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "任务系统": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "32k盒子显示": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "宠物背包清理": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "__init__.py",
+        "types.py",
+        "exceptions.py",
+        "subclass.py",
+        "constants.py",
+        "utils.py",
+        "main.py"
+    ],
+    "前置_MIDI播放器/mido": [
+        "frozen.py",
+        "tokenizer.py",
+        "__init__.py",
+        "ports.py",
+        "syx.py",
+        "parser.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "tracks.py",
+        "__init__.py",
+        "units.py",
+        "meta.py",
+        "midifiles.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "checks.py",
+        "encode.py",
+        "messages.py",
+        "__init__.py",
+        "decode.py",
+        "specs.py",
+        "strings.py"
+    ],
+    "命令发送监视器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "井字棋": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "聊天历史记录": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "世界备份": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "雪球菜单": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "入服欢迎": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "白名单&管理员检测": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "猫七街玩家互传": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "控制台执行MC指令": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_世界交互": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "类式插件创建器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_基本插件功能库": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "@玩家": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "签到系统": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "头衔系统": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "传送点设置": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "权限管理": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "ai聊天": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "循环替换拒绝方块": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "bdx导出器": [
+        "state_dump.py",
+        "__init__.py",
+        "datas.json",
+        "utils.py",
+        "progress_bar.py",
+        "scanner.py",
+        "struct_loader.py"
+    ],
+    "bdx导出器/bdx_utils": [
+        "writer.py",
+        "construct_file.py",
+        "structs.py"
+    ],
+    "举报系统": [
+        "__init__.py",
+        "Readme.md",
+        "datas.json"
+    ],
+    "死亡点返回": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_tps计算器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "基础聊天栏菜单": [
+        "__init__.py",
+        "Readme.md",
+        "datas.json",
+        "kimi.py"
+    ],
+    "机器人发言": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "世界の记忆": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "更好的钓鱼": [
+        "readme.txt",
+        "__init__.py",
+        "属性.json",
+        "datas.json",
+        "data_operation.py"
     ],
     "[pkg]新手插件包": [
         "datas.json"
@@ -817,12 +584,245 @@
         "聊天栏菜单.json",
         "自定义聊天栏菜单.json"
     ],
+    "MySQL连接器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "群服互通云链版": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "群服互通云链版/websocket": [
+        "_ssl_compat.py",
+        "_socket.py",
+        "_logging.py",
+        "__init__.py",
+        "_wsdump.py",
+        "py.typed",
+        "_abnf.py",
+        "_app.py",
+        "_handshake.py",
+        "_http.py",
+        "_url.py",
+        "_cookiejar.py",
+        "_core.py",
+        "_exceptions.py",
+        "_utils.py"
+    ],
+    "群服互通云链版/websocket/tests": [
+        "test_abnf.py",
+        "test_http.py",
+        "__init__.py",
+        "test_cookiejar.py",
+        "test_app.py",
+        "test_websocket.py",
+        "test_url.py",
+        "echo-server.py"
+    ],
+    "群服互通云链版/websocket/tests/data": [
+        "header01.txt",
+        "header02.txt",
+        "header03.txt"
+    ],
+    "前置_聊天栏菜单": [
+        "使用方法.md",
+        "__init__.py",
+        "config_getter.py",
+        "datas.json"
+    ],
+    "巡逻": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "[pkg]音乐杂合包": [
+        "datas.json"
+    ],
+    "[pkg]音乐杂合包/插件数据文件": [],
+    "[pkg]音乐杂合包/插件数据文件/音乐播放器": [
+        "鱼宴Plus.midseq",
+        "名侦探柯南.midseq",
+        "以父之名.midseq",
+        "空白.midseq",
+        "僵王博士.midseq",
+        "蜡笔小新.midseq",
+        "新鸳鸯蝴蝶梦.midseq",
+        "百年孤寂.midseq",
+        "世界末日(ARMAGEDN).midseq",
+        "海阔天空.midseq",
+        "子弹地狱.midseq",
+        "哆啦A梦.midseq",
+        "千本樱.midseq",
+        "灌篮高手.midseq",
+        "爬行者.midseq",
+        "小埋单轨.midseq",
+        "狂妄之人.midseq",
+        "雪花竞技场[请不要外传].schem",
+        "甩葱歌.midseq",
+        "决心鱼.midseq",
+        "恋爱循环.midseq",
+        "see you again.midseq",
+        "转身即心痛.midseq",
+        "原神大厅音乐.midseq",
+        "浪人琵琶.midseq",
+        "雷欧奥特曼.midseq",
+        "默哀.midseq",
+        "宝贝别哭.midseq",
+        "突然好想你.midseq",
+        "你瞒我瞒.midseq",
+        "极乐净土.midseq",
+        "星茶会.midseq",
+        "三重审判.midseq",
+        "银行不妙曲.midseq",
+        "旋转鸡块.midseq",
+        "兰亭序.midseq",
+        "我落泪情绪零碎.midseq",
+        "你干吗嗨嗨呦.midseq",
+        "新闻联播.midseq",
+        "稻香.midseq",
+        "我的世界.midseq",
+        "玄武国.midseq",
+        "鸟之诗.midseq",
+        "下坠Falling.midseq",
+        "世界末日(Il mondo).midseq",
+        "怪物-原神.midseq",
+        "Undertale.midseq",
+        "退后.midseq",
+        "诀别书.midseq",
+        "Tokyovania墨水.midseq",
+        "卡农.midseq",
+        "蒲公英的约定.midseq",
+        "某科学的超电磁炮.midseq",
+        "苹果香.midseq",
+        "坏苹果.midseq",
+        "解开.midseq",
+        "桃源恋歌.midseq",
+        "爱情故事.midseq",
+        "Pvz水池.midseq",
+        "彩虹猫.midseq",
+        "春节序曲.midseq",
+        "天空之城.midseq",
+        "苏公提.midseq"
+    ],
+    "[pkg]音乐杂合包/插件数据文件/点歌台": [],
+    "[pkg]音乐杂合包/插件数据文件/点歌台/音乐列表": [
+        "鱼宴Plus.midseq",
+        "名侦探柯南.midseq",
+        "以父之名.midseq",
+        "空白.midseq",
+        "僵王博士.midseq",
+        "蜡笔小新.midseq",
+        "新鸳鸯蝴蝶梦.midseq",
+        "百年孤寂.midseq",
+        "世界末日(ARMAGEDN).midseq",
+        "海阔天空.midseq",
+        "子弹地狱.midseq",
+        "哆啦A梦.midseq",
+        "千本樱.midseq",
+        "灌篮高手.midseq",
+        "爬行者.midseq",
+        "小埋单轨.midseq",
+        "狂妄之人.midseq",
+        "雪花竞技场[请不要外传].schem",
+        "甩葱歌.midseq",
+        "决心鱼.midseq",
+        "恋爱循环.midseq",
+        "see you again.midseq",
+        "转身即心痛.midseq",
+        "原神大厅音乐.midseq",
+        "浪人琵琶.midseq",
+        "雷欧奥特曼.midseq",
+        "默哀.midseq",
+        "宝贝别哭.midseq",
+        "突然好想你.midseq",
+        "你瞒我瞒.midseq",
+        "极乐净土.midseq",
+        "星茶会.midseq",
+        "三重审判.midseq",
+        "银行不妙曲.midseq",
+        "旋转鸡块.midseq",
+        "兰亭序.midseq",
+        "我落泪情绪零碎.midseq",
+        "你干吗嗨嗨呦.midseq",
+        "新闻联播.midseq",
+        "稻香.midseq",
+        "我的世界.midseq",
+        "玄武国.midseq",
+        "鸟之诗.midseq",
+        "下坠Falling.midseq",
+        "世界末日(Il mondo).midseq",
+        "怪物-原神.midseq",
+        "Undertale.midseq",
+        "退后.midseq",
+        "诀别书.midseq",
+        "Tokyovania墨水.midseq",
+        "卡农.midseq",
+        "蒲公英的约定.midseq",
+        "某科学的超电磁炮.midseq",
+        "苹果香.midseq",
+        "坏苹果.midseq",
+        "解开.midseq",
+        "桃源恋歌.midseq",
+        "爱情故事.midseq",
+        "Pvz水池.midseq",
+        "彩虹猫.midseq",
+        "春节序曲.midseq",
+        "天空之城.midseq",
+        "苏公提.midseq"
+    ],
+    "设置栏钢琴师": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "多服聊天互通": [
+        "__init__.py",
+        "README.txt",
+        "datas.json"
+    ],
+    "前置_玩家XUID获取": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "前置_循环获取玩家坐标": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "音效播放器": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
     "游戏内显示插件报错": [
         "__init__.py",
         "datas.json"
     ],
-    "更好的公告栏": [
+    "发言频率限制v2": [
         "__init__.py",
         "datas.json"
+    ],
+    "指令调试器": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "简单世界恢复": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "[pkg]防挂插件包": [
+        "datas.json"
+    ],
+    "点歌台": [
+        "GetFile.py",
+        "__init__.py",
+        "datas.json"
+    ],
+    "定时任务": [
+        "readme.txt",
+        "__init__.py",
+        "datas.json"
+    ],
+    "定时任务/示例定时任务": [
+        "扫地姬.mcfunction"
     ]
 }
