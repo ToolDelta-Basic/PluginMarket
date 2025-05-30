@@ -7,7 +7,7 @@ from tooldelta import Plugin, utils, fmts, plugin_entry
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -18,7 +18,7 @@ class PipSupport(Plugin):
         )
 
     # -------------------------  API  -----------------------------
-    def install(self, packages: list[str]):
+    def install(self, packages: list[str], upgrade = False):
         pyexec = sys.executable
         if "py" not in pyexec:
             # 这不是 Python, 是 ToolDelta
@@ -33,6 +33,8 @@ class PipSupport(Plugin):
                 self.data_path,
                 *packages,
             ]
+        if upgrade:
+            install_opts.append("--upgrade")
 
         proc = subprocess.Popen(
             install_opts,
@@ -76,6 +78,15 @@ class PipSupport(Plugin):
                 need_installed.append(package_name)
         if need_installed:
             self.install(need_installed)
+            
+    def upgrade(self, *modules: str):
+        """
+        更新库。
+        
+        Args:
+            *modules (str): 需要更新的库的库名
+        """
+        self.install(list(modules), upgrade=True)
 
     # -----------------------------------------------------------
     def on_console_pip(self, args: list[str]):
