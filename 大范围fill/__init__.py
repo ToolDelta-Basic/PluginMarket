@@ -24,7 +24,7 @@ class LargeFill(Plugin):
             ["lfsend"], "[x] [y] [z]", "设置大范围填充终点", self.on_setpos_end
         )
         self.frame.add_console_cmd_trigger(
-            ["lfill"], None, "开始大范围填充", self.on_fill
+            ["lfill"], "[方块ID]", "开始大范围填充", self.on_fill
         )
         self.frame.add_console_cmd_trigger(
             ["lfpos"], None, "获取所有人的坐标", self.get_all_pos
