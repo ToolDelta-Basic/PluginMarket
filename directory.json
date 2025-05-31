@@ -500,6 +500,11 @@
         "recover_tool_name.py",
         "datas.json"
     ],
+    "商店系统": [
+        "__init__.py",
+        "配置.json",
+        "datas.json"
+    ],
     "单方块空岛系统": [
         "__init__.py",
         "data_operation.py",

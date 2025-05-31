@@ -506,6 +506,11 @@
         "recover_tool_name.py": 0,
         "datas.json": 0
     },
+    "商店系统": {
+        "__init__.py": 0,
+        "配置.json": 0,
+        "datas.json": 0
+    },
     "单方块空岛系统": {
         "__init__.py": 0,
         "data_operation.py": 0,

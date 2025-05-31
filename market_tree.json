@@ -465,6 +465,12 @@
       "version": "1.3.1",
       "plugin-type": "classic"
     },
+    "demo-plugin-shop-pro": {
+      "name": "商店系统",
+      "author": "ToolDelta Demo",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
     "单方块空岛系统": {
       "name": "单方块空岛系统",
       "author": "猫七街",
