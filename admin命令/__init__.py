@@ -17,6 +17,7 @@ class AdminCommand(Plugin):
             self.version,
         )
         self.cmdarea: dict[str, int] = cfg["指令区坐标"]
+        self.ListenChat(self.on_chat)
 
     def on_chat(self, chat: Chat):
         player = chat.player
