@@ -153,10 +153,10 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "兑换码": {
-      "name": "兑换码",
-      "author": "机入",
-      "version": "0.0.1",
+    "兑换码系统": {
+      "name": "兑换码系统",
+      "author": "权威-马牛逼",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "前置-世界交互": {
@@ -258,6 +258,12 @@
     "mcfunction-tasks": {
       "name": "MCFunction计划任务",
       "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "兑换码": {
+      "name": "兑换码",
+      "author": "机入",
       "version": "0.0.1",
       "plugin-type": "classic"
     },
