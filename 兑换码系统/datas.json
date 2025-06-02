@@ -1,8 +1,9 @@
 {
   "author": "权威-马牛逼",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
-  "description": "由马牛逼开发的兑换码系统，如果需要修改，在数据文件中修改",
+  "description": "1",
   "pre-plugins": {},
-  "plugin-id": "兑换码"
+  "plugin-id": "兑换码",
+  "enabled": true
 }
