@@ -4,6 +4,5 @@
   "plugin-type": "classic",
   "description": "1",
   "pre-plugins": {},
-  "plugin-id": "兑换码",
-  "enabled": true
+  "plugin-id": "兑换码系统"
 }
