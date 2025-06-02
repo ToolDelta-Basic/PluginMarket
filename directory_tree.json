@@ -347,6 +347,9 @@
         "readme.txt": 0,
         "datas.json": 0
     },
+    "计分板支持": {
+        "__init__.py": 0
+    },
     "信任玩家互传": {
         "__init__.py": 0,
         "datas.json": 0

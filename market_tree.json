@@ -612,7 +612,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "plugin-type": "classic"
     },
     "简易建造-Pro": {
