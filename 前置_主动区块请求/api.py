@@ -5,10 +5,11 @@ from tooldelta.mc_bytes_packet.sub_chunk import SUB_CHUNK_RESULT_CHUNK_NOT_FOUND
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     CInt,
+    TranslateChunkNBT_return,
     as_python_bytes,
     toByteCSlice,
 )
-from 前置_主动区块请求.define import (
+from .define import (
     EMPTY_SINGLE_SUB_CHUNK,
     AutoSubChunkRequestBase,
     ChunkListener,
@@ -126,8 +127,8 @@ class AutoSubChunkRequestAPI:
         bs = b""
 
         if len(nbts) > 0:
-            ret = self.base().LIB.TranslateChunkNBT(toByteCSlice(nbts), CInt(len(nbts)))
-            bs = as_python_bytes(ret.bs, ret.l)
+            ret: TranslateChunkNBT_return = self.base().LIB.TranslateChunkNBT(toByteCSlice(nbts), CInt(len(nbts)))
+            bs = as_python_bytes(ret.bs, ret.length)
             self.base().LIB.FreeMem(ret.bs)
 
         self.base().mu.acquire()

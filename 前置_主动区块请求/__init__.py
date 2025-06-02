@@ -6,16 +6,16 @@ from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     CInt,
     TranslateChunkNBT_return,
 )
-from 前置_主动区块请求.api import AutoSubChunkRequestAPI
-from 前置_主动区块请求.define import AutoSubChunkRequestBase
-from 前置_主动区块请求.sub_chunk_process import AutoSubChunkRequestSubChunkProcess
-from 前置_主动区块请求.requet_queue import AutoSubChunkRequetQueue
+from .api import AutoSubChunkRequestAPI
+from .define import AutoSubChunkRequestBase
+from .sub_chunk_process import AutoSubChunkRequestSubChunkProcess
+from .requet_queue import AutoSubChunkRequetQueue
 
 
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 2, 3)
+    version = (0, 2, 4)
 
     base: AutoSubChunkRequestBase
     api: AutoSubChunkRequestAPI
