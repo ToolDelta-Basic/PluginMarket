@@ -14,7 +14,7 @@ from tooldelta.utils.packet_transition import get_playername_and_msg_from_text_p
 class HighRateChatAnti(Plugin):
     name = "超频发言反制"
     author = "SuperScript"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -75,8 +75,6 @@ class HighRateChatAnti(Plugin):
             return False
         if p := self.game_ctrl.players.getPlayerByName(playername):
             self.on_chat(Chat(p, msg))
-        else:
-            self.print(f"§6无法通过数据包获得玩家发言: {pk}")
         return False
 
     def is_too_fast(self, player: Player) -> bool:
