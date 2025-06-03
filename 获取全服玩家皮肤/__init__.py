@@ -1,5 +1,5 @@
 import base64
-from tooldelta import Plugin, fmts, plugin_entry
+from tooldelta import Plugin, Print, plugin_entry
 from tooldelta.constants import PacketIDS
 
 cl = [
@@ -25,7 +25,7 @@ cl = [
 
 class GetSkin(Plugin):
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
     name = "获取全服玩家皮肤"
 
     def __init__(self, frame):
@@ -39,8 +39,8 @@ class GetSkin(Plugin):
         pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
-            pip: PipSupport
-        pip.require({"pillow": "PIL.Image"})
+            pip = self.get_typecheck_plugin_api(PipSupport)
+        pip.require("PIL")
         import PIL.Image as PILImage
 
     def on_pkt_skin(self, pkt):
@@ -48,7 +48,11 @@ class GetSkin(Plugin):
         for player in pls:
             name = player["Username"]
             if player["Skin"]["SkinData"]:
-                bskindata = base64.b64decode(player["Skin"]["SkinData"])
+                skindata_raw = player["Skin"]["SkinData"]
+                if isinstance(skindata_raw, str):
+                    bskindata = base64.b64decode(player["Skin"]["SkinData"])
+                else:
+                    bskindata = skindata_raw
                 siz = (
                     player["Skin"]["SkinImageWidth"],
                     player["Skin"]["SkinImageHeight"],
@@ -62,7 +66,7 @@ class GetSkin(Plugin):
                         # 绘制像素点
                         img.putpixel((xp, yp), (rs, gs, bs, alp))
                 img.save(f"{self.data_path}/{name}.png", bitmap_format="png")
-                fmts.print_with_info(
+                Print.print_with_info(
                     f"皮肤信息: 宽={siz[0]} 高={siz[1]} 使用者={name}", info=" Skin "
                 )
                 img_x16 = img.crop((8, 8, 16, 16))
