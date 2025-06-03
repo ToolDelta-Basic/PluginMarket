@@ -1,0 +1,9 @@
+{
+  "author": "猫七街",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "用于将计分板全部储存云端的API操作",
+  "pre-plugins": {},
+  "plugin-id": "云计分板API",
+  "enabled": true
+}
