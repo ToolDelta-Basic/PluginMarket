@@ -52,6 +52,11 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "云计分板API": {
+        "__init__.py": 0,
+        "云计分板API.md": 0,
+        "datas.json": 0
+    },
     "MySQL连接器": {
         "__init__.py": 0,
         "datas.json": 0

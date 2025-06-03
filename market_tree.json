@@ -69,6 +69,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "云计分板API": {
+      "name": "云计分板API",
+      "author": "猫七街",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "MySQL": {
       "name": "MySQL连接器",
       "author": "小虫虫",
