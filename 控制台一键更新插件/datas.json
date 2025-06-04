@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "在控制台输入 up 即可一键更新所有插件",
+  "pre-plugins": {},
+  "plugin-id": "fast-upgrade-plugins",
+  "enabled": true
+}
