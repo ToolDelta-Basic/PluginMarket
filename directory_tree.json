@@ -424,6 +424,10 @@
         "readme.txt": 0,
         "datas.json": 0
     },
+    "控制台一键更新插件": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "世界备份v2": {
         "recover.py": 0,
         "world_backup.py": 0,

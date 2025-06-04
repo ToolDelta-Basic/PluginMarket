@@ -465,6 +465,12 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "fast-upgrade-plugins": {
+      "name": "控制台一键更新插件",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "世界备份第二世代": {
       "name": "世界备份v2",
       "author": "YoRHa and RATH",

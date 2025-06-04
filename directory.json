@@ -421,6 +421,10 @@
         "readme.txt",
         "datas.json"
     ],
+    "控制台一键更新插件": [
+        "__init__.py",
+        "datas.json"
+    ],
     "世界备份v2": [
         "recover.py",
         "world_backup.py",
