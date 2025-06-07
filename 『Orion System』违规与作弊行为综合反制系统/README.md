@@ -18,19 +18,19 @@ XV 发言长度限制
 XVI 重复消息刷屏限制  
 XVII 记录玩家XUID/设备号/现有名称与历史改名记录  
 XVIII 对上述行为执行自动封禁  
+XIX 玩家能力权限管理器(如自动设置访客)  
 
 ## 2.注意事项
 ① 如果您需要“禁止游戏内私聊(tell,msg,w命令)”，请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true  
 ② 请注意修改您的配置文件，部分配置项要求的类型为“表”，如["白墙","跑路","runaway"]，请注意格式规范  
 ```python
-blacklist_word_list = ["白墙","跑路","runaway"]
+self.blacklist_word_list = ["白墙","跑路","runaway"]
 ```
 ③ 发言字数、条数限制要求的类型为“正整数”，请不要输入小数或负数  
 ④ 如果您需要封禁触发上述行为的用户，请在相关配置下按照以下格式输入：  
 ```python
-def __init__(self, frame):
-    super().__init__(frame)
-    self.CONFIG_DEFAULT = {
+class OrionConfig:
+    CONFIG_DEFAULT = {
         "封禁时间_机器人IP外进反制": -1,
         "封禁时间_账号等级限制": 0,
         "封禁时间_发言频率检测": "0年0月0日0时10分0秒",
