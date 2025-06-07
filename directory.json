@@ -202,8 +202,12 @@
         "datas.json"
     ],
     "『Orion System』违规与作弊行为综合反制系统": [
+        "ban_system.py",
+        "core.py",
+        "config.py",
         "__init__.py",
         "README.md",
+        "ban_utils.py",
         "datas.json"
     ],
     "猫七街玩家互传": [
