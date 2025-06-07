@@ -772,17 +772,13 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.is_detect_self_banned_word:
+            if self.cfg.is_distinguish_upper_or_lower_in_self_banned_word is False:
+                Username = Username.upper()
             banned_word_set = set(self.cfg.banned_word_list)
             n = len(Username)
             for i in range(n):
                 for j in range(i + 1, n + 1):
-                    Username_upper = Username
-                    if (
-                        self.cfg.is_distinguish_upper_or_lower_in_self_banned_word
-                        is False
-                    ):
-                        Username_upper = Username.upper()
-                    if Username_upper[i:j] in banned_word_set:
+                    if Username[i:j] in banned_word_set:
                         self.execute_ban(
                             Username,
                             xuid,
@@ -925,14 +921,16 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.testfor_blacklist_word:
+            message = message.replace(" ","")
+            if self.cfg.is_remove_double_s:
+                message = OrionUtils.remove_double_s(message)
+            if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
+                message = message.upper()
             blacklist_word_set = set(self.cfg.blacklist_word_list)
             n = len(message)
             for i in range(n):
                 for j in range(i + 1, n + 1):
-                    message_upper = message
-                    if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
-                        message_upper = message.upper()
-                    if message_upper[i:j] in blacklist_word_set:
+                    if message[i:j] in blacklist_word_set:
                         self.execute_ban(
                             player,
                             xuid,
@@ -969,6 +967,9 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.speak_speed_limit or self.cfg.repeat_message_limit:
+            message = message.replace(" ","")
+            if self.cfg.is_remove_double_s:
+                message = OrionUtils.remove_double_s(message)
             if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
                 message = message.upper()
             with self.plugin.lock_timer:
@@ -1179,7 +1180,11 @@ class OrionCore:
     def ListenScore(self) -> NoReturn:
         """记分板监听器线程"""
         while True:
-            result = self.sendwscmd("/scoreboard players list @a", True).as_dict
+            time.sleep(self.cfg.scoreboard_detect_cycle)
+            try:
+                result = self.sendwscmd("/scoreboard players list @a", True).as_dict
+            except TimeoutError:
+                continue
             OutputMessages = result["OutputMessages"]
             scoreboard_dict = {}
             current_player = None
@@ -1211,7 +1216,6 @@ class OrionCore:
 
             self.ban_player_by_scoreboard(scoreboard_dict)
             self.change_permission_by_scoreboard(scoreboard_dict)
-            time.sleep(self.cfg.scoreboard_detect_cycle)
 
     def ban_player_by_scoreboard(
         self, scoreboard_dict: dict[str, dict[str, int]]

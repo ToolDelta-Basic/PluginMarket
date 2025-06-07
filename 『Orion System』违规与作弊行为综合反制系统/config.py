@@ -79,6 +79,8 @@ class OrionConfig:
             "ATS",
             "WAD",
             "UBSR",
+            "FMS",
+            "NOVE",
             "生存圈",
             "天庭",
             "天神之庭",
@@ -118,6 +120,7 @@ class OrionConfig:
         "--禁止私聊时是否允许私聊机器人": False,
         "是否禁止游戏内me命令": True,
         "发言反制是否区分大小写英文字母": False,
+        "发言反制是否删除§染色符号": True,
         "是否启用发言黑名单词检测": True,
         "发言黑名单词列表": [
             "白墙",
@@ -385,6 +388,8 @@ class OrionConfig:
         "隐藏违规行为踢出提示使用的屏蔽词": " 加Q",
         "<<提示>> 以下为游戏内封禁记分板和玩家权限管理器记分板的检查周期，您可以自由调整，但为了防止卡顿我们不建议调太短": None,
         "记分板监听器检查周期(秒)": 5,
+        "<<提示>> 简约模式: 可一键关闭全部非必要插件输出，使控制台更简洁(如设备号获取失败、客户端搜索失败、崩服数据包等)": None,
+        "是否启用简约模式": False,
         "<<提示>> 除非您是插件开发者或调试人员，否则请不要修改下面这两项": None,
         "是否在测试服启用『Orion System』": False,
         "测试服列表": [48285363],
@@ -431,6 +436,7 @@ class OrionConfig:
         "--禁止私聊时是否允许私聊机器人": bool,
         "是否禁止游戏内me命令": bool,
         "发言反制是否区分大小写英文字母": bool,
+        "发言反制是否删除§染色符号": bool,
         "是否启用发言黑名单词检测": bool,
         "发言黑名单词列表": cfg.JsonList(str, -1),
         "发言检测周期(秒)": cfg.PNumber,
@@ -508,6 +514,7 @@ class OrionConfig:
         "插件数据文件更新按钮": bool,
         "隐藏违规行为踢出提示使用的屏蔽词": str,
         "记分板监听器检查周期(秒)": cfg.PNumber,
+        "是否启用简约模式": bool,
         "是否在测试服启用『Orion System』": bool,
         "测试服列表": cfg.JsonList(int, -1),
     }
@@ -536,6 +543,7 @@ class OrionConfig:
             self.get_parsed_config()
             self.transfer_config()
             self.check_permission_mgr()
+            self.concise_mode()
         except cfg.ConfigKeyError as error:
             fmts.print_inf(
                 f"§e<『Orion System』违规与作弊行为综合反制系统> §6警告：发现插件配置文件中有{error}，这可能是因为插件本体已更新而插件配置文件未更新，已自动替换为新版配置文件"
@@ -605,6 +613,30 @@ class OrionConfig:
             fmts.print_inf(f"§6警告：玩家权限组格式有误 (出现了重复项: {string})")
             return False
         return True
+
+    def concise_mode(self) -> None:
+        """简约模式下关闭某些配置项输出"""
+        if self.is_concise_mode:
+            config = self.config
+            concise_list = [
+                config["信息_崩服数据包"],
+                config["信息_破损数据包"],
+                config["信息_篡改等级包"],
+                config["信息_设备号快速获取失败"],
+                config["信息_设备号慢速获取失败1"],
+                config["信息_设备号慢速获取失败2"],
+                config["信息_设备号慢速获取失败3"],
+                config["信息_客户端搜索失败1"],
+                config["信息_客户端搜索失败2"],
+            ]
+            for info in concise_list:
+                for k, v in info.items():
+                    if isinstance(v, str) and v.startswith("NN") is False:
+                        info[k] = "NN" + v
+                    elif isinstance(v, list):
+                        if isinstance(v[1], str) and v[1].startswith("NN") is False:
+                            info[k][1] = "NN" + v[1]
+            cfg.upgrade_plugin_config(self.name, config, self.version)
 
     def get_parsed_config(self) -> None:
         """将配置属性绑定至实例"""
@@ -679,6 +711,7 @@ class OrionConfig:
         self.is_distinguish_upper_or_lower_on_chat: bool = config[
             "发言反制是否区分大小写英文字母"
         ]
+        self.is_remove_double_s: bool = config["发言反制是否删除§染色符号"]
         self.testfor_blacklist_word: bool = config["是否启用发言黑名单词检测"]
         self.blacklist_word_list: list[str] = config["发言黑名单词列表"]
         self.speak_detection_cycle: int | float = config["发言检测周期(秒)"]
@@ -846,6 +879,7 @@ class OrionConfig:
         self.upgrade_plugin_data_button: bool = config["插件数据文件更新按钮"]
         self.hide_netease_banned_word: str = config["隐藏违规行为踢出提示使用的屏蔽词"]
         self.scoreboard_detect_cycle: int | float = config["记分板监听器检查周期(秒)"]
+        self.is_concise_mode: bool = config["是否启用简约模式"]
         self.load_in_trial_server: bool = config["是否在测试服启用『Orion System』"]
         self.trial_server_list: list[int] = config["测试服列表"]
 

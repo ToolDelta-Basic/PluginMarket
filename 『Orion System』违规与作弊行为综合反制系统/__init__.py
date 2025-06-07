@@ -27,18 +27,13 @@ reload(core)
 reload(ban_system)
 reload(ban_utils)
 
-from config import OrionConfig
-from core import OrionCore
-from ban_system import BanSystem
-from ban_utils import OrionUtils
-
 
 class Orion_System(Plugin):
     """插件主类"""
 
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢『猎户座』"
-    version = (0, 3, 1)
+    version = (0, 3, 2)
 
     def __init__(self, frame) -> None:
         """
@@ -47,14 +42,14 @@ class Orion_System(Plugin):
             frame (ToolDelta): ToolDelta框架
         """
         super().__init__(frame)
-        self.config_mgr = OrionConfig(self)
-        self.utils = OrionUtils(self)
+        self.config_mgr = config.OrionConfig(self)
+        self.utils = ban_utils.OrionUtils(self)
         self.config_mgr.load_config()
         self.config_mgr.upgrade_plugin_data()
         self.create_lock()
         self.create_dir()
-        self.core = OrionCore(self)
-        self.ban_system = BanSystem(self)
+        self.core = core.OrionCore(self)
+        self.ban_system = ban_system.BanSystem(self)
         server_number = self.frame.launcher.serverNumber
         if (
             self.config_mgr.load_in_trial_server is False
@@ -101,7 +96,7 @@ class Orion_System(Plugin):
         os.makedirs(f"{self.data_path}/{self.config_mgr.device_id_dir}", exist_ok=True)
         player_data_path = f"{self.data_path}/{self.config_mgr.player_data_file}"
         if not os.path.exists(player_data_path):
-            OrionUtils.disk_write(player_data_path, {})
+            ban_utils.OrionUtils.disk_write(player_data_path, {})
 
 
 entry = plugin_entry(Orion_System, "Orion_System")

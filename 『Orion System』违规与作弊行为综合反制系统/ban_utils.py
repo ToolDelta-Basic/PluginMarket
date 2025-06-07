@@ -311,6 +311,19 @@ class OrionUtils:
         return fixed_str + missing_closures
 
     @staticmethod
+    def remove_double_s(text: str) -> str:
+        """
+        移除字符串中的§符号，具体逻辑如下:
+        1. 若§后续一个字符为小写英文字母[a-z]或非负整数[0-9]，则删除§和后续那个字符
+        2. 若§后续一个字符为其他情况，则只删除§
+        Args:
+            text (str): 字符串
+        Returns:
+            text_after_remove (str): 修改完毕后的字符串
+        """
+        return re.sub(r"§([a-z0-9])|§", lambda m: "" if m.group(1) else "", text)
+
+    @staticmethod
     def paginate(total_len: int, per_page: int, page: int) -> tuple[int, int, int]:
         """
         计算页码相关信息，可用于封禁面板的页码标识和翻页
