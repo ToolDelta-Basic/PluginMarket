@@ -1,6 +1,6 @@
 """『Orion System 猎户座』一些实用的插件方法"""
 
-from tooldelta import fmts, TYPE_CHECKING
+from tooldelta import fmts, game_utils, TYPE_CHECKING
 from tooldelta.utils import tempjson
 from typing import Literal, Any
 import time
@@ -96,20 +96,37 @@ class OrionUtils:
             reason += self.cfg.hide_netease_banned_word
         self.sendwocmd(f'/kick "{player}" {reason}')
 
+    def in_whitelist(self, name: str) -> bool:
+        """
+        判断玩家是否位于白名单内
+        Args:
+            name (str): 玩家名称
+        Returns:
+            in_whitelist_or_not (bool): 布尔值
+        """
+        try:
+            if (name in self.cfg.whitelist) or (
+                game_utils.is_op(name) and self.cfg.is_op_in_whitelist
+            ):
+                return True
+        except (ValueError, KeyError):
+            return False
+        return False
+
     def print_inf(
         self,
         info: dict[str, str | list[str]] | None,
-        info_args: list[Any] = [],
+        info_args: tuple[Any] = (),
     ) -> None:
-        """
+        r"""
         快速控制台/游戏内输出操作
         Args:
             info (dict[str, str | list[str]]): 输出文本的字典，来源于插件配置，一般包括<控制台>和<游戏内>输出
-            info_args (list[Any]): 如果info的值中存在诸如{}的format占位符，则进行替换，若不填(即为空表)则忽略
+            info_args (tuple[Any]): 如果info的值中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
         Warning:
             如果info_args的元素数量小于format占位符(IndexError)，将不会输出任何文本
             如果info的值最前面有NN，将不会输出任何文本
-            如果info的值包括换行符或\\n，将分行输出文本(绕过可能的网易屏蔽词)
+            如果info的值包括换行符或\n，将分行输出文本(绕过可能的网易屏蔽词)
         """
         terminal_info = OrionUtils.text_format(info.get("控制台"), info_args)
         game_info = OrionUtils.text_format(info.get("游戏内")[1], info_args)
@@ -124,13 +141,13 @@ class OrionUtils:
     @staticmethod
     def text_format(
         text: str | None,
-        text_args: list[Any] = [],
+        text_args: tuple[Any] = (),
     ) -> str:
         """
         格式化文本
         Args:
             text (str): 文本内容
-            text_args (list[Any]): 如果text中存在诸如{}的format占位符，则进行替换，若不填(即为空表)则忽略
+            text_args (tuple[Any]): 如果text中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
         Returns:
             text (str): 格式化后的文本内容
         Warning:
@@ -139,13 +156,12 @@ class OrionUtils:
         """
         if text is None or text.startswith("NN") or text == "":
             return ""
-        if text_args is None or text_args == []:
+        if text_args is None or text_args == ():
             return text
-        else:
-            try:
-                return text.format(*text_args)
-            except IndexError:
-                return ""
+        try:
+            return text.format(*text_args)
+        except IndexError:
+            return ""
 
     @staticmethod
     def ban_time_format(ban_time: str | int | None) -> int | Literal["Forever"]:

@@ -267,7 +267,7 @@ class BanSystem:
 
     @staticmethod
     def print_U(message: str, mode: int, OBJ: Player | Any | None) -> None:
-        """
+        r"""
         统一化输出方法，使得控制台菜单/游戏内聊天栏菜单使用同一套封禁系统代码
         Args:
             message (str): 输出文本
@@ -279,7 +279,7 @@ class BanSystem:
             OBJ (Player | Any | None): 部分输出方法所需要的对象属性(如游戏内输出需要玩家对象)
         Warning:
             如果message最前面有NN，将不会输出任何文本
-            如果message包括换行符或\\n，将分行输出文本(绕过可能的网易屏蔽词)
+            如果message包括换行符或\n，将分行输出文本(绕过可能的网易屏蔽词)
         """
         message = OrionUtils.text_format(message)
         if message not in (None, ""):
@@ -308,7 +308,7 @@ class BanSystem:
             message = "请输入："
         if mode == 1:
             return input(fmts.fmt_info(message))
-        elif mode == 2:
+        if mode == 2:
             return OBJ.input(message, timeout=self.cfg.ban_player_by_game_timeout)
 
     def ban(self, mode: int, OBJ: Player | Any | None = None) -> None:
@@ -810,14 +810,14 @@ class BanSystem:
         user_input = self.input(MENU["Exit"]["Info"])
         if user_input is None:
             self.print(MENU["Error"]["TimeoutError"])
-            return
+            return None
         if user_input in (".", "。"):
             self.print(MENU["Exit"]["Success"])
-            return
+            return None
         ban_time = OrionUtils.ban_time_format(user_input)
         if ban_time == 0:
             self.print(MENU["Time"]["Error"])
-            return
+            return None
         return ban_time
 
     def get_reason(self) -> str | None:
@@ -831,9 +831,9 @@ class BanSystem:
         user_input = self.input(MENU["Exit"]["Info"]) or MENU["Reason"]["DefaultReason"]
         if user_input is None:
             self.print(MENU["Error"]["TimeoutError"])
-            return
+            return None
         if user_input in (".", "。"):
             self.print(MENU["Exit"]["Success"])
-            return
+            return None
         ban_reason = user_input
         return ban_reason

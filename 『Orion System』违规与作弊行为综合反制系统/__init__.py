@@ -1,4 +1,5 @@
-"""```『Orion System 猎户座』违规与作弊行为综合反制系统
+"""```
+『Orion System 猎户座』违规与作弊行为综合反制系统
 ╔════════════════════════════════════════════════════════════╗
 ║    ██████╗     ██████╗     ██╗     ██████╗     ██╗   ██╗   ║
 ║   ██╔═══██╗    ██   ██╗    ██║    ██╔═══██╗    ███╗  ██║   ║
@@ -14,17 +15,17 @@
 from tooldelta import Plugin, fmts, plugin_entry, TYPE_CHECKING
 from threading import Lock
 import os
-import importlib
+from importlib import reload
 
 import config
 import core
 import ban_system
 import ban_utils
 
-importlib.reload(config)
-importlib.reload(core)
-importlib.reload(ban_system)
-importlib.reload(ban_utils)
+reload(config)
+reload(core)
+reload(ban_system)
+reload(ban_utils)
 
 from config import OrionConfig
 from core import OrionCore
@@ -37,7 +38,7 @@ class Orion_System(Plugin):
 
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢『猎户座』"
-    version = (0, 3, 0)
+    version = (0, 3, 1)
 
     def __init__(self, frame) -> None:
         """

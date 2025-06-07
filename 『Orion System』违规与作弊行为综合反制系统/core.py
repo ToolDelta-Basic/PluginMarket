@@ -113,7 +113,7 @@ class OrionCore:
 
             self.get_player_device_id(Username, xuid, SkinID)
 
-            if Username not in self.cfg.whitelist:
+            if self.utils.in_whitelist(Username) is False:
                 self.change_permission_when_PlayerList(Username)
                 self.ban_bot(Username, xuid, PremiumSkin, Trusted, packet)
                 self.ban_abnormal_skin(
@@ -156,14 +156,14 @@ class OrionCore:
                 if (
                     self.cfg.ban_private_chat
                     and not self.cfg.allow_chat_with_bot
-                    and sourcename not in self.cfg.whitelist
+                    and self.utils.in_whitelist(sourcename) is False
                 ):
                     self.execute_ban(
                         sourcename,
                         xuid,
                         self.cfg.ban_time_private_chat,
                         self.cfg.info_private_chat,
-                        [sourcename, xuid, "7(私聊数据包)"],
+                        (sourcename, xuid, "7(私聊数据包)"),
                     )
                 self.message_handle(message, sourcename, xuid)
             except Exception as error:
@@ -195,7 +195,7 @@ class OrionCore:
                             break
                     if (
                         self.cfg.ban_private_chat
-                        and original_player not in self.cfg.whitelist
+                        and self.utils.in_whitelist(original_player) is False
                     ):
                         if self.cfg.allow_chat_with_bot:
                             if target_player != self.plugin.game_ctrl.bot_name:
@@ -204,7 +204,7 @@ class OrionCore:
                                     xuid,
                                     self.cfg.ban_time_private_chat,
                                     self.cfg.info_private_chat,
-                                    [original_player, xuid, "10(全局命令执行反馈)"],
+                                    (original_player, xuid, "10(全局命令执行反馈)"),
                                 )
                         else:
                             self.execute_ban(
@@ -212,7 +212,7 @@ class OrionCore:
                                 xuid,
                                 self.cfg.ban_time_private_chat,
                                 self.cfg.info_private_chat,
-                                [original_player, xuid, "10(全局命令执行反馈)"],
+                                (original_player, xuid, "10(全局命令执行反馈)"),
                             )
                     self.message_handle(msg_text, original_player, xuid)
             except Exception as error:
@@ -229,13 +229,16 @@ class OrionCore:
                     player = message_split[1]
                     msg_text = message_split[2]
                     xuid = self.plugin.xuid_getter.get_xuid_by_name(player, True)
-                    if self.cfg.ban_me_command and player not in self.cfg.whitelist:
+                    if (
+                        self.cfg.ban_me_command
+                        and self.utils.in_whitelist(player) is False
+                    ):
                         self.execute_ban(
                             player,
                             xuid,
                             self.cfg.ban_time_me_command,
                             self.cfg.info_me_command,
-                            [player, xuid],
+                            (player, xuid),
                         )
                     self.message_handle(msg_text, player, xuid)
                 # 判断为常规发言
@@ -259,7 +262,7 @@ class OrionCore:
              name (str): 玩家名称
              xuid (str): 玩家xuid
         """
-        if name not in self.cfg.whitelist:
+        if self.utils.in_whitelist(name) is False:
             self.blacklist_word_detect(message, name, xuid)
             self.message_length_detect(message, name, xuid)
             self.message_cache_area(message, name, xuid)
@@ -270,7 +273,7 @@ class OrionCore:
         xuid: str,
         ban_time: int | str,
         infos: dict[str, str | list[str]],
-        infos_args: list[Any] = [],
+        infos_args: tuple[Any] = (),
     ) -> None:
         """
         踢出玩家和写入封禁数据
@@ -288,11 +291,11 @@ class OrionCore:
                 - <控制台信息> 显示在面板上
                 - <游戏内信息> 通过/tellraw命令根据填入的目标选择器在游戏内进行广播
                 - <对玩家信息> 显示给被/kick的玩家
-            infos_args (list[Any]): 提示信息format占位符的替换表
-                - 传入的infos将共享同一个infos_args表，请合理设置format占位符中的数字索引，默认配置已经设置好了
+            infos_args (tuple[Any]): 提示信息format占位符的替换元组
+                - 传入的infos将共享同一个infos_args元组，请合理设置format占位符中的数字索引，默认配置已经设置好了
                 - 什么？你不知道python的str.format语法？:
                 - 假设infos["控制台"]="发现 {0} (xuid:{1}) 等级低于服务器准入等级({2}级)，正在制裁"
-                - 那么合理的infos_args应该为[player, xuid, server_level]，这会把上面的{}按顺序替换成infos_args里的元素
+                - 那么合理的infos_args应该为(player, xuid, server_level)，这会把上面的{}按顺序替换成infos_args里的元素
         """
         self.utils.print_inf(infos, infos_args)
         reason = OrionUtils.text_format(infos.get("玩家"), infos_args)
@@ -305,7 +308,7 @@ class OrionCore:
         )
 
     def execute_only_kick(
-        self, name: str, infos: dict[str, str | list[str]], infos_args: list[Any] = []
+        self, name: str, infos: dict[str, str | list[str]], infos_args: tuple[Any] = ()
     ) -> None:
         """
         只踢出玩家，不写入封禁数据
@@ -316,8 +319,8 @@ class OrionCore:
                 - <控制台信息> 显示在面板上
                 - <游戏内信息> 通过/tellraw命令根据填入的目标选择器在游戏内进行广播
                 - <对玩家信息> 显示给被/kick的玩家
-            infos_args (list[Any]): 提示信息format占位符的替换表
-                - 传入的infos将共享同一个infos_args表，请合理设置format占位符中的数字索引，默认配置已经设置好了
+            infos_args (tuple[Any]): 提示信息format占位符的替换元组
+                - 传入的infos将共享同一个infos_args元组，请合理设置format占位符中的数字索引，默认配置已经设置好了
         """
         self.utils.print_inf(infos, infos_args)
         reason = OrionUtils.text_format(infos.get("玩家"), infos_args)
@@ -434,7 +437,7 @@ class OrionCore:
             ban_end_timestamp = ban_data.get("ban_end_timestamp")
             ban_end_real_time = ban_data.get("ban_end_real_time")
             ban_reason = ban_data.get("ban_reason")
-            args = [player, xuid, ban_end_real_time, ban_reason]
+            args = (player, xuid, ban_end_real_time, ban_reason)
             if isinstance(ban_end_timestamp, int):
                 timestamp_now = int(time.time())
                 if ban_end_timestamp > timestamp_now:
@@ -474,7 +477,7 @@ class OrionCore:
             ban_end_timestamp = ban_data.get("ban_end_timestamp")
             ban_end_real_time = ban_data.get("ban_end_real_time")
             ban_reason = ban_data.get("ban_reason")
-            args = [device_id, player, ban_end_real_time, ban_reason]
+            args = (device_id, player, ban_end_real_time, ban_reason)
             if isinstance(ban_end_timestamp, int):
                 timestamp_now = int(time.time())
                 if ban_end_timestamp > timestamp_now:
@@ -539,7 +542,7 @@ class OrionCore:
                 original_end = ban_data.get("ban_end_timestamp")
                 if original_end == "Forever":
                     return
-                elif isinstance(original_end, int) and original_end >= end_ts:
+                if isinstance(original_end, int) and original_end >= end_ts:
                     return
             OrionUtils.disk_write(
                 path,
@@ -579,7 +582,7 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_detect_bot,
                 self.cfg.info_detect_bot,
-                [Username, xuid],
+                (Username, xuid),
             )
 
     @utils.thread_func("反制锁服函数(皮肤数据异常检查)")
@@ -647,7 +650,7 @@ class OrionCore:
                         xuid,
                         self.cfg.ban_time_detect_abnormal_skin,
                         self.cfg.info_detect_abnormal_skin,
-                        [Username, xuid],
+                        (Username, xuid),
                     )
             except Exception:
                 self.utils.print_inf(self.cfg.info_broken_packet, [packet])
@@ -656,7 +659,7 @@ class OrionCore:
                     xuid,
                     self.cfg.ban_time_detect_abnormal_skin,
                     self.cfg.info_detect_abnormal_skin,
-                    [Username, xuid],
+                    (Username, xuid),
                 )
 
     @utils.thread_func("反制Steve/Alex皮肤函数")
@@ -692,7 +695,7 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_Steve_or_Alex,
                 self.cfg.info_Steve_or_Alex,
-                [Username, xuid],
+                (Username, xuid),
             )
 
     @utils.thread_func("反制4D皮肤函数")
@@ -713,7 +716,7 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_4D_skin,
                 self.cfg.info_4D_skin,
-                [Username, xuid],
+                (Username, xuid),
             )
 
     @utils.thread_func("反制等级过低玩家函数")
@@ -733,7 +736,7 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_level_limit,
                 self.cfg.info_level_limit,
-                [Username, xuid, GrowthLevels, self.cfg.server_level],
+                (Username, xuid, GrowthLevels, self.cfg.server_level),
             )
 
     @utils.thread_func("反制网易屏蔽词名称玩家函数")
@@ -757,7 +760,7 @@ class OrionCore:
                     xuid,
                     self.cfg.ban_time_detect_netease_banned_word,
                     self.cfg.info_detect_netease_banned_word,
-                    [Username, xuid],
+                    (Username, xuid),
                 )
 
     @utils.thread_func("反制自定义违禁词名称玩家函数")
@@ -785,7 +788,7 @@ class OrionCore:
                             xuid,
                             self.cfg.ban_time_detect_self_banned_word,
                             self.cfg.info_detect_self_banned_word,
-                            [Username, xuid, Username[i:j]],
+                            (Username, xuid, Username[i:j]),
                         )
 
     @utils.thread_func("网易MC客户端玩家信息检查函数")
@@ -843,7 +846,7 @@ class OrionCore:
                                 xuid,
                                 self.cfg.ban_time_if_different_level,
                                 self.cfg.info_if_different_level,
-                                [Username, xuid, data["lv"], GrowthLevels],
+                                (Username, xuid, data["lv"], GrowthLevels),
                             )
                         return
 
@@ -895,7 +898,7 @@ class OrionCore:
                     xuid,
                     self.cfg.ban_time_if_cannot_search,
                     self.cfg.info_if_cannot_search,
-                    [name, xuid],
+                    (name, xuid),
                 )
             return True
         try_api_sleep_time = random.randint(3 * try_time, 6 * try_time)
@@ -935,7 +938,7 @@ class OrionCore:
                             xuid,
                             self.cfg.ban_time_testfor_blacklist_word,
                             self.cfg.info_testfor_blacklist_word,
-                            [player, xuid, message[i:j]],
+                            (player, xuid, message[i:j]),
                         )
 
     @utils.thread_func("发言字数检测函数")
@@ -953,7 +956,7 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_message_length_limit,
                 self.cfg.info_message_length_limit,
-                [player, xuid, self.cfg.max_speak_length],
+                (player, xuid, self.cfg.max_speak_length),
             )
 
     @utils.thread_func("缓存玩家发言数据函数")
@@ -994,12 +997,12 @@ class OrionCore:
                 xuid,
                 self.cfg.ban_time_speak_speed_limit,
                 self.cfg.info_speak_speed_limit,
-                [
+                (
                     player,
                     xuid,
                     self.cfg.max_speak_count,
                     self.cfg.speak_detection_cycle,
-                ],
+                ),
             )
 
     @utils.thread_func("重复消息刷屏检测函数")
@@ -1021,12 +1024,12 @@ class OrionCore:
                         xuid,
                         self.cfg.ban_time_repeat_message_limit,
                         self.cfg.info_repeat_message_limit,
-                        [
+                        (
                             player,
                             xuid,
                             self.cfg.max_repeat_count,
                             self.cfg.speak_detection_cycle,
-                        ],
+                        ),
                     )
 
     @utils.thread_func("玩家设备号获取函数")
@@ -1055,7 +1058,7 @@ class OrionCore:
                         [player, device_id_from_SkinID],
                     )
                     # 快速获取主要是为了快速踢出，记录设备号时会优先选择慢速获取方式
-                    if player not in self.cfg.whitelist:
+                    if self.utils.in_whitelist(player) is False:
                         self.ban_player_when_PlayerList_by_device_id(
                             player, xuid, device_id_from_SkinID
                         )
@@ -1125,7 +1128,7 @@ class OrionCore:
                 )
                 OrionUtils.disk_write(path, device_id_record)
             # 如果不能通过SkinID字段快速踢出，补偿慢速踢出
-            if (player not in self.cfg.whitelist) and (
+            if (self.utils.in_whitelist(player) is False) and (
                 device_id_from_SkinID != device_id
             ):
                 self.ban_player_when_PlayerList_by_device_id(player, xuid, device_id)
@@ -1162,14 +1165,14 @@ class OrionCore:
             for inner_xuid in li:
                 all_ban_device_id_merge.append(inner_xuid)
         for player in players_list:
-            if (player.name not in self.cfg.whitelist) and (
+            if (self.utils.in_whitelist(player.name) is False) and (
                 (player.xuid in all_ban_xuids)
                 or (player.xuid in all_ban_device_id_merge)
             ):
                 self.execute_only_kick(
                     player.name,
                     self.cfg.info_find_online_banned,
-                    [player.name, player.xuid],
+                    (player.name, player.xuid),
                 )
 
     @utils.thread_func("记分板监听器")
@@ -1225,7 +1228,7 @@ class OrionCore:
             for player, score in scoreboard_dict.get(
                 self.cfg.ban_scoreboard_name, {}
             ).items():
-                if player not in self.cfg.whitelist:
+                if self.utils.in_whitelist(player) is False:
                     xuid = self.plugin.xuid_getter.get_xuid_by_name(player, True)
                     if score < -1:
                         score = 0
@@ -1234,7 +1237,7 @@ class OrionCore:
                         xuid,
                         score,
                         self.cfg.info_ban_by_scoreboard,
-                        [player, xuid],
+                        (player, xuid),
                     )
 
     def change_permission_by_scoreboard(
@@ -1249,9 +1252,12 @@ class OrionCore:
             for player, score in scoreboard_dict.get(
                 self.cfg.permission_scoreboard_name, {}
             ).items():
-                if (player in self.cfg.whitelist) or (
-                    game_utils.is_op(player) and self.cfg.permission_ignore_op
-                ):
+                try:
+                    if (player in self.cfg.whitelist) or (
+                        game_utils.is_op(player) and self.cfg.permission_ignore_op
+                    ):
+                        continue
+                except (ValueError, KeyError):
                     continue
                 for k, v in self.cfg.scoreboard_permission_group.items():
                     if score == int(v):
@@ -1266,7 +1272,10 @@ class OrionCore:
             Username (str): 玩家名称
         """
         if self.cfg.is_permission_mgr and self.cfg.is_change_permission_when_enter:
-            if game_utils.is_op(Username) and self.cfg.permission_ignore_op:
+            try:
+                if game_utils.is_op(Username) and self.cfg.permission_ignore_op:
+                    return
+            except (ValueError, KeyError):
                 return
             self.permission_change(Username, self.cfg.enter_permission_group)
 
