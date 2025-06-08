@@ -719,19 +719,22 @@ class BanSystem:
                         )
             elif ID_type == "DeviceID":
                 for device_id, player_data in ID_dict.items():
-                    colored_data = "{"
-                    for xuid, name_list in player_data.items():
+                    for name_list in player_data.values():
                         for name in name_list:
                             if user_search in name:
                                 matched_ID_dict[device_id] = player_data
-                                # 只对玩家名称中的字符串进行染色，不染xuid，所以把玩家名称列表拿出来单独替换，并重新组装成字符串
-                                s = str(name_list).replace(
-                                    user_search, f"§b{user_search}§e"
-                                )
-                                colored_data = colored_data + f"'{xuid}': {s}, "
-                                colored_data = colored_data[:-2] + "}"
-                                colored_matched_ID_dict[device_id] = colored_data
                                 break
+                        else:
+                            continue
+                        break
+                # 只对玩家名称中的字符串进行染色，不染xuid，所以把玩家名称列表拿出来单独替换，并重新组装成字符串
+                for device_id, player_data in matched_ID_dict.items():
+                    colored_data = "{"
+                    for xuid, name_list in player_data.items():
+                        colored_name = str(name_list).replace(user_search, f"§b{user_search}§e")
+                        colored_data += f"'{xuid}': {colored_name}, "
+                    colored_data = colored_data[:-2] + "}"
+                    colored_matched_ID_dict[device_id] = colored_data
 
             # 如果根据用户输入内容，无法搜索到任何匹配项，退出系统
             if matched_ID_dict == {}:
