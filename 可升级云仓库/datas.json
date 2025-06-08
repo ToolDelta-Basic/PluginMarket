@@ -1,0 +1,9 @@
+{
+  "author": "Ka3mora",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "云空间存储物品，仓库共八个等级，可设置",
+  "pre-plugins": {},
+  "plugin-id": "可升级云仓库存储",
+  "enabled": true
+}
