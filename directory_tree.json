@@ -15,6 +15,14 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "bdx导出器Pro-急眼版": {
+        "lib.py": 0,
+        "__init__.py": 0,
+        "bdx_utils.py": 0,
+        "libbdxexporter.so": 0,
+        "scanner.py": 0,
+        "datas.json": 0
+    },
     "简单世界导入": {
         "__init__.py": 0,
         "readme.txt": 0,

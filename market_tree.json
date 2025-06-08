@@ -27,6 +27,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "bdx-exporter": {
+      "name": "bdx导出器",
+      "author": "SuperScript",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
@@ -415,12 +421,6 @@
       "name": "发言频率限制v2",
       "author": "SuperScript",
       "version": "0.1.1",
-      "plugin-type": "classic"
-    },
-    "bdx-exporter": {
-      "name": "bdx导出器",
-      "author": "SuperScript",
-      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "井字棋": {
