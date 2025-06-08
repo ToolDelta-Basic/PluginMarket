@@ -71,6 +71,8 @@ class Structure:
         ):
             raise ValueError(f"超出结构尺寸: ({x}, {y}, {z})")
         index = self._block_matrix[x * self.sizey * self.sizez + y * self.sizez + z]
+        if index == -1:
+            return Block("minecraft:air", {}, 0, 0, None)
         name, states, val, version = self._palette[index]
         metadata = self._pos_block_data.get((x, y, z))
         return Block(name, states, val, version, metadata)
@@ -81,7 +83,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (1, 0, 1)
+    version = (1, 0, 2)
     Structure = Structure
     Block = Block
 
