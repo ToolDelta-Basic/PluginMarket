@@ -731,7 +731,9 @@ class BanSystem:
                 for device_id, player_data in matched_ID_dict.items():
                     colored_data = "{"
                     for xuid, name_list in player_data.items():
-                        colored_name = str(name_list).replace(user_search, f"§b{user_search}§e")
+                        colored_name = str(name_list).replace(
+                            user_search, f"§b{user_search}§e"
+                        )
                         colored_data += f"'{xuid}': {colored_name}, "
                     colored_data = colored_data[:-2] + "}"
                     colored_matched_ID_dict[device_id] = colored_data
