@@ -350,7 +350,11 @@ class BanSystem:
                 return
             # 如果玩家位于白名单内，不能执行封禁
             if ban_name in self.cfg.whitelist:
-                self.print(BAN_MENU["Xuid"]["Error"]["WhitelistError"].format(ban_name))
+                self.print(
+                    BAN_MENU["Xuid"]["Error"]["WhitelistError"].format(
+                        ban_xuid, ban_name
+                    )
+                )
                 return
             # 搜索xuid和玩家名称成功
             self.print(
@@ -420,7 +424,11 @@ class BanSystem:
                 return
             # 如果玩家位于白名单内，不能执行封禁
             if ban_name in self.cfg.whitelist:
-                self.print(BAN_MENU["Xuid"]["Error"]["WhitelistError"].format(ban_name))
+                self.print(
+                    BAN_MENU["Xuid"]["Error"]["WhitelistError"].format(
+                        ban_xuid, ban_name
+                    )
+                )
                 return
             # 搜索xuid和玩家名称成功
             self.print(

@@ -254,6 +254,7 @@ class OrionCore:
 
         return False
 
+    @utils.thread_func("处理文本相关封禁")
     def message_handle(self, message: str, name: str, xuid: str) -> None:
         """
         处理文本相关封禁，如发言黑名单词，长度限制，频率限制和重复消息刷屏限制
@@ -267,6 +268,7 @@ class OrionCore:
             self.message_length_detect(message, name, xuid)
             self.message_cache_area(message, name, xuid)
 
+    @utils.thread_func("踢出玩家和写入封禁数据")
     def execute_ban(
         self,
         name: str,
@@ -307,6 +309,7 @@ class OrionCore:
             name, xuid, OrionUtils.ban_time_format(ban_time), reason
         )
 
+    @utils.thread_func("只踢出玩家，不写入封禁数据")
     def execute_only_kick(
         self, name: str, infos: dict[str, str | list[str]], infos_args: tuple[Any] = ()
     ) -> None:
@@ -513,6 +516,7 @@ class OrionCore:
         except FileNotFoundError:
             return
 
+    @utils.thread_func("转移封禁数据至xuid")
     def jointly_ban_xuid(
         self,
         player: str,
@@ -620,12 +624,12 @@ class OrionCore:
                 decode_skinData = base64.b64decode(SkinData)
                 SkinData_bytes_len = len(decode_skinData)
                 if len(Animations) == 1:
-                    Animations = Animations[0]
+                    Animations_info = Animations[0]
                 elif len(Animations) == 0:
-                    Animations = {}
-                AnimationsImageWidth = Animations.get("ImageWidth", 0)
-                AnimationsImageHeight = Animations.get("ImageHeight", 0)
-                AnimationsImageData = Animations.get("ImageData", "")
+                    Animations_info = {}
+                AnimationsImageWidth = Animations_info.get("ImageWidth", 0)
+                AnimationsImageHeight = Animations_info.get("ImageHeight", 0)
+                AnimationsImageData = Animations_info.get("ImageData", "")
                 decode_AnimationsImageData = base64.b64decode(AnimationsImageData)
                 AnimationsImageData_bytes_len = len(decode_AnimationsImageData)
                 if (
@@ -772,13 +776,14 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.is_detect_self_banned_word:
+            Username_U = Username
             if self.cfg.is_distinguish_upper_or_lower_in_self_banned_word is False:
-                Username = Username.upper()
+                Username_U = Username.upper()
             banned_word_set = set(self.cfg.banned_word_list)
-            n = len(Username)
+            n = len(Username_U)
             for i in range(n):
                 for j in range(i + 1, n + 1):
-                    if Username[i:j] in banned_word_set:
+                    if Username_U[i:j] in banned_word_set:
                         self.execute_ban(
                             Username,
                             xuid,
@@ -921,7 +926,7 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.testfor_blacklist_word:
-            message = message.replace(" ","")
+            message = message.replace(" ", "")
             if self.cfg.is_remove_double_s:
                 message = OrionUtils.remove_double_s(message)
             if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
@@ -967,7 +972,7 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.speak_speed_limit or self.cfg.repeat_message_limit:
-            message = message.replace(" ","")
+            message = message.replace(" ", "")
             if self.cfg.is_remove_double_s:
                 message = OrionUtils.remove_double_s(message)
             if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
@@ -1058,6 +1063,7 @@ class OrionCore:
                         self.cfg.info_quick_get_device_success,
                         [player, device_id_from_SkinID],
                     )
+                    time.sleep(0.1)
                     # 快速获取主要是为了快速踢出，记录设备号时会优先选择慢速获取方式
                     if self.utils.in_whitelist(player) is False:
                         self.ban_player_when_PlayerList_by_device_id(
@@ -1217,6 +1223,7 @@ class OrionCore:
             self.ban_player_by_scoreboard(scoreboard_dict)
             self.change_permission_by_scoreboard(scoreboard_dict)
 
+    @utils.thread_func("封禁专用记分板")
     def ban_player_by_scoreboard(
         self, scoreboard_dict: dict[str, dict[str, int]]
     ) -> None:
@@ -1244,6 +1251,7 @@ class OrionCore:
                         (player, xuid),
                     )
 
+    @utils.thread_func("玩家权限管理专用记分板")
     def change_permission_by_scoreboard(
         self, scoreboard_dict: dict[str, dict[str, int]]
     ) -> None:
@@ -1283,6 +1291,7 @@ class OrionCore:
                 return
             self.permission_change(Username, self.cfg.enter_permission_group)
 
+    @utils.thread_func("玩家权限修改执行")
     def permission_change(self, player: str, permission_group: str | int) -> None:
         """
         玩家权限修改执行
