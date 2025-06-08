@@ -315,6 +315,12 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "可升级云仓库": {
+        "__init__.py": 0,
+        "data.json": 0,
+        "readme.txt": 0,
+        "datas.json": 0
+    },
     "定时任务": {
         "示例定时任务": {
             "扫地姬.mcfunction": 0

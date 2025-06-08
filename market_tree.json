@@ -351,6 +351,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "可升级云仓库存储": {
+      "name": "可升级云仓库",
+      "author": "Ka3mora",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "scheduled-task": {
       "name": "定时任务",
       "author": "System",

@@ -312,6 +312,12 @@
         "__init__.py",
         "datas.json"
     ],
+    "可升级云仓库": [
+        "__init__.py",
+        "data.json",
+        "readme.txt",
+        "datas.json"
+    ],
     "定时任务": [
         "__init__.py",
         "readme.txt",
