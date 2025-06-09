@@ -50,7 +50,7 @@ class StyledPlayerPrinter:
 class OneStyleMsg(Plugin):
     name = "统一消息风格"
     author = "ToolDelta"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -117,7 +117,7 @@ class OneStyleMsg(Plugin):
         prompt: str,
         arguments: "list[T]",
         sections_formatter: "Callable[[T], str]",
-    ) -> T | None:
+    ) -> "T | None":
         if len(arguments) == 0:
             raise ValueError("arguments 不能为空列表")
         arguments_blocks = utils.split_list(arguments, self.msg_select_index_max)

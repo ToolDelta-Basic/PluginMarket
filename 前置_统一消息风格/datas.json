@@ -1,6 +1,6 @@
 {
   "author": "ToolDelta",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "统一对玩家显示的消息的风格 (如成功、失败、报错等)",
   "pre-plugins": {},
