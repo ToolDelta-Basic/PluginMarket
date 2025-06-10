@@ -1,0 +1,9 @@
+{
+  "author": "xingchen",
+  "version": "0.1.0",
+  "plugin-type": "classic",
+  "description": "",
+  "pre-plugins": {},
+  "plugin-id": "pluginmarket_web",
+  "enabled": true
+}
