@@ -441,6 +441,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "pluginmarket_web": {
+      "name": "Web版插件市场-试行",
+      "author": "xingchen",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "等级限制": {
       "name": "等级检测",
       "author": "果_k",

@@ -407,6 +407,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "Web版插件市场-试行": [
+        "__init__.py",
+        "datas.json"
+    ],
     "等级检测": [
         "__init__.py",
         "datas.json"
