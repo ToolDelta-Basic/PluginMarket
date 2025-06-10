@@ -621,7 +621,10 @@ class OrionCore:
         """
         if self.cfg.is_detect_abnormal_skin:
             try:
-                decode_skinData = base64.b64decode(SkinData)
+                if isinstance(SkinData, str):
+                    decode_skinData = base64.b64decode(SkinData)
+                elif isinstance(SkinData, bytes):
+                    decode_skinData = SkinData
                 SkinData_bytes_len = len(decode_skinData)
                 if len(Animations) == 1:
                     Animations_info = Animations[0]
@@ -630,7 +633,10 @@ class OrionCore:
                 AnimationsImageWidth = Animations_info.get("ImageWidth", 0)
                 AnimationsImageHeight = Animations_info.get("ImageHeight", 0)
                 AnimationsImageData = Animations_info.get("ImageData", "")
-                decode_AnimationsImageData = base64.b64decode(AnimationsImageData)
+                if isinstance(AnimationsImageData, str):
+                    decode_AnimationsImageData = base64.b64decode(AnimationsImageData)
+                elif isinstance(AnimationsImageData, bytes):
+                    decode_AnimationsImageData = AnimationsImageData
                 AnimationsImageData_bytes_len = len(decode_AnimationsImageData)
                 if (
                     (SkinImageWidth * SkinImageHeight * 4 != SkinData_bytes_len)
@@ -691,7 +697,7 @@ class OrionCore:
                 "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex",
             )
             # Base64 解码：MS4xNC4w → 1.14.0
-            or GeometryDataEngineVersion == "MS4xNC4w"
+            or GeometryDataEngineVersion in ("MS4xNC4w", "1.14.0")
             or PersonaSkin is True
         ):
             self.execute_ban(
@@ -714,7 +720,10 @@ class OrionCore:
             GeometryDataEngineVersion (str):
         """
         # Base64 解码：MS4yLjU= → 1.2.5
-        if self.cfg.is_ban_4D_skin and GeometryDataEngineVersion == "MS4yLjU=":
+        if self.cfg.is_ban_4D_skin and GeometryDataEngineVersion in (
+            "MS4yLjU=",
+            "1.2.5",
+        ):
             self.execute_ban(
                 Username,
                 xuid,
