@@ -3,6 +3,7 @@
 from tooldelta import fmts, game_utils, TYPE_CHECKING
 from tooldelta.utils import tempjson
 from typing import Literal, Any
+from string import punctuation
 import time
 import re
 import math
@@ -309,6 +310,20 @@ class OrionUtils:
         if quote_count % 2 != 0:
             fixed_str += '"'  # 补全字符串的闭合引号
         return fixed_str + missing_closures
+
+    @staticmethod
+    def remove_punct(text: str) -> str:
+        """
+        移除字符串中的中英文标点符号
+        Args:
+            text (str): 字符串
+        Returns:
+            text_after_remove (str): 修改完毕后的字符串
+        """
+        chinese_punct = "，。！？；：‘’“”【】（）《》、·—～…・"
+        all_punct = punctuation + chinese_punct
+        pattern = re.compile(f"[{re.escape(all_punct)}]")
+        return pattern.sub("", text)
 
     @staticmethod
     def remove_double_s(text: str) -> str:

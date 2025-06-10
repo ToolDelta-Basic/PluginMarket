@@ -800,6 +800,7 @@ class OrionCore:
                             self.cfg.info_detect_self_banned_word,
                             (Username, xuid, Username[i:j]),
                         )
+                        return
 
     @utils.thread_func("网易MC客户端玩家信息检查函数")
     def check_player_info(
@@ -936,6 +937,7 @@ class OrionCore:
         """
         if self.cfg.testfor_blacklist_word:
             message = message.replace(" ", "")
+            message = OrionUtils.remove_punct(message)
             if self.cfg.is_remove_double_s:
                 message = OrionUtils.remove_double_s(message)
             if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
@@ -952,6 +954,7 @@ class OrionCore:
                             self.cfg.info_testfor_blacklist_word,
                             (player, xuid, message[i:j]),
                         )
+                        return
 
     @utils.thread_func("发言字数检测函数")
     def message_length_detect(self, message: str, player: str, xuid: str) -> None:
@@ -982,6 +985,7 @@ class OrionCore:
         """
         if self.cfg.speak_speed_limit or self.cfg.repeat_message_limit:
             message = message.replace(" ", "")
+            message = OrionUtils.remove_punct(message)
             if self.cfg.is_remove_double_s:
                 message = OrionUtils.remove_double_s(message)
             if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
@@ -1046,6 +1050,7 @@ class OrionCore:
                             self.cfg.speak_detection_cycle,
                         ),
                     )
+                    return
 
     @utils.thread_func("玩家设备号获取函数")
     def get_player_device_id(self, player: str, xuid: str, SkinID: str) -> None:
@@ -1274,7 +1279,7 @@ class OrionCore:
                 self.cfg.permission_scoreboard_name, {}
             ).items():
                 try:
-                    if (player in self.cfg.whitelist) or (
+                    if (player in self.cfg.permission_whitelist) or (
                         game_utils.is_op(player) and self.cfg.permission_ignore_op
                     ):
                         continue
@@ -1294,7 +1299,9 @@ class OrionCore:
         """
         if self.cfg.is_permission_mgr and self.cfg.is_change_permission_when_enter:
             try:
-                if game_utils.is_op(Username) and self.cfg.permission_ignore_op:
+                if (Username in self.cfg.permission_whitelist) or (
+                    game_utils.is_op(Username) and self.cfg.permission_ignore_op
+                ):
                     return
             except (ValueError, KeyError):
                 return

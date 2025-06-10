@@ -28,7 +28,7 @@ class OrionConfig:
         "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，若要根据设备号封禁玩家则必须开启该项)": True,
         "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": 5,
         "反制白名单": ["style_天枢", "Happy2018new", "SkyblueSuper", "YeahBot", "..."],
-        "--操作员是否默认位于白名单内": True,
+        "各项反制是否禁用于操作员": True,
         "<<提示>> 以下为游戏内封禁记分板API：可将游戏内指令或命令方块通过记分板接入本封禁系统": None,
         "<<提示>> 您可以通过 /scoreboard players set [玩家名称] [封禁记分板名称] [封禁时间(秒)] 来封禁对应玩家": None,
         "<<提示>> 封禁记分板的分数为封禁时间(秒)；若分数为-1，则永久封禁；若分数为0，仅踢出游戏，不作封禁，玩家可以立即重进": None,
@@ -129,6 +129,7 @@ class OrionConfig:
             "走路科技",
             "busj",
             "万花筒",
+            "苦力怕盒子",
             "炸服",
             "锁服",
             "崩服",
@@ -357,6 +358,13 @@ class OrionConfig:
         "<<提示>> 猎户座插件附属功能：玩家权限管理器": None,
         "<<提示>> 可用于在玩家进入游戏时自动修改其权限，或者将记分板与玩家权限进行绑定，您可以通过修改对应的记分板分数来自动修改玩家权限": None,
         "是否启用玩家权限管理器": True,
+        "玩家权限管理器白名单": [
+            "style_天枢",
+            "Happy2018new",
+            "SkyblueSuper",
+            "YeahBot",
+            "...",
+        ],
         "玩家权限管理器是否禁用于操作员": True,
         "<<提示>> · 放置方块 : 1": None,
         "<<提示>> · 采集方块 : 2": None,
@@ -411,7 +419,7 @@ class OrionConfig:
         "是否自动记录玩家设备号/xuid/历史名称(机器人在玩家登录时需tp至玩家处，若要根据设备号封禁玩家则必须开启该项)": bool,
         "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)": cfg.PInt,
         "反制白名单": cfg.JsonList(str, -1),
-        "--操作员是否默认位于白名单内": bool,
+        "各项反制是否禁用于操作员": bool,
         "是否启用游戏内封禁记分板API": bool,
         "--游戏内封禁记分板名称": str,
         "--游戏内封禁记分板显示名称": str,
@@ -504,6 +512,7 @@ class OrionConfig:
         "信息_客户端搜索失败1": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_客户端搜索失败2": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "是否启用玩家权限管理器": bool,
+        "玩家权限管理器白名单": cfg.JsonList(str, -1),
         "玩家权限管理器是否禁用于操作员": bool,
         "是否在进入游戏时自动修改玩家权限": bool,
         "进入游戏权限组": (str, int),
@@ -619,6 +628,7 @@ class OrionConfig:
         if self.is_concise_mode:
             config = self.config
             concise_list = [
+                config["信息_置顶消息"],
                 config["信息_崩服数据包"],
                 config["信息_破损数据包"],
                 config["信息_篡改等级包"],
@@ -664,7 +674,7 @@ class OrionConfig:
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)"
         ]
         self.whitelist: list[str] = config["反制白名单"]
-        self.is_op_in_whitelist: bool = config["--操作员是否默认位于白名单内"]
+        self.is_op_in_whitelist: bool = config["各项反制是否禁用于操作员"]
         self.is_ban_api_in_game: bool = config["是否启用游戏内封禁记分板API"]
         self.ban_scoreboard_name: str = config["--游戏内封禁记分板名称"]
         self.ban_scoreboard_dummy_name: str = config["--游戏内封禁记分板显示名称"]
@@ -863,6 +873,7 @@ class OrionConfig:
             "信息_客户端搜索失败2"
         ]
         self.is_permission_mgr: bool = config["是否启用玩家权限管理器"]
+        self.permission_whitelist: list[str] = config["玩家权限管理器白名单"]
         self.permission_ignore_op: bool = config["玩家权限管理器是否禁用于操作员"]
         self.is_change_permission_when_enter: bool = config[
             "是否在进入游戏时自动修改玩家权限"
