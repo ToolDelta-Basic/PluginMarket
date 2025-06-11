@@ -6,6 +6,6 @@
   "pre-plugins": {
     "前置-世界交互": "0.0.1"
   },
-  "plugin-id": "bdx-exporter",
+  "plugin-id": "bdx-exporter-make-me-very-annoyed",
   "enabled": true
 }
