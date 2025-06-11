@@ -20,11 +20,9 @@ class ClientConfig:
         self.websocket_url = f"ws://{self.server_url}/api/socket"
 
     def generate_user_id(self) -> str:
-        """生成6位大写字母的客户端ID"""
         return "".join(random.choices(string.ascii_uppercase, k=6))
 
     def generate_device_fingerprint(self) -> str:
-        """生成设备指纹"""
         return "".join(random.choices(string.ascii_letters + string.digits, k=32))
 
 class HTTPClient:
@@ -33,11 +31,9 @@ class HTTPClient:
         self.session = requests.Session()
         
     def _get_full_url(self, endpoint: str) -> str:
-        """获取完整的API URL"""
         return f"http://{self.config.server_url}/{endpoint.lstrip('/')}"
 
     def _add_headers(self, headers: Dict[str, str] = None) -> Dict[str, str]:
-        """添加默认headers"""
         default_headers = {
             "Content-Type": "application/json",
             "X-Custom-ID": self.config.user_id
@@ -63,20 +59,16 @@ class HTTPClient:
             raise
 
     def get_plugins(self) -> Dict[str, Any]:
-        """获取所有插件信息"""
         return self._make_request("GET", "api/plugins")
 
     def get_packages(self) -> Dict[str, Any]:
-        """获取所有整合包信息"""
         return self._make_request("GET", "api/packages")
 
     def download_plugin(self, plugin_id: str) -> Dict[str, Any]:
-        """记录插件下载"""
         data = {"user_id": self.config.user_id}
         return self._make_request("POST", f"api/plugin/download/{plugin_id}", data=data)
 
     def rate_plugin(self, plugin_id: str, rating: int) -> Dict[str, Any]:
-        """为插件评分"""
         data = {"user_id": self.config.user_id, "rating": rating}
         return self._make_request("POST", f"api/plugin/rate/{plugin_id}", data=data)
 
@@ -94,7 +86,9 @@ class WebSocketClient:
         self.max_reconnect_attempts = 10
         self.ws_lock = asyncio.Lock()
         self.loop = asyncio.new_event_loop()
-        self.stop_event = threading.Event()
+        self.stop_flag = threading.Event()
+        self.last_heartbeat_ack = 0
+        self._print_progress()
 
     async def ws_send(self, message):
         async with self.ws_lock:
@@ -107,81 +101,124 @@ class WebSocketClient:
     async def save_received_file(self):
         if not self.current_file:
             return
-        download_dir = os.path.join("插件文件", "ToolDelta类式插件", self.current_file["id"])
-        os.makedirs(download_dir, exist_ok=True)
-        file_path = os.path.join(download_dir, f"{self.current_file['id']}.zip")
-        with open(file_path, "wb") as f:
-            f.write(self.current_file["data"])
-        try:
-            with zipfile.ZipFile(file_path, "r") as zip_ref:
-                zip_ref.extractall(download_dir)
-            os.remove(file_path)
-            fmts.print_inf(f"文件 {self.current_file['id']} 已保存到 {download_dir}")
-        except Exception as e:
-            fmts.print_err(f"解压文件失败: {str(e)}")
-
-    async def _monitor_connection(self):
-        while self.is_connected and not self.stop_event.is_set():
-            try:
-                async with self.ws_lock:
-                    if self.ws:
-                        await self.ws.send(json.dumps({
-                            "type": "heartbeat",
-                            "timestamp": datetime.datetime.now().isoformat()
-                        }))
-                await asyncio.sleep(self.heartbeat_interval)
-            except Exception as e:
-                fmts.print_err(f"心跳监控错误: {str(e)}")
-                await self._safe_reconnect()
-                return
-
-    async def _safe_reconnect(self):
-        if self.is_connected:
-            await self.close()
-        await self.connect()
-
-    async def connect(self) -> None:
-        self.reconnect_attempts = 0
-        while self.reconnect_attempts < self.max_reconnect_attempts and not self.stop_event.is_set():
-            if self.reconnect_attempts > 0:
-                self.config.user_id = self.config.generate_user_id()
-                fmts.print_inf(f"重连时生成新的用户ID: {self.config.user_id}")
-                
-            try:
-                fmts.print_inf(f"尝试连接到 {self.config.websocket_url}...")
-                async with websockets.connect(
-                    self.config.websocket_url,
-                    ping_interval=None,
-                    close_timeout=1,
-                    open_timeout=10
-                ) as ws:
-                    self.ws = ws
-                    self.is_connected = True
-                    self.last_activity = time.time()
-                    fmts.print_inf("WebSocket连接成功")
-
-                    if self.message_callback:
-                        self.message_callback("connected")
-                    
-                    await self._register_client()
-                    
-                    asyncio.create_task(self._monitor_connection())
-                    
-                    await self._listen_messages()
-                    
-            except (asyncio.TimeoutError, websockets.ConnectionClosed, websockets.InvalidURI) as e:
-                self.reconnect_attempts += 1
-                fmts.print_war(f"连接失败 ({self.reconnect_attempts}/{self.max_reconnect_attempts}): {str(e)}")
-                await asyncio.sleep(min(2 ** self.reconnect_attempts, 30))
-            except Exception as e:
-                fmts.print_err(f"连接异常: {str(e)}")
-                self.reconnect_attempts += 1
-                await asyncio.sleep(5)
         
-        if not self.stop_event.is_set():
-            fmts.print_err("达到最大重连次数，放弃连接")
+        file_id = self.current_file["id"]
+        file_data = self.current_file["data"]
+        
+        # 确保下载目录存在
+        download_dir = os.path.join("插件文件", "ToolDelta类式插件", file_id)
+        os.makedirs(download_dir, exist_ok=True)
+        
+        # 保存ZIP文件
+        zip_path = os.path.join(download_dir, f"{file_id}.zip")
+        try:
+            with open(zip_path, "wb") as f:
+                f.write(file_data)
+            
+            # 解压文件
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                zip_ref.extractall(download_dir)
+            
+            # 删除临时ZIP文件
+            os.remove(zip_path)
+            
+            fmts.print_suc(f"插件 {file_id} 已成功安装到: {download_dir}")
+            fmts.print_inf(f"文件大小: {len(file_data)} bytes")
+            
+        except Exception as e:
+            fmts.print_err(f"文件处理失败: {str(e)}")
+            fmts.print_err(f"错误文件路径: {zip_path}")
 
-    async def _register_client(self) -> None:
+    def _print_progress(self):
+        if self.current_file:
+            received = self.current_file.get("received", 0)
+            total = self.current_file.get("size", 0)
+            if total > 0:
+                percentage = min(int((received / total) * 100), 100)
+                # 创建更直观的进度条
+                bar_length = 50
+                filled_length = int(bar_length * percentage // 100)
+                bar = '■' * filled_length + '□' * (bar_length - filled_length)
+                # 使用 \r 实现行内刷新
+                print(f"\r[{bar}] {percentage}%", end='', flush=True)
+                
+                # 下载完成时换行
+                if percentage == 100:
+                    print()
+
+    async def _listen_messages(self):
+        try:
+            while not self.stop_flag.is_set() and self.is_connected:
+                try:
+                    if self.ws is None:
+                        break
+                    
+                    # 使用异步接收避免阻塞
+                    message = await asyncio.wait_for(self.ws_recv(), timeout=self.keepalive_timeout)
+                    self.last_activity = time.time()
+                    
+                    # 处理文本消息
+                    if isinstance(message, str):
+                        try:
+                            msg = json.loads(message)
+                            # 处理服务端发来的心跳包
+                            if msg.get("type") == "heartbeat":
+                                # 回复心跳确认
+                                ack_msg = json.dumps({
+                                    "type": "heartbeat_ack",
+                                    "timestamp": datetime.datetime.now().isoformat()
+                                })
+                                await self.ws_send(ack_msg)
+                                # fmts.print_inf(f"收到服务端心跳并回复确认")
+                                continue
+                                
+                            # 处理心跳确认（服务端对客户端心跳的回复）
+                            elif msg.get("type") == "heartbeat_ack":
+                                self.last_heartbeat_ack = time.time()
+                                # fmts.print_inf("收到心跳确认")
+                                continue
+                                
+                            # 文件传输处理（保持原逻辑）
+                            elif msg.get("type") == "file_start":
+                                file_id = msg["file_id"]
+                                total_size = msg["size"]
+                                self.current_file = {
+                                    "id": file_id,
+                                    "received": 0,
+                                    "data": b"",
+                                    "size": total_size
+                                }
+                                print(f"开始下载: {file_id} ({total_size} bytes)")
+                                self._print_progress()
+                                
+                                
+                            elif msg.get("type") == "file_end":
+                                if self.current_file:
+                                    self._print_progress()  # 确保显示100%
+                                    await self.save_received_file()
+                                    self.current_file = None  # 重置当前文件
+                                
+                        except json.JSONDecodeError:
+                            pass
+                    
+                    # 处理二进制数据（文件内容）
+                    elif isinstance(message, bytes) and self.current_file:
+                        self.current_file["received"] += len(message)
+                        self.current_file["data"] += message
+                        self._print_progress()
+                        
+                except asyncio.TimeoutError:
+                    continue
+        except websockets.ConnectionClosed as e:
+            fmts.print_war(f"连接已断开: {e}")
+        except Exception as e:
+            fmts.print_err(f"监听消息错误: {str(e)}")
+        finally:
+            self.is_connected = False
+            if self.message_callback:
+                self.message_callback("disconnected")
+
+    async def _register_client(self):
         if self.config.user_id is None:
             self.config.user_id = self.config.generate_user_id()
             fmts.print_inf(f"生成新的客户端ID: {self.config.user_id}")
@@ -193,66 +230,102 @@ class WebSocketClient:
         await self.ws_send(json.dumps(register_message))
         
         response = await self.ws_recv()
-        fmts.print_inf(f"注册响应: {response}")
+        # fmts.print_inf(f"注册响应: {response}")
         self.last_activity = time.time()
 
-    async def _listen_messages(self):
-        try:
-            while self.is_connected and not self.stop_event.is_set():
-                try:
-                    message = await asyncio.wait_for(self.ws_recv(), timeout=self.keepalive_timeout)
-                    self.last_activity = time.time()
+    async def _monitor_connection(self):
+        while not self.stop_flag.is_set() and self.is_connected:
+            try:
+                # 发送心跳包
+                await self.ws_send(json.dumps({
+                    "type": "heartbeat",
+                    "timestamp": datetime.datetime.now().isoformat()
+                }))
+                send_time = time.time()
+                
+                # 等待确认（不再直接接收消息）
+                while time.time() - send_time < 10:  # 10秒超时
+                    if self.last_heartbeat_ack > send_time:
+                        # fmts.print_inf("心跳确认正常")
+                        break
+                    await asyncio.sleep(0.5)
+                else:
+                    fmts.print_war("未收到心跳确认")
+                    await self._safe_reconnect()
+                    return
                     
-                    if isinstance(message, str):
-                        msg = json.loads(message)
-                        if msg.get("type") == "file_start":
-                            file_id = msg["file_id"]
-                            total_size = msg["size"]
-                            self.current_file = {"id": file_id, "received": 0, "data": b"", "size": total_size}
-                            fmts.print_inf(f"开始接收文件 {file_id}, 总大小: {total_size} bytes")
-                        elif msg.get("type") == "file_end":
-                            if self.current_file:
-                                await self.save_received_file()
-                                fmts.print_inf(f"完成接收文件 {self.current_file['id']}")
-                                self.current_file = None
-                        elif msg.get("type") == "heartbeat_ack":
-                            fmts.print_inf("收到心跳确认")
-                        else:
-                            fmts.print_inf(f"接收消息: {message}")
-                            if self.message_callback:
-                                self.message_callback("message", message)
-                    elif isinstance(message, bytes):
-                        if self.current_file:
-                            self.current_file["received"] += len(message)
-                            self.current_file["data"] += message
-                            progress = (self.current_file["received"] / self.current_file["size"]) * 100
-                            fmts.print_inf(f"接收进度: {progress:.1f}%")
-                            if self.message_callback:
-                                self.message_callback("progress", progress)
+            except Exception as e:
+                if "NoneType" in str(e):  # 忽略NoneType错误
+                    fmts.print_war(f"连接已关闭: {str(e)}")
+                else:
+                    fmts.print_err(f"心跳监控错误: {str(e)}")
+                await self._safe_reconnect()
+                return
+            await asyncio.sleep(self.heartbeat_interval)
+
+    async def _safe_reconnect(self):
+        if self.is_connected:
+            await self.close()
+        await self.connect()
+
+    async def connect(self) -> None:
+        self.stop_flag.clear()  # 重置停止标志
+        self.reconnect_attempts = 0
+        while not self.stop_flag.is_set() and self.reconnect_attempts < self.max_reconnect_attempts:
+            if self.reconnect_attempts > 0:
+                self.config.user_id = self.config.generate_user_id()
+                fmts.print_inf(f"重连时生成新的用户ID: {self.config.user_id}")
                 
-                except asyncio.TimeoutError:
-                    continue
-                
-        except websockets.ConnectionClosed as e:
-            fmts.print_inf(f"连接已关闭: {e}")
-        except Exception as e:
-            fmts.print_err(f"监听消息错误: {str(e)}")
-        finally:
-            self.is_connected = False
-            if self.message_callback:
-                self.message_callback("disconnected")
+            try:
+                # fmts.print_inf(f"尝试连接到 {self.config.websocket_url}...")
+                async with websockets.connect(
+                    self.config.websocket_url,
+                    ping_interval=None,
+                    close_timeout=1,
+                    open_timeout=10
+                ) as ws:
+                    self.ws = ws
+                    self.is_connected = True
+                    self.last_activity = time.time()
+                    fmts.print_inf("成功连接到 PluginMarket-Web 服务端")
+
+                    if self.message_callback:
+                        self.message_callback("connected")
+                    
+                    await self._register_client()
+                    
+                    # 启动心跳监控任务
+                    asyncio.create_task(self._monitor_connection())
+                    
+                    await self._listen_messages()
+                    
+            except (asyncio.TimeoutError, websockets.ConnectionClosed, websockets.InvalidURI) as e:
+                self.reconnect_attempts += 1
+                fmts.print_war(f"连接失败 ({self.reconnect_attempts}/{self.max_reconnect_attempts}): {str(e)}")
+                await asyncio.sleep(min(2 ** self.reconnect_attempts, 30))
+            except Exception as e:
+                if "NoneType" in str(e):  # 忽略NoneType错误
+                    fmts.print_war(f"连接已关闭: {str(e)}")
+                else:
+                    fmts.print_err(f"连接异常: {str(e)}")
+                self.reconnect_attempts += 1
+                await asyncio.sleep(5)
+        
+        if not self.stop_flag.is_set():
+            fmts.print_err("达到最大重连次数，放弃连接")
+
 
     async def send_message(self, message: Dict[str, Any]) -> None:
         if self.ws and self.is_connected:
             await self.ws_send(json.dumps(message))
             self.last_activity = time.time()
-            fmts.print_inf(f"发送消息: {message}")
             if self.message_callback:
                 self.message_callback("sent", message)
         else:
             fmts.print_err("WebSocket未连接")
 
     async def close(self) -> None:
+        self.stop_flag.set()  # 设置停止标志
         if self.ws:
             await self.ws.close()
             self.ws = None
@@ -260,22 +333,18 @@ class WebSocketClient:
         fmts.print_inf("WebSocket连接已关闭")
 
     def run_in_thread(self):
-        """在新线程中运行事件循环"""
         def start_loop():
             asyncio.set_event_loop(self.loop)
             self.loop.run_until_complete(self.connect())
 
         self.thread = threading.Thread(target=start_loop, daemon=True)
         self.thread.start()
-        fmts.print_inf("WebSocket客户端已在后台线程启动")
+        # fmts.print_inf("WebSocket客户端已在后台线程启动")
 
     def stop(self):
-        """停止客户端并清理资源"""
         self.stop_event.set()
         if self.loop.is_running():
-            # 安排关闭任务
             asyncio.run_coroutine_threadsafe(self.close(), self.loop)
-            # 停止事件循环
             self.loop.call_soon_threadsafe(self.loop.stop)
         fmts.print_inf("WebSocket客户端已停止")
 
@@ -288,46 +357,42 @@ class Client:
     def generate_ids(self) -> None:
         if not self.config.user_id:
             self.config.user_id = self.config.generate_user_id()
-            fmts.print_inf(f"生成客户端ID: {self.config.user_id}")
+            fmts.print_succ(f"PluginMarketWeb 身份ID -> {self.config.user_id}")
         
         if not self.config.device_fingerprint:
             self.config.device_fingerprint = self.config.generate_device_fingerprint()
-            fmts.print_inf(f"生成设备指纹: {self.config.device_fingerprint}")
+            # fmts.print_inf(f"生成设备指纹: {self.config.device_fingerprint}")
 
     def connect_in_thread(self) -> None:
-        """在独立线程中启动连接"""
         self.generate_ids()
         self.ws_client.run_in_thread()
 
     def stop(self) -> None:
-        """停止客户端"""
         self.ws_client.stop()
 
 async def message_callback(event_type: str, *args):
-    """示例回调函数"""
     if event_type == "connected":
-        print("连接成功")
+        fmts.print_inf("连接成功")
     elif event_type == "disconnected":
-        print("连接已断开")
+        fmts.print_war("连接已断开")
     elif event_type == "message":
-        print(f"接收到消息: {args[0]}")
-    elif event_type == "progress":
-        print(f"下载进度: {args[0]}%")
+        fmts.print_inf(f"接收到消息: {args[0]}")
 
 class PluginMarketWeb(Plugin):
     name = "PluginMarketWeb"
     author = "ToolDelta"
-    version = (0, 0, 1)
+    version = (0, 1, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
+        self.ListenFrameExit(self.on_disable)
+        self.ListenActive(self.on_active)
+
+    def on_active(self):
         self.client = Client(message_callback=message_callback)
-        # 在独立线程中启动客户端
         self.client.connect_in_thread()
 
     def on_disable(self):
-        """插件卸载时停止客户端"""
         self.client.stop()
-        fmts.print_inf(f"[{self.name}] 插件市场客户端已关闭")
 
 entry = plugin_entry(PluginMarketWeb, "pluginmarket_web")
