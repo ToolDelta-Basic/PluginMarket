@@ -444,7 +444,7 @@
     "pluginmarket_web": {
       "name": "Web版插件市场-试行",
       "author": "xingchen",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "等级限制": {
