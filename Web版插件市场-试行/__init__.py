@@ -357,7 +357,7 @@ class Client:
     def generate_ids(self) -> None:
         if not self.config.user_id:
             self.config.user_id = self.config.generate_user_id()
-            fmts.print_succ(f"PluginMarketWeb 身份ID -> {self.config.user_id}")
+            fmts.print_suc(f"PluginMarketWeb 身份ID -> {self.config.user_id}")
         
         if not self.config.device_fingerprint:
             self.config.device_fingerprint = self.config.generate_device_fingerprint()
