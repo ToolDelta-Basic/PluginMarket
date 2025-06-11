@@ -389,6 +389,7 @@ class PluginMarketWeb(Plugin):
         self.ListenActive(self.on_active)
 
     def on_active(self):
+        fmts.print_load("PluginMarketWeb 官方网站地址: http://web.tooldelta.xyz")
         self.client = Client(message_callback=message_callback)
         self.client.connect_in_thread()
 
