@@ -2,14 +2,23 @@ import os
 import json
 import threading
 import time
-from tooldelta import FrameExit, Plugin, Frame, fmts, utils, plugin_entry
+import uuid
+from tooldelta import (
+    FrameExit,
+    InternalBroadcast,
+    Plugin,
+    Frame,
+    fmts,
+    utils,
+    plugin_entry,
+)
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -18,17 +27,25 @@ class SimpleWorldImport(Plugin):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
 
+        self.place_nbt_block_request_id = ""
+        self.place_nbt_block_waiter = threading.Event()
+
         self.should_close = False
         self.running_mutex = threading.Lock()
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenFrameExit(self.on_close)
+        self.ListenInternalBroadcast(
+            "ffm:place_nbt_block_response", self.on_place_nbt_block_response
+        )
         self.make_data_path()
 
     def on_def(self):
-        global bwo
+        global bwo, nbtlib
+
         pip = self.GetPluginAPI("pip")
+        _ = self.GetPluginAPI("献给机械の花束")
 
         if 0:
             from pip模块支持 import PipSupport
@@ -37,6 +54,7 @@ class SimpleWorldImport(Plugin):
 
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
         import bedrockworldoperator as bwo
+        import nbtlib
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -56,6 +74,7 @@ class SimpleWorldImport(Plugin):
 
     def on_close(self, _: FrameExit):
         self.should_close = True
+        self.place_nbt_block_waiter.set()
         self.running_mutex.acquire()
         self.running_mutex.release()
 
@@ -159,6 +178,47 @@ class SimpleWorldImport(Plugin):
             f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
         )
 
+    def place_nbt_block(
+        self,
+        pos: tuple[int, int, int],
+        block_runtime_id,
+        block_nbt: "nbtlib.tag.Compound",
+    ):
+        states = bwo.runtime_id_to_state(block_runtime_id)
+        self.place_nbt_block_request_id = str(uuid.uuid4())
+
+        waiter = threading.Event()
+        self.place_nbt_block_waiter = waiter
+
+        self.BroadcastEvent(
+            InternalBroadcast(
+                "ffm:place_nbt_block_request",
+                {
+                    "request_id": self.place_nbt_block_request_id,
+                    "block_name": states.Name,
+                    "block_states_string": self.as_block_states_string(states.States),
+                    "block_nbt": block_nbt,
+                    "posx": pos[0],
+                    "posy": pos[1],
+                    "posz": pos[2],
+                },
+            )
+        )
+
+        waiter.wait()
+
+    def on_place_nbt_block_response(self, event: InternalBroadcast):
+        if event.data["request_id"] != self.place_nbt_block_request_id:
+            return
+
+        if not event.data["success"]:
+            fmts.print_war(
+                f"简单世界导入: 处理 ({event.data["posx"]},{event.data["posy"]},{event.data["posz"]}) 处的 NBT 方块时出现错误"
+            )
+
+        self.place_nbt_block_request_id = ""
+        self.place_nbt_block_waiter.set()
+
     @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_import(self, cmd: list[str]):
         if not self.running_mutex.acquire(timeout=0):
@@ -250,6 +310,17 @@ class SimpleWorldImport(Plugin):
             # 转换到以实际导入地点为原点时的绝对坐标
             pen_x = sub_x - start_pos[0] + result_start_pos[0]
             pen_z = sub_z - start_pos[2] + result_start_pos[2]
+
+            # 加载 NBT 方块，
+            # 并保存方块坐标到 NBT 方块数据的映射。
+            # 注：这个坐标是 实际导入 时的方块坐标
+            nbts = world.load_nbt(origin_chunk_pos, dm)
+            block_pos_to_nbt: dict[tuple[int, int, int], nbtlib.tag.Compound] = {}
+            for i in nbts:
+                posx = int(i["x"]) - start_pos[0] + result_start_pos[0]
+                posy = int(i["y"]) - start_pos[1] + result_start_pos[1]
+                posz = int(i["z"]) - start_pos[2] + result_start_pos[2]
+                block_pos_to_nbt[(posx, posy, posz)] = i
 
             # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了,
             # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z),
@@ -383,8 +454,14 @@ class SimpleWorldImport(Plugin):
                     if rid1 != bwo.AIR_BLOCK_RUNTIME_ID:
                         self.send_build_command(final_pos, rid1)
 
+                    # 如果这是一个 NBT 方块
+                    if final_pos in block_pos_to_nbt:
+                        self.place_nbt_block(
+                            final_pos, rid0, block_pos_to_nbt[final_pos]
+                        )
                     # 正常放置前景层的方块
-                    self.send_build_command(final_pos, rid0)
+                    else:
+                        self.send_build_command(final_pos, rid0)
 
                     # 这里是保证 1 秒钟最多导入 1000 个方块。
                     # 0.001 = 1/1000

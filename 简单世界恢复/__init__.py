@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from dataclasses import dataclass
+import uuid
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
@@ -29,7 +30,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -58,6 +59,9 @@ class SimpleWorldRecover(Plugin):
         self.all_waiting_chunk = set()
         self.chunk_cache = {}
 
+        self.place_nbt_block_request_id = ""
+        self.place_nbt_block_waiter = threading.Event()
+
         self.should_close = False
         self.running_mutex = threading.Lock()
 
@@ -66,11 +70,16 @@ class SimpleWorldRecover(Plugin):
         self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
         self.ListenInternalBroadcast("swr:recover_request", self.on_event)
+        self.ListenInternalBroadcast(
+            "ffm:place_nbt_block_response", self.on_place_nbt_block_response
+        )
 
     def on_def(self):
-        global bwo
+        global bwo, nbtlib
+
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 1, 1))
+        _ = self.GetPluginAPI("献给机械の花束")
 
         if 0:
             from pip模块支持 import PipSupport
@@ -79,6 +88,7 @@ class SimpleWorldRecover(Plugin):
 
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
         import bedrockworldoperator as bwo
+        import nbtlib
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -96,6 +106,7 @@ class SimpleWorldRecover(Plugin):
 
     def on_close(self, _: FrameExit):
         self.should_close = True
+        self.place_nbt_block_waiter.set()
         self.chunk_cache_mu.acquire()
         self.all_waiting_chunk.clear()
         self.chunk_cache = {}
@@ -143,6 +154,47 @@ class SimpleWorldRecover(Plugin):
 
         self.waiting_chunk_data = event.data
         self.chunk_waiter.set()
+
+    def place_nbt_block(
+        self,
+        pos: tuple[int, int, int],
+        block_runtime_id,
+        block_nbt: "nbtlib.tag.Compound",
+    ):
+        states = bwo.runtime_id_to_state(block_runtime_id)
+        self.place_nbt_block_request_id = str(uuid.uuid4())
+
+        waiter = threading.Event()
+        self.place_nbt_block_waiter = waiter
+
+        self.BroadcastEvent(
+            InternalBroadcast(
+                "ffm:place_nbt_block_request",
+                {
+                    "request_id": self.place_nbt_block_request_id,
+                    "block_name": states.Name,
+                    "block_states_string": self.as_block_states_string(states.States),
+                    "block_nbt": block_nbt,
+                    "posx": pos[0],
+                    "posy": pos[1],
+                    "posz": pos[2],
+                },
+            )
+        )
+
+        waiter.wait()
+
+    def on_place_nbt_block_response(self, event: InternalBroadcast):
+        if event.data["request_id"] != self.place_nbt_block_request_id:
+            return
+
+        if not event.data["success"]:
+            fmts.print_war(
+                f"简单世界恢复: 处理 ({event.data["posx"]},{event.data["posy"]},{event.data["posz"]}) 处的 NBT 方块时出现错误"
+            )
+
+        self.place_nbt_block_request_id = ""
+        self.place_nbt_block_waiter.set()
 
     def on_event(self, event: InternalBroadcast):
         """
@@ -366,6 +418,14 @@ class SimpleWorldRecover(Plugin):
                 fmts.print_war(f"位于 {chunk_pos} 的区块没有找到, 跳过")
                 continue
 
+            nbts = world.load_nbt(chunk_pos, dm)
+            block_pos_to_nbt: dict[tuple[int, int, int], nbtlib.tag.Compound] = {}
+            for i in nbts:
+                posx = int(i["x"])
+                posy = int(i["y"])
+                posz = int(i["z"])
+                block_pos_to_nbt[(posx, posy, posz)] = i
+
             while True:
                 if self.should_close:
                     world.close_world()
@@ -428,9 +488,19 @@ class SimpleWorldRecover(Plugin):
                         time.sleep(0.001)
 
                     if chunk_sub_block_0 != server_sub_block_0:
-                        self.send_build_command(
-                            (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_0
-                        )
+                        final_pos = (pen_x + x, pen_y + y, pen_z + z)
+
+                        if final_pos in block_pos_to_nbt:
+                            self.place_nbt_block(
+                                final_pos,
+                                chunk_sub_block_0,
+                                block_pos_to_nbt[final_pos],
+                            )
+                        else:
+                            self.send_build_command(
+                                (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_0
+                            )
+
                         recover_block_count += 1
                         time.sleep(0.001)
 
