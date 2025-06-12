@@ -141,10 +141,10 @@ class FlowersForMachine(Plugin):
         self.started_server = False
 
     def create_err_log(self, args: dict):
-        file_name = str(uuid.uuid4()) + ".log"
+        file_name = self.format_data_path(str(uuid.uuid4()) + ".log")
         with open(file_name, "w+", encoding="utf-8") as file:
             file.write(json.dumps(args, ensure_ascii=False))
-        fmts.print_war(f"献给机械の花束: 错误日志已生成到文件 {file_name} 中")
+        fmts.print_war(f"献给机械の花束: 错误日志已生成到路径 {file_name} 中")
 
     def place_nbt_block(
         self, block_name: str, block_states: str, block_nbt: "nbtlib.tag.Compound"
