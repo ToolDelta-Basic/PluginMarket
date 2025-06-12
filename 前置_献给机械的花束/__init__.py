@@ -109,7 +109,7 @@ class FlowersForMachine(Plugin):
             "https://github.tooldelta.top/github.com/Happy2018new/the-last-problem-of-the-humankind/releases/download/public-hacking/std_server"
         )
         if not file_binary.ok:
-            fmts.print_err("献给机械の花束: 恢复工具下载失败")
+            fmts.print_err("献给机械の花束: 配套软件下载失败")
             return
         with open(server_path, "wb") as file:
             file.write(file_binary.content)
