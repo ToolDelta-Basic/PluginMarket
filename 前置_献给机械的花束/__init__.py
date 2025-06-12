@@ -170,7 +170,7 @@ class FlowersForMachine(Plugin):
             return PlaceNBTBlockResult(False)
 
         if resp.status_code != 200:
-            fmts.print_err("献给机械の花束: 尝试放置 NBT 方块时配置软件惊慌")
+            fmts.print_err("献给机械の花束: 尝试放置 NBT 方块时配套软件惊慌")
             self.create_err_log(args)
             return PlaceNBTBlockResult()
 
