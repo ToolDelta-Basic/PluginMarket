@@ -213,7 +213,7 @@ class SimpleWorldImport(Plugin):
 
         if not event.data["success"]:
             fmts.print_war(
-                f"简单世界导入: 处理 ({event.data["posx"]},{event.data["posy"]},{event.data["posz"]}) 处的 NBT 方块时出现错误"
+                f"简单世界导入: 处理 {event.data["posx"]} {event.data["posy"]} {event.data["posz"]}) 处的 NBT 方块时出现错误"
             )
 
         self.place_nbt_block_request_id = ""
