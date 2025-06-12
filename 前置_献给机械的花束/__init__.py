@@ -176,8 +176,9 @@ class FlowersForMachine(Plugin):
 
         resp_json = json.loads(resp.content.decode())
         if not resp_json["success"]:
+            error_info = resp_json["error_info"]
             fmts.print_war(
-                f"献给机械の花束: 尝试放置 NBT 方块时失败，错误信息为 {resp_json["error_info"]}"
+                f"献给机械の花束: 尝试放置 NBT 方块时失败，错误信息为 {error_info}"
             )
             if resp_json["error_type"] == RESPONSE_ERROR_TYPE_RUNTIME_ERROR:
                 self.create_err_log(args)
@@ -235,9 +236,15 @@ class FlowersForMachine(Plugin):
         if not self.started_server:
             self.run_server()
 
+        posx = event.data["posx"]
+        posy = event.data["posy"]
+        posz = event.data["posz"]
+        block_name = event.data["block_name"]
+        block_states_string = event.data["block_states_string"]
+
         resp = self.place_nbt_block(
-            event.data["block_name"],
-            event.data["block_states_string"],
+            block_name,
+            block_states_string,
             event.data["block_nbt"],
         )
 
@@ -258,11 +265,11 @@ class FlowersForMachine(Plugin):
 
         if resp.can_fast:
             self.game_ctrl.sendwocmd(
-                f"setblock {event.data["posx"]} {event.data["posy"]} {event.data["posz"]} {event.data["block_name"]} {event.data["block_states_string"]}"
+                f"setblock {posx} {posy} {posz} {block_name} {block_states_string}"
             )
         else:
             self.game_ctrl.sendwocmd(
-                f'structure load "{resp.structure_name}" {event.data["posx"]} {event.data["posy"]} {event.data["posz"]}'
+                f'structure load "{resp.structure_name}" {posx} {posy} {posz}'
             )
             self.game_ctrl.sendcmd_with_resp("")
 
