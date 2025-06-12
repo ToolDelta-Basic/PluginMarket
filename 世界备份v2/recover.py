@@ -6,6 +6,7 @@ from tooldelta import Plugin
 from tooldelta.utils import fmts, tempjson
 from .recover_tool_name import get_tool_name
 from .define import WorldBackupBase
+from .releases import releases_str
 
 
 class WorldBackupRecover:
@@ -31,10 +32,11 @@ class WorldBackupRecover:
         resp = requests.get(
             "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/latest"
         )
+
         if not resp.ok:
-            fmts.print_err("世界备份第二世代: 从 GitHub 获取恢复工具失败")
-            return False
-        releases = json.loads(resp.content)
+            releases = json.loads(releases_str)
+        else:
+            releases = json.loads(resp.content)
 
         tool_path = self.plugin().format_data_path(tool_name)
         for i in releases["assets"]:
