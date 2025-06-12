@@ -189,8 +189,11 @@ class SimpleWorldRecover(Plugin):
             return
 
         if not event.data["success"]:
+            posx = event.data["posx"]
+            posy = event.data["posy"]
+            posz = event.data["posz"]
             fmts.print_war(
-                f"简单世界恢复: 处理 {event.data["posx"]} {event.data["posy"]} {event.data["posz"]}) 处的 NBT 方块时出现错误"
+                f"简单世界恢复: 处理 {posx} {posy} {posz} 处的 NBT 方块时出现错误"
             )
 
         self.place_nbt_block_request_id = ""
