@@ -642,6 +642,7 @@
         "datas.json",
         "readme.txt",
         "__init__.py",
+        "releases.py",
         "recover.py",
         "define.py"
     ],

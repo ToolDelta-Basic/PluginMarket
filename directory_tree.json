@@ -656,6 +656,7 @@
         "datas.json": 0,
         "readme.txt": 0,
         "__init__.py": 0,
+        "releases.py": 0,
         "recover.py": 0,
         "define.py": 0
     },
