@@ -34,7 +34,7 @@ class FlowersForMachine(Plugin):
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
-            "租赁服号": "48285363",
+            "租赁服号": "",
             "租赁服密码": "",
             "我已经修改了操作台坐标": False,
             "操作台中心 X 轴坐标": 0,
@@ -59,6 +59,8 @@ class FlowersForMachine(Plugin):
             raise Exception(
                 "献给机械の花束: 您需要设置操作台的中心坐标。如果您不知道这是什么，请阅读自述文件，否则后果自负"
             )
+        if len(self.rsn) == 0:
+            raise Exception("献给机械の花束: 请设置租赁服号")
 
         self.should_close = False
         self.running_mutex = threading.Lock()
