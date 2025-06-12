@@ -97,14 +97,14 @@ class FlowersForMachine(Plugin):
             self.close_server()
 
     def run_server(self):
-        server_path = self.format_data_path("std_server.exe")
+        server_path = self.format_data_path("std_server")
 
         if self.started_server:
             return
 
         fmts.print_inf("献给机械の花束: 开始下载相应配套软件，请坐和放宽")
         file_binary = requests.get(
-            "https://github.tooldelta.top/github.com/Happy2018new/the-last-problem-of-the-humankind/releases/download/public-hacking/std_server.exe"
+            "https://github.tooldelta.top/github.com/Happy2018new/the-last-problem-of-the-humankind/releases/download/public-hacking/std_server"
         )
         if not file_binary.ok:
             fmts.print_err("献给机械の花束: 恢复工具下载失败")
