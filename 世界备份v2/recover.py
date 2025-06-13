@@ -86,7 +86,7 @@ class WorldBackupRecover:
             tempjson.flush(config_path)
             return (
                 cmd_config["output"],
-                cmd_config["use-range"],
+                cmd_config["use-range"] == "true",
                 f"({cmd_config['range-start-x']},{cmd_config['range-start-z']})",
                 f"({cmd_config['range-end-x']},{cmd_config['range-end-z']})",
             )
