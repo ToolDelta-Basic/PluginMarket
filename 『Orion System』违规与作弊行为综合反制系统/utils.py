@@ -3,14 +3,13 @@
 from tooldelta import fmts, game_utils, TYPE_CHECKING
 from tooldelta.utils import tempjson
 from typing import Literal, Any
-from string import punctuation
 import time
 import re
 import math
 
 # 仅类型检查用
 if TYPE_CHECKING:
-    from __init__ import Orion_System
+    from .__init__ import Orion_System
 
 
 class OrionUtils:
@@ -107,48 +106,74 @@ class OrionUtils:
         """
         try:
             if (name in self.cfg.whitelist) or (
-                game_utils.is_op(name) and self.cfg.is_op_in_whitelist
+                game_utils.is_op(name) and self.cfg.ban_ignore_op
             ):
                 return True
         except (ValueError, KeyError):
             return False
         return False
 
+    def clean_text(self, text: str) -> str:
+        r"""
+        移除字符串内的某些字符，包括:
+            1. 删除空白字符，如空格、全角空格、换行符、制表符
+            2. 删除§染色符号和后续那一个字符
+            3. 将字符串中的全部英文字母转换为大写，抹去大小写的差异
+            4. 删除配置中的特定字符，如!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~，。！？；：‘’“”【】（）《》、·—～…・丨
+        Args:
+            text (str): 字符串
+        Returns:
+            text (str): 修饰完毕后的字符串
+        """
+        if self.cfg.is_remove_space:
+            text = re.sub(r"[\s\u3000]+", "", text, flags=re.UNICODE)
+        pattern = re.compile(f"[{re.escape(self.cfg.other_remove)}]")
+        text = pattern.sub("", text)
+        if self.cfg.is_remove_double_s:
+            text = re.sub(r"§.", "", text)
+        if self.cfg.is_distinguish_upper_or_lower_on_chat is False:
+            text = text.upper()
+        return text
+
     def print_inf(
         self,
-        info: dict[str, str | list[str]] | None,
-        info_args: tuple[Any] = (),
+        info: dict[str, str | list[str]],
+        info_args: tuple = (),
     ) -> None:
         r"""
         快速控制台/游戏内输出操作
         Args:
             info (dict[str, str | list[str]]): 输出文本的字典，来源于插件配置，一般包括<控制台>和<游戏内>输出
-            info_args (tuple[Any]): 如果info的值中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
+            info_args (tuple): 如果info的值中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
         Warning:
             如果info_args的元素数量小于format占位符(IndexError)，将不会输出任何文本
             如果info的值最前面有NN，将不会输出任何文本
             如果info的值包括换行符或\n，将分行输出文本(绕过可能的网易屏蔽词)
         """
-        terminal_info = OrionUtils.text_format(info.get("控制台"), info_args)
-        game_info = OrionUtils.text_format(info.get("游戏内")[1], info_args)
-        selector = info.get("游戏内")[0]
-        if terminal_info not in (None, ""):
-            for line in terminal_info.split("\n"):
-                fmts.print_inf(line)
-        if game_info not in (None, ""):
-            for line in game_info.split("\n"):
-                self.plugin.game_ctrl.say_to(selector, line)
+        terminal = info.get("控制台")
+        game = info.get("游戏内")
+        if isinstance(terminal, str):
+            terminal_info = OrionUtils.text_format(terminal, info_args)
+            if terminal_info not in (None, ""):
+                for line in terminal_info.split("\n"):
+                    fmts.print_inf(line)
+        if isinstance(game, list):
+            game_info = OrionUtils.text_format(game[1], info_args)
+            selector = game[0]
+            if game_info not in (None, ""):
+                for line in game_info.split("\n"):
+                    self.plugin.game_ctrl.say_to(selector, line)
 
     @staticmethod
     def text_format(
-        text: str | None,
-        text_args: tuple[Any] = (),
+        text: str,
+        text_args: tuple = (),
     ) -> str:
         """
         格式化文本
         Args:
             text (str): 文本内容
-            text_args (tuple[Any]): 如果text中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
+            text_args (tuple): 如果text中存在诸如{}的format占位符，则进行替换，若不填(即为空元组)则忽略
         Returns:
             text (str): 格式化后的文本内容
         Warning:
@@ -310,33 +335,6 @@ class OrionUtils:
         if quote_count % 2 != 0:
             fixed_str += '"'  # 补全字符串的闭合引号
         return fixed_str + missing_closures
-
-    @staticmethod
-    def remove_punct(text: str) -> str:
-        """
-        移除字符串中的中英文标点符号
-        Args:
-            text (str): 字符串
-        Returns:
-            text_after_remove (str): 修改完毕后的字符串
-        """
-        chinese_punct = "，。！？；：‘’“”【】（）《》、·—～…・"
-        all_punct = punctuation + chinese_punct
-        pattern = re.compile(f"[{re.escape(all_punct)}]")
-        return pattern.sub("", text)
-
-    @staticmethod
-    def remove_double_s(text: str) -> str:
-        """
-        移除字符串中的§符号，具体逻辑如下:
-        1. 若§后续一个字符为小写英文字母[a-z]或非负整数[0-9]，则删除§和后续那个字符
-        2. 若§后续一个字符为其他情况，则只删除§
-        Args:
-            text (str): 字符串
-        Returns:
-            text_after_remove (str): 修改完毕后的字符串
-        """
-        return re.sub(r"§([a-z0-9])|§", lambda m: "" if m.group(1) else "", text)
 
     @staticmethod
     def paginate(total_len: int, per_page: int, page: int) -> tuple[int, int, int]:

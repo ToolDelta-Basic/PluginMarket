@@ -1,24 +1,29 @@
 """『Orion System 猎户座』插件配置加载器"""
 
 from tooldelta import cfg, fmts, TYPE_CHECKING
+from typing import ClassVar, Literal, Any
 import os
+
+from .utils import OrionUtils
 
 # 仅类型检查用
 if TYPE_CHECKING:
-    from __init__ import Orion_System
+    from .__init__ import Orion_System
 
 
 class OrionConfig:
     """插件配置加载器"""
 
     # 首次生成的配置
-    CONFIG_DEFAULT = {
+    CONFIG_DEFAULT: ClassVar[dict[str, Any]] = {
         "是否启用控制台封禁/解封系统": True,
         "是否启用游戏内封禁/解封系统": True,
         "控制台封禁系统触发词": ["ban", "封禁"],
         "游戏内封禁系统触发词": ["ban", "封禁"],
         "控制台解封系统触发词": ["unban", "解封"],
         "游戏内解封系统触发词": ["unban", "解封"],
+        "--操作员可使用游戏内封禁/解封系统": True,
+        "--以下用户无需操作员权限也可使用游戏内封禁/解封系统": ["...", "..."],
         "控制台封禁/解封系统每页显示几项": 20,
         "游戏内封禁/解封系统每页显示几项": 20,
         "游戏内封禁/解封系统等待输入超时时间(秒)": 60,
@@ -84,7 +89,8 @@ class OrionConfig:
             "生存圈",
             "天庭",
             "天神之庭",
-            "LunarHax",
+            "Lunar",
+            "Hax",
             "白墙",
             "跑路",
             "走路科技",
@@ -119,8 +125,12 @@ class OrionConfig:
         "是否禁止游戏内私聊(tell,msg,w命令)": True,
         "--禁止私聊时是否允许私聊机器人": False,
         "是否禁止游戏内me命令": True,
-        "发言反制是否区分大小写英文字母": False,
-        "发言反制是否删除§染色符号": True,
+        "<<提示>> 由于玩家可能通过各种方式绕开发言反制，本插件可以对文本进行以下修饰": None,
+        "<<提示>> 例如：在文本修饰完毕后，玩家输入的<, R§aUn§gA.【丨w@a   §cY>将可以被精确识别为<runaway>": None,
+        "--发言反制是否删除空格": True,
+        "--发言反制是否区分大小写英文字母": False,
+        "--发言反制是否删除§染色符号": True,
+        "--除上述修饰外，以下内容也会被删除(仅限单个字符)": r"""!"#$£€%‰&'()*+,-./:;<=≠≈≌∈>?@[\]^_`{|}~，。！？；：‘’“”【】（）《》、·—～…・丨￥［］〔〕｛｝＃％＾＊＋＝＿＼｜〈〉＜＞＆•°．""",
         "是否启用发言黑名单词检测": True,
         "发言黑名单词列表": [
             "白墙",
@@ -225,7 +235,7 @@ class OrionConfig:
             "玩家": "您必须通过 Microsoft 服务身份验证。",
         },
         "信息_游戏内私聊(tell,msg,w命令)": {
-            "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 尝试发送私聊(tell,msg,w命令)，§a正在制裁 §b[TextType:{2}]",
+            "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 尝试发送私聊(tell,msg,w命令)，§a正在制裁，§b[TextType:{2}]",
             "游戏内": ["@a", "NN"],
             "玩家": "您尝试发送私聊(tell,msg,w命令)",
         },
@@ -255,12 +265,12 @@ class OrionConfig:
             "玩家": "您连续发送重复文本超出限制({2}条/{3}秒)",
         },
         "信息_被封禁玩家进入游戏": {
-            "控制台": "§a❀ §b[PlayerList] §c发现玩家 {0} (xuid:{1}) 被封禁，§a正在制裁，其被封禁至：{2}",
+            "控制台": "§a❀ §b[PlayerList] §c发现玩家 {0} (xuid:{1}) 被封禁，§a正在制裁，封禁时间至：{2}",
             "游戏内": ["@a", "NN"],
             "玩家": "由于{3}，您被系统封禁至：{2}",
         },
         "信息_被封禁设备号进入游戏": {
-            "控制台": "§a❀ §b[PlayerList] §c发现设备号 {0} 被封禁(当前登录玩家：{1})，§a正在制裁，其被封禁至：{2}",
+            "控制台": "§a❀ §b[PlayerList] §c发现设备号 {0} 被封禁(当前登录玩家:{1})，§a正在制裁，封禁时间至：{2}",
             "游戏内": ["@a", "NN"],
             "玩家": "由于{3}，您被系统封禁至：{2}",
         },
@@ -279,11 +289,25 @@ class OrionConfig:
             "控制台": """§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §l§d❐§f 『§6Orion System §d猎户座§f』 §b违规与作弊行为§e综合§a反制§d系统
 §a❀ §b反制外挂の重要提示！
-§a❀ §e目前较为流行的崩服方法为 §b坐骑+传送崩服
-§a❀ §d反制方法： §e请在您的租赁服的常加载区域设置 §b循环命令方块：/ride @a stop_riding
-§a❀ §d注意：§e由于性能原因，我们不建议通过机器人插件循环执行上述命令，§b请您在游戏中通过命令方块进行防御！
+§a❀ §d我们认为 §b外挂可能通过遍历密码或者通过某些BUG §e破解或绕开租赁服的密码 §c我们认为租赁服密码是无效的
+§a❀ §d外挂可以在进入游戏时 §e篡改数据包中的等级字段 §c我们认为租赁服等级是无效的
+§a❀ §d若您的密码曾被破解 §e只要外挂跟租赁服建立过一次连接 §b租赁服当前IP地址即暴露
+§a❀ §d网易的租赁服黑名单仅限于通过正常客户端加入游戏 §e在IP暴露的情况下 §b外挂可能尝试通过IP外进绕过网易黑名单 §c我们认为黑名单是无效的
+§a❀ §c只要您的租赁服IP被暴露，外挂可以随意进出您的服务器，如入无人之境，您的密码、等级、黑名单均无效!
+§a❀ §b此时您必须尝试重置租赁服IP以防御外挂 §e重置IP的方法为: §b保存当前存档 → 重置存档 → 还原存档
+§a❀ §b我们认为仅重启租赁服也可能有效 §e此外 租赁服在正常运行过程中也有可能会定期更新IP
+§a❀ §f如果您的租赁服遭到外挂袭击，您必须保护您的租赁服IP不受暴露，设置密码、等级、黑名单均有被绕过的可能，§a故最佳做法是:设置"仅限好友可见"!
+§a❀ §e当前NBT虚转实复活风险: §a低风险(暂未发现或未构成流行)
 §d✧✦§f§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §a❀ §e如果您需要“禁止游戏内私聊(tell,msg,w命令)”，§b请将机器人踢出游戏后启用sendcommandfeedback，命令为/gamerule sendcommandfeedback true""",
+            "游戏内": ["@a", "NN"],
+        },
+        "信息_xuid封禁时长显示": {
+            "控制台": "§a❀ §9[Data] §b玩家 {0} (xuid:{1}) §e本次新增封禁时长：{2}秒，§a封禁时间至：{3}",
+            "游戏内": ["@a", "NN"],
+        },
+        "信息_设备号封禁时长显示": {
+            "控制台": "§a❀ §9[Data] §b设备号 {0} (当前登录玩家:{1}) §e本次新增封禁时长：{2}秒，§a封禁时间至：{3}",
             "游戏内": ["@a", "NN"],
         },
         "信息_崩服数据包": {
@@ -335,7 +359,7 @@ class OrionConfig:
             "游戏内": ["@a", "NN"],
         },
         "信息_设备号慢速获取失败2": {
-            "控制台": "§a❀ §5[Error] §c获取玩家 {0} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{1}/{2}，将在4秒后再次尝试查询",
+            "控制台": "§a❀ §5[Error] §c获取玩家 {0} 设备号失败(慢速获取方式)，这可能是因为玩家进服后秒退或者玩家暂未完全进入服务器，当前尝试次数{1}/{2}，将在1.5秒后再次尝试查询",
             "游戏内": ["@a", "NN"],
         },
         "信息_设备号慢速获取失败3": {
@@ -403,13 +427,15 @@ class OrionConfig:
         "测试服列表": [48285363],
     }
     # 配置格式要求
-    CONFIG_STD = {
+    CONFIG_STD: ClassVar[dict[str, Any]] = {
         "是否启用控制台封禁/解封系统": bool,
         "是否启用游戏内封禁/解封系统": bool,
         "控制台封禁系统触发词": cfg.JsonList(str, -1),
         "游戏内封禁系统触发词": cfg.JsonList(str, -1),
         "控制台解封系统触发词": cfg.JsonList(str, -1),
         "游戏内解封系统触发词": cfg.JsonList(str, -1),
+        "--操作员可使用游戏内封禁/解封系统": bool,
+        "--以下用户无需操作员权限也可使用游戏内封禁/解封系统": cfg.JsonList(str, -1),
         "控制台封禁/解封系统每页显示几项": cfg.PInt,
         "游戏内封禁/解封系统每页显示几项": cfg.PInt,
         "游戏内封禁/解封系统等待输入超时时间(秒)": cfg.PNumber,
@@ -443,8 +469,10 @@ class OrionConfig:
         "是否禁止游戏内私聊(tell,msg,w命令)": bool,
         "--禁止私聊时是否允许私聊机器人": bool,
         "是否禁止游戏内me命令": bool,
-        "发言反制是否区分大小写英文字母": bool,
-        "发言反制是否删除§染色符号": bool,
+        "--发言反制是否删除空格": bool,
+        "--发言反制是否区分大小写英文字母": bool,
+        "--发言反制是否删除§染色符号": bool,
+        "--除上述修饰外，以下内容也会被删除(仅限单个字符)": str,
         "是否启用发言黑名单词检测": bool,
         "发言黑名单词列表": cfg.JsonList(str, -1),
         "发言检测周期(秒)": cfg.PNumber,
@@ -494,6 +522,8 @@ class OrionConfig:
         "信息_发现被封禁的在线玩家": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_玩家通过记分板被封禁": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_置顶消息": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_xuid封禁时长显示": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_设备号封禁时长显示": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_崩服数据包": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_破损数据包": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_篡改等级包": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -535,7 +565,6 @@ class OrionConfig:
             plugin: 插件实例
         """
         self.plugin = plugin
-        self.config = None
         self.data_path = plugin.data_path
         self.name = plugin.name
         self.version = plugin.version
@@ -571,6 +600,7 @@ class OrionConfig:
         转换一些配置内容，比如：
         1.移除部分配置项(如名称违禁词列表、发言黑名单词列表)中的空字符串
         2.在符合配置要求下，将部分配置项(如名称违禁词列表、发言黑名单词列表)中的英文字母转换为大写
+        3.将配置中的封禁时间格式化为0、正整数或Forever
         ```"""
         self.banned_word_list = [x for x in self.banned_word_list if x != ""]
         self.blacklist_word_list = [x for x in self.blacklist_word_list if x != ""]
@@ -580,6 +610,11 @@ class OrionConfig:
             self.blacklist_word_list = [
                 word.upper() for word in self.blacklist_word_list
             ]
+        for attr in list(self.__dict__.keys()):
+            if attr.startswith("ban_time_"):
+                original_attr = getattr(self, attr, 0)
+                formatted = OrionUtils.ban_time_format(original_attr)
+                setattr(self, attr, formatted)
 
     def check_permission_mgr(self) -> None:
         """检查玩家权限管理器配置是否正确"""
@@ -657,6 +692,10 @@ class OrionConfig:
         self.game_ban_trigger_words: list[str] = config["游戏内封禁系统触发词"]
         self.terminal_unban_trigger_words: list[str] = config["控制台解封系统触发词"]
         self.game_unban_trigger_words: list[str] = config["游戏内解封系统触发词"]
+        self.is_op_allow_ban_in_game: bool = config["--操作员可使用游戏内封禁/解封系统"]
+        self.user_allow_ban_in_game: list[str] = config[
+            "--以下用户无需操作员权限也可使用游戏内封禁/解封系统"
+        ]
         self.terminal_items_per_page: int = config["控制台封禁/解封系统每页显示几项"]
         self.game_items_per_page: int = config["游戏内封禁/解封系统每页显示几项"]
         self.ban_player_by_game_timeout: int | float = config[
@@ -674,7 +713,7 @@ class OrionConfig:
             "--查询玩家设备号可尝试次数(最后一次尝试依然查询失败即放弃)"
         ]
         self.whitelist: list[str] = config["反制白名单"]
-        self.is_op_in_whitelist: bool = config["各项反制是否禁用于操作员"]
+        self.ban_ignore_op: bool = config["各项反制是否禁用于操作员"]
         self.is_ban_api_in_game: bool = config["是否启用游戏内封禁记分板API"]
         self.ban_scoreboard_name: str = config["--游戏内封禁记分板名称"]
         self.ban_scoreboard_dummy_name: str = config["--游戏内封禁记分板显示名称"]
@@ -718,10 +757,14 @@ class OrionConfig:
         self.ban_private_chat: bool = config["是否禁止游戏内私聊(tell,msg,w命令)"]
         self.allow_chat_with_bot: bool = config["--禁止私聊时是否允许私聊机器人"]
         self.ban_me_command: bool = config["是否禁止游戏内me命令"]
+        self.is_remove_space: bool = config["--发言反制是否删除空格"]
         self.is_distinguish_upper_or_lower_on_chat: bool = config[
-            "发言反制是否区分大小写英文字母"
+            "--发言反制是否区分大小写英文字母"
         ]
-        self.is_remove_double_s: bool = config["发言反制是否删除§染色符号"]
+        self.is_remove_double_s: bool = config["--发言反制是否删除§染色符号"]
+        self.other_remove: str = config[
+            "--除上述修饰外，以下内容也会被删除(仅限单个字符)"
+        ]
         self.testfor_blacklist_word: bool = config["是否启用发言黑名单词检测"]
         self.blacklist_word_list: list[str] = config["发言黑名单词列表"]
         self.speak_detection_cycle: int | float = config["发言检测周期(秒)"]
@@ -740,35 +783,47 @@ class OrionConfig:
         self.jointly_ban_player: bool = config[
             "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)"
         ]
-        self.ban_time_detect_bot: int | str = config["封禁时间_机器人IP外进反制"]
-        self.ban_time_detect_abnormal_skin: int | str = config[
+        self.ban_time_detect_bot: int | Literal["Forever"] = config[
+            "封禁时间_机器人IP外进反制"
+        ]
+        self.ban_time_detect_abnormal_skin: int | Literal["Forever"] = config[
             "封禁时间_锁服反制(皮肤数据异常检查)"
         ]
-        self.ban_time_Steve_or_Alex: int | str = config["封禁时间_Steve/Alex皮肤反制"]
-        self.ban_time_4D_skin: int | str = config["封禁时间_4D皮肤反制"]
-        self.ban_time_level_limit: int | str = config["封禁时间_账号等级限制"]
-        self.ban_time_detect_netease_banned_word: int | str = config[
+        self.ban_time_Steve_or_Alex: int | Literal["Forever"] = config[
+            "封禁时间_Steve/Alex皮肤反制"
+        ]
+        self.ban_time_4D_skin: int | Literal["Forever"] = config["封禁时间_4D皮肤反制"]
+        self.ban_time_level_limit: int | Literal["Forever"] = config[
+            "封禁时间_账号等级限制"
+        ]
+        self.ban_time_detect_netease_banned_word: int | Literal["Forever"] = config[
             "封禁时间_网易屏蔽词名称反制"
         ]
-        self.ban_time_detect_self_banned_word: int | str = config[
+        self.ban_time_detect_self_banned_word: int | Literal["Forever"] = config[
             "封禁时间_自定义违禁词名称反制"
         ]
-        self.ban_time_if_cannot_search: int | str = config[
+        self.ban_time_if_cannot_search: int | Literal["Forever"] = config[
             "封禁时间_网易MC客户端无法搜索到玩家"
         ]
-        self.ban_time_if_different_level: int | str = config[
+        self.ban_time_if_different_level: int | Literal["Forever"] = config[
             "封禁时间_网易MC客户端搜到的玩家等级与游戏内等级不同"
         ]
-        self.ban_time_private_chat: int | str = config[
+        self.ban_time_private_chat: int | Literal["Forever"] = config[
             "封禁时间_游戏内私聊(tell,msg,w命令)"
         ]
-        self.ban_time_me_command: int | str = config["封禁时间_游戏内me命令"]
-        self.ban_time_testfor_blacklist_word: int | str = config[
+        self.ban_time_me_command: int | Literal["Forever"] = config[
+            "封禁时间_游戏内me命令"
+        ]
+        self.ban_time_testfor_blacklist_word: int | Literal["Forever"] = config[
             "封禁时间_发言黑名单词检测"
         ]
-        self.ban_time_speak_speed_limit: int | str = config["封禁时间_发言频率检测"]
-        self.ban_time_message_length_limit: int | str = config["封禁时间_发言字数检测"]
-        self.ban_time_repeat_message_limit: int | str = config[
+        self.ban_time_speak_speed_limit: int | Literal["Forever"] = config[
+            "封禁时间_发言频率检测"
+        ]
+        self.ban_time_message_length_limit: int | Literal["Forever"] = config[
+            "封禁时间_发言字数检测"
+        ]
+        self.ban_time_repeat_message_limit: int | Literal["Forever"] = config[
             "封禁时间_重复消息刷屏检测"
         ]
         self.info_detect_bot: dict[str, str | list[str]] = config[
@@ -823,6 +878,12 @@ class OrionConfig:
             "信息_玩家通过记分板被封禁"
         ]
         self.info_top_message: dict[str, str | list[str]] = config["信息_置顶消息"]
+        self.info_xuid_ban_display: dict[str, str | list[str]] = config[
+            "信息_xuid封禁时长显示"
+        ]
+        self.info_device_id_ban_display: dict[str, str | list[str]] = config[
+            "信息_设备号封禁时长显示"
+        ]
         self.info_collapse_packet: dict[str, str | list[str]] = config[
             "信息_崩服数据包"
         ]

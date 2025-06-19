@@ -1,16 +1,16 @@
 """『Orion System 猎户座』封禁面板"""
 
-from tooldelta import Player, fmts, TYPE_CHECKING
+from tooldelta import Player, game_utils, fmts, TYPE_CHECKING
 from functools import partial
-from typing import Literal, Any
+from typing import ClassVar, Literal, Any
 import re
 import os
 
-from ban_utils import OrionUtils
+from .utils import OrionUtils
 
 # 仅类型检查用
 if TYPE_CHECKING:
-    from __init__ import Orion_System
+    from .__init__ import Orion_System
 
 
 class BanSystem:
@@ -18,7 +18,7 @@ class BanSystem:
 
     # We are now waiting for CQHTTP support !!!!!
 
-    BAN_MENU = {
+    BAN_MENU: ClassVar[dict[str, Any]] = {
         "Exit": {
             "Info": "§a❀ §b输入 §c. §b退出",
             "Success": "§a❀ 已退出封禁系统",
@@ -39,7 +39,7 @@ class BanSystem:
             "Menu_1": """
 §a❀ 已发现以下xuid和玩家名称~
 §d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
-§l§b[ §a序号§b ] §r§axuid - 玩家名称""",
+§l§b[ §a序号§b ] §r§axuid - 玩家名称 - 当前状态""",
             "Menu_2": "§l§b[ §e{}§b ] §r§e{} - {}",
             "Menu_3": """§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §l§a[ §e-§a ] §b上页§r§f▶ §7{}/{} §f◀§l§b下页 §a[ §e+ §a]
@@ -67,7 +67,7 @@ class BanSystem:
             "Menu_1": """
 §a❀ 已发现以下设备号~
 §d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
-§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}""",
+§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]} - 当前状态""",
             "Menu_2": "§l§b[ §e{}§b ] §r§e{} - {}",
             "Menu_3": """§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §l§a[ §e-§a ] §b上页§r§f▶ §7{}/{} §f◀§l§b下页 §a[ §e+ §a]
@@ -113,7 +113,7 @@ class BanSystem:
         },
     }
 
-    UNBAN_MENU = {
+    UNBAN_MENU: ClassVar[dict[str, Any]] = {
         "Exit": {
             "Info": "§a❀ §b输入 §c. §b退出",
             "Success": "§a❀ 已退出解封系统",
@@ -133,7 +133,7 @@ class BanSystem:
             "Menu_1": """
 §a❀ 已发现以下xuid和玩家名称~
 §d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
-§l§b[ §a序号§b ] §r§axuid - 玩家名称""",
+§l§b[ §a序号§b ] §r§axuid - 玩家名称 - 当前状态""",
             "Menu_2": "§l§b[ §e{}§b ] §r§e{} - {}",
             "Menu_3": """§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §l§a[ §e-§a ] §b上页§r§f▶ §7{}/{} §f◀§l§b下页 §a[ §e+ §a]
@@ -153,7 +153,7 @@ class BanSystem:
             "Menu_1": """
 §a❀ 已发现以下设备号~
 §d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
-§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]}""",
+§l§b[ §a序号§b ] §r§a设备号 - {xuid: [玩家名称与改名记录]} - 当前状态""",
             "Menu_2": "§l§b[ §e{}§b ] §r§e{} - {}",
             "Menu_3": """§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧
 §l§a[ §e-§a ] §b上页§r§f▶ §7{}/{} §f◀§l§b下页 §a[ §e+ §a]
@@ -203,13 +203,13 @@ class BanSystem:
         if self.cfg.is_terminal_ban_system:
             self.plugin.frame.add_console_cmd_trigger(
                 self.cfg.terminal_ban_trigger_words,
-                [],
+                None,
                 "封禁玩家-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.ban_player_by_terminal,
             )
             self.plugin.frame.add_console_cmd_trigger(
                 self.cfg.terminal_unban_trigger_words,
-                [],
+                None,
                 "解封玩家-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.unban_player_by_terminal,
             )
@@ -221,29 +221,27 @@ class BanSystem:
                 [],
                 "封禁玩家-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.ban_player_by_game,
-                op_only=True,
             )
             self.plugin.chatbar.add_new_trigger(
                 self.cfg.game_unban_trigger_words,
                 [],
                 "解封玩家-来自<『Orion System』违规与作弊行为综合反制系统>",
                 self.unban_player_by_game,
-                op_only=True,
             )
 
-    def ban_player_by_terminal(self, _: tuple) -> None:
+    def ban_player_by_terminal(self, _: list[str]) -> None:
         """
         控制台玩家封禁-回调函数数据转移
         Args:
-            _ (tuple): 触发词后续的文本切片，本插件不需要使用
+            _ (list[str]): 触发词后续的文本切片，本插件不需要使用
         """
         self.ban(mode=1)
 
-    def unban_player_by_terminal(self, _: tuple) -> None:
+    def unban_player_by_terminal(self, _: list[str]) -> None:
         """
         控制台玩家解封-回调函数数据转移
         Args:
-            _ (tuple): 触发词后续的文本切片，本插件不需要使用
+            _ (list[str]): 触发词后续的文本切片，本插件不需要使用
         """
         self.unban(mode=1)
 
@@ -254,7 +252,12 @@ class BanSystem:
             player (Player): 触发者的玩家对象
             _ (tuple): 触发词后续的文本切片，本插件不需要使用
         """
-        self.ban(mode=2, OBJ=player)
+        if (game_utils.is_op(player.name) and self.cfg.is_op_allow_ban_in_game) or (
+            player.name in self.cfg.user_allow_ban_in_game
+        ):
+            self.ban(mode=2, OBJ=player)
+        else:
+            player.show("§c❀ 您没有使用封禁系统的权限")
 
     def unban_player_by_game(self, player: Player, _: tuple) -> None:
         """
@@ -263,7 +266,12 @@ class BanSystem:
             player (Player): 触发者的玩家对象
             _ (tuple): 触发词后续的文本切片，本插件不需要使用
         """
-        self.unban(mode=2, OBJ=player)
+        if (game_utils.is_op(player.name) and self.cfg.is_op_allow_ban_in_game) or (
+            player.name in self.cfg.user_allow_ban_in_game
+        ):
+            self.unban(mode=2, OBJ=player)
+        else:
+            player.show("§c❀ 您没有使用解封系统的权限")
 
     @staticmethod
     def print_U(message: str, mode: int, OBJ: Player | Any | None) -> None:
@@ -286,7 +294,7 @@ class BanSystem:
             for line in message.split("\n"):
                 if mode == 1:
                     fmts.print_inf(line)
-                elif mode == 2:
+                elif mode == 2 and isinstance(OBJ, Player):
                     OBJ.show(line)
 
     def input_U(self, message: str, mode: int, OBJ: Player | Any | None) -> str | None:
@@ -308,7 +316,7 @@ class BanSystem:
             message = "请输入："
         if mode == 1:
             return input(fmts.fmt_info(message))
-        if mode == 2:
+        if mode == 2 and isinstance(OBJ, Player):
             return OBJ.input(message, timeout=self.cfg.ban_player_by_game_timeout)
 
     def ban(self, mode: int, OBJ: Player | Any | None = None) -> None:
@@ -323,6 +331,7 @@ class BanSystem:
         # 通过functools.partial创建预绑定mode和OBJ属性的函数
         self.print = partial(self.print_U, mode=mode, OBJ=OBJ)
         self.input = partial(self.input_U, mode=mode, OBJ=OBJ)
+        self.get_ID = partial(self.get_ID_U, mode=mode)
         BAN_MENU = self.BAN_MENU
 
         self.print(BAN_MENU["TopMenu"])
@@ -345,8 +354,10 @@ class BanSystem:
             if xuid_data == {}:
                 self.print(BAN_MENU["Xuid"]["Error"]["NotOnlineError"])
                 return
-            (ban_xuid, ban_name) = self.get_ID(xuid_data, "Xuid", 1, mode)
+            (ban_xuid, ban_name) = self.get_ID(xuid_data, "Xuid", 1)
             if ban_xuid is None or ban_name is None:
+                return
+            if not isinstance(ban_name, str):
                 return
             # 如果玩家位于白名单内，不能执行封禁
             if ban_name in self.cfg.whitelist:
@@ -397,7 +408,7 @@ class BanSystem:
             info = BAN_MENU["Xuid"]["Success"]["BanSuccess"]
             self.utils.kick(ban_name, info["Player"].format(ban_reason, date_end))
             self.print(info["Message"].format(ban_xuid, ban_name, date_end))
-            if mode == 2:
+            if mode == 2 and isinstance(OBJ, Player):
                 fmts.print_inf(
                     info["TerminalFromGame"].format(
                         OBJ.name, ban_xuid, ban_name, date_end
@@ -419,8 +430,10 @@ class BanSystem:
             if xuid_data == {}:
                 self.print(BAN_MENU["Xuid"]["Error"]["NotQueryError"])
                 return
-            (ban_xuid, ban_name) = self.get_ID(xuid_data, "Xuid", 1, mode)
+            (ban_xuid, ban_name) = self.get_ID(xuid_data, "Xuid", 1)
             if ban_xuid is None or ban_name is None:
+                return
+            if not isinstance(ban_name, str):
                 return
             # 如果玩家位于白名单内，不能执行封禁
             if ban_name in self.cfg.whitelist:
@@ -471,7 +484,7 @@ class BanSystem:
             info = BAN_MENU["Xuid"]["Success"]["BanSuccess"]
             self.utils.kick(ban_name, info["Player"].format(ban_reason, date_end))
             self.print(info["Message"].format(ban_xuid, ban_name, date_end))
-            if mode == 2:
+            if mode == 2 and isinstance(OBJ, Player):
                 fmts.print_inf(
                     info["TerminalFromGame"].format(
                         OBJ.name, ban_xuid, ban_name, date_end
@@ -497,9 +510,11 @@ class BanSystem:
                 self.print(BAN_MENU["DeviceID"]["Error"]["NotQueryError"])
                 return
             (ban_device_id, ban_xuid_history_name) = self.get_ID(
-                device_id_data, "DeviceID", 1, mode
+                device_id_data, "DeviceID", 1
             )
             if ban_device_id is None or ban_xuid_history_name is None:
+                return
+            if not isinstance(ban_xuid_history_name, dict):
                 return
             # 搜索设备号成功
             self.print(
@@ -551,7 +566,7 @@ class BanSystem:
             self.print(
                 info["Message"].format(ban_device_id, ban_xuid_history_name, date_end)
             )
-            if mode == 2:
+            if mode == 2 and isinstance(OBJ, Player):
                 fmts.print_inf(
                     info["TerminalFromGame"].format(
                         OBJ.name, ban_device_id, ban_xuid_history_name, date_end
@@ -573,6 +588,7 @@ class BanSystem:
         # 通过functools.partial创建预绑定mode和OBJ属性的函数
         self.print = partial(self.print_U, mode=mode, OBJ=OBJ)
         self.input = partial(self.input_U, mode=mode, OBJ=OBJ)
+        self.get_ID = partial(self.get_ID_U, mode=mode)
         UNBAN_MENU = self.UNBAN_MENU
 
         self.print(UNBAN_MENU["TopMenu"])
@@ -601,13 +617,13 @@ class BanSystem:
             if xuid_data == {}:
                 self.print(UNBAN_MENU["Xuid"]["Error"]["NotBanError"])
                 return
-            (unban_xuid, unban_name) = self.get_ID(xuid_data, "Xuid", 2, mode)
+            (unban_xuid, unban_name) = self.get_ID(xuid_data, "Xuid", 2)
             if unban_xuid is None or unban_name is None:
                 return
             os.remove(f"{self.data_path}/{self.cfg.xuid_dir}/{unban_xuid}.json")
             info = UNBAN_MENU["Xuid"]["UnbanSuccess"]
             self.print(info["Message"].format(unban_xuid, unban_name))
-            if mode == 2:
+            if mode == 2 and isinstance(OBJ, Player):
                 fmts.print_inf(
                     info["TerminalFromGame"].format(OBJ.name, unban_xuid, unban_name)
                 )
@@ -637,14 +653,14 @@ class BanSystem:
             for device_id_json in all_device_id_json:
                 device_id = device_id_json.replace(".json", "")
                 try:
-                    device_id_data[device_id] = player_data.get(device_id, "")
+                    device_id_data[device_id] = player_data.get(device_id, {})
                 except ValueError:
                     continue
             if device_id_data == {}:
                 self.print(UNBAN_MENU["DeviceID"]["Error"]["NotBanError"])
                 return
             (unban_device_id, unban_xuid_history_name) = self.get_ID(
-                device_id_data, "DeviceID", 2, mode
+                device_id_data, "DeviceID", 2
             )
             if unban_device_id is None or unban_xuid_history_name is None:
                 return
@@ -653,7 +669,7 @@ class BanSystem:
             )
             info = UNBAN_MENU["DeviceID"]["UnbanSuccess"]
             self.print(info["Message"].format(unban_device_id, unban_xuid_history_name))
-            if mode == 2:
+            if mode == 2 and isinstance(OBJ, Player):
                 fmts.print_inf(
                     info["TerminalFromGame"].format(
                         OBJ.name, unban_device_id, unban_xuid_history_name
@@ -663,11 +679,11 @@ class BanSystem:
         else:
             self.print(UNBAN_MENU["Error"]["InputError"])
 
-    def get_ID(
+    def get_ID_U(
         self,
         ID_dict: dict[str, str | dict[str, list[str]]],
-        ID_type: str,
-        ban_type: int,
+        ID_type: Literal["Xuid", "DeviceID"],
+        ban_type: Literal[1, 2],
         mode: int,
     ) -> tuple[str, str | dict[str, list[str]]] | tuple[None, None]:
         """
@@ -676,10 +692,10 @@ class BanSystem:
             ID_dict (dict[str, str | dict[str, list[str]]]): 全部玩家或在线玩家的标识数据:
                 - 若为xuid，则字典格式为 {xuid: 玩家名称}
                 - 若为device_id，则字典格式为 {device_id: {xuid: [玩家全部历史名称]}}
-            ID_type (str): 玩家标识数据类型，包括:
+            ID_type (Literal["Xuid", "DeviceID"]): 玩家标识数据类型，包括:
                 - "Xuid": 玩家唯一标识符
                 - "DeviceID": 玩家设备号
-            ban_type (int): 执行类型，包括:
+            ban_type (Literal[1, 2]): 执行类型，包括:
                 - 1: 封禁
                 - 2: 解封
             mode (int): 输出模式，包括:
@@ -700,6 +716,10 @@ class BanSystem:
             per_page = self.cfg.terminal_items_per_page
         elif mode == 2:
             per_page = self.cfg.game_items_per_page
+        if ID_type == "Xuid":
+            path = f"{self.data_path}/{self.cfg.xuid_dir}"
+        elif ID_type == "DeviceID":
+            path = f"{self.data_path}/{self.cfg.device_id_dir}"
 
         user_search = ""
         page = 1
@@ -712,21 +732,34 @@ class BanSystem:
             colored_matched_ID_dict = {}
             if ID_type == "Xuid":
                 for xuid, name in ID_dict.items():
-                    if user_search in name:
+                    if user_search in name and isinstance(name, str):
                         matched_ID_dict[xuid] = name
                         colored_matched_ID_dict[xuid] = name.replace(
                             user_search, f"§b{user_search}§e"
                         )
+                        try:
+                            with self.plugin.lock_ban_xuid:
+                                data = OrionUtils.disk_read_need_exists(
+                                    f"{path}/{xuid}.json"
+                                )
+                            ban_end_real_time = data.get("ban_end_real_time", "")
+                            colored_matched_ID_dict[xuid] += (
+                                f" §c- 封禁至: {ban_end_real_time}"
+                            )
+                        except FileNotFoundError:
+                            colored_matched_ID_dict[xuid] += " §a- 未封禁"
+                            continue
             elif ID_type == "DeviceID":
                 for device_id, player_data in ID_dict.items():
-                    for name_list in player_data.values():
-                        for name in name_list:
-                            if user_search in name:
-                                matched_ID_dict[device_id] = player_data
-                                break
-                        else:
-                            continue
-                        break
+                    if isinstance(player_data, dict):
+                        for name_list in player_data.values():
+                            for name in name_list:
+                                if user_search in name:
+                                    matched_ID_dict[device_id] = player_data
+                                    break
+                            else:
+                                continue
+                            break
                 # 只对玩家名称中的字符串进行染色，不染xuid，所以把玩家名称列表拿出来单独替换，并重新组装成字符串
                 for device_id, player_data in matched_ID_dict.items():
                     colored_data = "{"
@@ -737,6 +770,18 @@ class BanSystem:
                         colored_data += f"'{xuid}': {colored_name}, "
                     colored_data = colored_data[:-2] + "}"
                     colored_matched_ID_dict[device_id] = colored_data
+                    try:
+                        with self.plugin.lock_ban_device_id:
+                            data = OrionUtils.disk_read_need_exists(
+                                f"{path}/{device_id}.json"
+                            )
+                        ban_end_real_time = data.get("ban_end_real_time", "")
+                        colored_matched_ID_dict[device_id] += (
+                            f" §c- 封禁至: {ban_end_real_time}"
+                        )
+                    except FileNotFoundError:
+                        colored_matched_ID_dict[device_id] += " §a- 未封禁"
+                        continue
 
             # 如果根据用户输入内容，无法搜索到任何匹配项，退出系统
             if matched_ID_dict == {}:
@@ -784,8 +829,8 @@ class BanSystem:
                 else:
                     self.print(MENU["Page"]["Error"]["FinalPageError"])
             # 如果输入<正整数+页>，尝试翻到对应页
-            elif bool(re.fullmatch(r"^[1-9]\d*页$", user_input)):
-                page_num = int(re.fullmatch(r"^([1-9]\d*)页$", user_input).group(1))
+            elif match := re.fullmatch(r"^([1-9]\d*)页$", user_input):
+                page_num = int(match.group(1))
                 if 1 <= page_num <= total_pages:
                     page = page_num
                 else:
@@ -795,10 +840,10 @@ class BanSystem:
             else:
                 try:
                     # 如果输入整数，尝试匹配对应索引的玩家
-                    user_input = int(user_input)
-                    if user_input in range(start_index, end_index + 1):
-                        ban_ID = list(matched_ID_dict.keys())[user_input - 1]
-                        ban_player_data = list(matched_ID_dict.values())[user_input - 1]
+                    input_int = int(user_input)
+                    if input_int in range(start_index, end_index + 1):
+                        ban_ID = list(matched_ID_dict.keys())[input_int - 1]
+                        ban_player_data = list(matched_ID_dict.values())[input_int - 1]
                         return (ban_ID, ban_player_data)
                     self.print(MENU["Error"]["InputError"])
                     return (None, None)
