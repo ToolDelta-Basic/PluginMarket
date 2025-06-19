@@ -126,11 +126,11 @@
     "『Orion System』违规与作弊行为综合反制系统": {
         "core.py": 0,
         "config.py": 0,
-        "ban_utils.py": 0,
         "README.md": 0,
         "datas.json": 0,
         "ban_system.py": 0,
-        "__init__.py": 0
+        "__init__.py": 0,
+        "utils.py": 0
     },
     "玩家交易所": {
         "datas.json": 0,
