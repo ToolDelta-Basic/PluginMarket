@@ -1,0 +1,11 @@
+{
+    "author": "帥気的男主角",
+    "version": "0.2.0",
+    "plugin-type": "classic",
+    "description": "demo商店插件的升级版本，支持关键词查询购买、回收、翻页和继续回收",
+    "pre-plugins": {
+      "前置-聊天栏菜单": "0.3.7"
+    },
+    "plugin-id": "demo-plugin-shop-pro",
+    "enabled": true
+  }
