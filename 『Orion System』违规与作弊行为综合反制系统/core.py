@@ -980,9 +980,7 @@ class OrionCore:
             xuid (str): 玩家xuid
         """
         if self.cfg.testfor_blacklist_word:
-            message_list = []
-            message_list.append(message)
-            message_list.append(self.utils.clean_text(message))
+            message_list = [message, self.utils.clean_text(message)]
             blacklist_word_set = set(self.cfg.blacklist_word_list)
             for mess in message_list:
                 n = len(mess)
@@ -1029,13 +1027,13 @@ class OrionCore:
             with self.plugin.lock_timer:
                 if self.message_data.get(player) is None:
                     self.message_data[player] = {}
-                    self.message_data[player]["message"] = [[], []]
+                    self.message_data[player]["message"] = [{}, {}]
                     self.message_data[player]["timer"] = self.cfg.speak_detection_cycle
-                self.message_data[player]["message"][0].append(message)
-                self.message_data[player]["message"][1].append(
-                    self.utils.clean_text(message)
-                )
+                mess_list = self.message_data[player]["message"]
+                mess_list[0][message] = mess_list[0].get(message, 0) + 1
                 self.speak_speed_detect(player, xuid)
+                clean_message = self.utils.clean_text(message)
+                mess_list[1][clean_message] = mess_list[1].get(clean_message, 0) + 1
                 self.repeat_message_detect(player, xuid)
 
     @utils.thread_func("发言频率检测函数")
@@ -1048,7 +1046,7 @@ class OrionCore:
         """
         if (
             self.cfg.speak_speed_limit
-            and len(self.message_data[player]["message"][0]) > self.cfg.max_speak_count
+            and sum(self.message_data[player]["message"][0].values()) > self.cfg.max_speak_count
         ):
             self.execute_ban(
                 player,
@@ -1073,10 +1071,7 @@ class OrionCore:
         """
         if self.cfg.repeat_message_limit:
             for mess in self.message_data[player]["message"]:
-                counts = {}
-                for i in mess:
-                    counts[i] = counts.get(i, 0) + 1
-                for v in counts.values():
+                for v in mess.values():
                     if v > self.cfg.max_repeat_count:
                         self.execute_ban(
                             player,
