@@ -6,8 +6,8 @@ from tooldelta.mc_bytes_packet import sub_chunk_request
 from tooldelta.utils import thread_func
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
-from 前置_主动区块请求.api import AutoSubChunkRequestAPI
-from 前置_主动区块请求.define import (
+from .api import AutoSubChunkRequestAPI
+from .define import (
     EMPTY_CHUNK_POS_WITH_DIMENSION,
     EMPTY_SINGLE_SUB_CHUNK,
     AutoSubChunkRequestBase,
@@ -57,7 +57,10 @@ class AutoSubChunkRequetQueue:
             for key, value in self.base().requet_queue.items():
                 if count <= 0:
                     break
-                self.base().game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, value)
+                try:
+                    self.base().game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, value)
+                except Exception:
+                    pass
                 key_to_delete.append(key)
                 count -= 1
 

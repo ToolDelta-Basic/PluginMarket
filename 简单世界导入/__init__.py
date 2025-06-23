@@ -18,7 +18,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -174,9 +174,12 @@ class SimpleWorldImport(Plugin):
         is block_runtime_id at position (pos[0], pos[1], pos[2]).
         """
         block_states = bwo.runtime_id_to_state(block_runtime_id)
-        self.game_ctrl.sendwocmd(
-            f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
-        )
+        try:
+            self.game_ctrl.sendwocmd(
+                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+            )
+        except Exception:
+            pass
 
     def place_nbt_block(
         self,
@@ -325,16 +328,19 @@ class SimpleWorldImport(Plugin):
                 posz = int(i["z"]) - start_pos[2] + result_start_pos[2]
                 block_pos_to_nbt[(posx, posy, posz)] = i
 
-            # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了,
-            # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z),
-            # 于是我们把机器人 tp 到这个区块以做好准备
-            pen_position_str = f"{pen_x} {result_start_pos[1]} {pen_z}"
-            self.game_ctrl.sendwocmd(
-                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {pen_position_str}'
-            )
-            # 发送指令等待返回, 让机器人确保在进行下一步前租赁服已经将机器人传送到目标地点
-            # 对于租赁服较为卡顿的时候, 它的作用尤为明显
-            self.game_ctrl.sendwscmd_with_resp("testforblock ~ ~ ~ air")
+            try:
+                pen_position_str = f"{pen_x} {result_start_pos[1]} {pen_z}"
+                # 我们现在已经准备好处理 origin_chunk_pos 所指示的区块了,
+                # 然后计算得到这个区块在目标导入地点的平面坐标是 (pen_x, pen_z),
+                # 于是我们把机器人 tp 到这个区块以做好准备
+                self.game_ctrl.sendwocmd(
+                    f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {pen_position_str}'
+                )
+                # 发送指令等待返回, 让机器人确保在进行下一步前租赁服已经将机器人传送到目标地点
+                # 对于租赁服较为卡顿的时候, 它的作用尤为明显
+                self.game_ctrl.sendwscmd_with_resp("testforblock ~ ~ ~ air")
+            except Exception:
+                pass
 
             # 我们严格区分 区块 和 子区块, 因为子区块实际上只是一个 16*16*16 的区域,
             # 但整个区块可以是 16*16*384 的区域。但不管怎么样, 游戏储存区块的最细颗粒度

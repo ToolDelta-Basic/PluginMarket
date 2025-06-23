@@ -12,8 +12,8 @@ from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     HashWithPosition,
     SubChunkPos,
 )
-from 前置_主动区块请求.api import AutoSubChunkRequestAPI
-from 前置_主动区块请求.define import AutoSubChunkRequestBase
+from .api import AutoSubChunkRequestAPI
+from .define import AutoSubChunkRequestBase
 
 
 class AutoSubChunkRequestSubChunkProcess:

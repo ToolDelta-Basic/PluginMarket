@@ -29,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -67,7 +67,7 @@ class HoloPsychon(Plugin):
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 1, 2))
+        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
 
         pip = self.GetPluginAPI("pip")
         if 0:

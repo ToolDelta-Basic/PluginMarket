@@ -30,7 +30,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -78,7 +78,7 @@ class SimpleWorldRecover(Plugin):
         global bwo, nbtlib
 
         pip = self.GetPluginAPI("pip")
-        _ = self.GetPluginAPI("主动区块请求", (0, 1, 1))
+        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
         _ = self.GetPluginAPI("献给机械の花束")
 
         if 0:
@@ -223,10 +223,13 @@ class SimpleWorldRecover(Plugin):
         if self.should_close:
             return bwo.Chunk(), False
 
-        self.game_ctrl.sendwocmd(
-            f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {(chunk_pox_x << 4)} {0} {chunk_pos_z << 4}'
-        )
-        self.game_ctrl.sendwscmd_with_resp("")
+        try:
+            self.game_ctrl.sendwocmd(
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp {(chunk_pox_x << 4)} {0} {chunk_pos_z << 4}'
+            )
+            self.game_ctrl.sendwscmd_with_resp("")
+        except Exception:
+            pass
 
         cp = chunkPos(dim, chunk_pox_x, chunk_pos_z)
         result_chunk: list[dict] = []
@@ -335,16 +338,22 @@ class SimpleWorldRecover(Plugin):
 
     def send_build_command(self, pos: tuple[int, int, int], block_runtime_id):
         block_states = bwo.runtime_id_to_state(block_runtime_id)
-        self.game_ctrl.sendwocmd(
-            f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
-        )
+        try:
+            self.game_ctrl.sendwocmd(
+                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+            )
+        except Exception:
+            pass
 
     def get_bot_dimension(self) -> int:
-        result = self.game_ctrl.sendwscmd_with_resp("querytarget @s")
-        if result.SuccessCount == 0:
+        try:
+            result = self.game_ctrl.sendwscmd_with_resp("querytarget @s")
+            if result.SuccessCount == 0:
+                return -1
+            content = json.loads(result.OutputMessages[0].Parameters[0])
+            return int(content[0]["dimension"])
+        except Exception:
             return -1
-        content = json.loads(result.OutputMessages[0].Parameters[0])
-        return int(content[0]["dimension"])
 
     @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_recover(self, cmd: list[str], called_by_api: bool):
