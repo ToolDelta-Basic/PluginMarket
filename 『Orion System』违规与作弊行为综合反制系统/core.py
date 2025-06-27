@@ -688,7 +688,7 @@ class OrionCore:
                     or (SkinImageHeight not in (64, 128, 256, 512))
                     or (CapeImageWidth != 0)
                     or (CapeImageHeight != 0)
-                    or (CapeData != "")
+                    or (len(CapeData) != 0)
                     or (len(Animations) not in (0, 1))
                     or (
                         AnimationsImageWidth * AnimationsImageHeight * 4
@@ -696,7 +696,7 @@ class OrionCore:
                     )
                     or (AnimationsImageWidth not in (0, 32))
                     or (AnimationsImageHeight not in (0, 64))
-                    or (AnimationData != "")
+                    or (len(AnimationData) != 0)
                 ):
                     self.utils.print_inf(self.cfg.info_broken_packet, (packet,))
                     self.execute_ban(
@@ -741,7 +741,14 @@ class OrionCore:
                 "c18e65aa-7b21-4637-9b63-8ad63622ef01.Alex",
             )
             # Base64 解码：MS4xNC4w → 1.14.0
-            or GeometryDataEngineVersion in ("MS4xNC4w", "1.14.0")
+            or (
+                isinstance(GeometryDataEngineVersion, str)
+                and GeometryDataEngineVersion == "MS4xNC4w"
+            )
+            or (
+                isinstance(GeometryDataEngineVersion, bytes)
+                and GeometryDataEngineVersion == b"1.14.0"
+            )
             or PersonaSkin is True
         ):
             self.execute_ban(
@@ -764,9 +771,15 @@ class OrionCore:
             GeometryDataEngineVersion (str):
         """
         # Base64 解码：MS4yLjU= → 1.2.5
-        if self.cfg.is_ban_4D_skin and GeometryDataEngineVersion in (
-            "MS4yLjU=",
-            "1.2.5",
+        if self.cfg.is_ban_4D_skin and (
+            (
+                isinstance(GeometryDataEngineVersion, str)
+                and GeometryDataEngineVersion == "MS4yLjU="
+            )
+            or (
+                isinstance(GeometryDataEngineVersion, bytes)
+                and GeometryDataEngineVersion == b"1.2.5"
+            )
         ):
             self.execute_ban(
                 Username,
@@ -1046,7 +1059,8 @@ class OrionCore:
         """
         if (
             self.cfg.speak_speed_limit
-            and sum(self.message_data[player]["message"][0].values()) > self.cfg.max_speak_count
+            and sum(self.message_data[player]["message"][0].values())
+            > self.cfg.max_speak_count
         ):
             self.execute_ban(
                 player,
