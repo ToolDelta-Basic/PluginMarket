@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
 from tooldelta import utils
-from tooldelta.utils import fmts
+from tooldelta.utils import fmts, tempjson
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 RESPONSE_ERROR_TYPE_PARSE_ERROR = 0
@@ -30,7 +30,7 @@ class PlaceNBTBlockResult:
 class FlowersForMachine(Plugin):
     name = "献给机械の花束"
     author = "2B and 9S"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -76,6 +76,25 @@ class FlowersForMachine(Plugin):
             "ffm:place_nbt_block_request", self.on_place_nbt_block_request
         )
 
+    def need_upgrade_bwo(self) -> bool:
+        version_path = self.format_data_path("bwo_version.json")
+        loaded_dict = tempjson.load_and_read(
+            version_path, need_file_exists=False, default={}
+        )
+        if "version" not in loaded_dict:
+            return True
+        if loaded_dict["version"] != "1.2.0":
+            return True
+        return False
+
+    def save_bwo_version(self):
+        version_path = self.format_data_path("bwo_version.json")
+        tempjson.write(
+            version_path,
+            {"version": "1.2.0"},
+        )
+        tempjson.flush(version_path)
+
     def on_def(self):
         global bwo, nbtlib, MarshalPythonNBTObjectToWriter
         pip = self.GetPluginAPI("pip")
@@ -84,8 +103,12 @@ class FlowersForMachine(Plugin):
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+
+        if self.need_upgrade_bwo():
+            pip.upgrade("bedrock-world-operator")
+            self.save_bwo_version()
+
         import nbtlib
         import bedrockworldoperator as bwo
         from bedrockworldoperator.utils.marshalNBT import MarshalPythonNBTObjectToWriter

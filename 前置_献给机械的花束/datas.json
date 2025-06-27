@@ -1,10 +1,10 @@
 {
   "author": "2B and 9S",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "plugin-type": "classic",
   "description": "flowers for m[A]chines",
   "pre-plugins": {
-    "pip": "0.0.1"
+    "pip": "0.0.5"
   },
   "plugin-id": "献给机械の花束",
   "enabled": true

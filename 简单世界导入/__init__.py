@@ -12,13 +12,14 @@ from tooldelta import (
     utils,
     plugin_entry,
 )
+from tooldelta.utils import tempjson
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 0, 7)
+    version = (0, 1, 0)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -41,18 +42,41 @@ class SimpleWorldImport(Plugin):
         )
         self.make_data_path()
 
+    def need_upgrade_bwo(self) -> bool:
+        version_path = self.format_data_path("bwo_version.json")
+        loaded_dict = tempjson.load_and_read(
+            version_path, need_file_exists=False, default={}
+        )
+        if "version" not in loaded_dict:
+            return True
+        if loaded_dict["version"] != "1.2.0":
+            return True
+        return False
+
+    def save_bwo_version(self):
+        version_path = self.format_data_path("bwo_version.json")
+        tempjson.write(
+            version_path,
+            {"version": "1.2.0"},
+        )
+        tempjson.flush(version_path)
+
     def on_def(self):
         global bwo, nbtlib
 
         pip = self.GetPluginAPI("pip")
-        _ = self.GetPluginAPI("献给机械の花束")
+        _ = self.GetPluginAPI("献给机械の花束", (0, 0, 2))
 
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+
+        if self.need_upgrade_bwo():
+            pip.upgrade("bedrock-world-operator")
+            self.save_bwo_version()
+
         import bedrockworldoperator as bwo
         import nbtlib
 

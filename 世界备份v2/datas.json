@@ -1,12 +1,12 @@
 {
   "author": "YoRHa and RATH",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "plugin-type": "classic",
   "description": "保存多个时间点的存档数据，并使用专业工具恢复到对应时刻的存档",
   "pre-plugins": {
-    "pip": "0.0.1",
-    "世界の记忆": "0.0.7",
-    "简单世界恢复": "0.1.2"
+    "pip": "0.0.5",
+    "世界の记忆": "0.1.0",
+    "简单世界恢复": "0.2.0"
   },
   "plugin-id": "世界备份第二世代",
   "enabled": true

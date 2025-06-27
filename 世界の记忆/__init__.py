@@ -4,8 +4,8 @@ import traceback
 import numpy
 from io import BytesIO
 from dataclasses import dataclass
-from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta import cfg as config
+from tooldelta import FrameExit, InternalBroadcast, Plugin, Frame, plugin_entry
 from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     HashWithPosition,
     PayloadByHash,
@@ -15,7 +15,7 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
 )
-from tooldelta.utils import fmts
+from tooldelta.utils import fmts, tempjson
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 
@@ -29,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 0, 7)
+    version = (0, 1, 0)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -65,6 +65,25 @@ class HoloPsychon(Plugin):
         self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
 
+    def need_upgrade_bwo(self) -> bool:
+        version_path = self.format_data_path("bwo_version.json")
+        loaded_dict = tempjson.load_and_read(
+            version_path, need_file_exists=False, default={}
+        )
+        if "version" not in loaded_dict:
+            return True
+        if loaded_dict["version"] != "1.2.0":
+            return True
+        return False
+
+    def save_bwo_version(self):
+        version_path = self.format_data_path("bwo_version.json")
+        tempjson.write(
+            version_path,
+            {"version": "1.2.0"},
+        )
+        tempjson.flush(version_path)
+
     def on_def(self):
         global bwo, xxhash
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
@@ -76,6 +95,10 @@ class HoloPsychon(Plugin):
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
         pip.require({"xxhash": "xxhash"})
+
+        if self.need_upgrade_bwo():
+            pip.upgrade("bedrock-world-operator")
+            self.save_bwo_version()
 
         import bedrockworldoperator as bwo
         import xxhash
