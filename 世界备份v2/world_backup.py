@@ -38,7 +38,7 @@ class WorldBackupMain:
         )
         if "bedrock-chunk-diff" not in loaded_dict:
             return True
-        if loaded_dict["bedrock-chunk-diff"] != "0.1.6":
+        if loaded_dict["bedrock-chunk-diff"] != "0.2.0":
             return True
         return False
 
@@ -59,7 +59,7 @@ class WorldBackupMain:
             version_path,
             {
                 "bedrock-world-operator": "1.2.0",
-                "bedrock-chunk-diff": "0.1.6",
+                "bedrock-chunk-diff": "0.2.0",
             },
         )
         tempjson.flush(version_path)
