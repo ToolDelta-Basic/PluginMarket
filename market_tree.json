@@ -498,7 +498,7 @@
     "tpscalculator": {
       "name": "前置_tps计算器",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "choose-song": {
