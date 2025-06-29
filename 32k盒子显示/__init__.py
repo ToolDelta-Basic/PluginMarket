@@ -7,7 +7,7 @@ class Display32KShulkerBox(Plugin):
     name = "32k盒子显示"
     description = "检测32k盒子并反制"
     author = "SuperScript"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -57,17 +57,18 @@ class Display32KShulkerBox(Plugin):
                     )[0]
                 except Exception:
                     playerNearest = "未找到"
-                self.game_ctrl.sendcmd(
+                self.game_ctrl.sendwocmd(
                     f"/structure save {structID} {shulkerBoxPos} {shulkerBoxPos} disk"
                 )
-                self.game_ctrl.sendcmd(
+                self.game_ctrl.sendwscmd_with_resp("/errcmd")
+                self.game_ctrl.sendwocmd(
                     f"/setblock {shulkerBoxPos} reinforced_deepslate"
                 )
                 self.game_ctrl.say_to(
                     "@a",
                     f"§4警报 §c发现坐标§e({shulkerBoxPos.replace(' ', ',')})§c的32k潜影盒，已自动保存并清除，最近玩家：{playerNearest}，结构方块结构名：",
                 )
-                self.game_ctrl.sendcmd(f'/tag "{playerNearest}" add ban')
+                self.game_ctrl.sendwocmd(f'/tag "{playerNearest}" add ban')
                 self.game_ctrl.say_to(
                     "@a[m=1]", "§6" + structID + "§6，给予玩家的标签是ban"
                 )
@@ -84,13 +85,13 @@ class Display32KShulkerBox(Plugin):
         boxes = self.getAll32kBoxes()
         if boxes:
             for i in boxes:
-                self.game_ctrl.sendcmd(
+                self.game_ctrl.sendwocmd(
                     f'/execute as "{player.name}" run structure load {i} ~~~'
                 )
-                self.game_ctrl.sendcmd(
+                self.game_ctrl.sendwocmd(
                     f'/execute as "{player.name}" run setblock ~~~ air 0 destroy'
                 )
-                self.game_ctrl.sendcmd("/structure delete " + i)
+                self.game_ctrl.sendwocmd("/structure delete " + i)
                 time.sleep(0.05)
             player.show("§6检查完成.")
         else:
