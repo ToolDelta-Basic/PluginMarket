@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "制裁玩家放置的高频活塞！高度自定义化反制！",
     "limit_launcher": null,
     "pre-plugins": {

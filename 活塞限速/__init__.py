@@ -18,7 +18,7 @@ class AntiPistonPos:
 class PistonLmt(Plugin):
     name = "活塞限速"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -63,8 +63,12 @@ class PistonLmt(Plugin):
 
     def get_speed_lmt(self) -> int:
         LMT = self.lmt
+        tps_now = self.get_tps()
+        if tps_now == 0:
+            # ???
+            return LMT
         if self.is_dyna:
-            return int(LMT / (20 / self.get_tps()))
+            return int(LMT / (20 / tps_now))
         else:
             return self.lmt
 
