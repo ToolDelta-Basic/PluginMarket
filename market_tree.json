@@ -429,6 +429,12 @@
       "version": "0.1.3",
       "plugin-type": "classic"
     },
+    "无限方块反制": {
+      "name": "无限方块反制",
+      "author": "哈尼卡",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "清空玩家末影箱": {
       "name": "清空全部玩家末影箱",
       "author": "wling",

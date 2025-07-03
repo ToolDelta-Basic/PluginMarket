@@ -541,6 +541,14 @@
         "datas.json",
         "__init__.py"
     ],
+    "无限方块反制": [
+        "request_queue.py",
+        "auto_request.py",
+        "datas.json",
+        "__init__.py",
+        "sub_chunk_analysis.py",
+        "define.py"
+    ],
     "清空全部玩家末影箱": [
         "datas.json",
         "__init__.py"
