@@ -350,6 +350,10 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "性能管理": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "类式插件创建器": {
         "datas.json": 0,
         "__init__.py": 0
@@ -404,10 +408,6 @@
     },
     "desperated_plugins": {
         "睡觉统计": {
-            "datas.json": 0,
-            "__init__.py": 0
-        },
-        "性能管理": {
             "datas.json": 0,
             "__init__.py": 0
         }

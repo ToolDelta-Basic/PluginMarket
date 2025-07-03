@@ -344,6 +344,10 @@
         "readme.txt",
         "__init__.py"
     ],
+    "性能管理": [
+        "datas.json",
+        "__init__.py"
+    ],
     "类式插件创建器": [
         "datas.json",
         "__init__.py"
@@ -397,10 +401,6 @@
     ],
     "desperated_plugins": [],
     "desperated_plugins/睡觉统计": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "desperated_plugins/性能管理": [
         "datas.json",
         "__init__.py"
     ],
