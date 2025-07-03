@@ -8,7 +8,6 @@ class WorldBackupBase:
 
     def __init__(self, plugin: Plugin) -> None:
         self.plugin = plugin
-        self.game_ctrl = plugin.game_ctrl
 
         CFG_DEFAULT = {
             "数据库名称": "world_timeline.db",
