@@ -222,7 +222,7 @@
     "prof_manager": {
       "name": "性能管理",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "class-plugin-creator": {
