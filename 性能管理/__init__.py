@@ -28,8 +28,8 @@ class EmergencyMetaMana(Plugin):
         config, _ = cfg.get_plugin_config_and_version(
             self.name, cfg.auto_to_std(CFG), CFG, self.version
         )
-        self.mem_warn = config["当内存占用超过多少百分比时提示警告"] / 100
-        self.mem_exit = config["当内存占用超过多少百分比时停机"] / 100
+        self.mem_warn = config["当内存占用超过多少百分比时提示警告"]
+        self.mem_exit = config["当内存占用超过多少百分比时停机"]
         self.ListenPreload(self.on_def)
 
     def on_def(self):
@@ -62,6 +62,7 @@ class EmergencyMetaMana(Plugin):
                 f"系统可用内存告急({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%)"
             )
         if vm.percent > self.mem_exit:
+            print(vm.percent, self.mem_exit)
             fmts.print_err(
                 f"已超过最大可用内存限额({vm.available / BYTES2MB:.2f}MB/{vm.total / BYTES2MB:.2f}MB 可用, {vm.percent:.2f}%), 系统将退出"
             )
