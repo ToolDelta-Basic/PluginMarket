@@ -120,7 +120,7 @@ class EmergencyMetaMana(Plugin):
                     fmts.print_inf(f"  {v1[0]}")
 
     def test_hc(self):
-        return list(utils.tempjson.get_tmps().keys())
+        return [str(i) for i in utils.tempjson.get_tmps().keys()]
 
 
 entry = plugin_entry(EmergencyMetaMana)
