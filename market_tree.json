@@ -516,7 +516,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript & Zhonger-Yuansi",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "plugin-type": "classic"
     },
     "插件接口获取修复": {
