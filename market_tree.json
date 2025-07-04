@@ -30,7 +30,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "每日签到": {
@@ -60,7 +60,7 @@
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "admin_cmd": {
@@ -372,7 +372,7 @@
     "世界の记忆": {
       "name": "世界の记忆",
       "author": "9S, Meteora·Österreich, Altair and Echidna",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "全服喇叭": {
@@ -402,7 +402,7 @@
     "世界备份": {
       "name": "世界备份",
       "author": "YoRHa and RATH",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "空岛分配": {
@@ -438,7 +438,7 @@
     "无限方块反制": {
       "name": "无限方块反制",
       "author": "哈尼卡",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "清空玩家末影箱": {
@@ -558,7 +558,7 @@
     "世界备份第二世代": {
       "name": "世界备份v2",
       "author": "YoRHa and RATH",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "plugin-type": "classic"
     },
     "32k盒子显示": {
@@ -606,7 +606,7 @@
     "献给机械の花束": {
       "name": "前置_献给机械的花束",
       "author": "2B and 9S",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "暴击限制": {
