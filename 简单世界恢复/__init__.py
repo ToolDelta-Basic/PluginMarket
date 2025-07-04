@@ -4,7 +4,6 @@ import threading
 import time
 from dataclasses import dataclass
 import uuid
-from tooldelta.utils import tempjson
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
@@ -31,7 +30,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 2, 0)
+    version = (0, 2, 1)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -75,41 +74,18 @@ class SimpleWorldRecover(Plugin):
             "ffm:place_nbt_block_response", self.on_place_nbt_block_response
         )
 
-    def need_upgrade_bwo(self) -> bool:
-        version_path = self.format_data_path("bwo_version.json")
-        loaded_dict = tempjson.load_and_read(
-            version_path, need_file_exists=False, default={}
-        )
-        if "version" not in loaded_dict:
-            return True
-        if loaded_dict["version"] != "1.2.1":
-            return True
-        return False
-
-    def save_bwo_version(self):
-        version_path = self.format_data_path("bwo_version.json")
-        tempjson.write(
-            version_path,
-            {"version": "1.2.1"},
-        )
-        tempjson.flush(version_path)
-
     def on_def(self):
         global bwo, nbtlib
 
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-        _ = self.GetPluginAPI("献给机械の花束", (0, 0, 2))
+        _ = self.GetPluginAPI("献给机械の花束", (0, 0, 3))
 
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
-
-        if self.need_upgrade_bwo():
-            pip.upgrade("bedrock-world-operator")
-            self.save_bwo_version()
 
         import bedrockworldoperator as bwo
         import nbtlib

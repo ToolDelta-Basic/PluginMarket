@@ -31,43 +31,29 @@ class WorldBackupMain:
     def plugin(self) -> Plugin:
         return self.base().plugin
 
-    def need_upgrade_bwo(self) -> bool:
+    def need_upgrade_chunkdiff(self) -> bool:
         version_path = self.plugin().format_data_path("depends_version.json")
         loaded_dict = tempjson.load_and_read(
             version_path, need_file_exists=False, default={}
         )
         if "bedrock-chunk-diff" not in loaded_dict:
             return True
-        if loaded_dict["bedrock-chunk-diff"] != "0.2.0":
+        if loaded_dict["bedrock-chunk-diff"] != "0.2.1":
             return True
         return False
 
-    def need_upgrade_chunkdiff(self) -> bool:
-        version_path = self.plugin().format_data_path("depends_version.json")
-        loaded_dict = tempjson.load_and_read(
-            version_path, need_file_exists=False, default={}
-        )
-        if "bedrock-world-operator" not in loaded_dict:
-            return True
-        if loaded_dict["bedrock-world-operator"] != "1.2.1":
-            return True
-        return False
-
-    def save_depends_version(self):
+    def save_chunkdiff_version(self):
         version_path = self.plugin().format_data_path("depends_version.json")
         tempjson.write(
             version_path,
-            {
-                "bedrock-world-operator": "1.2.1",
-                "bedrock-chunk-diff": "0.2.0",
-            },
+            {"bedrock-chunk-diff": "0.2.1"},
         )
         tempjson.flush(version_path)
 
     def on_def(self) -> None:
         global chunkdiff, bwo
-        _ = self.plugin().GetPluginAPI("世界の记忆", (0, 1, 0))
-        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 2, 0))
+        _ = self.plugin().GetPluginAPI("世界の记忆", (0, 1, 1))
+        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 2, 1))
 
         pip = self.plugin().GetPluginAPI("pip")
         if 0:
@@ -75,11 +61,9 @@ class WorldBackupMain:
         pip.require({"bedrock-chunk-diff": "bedrockchunkdiff"})
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
-        if self.need_upgrade_bwo():
-            pip.upgrade("bedrock-world-operator")
         if self.need_upgrade_chunkdiff():
             pip.upgrade("bedrock-chunk-diff")
-        self.save_depends_version()
+        self.save_chunkdiff_version()
 
         import bedrockchunkdiff as chunkdiff
         import bedrockworldoperator as bwo

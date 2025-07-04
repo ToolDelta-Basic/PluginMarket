@@ -29,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -72,7 +72,7 @@ class HoloPsychon(Plugin):
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.2.1":
+        if loaded_dict["version"] != "1.2.2":
             return True
         return False
 
@@ -80,7 +80,7 @@ class HoloPsychon(Plugin):
         version_path = self.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.2.1"},
+            {"version": "1.2.2"},
         )
         tempjson.flush(version_path)
 

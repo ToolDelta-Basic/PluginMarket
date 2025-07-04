@@ -30,7 +30,7 @@ class PlaceNBTBlockResult:
 class FlowersForMachine(Plugin):
     name = "献给机械の花束"
     author = "2B and 9S"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -83,7 +83,7 @@ class FlowersForMachine(Plugin):
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.2.1":
+        if loaded_dict["version"] != "1.2.2":
             return True
         return False
 
@@ -91,7 +91,7 @@ class FlowersForMachine(Plugin):
         version_path = self.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.2.1"},
+            {"version": "1.2.2"},
         )
         tempjson.flush(version_path)
 

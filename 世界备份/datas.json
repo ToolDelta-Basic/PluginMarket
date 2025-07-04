@@ -1,11 +1,11 @@
 {
   "author": "YoRHa and RATH",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "plugin-type": "classic",
   "description": "按需保留前几天的镜像存档数据，以便服务器地图损坏后可以修复",
   "pre-plugins": {
     "pip": "0.0.5",
-    "世界の记忆": "0.1.0"
+    "世界の记忆": "0.1.1"
   },
   "plugin-id": "世界备份",
   "enabled": true

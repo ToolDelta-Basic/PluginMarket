@@ -9,13 +9,13 @@ from tooldelta.mc_bytes_packet.sub_chunk import (
     SUB_CHUNK_RESULT_SUCCESS,
     SUB_CHUNK_RESULT_SUCCESS_ALL_AIR,
 )
-from tooldelta.utils import fmts, tempjson
+from tooldelta.utils import fmts
 
 
 class WorldBackup(Plugin):
     name = "世界备份"
     author = "YoRHa and RATH"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -47,28 +47,9 @@ class WorldBackup(Plugin):
         self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
 
-    def need_upgrade_bwo(self) -> bool:
-        version_path = self.format_data_path("bwo_version.json")
-        loaded_dict = tempjson.load_and_read(
-            version_path, need_file_exists=False, default={}
-        )
-        if "version" not in loaded_dict:
-            return True
-        if loaded_dict["version"] != "1.2.1":
-            return True
-        return False
-
-    def save_bwo_version(self):
-        version_path = self.format_data_path("bwo_version.json")
-        tempjson.write(
-            version_path,
-            {"version": "1.2.1"},
-        )
-        tempjson.flush(version_path)
-
     def on_def(self):
         global bwo, bsdiff4, xxhash
-        _ = self.GetPluginAPI("世界の记忆", (0, 1, 0))
+        _ = self.GetPluginAPI("世界の记忆", (0, 1, 1))
 
         pip = self.GetPluginAPI("pip")
         if 0:
@@ -78,10 +59,6 @@ class WorldBackup(Plugin):
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
         pip.require({"bsdiff4": "bsdiff4"})
         pip.require({"xxhash": "xxhash"})
-
-        if self.need_upgrade_bwo():
-            pip.upgrade("bedrock-world-operator")
-            self.save_bwo_version()
 
         import bedrockworldoperator as bwo
         import bsdiff4

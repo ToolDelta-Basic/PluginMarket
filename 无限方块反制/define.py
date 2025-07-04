@@ -31,7 +31,7 @@ class AntiInfiniteBlockBase:
         self.nbt_unmarshal: Callable[[BytesIO], Any] | None = None
 
     def on_def(self):
-        _ = self.plugin.GetPluginAPI("世界の记忆", (0, 1, 0))
+        _ = self.plugin.GetPluginAPI("世界の记忆", (0, 1, 1))
 
         pip = self.plugin.GetPluginAPI("pip")
         if 0:
