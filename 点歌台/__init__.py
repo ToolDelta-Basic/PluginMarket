@@ -5,9 +5,9 @@ from tooldelta import utils, Plugin, Player, plugin_entry
 
 
 class DJTable(Plugin):
-    author = "Sup3rScr1pt"
+    author = "SuperScript & Zhonger-Yuansi"
     name = "点歌台"
-    version = (0, 2, 3)
+    version = (0, 2, 4)
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
@@ -84,11 +84,14 @@ class DJTable(Plugin):
 
     def choose_menu(self, player: Player, args: tuple):
         song_list = self.midis_list
-        if song_list == []:
-            player.show("§6曲目列表空空如也...")
-            return
         choose_song_name: str = args[0]
         if choose_song_name == "":
+            total_songs = len(song_list)
+            total_remote = len(getattr(self, "remote_midis_list", []))
+            if total_songs == 0 and total_remote == 0:
+                player.show("§6曲目列表空空如也...")
+                return
+                
             player.show("§a当前曲目列表：")
             for i, j in enumerate(song_list):
                 player.show(f" §b{i + 1} §f{j}")
@@ -113,8 +116,13 @@ class DJTable(Plugin):
             else:
                 remote_index = resp - len(song_list) - 1
                 music_name = self.remote_midis_list[remote_index]
-                player.show("§e点歌§f>> §7正在下载并处理远程曲目，请稍候...")
-                self._download_process(player, music_name)
+                if player.getScore("song_point") <= 0:
+                    player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
+                else:
+                    self.game_ctrl.sendwocmd(
+                        f"/scoreboard players remove {player.getSelector()} song_point 1")
+                    player.show("§e点歌§f>> §7正在下载并处理远程曲目，消耗1点音乐，请稍候...")
+                    self._download_process(player, music_name)
                 return
         else:
             for song_name in song_list:
@@ -137,7 +145,6 @@ class DJTable(Plugin):
             self.game_ctrl.say_to(
                 "@a", f"§e点歌§f>> §e{player.name}§a成功点歌:{music_name}"
             )
-
     def lookup_songs_list(self, player: Player, _):
         if not self.musics_list == []:
             player.show("§b◎§e当前点歌♬等待列表:")
@@ -181,7 +188,7 @@ class DJTable(Plugin):
             import requests
             from urllib3.exceptions import InsecureRequestWarning
 
-            requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+            #requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
             """
             
@@ -196,7 +203,6 @@ class DJTable(Plugin):
                     os.remove(os.path.join(self.mdir_external, file))
                 except Exception as e:
                     pass
-                    #self.logger.error(f"清空缓存失败: {e}")
 
             url = f"https://ghproxy.net/https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
             response = requests.get(url)
