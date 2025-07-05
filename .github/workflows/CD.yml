@@ -41,4 +41,5 @@ jobs:
           ./upx rm -d /
           ./upx put ./ /
           ./upx rm upx
+          ./upx rm upx.tar.gz
           ./upx logout
