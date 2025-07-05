@@ -39,6 +39,6 @@ jobs:
           chmod +x upx
           ./upx login ${{ secrets.UP_BUCKET }} ${{ secrets.UP_OPERATOR }} ${{ secrets.UP_OPERATOR_PASSWORD }}
           ./upx rm --async /*
-          ./upx sync ./ / --delete
+          ./upx put ./ / --delete
           ./upx rm --async /upx
           ./upx logout
