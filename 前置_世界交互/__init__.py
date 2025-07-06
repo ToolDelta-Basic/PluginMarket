@@ -2,7 +2,6 @@ from typing import Any
 from io import BytesIO
 import time
 import uuid
-import nbtlib
 from .structure import Structure
 from .safe_uuid import make_uuid_safe_string
 from tooldelta import Frame, Plugin, utils, fmts, plugin_entry
@@ -18,7 +17,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 1)
+    version = (2, 0, 2)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -32,7 +31,7 @@ class GameInteractive(Plugin):
         )
 
     def on_def(self):
-        global numpy, UnMarshalBufferToPythonNBTObject
+        global numpy, nbtlib, UnMarshalBufferToPythonNBTObject
         pip = self.GetPluginAPI("pip")
 
         if 0:
@@ -45,6 +44,7 @@ class GameInteractive(Plugin):
         pip.require({"nbtlib": "nbtlib"})
 
         import numpy
+        import nbtlib
         from bedrockworldoperator.utils.unmarshalNBT import (
             UnMarshalBufferToPythonNBTObject,
         )
