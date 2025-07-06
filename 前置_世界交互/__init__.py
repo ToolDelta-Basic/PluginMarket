@@ -18,7 +18,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 0)
+    version = (2, 0, 1)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -42,6 +42,7 @@ class GameInteractive(Plugin):
 
         pip.require({"numpy": "numpy"})
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+        pip.require({"nbtlib": "nbtlib"})
 
         import numpy
         from bedrockworldoperator.utils.unmarshalNBT import (
