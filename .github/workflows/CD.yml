@@ -38,7 +38,7 @@ jobs:
           tar -zxf upx.tar.gz
           chmod +x upx
           ./upx login ${{ secrets.UP_BUCKET }} ${{ secrets.UP_OPERATOR }} ${{ secrets.UP_OPERATOR_PASSWORD }}
-          ./upx sync ./ / --delete -v
+          ./upx sync ./ / --delete
           ./upx rm upx
           ./upx rm upx.tar.gz
           ./upx logout
