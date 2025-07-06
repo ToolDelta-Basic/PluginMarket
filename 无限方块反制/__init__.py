@@ -9,7 +9,7 @@ from tooldelta.constants import PacketIDS
 class AntiInfiniteBlock(Plugin):
     name = "无限方块反制"
     author = "哈尼卡"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame: Frame) -> None:
         super().__init__(frame)

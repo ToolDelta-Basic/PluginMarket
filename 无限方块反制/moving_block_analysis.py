@@ -66,84 +66,85 @@ class MovingBlockAnalysis:
 
     def _auto_analysis(self):
         with self._mu:
-            if len(self._pending_list) == 0:
-                return
-            sample = self._pending_list.pop()
+            for i in self._pending_list:
+                self._analysis_single_sample(i)
+            self._pending_list.clear()
 
-            min_pos = (
-                min(sample.moving_block_pos[0], sample.piston_pos[0]),
-                min(sample.moving_block_pos[1], sample.piston_pos[1]),
-                min(sample.moving_block_pos[2], sample.piston_pos[2]),
+    def _analysis_single_sample(self, sample: MovingBlockSample):
+        min_pos = (
+            min(sample.moving_block_pos[0], sample.piston_pos[0]),
+            min(sample.moving_block_pos[1], sample.piston_pos[1]),
+            min(sample.moving_block_pos[2], sample.piston_pos[2]),
+        )
+        max_pos = (
+            max(sample.moving_block_pos[0], sample.piston_pos[0]),
+            max(sample.moving_block_pos[1], sample.piston_pos[1]),
+            max(sample.moving_block_pos[2], sample.piston_pos[2]),
+        )
+        size = (
+            max_pos[0] - min_pos[0] + 1,
+            max_pos[1] - min_pos[1] + 1,
+            max_pos[2] - min_pos[2] + 1,
+        )
+
+        if size[0] > 64 or size[1] > 64 or size[2] > 64:
+            return
+
+        try:
+            structure = self.game_interact().get_structure(min_pos, size)
+        except Exception:
+            return
+
+        try:
+            moving_block = structure.get_block(
+                (
+                    sample.moving_block_pos[0] - min_pos[0],
+                    sample.moving_block_pos[1] - min_pos[1],
+                    sample.moving_block_pos[2] - min_pos[2],
+                ),
             )
-            max_pos = (
-                max(sample.moving_block_pos[0], sample.piston_pos[0]),
-                max(sample.moving_block_pos[1], sample.piston_pos[1]),
-                max(sample.moving_block_pos[2], sample.piston_pos[2]),
+            piston = structure.get_block(
+                (
+                    sample.piston_pos[0] - min_pos[0],
+                    sample.piston_pos[1] - min_pos[1],
+                    sample.piston_pos[2] - min_pos[2],
+                ),
             )
-            size = (
-                max_pos[0] - min_pos[0] + 1,
-                max_pos[1] - min_pos[1] + 1,
-                max_pos[2] - min_pos[2] + 1,
+        except Exception:
+            return
+
+        if moving_block.foreground is None or piston.foreground is None:
+            return
+        if moving_block.entity_data is None:
+            return
+
+        if str(moving_block.entity_data["id"]) != "MovingBlock":
+            return
+        piston_pos = (
+            int(moving_block.entity_data["pistonPosX"]),
+            int(moving_block.entity_data["pistonPosY"]),
+            int(moving_block.entity_data["pistonPosZ"]),
+        )
+        if piston_pos != sample.piston_pos:
+            return
+
+        if "piston" not in piston.foreground.name:
+            bot_name = self.game_ctrl().bot_name
+            x, y, z = sample.moving_block_pos
+
+            self.game_ctrl().sendwocmd(
+                f'execute as @a[name="{bot_name}"] at @s run setblock {x} {y} {z} cherry_wall_sign'
             )
+            self.game_ctrl().sendwscmd_with_resp("")
+            self.game_ctrl().sendwscmd_with_resp("")
 
-            if size[0] > 64 or size[1] > 64 or size[2] > 64:
-                return
-
-            try:
-                structure = self.game_interact().get_structure(min_pos, size)
-            except Exception:
-                return
-
-            try:
-                moving_block = structure.get_block(
-                    (
-                        sample.moving_block_pos[0] - min_pos[0],
-                        sample.moving_block_pos[1] - min_pos[1],
-                        sample.moving_block_pos[2] - min_pos[2],
-                    ),
-                )
-                piston = structure.get_block(
-                    (
-                        sample.piston_pos[0] - min_pos[0],
-                        sample.piston_pos[1] - min_pos[1],
-                        sample.piston_pos[2] - min_pos[2],
-                    ),
-                )
-            except Exception:
-                return
-
-            if moving_block.foreground is None or piston.foreground is None:
-                return
-            if moving_block.entity_data is None:
-                return
-
-            if str(moving_block.entity_data["id"]) != "MovingBlock":
-                return
-            piston_pos = (
-                int(moving_block.entity_data["pistonPosX"]),
-                int(moving_block.entity_data["pistonPosY"]),
-                int(moving_block.entity_data["pistonPosZ"]),
+            self.game_ctrl().sendwocmd(
+                f'execute as @a[name="{bot_name}"] at @s run setblock {x} {y} {z} air'
             )
-            if piston_pos != sample.piston_pos:
-                return
+            self.game_ctrl().sendwscmd_with_resp("")
+            self.game_ctrl().sendwscmd_with_resp("")
 
-            if "piston" not in piston.foreground.name:
-                bot_name = self.game_ctrl().bot_name
-                x, y, z = sample.moving_block_pos
-
+            for command_line in self.base.command_line:
                 self.game_ctrl().sendwocmd(
-                    f'execute as @a[name="{bot_name}"] at @s run setblock {x} {y} {z} cherry_wall_sign'
+                    f'execute as @a[name="{bot_name}"] at @s positioned {x} {y} {z} run {command_line}'
                 )
-                self.game_ctrl().sendwscmd_with_resp("")
-                self.game_ctrl().sendwscmd_with_resp("")
-
-                self.game_ctrl().sendwocmd(
-                    f'execute as @a[name="{bot_name}"] at @s run setblock {x} {y} {z} air'
-                )
-                self.game_ctrl().sendwscmd_with_resp("")
-                self.game_ctrl().sendwscmd_with_resp("")
-
-                for command_line in self.base.command_line:
-                    self.game_ctrl().sendwocmd(
-                        f'execute as @a[name="{bot_name}"] at @s positioned {x} {y} {z} run {command_line}'
-                    )

@@ -1,6 +1,6 @@
 {
   "author": "哈尼卡",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "plugin-type": "classic",
   "description": "字如其名，无限方块的反制插件",
   "pre-plugins": {
