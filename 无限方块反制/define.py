@@ -32,10 +32,14 @@ class AntiInfiniteBlockBase:
 
     def on_def(self):
         _ = self.plugin.GetPluginAPI("世界の记忆", (0, 1, 1))
+        game_interact: "GameInteractive" = self.plugin.GetPluginAPI(
+            "前置-世界交互", (2, 0, 0)
+        )
 
         pip = self.plugin.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
+            from 前置_世界交互 import GameInteractive
 
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
@@ -45,3 +49,4 @@ class AntiInfiniteBlockBase:
         )
 
         self.nbt_unmarshal = UnMarshalBufferToPythonNBTObject
+        self.game_interact = game_interact

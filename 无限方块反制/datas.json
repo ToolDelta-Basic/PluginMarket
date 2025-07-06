@@ -1,11 +1,12 @@
 {
   "author": "哈尼卡",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "plugin-type": "classic",
   "description": "字如其名，无限方块的反制插件",
   "pre-plugins": {
     "pip": "0.0.5",
-    "世界の记忆": "0.1.1"
+    "世界の记忆": "0.1.1",
+    "前置-世界交互": "2.0.0"
   },
   "plugin-id": "无限方块反制",
   "enabled": true

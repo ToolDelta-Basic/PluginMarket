@@ -63,12 +63,16 @@ class AutoRequest:
             if value["dimension"] != self.bot_dim:
                 continue
 
+            chunks: list[ChunkPos] = []
             chunk_posx = int(value["x"]) >> 4
             chunk_posz = int(value["z"]) >> 4
 
             for i in range(chunk_posx - 1, chunk_posx + 2):
                 for j in range(chunk_posz - 1, chunk_posz + 2):
-                    self.request_queue.append_request(ChunkPos(i, j))
+                    chunks.append(ChunkPos(i, j))
+
+            if len(chunks) > 0:
+                self.request_queue.append_request(chunks)
 
     def on_block_actor_data(self, packet) -> bool:
         self._on_block_actor_data(packet)
@@ -98,12 +102,21 @@ class AutoRequest:
             return
 
         for i in range(length // 3):
+            chunks: list[ChunkPos] = []
             chunk_posx = int(break_blocks[i * 3]) >> 4
             chunk_posz = int(break_blocks[i * 3 + 2]) >> 4
 
             for i in range(chunk_posx - 1, chunk_posx + 2):
                 for j in range(chunk_posz - 1, chunk_posz + 2):
-                    self.request_queue.append_request(ChunkPos(i, j))
+                    chunks.append(ChunkPos(i, j))
+
+            if len(chunks) > 0:
+
+                def wait_and_append_request():
+                    time.sleep(7)
+                    self.request_queue.append_request(chunks)
+
+                ToolDeltaThread(wait_and_append_request)
 
     @utils.thread_func(
         "无限方块反制: 自动请求区块", thread_level=ToolDeltaThread.SYSTEM
@@ -114,7 +127,7 @@ class AutoRequest:
                 self.close_waiter.release()
                 return
             self._auto_send_request()
-            time.sleep(1)
+            time.sleep(0.5)
 
     def _auto_send_request(self):
         self.request_queue.flush_wait_to_unix_time()

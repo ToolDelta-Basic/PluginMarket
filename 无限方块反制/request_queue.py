@@ -15,9 +15,10 @@ class RequestQueue:
         self._pending_list: dict[ChunkPos, bool] = {}
         self._wait_to_unix_time: dict[ChunkPos, int] = {}
 
-    def append_request(self, chunk_pos: ChunkPos):
+    def append_request(self, chunks: list[ChunkPos]):
         with self._mu:
-            self._pending_list[chunk_pos] = True
+            for i in chunks:
+                self._pending_list[i] = True
 
     def pop_request(self) -> list[ChunkPos]:
         with self._mu:
