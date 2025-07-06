@@ -15,7 +15,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 4)
+    version = (2, 0, 5)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -169,7 +169,7 @@ class GameInteractive(Plugin):
 
     def get_structure(
         self, position: tuple[int, int, int], size: tuple[int, int, int]
-    ) -> Structure:
+    ) -> "Structure":
         """
         在 Bot 所处维度获取一个特定位置和大小的结构方块结构
         Args:
