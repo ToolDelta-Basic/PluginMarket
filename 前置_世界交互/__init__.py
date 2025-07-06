@@ -1,123 +1,72 @@
-import time
 from typing import Any
-from json import dumps as stringfy
-from dataclasses import dataclass
+from io import BytesIO
+import time
+import uuid
+import nbtlib
+from .structure import Structure
+from .safe_uuid import make_uuid_safe_string
 from tooldelta import Frame, Plugin, utils, fmts, plugin_entry
-
 from tooldelta.constants import PacketIDS
-
-try:
-    from tooldelta.internal.launch_cli import FrameEulogistLauncher
-except ImportError:
-    FrameEulogistLauncher = None
-
-
-@dataclass
-class Block:
-    "记录了结构中某一坐标的方块的数据"
-
-    name: str
-    "方块ID"
-    states: dict[str, Any]
-    "方块状态数据"
-    val: int
-    "方块特殊值"
-    version: int
-    "此方块的世界版本"
-    metadata: Any
-    "方块的 NBT 信息"
+from tooldelta.mc_bytes_packet.base_bytes_packet import BaseBytesPacket
+from tooldelta.mc_bytes_packet.structure_template_data_response import (
+    StructureTemplateDataResponse,
+)
 
 
-class Structure:
-    "记录了获取的世界结构 (暂未实现获取实体数据)"
-
-    def __init__(self, structure_json):
-        structure = structure_json["StructureTemplate"]["structure"]
-        block_matrix = structure["block_indices"][0]
-        block_palettes = structure["palette"]["default"]["block_palette"]
-        self.x, self.y, self.z = structure_json["StructureTemplate"][
-            "structure_world_origin"
-        ]
-        self._block_matrix = numpy.array(block_matrix, dtype=numpy.uint16)
-        self._palette = [
-            (i["name"], i["states"], i["val"], i["version"]) for i in block_palettes
-        ]
-        self.sizex, self.sizey, self.sizez = structure_json["StructureTemplate"]["size"]
-        self._pos_block_data = {}
-        for v in structure["palette"]["default"]["block_position_data"].values():
-            v = v.get("block_entity_data")
-            if v is None:
-                fmts.print_war(f"结构解析: 方块数据 {v} 无 block_entity_data")
-                continue
-            self._pos_block_data[
-                (v["x"] - self.x, v["y"] - self.y, v["z"] - self.z)
-            ] = v
-
-    def get_block(self, position: tuple[int, int, int]) -> Block:
-        """
-        获取该结构中的一个方块的数据。
-        Args:
-            position (tuple[int, int, int]): 此方块在结构内的相对坐标
-        Raises:
-            ValueError: 超出结构尺寸
-        Returns:
-            Block: 方块数据类
-        """
-        x, y, z = position
-        if (
-            x not in range(self.sizex)
-            or y not in range(self.sizey)
-            or z not in range(self.sizez)
-        ):
-            raise ValueError(f"超出结构尺寸: ({x}, {y}, {z})")
-        index = self._block_matrix[x * self.sizey * self.sizez + y * self.sizez + z]
-        if index == -1:
-            return Block("minecraft:air", {}, 0, 0, None)
-        name, states, val, version = self._palette[index]
-        metadata = self._pos_block_data.get((x, y, z))
-        return Block(name, states, val, version, metadata)
-
-
-# 使用 api = self.GetPluginAPI("前置-世界交互") 来获取到这个api
+# 使用 api = self.GetPluginAPI("前置-世界交互") 来获取到这个 api
 class GameInteractive(Plugin):
     name = "前置-世界交互"
-    author = "SuperScript"
+    author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (1, 0, 2)
-    Structure = Structure
-    Block = Block
+    version = (2, 0, 0)
 
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
-        self.structure_cbs = {}
+        self.structure_callbacks: dict[str, Any] = {}
+
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
-        self.ListenPacket(
-            PacketIDS.IDStructureTemplateDataResponse, self._on_structure_pkt
+        self.ListenBytesPacket(
+            PacketIDS.IDStructureTemplateDataResponse, self.on_structure_pkt
         )
 
     def on_def(self):
-        global numpy
+        global numpy, UnMarshalBufferToPythonNBTObject
         pip = self.GetPluginAPI("pip")
+
         if 0:
             from pip模块支持 import PipSupport
+
             pip = self.get_typecheck_plugin_api(PipSupport)
-        pip.require("numpy")
-        import numpy as np
-        numpy = np
+
+        pip.require({"numpy": "numpy"})
+        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+
+        import numpy
+        from bedrockworldoperator.utils.unmarshalNBT import (
+            UnMarshalBufferToPythonNBTObject,
+        )
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
             ["getnbt"], "[x] [y] [z]", "获取指定坐标的方块的NBT", self.on_get_nbt
         )
 
-    def _on_structure_pkt(self, pk):
-        xyz = tuple(pk["StructureTemplate"]["structure_world_origin"])
-        if xyz in self.structure_cbs.keys():
-            self.structure_cbs[xyz].pop()(pk)
-            if self.structure_cbs[xyz] == []:
-                del self.structure_cbs[xyz]
+    def on_structure_pkt(self, pk: BaseBytesPacket):
+        if not isinstance(pk, StructureTemplateDataResponse):
+            raise Exception("on_structure_pkt: Should nerver happened")
+
+        structure_name = pk.StructureName
+        if structure_name in self.structure_callbacks:
+            callbacks: list = self.structure_callbacks[structure_name]
+
+            callback = callbacks.pop()
+            callback(pk)
+
+            if callbacks == []:
+                del self.structure_callbacks[structure_name]
+
         return False
 
     @staticmethod
@@ -231,7 +180,14 @@ class GameInteractive(Plugin):
             Structure: 结构数据类
         """
         structure = self._request_structure_and_get(position, size)
-        return Structure(structure)
+        if not isinstance(structure, StructureTemplateDataResponse):
+            raise Exception("get_structure: Should nerver happend")
+
+        nbt_bytes = structure.StructureTemplate
+        buf = BytesIO(nbt_bytes)
+        template: nbtlib.tag.Compound = UnMarshalBufferToPythonNBTObject(buf)[0]  # type: ignore
+
+        return Structure(template)
 
     def on_get_nbt(self, args):
         try:
@@ -239,25 +195,30 @@ class GameInteractive(Plugin):
         except ValueError:
             fmts.print_err("参数错误")
             return
+
         try:
-            res = self.get_structure((x, y, z), (2, 2, 2))
+            res = self.get_structure((x, y, z), (1, 1, 1))
         except Exception as err:
             fmts.print_err(f"获取结构错误: {err}")
             return
+
         block = res.get_block((0, 0, 0))
-        fmts.print_inf(
-            f"目标方块ID: {block.name}, 特殊值: {block.val}, 状态: {block.states} NBT数据:"
-        )
-        fmts.print_inf(stringfy(block.metadata, indent=2, ensure_ascii=False))
+        fmts.print_inf(f"目标方块数据: {block}")
 
     def get_block(self, x: int, y: int, z: int):
         return self.get_structure((x, y, z), (1, 1, 1)).get_block((0, 0, 0))
 
     def _request_structure_and_get(
         self, position: tuple[int, int, int], size: tuple[int, int, int], timeout=5.0
-    ):
+    ) -> BaseBytesPacket:
+        structure_name = "mystructure:" + make_uuid_safe_string(uuid.uuid4())
+
+        getter, setter = utils.create_result_cb()
+        self.structure_callbacks.setdefault(structure_name, [])
+        self.structure_callbacks[structure_name].append(setter)
+
         pk = {
-            "StructureName": "mystructure:a",
+            "StructureName": structure_name,
             "Position": list(position),
             "Settings": {
                 "PaletteName": "default",
@@ -275,11 +236,9 @@ class GameInteractive(Plugin):
             "RequestType": 1,
         }
         self.game_ctrl.sendPacket(PacketIDS.IDStructureTemplateDataRequest, pk)
-        getter, setter = utils.create_result_cb()
-        self.structure_cbs.setdefault(position, [])
-        self.structure_cbs[position].append(setter)
+
         resp = getter(timeout)
-        if resp is None:
+        if not isinstance(resp, BaseBytesPacket):
             raise ValueError(f"无法获取 {position} 的 {size} 结构")
         return resp
 
@@ -288,7 +247,7 @@ class GameInteractive(Plugin):
         return (
             self.frame.get_players()
             .getPlayerByName(self.frame.game_ctrl.bot_name)
-            .unique_id # type: ignore
+            .unique_id  # type: ignore
         )
 
 
