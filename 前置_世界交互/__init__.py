@@ -2,8 +2,6 @@ from typing import Any
 from io import BytesIO
 import time
 import uuid
-from .structure import Structure
-from .safe_uuid import make_uuid_safe_string
 from tooldelta import Frame, Plugin, utils, fmts, plugin_entry
 from tooldelta.constants import PacketIDS
 from tooldelta.mc_bytes_packet.base_bytes_packet import BaseBytesPacket
@@ -17,7 +15,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 3)
+    version = (2, 0, 4)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -31,7 +29,7 @@ class GameInteractive(Plugin):
         )
 
     def on_def(self):
-        global numpy, nbtlib, UnMarshalBufferToPythonNBTObject
+        global numpy, nbtlib, Structure, make_uuid_safe_string, UnMarshalBufferToPythonNBTObject
         pip = self.GetPluginAPI("pip")
 
         if 0:
@@ -46,6 +44,8 @@ class GameInteractive(Plugin):
         from bedrockworldoperator.utils.unmarshalNBT import (
             UnMarshalBufferToPythonNBTObject,
         )
+        from .structure import Structure
+        from .safe_uuid import make_uuid_safe_string
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
