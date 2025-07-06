@@ -552,8 +552,9 @@
         "request_queue.py",
         "auto_request.py",
         "datas.json",
+        "moving_block_analysis.py",
         "__init__.py",
-        "sub_chunk_analysis.py",
+        "on_sub_chunk.py",
         "define.py"
     ],
     "清空全部玩家末影箱": [

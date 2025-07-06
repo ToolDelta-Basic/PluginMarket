@@ -564,8 +564,9 @@
         "request_queue.py": 0,
         "auto_request.py": 0,
         "datas.json": 0,
+        "moving_block_analysis.py": 0,
         "__init__.py": 0,
-        "sub_chunk_analysis.py": 0,
+        "on_sub_chunk.py": 0,
         "define.py": 0
     },
     "清空全部玩家末影箱": {
