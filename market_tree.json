@@ -543,12 +543,6 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
-    "barrelshop": {
-      "name": "木桶玩家商店-试验版",
-      "author": "SuperScript",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "cb-say-supporter": {
       "name": "命令方块代发言支持",
       "author": "SuperScript",
