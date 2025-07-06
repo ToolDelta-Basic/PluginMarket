@@ -105,6 +105,8 @@ class Structure:
     def get_block(self, position: tuple[int, int, int]) -> Block:
         """
         获取该结构中的一个方块的数据。
+        使用者应当确保返回的 Block 不被修改
+
         Args:
             position (tuple[int, int, int]): 此方块在结构内的相对坐标
         Raises:
