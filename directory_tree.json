@@ -403,7 +403,9 @@
         "__init__.py": 0
     },
     "前置_世界交互": {
+        "structure.py": 0,
         "datas.json": 0,
+        "safe_uuid.py": 0,
         "__init__.py": 0
     },
     "desperated_plugins": {

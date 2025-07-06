@@ -396,7 +396,9 @@
         "__init__.py"
     ],
     "前置_世界交互": [
+        "structure.py",
         "datas.json",
+        "safe_uuid.py",
         "__init__.py"
     ],
     "desperated_plugins": [],
