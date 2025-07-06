@@ -32,13 +32,20 @@ jobs:
           add: '*'
 
       # 同步到又拍云
-      - name: Deploy upyun
+      - name: Sync to upyun
         run: |
           wget -O upx.tar.gz http://collection.b0.upaiyun.com/softwares/upx/upx_0.4.9_linux_amd64.tar.gz
           tar -zxf upx.tar.gz
           chmod +x upx
           ./upx login ${{ secrets.UP_BUCKET }} ${{ secrets.UP_OPERATOR }} ${{ secrets.UP_OPERATOR_PASSWORD }}
           ./upx sync ./ / --delete
+          ./upx rm -d .git
+          ./upx rm -d .github
+          ./upx rm .gitignore
+          ./upx rm .deepsource.toml
+          ./upx rm _workflow.py
+          ./upx rm README.md
+          ./upx rm LICENSE
           ./upx rm upx
           ./upx rm upx.tar.gz
           ./upx logout
