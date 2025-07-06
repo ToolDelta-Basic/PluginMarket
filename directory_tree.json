@@ -144,6 +144,7 @@
         "datas.json": 0,
         "__init__.py": 0,
         "thisutils.py": 0,
+        "libbdxbuilder_windows_amd64.dll": 0,
         "libbdxbuilder_linux_amd64.so": 0
     },
     "README.md": 0,

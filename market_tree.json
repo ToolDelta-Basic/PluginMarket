@@ -144,7 +144,7 @@
     "bdx-builder-pro": {
       "name": "bdx导入器Pro",
       "author": "SuperScript",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "plugin-type": "classic"
     },
     "ToolDeltaFlet": {
@@ -294,7 +294,7 @@
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript and Happy2018new",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "plugin-type": "classic"
     },
     "ad": {

@@ -143,6 +143,7 @@
         "datas.json",
         "__init__.py",
         "thisutils.py",
+        "libbdxbuilder_windows_amd64.dll",
         "libbdxbuilder_linux_amd64.so"
     ],
     "前置_ToolDeltaFlet": [
