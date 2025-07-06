@@ -4,20 +4,21 @@ import msgpack
 from typing import Any
 from platform import uname
 from collections.abc import Generator
-from tooldelta import fmts
 
-LIB = ctypes.cdll.LoadLibrary(
-    os.path.join(os.path.dirname(__file__), "libbdxbuilder_linux_amd64.so")
-)
+if uname().system == "Windows":
+    LIB = ctypes.cdll.LoadLibrary(
+        os.path.join(os.path.dirname(__file__), "libbdxbuilder_windows_amd64.dll")
+    )
+elif uname().system == "Linux":
+    LIB = ctypes.cdll.LoadLibrary(
+        os.path.join(os.path.dirname(__file__), "libbdxbuilder_linux_amd64.so")
+    )
 
-if uname().system != "Linux" or uname().machine.replace("x86_64", "amd64") != "amd64":
-    fmts.print_err("BDX 导入器 Pro 仅支持 Linux amd64 系统")
-    raise SystemExit
 
 def py_bytes(bytes_pointer: ctypes.c_void_p | None, bytelen: int = -1):
     if bytes_pointer is None:
         return b""
-    bs = ctypes.string_at(bytes_pointer, size = bytelen)
+    bs = ctypes.string_at(bytes_pointer, size=bytelen)
     LIB.Free(bytes_pointer)
     return bs
 
@@ -34,6 +35,7 @@ def check_panic(obj: ctypes.Structure):
     err_str = py_string(obj.err)
     if err_str != "":
         raise RuntimeError(err_str)
+
 
 class BasicError(ctypes.Structure):
     err: ctypes.c_void_p
@@ -61,6 +63,7 @@ class YieldCommand_return(ctypes.Structure):
         ("err", ctypes.c_void_p),
     )
 
+
 LIB.LoadBDX.argtypes = (ctypes.c_char_p,)
 LIB.LoadBDX.restype = BasicError
 LIB.BDXTotalLen.argtypes = ()
@@ -71,8 +74,10 @@ LIB.YieldCommand.argtypes = ()
 LIB.YieldCommand.restype = YieldCommand_return
 LIB.Free.argtypes = (ctypes.c_void_p,)
 
+
 def Init():
     LIB.Init()
+
 
 def LoadBDX(path: str) -> None:
     check_panic(LIB.LoadBDX(c_string(path)))
@@ -102,5 +107,31 @@ def YieldCommand() -> Generator[tuple[int, dict], Any, None]:
         elif err_str:
             raise RuntimeError(err_str)
         else:
-            content = msgpack.unpackb(payload)
+            try:
+                content = msgpack.unpackb(payload)
+            except UnicodeDecodeError:
+                content = RawParse(msgpack.unpackb(payload, raw=True))
             yield content["ID"], content["Data"]
+
+
+def RawParse(raw) -> Any:
+    if isinstance(raw, dict):
+        new_dict = {}
+        for k, v in raw.items():
+            new_dict[_safe_decode(k)] = RawParse(v)
+        return new_dict
+    elif isinstance(raw, list):
+        return [RawParse(v) for v in raw]
+    elif isinstance(raw, bytes):
+        return _safe_decode(raw)
+    else:
+        return raw
+
+
+def _safe_decode(s: bytes):
+    try:
+        return s.decode()
+    except UnicodeDecodeError:
+        res = s.decode(errors="replace")
+        print(f"忽略编码错误: {res}")
+        return res

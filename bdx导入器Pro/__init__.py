@@ -32,8 +32,10 @@ class BDX_BDump(Plugin):
 
             self.interact: GameInteractive
             pip: PipSupport
+
         pip.require("msgpack")
         from . import lib, bdx_operation
+
         lib.Init()
 
     def on_inject(self):
@@ -65,7 +67,7 @@ class BDX_BDump(Plugin):
             fmts.print_err("输入错, 已退出")
             return
         bdx_file = fs[resp - 1]
-        path = str(self.data_path / bdx_file)
+        path = str(src_path / bdx_file)
         self.dump_bdx_at(path, int(self.get_x), int(self.get_y), int(self.get_z))
 
     def get_bdx_pos_menu(self, _):
@@ -131,7 +133,7 @@ class BDX_BDump(Plugin):
             )
             last_progress = progress
 
-        bdx_operation.do_operations(self, (x, y, z), progress_bar, 1.00)
+        bdx_operation.do_operations(self, (x, y, z), progress_bar, 1, 1000)
         self.game_ctrl.player_actionbar("@a", f"导入 {filename} 完成")
         fmts.print_suc("bdx 导入完成")
 

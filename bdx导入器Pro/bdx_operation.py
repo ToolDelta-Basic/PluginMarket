@@ -26,15 +26,23 @@ def do_operations(
     build_blocks = 0
     sleeptime = 1 / speed
 
+    def get_string(index: int):
+        if index >= len(string_pool):
+            raise ValueError(
+                f"String pool index out of range: want {index}, but pool size is {len(string_pool)}"
+            )
+        return string_pool[index]
+
     def speed_limit():
-        time.sleep(sleeptime)
+        if speed != -1:
+            time.sleep(sleeptime)
 
     def ensure_pos():
         nonlocal pos_x, pos_y, pos_z, bot_x, bot_y, bot_z
         if abs(pos_x - bot_x) > 32 or abs(pos_z - bot_z) > 32:
             sendwocmd(f"execute as {bot_selector} at @s run tp {pos_x} {pos_y} {pos_z}")
             bot_x, bot_y, bot_z = pos_x, pos_y, pos_z
-            time.sleep(0.02)
+            time.sleep(0.01)
 
     def setblock_here(block_id: str, block_state_or_data: str | int):
         nonlocal build_blocks
@@ -53,8 +61,8 @@ def do_operations(
                 BlockStatesConstantStringID = operation["BlockStatesConstantStringID"]
                 ensure_pos()
                 setblock_here(
-                    string_pool[BlockConstantStringID],
-                    string_pool[BlockStatesConstantStringID],
+                    get_string(BlockConstantStringID),
+                    get_string(BlockStatesConstantStringID),
                 )
             case 6:
                 Value = operation["Value"]
@@ -63,7 +71,7 @@ def do_operations(
                 BlockConstantStringID = operation["BlockConstantStringID"]
                 BlockData = operation["BlockData"]
                 ensure_pos()
-                setblock_here(string_pool[BlockConstantStringID], BlockData)
+                setblock_here(get_string(BlockConstantStringID), BlockData)
             case 8:
                 pos_z += 1
             case 9:
@@ -75,7 +83,7 @@ def do_operations(
                 BlockConstantStringID = operation["BlockConstantStringID"]
                 BlockStatesString = operation["BlockStatesString"]
                 ensure_pos()
-                setblock_here(string_pool[BlockConstantStringID], BlockStatesString)
+                setblock_here(get_string(BlockConstantStringID), BlockStatesString)
             case 14:
                 pos_x += 1
             case 15:
@@ -124,7 +132,7 @@ def do_operations(
                 if id == 27 or id == 36:
                     if id == 27:
                         BlockConstantStringID = operation["BlockConstantStringID"]
-                        BlockID = string_pool[BlockConstantStringID]
+                        BlockID = get_string(BlockConstantStringID)
                     else:
                         BlockID = ("", "repeating_", "chain_")[Mode] + "command_block"
                     BlockData = operation["BlockData"]
@@ -132,6 +140,7 @@ def do_operations(
                     time.sleep(0.05)
                 else:
                     speed_limit()
+                print("UpdateCommand")
                 sys.game_ctrl.sendPacket(PacketIDS.CommandBlockUpdate, pk)
             case 31:
                 sys.print("§6未实现: UseRuntimeIDPool")
@@ -142,15 +151,13 @@ def do_operations(
             case 34:
                 sys.print("§6未实现: PlaceRuntimeBlockWithCommandBlockData")
             case 35:
-                raise NotImplementedError(
-                    "PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID"
+                sys.print(
+                    "§6 未实现: PlaceRuntimeBlockWithCommandBlockDataAndUint32RuntimeID"
                 )
             case 37:
                 sys.print("§6未实现: PlaceRuntimeBlockWithChestData")
             case 38:
-                sys.print(
-                    "§6未实现: PlaceRuntimeBlockWithChestDataAndUint32RuntimeID"
-                )
+                sys.print("§6未实现: PlaceRuntimeBlockWithChestDataAndUint32RuntimeID")
             case 39:
                 sys.print(f"bdx 的 debug 信息: {operation['Data']}")
             case 40:
@@ -158,7 +165,34 @@ def do_operations(
             case 41:
                 BlockConstantStringID = operation["BlockConstantStringID"]
                 BlockStatesConstantStringID = operation["BlockStatesConstantStringID"]
-                setblock_here(string_pool[BlockConstantStringID], string_pool[BlockStatesConstantStringID])
+                BlockNBT = operation["BlockNBT"]
+                setblock_here(
+                    get_string(BlockConstantStringID),
+                    get_string(BlockStatesConstantStringID),
+                )
+                if BlockNBT.get("ExecuteOnFirstTick") is not None:
+                    Mode = BlockNBT["LPCommandMode"]
+                    Command = BlockNBT["Command"]
+                    CustomName = BlockNBT["CustomName"]
+                    # LastOutput = CommandBlockData["LastOutput"]
+                    # can't deal with this
+                    TickDelay = BlockNBT["TickDelay"]
+                    ExecuteOnFirstTick = BlockNBT["ExecuteOnFirstTick"]
+                    TrackOutput = BlockNBT["TrackOutput"]
+                    Conditional = BlockNBT["LPCondionalMode"]
+                    NeedsRedstone = not BlockNBT["auto"]
+                    pk = sys.interact.make_packet_command_block_update(
+                        (pos_x, pos_y, pos_z),
+                        Command,
+                        Mode,
+                        bool(NeedsRedstone),
+                        TickDelay,
+                        bool(Conditional),
+                        CustomName,
+                        bool(TrackOutput),
+                        bool(ExecuteOnFirstTick),
+                    )
+                    sys.game_ctrl.sendPacket(PacketIDS.CommandBlockUpdate, pk)
             case 88:
                 break
         if (nowtime := time.time()) - timer > progress_delay:
