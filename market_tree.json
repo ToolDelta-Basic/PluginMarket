@@ -348,7 +348,7 @@
     "skin-getter": {
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "reportsystem": {
