@@ -129,7 +129,7 @@ class FlowersForMachine(Plugin):
 
         fmts.print_inf("献给机械の花束: 开始下载相应配套软件，请坐和放宽")
         file_binary = requests.get(
-            "https://github.tooldelta.top/github.com/OmineDev/flowers-for-machines/releases/download/public-hacking/std_server"
+            "https://gh-proxy.com/github.com/OmineDev/flowers-for-machines/releases/download/public-hacking/std_server"
         )
         if not file_binary.ok:
             fmts.print_err("献给机械の花束: 配套软件下载失败")
