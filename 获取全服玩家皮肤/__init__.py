@@ -25,7 +25,7 @@ cl = [
 
 class GetSkin(Plugin):
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
     name = "获取全服玩家皮肤"
 
     def __init__(self, frame):
@@ -40,7 +40,7 @@ class GetSkin(Plugin):
         if 0:
             from pip模块支持 import PipSupport
             pip = self.get_typecheck_plugin_api(PipSupport)
-        pip.require("PIL")
+        pip.require({"pillow": "PIL"})
         import PIL.Image as PILImage
 
     def on_pkt_skin(self, pkt):
