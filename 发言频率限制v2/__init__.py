@@ -4,7 +4,7 @@ from tooldelta import Plugin, fmts, cfg, plugin_entry, utils, Chat, Player
 class AntiTooFastMessage_V2(Plugin):
     name = "发言频率限制v2"
     author = "SuperScript"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -17,12 +17,18 @@ class AntiTooFastMessage_V2(Plugin):
             ],
             "多少个换行判定为刷屏": 6,
             "多长的消息判定为刷屏": 100,
-            cfg.KeyGroup(
+            (
                 funckey
                 := "自定义踢出逻辑lambda函数(玩家名:str,消息:str)->(违规消息:str,为空则视为不违规)"
             ): "lambda playername,msg:''",
         }
-
+        std = cfg.auto_to_std(CFG_DEFAULT)
+        del std[funckey] # type: ignore
+        std[  # type: ignore
+            cfg.KeyGroup(
+                funckey
+            )
+        ] = str
         config, _ = cfg.get_plugin_config_and_version(
             "发言频率限制", cfg.auto_to_std(CFG_DEFAULT), CFG_DEFAULT, (0, 0, 5)
         )

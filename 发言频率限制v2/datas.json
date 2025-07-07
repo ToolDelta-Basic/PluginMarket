@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "plugin-type": "classic",
     "description": "制裁刷屏玩家；请在配置文件里配置刷屏检测功能",
     "pre-plugins": {},

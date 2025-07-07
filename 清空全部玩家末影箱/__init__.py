@@ -16,7 +16,6 @@ class ClearEnderChest(Plugin):
             [("玩家名中的关键词", str, None)],
             "清空玩家末影箱",
             self.on_menu,
-            lambda x: x == 1,
             True,
         )
 
