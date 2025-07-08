@@ -1,5 +1,6 @@
 import threading
 import time
+from .sub_chunk_classifier import sub_chunk_classifier
 from tooldelta import InternalBroadcast
 from tooldelta.constants.packets import PacketIDS
 from tooldelta.mc_bytes_packet import sub_chunk_request
@@ -43,6 +44,7 @@ class AutoSubChunkRequetQueue:
             self.base().mu.acquire()
 
             count = len(self.base().multiple_pos) * self.base().request_chunk_per_second
+            multiple_sub_chunks: list[tuple[int, tuple[int, int, int]]] = []
             key_to_delete: list[ChunkPosWithDimension] = []
 
             if self.base().should_close:
@@ -57,12 +59,28 @@ class AutoSubChunkRequetQueue:
             for key, value in self.base().requet_queue.items():
                 if count <= 0:
                     break
-                try:
-                    self.base().game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, value)
-                except Exception:
-                    pass
+                for i in value.Offsets:
+                    multiple_sub_chunks.append(
+                        (
+                            value.Dimension,
+                            (
+                                value.SubChunkPosX + i[0],
+                                value.SubChunkPosY + i[1],
+                                value.SubChunkPosZ + i[2],
+                            ),
+                        )
+                    )
                 key_to_delete.append(key)
                 count -= 1
+
+            if len(multiple_sub_chunks) > 0:
+                for packet in sub_chunk_classifier(multiple_sub_chunks):
+                    try:
+                        self.base().game_ctrl.sendPacket(
+                            PacketIDS.IDSubChunkRequest, packet
+                        )
+                    except Exception:
+                        pass
 
             for i in key_to_delete:
                 del self.base().requet_queue[i]
