@@ -312,7 +312,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.2.5",
+      "version": "0.3.0",
       "plugin-type": "classic"
     },
     "bdx-exporter": {

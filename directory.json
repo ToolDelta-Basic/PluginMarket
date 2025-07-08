@@ -435,6 +435,7 @@
     "前置_主动区块请求": [
         "api.py",
         "datas.json",
+        "sub_chunk_classifier.py",
         "__init__.py",
         "requet_queue.py",
         "sub_chunk_process.py",
