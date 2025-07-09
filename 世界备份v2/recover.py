@@ -44,7 +44,7 @@ class WorldBackupRecover:
                 fmts.print_inf("世界备份第二世代: 开始下载存档恢复工具，请坐和放宽")
 
                 file_binary = requests.get(
-                    "https://github.tooldelta.top/" + i["browser_download_url"]
+                    "https://gh-proxy.com/" + i["browser_download_url"]
                 )
                 if not file_binary.ok:
                     fmts.print_err("世界备份第二世代: 恢复工具下载失败")

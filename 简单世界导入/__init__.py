@@ -5,7 +5,6 @@ import time
 import uuid
 from tooldelta import (
     FrameExit,
-    InternalBroadcast,
     Plugin,
     Frame,
     fmts,
@@ -18,37 +17,38 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 1, 1)
+    version = (0, 2, 0)
 
     should_close: bool = False
     running_mutex: threading.Lock
+
+    flowers_for_machines: "FlowersForMachine | None"
+    _chest_cache_requester: str
 
     def __init__(self, frame: Frame):
         self.frame = frame
         self.game_ctrl = frame.get_game_control()
 
-        self.place_nbt_block_request_id = ""
-        self.place_nbt_block_waiter = threading.Event()
-
         self.should_close = False
         self.running_mutex = threading.Lock()
+
+        self.flowers_for_machines = None
+        self._chest_cache_requester = str(uuid.uuid4())
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenFrameExit(self.on_close)
-        self.ListenInternalBroadcast(
-            "ffm:place_nbt_block_response", self.on_place_nbt_block_response
-        )
         self.make_data_path()
 
     def on_def(self):
-        global bwo, nbtlib
+        global bwo, nbtlib, FlowersForMachine
 
         pip = self.GetPluginAPI("pip")
-        _ = self.GetPluginAPI("献给机械の花束", (0, 0, 3))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 0, 0))
 
         if 0:
             from pip模块支持 import PipSupport
+            from 前置_献给机械的花束 import FlowersForMachine
 
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
@@ -74,7 +74,6 @@ class SimpleWorldImport(Plugin):
 
     def on_close(self, _: FrameExit):
         self.should_close = True
-        self.place_nbt_block_waiter.set()
         self.running_mutex.acquire()
         self.running_mutex.release()
 
@@ -181,60 +180,29 @@ class SimpleWorldImport(Plugin):
         except Exception:
             pass
 
-    def place_nbt_block(
-        self,
-        pos: tuple[int, int, int],
-        block_runtime_id,
-        block_nbt: "nbtlib.tag.Compound",
-    ):
-        states = bwo.runtime_id_to_state(block_runtime_id)
-        self.place_nbt_block_request_id = str(uuid.uuid4())
-
-        waiter = threading.Event()
-        self.place_nbt_block_waiter = waiter
-
-        self.BroadcastEvent(
-            InternalBroadcast(
-                "ffm:place_nbt_block_request",
-                {
-                    "request_id": self.place_nbt_block_request_id,
-                    "block_name": states.Name,
-                    "block_states_string": self.as_block_states_string(states.States),
-                    "block_nbt": block_nbt,
-                    "posx": pos[0],
-                    "posy": pos[1],
-                    "posz": pos[2],
-                },
-            )
-        )
-
-        waiter.wait()
-
-    def on_place_nbt_block_response(self, event: InternalBroadcast):
-        if event.data["request_id"] != self.place_nbt_block_request_id:
-            return
-
-        if not event.data["success"]:
-            posx = event.data["posx"]
-            posy = event.data["posy"]
-            posz = event.data["posz"]
-            fmts.print_war(
-                f"简单世界导入: 处理 {posx} {posy} {posz} 处的 NBT 方块时出现错误"
-            )
-
-        self.place_nbt_block_request_id = ""
-        self.place_nbt_block_waiter.set()
-
     @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_import(self, cmd: list[str]):
+        if self.flowers_for_machines is None:
+            fmts.print_err("do_world_import: Should nerver happened")
+            return
+
         if not self.running_mutex.acquire(timeout=0):
             fmts.print_err("同一时刻最多处理一个导入任务")
             return
+
         if not self.should_close:
             self._do_world_import(cmd)
+            self.flowers_for_machines.get_chest_cache().remove_all_chests(
+                self._chest_cache_requester
+            )
+
         self.running_mutex.release()
 
     def _do_world_import(self, cmd: list[str]):
+        if self.flowers_for_machines is None:
+            fmts.print_err("_do_world_import: Should nerver happened")
+            return
+
         try:
             filename = cmd[0]
             if not filename.endswith(".mcworld"):
@@ -450,6 +418,12 @@ class SimpleWorldImport(Plugin):
                     rid0 = forceground_blocks.block(x, y, z)
                     rid1 = background_blocks.block(x, y, z)
 
+                    # 这个可能是一个 NBT 方块，
+                    # 因此我们提前开一些变量以方便后边的赋值
+                    nbt_block_structure_id = ""
+                    is_chest_block = False
+                    place_nbt_block_success = False
+
                     # 如果前景层和背景层都是空气,
                     # 那么我们可以不用管了, 直接跳过
                     if (
@@ -465,12 +439,72 @@ class SimpleWorldImport(Plugin):
 
                     # 如果这是一个 NBT 方块
                     if final_pos in block_pos_to_nbt:
-                        self.place_nbt_block(
-                            final_pos, rid0, block_pos_to_nbt[final_pos]
+                        states = bwo.runtime_id_to_state(rid0)
+                        if "chest" in states.Name:
+                            is_chest_block = True
+
+                        resp = (
+                            self.flowers_for_machines.place_nbt_block.place_nbt_block(
+                                final_pos,
+                                states.Name,
+                                self.as_block_states_string(states.States),
+                                block_pos_to_nbt[final_pos],
+                            )
                         )
+                        if not resp.success:
+                            fmts.print_war(
+                                f"简单世界导入: 处理 {final_pos} 处的 NBT 方块时出现错误"
+                            )
+
+                        place_nbt_block_success = resp.success
+                        if not resp.can_fast:
+                            nbt_block_structure_id = resp.structure_unique_id
                     # 正常放置前景层的方块
                     else:
                         self.send_build_command(final_pos, rid0)
+
+                    # 如果这是箱子，我们尝试测试它是否是大箱子。
+                    # 如果是大箱子，让我们开始进行特殊的处理
+                    if is_chest_block and place_nbt_block_success:
+                        # 取得箱子缓存数据集
+                        chest_cache = self.flowers_for_machines.get_chest_cache()
+                        # 先把当前这个箱子变成 PairChest
+                        pair_chest = chest_cache.nbt_to_chest(
+                            final_pos, block_pos_to_nbt[final_pos]
+                        )
+                        # 如果 pair_chest 不是 None，则这个箱子是大箱子的一部分
+                        if pair_chest is not None:
+                            # 设置这个箱子对应的结构 Unique ID
+                            pair_chest.set_structure_unique_id(nbt_block_structure_id)
+                            # 把当前这个箱子加入到箱子缓存数据集
+                            chest_cache.add_chest(
+                                self._chest_cache_requester, pair_chest
+                            )
+                            # 试图查找这个箱子的配对是否存在。
+                            # 如果存在，则放置大箱子
+                            if (
+                                chest_cache.find_chest(
+                                    self._chest_cache_requester, pair_chest, True
+                                )
+                                is not None
+                            ):
+                                # 获取大箱子的方块状态
+                                states = bwo.runtime_id_to_state(rid0)
+                                # 放置大箱子
+                                resp = self.flowers_for_machines.place_large_chest.place_large_chest(
+                                    self._chest_cache_requester,
+                                    states.Name,
+                                    self.as_block_states_string(states.States),
+                                    pair_chest,
+                                )
+                                if not resp.success:
+                                    fmts.print_war(
+                                        f"简单世界导入: 处理 {final_pos} 处的大箱子时出现错误"
+                                    )
+                                # 相应的大箱子已经处理完毕了，无论是否成功，我们从箱子缓存中回收它们
+                                chest_cache.remove_chest_and_its_pair(
+                                    self._chest_cache_requester, pair_chest
+                                )
 
                     # 这里是保证 1 秒钟最多导入 1000 个方块。
                     # 0.001 = 1/1000

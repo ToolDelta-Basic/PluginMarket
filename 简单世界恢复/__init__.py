@@ -30,7 +30,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 2, 1)
+    version = (0, 3, 0)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -40,6 +40,9 @@ class SimpleWorldRecover(Plugin):
     chunk_cache_mu: threading.Lock
     all_waiting_chunk: set[chunkPos]
     chunk_cache: dict[chunkPos, list[dict]]
+
+    flowers_for_machines: "FlowersForMachine | None"
+    _chest_cache_requester: str
 
     should_close: bool
     running_mutex: threading.Lock
@@ -59,8 +62,8 @@ class SimpleWorldRecover(Plugin):
         self.all_waiting_chunk = set()
         self.chunk_cache = {}
 
-        self.place_nbt_block_request_id = ""
-        self.place_nbt_block_waiter = threading.Event()
+        self.flowers_for_machines = None
+        self._chest_cache_requester = str(uuid.uuid4())
 
         self.should_close = False
         self.running_mutex = threading.Lock()
@@ -70,19 +73,17 @@ class SimpleWorldRecover(Plugin):
         self.ListenFrameExit(self.on_close)
         self.ListenInternalBroadcast("scq:publish_chunk_data", self.on_chunk_data)
         self.ListenInternalBroadcast("swr:recover_request", self.on_event)
-        self.ListenInternalBroadcast(
-            "ffm:place_nbt_block_response", self.on_place_nbt_block_response
-        )
 
     def on_def(self):
-        global bwo, nbtlib
+        global bwo, nbtlib, FlowersForMachine
 
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-        _ = self.GetPluginAPI("献给机械の花束", (0, 0, 3))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 0, 0))
 
         if 0:
             from pip模块支持 import PipSupport
+            from 前置_献给机械的花束 import FlowersForMachine
 
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
@@ -106,7 +107,6 @@ class SimpleWorldRecover(Plugin):
 
     def on_close(self, _: FrameExit):
         self.should_close = True
-        self.place_nbt_block_waiter.set()
         self.chunk_cache_mu.acquire()
         self.all_waiting_chunk.clear()
         self.chunk_cache = {}
@@ -154,50 +154,6 @@ class SimpleWorldRecover(Plugin):
 
         self.waiting_chunk_data = event.data
         self.chunk_waiter.set()
-
-    def place_nbt_block(
-        self,
-        pos: tuple[int, int, int],
-        block_runtime_id,
-        block_nbt: "nbtlib.tag.Compound",
-    ):
-        states = bwo.runtime_id_to_state(block_runtime_id)
-        self.place_nbt_block_request_id = str(uuid.uuid4())
-
-        waiter = threading.Event()
-        self.place_nbt_block_waiter = waiter
-
-        self.BroadcastEvent(
-            InternalBroadcast(
-                "ffm:place_nbt_block_request",
-                {
-                    "request_id": self.place_nbt_block_request_id,
-                    "block_name": states.Name,
-                    "block_states_string": self.as_block_states_string(states.States),
-                    "block_nbt": block_nbt,
-                    "posx": pos[0],
-                    "posy": pos[1],
-                    "posz": pos[2],
-                },
-            )
-        )
-
-        waiter.wait()
-
-    def on_place_nbt_block_response(self, event: InternalBroadcast):
-        if event.data["request_id"] != self.place_nbt_block_request_id:
-            return
-
-        if not event.data["success"]:
-            posx = event.data["posx"]
-            posy = event.data["posy"]
-            posz = event.data["posz"]
-            fmts.print_war(
-                f"简单世界恢复: 处理 {posx} {posy} {posz} 处的 NBT 方块时出现错误"
-            )
-
-        self.place_nbt_block_request_id = ""
-        self.place_nbt_block_waiter.set()
 
     def on_event(self, event: InternalBroadcast):
         """
@@ -357,6 +313,10 @@ class SimpleWorldRecover(Plugin):
 
     @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_recover(self, cmd: list[str], called_by_api: bool):
+        if self.flowers_for_machines is None:
+            fmts.print_err("do_world_recover: Should nerver happened")
+            return
+
         if not called_by_api:
             cmd[0] = self.format_data_path(cmd[0])
 
@@ -366,14 +326,23 @@ class SimpleWorldRecover(Plugin):
 
         if not self.should_close:
             self._do_world_recover(cmd)
+
             self.chunk_cache_mu.acquire()
             self.all_waiting_chunk.clear()
             self.chunk_cache = {}
             self.chunk_cache_mu.release()
 
+            self.flowers_for_machines.get_chest_cache().remove_all_chests(
+                self._chest_cache_requester
+            )
+
         self.running_mutex.release()
 
     def _do_world_recover(self, cmd: list[str]):
+        if self.flowers_for_machines is None:
+            fmts.print_err("_do_world_recover: Should nerver happened")
+            return
+
         dim_id = self.get_bot_dimension()
         if dim_id == -1:
             fmts.print_err("无法获取机器人当前维度")
@@ -478,6 +447,10 @@ class SimpleWorldRecover(Plugin):
                 chunk_sub_blocks_1 = chunk_sub.blocks(1)
                 server_sub_blocks_1 = server_sub.blocks(1)
 
+                nbt_block_structure_id = ""
+                is_chest_block = False
+                place_nbt_block_success = False
+
                 for comb_pos in range(4096):
                     if self.should_close:
                         world.close_world()
@@ -503,15 +476,65 @@ class SimpleWorldRecover(Plugin):
                         final_pos = (pen_x + x, pen_y + y, pen_z + z)
 
                         if final_pos in block_pos_to_nbt:
-                            self.place_nbt_block(
+                            states = bwo.runtime_id_to_state(chunk_sub_block_0)
+                            if "chest" in states.Name:
+                                is_chest_block = True
+
+                            resp = self.flowers_for_machines.place_nbt_block.place_nbt_block(
                                 final_pos,
-                                chunk_sub_block_0,
+                                states.Name,
+                                self.as_block_states_string(states.States),
                                 block_pos_to_nbt[final_pos],
                             )
+                            if not resp.success:
+                                fmts.print_war(
+                                    f"简单世界恢复: 处理 {final_pos} 处的 NBT 方块时出现错误"
+                                )
+
+                            place_nbt_block_success = resp.success
+                            if not resp.can_fast:
+                                nbt_block_structure_id = resp.structure_unique_id
                         else:
                             self.send_build_command(
                                 (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_0
                             )
+
+                        if is_chest_block and place_nbt_block_success:
+                            chest_cache = self.flowers_for_machines.get_chest_cache()
+                            pair_chest = chest_cache.nbt_to_chest(
+                                final_pos, block_pos_to_nbt[final_pos]
+                            )
+
+                            if pair_chest is not None:
+                                pair_chest.set_structure_unique_id(
+                                    nbt_block_structure_id
+                                )
+                                chest_cache.add_chest(
+                                    self._chest_cache_requester, pair_chest
+                                )
+
+                                if (
+                                    chest_cache.find_chest(
+                                        self._chest_cache_requester, pair_chest, True
+                                    )
+                                    is not None
+                                ):
+                                    states = bwo.runtime_id_to_state(chunk_sub_block_0)
+
+                                    resp = self.flowers_for_machines.place_large_chest.place_large_chest(
+                                        self._chest_cache_requester,
+                                        states.Name,
+                                        self.as_block_states_string(states.States),
+                                        pair_chest,
+                                    )
+                                    if not resp.success:
+                                        fmts.print_war(
+                                            f"简单世界恢复: 处理 {final_pos} 处的大箱子时出现错误"
+                                        )
+
+                                    chest_cache.remove_chest_and_its_pair(
+                                        self._chest_cache_requester, pair_chest
+                                    )
 
                         recover_block_count += 1
                         time.sleep(0.001)
