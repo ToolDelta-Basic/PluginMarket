@@ -2,14 +2,14 @@ from .define import FlowersForMachineBase
 from .server_running import FlowersForMachineServerRunning
 from .chest_cache import ChestCache
 from .place_nbt_block import PlaceNBTBlock
-from .place_large_chest import PlaceLargeChest 
+from .place_large_chest import PlaceLargeChest
 from tooldelta import Plugin, Frame, plugin_entry
 
 
 class FlowersForMachine(Plugin):
     name = "献给机械の花束"
     author = "2B, 9S and 6O"
-    version = (1, 0, 0)
+    version = (1, 0, 1)
 
     _base: FlowersForMachineBase
     _server_running: FlowersForMachineServerRunning
