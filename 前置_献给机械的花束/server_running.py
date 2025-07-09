@@ -82,6 +82,9 @@ class FlowersForMachineServerRunning:
         if not file_binary.ok:
             fmts.print_err("献给机械の花束: 配套软件下载失败")
             return False
+        else:
+            fmts.print_suc("献给机械の花束: 相应配套软件下载成功")
+
         with open(server_path, "wb") as file:
             file.write(file_binary.content)
             os.chmod(server_path, 0o755)
@@ -95,7 +98,6 @@ class FlowersForMachineServerRunning:
 
         fmts.print_inf("献给机械の花束: 开始下载相应配套软件，请坐和放宽")
         if not self._download_server(server_path):
-            fmts.print_suc("献给机械の花束: 相应配套软件下载成功")
             return
 
         args: list[str] = [
