@@ -12,6 +12,7 @@ class FlowersForMachineBase:
     plugin: Plugin
 
     server_started: bool
+    server_start_time: int
     server: subprocess.Popen[bytes] | None
 
     should_close: bool
@@ -57,6 +58,7 @@ class FlowersForMachineBase:
         self.ssp = int(cfg["本地服务器端口号"])
 
         self.server_started = False
+        self.server_start_time = 0
         self.server = None
 
         self.should_close = False

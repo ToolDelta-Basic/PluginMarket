@@ -59,11 +59,17 @@ class FlowersForMachineServerRunning:
             need_restart = True
 
         if need_restart:
+            if int(time.time()) - self.base.server_start_time < 90:
+                return
+
             fmts.print_war("献给机械の花束: 服务器似乎已崩溃，正在试图重启")
             if len(error_info) > 0:
                 fmts.print_war(f"献给机械の花束: 崩溃原因为 {error_info}")
+
             self._close_server()
             self._run_server()
+        else:
+            self.base.server_start_time = 0
 
     @thread_func(usage="献给机械の花束: 检查机器人是否已经死亡")
     def auto_keep_alive(self):
@@ -114,6 +120,7 @@ class FlowersForMachineServerRunning:
         ]
 
         self.base.server = subprocess.Popen(args)
+        self.base.server_start_time = int(time.time())
         self.base.server_started = True
 
     def _close_server(self):
@@ -128,6 +135,7 @@ class FlowersForMachineServerRunning:
 
         if self.base.server is not None:
             self.base.server.terminate()
+        self.base.server_start_time = 0
         self.base.server_started = False
 
     def run_server(self, _: list[str]):
