@@ -67,7 +67,10 @@ class MovingBlockAnalysis:
     def _auto_analysis(self):
         with self._mu:
             for i in self._pending_list:
-                self._analysis_single_sample(i)
+                try:
+                    self._analysis_single_sample(i)
+                except Exception:
+                    pass
             self._pending_list.clear()
 
     def _analysis_single_sample(self, sample: MovingBlockSample):

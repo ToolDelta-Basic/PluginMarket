@@ -15,7 +15,7 @@ from .requet_queue import AutoSubChunkRequetQueue
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 3, 0)
+    version = (0, 3, 1)
 
     base: AutoSubChunkRequestBase
     api: AutoSubChunkRequestAPI

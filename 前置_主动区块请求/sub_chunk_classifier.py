@@ -20,9 +20,9 @@ def single_dimension_classifier(
         last_hit_sub_chunks = 0
         matrix: list[tuple[int, list[tuple[int, int]]]] = []
 
-        best_x_start, best_hit_sub_chunks = 0, 0
+        best_x_start = 0
+        best_hit_sub_chunks = 0
         best_one: list[tuple[int, list[tuple[int, int]]]] = []
-        best_center: tuple[int, int] = (0, 0)
 
         last_x = 0
         temp: list[tuple[int, int]] = []
@@ -34,37 +34,32 @@ def single_dimension_classifier(
                     matrix.append((last_x, temp))
                     temp = []
                 last_x = i[0]
-            temp.append((i[1], i[2]))
+            if z_start <= i[2] <= z_end:
+                temp.append((i[1], i[2]))
         if len(temp) > 0:
             temp.sort(key=lambda i: i[1])
             matrix.append((last_x, temp))
             temp = []
 
-        x_start, x_end, best_x_start = x - 127, x + 128, x - 127
+        x_start, x_end, best_x_start = x - 255, x, x - 255
         left = bisect.bisect_left(matrix, x_start, key=lambda i: i[0])
         right = bisect.bisect_right(matrix, x_end, key=lambda i: i[0])
         for i in matrix[left:right]:
-            left = bisect.bisect_left(i[1], z_start, key=lambda i: i[1])
-            right = bisect.bisect_right(i[1], z_end, key=lambda i: i[1])
-            best_hit_sub_chunks += right - left
+            best_hit_sub_chunks += len(i[1])
             last_hit_sub_chunks = best_hit_sub_chunks
 
-        for x_start in range(x - 126, x + 1):
+        for x_start in range(x - 254, x + 1):
             hit_sub_chunks, x_end = last_hit_sub_chunks, x_start + 255
 
             ptr = bisect.bisect_left(matrix, x_start - 1, key=lambda i: i[0])
             sub_matrix = matrix[ptr : ptr + 1][0]
             if sub_matrix[0] == x_start - 1:
-                left = bisect.bisect_left(sub_matrix[1], z_start, key=lambda i: i[1])
-                right = bisect.bisect_right(sub_matrix[1], z_end, key=lambda i: i[1])
-                hit_sub_chunks -= right - left
+                hit_sub_chunks -= len(sub_matrix[1])
 
             ptr = bisect.bisect_right(matrix, x_end, key=lambda i: i[0])
             sub_matrix = matrix[ptr - 1 : ptr][0]
             if sub_matrix[0] == x_end:
-                left = bisect.bisect_left(sub_matrix[1], z_start, key=lambda i: i[1])
-                right = bisect.bisect_right(sub_matrix[1], z_end, key=lambda i: i[1])
-                hit_sub_chunks += right - left
+                hit_sub_chunks += len(sub_matrix[1])
 
             if hit_sub_chunks > best_hit_sub_chunks:
                 best_x_start = x_start
@@ -75,15 +70,13 @@ def single_dimension_classifier(
         left = bisect.bisect_left(matrix, x_start, key=lambda i: i[0])
         right = bisect.bisect_right(matrix, x_end, key=lambda i: i[0])
         for i in matrix[left:right]:
-            left = bisect.bisect_left(i[1], z_start, key=lambda i: i[1])
-            right = bisect.bisect_right(i[1], z_end, key=lambda i: i[1])
-            best_one.append((i[0], i[1][left:right]))
-            best_center = (
-                (x_start + x_end) // 2 + 1,
-                (z_start + z_end) // 2 + 1,
-            )
+            best_one.append((i[0], i[1]))
 
         current_result: list[tuple[int, int, int]] = []
+        best_center = (
+            (x_start + x_end) // 2 + 1,
+            (z_start + z_end) // 2 + 1,
+        )
 
         for i in best_one:
             for j in i[1]:
