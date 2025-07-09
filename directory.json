@@ -723,9 +723,15 @@
         "__init__.py"
     ],
     "前置_献给机械的花束": [
+        "server_running.py",
+        "chest_cache.py",
+        "place_nbt_block.py",
         "datas.json",
         "readme.txt",
-        "__init__.py"
+        "place_large_chest.py",
+        "__init__.py",
+        "log_record.py",
+        "define.py"
     ],
     "暴击检测": [
         "datas.json",
