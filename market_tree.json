@@ -312,7 +312,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "plugin-type": "classic"
     },
     "bdx-exporter": {
@@ -438,7 +438,7 @@
     "无限方块反制": {
       "name": "无限方块反制",
       "author": "哈尼卡",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "清空玩家末影箱": {
