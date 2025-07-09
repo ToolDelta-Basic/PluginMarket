@@ -89,7 +89,7 @@ class FlowersForMachineServerRunning:
         return True
 
     def _run_server(self):
-        server_path = self.plugin().format_data_path("std_server")
+        server_path = self.plugin().format_data_path("standard-server_linux_amd64")
         if self.base.server_started:
             return
 
