@@ -457,7 +457,7 @@ class SimpleWorldImport(Plugin):
                             )
 
                         place_nbt_block_success = resp.success
-                        if not resp.can_fast:
+                        if resp.success and not resp.can_fast:
                             nbt_block_structure_id = resp.structure_unique_id
                     # 正常放置前景层的方块
                     else:

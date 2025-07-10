@@ -1,3 +1,4 @@
+from io import BytesIO
 import os
 import json
 import threading
@@ -30,7 +31,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 3, 0)
+    version = (0, 4, 0)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -75,11 +76,11 @@ class SimpleWorldRecover(Plugin):
         self.ListenInternalBroadcast("swr:recover_request", self.on_event)
 
     def on_def(self):
-        global bwo, nbtlib, FlowersForMachine
+        global nbtlib, bwo, FlowersForMachine, UnMarshalBufferToPythonNBTObject
 
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 0, 0))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 1, 0))
 
         if 0:
             from pip模块支持 import PipSupport
@@ -88,8 +89,11 @@ class SimpleWorldRecover(Plugin):
             pip: PipSupport
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
-        import bedrockworldoperator as bwo
         import nbtlib
+        import bedrockworldoperator as bwo
+        from bedrockworldoperator.utils.unmarshalNBT import (
+            UnMarshalBufferToPythonNBTObject,
+        )
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -175,9 +179,9 @@ class SimpleWorldRecover(Plugin):
 
     def get_chunk(
         self, dim: int, chunk_pox_x: int, chunk_pos_z: int
-    ) -> tuple["bwo.Chunk", bool]:
+    ) -> tuple["bwo.Chunk", list["nbtlib.tag.Compound"], bool]:
         if self.should_close:
-            return bwo.Chunk(), False
+            return bwo.Chunk(), [], False
 
         try:
             self.game_ctrl.sendwocmd(
@@ -218,14 +222,15 @@ class SimpleWorldRecover(Plugin):
             self.chunk_waiter.clear()
 
             if self.should_close:
-                return bwo.Chunk(), False
+                return bwo.Chunk(), [], False
 
             result_chunk = self.waiting_chunk_data
 
         if not self.check_is_completely_chunk(result_chunk):
-            return bwo.Chunk(), False
+            return bwo.Chunk(), [], False
 
         sub_chunks: list[bwo.SubChunk] = []
+        nbts: list[nbtlib.tag.Compound] = []
         r = bwo.Dimension(dim).range()
 
         for i in result_chunk:
@@ -234,12 +239,19 @@ class SimpleWorldRecover(Plugin):
                     i["blocks"], r
                 )
                 sub_chunks.append(sub_chunk_with_index.sub_chunk)
+
+                nbt_data: bytes = i["nbts"]
+                nbt_data_length = len(nbt_data)
+                buf = BytesIO(nbt_data)
+
+                while buf.seek(0, 1) != nbt_data_length:
+                    nbts.append(UnMarshalBufferToPythonNBTObject(buf)[0])  # type: ignore
             else:
                 sub_chunks.append(bwo.new_sub_chunk())
 
         c = bwo.new_chunk(r)
         c.set_sub(sub_chunks)
-        return c, True
+        return c, nbts, True
 
     def as_pos(self, string: str) -> tuple[int, int]:
         s = string.replace("(", "", 1).replace(")", "", 1).split(",")
@@ -399,20 +411,12 @@ class SimpleWorldRecover(Plugin):
                 fmts.print_war(f"位于 {chunk_pos} 的区块没有找到, 跳过")
                 continue
 
-            nbts = world.load_nbt(chunk_pos, dm)
-            block_pos_to_nbt: dict[tuple[int, int, int], nbtlib.tag.Compound] = {}
-            for i in nbts:
-                posx = int(i["x"])
-                posy = int(i["y"])
-                posz = int(i["z"])
-                block_pos_to_nbt[(posx, posy, posz)] = i
-
             while True:
                 if self.should_close:
                     world.close_world()
                     return
 
-                server_chunk, success = self.get_chunk(
+                server_chunk, server_nbts, success = self.get_chunk(
                     int(dm), chunk_pos.x, chunk_pos.z
                 )
 
@@ -420,6 +424,18 @@ class SimpleWorldRecover(Plugin):
                     continue
                 else:
                     break
+
+            chunk_nbts = world.load_nbt(chunk_pos, dm)
+            block_pos_to_chunk_nbt: dict[tuple[int, int, int], nbtlib.tag.Compound] = {}
+            block_pos_to_server_nbt: dict[tuple[int, int, int], nbtlib.tag.Compound] = (
+                {}
+            )
+            for i in chunk_nbts:
+                posx, posy, posz = int(i["x"]), int(i["y"]), int(i["z"])
+                block_pos_to_chunk_nbt[(posx, posy, posz)] = i
+            for i in server_nbts:
+                posx, posy, posz = int(i["x"]), int(i["y"]), int(i["z"])
+                block_pos_to_server_nbt[(posx, posy, posz)] = i
 
             for index in range(dm.height() >> 4):
                 if self.should_close:
@@ -447,97 +463,135 @@ class SimpleWorldRecover(Plugin):
                 chunk_sub_blocks_1 = chunk_sub.blocks(1)
                 server_sub_blocks_1 = server_sub.blocks(1)
 
-                nbt_block_structure_id = ""
-                is_chest_block = False
-                place_nbt_block_success = False
-
                 for comb_pos in range(4096):
                     if self.should_close:
                         world.close_world()
                         return
 
+                    nbt_block_structure_id = ""
+                    is_chest_block = False
+                    place_nbt_block_success = False
+
                     y = comb_pos >> 8
                     z = (comb_pos - ((comb_pos >> 8) << 8)) >> 4
                     x = comb_pos - ((comb_pos >> 4) << 4)
+                    final_pos = (pen_x + x, pen_y + y, pen_z + z)
 
+                    need_rebuild = False
                     chunk_sub_block_0 = chunk_sub_blocks_0.block(x, y, z)
                     server_sub_block_0 = server_sub_blocks_0.block(x, y, z)
                     chunk_sub_block_1 = chunk_sub_blocks_1.block(x, y, z)
                     server_sub_block_1 = server_sub_blocks_1.block(x, y, z)
 
                     if chunk_sub_block_1 != server_sub_block_1:
-                        self.send_build_command(
-                            (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_1
-                        )
+                        need_rebuild = True
+                    if chunk_sub_block_0 != server_sub_block_0:
+                        need_rebuild = True
+                    else:
+                        in_chunk_nbts = final_pos in block_pos_to_chunk_nbt
+                        in_server_nbts = final_pos in block_pos_to_server_nbt
+
+                        if in_chunk_nbts and not in_server_nbts:
+                            need_rebuild = True
+                        if not in_chunk_nbts and in_server_nbts:
+                            need_rebuild = True
+
+                        if in_chunk_nbts and in_server_nbts:
+                            states = bwo.runtime_id_to_state(chunk_sub_block_0)
+                            states_string = self.as_block_states_string(states.States)
+
+                            if "chest" in states.Name:
+                                pair_chest = self.flowers_for_machines.get_chest_cache().nbt_to_chest(
+                                    final_pos, block_pos_to_chunk_nbt[final_pos]
+                                )
+                                if pair_chest is not None:
+                                    need_rebuild = True
+
+                            resp_for_origin = self.flowers_for_machines.get_nbt_block_hash.get_nbt_block_full_hash(
+                                states.Name,
+                                states_string,
+                                block_pos_to_chunk_nbt[final_pos],
+                            )
+                            resp_for_current = self.flowers_for_machines.get_nbt_block_hash.get_nbt_block_full_hash(
+                                states.Name,
+                                states_string,
+                                block_pos_to_server_nbt[final_pos],
+                            )
+
+                            if resp_for_origin.hash != resp_for_current.hash:
+                                need_rebuild = True
+
+                    if not need_rebuild:
+                        continue
+
+                    if chunk_sub_block_1 != bwo.AIR_BLOCK_RUNTIME_ID:
+                        self.send_build_command(final_pos, chunk_sub_block_1)
                         recover_block_count += 1
                         time.sleep(0.001)
 
-                    if chunk_sub_block_0 != server_sub_block_0:
-                        final_pos = (pen_x + x, pen_y + y, pen_z + z)
+                    if final_pos in block_pos_to_chunk_nbt:
+                        states = bwo.runtime_id_to_state(chunk_sub_block_0)
+                        if "chest" in states.Name:
+                            is_chest_block = True
 
-                        if final_pos in block_pos_to_nbt:
-                            states = bwo.runtime_id_to_state(chunk_sub_block_0)
-                            if "chest" in states.Name:
-                                is_chest_block = True
-
-                            resp = self.flowers_for_machines.place_nbt_block.place_nbt_block(
+                        resp = (
+                            self.flowers_for_machines.place_nbt_block.place_nbt_block(
                                 final_pos,
                                 states.Name,
                                 self.as_block_states_string(states.States),
-                                block_pos_to_nbt[final_pos],
+                                block_pos_to_chunk_nbt[final_pos],
                             )
-                            if not resp.success:
-                                fmts.print_war(
-                                    f"简单世界恢复: 处理 {final_pos} 处的 NBT 方块时出现错误"
+                        )
+                        if not resp.success:
+                            fmts.print_war(
+                                f"简单世界恢复: 处理 {final_pos} 处的 NBT 方块时出现错误"
+                            )
+
+                        place_nbt_block_success = resp.success
+                        if resp.success and not resp.can_fast:
+                            nbt_block_structure_id = resp.structure_unique_id
+                    else:
+                        self.send_build_command(
+                            (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_0
+                        )
+
+                    if is_chest_block and place_nbt_block_success:
+                        chest_cache = self.flowers_for_machines.get_chest_cache()
+                        pair_chest = chest_cache.nbt_to_chest(
+                            final_pos, block_pos_to_chunk_nbt[final_pos]
+                        )
+
+                        if pair_chest is not None:
+                            pair_chest.set_structure_unique_id(nbt_block_structure_id)
+                            chest_cache.add_chest(
+                                self._chest_cache_requester, pair_chest
+                            )
+
+                            if (
+                                chest_cache.find_chest(
+                                    self._chest_cache_requester, pair_chest, True
                                 )
+                                is not None
+                            ):
+                                states = bwo.runtime_id_to_state(chunk_sub_block_0)
 
-                            place_nbt_block_success = resp.success
-                            if not resp.can_fast:
-                                nbt_block_structure_id = resp.structure_unique_id
-                        else:
-                            self.send_build_command(
-                                (pen_x + x, pen_y + y, pen_z + z), chunk_sub_block_0
-                            )
-
-                        if is_chest_block and place_nbt_block_success:
-                            chest_cache = self.flowers_for_machines.get_chest_cache()
-                            pair_chest = chest_cache.nbt_to_chest(
-                                final_pos, block_pos_to_nbt[final_pos]
-                            )
-
-                            if pair_chest is not None:
-                                pair_chest.set_structure_unique_id(
-                                    nbt_block_structure_id
+                                resp = self.flowers_for_machines.place_large_chest.place_large_chest(
+                                    self._chest_cache_requester,
+                                    states.Name,
+                                    self.as_block_states_string(states.States),
+                                    pair_chest,
                                 )
-                                chest_cache.add_chest(
+                                if not resp.success:
+                                    fmts.print_war(
+                                        f"简单世界恢复: 处理 {final_pos} 处的大箱子时出现错误"
+                                    )
+
+                                chest_cache.remove_chest_and_its_pair(
                                     self._chest_cache_requester, pair_chest
                                 )
 
-                                if (
-                                    chest_cache.find_chest(
-                                        self._chest_cache_requester, pair_chest, True
-                                    )
-                                    is not None
-                                ):
-                                    states = bwo.runtime_id_to_state(chunk_sub_block_0)
-
-                                    resp = self.flowers_for_machines.place_large_chest.place_large_chest(
-                                        self._chest_cache_requester,
-                                        states.Name,
-                                        self.as_block_states_string(states.States),
-                                        pair_chest,
-                                    )
-                                    if not resp.success:
-                                        fmts.print_war(
-                                            f"简单世界恢复: 处理 {final_pos} 处的大箱子时出现错误"
-                                        )
-
-                                    chest_cache.remove_chest_and_its_pair(
-                                        self._chest_cache_requester, pair_chest
-                                    )
-
-                        recover_block_count += 1
-                        time.sleep(0.001)
+                    recover_block_count += 1
+                    time.sleep(0.001)
 
         world.close_world()
         fmts.print_suc(f"已完成恢复工作, 一共恢复了 {recover_block_count} 个方块")

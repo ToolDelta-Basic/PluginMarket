@@ -1,6 +1,6 @@
 {
   "author": "YoRHa",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "plugin-type": "classic",
   "description": "结合“世界备份”插件使用，在服务器地图损坏后用本插件修复(本插件会对比方块差异，只导入差异部分，比“简单世界导入”效率高)",
   "pre-plugins": {
