@@ -744,6 +744,7 @@
         "readme.txt": 0,
         "place_large_chest.py": 0,
         "__init__.py": 0,
+        "get_nbt_block_hash.py": 0,
         "log_record.py": 0,
         "define.py": 0
     },

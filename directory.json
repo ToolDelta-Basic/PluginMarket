@@ -730,6 +730,7 @@
         "readme.txt",
         "place_large_chest.py",
         "__init__.py",
+        "get_nbt_block_hash.py",
         "log_record.py",
         "define.py"
     ],
