@@ -14,7 +14,7 @@ class LogRecord:
 
     def __init__(self, plugin: Plugin, system_name: str) -> None:
         self.plugin = plugin
-        self.system_name = str(int(time.time())) + system_name
+        self.system_name = str(int(time.time())) + "_" + system_name
         self._mu = threading.Lock()
         self._id = 0
 
