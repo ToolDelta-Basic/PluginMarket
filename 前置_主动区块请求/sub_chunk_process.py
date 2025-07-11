@@ -1,5 +1,7 @@
+from .define import AutoSubChunkRequestBase
+from .api import AutoSubChunkRequestAPI
+from .sub_chunk_classifier import sub_chunk_classifier
 from tooldelta.constants.packets import PacketIDS
-from tooldelta.mc_bytes_packet import sub_chunk_request
 from tooldelta.mc_bytes_packet.base_bytes_packet import BaseBytesPacket
 from tooldelta.utils import thread_func
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
@@ -12,8 +14,6 @@ from tooldelta.internal.launch_cli.neo_libs.blob_hash.packet.define import (
     HashWithPosition,
     SubChunkPos,
 )
-from .api import AutoSubChunkRequestAPI
-from .define import AutoSubChunkRequestBase
 
 
 class AutoSubChunkRequestSubChunkProcess:
@@ -151,16 +151,14 @@ class AutoSubChunkRequestSubChunkProcess:
 
         # Request these failed sub chunks due to server is still loading them.
         if len(unloaded_sub_chunk) > 0:
-            center = unloaded_sub_chunk[0]
-            offsets: list[tuple[int, int, int]] = []
+            multiple_sub_chunks: list[tuple[int, tuple[int, int, int]]] = []
             for i in unloaded_sub_chunk:
-                offsets.append((i.x - center.x, i.y - center.y, i.z - center.z))
-            self.base().game_ctrl.sendPacket(
-                PacketIDS.IDSubChunkRequest,
-                sub_chunk_request.SubChunkRequest(
-                    pk.Dimension, center.x, center.y, center.z, offsets
-                ),
-            )
+                multiple_sub_chunks.append((pk.Dimension, (i.x, i.y, i.z)))
+            for i in sub_chunk_classifier(multiple_sub_chunks):
+                try:
+                    self.base().game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, i)
+                except Exception:
+                    pass
 
         # Request missing blob hash from server-side blob hash holder.
         if len(pending_blob_hash) > 0:
@@ -235,15 +233,13 @@ class AutoSubChunkRequestSubChunkProcess:
         # and here we resent sub chunk request to
         # reget them.
         if len(failed_sub_chunks) > 0:
-            center = failed_sub_chunks[0]
-            offsets: list[tuple[int, int, int]] = []
+            multiple_sub_chunks: list[tuple[int, tuple[int, int, int]]] = []
             for i in failed_sub_chunks:
-                offsets.append((i.x - center.x, i.y - center.y, i.z - center.z))
-            self.base().game_ctrl.sendPacket(
-                PacketIDS.IDSubChunkRequest,
-                sub_chunk_request.SubChunkRequest(
-                    pk.Dimension, center.x, center.y, center.z, offsets
-                ),
-            )
+                multiple_sub_chunks.append((pk.Dimension, (i.x, i.y, i.z)))
+            for i in sub_chunk_classifier(multiple_sub_chunks):
+                try:
+                    self.base().game_ctrl.sendPacket(PacketIDS.IDSubChunkRequest, i)
+                except Exception:
+                    pass
 
         return
