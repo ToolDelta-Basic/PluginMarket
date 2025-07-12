@@ -29,11 +29,12 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
             "存档名字": "Kunst Wunderkammer",
+            "是否使用超平坦": False,
             "世界种子号": 96,
             "显示坐标": True,
             "启用调试": False,
@@ -45,8 +46,9 @@ class HoloPsychon(Plugin):
         )
 
         self.enable_debug = bool(cfg["启用调试"])
-        self.world_seed = int(cfg["世界种子号"])
         self.world_dir_name = str(cfg["存档名字"])
+        self.is_flatten_world = bool(cfg["是否使用超平坦"])
+        self.world_seed = int(cfg["世界种子号"])
         self.show_coordinates = bool(cfg["显示坐标"])
         self.always_sync_nbt = bool(
             cfg["总是同步方块实体数据(启用后方块实体同步频率失效)"]
@@ -116,6 +118,10 @@ class HoloPsychon(Plugin):
             ldt.level_name = self.world_dir_name
             ldt.random_seed = self.world_seed
             ldt.show_coordinates = self.show_coordinates
+            if self.is_flatten_world:
+                ldt.generator = 2
+            else:
+                ldt.generator = 1
             self.world.modify_level_dat(ldt)
 
         blob_hash = self.game_ctrl.blob_hash_holder()
