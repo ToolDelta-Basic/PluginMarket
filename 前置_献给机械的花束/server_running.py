@@ -39,6 +39,22 @@ class FlowersForMachineServerRunning:
             self.run_server,
         )
 
+    def check_config(self):
+        if not self.base.read_v1_readme:
+            raise Exception(
+                "献给机械の花束: 请阅读版本 v2 的自述文件，因为我们更新了它"
+            )
+        if not self.base.set_console_pos:
+            raise Exception(
+                "献给机械の花束: 您需要设置操作台的中心坐标。如果您不知道这是什么，请阅读自述文件，否则后果自负"
+            )
+        if len(self.base.asa) == 0:
+            raise Exception("献给机械の花束: 请设置验证服务地址")
+        if len(self.base.rsn) == 0:
+            raise Exception("献给机械の花束: 请设置租赁服号")
+        if self.base.ssp == 0:
+            raise Exception("献给机械の花束: 服务器端口号不得为 0")
+
     def _auto_keep_alive(self):
         need_restart = False
         error_info = ""
@@ -98,6 +114,8 @@ class FlowersForMachineServerRunning:
         return True
 
     def _run_server(self):
+        self.check_config()
+
         server_path = self.plugin().format_data_path("standard-server_linux_amd64")
         if self.base.server_started:
             return

@@ -68,22 +68,6 @@ class FlowersForMachineBase:
         self.nbt_marshal = None
         self.chest_cache = ChestCache()
 
-        if not self.read_v1_readme:
-            raise Exception(
-                "献给机械の花束: 请阅读版本 v2 的自述文件，因为我们更新了它"
-            )
-        if not self.set_console_pos:
-            raise Exception(
-                "献给机械の花束: 您需要设置操作台的中心坐标。如果您不知道这是什么，请阅读自述文件，否则后果自负"
-            )
-
-        if len(self.asa) == 0:
-            raise Exception("献给机械の花束: 请设置验证服务地址")
-        if len(self.rsn) == 0:
-            raise Exception("献给机械の花束: 请设置租赁服号")
-        if self.ssp == 0:
-            raise Exception("献给机械の花束: 服务器端口号不得为 0")
-
         self.plugin.make_data_path()
 
     def need_upgrade_bwo(self) -> bool:
