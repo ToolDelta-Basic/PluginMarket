@@ -1,10 +1,9 @@
-import threading
 import time
 from .sub_chunk_classifier import sub_chunk_classifier
 from tooldelta import InternalBroadcast
 from tooldelta.constants.packets import PacketIDS
 from tooldelta.mc_bytes_packet import sub_chunk_request
-from tooldelta.utils import thread_func
+from tooldelta.utils import fmts, thread_func
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 
 from .api import AutoSubChunkRequestAPI
@@ -27,13 +26,34 @@ class AutoSubChunkRequetQueue:
     def base(self) -> AutoSubChunkRequestBase:
         return self.api.base()
 
-    @thread_func(
-        usage="主动区块请求: 自动请求区块", thread_level=ToolDeltaThread.SYSTEM
-    )
-    def send_request_queue(self):
+    def clean_chunk_listeners(self):
+        listeners_to_delete: list[ChunkPosWithDimension] = []
+
+        for cp, listener in self.base().chunk_listener.items():
+            if listener.finished:
+                listeners_to_delete.append(cp)
+                continue
+
+            if listener.expire_unix_time == 0:
+                continue
+            if int(time.time()) < listener.expire_unix_time:
+                continue
+
+            fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
+            listeners_to_delete.append(cp)
+
+        for cp in listeners_to_delete:
+            if cp in self.base().requet_queue:
+                del self.base().requet_queue[cp]
+            if cp in self.base().chunk_listener:
+                del self.base().chunk_listener[cp]
+
+    @thread_func(usage="主动区块请求: 自动轮询器", thread_level=ToolDeltaThread.SYSTEM)
+    def auto_poll(self):
         self.base().get_request_queue_running_states_mu.acquire()
 
         if self.base().should_close:
+            self.base().close_waiter.release()
             self.base().get_request_queue_running_states_mu.release()
             return
         else:
@@ -42,35 +62,37 @@ class AutoSubChunkRequetQueue:
 
         while True:
             self.base().mu.acquire()
+            self.clean_chunk_listeners()
 
-            count = len(self.base().multiple_pos) * self.base().request_chunk_per_second
+            count = min(
+                len(self.base().multiple_pos) * self.base().request_chunk_per_second,
+                self.base().max_chunks_to_request_per_second,
+            )
             multiple_sub_chunks: list[tuple[int, tuple[int, int, int]]] = []
-            key_to_delete: list[ChunkPosWithDimension] = []
+            popped_sub_chunks: list[ChunkPosWithDimension] = []
 
             if self.base().should_close:
-                for _, listener in self.base().chunk_listener.items():
-                    listener.channel.set()
                 self.base().requet_queue.clear()
                 self.base().chunk_listener.clear()
                 self.base().close_waiter.release()
                 self.base().mu.release()
                 return
 
-            for key, value in self.base().requet_queue.items():
+            for cp, pk in self.base().requet_queue.items():
                 if count <= 0:
                     break
-                for i in value.Offsets:
+                for i in pk.Offsets:
                     multiple_sub_chunks.append(
                         (
-                            value.Dimension,
+                            pk.Dimension,
                             (
-                                value.SubChunkPosX + i[0],
-                                value.SubChunkPosY + i[1],
-                                value.SubChunkPosZ + i[2],
+                                pk.SubChunkPosX + i[0],
+                                pk.SubChunkPosY + i[1],
+                                pk.SubChunkPosZ + i[2],
                             ),
                         )
                     )
-                key_to_delete.append(key)
+                popped_sub_chunks.append(cp)
                 count -= 1
 
             if len(multiple_sub_chunks) > 0:
@@ -82,9 +104,8 @@ class AutoSubChunkRequetQueue:
                     except Exception:
                         pass
 
-            for i in key_to_delete:
-                del self.base().requet_queue[i]
-
+            for cp in popped_sub_chunks:
+                del self.base().requet_queue[cp]
             self.base().mu.release()
 
             if not self.base().should_close:
@@ -144,7 +165,7 @@ class AutoSubChunkRequetQueue:
             self.base().requet_queue[chunk_pos_with_dim] = pk
 
             self.base().chunk_listener[chunk_pos_with_dim] = ChunkListener(
-                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], False, threading.Event()
+                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], 0, False
             )
         self.base().mu.release()
 

@@ -36,8 +36,8 @@ class SingleSubChunk:
 @dataclass
 class ChunkListener:
     subchunks: list[SingleSubChunk]
-    assigned_listener: bool
-    channel: threading.Event
+    expire_unix_time: int
+    finished: bool
 
 
 EMPTY_SINGLE_SUB_CHUNK = SingleSubChunk()
@@ -74,7 +74,8 @@ class AutoSubChunkRequestBase:
         CFG_DEFAULT = {
             "请求半径(最大 5 半径)": 4,
             "每多少秒重新请求周围区块(浮点数)": 300,
-            "每秒请求多少个区块(整数)": 6,
+            "每秒同维度的每个玩家请求多少个区块(整数)": 6,
+            "每秒最多请求的总区块数(整数)": 60,
         }
         cfg, _ = config.get_plugin_config_and_version(
             "主动区块请求",
@@ -86,7 +87,10 @@ class AutoSubChunkRequestBase:
         self.multiple_pos = {}
         self.request_radius = min(int(cfg["请求半径(最大 5 半径)"]), 5)
         self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
-        self.request_chunk_per_second = int(cfg["每秒请求多少个区块(整数)"])
+        self.request_chunk_per_second = int(
+            cfg["每秒同维度的每个玩家请求多少个区块(整数)"]
+        )
+        self.max_chunks_to_request_per_second = int(cfg["每秒最多请求的总区块数(整数)"])
 
         self.mu = threading.Lock()
         self.must_chunk_position_waiter_release = threading.Lock()

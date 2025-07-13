@@ -1,8 +1,7 @@
-import threading
-from tooldelta import InternalBroadcast, Plugin, fmts
+import time
+from tooldelta import InternalBroadcast, Plugin
 from tooldelta.mc_bytes_packet import sub_chunk_request
 from tooldelta.mc_bytes_packet.sub_chunk import SUB_CHUNK_RESULT_CHUNK_NOT_FOUND
-from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 from tooldelta.internal.launch_cli.neo_libs.neo_conn import (
     CInt,
     TranslateChunkNBT_return,
@@ -90,9 +89,7 @@ class AutoSubChunkRequestAPI:
             self.base().requet_queue[chunk_pos_with_dim] = pk
 
             self.base().chunk_listener[chunk_pos_with_dim] = ChunkListener(
-                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)],
-                False,
-                threading.Event(),
+                [EMPTY_SINGLE_SUB_CHUNK for _ in range(32)], 0, False
             )
         self.base().mu.release()
 
@@ -127,7 +124,9 @@ class AutoSubChunkRequestAPI:
         bs = b""
 
         if len(nbts) > 0:
-            ret: TranslateChunkNBT_return = self.base().LIB.TranslateChunkNBT(toByteCSlice(nbts), CInt(len(nbts)))
+            ret: TranslateChunkNBT_return = self.base().LIB.TranslateChunkNBT(
+                toByteCSlice(nbts), CInt(len(nbts))
+            )
             bs = as_python_bytes(ret.bs, ret.length)
             self.base().LIB.FreeMem(ret.bs)
 
@@ -139,28 +138,8 @@ class AutoSubChunkRequestAPI:
             return
         current_listener = self.base().chunk_listener[cp]
 
-        if not current_listener.assigned_listener:
-
-            def simple_chunk_waiter():
-                try:
-                    current_listener.channel.wait(timeout=10)
-                except Exception:
-                    fmts.print_war(f"主动区块请求: 区块 {cp} 超时")
-
-                self.base().mu.acquire()
-                if cp in self.base().requet_queue:
-                    del self.base().requet_queue[cp]
-                if cp in self.base().chunk_listener:
-                    del self.base().chunk_listener[cp]
-                self.base().mu.release()
-
-            ToolDeltaThread(
-                simple_chunk_waiter,
-                usage=f"主动区块请求: 区块 {cp} 的等待器",
-                thread_level=ToolDeltaThread.SYSTEM,
-            )
-
-            current_listener.assigned_listener = True
+        if current_listener.expire_unix_time == 0:
+            current_listener.expire_unix_time = int(time.time()) + 10
 
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
         current_listener.subchunks[pos[1] + 4] = current_sub_chunk
@@ -195,7 +174,7 @@ class AutoSubChunkRequestAPI:
                     },
                 )
 
-            current_listener.channel.set()
+            current_listener.finished = True
             if len(pub) > 0:
                 self.plugin().BroadcastEvent(
                     InternalBroadcast("scq:publish_chunk_data", pub)
@@ -246,7 +225,6 @@ class AutoSubChunkRequestAPI:
                 },
             )
 
-        current_listener.channel.set()
         if cp in self.base().requet_queue:
             del self.base().requet_queue[cp]
         if cp in self.base().chunk_listener:

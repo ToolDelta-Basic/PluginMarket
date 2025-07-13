@@ -15,7 +15,7 @@ from .requet_queue import AutoSubChunkRequetQueue
 class AutoSubChunkRequest(Plugin):
     name = "NieR: Automata"
     author = "2B"
-    version = (0, 3, 2)
+    version = (0, 4, 0)
 
     base: AutoSubChunkRequestBase
     api: AutoSubChunkRequestAPI
@@ -46,7 +46,7 @@ class AutoSubChunkRequest(Plugin):
     def on_inject(self):
         self.base.blob_hash = self.game_ctrl.blob_hash_holder()
         self.load_lib()
-        self.requet_queue.send_request_queue()
+        self.requet_queue.auto_poll()
 
     def on_close(self, _: FrameExit):
         self.base.get_request_queue_running_states_mu.acquire()
