@@ -164,6 +164,28 @@
         "datas.json": 0
     },
     "desperated_plugins": {
+        "bdx导出器": {
+            "__init__.py": 0,
+            "state_dump.py": 0,
+            "progress_bar.py": 0,
+            "struct_loader.py": 0,
+            "utils.py": 0,
+            "datas.json": 0,
+            "scanner.py": 0,
+            "bdx_utils": {
+                "construct_file.py": 0,
+                "writer.py": 0,
+                "structs.py": 0
+            }
+        },
+        "bdx导出器Pro-急眼版": {
+            "__init__.py": 0,
+            "bdx_utils.py": 0,
+            "lib.py": 0,
+            "libbdxexporter.so": 0,
+            "datas.json": 0,
+            "scanner.py": 0
+        },
         "木桶玩家商店-试验版": {
             "__init__.py": 0,
             "shop_lib.py": 0,
@@ -427,20 +449,6 @@
         "__init__.py": 0,
         "datas.json": 0
     },
-    "bdx导出器": {
-        "__init__.py": 0,
-        "state_dump.py": 0,
-        "progress_bar.py": 0,
-        "struct_loader.py": 0,
-        "utils.py": 0,
-        "datas.json": 0,
-        "scanner.py": 0,
-        "bdx_utils": {
-            "construct_file.py": 0,
-            "writer.py": 0,
-            "structs.py": 0
-        }
-    },
     "白名单&管理员检测": {
         "__init__.py": 0,
         "datas.json": 0
@@ -491,14 +499,6 @@
         "datas.json": 0
     },
     "Lumelta": {},
-    "bdx导出器Pro-急眼版": {
-        "__init__.py": 0,
-        "bdx_utils.py": 0,
-        "lib.py": 0,
-        "libbdxexporter.so": 0,
-        "datas.json": 0,
-        "scanner.py": 0
-    },
     "demo-商店系统": {
         "__init__.py": 0,
         "datas.json": 0

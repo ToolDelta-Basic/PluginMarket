@@ -164,6 +164,28 @@
         "datas.json"
     ],
     "desperated_plugins": [],
+    "desperated_plugins/bdx导出器": [
+        "__init__.py",
+        "state_dump.py",
+        "progress_bar.py",
+        "struct_loader.py",
+        "utils.py",
+        "datas.json",
+        "scanner.py"
+    ],
+    "desperated_plugins/bdx导出器/bdx_utils": [
+        "construct_file.py",
+        "writer.py",
+        "structs.py"
+    ],
+    "desperated_plugins/bdx导出器Pro-急眼版": [
+        "__init__.py",
+        "bdx_utils.py",
+        "lib.py",
+        "libbdxexporter.so",
+        "datas.json",
+        "scanner.py"
+    ],
     "desperated_plugins/木桶玩家商店-试验版": [
         "__init__.py",
         "shop_lib.py",
@@ -423,20 +445,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "bdx导出器": [
-        "__init__.py",
-        "state_dump.py",
-        "progress_bar.py",
-        "struct_loader.py",
-        "utils.py",
-        "datas.json",
-        "scanner.py"
-    ],
-    "bdx导出器/bdx_utils": [
-        "construct_file.py",
-        "writer.py",
-        "structs.py"
-    ],
     "白名单&管理员检测": [
         "__init__.py",
         "datas.json"
@@ -486,14 +494,6 @@
         "datas.json"
     ],
     "Lumelta": [],
-    "bdx导出器Pro-急眼版": [
-        "__init__.py",
-        "bdx_utils.py",
-        "lib.py",
-        "libbdxexporter.so",
-        "datas.json",
-        "scanner.py"
-    ],
     "demo-商店系统": [
         "__init__.py",
         "datas.json"
