@@ -69,7 +69,7 @@ class AutoSubChunkRequetQueue:
                 self.base().max_chunks_to_request_per_second,
             )
             multiple_sub_chunks: list[tuple[int, tuple[int, int, int]]] = []
-            popped_sub_chunks: list[ChunkPosWithDimension] = []
+            sub_chunks_to_pop: list[ChunkPosWithDimension] = []
 
             if self.base().should_close:
                 self.base().requet_queue.clear()
@@ -92,7 +92,7 @@ class AutoSubChunkRequetQueue:
                             ),
                         )
                     )
-                popped_sub_chunks.append(cp)
+                sub_chunks_to_pop.append(cp)
                 count -= 1
 
             if len(multiple_sub_chunks) > 0:
@@ -104,7 +104,7 @@ class AutoSubChunkRequetQueue:
                     except Exception:
                         pass
 
-            for cp in popped_sub_chunks:
+            for cp in sub_chunks_to_pop:
                 del self.base().requet_queue[cp]
             self.base().mu.release()
 
