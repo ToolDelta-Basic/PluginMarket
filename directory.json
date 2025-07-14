@@ -34,6 +34,15 @@
         "readme.txt",
         "datas.json"
     ],
+    "bdx导出器Pro": [
+        "__init__.py",
+        "bdx_utils.py",
+        "lib.py",
+        "libbdxexporter.so",
+        "libbdxexporter.dll",
+        "datas.json",
+        "scanner.py"
+    ],
     "音效播放器": [
         "__init__.py",
         "readme.txt",
@@ -177,14 +186,6 @@
         "construct_file.py",
         "writer.py",
         "structs.py"
-    ],
-    "desperated_plugins/bdx导出器Pro-急眼版": [
-        "__init__.py",
-        "bdx_utils.py",
-        "lib.py",
-        "libbdxexporter.so",
-        "datas.json",
-        "scanner.py"
     ],
     "desperated_plugins/木桶玩家商店-试验版": [
         "__init__.py",
