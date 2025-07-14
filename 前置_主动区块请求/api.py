@@ -146,9 +146,9 @@ class AutoSubChunkRequestAPI:
 
         y_range = range(24)
         if dimension == 1:
-            y_range = range(8)
+            y_range = range(4, 12)
         elif dimension == 2:
-            y_range = range(16)
+            y_range = range(4, 20)
 
         chunk_is_completely = True
         for i in y_range:
@@ -198,15 +198,15 @@ class AutoSubChunkRequestAPI:
 
         y_range = range(24)
         if dimension == 1:
-            y_range = range(8)
+            y_range = range(4, 12)
         elif dimension == 2:
-            y_range = range(16)
+            y_range = range(4, 20)
 
         for i in y_range:
             if current_listener.subchunks[i] != EMPTY_SINGLE_SUB_CHUNK:
                 continue
             current_listener.subchunks[i] = SingleSubChunk(
-                SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i, b"", b""
+                SUB_CHUNK_RESULT_CHUNK_NOT_FOUND, i - 4, b"", b""
             )
 
         pub: list[dict] = []
