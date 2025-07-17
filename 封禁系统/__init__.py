@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 5)
+    version = (1, 0, 6)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -209,7 +209,7 @@ class BanSystem(Plugin):
             return
         reason = input(fmts.fmt_info("请输入封禁理由：")) or "未知"
         self.ban(ban_player, ban_seconds, reason)
-        fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
+        fmts.print_suc(f"封禁成功: 已封禁 {ban_player.name}")
 
     def on_console_unban(self, _):
         all_ban_player_xuids = [
@@ -337,7 +337,7 @@ class BanSystem(Plugin):
                 caller.show("§6看起来你不能封禁自己..")
                 return
             self.ban(allplayers[resp - 1], -1)
-            fmts.print_suc(f"封禁成功: 已封禁 {ban_player}")
+            fmts.print_suc(f"封禁成功: 已封禁 {ban_player.name}")
         else:
             fmts.print_err("输入有误")
 
@@ -390,13 +390,12 @@ class BanSystem(Plugin):
             ban_data = self.get_ban_data(self.generate_virtual_xuid(playername))
             if ban_data is None:
                 return
-            return
         ban_to = ban_data.ban_to
         ban_reason = ban_data.reason
         if ban_to == -1 or ban_to > time.time():
             format_time = datetime.fromtimestamp(ban_to) if ban_to > 0 else "永久"
             fmts.print_inf(
-                f"封禁系统: {playername} 因为 {ban_to} 被封禁至 {format_time}"
+                f"封禁系统: {playername} 因为 {ban_reason} 被封禁至 {format_time}"
             )
             self.game_ctrl.sendwocmd(
                 f"kick {xuid} {self.format_msg(playername, ban_to, ban_reason, '踢出玩家提示格式')}"
