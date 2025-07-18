@@ -149,11 +149,17 @@ class AutoSubChunkRequetQueue:
             facing_round += 2
 
         all_chunks = all_chunks[: -2 - 2 * self.base().request_radius]
+        request_radius_pow = self.base().request_radius ** 2
 
         self.base().mu.acquire()
         for chunk in all_chunks:
             chunk_pos_with_dim = ChunkPosWithDimension(chunk[0], chunk[1], dimension)
 
+            if (
+                abs(chunk[0] - center[0]) ** 2 + abs(chunk[1] - center[1]) ** 2
+                > request_radius_pow
+            ):
+                continue
             if (
                 chunk_pos_with_dim in self.base().chunk_listener
                 or chunk_pos_with_dim in self.base().requet_queue
