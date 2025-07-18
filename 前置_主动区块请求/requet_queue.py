@@ -149,7 +149,6 @@ class AutoSubChunkRequetQueue:
             facing_round += 2
 
         all_chunks = all_chunks[: -2 - 2 * self.base().request_radius]
-        request_radius_pow = self.base().request_radius ** 2
 
         self.base().mu.acquire()
         for chunk in all_chunks:
@@ -157,7 +156,7 @@ class AutoSubChunkRequetQueue:
 
             if (
                 abs(chunk[0] - center[0]) ** 2 + abs(chunk[1] - center[1]) ** 2
-                > request_radius_pow
+                > self.base().request_radius_pow
             ):
                 continue
             if (
@@ -202,10 +201,12 @@ class AutoSubChunkRequetQueue:
             could_be_reach = False
 
             for _, pos in self.base().multiple_pos.items():
+                if pos.pos.dim != dim_chunk_pos.dim:
+                    continue
                 if (
-                    abs(pos.pos.x - dim_chunk_pos.x) <= self.base().request_radius
-                    and abs(pos.pos.z - dim_chunk_pos.z) <= self.base().request_radius
-                    and pos.pos.dim == dim_chunk_pos.dim
+                    abs(pos.pos.x - dim_chunk_pos.x) ** 2
+                    + abs(pos.pos.z - dim_chunk_pos.z) ** 2
+                    <= self.base().request_radius_pow
                 ):
                     could_be_reach = True
                     break

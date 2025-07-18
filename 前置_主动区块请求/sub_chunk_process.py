@@ -80,12 +80,12 @@ class AutoSubChunkRequestSubChunkProcess:
                 # We compute if current sub chunk entry could reached by the bot
                 is_include = False
                 for _, value in self.base().multiple_pos.items():
+                    if pk.Dimension != value.pos.dim:
+                        continue
                     if (
-                        abs(entry.SubChunkPosX - value.pos.x)
-                        <= self.base().request_radius
-                        and abs(entry.SubChunkPosZ - value.pos.z)
-                        <= self.base().request_radius
-                        and pk.Dimension == value.pos.dim
+                        abs(entry.SubChunkPosX - value.pos.x) ** 2
+                        + abs(entry.SubChunkPosZ - value.pos.z) ** 2
+                        <= self.base().request_radius_pow
                     ):
                         is_include = True
                         break
