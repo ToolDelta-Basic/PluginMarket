@@ -53,7 +53,6 @@ class AutoSubChunkRequestBase:
 
     multiple_pos: dict[str, DimChunkPosWithUnixTime]
     request_radius: int
-    request_radius_pow: int
     force_update_time: float
     request_chunk_per_second: int
 
@@ -87,7 +86,6 @@ class AutoSubChunkRequestBase:
 
         self.multiple_pos = {}
         self.request_radius = min(int(cfg["请求半径(最大 5 半径)"]), 5)
-        self.request_radius_pow = self.request_radius**2
         self.force_update_time = float(cfg["每多少秒重新请求周围区块(浮点数)"])
         self.request_chunk_per_second = int(
             cfg["每秒同维度的每个玩家请求多少个区块(整数)"]

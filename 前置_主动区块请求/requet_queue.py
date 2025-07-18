@@ -155,11 +155,6 @@ class AutoSubChunkRequetQueue:
             chunk_pos_with_dim = ChunkPosWithDimension(chunk[0], chunk[1], dimension)
 
             if (
-                abs(chunk[0] - center[0]) ** 2 + abs(chunk[1] - center[1]) ** 2
-                > self.base().request_radius_pow
-            ):
-                continue
-            if (
                 chunk_pos_with_dim in self.base().chunk_listener
                 or chunk_pos_with_dim in self.base().requet_queue
             ):
@@ -201,12 +196,10 @@ class AutoSubChunkRequetQueue:
             could_be_reach = False
 
             for _, pos in self.base().multiple_pos.items():
-                if pos.pos.dim != dim_chunk_pos.dim:
-                    continue
                 if (
-                    abs(pos.pos.x - dim_chunk_pos.x) ** 2
-                    + abs(pos.pos.z - dim_chunk_pos.z) ** 2
-                    <= self.base().request_radius_pow
+                    abs(pos.pos.x - dim_chunk_pos.x) <= self.base().request_radius
+                    and abs(pos.pos.z - dim_chunk_pos.z) <= self.base().request_radius
+                    and pos.pos.dim == dim_chunk_pos.dim
                 ):
                     could_be_reach = True
                     break
