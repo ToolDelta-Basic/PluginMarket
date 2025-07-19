@@ -21,6 +21,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "银行": {
+      "name": "银行插件",
+      "author": "笛卡尔似的梦",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "计分板重置": {
       "name": "计分板重置",
       "author": "猫七街",

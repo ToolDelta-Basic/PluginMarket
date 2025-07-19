@@ -20,6 +20,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "银行插件": [
+        "__init__.py",
+        "datas.json"
+    ],
     "计分板重置": [
         "__init__.py",
         "data_operation.py",
