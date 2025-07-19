@@ -17,6 +17,9 @@ from tooldelta import (
 )
 
 
+EASTER_EGG_QQIDS = {2528622340: ("SuperScript", "Super")}
+
+
 class QQMsgTrigger:
     def __init__(
         self,
@@ -88,7 +91,7 @@ def replace_cq(content: str):
 
 
 class QQLinker(Plugin):
-    version = (0, 0, 9)
+    version = (0, 0, 10)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -268,7 +271,7 @@ class QQLinker(Plugin):
         self.ws = websocket.WebSocketApp(  # type: ignore
             self.cfg["云链设置"]["地址"],
             header,
-            on_message= lambda a, b: self.on_ws_message(a, b) and None,
+            on_message=lambda a, b: self.on_ws_message(a, b) and None,
             on_error=self.on_ws_error,
             on_close=self.on_ws_close,
         )
@@ -407,11 +410,22 @@ class QQLinker(Plugin):
                             self.linked_group,
                             f"[CQ:at,qq={qqid}] 参数错误，格式：{t}"
                             f"{' ' + trigger.argument_hint if trigger.argument_hint else ''}",
+                            do_remove_cq_code=False,
                         )
                 else:
-                    self.sendmsg(
-                        self.linked_group, f"[CQ:at,qq={qqid}] 你没有权限执行此指令"
-                    )
+                    if easter_egg := EASTER_EGG_QQIDS.get(qqid):
+                        name, nickname = easter_egg
+                        self.sendmsg(
+                            self.linked_group,
+                            f"[CQ:at,qq={qqid}] 你没有权限执行此指令，即使你是 {nickname}..",
+                            do_remove_cq_code=False,
+                        )
+                    else:
+                        self.sendmsg(
+                            self.linked_group,
+                            f"[CQ:at,qq={qqid}] 你没有权限执行此指令",
+                            do_remove_cq_code=False,
+                        )
                 return True
         return False
 
@@ -421,12 +435,14 @@ class QQLinker(Plugin):
         else:
             fmts.print_err("还没有连接到群服互通")
 
-    def sendmsg(self, group: int, msg: str):
+    def sendmsg(self, group: int, msg: str, do_remove_cq_code=True):
         assert self.ws
+        if do_remove_cq_code:
+            msg = remove_cq_code(msg)
         jsondat = json.dumps(
             {
                 "action": "send_group_msg",
-                "params": {"group_id": group, "message": remove_cq_code(msg)},
+                "params": {"group_id": group, "message": msg},
             }
         )
         self.ws.send(jsondat)
