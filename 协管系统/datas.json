@@ -1,0 +1,8 @@
+{
+  "author": "果_k",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "使协管可以执行部分MC指令",
+  "pre-plugins": {},
+  "plugin-id": "协管系统"
+}
