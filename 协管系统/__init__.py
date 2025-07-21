@@ -72,14 +72,12 @@ class Auxiliary(Plugin):
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
-        self.chatbar.chatbar.add_new_trigger(["协管系统"], None, "协管系统", self.GMmenu)
-        self.chatbar.chatbar.add_new_trigger(["命令转发","转发"], None, "命令转发", self.CMDpost)
-        self.chatbar.chatbar.add_new_trigger(["快捷功能"], None, "协管的快捷功能", self.GM_focus)
-        self.chatbar.chatbar.add_new_trigger(["协管名单"], None, "查看所有协管名称", self.GMuser)
-    def GMmenu(self, playername:str,*args):
-        player = self.players.getPlayerByName(playername)
-        print(playername)
-        print(self.GMlist)
+        self.chatbar.add_new_trigger(["协管系统"], [], "协管系统", self.GMmenu)
+        self.chatbar.add_new_trigger(["命令转发","转发"], ..., "命令转发", self.CMDpost)
+        self.chatbar.add_new_trigger(["快捷功能"], [], "协管的快捷功能", self.GM_focus)
+        self.chatbar.add_new_trigger(["协管名单"], [], "查看所有协管名称", self.GMuser)
+    def GMmenu(self, player: Player, args: tuple):
+        playername = player.name
         if playername in self.GMlist:
             player.show("§b§l当前协管功能包含")
             player.show("§a§l" + self.CMDsend)
@@ -88,8 +86,8 @@ class Auxiliary(Plugin):
             player.show("您当前不是协管")
 
     @utils.thread_func("CMD")
-    def CMDpost(self, playername: str, *args):
-        player = self.players.getPlayerByName(playername)
+    def CMDpost(self, player: Player, args: tuple):
+        playername = player.name
         if playername not in self.GMlist:
             player.show("§c§l您不是协管")
             return
@@ -118,8 +116,8 @@ class Auxiliary(Plugin):
             player.show(f"§c§l参数索引错误: {str(e)}")
         except Exception as e:
             player.show(f"§c§l发生未知错误: {str(e)}")
-    def GM_focus(self, playername:str,*args): 
-        player = self.players.getPlayerByName(playername)
+    def GM_focus(self, player: Player, args: tuple):
+        playername = player.name
         if playername not in self.GMlist:
             player.show("§c§l您不是协管")
             return
@@ -154,8 +152,7 @@ class Auxiliary(Plugin):
         except ValueError:
             player.show("§c§l请输入一个有效的数字。")
 
-    def GMuser(self, playername:str,*args):
-        player = self.players.getPlayerByName(playername)
+    def GMuser(self, player: Player, args: tuple):
         if not self.GMlist:
             player.show("§c§l当前没有协管玩家。")
             return
