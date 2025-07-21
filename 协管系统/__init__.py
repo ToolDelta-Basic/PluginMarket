@@ -72,10 +72,10 @@ class Auxiliary(Plugin):
 
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
-        self.chatbar.add_trigger(["协管系统"], None, "协管系统", self.GMmenu)
-        self.chatbar.add_trigger(["命令转发","转发"], None, "命令转发", self.CMDpost)
-        self.chatbar.add_trigger(["快捷功能"], None, "协管的快捷功能", self.GM_focus)
-        self.chatbar.add_trigger(["协管名单"], None, "查看所有协管名称", self.GMuser)
+        self.chatbar.chatbar.add_new_trigger(["协管系统"], None, "协管系统", self.GMmenu)
+        self.chatbar.chatbar.add_new_trigger(["命令转发","转发"], None, "命令转发", self.CMDpost)
+        self.chatbar.chatbar.add_new_trigger(["快捷功能"], None, "协管的快捷功能", self.GM_focus)
+        self.chatbar.chatbar.add_new_trigger(["协管名单"], None, "查看所有协管名称", self.GMuser)
     def GMmenu(self, playername:str,*args):
         player = self.players.getPlayerByName(playername)
         print(playername)
