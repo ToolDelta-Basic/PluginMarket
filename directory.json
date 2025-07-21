@@ -621,6 +621,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "协管系统": [
+        "__init__.py",
+        "datas.json"
+    ],
     "游戏内显示插件报错": [
         "__init__.py",
         "datas.json"

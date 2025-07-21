@@ -495,6 +495,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "协管系统": {
+      "name": "协管系统",
+      "author": "果_k",
+      "version": "0.0.2",
+      "plugin-type": "classic"
+    },
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
