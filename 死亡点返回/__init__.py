@@ -3,7 +3,7 @@ from tooldelta.constants import PacketIDS
 class DeathBack(Plugin):
     name = "死亡点返回"
     author = "果_k"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -36,6 +36,8 @@ class DeathBack(Plugin):
     def GetPos(self,playername):
         players = self.frame.get_players()
         player = players.getPlayerByName(playername)
+        if not player:
+            return
         dim, x, y, z = player.getPos()
         if self.TagCheck:    #标签筛选玩家
             backCmd = self.game_ctrl.sendcmd(f"/testfor @a[name={player.name},tag={self.PlayerTag}]",waitForResp=True) 
