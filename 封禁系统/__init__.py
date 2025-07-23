@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 6)
+    version = (1, 0, 7)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -328,7 +328,7 @@ class BanSystem(Plugin):
         allplayers = list(self.game_ctrl.players)
         caller.show("§6选择一个玩家进行封禁：")
         for i, j in enumerate(allplayers):
-            caller.show(f"{i + 1}: {j}")
+            caller.show(f"{i + 1}: {j.name}")
         caller.show("§6请输入序号：")
         resp = utils.try_int(caller.input())
         if resp and resp in range(1, len(allplayers) + 1):
