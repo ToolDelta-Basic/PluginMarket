@@ -103,7 +103,7 @@ class DJTable(Plugin):
                 player.show(f"§a当前曲目列表 (第 {current_page + 1} / {max_page} 页)：")
                 for song_index, song_name in enumerate(page_songs):
                     song_number = start + song_index + 1
-                    is_remote = index > len(song_list)
+                    is_remote = song_number > len(song_list)
                     suffix = " §7(远程)" if is_remote else ""
                     player.show(f" §b{song_number} §f{song_name}{suffix}")
 
