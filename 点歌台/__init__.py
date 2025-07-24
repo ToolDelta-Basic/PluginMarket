@@ -104,11 +104,11 @@ class DJTable(Plugin):
                 page_songs = combined_list[start:end]
 
                 player.show(f"§a当前曲目列表 (第 {current_page + 1} / {max_page} 页)：")
-                for i, j in enumerate(page_songs):
-                    index = start + i + 1
-                    is_remote = index > len(song_list)
+                for song_index, song_name in enumerate(page_songs):
+                    song_number = start + song_index + 1
+                    is_remote = song_number > len(song_list)
                     suffix = " §7(远程)" if is_remote else ""
-                    player.show(f" §b{index} §f{j}{suffix}")
+                    player.show(f" §b{song_number} §f{song_name}{suffix}")
 
                 if self.repo_message:
                     player.show(f"§7远程仓库: {self.repo_message}")
@@ -130,7 +130,8 @@ class DJTable(Plugin):
                     player.show("§7已退出点歌菜单")
                     return
 
-                if (resp_int := utils.try_int(resp)) is None:
+                resp_int = utils.try_int(resp)
+                if resp_int is None:
                     player.show("§c选项无效")
                     continue
 
