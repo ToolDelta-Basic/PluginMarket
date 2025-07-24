@@ -50,7 +50,7 @@ class GuildPlugin(Plugin):
 
         for num, cmd, desc in menu_items:
             player.show(f"§e§l{num}. §r{cmd} §f[§6{desc}§r]")
-
+        player.show("§r§7>> 输入选项内容即可，无需输入序号")
 
         subcommand = game_utils.waitMsg(player.name)
         param = args[1] if len(args) > 1 else ""
@@ -65,7 +65,7 @@ class GuildPlugin(Plugin):
                 return True
 
             # 检查钻石数量
-            diamond_count = player.getItem(player.name,"minecraft:diamond")
+            diamond_count = player.getItemCount("minecraft:diamond")
             if diamond_count < 10:
                 player.show("§l§a公会 §d>> §r创建公会需要10个钻石")
                 return True
@@ -204,7 +204,7 @@ class GuildPlugin(Plugin):
                 for idx, g in enumerate(matched_guilds, start=1):
                     msg += f"{idx}. {g['name']} (会长:{g['owner']})\n"
                 player.show(msg)
-                choice = game_utils.waitMsg(playerf.name)
+                choice = game_utils.waitMsg(player.name)
                 if choice is None or not choice.isdigit() or int(choice) < 1 or int(choice) > len(matched_guilds):
                     player.show("§c选择无效，已取消")
                     return True
@@ -320,6 +320,9 @@ class GuildPlugin(Plugin):
                 elif choice == "q":
                     player.show("§r§a已退出踢出菜单")
                     break
+                if choice is None:
+                    player.show("§r§c操作已取消或超时")
+                    break
                 elif choice.isdigit():
                     idx = int(choice) - 1
                     if idx < 0 or idx >= len(idx_map):
@@ -331,7 +334,7 @@ class GuildPlugin(Plugin):
                         player.show(f"§l§a公会 §d>> §r已将 §r{target}§f 踢出公会")
                         break
                 else:
-                    player.show("§r§c无效输入，请输入序号 / + / - / q")
+                    player.show("§r§c输入无效，请输入正确序号")
 
 
         else:
