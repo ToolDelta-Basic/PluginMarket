@@ -7,7 +7,7 @@ from tooldelta import utils, Plugin, Player, plugin_entry
 class DJTable(Plugin):
     author = "SuperScript & Zhonger-Yuansi"
     name = "点歌台"
-    version = (0, 2, 5)
+    version = (0, 2, 4)
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
@@ -21,6 +21,7 @@ class DJTable(Plugin):
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
+        self.repo_message = None
 
     def on_def(self):
         self.midiplayer = self.GetPluginAPI("MIDI播放器")
@@ -50,6 +51,7 @@ class DJTable(Plugin):
         self.repo_url = "Zhonger-Yuansi/Midi-Repositories"
         try:
             repo_url = self.repo_url
+            # 获取文件列表和公告消息
             remote_data = get_github_repo_files(repo_url)
             original_list, self.repo_message = remote_data
             self.remote_midis_list = [
@@ -77,7 +79,7 @@ class DJTable(Plugin):
         )
         self.choose_music_thread()
 
-    def on_player_join(self, player: Player):
+    def on_player_join(self, _: Player):
         self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
 
     def choose_menu(self, player: Player, args: tuple):
@@ -85,12 +87,13 @@ class DJTable(Plugin):
         choose_song_name: str = args[0]
         if choose_song_name == "":
             total_songs = len(song_list)
-            total_remote = len(getattr(self, "remote_midis_list", []))
+            midis_list = getattr(self, "remote_midis_list", [])
+            total_remote = len(midis_list)
             if total_songs == 0 and total_remote == 0:
                 player.show("§6曲目列表空空如也...")
                 return
 
-            combined_list = song_list + getattr(self, "remote_midis_list", [])
+            combined_list = song_list + midis_list
             page_size = 10
             max_page = (len(combined_list) + page_size - 1) // page_size
             current_page = 0
@@ -101,17 +104,16 @@ class DJTable(Plugin):
                 page_songs = combined_list[start:end]
 
                 player.show(f"§a当前曲目列表 (第 {current_page + 1} / {max_page} 页)：")
-                for song_index, song_name in enumerate(page_songs):
-                    song_number = start + song_index + 1
-                    is_remote = song_number > len(song_list)
+                for i, j in enumerate(page_songs):
+                    index = start + i + 1
+                    is_remote = index > len(song_list)
                     suffix = " §7(远程)" if is_remote else ""
-                    player.show(f" §b{song_number} §f{song_name}{suffix}")
+                    player.show(f" §b{index} §f{j}{suffix}")
 
-                if hasattr(self, "repo_message"):
-                    if self.repo_message:
-                        player.show(f"§7远程仓库: {self.repo_message}")
-                    else:
-                        player.show("§7远程仓库: 当前暂无公告内容")
+                if self.repo_message:
+                    player.show(f"§7远程仓库: {self.repo_message}")
+                else:
+                    player.show("§7远程仓库: 当前暂无公告内容")
 
                 resp = player.input("§a请输入序号选择曲目 \n§e+ §f下一页\n§e- §f上一页\n§e退出 §f退出菜单", timeout=300)
                 if resp is None:
@@ -128,8 +130,7 @@ class DJTable(Plugin):
                     player.show("§7已退出点歌菜单")
                     return
 
-                resp_int = utils.try_int(resp)
-                if resp_int is None:
+                if (resp_int := utils.try_int(resp)) is None:
                     player.show("§c选项无效")
                     continue
 
@@ -147,7 +148,7 @@ class DJTable(Plugin):
                         player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
                     else:
                         self.game_ctrl.sendwocmd(
-                            f"/scoreboard players remove {player.getSelector()} song_point 1")
+                            f"/scoreboard players remove {player.safe_name} song_point 1")
                         player.show("§e点歌§f>> §7正在下载并处理远程曲目，消耗1点音乐，请稍候...")
                         self._download_process(player, music_name)
                     return
