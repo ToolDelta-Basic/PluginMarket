@@ -128,7 +128,8 @@ class DJTable(Plugin):
                     player.show("§7已退出点歌菜单")
                     return
 
-                if (resp_int := utils.try_int(resp)) is None:
+                resp_int = utils.try_int(resp)
+                if resp_int is None:
                     player.show("§c选项无效")
                     continue
 
