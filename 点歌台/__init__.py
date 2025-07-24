@@ -105,7 +105,7 @@ class DJTable(Plugin):
                     song_number = start + song_index + 1
                     is_remote = index > len(song_list)
                     suffix = " §7(远程)" if is_remote else ""
-                    player.show(f" §b{song_index} §f{song_name}{suffix}")
+                    player.show(f" §b{song_number} §f{song_name}{suffix}")
 
                 if hasattr(self, "repo_message"):
                     if self.repo_message:
