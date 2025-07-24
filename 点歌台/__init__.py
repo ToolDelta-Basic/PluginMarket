@@ -7,7 +7,7 @@ from tooldelta import utils, Plugin, Player, plugin_entry
 class DJTable(Plugin):
     author = "SuperScript & Zhonger-Yuansi"
     name = "点歌台"
-    version = (0, 2, 5)  # 版本号 +0.0.1
+    version = (0, 2, 5)
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
