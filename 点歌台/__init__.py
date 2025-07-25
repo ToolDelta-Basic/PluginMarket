@@ -87,7 +87,7 @@ class DJTable(Plugin):
         choose_song_name: str = args[0]
         if choose_song_name == "":
             total_songs = len(song_list)
-            midis_list = getattr(self, "remote_midis_list", [])
+            midis_list = self.remote_midis_list
             total_remote = len(midis_list)
             if total_songs == 0 and total_remote == 0:
                 player.show("§6曲目列表空空如也...")
