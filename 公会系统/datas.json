@@ -1,12 +1,13 @@
 {
-  "author": "星林",
-  "version": "0.0.1",
-  "description": "允许玩家创建公会",
-  "pre-plugins": {
-    "基本插件功能库": "0.0.1",
-    "聊天栏菜单": "0.0.1",
-    "XUID获取": "0.0.1"
-  },
-  "plugin-id": "union-maker",
-  "enabled": false
+    "author": "星林",
+    "version": "0.0.1",
+    "description": "允许玩家创建公会",
+    "pre-plugins": {
+        "基本插件功能库": "0.0.1",
+        "聊天栏菜单": "0.0.1",
+        "XUID获取": "0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "union-maker",
+    "enabled": false
 }
