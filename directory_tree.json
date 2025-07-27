@@ -506,6 +506,18 @@
     "Lumelta": {},
     "公会系统": {
         "__init__.py": 0,
+        "readme.txt": 0,
+        "guild": {
+            "control.py": 0,
+            "config.py": 0,
+            "handlers_quick.py": 0,
+            "validators.py": 0,
+            "handlers.py": 0,
+            "service.py": 0,
+            "logic.py": 0,
+            "models.py": 0,
+            "matchers.py": 0
+        },
         "datas.json": 0
     },
     "demo-商店系统": {
