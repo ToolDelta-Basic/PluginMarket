@@ -17,8 +17,8 @@
     },
     "兑换码系统": {
       "name": "兑换码系统",
-      "author": "权威-马牛逼",
-      "version": "0.0.3",
+      "author": "法老༂",
+      "version": "1.2.1",
       "plugin-type": "classic"
     },
     "银行": {
@@ -300,7 +300,7 @@
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "plugin-type": "classic"
     },
     "scheduled-task": {
