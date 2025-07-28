@@ -5,6 +5,7 @@ from .config import CONFIG_DEFAULT, CONFIG_STD
 from .core import Core
 from .deepseek import DeepSeek
 
+
 class Auxiliary(Plugin):
     name = "协管系统"
     author = "果_k"
@@ -32,9 +33,10 @@ class Auxiliary(Plugin):
         self.core = Core(self)
         self.deepseek = DeepSeek(self)
 
-        #监听数据包与注册
+        # 监听数据包与注册
         if config.get("随机插话是否启用", False):
             self.ListenPacket(PacketIDS.Text, self.deepseek.RandomRemark)
+
     def on_def(self):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         self.deepseek.conversations_O.clear()  # 清除所有的历史对话

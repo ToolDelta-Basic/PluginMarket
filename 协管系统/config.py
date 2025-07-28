@@ -1,5 +1,6 @@
 from tooldelta import cfg
 
+
 CONFIG_DEFAULT = {
     "协管名单": [
         "player1",

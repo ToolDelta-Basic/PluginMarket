@@ -2,6 +2,7 @@ import requests
 import random
 from tooldelta import Player, fmts, utils
 
+
 class DeepSeek:
     def __init__(self, plugin):
         self.plugin = plugin
@@ -25,8 +26,7 @@ class DeepSeek:
             formatted_text += text[i:i + chars_per_line]
             
         return formatted_text
-    
-    
+
     @utils.thread_func("RandomRemark")
     def RandomRemark(self, packet: dict):
         # 过滤选择玩家发送的信息
@@ -42,10 +42,11 @@ class DeepSeek:
             if random.random() < remark_probability:
                 p = packet
                 print(p['Message'])
-                result = self.reDeepSeek( p['Message'], p['SourceName'])
+                result = self.reDeepSeek(p['Message'], p['SourceName'])
                 reply = result['choices'][0]['message']['content']
                 command = '/tellraw @a {{"rawtext":[{{"text":"<§d小猫娘§f>:§e@{}§a {}"}}]}}'.format(p['SourceName'],reply)
                 self.plugin.game_ctrl.sendwocmd(command)
+
     def reDeepOSeek(self, Message: str, playername: str):
         base_url = "https://api.deepseek.com"
         api_key = self.plugin.SetDeepOSeek['APIkey']
@@ -166,7 +167,7 @@ class DeepSeek:
                 return f"网络请求异常：{str(e)}"
             except UnicodeError as e:
                 return f"编码异常：{str(e)}"
-                
+
     @utils.thread_func("DeepOSeek")
     def DeepOSeek(self, player: Player, args: tuple):
         playername = player.name
@@ -199,7 +200,7 @@ class DeepSeek:
         fmts.print(f"§f§l玩家:§e§l {player.name}§f§l 请求了§e§l {param}")
         fmts.print(f"§f§l实际执行结果为§e§l {DS_result['choices'][0]['message']['content']} §f本次消耗Token: {DS_result['usage']['total_tokens']} §a共花费{self.calculate_output_cost(DS_result['usage']['total_tokens'])}元")
         return True
-        
+
     @utils.thread_func("DeepSeek")
     def DeepSeek(self, player: Player, args: tuple):
         # 获取用户输入内容

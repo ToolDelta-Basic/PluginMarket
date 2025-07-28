@@ -1,6 +1,7 @@
 from tooldelta import Player, fmts
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from . import Auxiliary
 
@@ -183,7 +184,7 @@ class Core:
             choice = int(choice_str) - 1
 
             if 0 <= choice < len(online_players):
-                dim, x, y, z = player.getPos()
+                _, x, y, z = player.getPos()
                 self.game_ctrl.sendwocmd(f"/setblock {x} {y} {z} shulker_box")  # 创建容器
                 selected_player = online_players[choice]
                 inventory = selected_player.queryInventory()
