@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 4)
+    version = (0, 1, 5)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -178,7 +178,7 @@ class CustomChatbarMenu(Plugin):
                 elif f_cmd.startswith("sleep "):
                     time.sleep(utils.try_int(f_cmd[6:]) or 0)
                 else:
-                    self.game_ctrl.sendwscmd(f_cmd)
+                    self.game_ctrl.sendwocmd(f_cmd)
 
         self.chatbar.add_new_trigger(
             menu["触发词"],

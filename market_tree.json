@@ -300,7 +300,7 @@
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "plugin-type": "classic"
     },
     "scheduled-task": {
@@ -341,8 +341,8 @@
     },
     "union-maker": {
       "name": "公会系统",
-      "author": "星林",
-      "version": "0.0.1",
+      "author": "星林 & 夏至",
+      "version": "0.1.0",
       "plugin-type": "classic"
     },
     "demo-plugin-shop": {

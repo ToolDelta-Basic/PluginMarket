@@ -501,7 +501,19 @@
     "Lumelta": [],
     "公会系统": [
         "__init__.py",
+        "readme.txt",
         "datas.json"
+    ],
+    "公会系统/guild": [
+        "control.py",
+        "config.py",
+        "handlers_quick.py",
+        "validators.py",
+        "handlers.py",
+        "service.py",
+        "logic.py",
+        "models.py",
+        "matchers.py"
     ],
     "demo-商店系统": [
         "__init__.py",
