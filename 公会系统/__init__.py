@@ -16,7 +16,7 @@ from guild.config import Config
 class GuildPlugin(Plugin):
     name = "公会系统"
     author = "星林 & 夏至"
-    version = (0, 1, 0)
+    version = (0, 1, 1)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -59,12 +59,6 @@ class GuildPlugin(Plugin):
                 "callback": self.guild_chat_cb,
             },
             {
-                "commands": ["公会仓库", "仓库"],
-                "args": [("", str, "")],
-                "description": "公会仓库系统",
-                "callback": self.quick_vault_menu,
-            },
-            {
                 "commands": ["仓库出售", "出售"],
                 "args": [("item_id", str, ""), ("count", int, 1), ("price", int, 0)],
                 "description": "快速出售物品到仓库",
@@ -87,12 +81,6 @@ class GuildPlugin(Plugin):
                 "args": [("confirm", str, "")],
                 "description": "清理所有公会数据 (管理员专用)",
                 "callback": self.admin_clear_guild_data,
-            },
-            {
-                "commands": ["公会据点", "据点"],
-                "args": [("action", str, "")],
-                "description": "公会据点操作 (tp/set)",
-                "callback": self.quick_base_action,
             },
             {
                 "commands": ["调试公会菜单"],
