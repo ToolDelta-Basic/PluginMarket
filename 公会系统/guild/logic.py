@@ -422,7 +422,7 @@ def check_and_complete_trade_tasks(self, player_name: str):
 
 def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, Any]]:
     """获取公会排行榜"""
-    guilds = self._load_guilds()
+    guilds = self.guild_manager._load_guilds()
     guild_list = list(guilds.values())
 
     if sort_by == "level":
@@ -444,7 +444,7 @@ def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, An
 
 def get_member_rankings(self, guild_id: str, sort_by: str = "contribution") -> List[Tuple[GuildMember, Any]]:
     """获取公会成员排行榜"""
-    guilds = self._load_guilds()
+    guilds = self.guild_manager._load_guilds()
     guild = guilds.get(guild_id)
 
     if not guild:
