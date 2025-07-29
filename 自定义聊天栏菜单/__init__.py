@@ -16,7 +16,7 @@ from tooldelta import (
 class CustomChatbarMenu(Plugin):
     name = "自定义聊天栏菜单"
     author = "SuperScript"
-    version = (0, 1, 5)
+    version = (0, 1, 6)
     description = "自定义ToolDelta的聊天栏菜单触发词等"
     args_match_rule = re.compile(r"(\[参数:([0-9]+)\])")
     scb_simple_rule = re.compile(r"\[计分板:([^\[\]]+)\]")
@@ -193,7 +193,7 @@ class CustomChatbarMenu(Plugin):
         for varsub, var_arg in res:
             try:
                 var_value = args[int(var_arg) - 1]
-                sub = sub.replace(varsub, var_value)
+                sub = sub.replace(varsub, str(var_value))
             except IndexError:
                 fmts.print_err("聊天栏菜单: 菜单的参数项提供异常!")
                 self.game_ctrl.say_to(
