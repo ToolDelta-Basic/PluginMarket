@@ -15,6 +15,10 @@ from tooldelta import (
     plugin_entry,
     InternalBroadcast,
 )
+try:
+    from tooldelta.utils.mc_translator import translate
+except ImportError:
+    translate = None
 
 
 EASTER_EGG_QQIDS = {2528622340: ("SuperScript", "Super")}
@@ -193,7 +197,15 @@ class QQLinker(Plugin):
                 ):
                     return f'😅 未知的 MC 指令, 可能是指令格式有误: "{cmd}"'
                 else:
-                    if game_text_handler := self.game_ctrl.game_data_handler:
+                    if translate is not None:
+                        mjon = "\n".join(
+                            translate(
+                                i.Message,
+                                i.Parameters
+                            )
+                            for i in result.OutputMessages
+                        )
+                    elif game_text_handler := self.game_ctrl.game_data_handler:
                         mjon = " ".join(
                             json.loads(i)
                             for i in game_text_handler.Handle_Text_Class1(
