@@ -216,7 +216,7 @@
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "玩家转账": {
@@ -606,7 +606,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "plugin-type": "classic"
     },
     "PlayerJoinverify": {
