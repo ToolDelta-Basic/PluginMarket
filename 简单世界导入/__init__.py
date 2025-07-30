@@ -17,7 +17,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 2, 0)
+    version = (0, 2, 1)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -175,7 +175,7 @@ class SimpleWorldImport(Plugin):
         block_states = bwo.runtime_id_to_state(block_runtime_id)
         try:
             self.game_ctrl.sendwocmd(
-                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}'
             )
         except Exception:
             pass

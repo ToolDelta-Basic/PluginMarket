@@ -31,7 +31,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 4, 0)
+    version = (0, 4, 1)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -308,7 +308,7 @@ class SimpleWorldRecover(Plugin):
         block_states = bwo.runtime_id_to_state(block_runtime_id)
         try:
             self.game_ctrl.sendwocmd(
-                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}'
             )
         except Exception:
             pass
