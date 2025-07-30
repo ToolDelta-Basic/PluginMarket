@@ -213,7 +213,7 @@ class QQLinker(Plugin):
                             )
                         )
                     if result.SuccessCount:
-                        if translator is not None:
+                        if translate is not None:
                             return "😄 指令执行成功， 执行结果：\n " + mjon
                         else:
                             return (
@@ -221,7 +221,7 @@ class QQLinker(Plugin):
                                 + result.OutputMessages[0].Message
                             )
                     else:
-                        if translator is not None:
+                        if translate is not None:
                             return "😭 指令执行失败， 原因：\n" + mjon
                         else:
                             return (
