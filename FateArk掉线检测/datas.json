@@ -1,0 +1,9 @@
+{
+  "author": "渊思",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "检查机器人是否掉线",
+  "pre-plugins": {},
+  "plugin-id": "CheckBotAlive",
+  "enabled": true
+}
