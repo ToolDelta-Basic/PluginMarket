@@ -107,24 +107,24 @@ class LargeFill(Plugin):
         x, y, z = game_utils.getPosXYZ("SkyblueSuper")
         self.gx, self.gy, self.gz = x, -63, z
 
-    def get_super_pos2(self, _):def 获取超级位置2(self, _
-        x, y, z = game_utils.getPosXYZ("SkyblueSuper")x、y、z = 游戏工具获取XYZ坐标("SkyblueSuper
-        self.ex, self.ey   迪士尼, self.ez = x, -63, zself.ex、self.ey   迪士尼 和 self.ez 分别等于 x、-63 和 z 。
+    def get_super_pos2(self, _):
+        x, y, z = game_utils.getPosXYZ("SkyblueSuper")
+        self.ex, self.ey, self.ez = x, -63, z
 
-    def get_single_pos(self, player: str):def 获取单个位置(self， 玩家： str
-        return player, game_utils.getPosXYZ(player)返回玩家，游戏工具获取玩家的 XYZ 位置
+    def get_single_pos(self, player: str):
+        return player, game_utils.getPosXYZ(player)
 
     @utils.thread_func("大范围填充")
     def thread_fill(self, fillblock_id: str):
         pos_start = self.getpos_start()
-        if pos_start is None:   如果pos_start为None：
+        if pos_start is None:
             fmts.print_err("还未设置起点, 使用 lfset 设置")
-            from   从 tooldelta 导入 Plugin、utils、fmts、game_utils、TYPE_CHECKING、plugin_entryreturn
+            return
         _sx, _sy, _sz = pos_start
         pos_end = self.getpos_end()
-        if pos_end is None:   如果pos_end为None：
+        if pos_end is None:
             fmts.print_err("还未设置终点, 使用 lfsend 设置")
-            return   返回
+            return
         _ex, _ey, _ez = pos_end
         sx, ex = self.cmp(_sx, _ex)
         sy, ey = self.cmp(_sy, _ey)
@@ -149,28 +149,28 @@ class LargeFill(Plugin):
                     fmts.print_inf(
                         f"大范围填充: 已填充 {nowx}, {nowy}, {nowz} 区域     ",
                         need_log=False,
-                        end="\r",   结束= " \ r”,
+                        end="\r",
                     )
-                    nowy += 32   nowy  = 32
+                    nowy += 32
                 nowy = sy
-                nowx += 32   now = 32
-            nowx = sx   Nowx = sx
-            nowz += 32   nowz  = 32
+                nowx += 32
+            nowx = sx
+            nowz += 32
         fmts.print_suc(f"大范围填充已完成: ({sx}, {sy}, {sz}) -> ({ex}, {ey}, {ez})")
 
-    def getpos_start(self):   获取起始位置。
-        if self.gx is None or self.gy is None or self.gz is None:如果 self.gx 为 None   没有一个 或 self.gy 为 None   没有一个 或 self.gz   广州 为 None：
-            return None   回来没有
-        return int(self.gx), int(self.gy), int(self.gz)返回 int(self.gx)、int(self.gy) 和 int(self.gz   广州
+    def getpos_start(self):
+        if self.gx is None or self.gy is None or self.gz is None:
+            return None
+        return int(self.gx), int(self.gy), int(self.gz)
 
-    def getpos_end(self):   def 获取结束位置(self
-        if self.ex is None or self.ey is None or self.ez is None:如果 self.ex   交货 为 None   没有一个 或 self.ey   迪士尼 为 None   没有一个 或 self.ez 为 None：
-            return None   回来没有
-        return int(self.ex), int(self.ey), int(self.ez)返回 int(self.ex   交货)、int(self.ey   迪士尼)、int(self.ez
+    def getpos_end(self):
+        if self.ex is None or self.ey is None or self.ez is None:
+            return None
+        return int(self.ex), int(self.ey), int(self.ez)
 
     @staticmethod
-    def cmp(a: int, b: int):   定义一个名为 cmp 的函数，该函数接受两个整数参数 a 和 b 。
-        return (a, b) if a < b else (b, a)如果 a 小于 b 则返回 (a, b)，否则返回 (b, a)
+    def cmp(a: int, b: int):
+        return (a, b) if a < b else (b, a)
 
 
-entry = plugin_entry(LargeFill)入口 = 插件入口（LargeFill）
+entry = plugin_entry(LargeFill)
