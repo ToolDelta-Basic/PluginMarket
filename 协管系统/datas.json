@@ -1,8 +1,8 @@
 {
   "author": "果_k",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "plugin-type": "classic",
-  "description": "使协管可以执行部分功能 包括/n视角投射 查询玩家背包物品 设置玩家权限 命令转发等",
+  "description": "使协管可以执行部分功能 包括/n视角投射 查询玩家背包物品 设置玩家权限 命令转发 DeepSeek多轮对话等",
   "pre-plugins": {},
   "plugin-id": "协管系统"
 }
