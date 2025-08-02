@@ -804,6 +804,10 @@
         "datas.json": 0
     },
     "plugin_ids_map.json": 0,
+    "FateArk掉线检测": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "世界の记忆": {
         "__init__.py": 0,
         "readme.txt": 0,

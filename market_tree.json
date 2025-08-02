@@ -657,6 +657,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "CheckBotAlive": {
+      "name": "FateArk掉线检测",
+      "author": "渊思",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "世界の记忆": {
       "name": "世界の记忆",
       "author": "9S, Meteora·Österreich, Altair and Echidna",
