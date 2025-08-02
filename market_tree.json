@@ -342,7 +342,7 @@
     "union-maker": {
       "name": "公会系统",
       "author": "星林 & 夏至",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "plugin-type": "classic"
     },
     "demo-plugin-shop": {

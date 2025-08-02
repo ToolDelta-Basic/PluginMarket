@@ -506,7 +506,7 @@
     "Lumelta": {},
     "公会系统": {
         "__init__.py": 0,
-        "readme.txt": 0,
+        "错误处理.md": 0,
         "guild": {
             "control.py": 0,
             "config.py": 0,
@@ -518,6 +518,7 @@
             "models.py": 0,
             "matchers.py": 0
         },
+        "readme.md": 0,
         "datas.json": 0
     },
     "demo-商店系统": {

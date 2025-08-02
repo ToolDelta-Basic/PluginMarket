@@ -501,7 +501,8 @@
     "Lumelta": [],
     "公会系统": [
         "__init__.py",
-        "readme.txt",
+        "错误处理.md",
+        "readme.md",
         "datas.json"
     ],
     "公会系统/guild": [
