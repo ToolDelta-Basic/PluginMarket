@@ -1,16 +1,5 @@
-from tooldelta import Plugin, plugin_entry, fmts
-from threading import Thread
+from tooldelta import Plugin, plugin_entry, Player, Chat, FrameExit, game_utils, utils, fmts
 import time
-
-"""
-先叠甲
-这个插件写的很草率，但是能用
-目的为了FateArk接入点机器人掉线
-但是我认为这样的情况不会出现太久
-这也就是这坨的由来
-"""
-
-
 
 class NewPlugin(Plugin):
     name = "FateArk掉线检测"
@@ -20,19 +9,14 @@ class NewPlugin(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenActive(self.Start)
-        self.stop = False
-        self.ListenFrameExit(self.Stop)
 
-    def Stop(self,_):
-        self.stop = True
     def Start(self):
         
-        global thread
-        thread = Thread(target=self.Check)
-        thread.start()
+        utils.createThread(self.Check, (), "Fateark掉线检测")
+
 
     def Check(self):
-        while self.stop == False:
+        while True:
             try:
                 res = self.game_ctrl.sendwscmd("testfor @a", waitForResp=True, timeout=10)
                 time.sleep(8)
