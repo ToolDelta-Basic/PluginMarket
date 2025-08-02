@@ -649,7 +649,11 @@
     },
     "协管系统": {
         "__init__.py": 0,
-        "datas.json": 0
+        "config.py": 0,
+        "使用方法.md": 0,
+        "deepseek.py": 0,
+        "datas.json": 0,
+        "core.py": 0
     },
     "游戏内显示插件报错": {
         "__init__.py": 0,

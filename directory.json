@@ -640,7 +640,11 @@
     ],
     "协管系统": [
         "__init__.py",
-        "datas.json"
+        "config.py",
+        "使用方法.md",
+        "deepseek.py",
+        "datas.json",
+        "core.py"
     ],
     "游戏内显示插件报错": [
         "__init__.py",
