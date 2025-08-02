@@ -12,7 +12,7 @@
     "献给机械の花束": {
       "name": "前置_献给机械的花束",
       "author": "2B, 9S and 6O",
-      "version": "1.2.0",
+      "version": "1.2.3",
       "plugin-type": "classic"
     },
     "兑换码系统": {
@@ -216,7 +216,7 @@
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "玩家转账": {
@@ -606,7 +606,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "plugin-type": "classic"
     },
     "PlayerJoinverify": {
