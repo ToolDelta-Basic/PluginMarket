@@ -9,6 +9,7 @@ from tooldelta import Plugin, utils, fmts, game_utils, TYPE_CHECKING, plugin_ent
 
 class LargeFill(Plugin):
     """大范围填充插件类"""
+
     name = "大范围填充"
     author = "System"
     version = (0, 0, 2)
@@ -24,7 +25,7 @@ class LargeFill(Plugin):
         self.ey: float | None = None
         self.ez: float | None = None
         self.chatbar = None
-        
+
         self.ListenPreload(self.on_def)
 
     def on_def(self):
@@ -39,9 +40,9 @@ class LargeFill(Plugin):
             ["lfill"], "[方块ID]", "开始大范围填充", self.on_fill
         )
         self.frame.add_console_cmd_trigger(
-            ["llfill"], 
-            "[起点x] [起点y] [起点z] [终点x] [终点y] [终点z] [方块ID]", 
-            "单命令快捷大范围填充", 
+            ["llfill"],
+            "[起点x] [起点y] [起点z] [终点x] [终点y] [终点z] [方块ID]",
+            "单命令快捷大范围填充",
             self.on_quick_fill
         )
         self.frame.add_console_cmd_trigger(
