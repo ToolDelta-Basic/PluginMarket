@@ -34,21 +34,29 @@ def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optiona
     menu_items = [
         ("创建", "创建自己的公会", not is_member),
         ("列表", "查看所有公会", True),
-        ("排行", "查看公会排行榜", True),
         ("查看", "查看公会详情", is_member),
         ("成员", "查看成员列表", is_member),
         ("日志", "查看公会日志", is_member),
         ("公告", "查看/设置公告", is_member),
-        ("仓库", "公会仓库", is_member),
         ("加入", "加入一个公会", not is_member),
         ("退出", "退出当前公会", is_member and not is_owner),
         ("管理", "管理公会成员", member and member.rank in [GuildRank.OWNER, GuildRank.DEPUTY]),
         ("解散", "解散公会", is_owner),
-        ("据点", "据点相关操作", is_member),
-        ("捐献", "捐献物品到公会", is_member),
-        ("任务", "公会任务系统", is_member),
-        ("效果", "通过钻石获得效果增益",is_member)
     ]
+
+    optional_menu_config = [
+        (Config.GUILD_FUNCTION_VAULT,    "仓库", "公会仓库", is_member),
+        (Config.GUILD_FUNCTION_BASE,     "据点", "据点相关操作", is_member),
+        (Config.GUILD_FUNCTION_DONATION, "捐献", "捐献物品到公会", is_member),
+        (Config.GUILD_FUNCTION_TASKS,    "任务", "公会任务系统", is_member),
+        (Config.GUILD_FUNCTION_EFFECT,   "效果", "通过钻石获得效果增益", is_member),
+        (Config.GUILD_FUNCTION_RANKINGS, "排行", "查看公会排行榜", True),
+    ]
+
+    for enabled, cmd, desc, condition in optional_menu_config:
+        if enabled:
+            menu_items.append((cmd, desc, condition))
+
     
     available_items = [(cmd, desc) for cmd, desc, cond in menu_items if cond]
     
@@ -73,11 +81,12 @@ def guild_update_data(self, args: list[str]):
     guilds = self.guild_manager._load_guilds(force_reload=True)
 
     for outer_id, guild in guilds.items():
-        inner_id = getattr(guild, "guild_id", None)
+        inner_id = guild.guild_id
         if inner_id != outer_id:
             guild.guild_id = outer_id
             fmts.print_inf(f"已更新 guild_id: {outer_id}（原: {inner_id}）")
             updated = True
+
     if updated:
         try:
             self.guild_manager.save_guilds(guilds)
@@ -85,7 +94,7 @@ def guild_update_data(self, args: list[str]):
         except Exception as e:
             fmts.print_err(f"保存公会数据时出错: {e}")
     else:
-        fmts.print_inf("无需更新，所有 guild_id 已正确")
+        fmts.print_inf("无需更新，所有 数据 已正确")
 
 def guild_menu_cb(self, player: Player, args: tuple):
     """公会菜单回调函数 - 增强版本"""
@@ -108,24 +117,35 @@ def guild_menu_cb(self, player: Player, args: tuple):
         return True
         
     # 路由到对应的处理函数
+    # 功能项配置：功能是否启用、菜单标题、处理函数
+    optional_handlers_config = [
+        (Config.GUILD_FUNCTION_VAULT,   "仓库",   self._handle_vault),
+        (Config.GUILD_FUNCTION_BASE,    "据点",   self._handle_base_menu),
+        (Config.GUILD_FUNCTION_DONATION,"捐献",   self._handle_donation),
+        (Config.GUILD_FUNCTION_TASKS,   "任务",   self._handle_tasks),
+        (Config.GUILD_FUNCTION_EFFECT,  "效果",   self._handle_effect),
+        (Config.GUILD_FUNCTION_RANKINGS, "排行",  self._handle_rankings)
+    ]
+
+    # 基础菜单项（总是存在）
     handlers = {
         "创建": lambda: self._handle_create_guild(player, player_xuid),
         "列表": lambda: self._handle_list_guilds(player),
-        "排行": lambda: self._handle_rankings(player),
         "查看": lambda: self._handle_view_guild(player),
         "成员": lambda: self._handle_view_members(player),
         "日志": lambda: self._handle_view_logs(player),
         "公告": lambda: self._handle_announcement(player),
-        "仓库": lambda: self._handle_vault(player),
         "加入": lambda: self._handle_join_guild(player),
         "退出": lambda: self._handle_leave_guild(player),
         "管理": lambda: self._handle_manage_members(player),
         "解散": lambda: self._handle_dissolve_guild(player, player_xuid),
-        "据点": lambda: self._handle_base_menu(player),
-        "捐献": lambda: self._handle_donation(player),
-        "任务": lambda: self._handle_tasks(player),
-        "效果": lambda: self._handle_effect(player),
     }
+
+    # 追加可选功能项
+    for enabled, title, func in optional_handlers_config:
+        if enabled:
+            handlers[title] = lambda f=func: f(player)
+
         
     handler = handlers.get(subcommand)
     if handler:
@@ -308,11 +328,40 @@ def update_online_task(self):
     """更新在线状态任务"""
     while True:
         try:
-            time.sleep(60)
-            online_players = list(self.game_ctrl.allplayers)
-            self.guild_manager.update_online_status(online_players)
+            time.sleep(300)
+            online_players = list(self.game_ctrl.allplayers)  # 这里是 List[str]
+
+            self.guild_manager.update_online_status(online_players)  # 传名字列表
+
+            guilds = self.guild_manager._load_guilds(force_reload=True)
+
+            for player_name in online_players:  # 这里直接遍历名字字符串
+                time.sleep(1)
+                guild_id = self.guild_manager._player_guild_cache.get(player_name)
+
+                if not guild_id:
+                    continue
+
+                guild = guilds.get(guild_id)
+                if not guild:
+                    continue
+
+                effects = getattr(guild, "purchased_effects", {})
+                if not effects:
+                    continue
+
+                for effect_name, level in effects.items():
+                    time.sleep(1)
+                    try:
+                        self.game_ctrl.sendwocmd(
+                            f"effect {player_name} {effect_name} 100000 {level} true"
+                        )
+                    except Exception as e:
+                        fmts.print_err(f"为玩家 {player_name} 添加效果 {effect_name} 时出错: {e}")
         except Exception as e:
             fmts.print_err(f"更新在线状态出错: {e}")
+
+
 
 def on_player_action(self, packet):
     """监听玩家行为，用于任务进度跟踪"""
@@ -373,7 +422,7 @@ def check_and_complete_trade_tasks(self, player_name: str):
 
 def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, Any]]:
     """获取公会排行榜"""
-    guilds = self._load_guilds()
+    guilds = self.guild_manager._load_guilds()
     guild_list = list(guilds.values())
 
     if sort_by == "level":
@@ -395,7 +444,7 @@ def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, An
 
 def get_member_rankings(self, guild_id: str, sort_by: str = "contribution") -> List[Tuple[GuildMember, Any]]:
     """获取公会成员排行榜"""
-    guilds = self._load_guilds()
+    guilds = self.guild_manager._load_guilds()
     guild = guilds.get(guild_id)
 
     if not guild:
@@ -699,14 +748,15 @@ def debug_guild_menu(self, player: Player, args: tuple):
                 ("成员", is_member),
                 ("日志", is_member),
                 ("公告", is_member),
-                ("仓库", is_member),
+                ("仓库", Config.GUILD_FUNCTION_VAULT and is_member),
                 ("管理", is_deputy_or_above),
                 ("解散", is_owner),
-                ("据点", is_member),
-                ("捐献", is_member),
-                ("任务", is_member),
-                ("效果", is_member),
+                ("据点", Config.GUILD_FUNCTION_BASE and is_member),
+                ("捐献", Config.GUILD_FUNCTION_DONATION and is_member),
+                ("任务", Config.GUILD_FUNCTION_TASKS and is_member),
+                ("效果", Config.GUILD_FUNCTION_EFFECT and is_member),
             ]
+
 
             player.show("§7菜单项显示测试:")
             for menu_name, condition in menu_tests:
@@ -818,4 +868,5 @@ logic_functions = {
     "guild_chat_cb":guild_chat_cb,
     "debug_guild_menu":debug_guild_menu,
     "debug_base_function":debug_base_function,
+    "get_guild_rankings":get_guild_rankings
 }

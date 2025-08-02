@@ -29,33 +29,33 @@ class GuildManager:
 
         # 检查基本字段
         if not guild_data.name:
-            errors.append("公会名称为空")
+            errors.append("公会名称为空 Err:event.check.data.guild_name")
 
         if not guild_data.guild_id:
-            errors.append("公会ID为空")
+            errors.append("公会ID为空 Err:event.check.data.guild_id")
 
         if not guild_data.members:
-            errors.append("公会没有成员")
+            errors.append("公会没有成员 Msg:event.check.data.member_length_LMIN")
 
         # 检查会长
         owners = [m for m in guild_data.members if m.rank == GuildRank.OWNER]
         if len(owners) != 1:
-            errors.append(f"公会应该有且仅有一个会长，当前有{len(owners)}个")
+            errors.append(f"公会应该有且仅有一个会长，当前有{len(owners)}个 Err:event.check.data.owner_length_LMAX")
 
         # 检查成员数量
         if len(guild_data.members) > Config.MAX_GUILD_MEMBERS:
-            errors.append(f"成员数量超过限制：{len(guild_data.members)}/{Config.MAX_GUILD_MEMBERS}")
+            errors.append(f"成员数量超过限制：{len(guild_data.members)}/{Config.MAX_GUILD_MEMBERS} Err:event.check.data.member_length_LMAX")
 
         # 检查仓库物品
         if len(guild_data.vault_items) > Config.VAULT_INITIAL_SLOTS:
-            errors.append(f"仓库物品超过容量：{len(guild_data.vault_items)}/{Config.VAULT_INITIAL_SLOTS}")
+            errors.append(f"仓库物品超过容量：{len(guild_data.vault_items)}/{Config.VAULT_INITIAL_SLOTS} Err:event.check.data.vault_items_LMAX")
 
         # 检查数据类型
         if not isinstance(guild_data.exp, (int, float)) or guild_data.exp < 0:
-            errors.append("公会经验值无效")
+            errors.append("公会经验值无效 Err:event.check.data.exp_type_or_negative")
 
         if not isinstance(guild_data.level, int) or guild_data.level < 1:
-            errors.append("公会等级无效")
+            errors.append("公会等级无效 Err:event.check.data.level_type_or_range")
 
         return len(errors) == 0, errors
 
