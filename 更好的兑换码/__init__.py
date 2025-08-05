@@ -148,7 +148,9 @@ class NewPlugin(Plugin):
                             dick_n = convert_chars(dick_)
                             List.append(dick_n)
                         fmts.print_inf(f"兑换码：{List}")
-                        fmts.print_inf(f"已经存储进兑换码历史记录里面json里面")
+                        fmts.print_inf("已经存储进兑换码历史记录里面json里面")
+                        with open('兑换码历史记录.txt', 'a', encoding='utf-8') as f:
+                            f.write(f'{List}\n')
                         tempjson.load_and_write(
                             "兑换码历史记录.json", f"{List}\n", False
                         )
