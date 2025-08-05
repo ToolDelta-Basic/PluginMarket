@@ -646,6 +646,10 @@
         "datas.json",
         "core.py"
     ],
+    "更好的兑换码": [
+        "__init__.py",
+        "datas.json"
+    ],
     "游戏内显示插件报错": [
         "__init__.py",
         "datas.json"

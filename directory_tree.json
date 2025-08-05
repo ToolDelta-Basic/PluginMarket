@@ -655,6 +655,10 @@
         "datas.json": 0,
         "core.py": 0
     },
+    "更好的兑换码": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "游戏内显示插件报错": {
         "__init__.py": 0,
         "datas.json": 0

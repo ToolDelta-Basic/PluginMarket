@@ -507,6 +507,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "114514": {
+      "name": "更好的兑换码",
+      "author": "衍",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
