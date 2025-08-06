@@ -741,6 +741,13 @@
       "description": "收录常用的防挂插件",
       "author": "ToolDelta",
       "version": "0.0.2"
+    },
+        "随机商店": { 
+        "author": "伊嘉", 
+        "version": "0.0.1", // 插件的版本
+        "description": "高度自定义的随机商店，支持设置商品权重、随机单价等",
+        "plugin-type": "classic",
+        "plugin-id": "Random_Shop" 
     }
   }
 }
