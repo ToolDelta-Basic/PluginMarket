@@ -41,3 +41,9 @@
         ]
     }
 }
+
+用命令方块向玩家开始任务：
+tellraw @a[tag=robot] {"rawtext":[{"text":"quest.start"},{"selector":"（选择开始任务的玩家的选择器）"},{"text":"（任务标签名）"}]}
+如：
+§btellraw @a[tag=robot] {"rawtext":[{"text":"quest.start"},{"selector":"@p"},{"text":"任务1"}]}
+将命令方块设置为脉冲+红石控制, 激活命令方块即可。
