@@ -4,18 +4,6 @@
         "datas.json",
         "GetFile.py"
     ],
-    "前置_献给机械的花束": [
-        "__init__.py",
-        "get_nbt_block_hash.py",
-        "readme.txt",
-        "place_nbt_block.py",
-        "place_large_chest.py",
-        "server_running.py",
-        "define.py",
-        "log_record.py",
-        "datas.json",
-        "chest_cache.py"
-    ],
     "兑换码系统": [
         "__init__.py",
         "datas.json"
@@ -200,17 +188,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "世界备份v2": [
-        "__init__.py",
-        "on_chat.py",
-        "readme.txt",
-        "releases.py",
-        "recover_tool_name.py",
-        "recover.py",
-        "define.py",
-        "world_backup.py",
-        "datas.json"
-    ],
     "控制台执行MC指令": [
         "__init__.py",
         "datas.json"
@@ -380,22 +357,8 @@
         "恋爱循环.midseq",
         "决心鱼.midseq"
     ],
-    "前置_主动区块请求": [
-        "__init__.py",
-        "sub_chunk_classifier.py",
-        "requet_queue.py",
-        "api.py",
-        "define.py",
-        "datas.json",
-        "sub_chunk_process.py"
-    ],
     "计分板支持": [
         "__init__.py"
-    ],
-    "简单世界导入": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
     ],
     "玩家转账": [
         "__init__.py",
@@ -547,10 +510,6 @@
         "datas.json"
     ],
     "00榛缈插件性能分析": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "世界备份": [
         "__init__.py",
         "datas.json"
     ],
@@ -760,11 +719,6 @@
         "readme.txt",
         "datas.json"
     ],
-    "简单世界恢复": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
     "进服验证": [
         "__init__.py",
         "datas.json"
@@ -802,11 +756,6 @@
     ],
     "FateArk掉线检测": [
         "__init__.py",
-        "datas.json"
-    ],
-    "世界の记忆": [
-        "__init__.py",
-        "readme.txt",
         "datas.json"
     ],
     "ZBasic_Lang_中文编程": [
