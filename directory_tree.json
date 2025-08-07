@@ -4,6 +4,18 @@
         "datas.json": 0,
         "GetFile.py": 0
     },
+    "前置_献给机械的花束": {
+        "__init__.py": 0,
+        "get_nbt_block_hash.py": 0,
+        "readme.txt": 0,
+        "place_nbt_block.py": 0,
+        "place_large_chest.py": 0,
+        "server_running.py": 0,
+        "define.py": 0,
+        "log_record.py": 0,
+        "datas.json": 0,
+        "chest_cache.py": 0
+    },
     "兑换码系统": {
         "__init__.py": 0,
         "datas.json": 0
@@ -190,6 +202,17 @@
         }
     },
     "README.md": 0,
+    "世界备份v2": {
+        "__init__.py": 0,
+        "on_chat.py": 0,
+        "readme.txt": 0,
+        "releases.py": 0,
+        "recover_tool_name.py": 0,
+        "recover.py": 0,
+        "define.py": 0,
+        "world_backup.py": 0,
+        "datas.json": 0
+    },
     "控制台执行MC指令": {
         "__init__.py": 0,
         "datas.json": 0
@@ -361,8 +384,22 @@
         },
         "datas.json": 0
     },
+    "前置_主动区块请求": {
+        "__init__.py": 0,
+        "sub_chunk_classifier.py": 0,
+        "requet_queue.py": 0,
+        "api.py": 0,
+        "define.py": 0,
+        "datas.json": 0,
+        "sub_chunk_process.py": 0
+    },
     "计分板支持": {
         "__init__.py": 0
+    },
+    "简单世界导入": {
+        "__init__.py": 0,
+        "readme.txt": 0,
+        "datas.json": 0
     },
     "玩家转账": {
         "__init__.py": 0,
@@ -517,6 +554,10 @@
         "datas.json": 0
     },
     "00榛缈插件性能分析": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
+    "世界备份": {
         "__init__.py": 0,
         "datas.json": 0
     },
@@ -728,6 +769,11 @@
         "readme.txt": 0,
         "datas.json": 0
     },
+    "简单世界恢复": {
+        "__init__.py": 0,
+        "readme.txt": 0,
+        "datas.json": 0
+    },
     "进服验证": {
         "__init__.py": 0,
         "datas.json": 0
@@ -768,6 +814,11 @@
     "plugin_ids_map.json": 0,
     "FateArk掉线检测": {
         "__init__.py": 0,
+        "datas.json": 0
+    },
+    "世界の记忆": {
+        "__init__.py": 0,
+        "readme.txt": 0,
         "datas.json": 0
     },
     "ZBasic_Lang_中文编程": {

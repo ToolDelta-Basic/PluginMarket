@@ -9,6 +9,12 @@
       "version": "0.2.4",
       "plugin-type": "classic"
     },
+    "献给机械の花束": {
+      "name": "前置_献给机械的花束",
+      "author": "2B, 9S and 6O",
+      "version": "1.2.3",
+      "plugin-type": "classic"
+    },
     "兑换码系统": {
       "name": "兑换码系统",
       "author": "权威-马牛逼",
@@ -171,6 +177,12 @@
       "version": "0.0.7",
       "plugin-type": "classic"
     },
+    "世界备份第二世代": {
+      "name": "世界备份v2",
+      "author": "YoRHa and RATH",
+      "version": "1.4.2",
+      "plugin-type": "classic"
+    },
     "控制台执行MC指令": {
       "name": "控制台执行MC指令",
       "author": "SuperScript",
@@ -193,6 +205,18 @@
       "name": "巡逻",
       "author": "猫七街",
       "version": "0.0.8",
+      "plugin-type": "classic"
+    },
+    "主动区块请求": {
+      "name": "前置_主动区块请求",
+      "author": "2B",
+      "version": "0.4.4",
+      "plugin-type": "classic"
+    },
+    "simple-bedworld-import": {
+      "name": "简单世界导入",
+      "author": "YoRHa",
+      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "玩家转账": {
@@ -360,6 +384,12 @@
     "榛缈插件性能分析": {
       "name": "00榛缈插件性能分析",
       "author": "Hazelmeow",
+      "version": "0.1.1",
+      "plugin-type": "classic"
+    },
+    "世界备份": {
+      "name": "世界备份",
+      "author": "YoRHa and RATH",
       "version": "0.1.1",
       "plugin-type": "classic"
     },
@@ -579,6 +609,12 @@
       "version": "0.0.9",
       "plugin-type": "classic"
     },
+    "简单世界恢复": {
+      "name": "简单世界恢复",
+      "author": "YoRHa",
+      "version": "0.4.1",
+      "plugin-type": "classic"
+    },
     "PlayerJoinverify": {
       "name": "进服验证",
       "author": "大庆油田",
@@ -631,6 +667,12 @@
       "name": "FateArk掉线检测",
       "author": "渊思",
       "version": "0.0.1",
+      "plugin-type": "classic"
+    },
+    "世界の记忆": {
+      "name": "世界の记忆",
+      "author": "9S, Meteora·Österreich, Altair and Echidna",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "TD-ZBasic": {
