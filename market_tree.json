@@ -48,7 +48,7 @@
     "bdx-exporter": {
       "name": "bdx导出器Pro",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "sfx-player": {
@@ -630,7 +630,7 @@
     "better-announcebar": {
       "name": "更好的公告栏",
       "author": "SuperScript",
-      "version": "0.0.8",
+      "version": "0.0.9",
       "plugin-type": "classic"
     },
     "简易建造": {
