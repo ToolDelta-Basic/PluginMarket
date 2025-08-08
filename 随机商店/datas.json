@@ -1,0 +1,9 @@
+{
+  "author": "伊嘉",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "高度自定义的随机商店\n支持修改商品刷新数量、权重、随机单价、全服/个人限购等",
+  "pre-plugins": {},
+  "plugin-id": "Random_Shop",
+  "enabled": true
+}

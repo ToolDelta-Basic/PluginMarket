@@ -189,6 +189,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "Random_Shop": {
+      "name": "随机商店",
+      "author": "伊嘉",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "ai聊天": {
       "name": "ai聊天",
       "author": "机入",
@@ -210,7 +216,7 @@
     "主动区块请求": {
       "name": "前置_主动区块请求",
       "author": "2B",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "plugin-type": "classic"
     },
     "simple-bedworld-import": {
@@ -691,6 +697,12 @@
       "name": "获取全服玩家皮肤",
       "author": "SuperScript",
       "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "等级检测增强版": {
+      "name": "等级检测增强版",
+      "author": "Q3CC",
+      "version": "1.0.0",
       "plugin-type": "classic"
     },
     "简易建造-Pro": {

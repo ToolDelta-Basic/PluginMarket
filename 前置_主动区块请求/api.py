@@ -139,7 +139,9 @@ class AutoSubChunkRequestAPI:
         current_listener = self.base().chunk_listener[cp]
 
         if current_listener.expire_unix_time == 0:
-            current_listener.expire_unix_time = int(time.time()) + 10
+            current_listener.expire_unix_time = (
+                int(time.time()) + self.base().chunk_max_expire_time
+            )
 
         current_sub_chunk = SingleSubChunk(result_code, pos[1], blocks, bs)
         current_listener.subchunks[pos[1] + 4] = current_sub_chunk

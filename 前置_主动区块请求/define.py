@@ -76,6 +76,7 @@ class AutoSubChunkRequestBase:
             "每多少秒重新请求周围区块(浮点数)": 300,
             "每秒同维度的每个玩家请求多少个区块(整数)": 6,
             "每秒最多请求的总区块数(整数)": 60,
+            "区块超时判定时间 (最小 10 秒)": 30,
         }
         cfg, _ = config.get_plugin_config_and_version(
             "主动区块请求",
@@ -91,6 +92,7 @@ class AutoSubChunkRequestBase:
             cfg["每秒同维度的每个玩家请求多少个区块(整数)"]
         )
         self.max_chunks_to_request_per_second = int(cfg["每秒最多请求的总区块数(整数)"])
+        self.chunk_max_expire_time = max(10, int(cfg["区块超时判定时间 (最小 10 秒)"]))
 
         self.mu = threading.Lock()
         self.must_chunk_position_waiter_release = threading.Lock()
