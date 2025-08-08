@@ -693,6 +693,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "等级检测增强版": {
+      "name": "等级检测增强版",
+      "author": "Q3CC",
+      "version": "1.0.0",
+      "plugin-type": "classic"
+    },
     "简易建造-Pro": {
       "name": "简易建造-Pro",
       "author": "SuperScript",

@@ -838,6 +838,11 @@
         "__init__.py",
         "datas.json"
     ],
+    "等级检测增强版": [
+        "__init__.py",
+        "README.md",
+        "datas.json"
+    ],
     "简易建造-Pro": [
         "__init__.py",
         "readme.txt",
