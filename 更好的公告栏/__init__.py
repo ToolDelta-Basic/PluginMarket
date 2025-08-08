@@ -5,7 +5,7 @@ from tooldelta import utils, cfg as config, Plugin, fmts, plugin_entry
 class BetterAnnounce(Plugin):
     name = "更好的公告栏"
     author = "SuperScript"
-    version = (0, 0, 8)
+    version = (0, 0, 9)
 
     def __init__(self, f):
         super().__init__(f)
@@ -49,7 +49,7 @@ class BetterAnnounce(Plugin):
         self.game_ctrl.sendwocmd("/scoreboard objectives remove 公告")
         time.sleep(0.3)
         self.game_ctrl.sendwocmd(
-            f"/scoreboard objectives add 公告 dummy {self.ano_title}"
+            f"/scoreboard objectives add 公告 dummy \"{self.ano_title}\""
         )
         self.game_ctrl.sendwocmd("/scoreboard objectives setdisplay sidebar 公告")
 
