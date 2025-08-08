@@ -224,6 +224,12 @@
         },
         "datas.json": 0
     },
+    "随机商店": {
+        "__init__.py": 0,
+        "xlsx转json.py": 0,
+        "readme.md": 0,
+        "datas.json": 0
+    },
     "ai聊天": {
         "__init__.py": 0,
         "datas.json": 0

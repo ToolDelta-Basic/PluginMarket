@@ -189,6 +189,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "Random_Shop": {
+      "name": "随机商店",
+      "author": "伊嘉",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "ai聊天": {
       "name": "ai聊天",
       "author": "机入",
@@ -748,6 +754,5 @@
       "author": "ToolDelta",
       "version": "0.0.2"
     }
-     
   }
 }
