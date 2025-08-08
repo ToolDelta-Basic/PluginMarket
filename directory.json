@@ -222,6 +222,12 @@
         "自定义聊天栏菜单.json",
         "聊天栏菜单.json"
     ],
+    "随机商店": [
+        "__init__.py",
+        "xlsx转json.py",
+        "readme.md",
+        "datas.json"
+    ],
     "ai聊天": [
         "__init__.py",
         "datas.json"
@@ -836,6 +842,11 @@
     ],
     "获取全服玩家皮肤": [
         "__init__.py",
+        "datas.json"
+    ],
+    "等级检测增强版": [
+        "__init__.py",
+        "README.md",
         "datas.json"
     ],
     "简易建造-Pro": [
