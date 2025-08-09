@@ -1,8 +1,9 @@
 {
   "author": "Q3CC",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "plugin-type": "classic",
   "description": "基于原版等级检测插件的增强版本，新增了通过QQ群聊白名单绕过等级限制的功能。",
   "pre-plugins": {},
   "plugin-id": "等级检测增强版"
 }
+
