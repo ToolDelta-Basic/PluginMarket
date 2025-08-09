@@ -86,7 +86,9 @@ def show_args(
         player.show(f"{prefix} " + " ".join(args))
 
 
-def ask_for_args(player: Player, prefix: str, arg_hints: ARGUMENT_HINT_WITH_ELLIPSIS):
+def ask_for_args(
+    player: Player, prefix: str, arg_hints: ARGUMENT_HINT_WITH_ELLIPSIS, first_arg=0
+):
     final_args = []
     if arg_hints == ...:
         resp = player.input("§7请输入：", timeout=240)
@@ -233,7 +235,10 @@ class StandardChatbarTriggers:
         default_args = [
             default for _, _2, default in self.argument_hints if default is not None
         ]
-        utils.fill_list_index(args_parsed, default_args)
+        print((args_parsed, default_args))
+        utils.fill_list_index(
+            args_parsed, [-99999 for _ in range(self.no_default_args_num)] + default_args
+        )
         return tuple(args_parsed), None
 
     def _check_argument_hint(self):
@@ -272,7 +277,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 7)
+    version = (0, 3, 8)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -603,7 +608,10 @@ class ChatbarMenu(Plugin):
                     args = msg.removeprefix(trigger_str).split()
                     with utils.ChatbarLock(player.name):
                         if isinstance(trigger, StandardChatbarTriggers):
-                            trigger.execute(player, args)
+                            if args == []:
+                                trigger.execute_with_no_args(player, trigger_str)
+                            else:
+                                trigger.execute(player, args)
                         else:
                             trigger.func(player.name, args)
                         return
