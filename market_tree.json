@@ -39,6 +39,12 @@
       "version": "0.0.6",
       "plugin-type": "classic"
     },
+    "简单程序启动器": {
+      "name": "简单程序启动器",
+      "author": "Eternal Crystal",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "PianoInSettingPiano": {
       "name": "设置栏钢琴师",
       "author": "SuperScript",
