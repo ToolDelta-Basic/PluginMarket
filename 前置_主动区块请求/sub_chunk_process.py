@@ -101,7 +101,7 @@ class AutoSubChunkRequestSubChunkProcess:
                         b"",
                     )
                 # Or, this sub chunk is not loaded, and waiting server to load them.
-                # Therefore, we add to unloaded sub chunk list, and them reget them
+                # Therefore, we add to unloaded sub chunk list, and then reget them
                 # in a single packet.SubChunkRequest packet.
                 else:
                     unloaded_sub_chunk.append(
