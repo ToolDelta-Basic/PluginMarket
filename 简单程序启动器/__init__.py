@@ -11,7 +11,10 @@ class SimpleProgramRunner(Plugin):
         self.on_def()
 
     def on_def(self):
-        args: list[str] = ["your_program_path", "some_args"]
+        args: list[str] = [
+            self.format_data_path("your_program_path"),
+            "some_args",
+        ]
         subprocess.Popen(args).wait()
 
 
