@@ -8,6 +8,7 @@ class SimpleProgramRunner(Plugin):
     version = (0, 0, 1)
 
     def __init__(self, _: Frame):
+        self.make_data_path()
         self.on_def()
 
     def on_def(self):
