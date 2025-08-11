@@ -612,6 +612,10 @@
         "datas.json",
         "__init__.py"
     ],
+    "清理实体分数": [
+        "datas.json",
+        "__init__.py"
+    ],
     "音效播放器": [
         "datas.json",
         "readme.txt",
