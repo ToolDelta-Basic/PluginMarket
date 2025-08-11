@@ -93,7 +93,7 @@ class OrionCore:
         """
         将监听到PlayerList数据包后的回调函数异步化
         Args:
-            packet (dict[Any, Any]): 监听到的dict型PlayerList数据包
+            packet (dict[Any, Any]): 监听到的PlayerList数据包
         Returns:
             False (bool):
         """
@@ -104,7 +104,7 @@ class OrionCore:
         """
         将监听到Text数据包后的回调函数异步化
         Args:
-            packet (dict[Any, Any]): 监听到的dict型Text数据包
+            packet (dict[Any, Any]): 监听到的Text数据包
         Returns:
             False (bool):
         """
@@ -116,7 +116,7 @@ class OrionCore:
         """
         PlayerList回调执行逻辑，执行玩家进服的相关封禁
         Args:
-            packet (dict[Any, Any]): 监听到的dict型PlayerList数据包
+            packet (dict[Any, Any]): 监听到的PlayerList数据包
         """
         if packet["ActionType"] == 0:
             Username = packet["Entries"][0]["Username"]
@@ -171,7 +171,7 @@ class OrionCore:
         """
         Text回调执行逻辑，执行玩家发言的相关封禁
         Args:
-            packet (dict[Any, Any]): 监听到的dict型Text数据包
+            packet (dict[Any, Any]): 监听到的Text数据包
         """
         TextType = packet["TextType"]
         SourceName = packet["SourceName"]
@@ -621,7 +621,7 @@ class OrionCore:
             xuid (str): 玩家xuid
             PremiumSkin (bool):
             Trusted (bool):
-            packet (dict[Any, Any]): dict型数据包
+            packet (dict[Any, Any]): PlayerList数据包
         """
         if self.cfg.is_detect_bot and (PremiumSkin is False or Trusted is False):
             self.utils.print_inf(self.cfg.info_collapse_packet, (packet,))
@@ -661,7 +661,7 @@ class OrionCore:
             CapeData (str):
             Animations (list[Any]):
             AnimationData (str):
-            packet (dict[Any, Any]): dict型数据包
+            packet (dict[Any, Any]): PlayerList数据包
         """
         if self.cfg.is_detect_abnormal_skin:
             try:
@@ -869,7 +869,7 @@ class OrionCore:
             Username (str): 玩家名称
             xuid (str): 玩家xuid
             GrowthLevels (int):
-            packet (dict[Any, Any]): dict型数据包
+            packet (dict[Any, Any]): PlayerList数据包
         """
         if self.cfg.is_check_player_info:
             try_time = 0
@@ -1311,6 +1311,8 @@ class OrionCore:
                     xuid = self.plugin.xuid_getter.get_xuid_by_name(player, True)
                     if score < -1:
                         score = 0
+                    elif score == -1:
+                        score = "Forever"
                     self.execute_ban(
                         player,
                         xuid,
