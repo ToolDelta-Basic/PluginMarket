@@ -55,10 +55,10 @@ def parse_arg(
 
 
 def arg_str(arg: str | float | bool):
-    if isinstance(arg, str | float):
-        return str(arg)
-    else:
+    if isinstance(arg, bool):
         return "true" if arg else "false"
+    else:
+        return str(arg)
 
 
 def show_args(
@@ -235,7 +235,6 @@ class StandardChatbarTriggers:
         default_args = [
             default for _, _2, default in self.argument_hints if default is not None
         ]
-        print((args_parsed, default_args))
         utils.fill_list_index(
             args_parsed, [-99999 for _ in range(self.no_default_args_num)] + default_args
         )
@@ -277,7 +276,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 3, 8)
+    version = (0, 4, 0)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
@@ -330,12 +329,12 @@ class ChatbarMenu(Plugin):
                 "打开菜单",
                 self.show_nbc_menu,
             )
-            self.add_new_trigger(
-                ["test", "td"],
-                ...,
-                "testargs",
-                lambda a, b: a.show(f"args: {b}"),
-            )
+            # self.add_new_trigger(
+            #     ["test", "td"],
+            #     ...,
+            #     "testargs",
+            #     lambda a, b: a.show(f"args: {b}"),
+            # )
         else:
             self.add_new_trigger(
                 self.cfg["/help触发词"],
