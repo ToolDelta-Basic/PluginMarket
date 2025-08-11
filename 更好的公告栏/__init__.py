@@ -45,6 +45,8 @@ class BetterAnnounce(Plugin):
         self.tpscalc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
+        self.ftime = 100
+        self.locked = False
         self.flush_gg()
         self.flush_announcement1()
 
@@ -83,30 +85,31 @@ class BetterAnnounce(Plugin):
     @utils.timer_event(1, "计分板公告刷新")
     @utils.thread_func("计分板公告刷新")
     def flush_announcement1(self):
+        if self.locked:
+            return
+        self.locked = True
         scmd = self.game_ctrl.sendwocmd
-        ftime = 100
-        while 1:
-            time.sleep(1)
-            ftime += 1
-            if ftime > self.flush_secs:
-                ftime = 0
-                scmd("/scoreboard players reset * 公告")
-                basic_args = {
-                    "[在线人数]": len(self.game_ctrl.allplayers),
-                    "[星期]": "一二三四五六日"[time.localtime().tm_wday],
-                    "[TPS]": self.get_tps_str(),
-                    "[TPS带颜色]": self.get_tps_str(True),
-                }
-                extra_args = {k: v() for k, v in self.formatters.items()}
-                basic_args.update(extra_args)
-                for text, scb_score in self.anos.items():
-                    text = time.strftime(
-                        utils.simple_fmt(
-                            basic_args,
-                            text,
-                        )
+        self.ftime += 1
+        if self.ftime > self.flush_secs:
+            self.ftime = 0
+            scmd("/scoreboard players reset * 公告")
+            basic_args = {
+                "[在线人数]": len(self.game_ctrl.allplayers),
+                "[星期]": "一二三四五六日"[time.localtime().tm_wday],
+                "[TPS]": self.get_tps_str(),
+                "[TPS带颜色]": self.get_tps_str(True),
+            }
+            extra_args = {k: v() for k, v in self.formatters.items()}
+            basic_args.update(extra_args)
+            for text, scb_score in self.anos.items():
+                text = time.strftime(
+                    utils.simple_fmt(
+                        basic_args,
+                        text,
                     )
-                    scmd(f'/scoreboard players set "{text}" 公告 {scb_score}')
+                )
+                scmd(f'/scoreboard players set "{text}" 公告 {scb_score}')
+        self.locked = False
 
 
 entry = plugin_entry(BetterAnnounce, "更好的公告栏")
