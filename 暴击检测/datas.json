@@ -1,9 +1,0 @@
-{
-  "author": "果_k",
-  "version": "0.0.2",
-  "plugin-type": "classic",
-  "description": "限制玩家暴击次数",
-  "pre-plugins": {},
-  "plugin-id": "暴击限制",
-  "enabled": true
-}
