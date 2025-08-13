@@ -72,8 +72,22 @@ Don't be afraid daybreak has come...
 
 
 
-Reference List
+Reference List / Suggest Songs
 
-Aimer and SawanoHiroyuki[nZk] (2017). ninelie <cry-v>. [online] NetEase cloudmusic. Available at: https://music.163.com/song?id=507114412&uct2=U2FsdGVkX18i7ywRW+vlc5CoNXis/Xpn21nf021YRYs= [Accessed 30 Apr. 2025].
+Aimer and SawanoHiroyuki[nZk] (2017). ninelie . [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=507114412 [Accessed 30 Apr. 2025].
 
-YoRHa (2017). Weight of the World/the End of YoRHa. [online] NetEase cloudmusic. Available at: https://music.163.com/song?id=468490608&uct2=U2FsdGVkX1+DoxmndPBHUYSfuBWjfFguDOgnmRTKDtg= [Accessed 30 Apr. 2025].
+阿鲲 (2018). 风味的春夏秋. NetEase CloudMusic. Available at: https://music.163.com/#/song?id=1320649244 [Accessed 13 Aug. 2025].
+
+Fred, V. (2021). Skyscraping. [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=1888187763 [Accessed 13 Aug. 2025].
+
+Gareth, C. and Minecraft (2020). Departures (Map 7). [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=1809317707 [Accessed 13 Aug. 2025].
+
+naNami and SawanoHiroyuki[nZk] (2021). N0VA. [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=1824713154 [Accessed 13 Aug. 2025].
+
+Sawano, H. (2016). Release My Soul -Instrumental-. [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=411349071 [Accessed 13 Aug. 2025].
+
+Senna, R. (2022). dust. NetEase CloudMusic. Available at: https://music.163.com/song?id=1932498625 [Accessed 13 Aug. 2025].
+
+Vincent, R. and Nathaniel, S. (2018). One, Two, Zeta. Available at: https://music.163.com/song?id=1343883541 [Accessed 13 Aug. 2025].
+
+YoRHa (2017). Weight of the World/the End of YoRHa. [online] NetEase CloudMusic. Available at: https://music.163.com/song?id=468490608 [Accessed 30 Apr. 2025].
