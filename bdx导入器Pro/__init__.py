@@ -7,7 +7,7 @@ from .thisutils import render_bar
 class BDX_BDump(Plugin):
     name = "bdx导入器Pro"
     author = "SuperScript"
-    version = (0, 1, 4)
+    version = (0, 1, 5)
 
     def __init__(self, frame):
         super().__init__(frame)

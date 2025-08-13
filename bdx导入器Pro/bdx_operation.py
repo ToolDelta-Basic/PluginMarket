@@ -44,9 +44,51 @@ def do_operations(
             bot_x, bot_y, bot_z = pos_x, pos_y, pos_z
             time.sleep(0.01)
 
+    def decode_and_encode_block_state(block_state_str: str) -> str:
+        block_state_str = block_state_str.strip()
+        if len(block_state_str) < 2:
+            return "[]"
+
+        block_state_str = block_state_str[1:-1]
+        block_state_list = [i.strip() for i in block_state_str.split(",")]
+        block_state: dict[str, str] = {}
+
+        for i in block_state_list:
+            if len(i) == 0:
+                continue
+            if i[0] != '"':
+                continue
+            i = i[1:]
+
+            index = i.find('"')
+            if index == -1:
+                continue
+            key = i[:index]
+
+            i = i[index + 1 :]
+            i = i.strip()
+            if len(i) == 0:
+                continue
+            if i[0] != ":" and i[0] != "=":
+                continue
+            i = i[1:]
+
+            state = i.strip()
+            if len(state) == 0:
+                continue
+            block_state[key] = state
+
+        result = ""
+        for key, state in block_state.items():
+            result += f'"{key}"={state}'
+            result += ","
+        return "[" + result[:-1] + "]"
+
     def setblock_here(block_id: str, block_state_or_data: str | int):
         nonlocal build_blocks
         speed_limit()
+        if isinstance(block_state_or_data, str):
+            block_state_or_data = decode_and_encode_block_state(block_state_or_data)
         cmd = f"execute as {bot_selector} at @s run setblock {pos_x} {pos_y} {pos_z} {block_id} {block_state_or_data}"
         sendwocmd(cmd)
         build_blocks += 1
