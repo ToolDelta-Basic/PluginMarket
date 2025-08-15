@@ -68,7 +68,7 @@ class TpaRequest:
 
 class WuxiePlayerTeleport(Plugin):
     name = "无邪玩家互传"
-    author = "Assistant"
+    author = "无邪"
     version = (1, 0, 0)
     description = "功能完善的玩家互传系统，支持传送请求、权限管理和智能拼音搜索功能"
 
