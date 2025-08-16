@@ -4,11 +4,21 @@ import time
 import threading
 import re
 
-try:
-    from pypinyin import lazy_pinyin, Style
-    PYPINYIN_AVAILABLE = True
-except ImportError:
-    PYPINYIN_AVAILABLE = False
+# 全局变量，用于跟踪pypinyin是否可用
+PYPINYIN_AVAILABLE = False
+lazy_pinyin = None
+Style = None
+
+def _try_import_pypinyin():
+    """尝试导入pypinyin库"""
+    global PYPINYIN_AVAILABLE, lazy_pinyin, Style
+    try:
+        from pypinyin import lazy_pinyin, Style
+        PYPINYIN_AVAILABLE = True
+        return True
+    except ImportError:
+        PYPINYIN_AVAILABLE = False
+        return False
 
 
 class PinyinConverter:
@@ -17,7 +27,7 @@ class PinyinConverter:
     @classmethod
     def to_pinyin(cls, text: str) -> str:
         """将中文转换为拼音"""
-        if not text or not PYPINYIN_AVAILABLE:
+        if not text or not PYPINYIN_AVAILABLE or lazy_pinyin is None:
             return text.lower()
             
         result = []
@@ -36,7 +46,7 @@ class PinyinConverter:
     @classmethod
     def get_pinyin_initials(cls, text: str) -> str:
         """获取拼音首字母"""
-        if not text or not PYPINYIN_AVAILABLE:
+        if not text or not PYPINYIN_AVAILABLE or lazy_pinyin is None:
             return ''.join(c for c in text.lower() if c.isalpha())
             
         result = []
@@ -120,6 +130,9 @@ class WuxiePlayerTeleport(Plugin):
         
     def on_active(self):
         """插件激活时的初始化"""
+        # 首先尝试导入pypinyin库
+        _try_import_pypinyin()
+        
         # 检查并自动安装pypinyin库
         if not PYPINYIN_AVAILABLE:
             self.print("§e检测到pypinyin库未安装，正在尝试自动安装...")
@@ -153,6 +166,8 @@ class WuxiePlayerTeleport(Plugin):
     
     def _auto_install_pypinyin(self) -> bool:
         """自动安装pypinyin库"""
+        global PYPINYIN_AVAILABLE, lazy_pinyin, Style
+        
         try:
             pip_support = self.GetPluginAPI("pip")
             if pip_support is None:
@@ -160,17 +175,15 @@ class WuxiePlayerTeleport(Plugin):
                 return False
                 
             self.print("§e正在安装pypinyin库...")
-            # 使用require方法，这是推荐的方式
             pip_support.require("pypinyin")
             
-            # 尝试重新导入
-            global PYPINYIN_AVAILABLE, lazy_pinyin, Style
-            try:
-                from pypinyin import lazy_pinyin, Style
-                PYPINYIN_AVAILABLE = True
+            # 重新尝试导入
+            _try_import_pypinyin()
+            
+            if PYPINYIN_AVAILABLE:
                 self.print("§a pypinyin库安装成功！")
                 return True
-            except ImportError:
+            else:
                 return False
                 
         except Exception as e:
@@ -181,14 +194,20 @@ class WuxiePlayerTeleport(Plugin):
         """玩家离开时清理相关请求"""
         player_name = player.name
         
-        # 清理发送的请求
-        for req in self.tpa_requests[:]:
+        # 清理发送的请求 - 创建副本来避免在迭代时修改列表
+        requests_to_remove = []
+        for req in self.tpa_requests:
             if req.sender.name == player_name:
-                self.tpa_requests.remove(req)
+                requests_to_remove.append(req)
                 self.game_ctrl.say_to(req.target, f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消")
             elif req.target == player_name:
-                self.tpa_requests.remove(req)
+                requests_to_remove.append(req)
                 req.sender.show(f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消")
+        
+        # 移除找到的请求
+        for req in requests_to_remove:
+            if req in self.tpa_requests:
+                self.tpa_requests.remove(req)
         
         # 清理冷却记录
         if player_name in self.player_cooldowns:
@@ -697,9 +716,15 @@ class WuxiePlayerTeleport(Plugin):
             try:
                 current_time = time.time()
                 
-                # 清理过期请求
-                for request in self.tpa_requests[:]:
+                # 清理过期请求 - 创建副本来避免在迭代时修改列表
+                expired_requests = []
+                for request in self.tpa_requests:
                     if request.is_expired():
+                        expired_requests.append(request)
+                
+                # 处理过期请求
+                for request in expired_requests:
+                    if request in self.tpa_requests:
                         request.sender.show(self.config["消息配置"]["请求超时"])
                         self.game_ctrl.say_to(request.target, f"§7 [§cTPA§7] §7来自§f {request.sender.name} §7的传送请求已超时")
                         self.tpa_requests.remove(request)
