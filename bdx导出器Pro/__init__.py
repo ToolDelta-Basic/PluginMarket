@@ -69,7 +69,29 @@ class BDXExporter(Plugin):
         # export setend 40 283 40
         # export test1.bdx
 
+        # export 起点x 起点y 起点z 终点x 终点y 终点z 文件名字
+
         if args:
+            if len(args) == 7:
+                try:
+                    start_x, start_y, start_z = int(args[0]), int(args[1]), int(args[2])
+                    end_x, end_y, end_z = int(args[3]), int(args[4]), int(args[5])
+                    filename = args[6]
+                    
+                    # 确保文件名以.bdx结尾
+                    if not filename.endswith(".bdx"):
+                        filename += ".bdx"
+                    
+                    start_pos = (start_x, start_y, start_z)
+                    end_pos = (end_x, end_y, end_z)
+                    
+                    fmts.print_suc(f"起点: {start_pos}, 终点: {end_pos}, 文件名: {filename}")
+                    self.export(start_pos, end_pos, filename)
+                    return
+                except ValueError:
+                    fmts.print_err("坐标必须为整数")
+                    return
+            
             if args[0] == "set":
                 if len(args) == 4:
                     try:
@@ -107,7 +129,8 @@ class BDXExporter(Plugin):
                 fmts.print_inf("§eBDX 导出器帮助:")
                 fmts.print_inf(" - export set §7设置起点")
                 fmts.print_inf(" - export setend §7设置终点")
-                fmts.print_inf(" - export §7导出为 bdx")
+                fmts.print_inf(" - export <文件名>.bdx §7导出为 bdx")
+                fmts.print_inf(" - export <起点x> <起点y> <起点z> <终点x> <终点y> <终点z> <文件名> §7一键导出")
         else:
             if self.start is None or self.end is None:
                 fmts.print_err("请先设置起点和终点")
