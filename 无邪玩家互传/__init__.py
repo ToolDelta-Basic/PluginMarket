@@ -4,36 +4,26 @@ import time
 import threading
 import re
 
-# 全局变量，用于跟踪pypinyin是否可用
-PYPINYIN_AVAILABLE = False
-lazy_pinyin = None
-Style = None
 
-def _try_import_pypinyin():
-    """尝试导入pypinyin库"""
-    global PYPINYIN_AVAILABLE, lazy_pinyin, Style
-    try:
-        from pypinyin import lazy_pinyin, Style
-        PYPINYIN_AVAILABLE = True
-        return True
-    except ImportError:
-        PYPINYIN_AVAILABLE = False
-        return False
 
 
 class PinyinConverter:
     """中文拼音转换器:使用pypinyin库"""
     
-    @classmethod
-    def to_pinyin(cls, text: str) -> str:
+    def __init__(self, pypinyin_available=False, lazy_pinyin=None, style=None):
+        self.pypinyin_available = pypinyin_available
+        self.lazy_pinyin = lazy_pinyin
+        self.style = style
+    
+    def to_pinyin(self, text: str) -> str:
         """将中文转换为拼音"""
-        if not text or not PYPINYIN_AVAILABLE or lazy_pinyin is None:
+        if not text or not self.pypinyin_available or self.lazy_pinyin is None:
             return text.lower()
             
         result = []
         for char in text:
             if '\u4e00' <= char <= '\u9fff':  # 中文字符
-                pinyin_list = lazy_pinyin(char, style=Style.NORMAL)
+                pinyin_list = self.lazy_pinyin(char, style=self.style.NORMAL)
                 if pinyin_list:
                     result.append(pinyin_list[0])
                 else:
@@ -43,16 +33,15 @@ class PinyinConverter:
         
         return ''.join(result)
     
-    @classmethod
-    def get_pinyin_initials(cls, text: str) -> str:
+    def get_pinyin_initials(self, text: str) -> str:
         """获取拼音首字母"""
-        if not text or not PYPINYIN_AVAILABLE or lazy_pinyin is None:
+        if not text or not self.pypinyin_available or self.lazy_pinyin is None:
             return ''.join(c for c in text.lower() if c.isalpha())
             
         result = []
         for char in text:
             if '\u4e00' <= char <= '\u9fff':  # 中文字符
-                pinyin_list = lazy_pinyin(char, style=Style.FIRST_LETTER)
+                pinyin_list = self.lazy_pinyin(char, style=self.style.FIRST_LETTER)
                 if pinyin_list:
                     result.append(pinyin_list[0])
                 else:
@@ -84,6 +73,12 @@ class WuxiePlayerTeleport(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
+        
+        # 初始化pypinyin相关变量
+        self.pypinyin_available = False
+        self.lazy_pinyin = None
+        self.style = None
+        self.pinyin_converter = None
         
         # 默认配置
         self.default_config = {
@@ -128,13 +123,32 @@ class WuxiePlayerTeleport(Plugin):
         # 获取聊天栏菜单API
         self.chatbar_menu = None
         
+    def _try_import_pypinyin(self):
+        """尝试导入pypinyin库"""
+        try:
+            from pypinyin import lazy_pinyin, Style
+            self.pypinyin_available = True
+            self.lazy_pinyin = lazy_pinyin
+            self.style = Style
+            return True
+        except ImportError:
+            self.pypinyin_available = False
+            return False
+
     def on_active(self):
         """插件激活时的初始化"""
         # 首先尝试导入pypinyin库
-        _try_import_pypinyin()
+        self._try_import_pypinyin()
+        
+        # 初始化拼音转换器
+        self.pinyin_converter = PinyinConverter(
+            self.pypinyin_available, 
+            self.lazy_pinyin, 
+            self.style
+        )
         
         # 检查并自动安装pypinyin库
-        if not PYPINYIN_AVAILABLE:
+        if not self.pypinyin_available:
             self.print("§e检测到pypinyin库未安装，正在尝试自动安装...")
             if self._auto_install_pypinyin():
                 self.print("§a拼音搜索功能已启用")
@@ -166,8 +180,6 @@ class WuxiePlayerTeleport(Plugin):
     
     def _auto_install_pypinyin(self) -> bool:
         """自动安装pypinyin库"""
-        global PYPINYIN_AVAILABLE, lazy_pinyin, Style
-        
         try:
             pip_support = self.GetPluginAPI("pip")
             if pip_support is None:
@@ -178,9 +190,16 @@ class WuxiePlayerTeleport(Plugin):
             pip_support.require("pypinyin")
             
             # 重新尝试导入
-            _try_import_pypinyin()
+            self._try_import_pypinyin()
             
-            if PYPINYIN_AVAILABLE:
+            # 重新初始化拼音转换器
+            self.pinyin_converter = PinyinConverter(
+                self.pypinyin_available, 
+                self.lazy_pinyin, 
+                self.style
+            )
+            
+            if self.pypinyin_available:
                 self.print("§a pypinyin库安装成功！")
                 return True
             else:
@@ -266,7 +285,7 @@ class WuxiePlayerTeleport(Plugin):
         player.show("§7   §aTips §7: §7输入 §fq §f可退出输入交互")
         player.show("§7 [§6TPA§7] §7支持模糊搜索玩家名:")
         player.show("§7   §e英文: §f.tpa ab §7→ §fAbc123")
-        if PYPINYIN_AVAILABLE:
+        if self.pypinyin_available:
             player.show("§7   §e拼音: §f.tpa zhang §7-> §f张三")
             player.show("§7   §e首字母: §f.tpa zs §7-> §f张三")
         else:
@@ -325,7 +344,7 @@ class WuxiePlayerTeleport(Plugin):
         
         # 调试信息
         self.print(f"§7[调试] 搜索词: {query}, 在线玩家: {online_players}")
-        self.print(f"§7[调试] pypinyin可用: {PYPINYIN_AVAILABLE}")
+        self.print(f"§7[调试] pypinyin可用: {self.pypinyin_available}")
         
         # 完全匹配 (最高优先级)
         exact_matches = [p for p in online_players if p.lower() == query]
@@ -351,8 +370,8 @@ class WuxiePlayerTeleport(Plugin):
                 continue
                 
             # 生成拼音相关信息
-            player_pinyin = PinyinConverter.to_pinyin(player)
-            player_initials = PinyinConverter.get_pinyin_initials(player)
+            player_pinyin = self.pinyin_converter.to_pinyin(player)
+            player_initials = self.pinyin_converter.get_pinyin_initials(player)
             
             # 调试信息
             self.print(f"§7[调试] 玩家 {player}: 拼音={player_pinyin}, 首字母={player_initials}")
@@ -629,7 +648,7 @@ class WuxiePlayerTeleport(Plugin):
         # 功能状态
         player.show("§7 功能状态:")
         player.show(f"§7   聊天栏菜单: {'§a已连接' if self.chatbar_menu else '§c未连接'}")
-        player.show(f"§7   拼音搜索: {'§a已启用' if PYPINYIN_AVAILABLE else '§c未启用'}")
+        player.show(f"§7   拼音搜索: {'§a已启用' if self.pypinyin_available else '§c未启用'}")
         
         # 统计信息
         active_requests = len(self.tpa_requests)
