@@ -402,7 +402,7 @@
     "item-maker": {
       "name": "物品制作器",
       "author": "SuperScript",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "入服欢迎": {
