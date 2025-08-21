@@ -1,9 +1,9 @@
 releases_str = """{
-  "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/229981719",
-  "assets_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/229981719/assets",
-  "upload_url": "https://uploads.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/229981719/assets{?name,label}",
-  "html_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/tag/RecoverTool-v0.2.1",
-  "id": 229981719,
+  "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/241479257",
+  "assets_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/241479257/assets",
+  "upload_url": "https://uploads.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/241479257/assets{?name,label}",
+  "html_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/tag/RecoverTool-v0.2.2",
+  "id": 241479257,
   "author": {
     "login": "github-actions[bot]",
     "id": 41898282,
@@ -25,19 +25,21 @@ releases_str = """{
     "user_view_type": "public",
     "site_admin": false
   },
-  "node_id": "RE_kwDOOm_Q8c4NtT4X",
-  "tag_name": "RecoverTool-v0.2.1",
+  "node_id": "RE_kwDOOm_Q8c4OZK5Z",
+  "tag_name": "RecoverTool-v0.2.2",
   "target_commitish": "main",
-  "name": "RecoverTool-v0.2.1",
+  "name": "RecoverTool-v0.2.2",
   "draft": false,
+  "immutable": false,
   "prerelease": false,
-  "created_at": "2025-07-04T09:30:10Z",
-  "published_at": "2025-07-04T09:31:36Z",
+  "created_at": "2025-08-21T11:25:45Z",
+  "updated_at": "2025-08-21T11:27:25Z",
+  "published_at": "2025-08-21T11:27:23Z",
   "assets": [
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920918",
-      "id": 269920918,
-      "node_id": "RA_kwDOOm_Q8c4QFqqW",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768292",
+      "id": 284768292,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgk",
       "name": "recover-tool_android_arm64",
       "label": "",
       "uploader": {
@@ -63,17 +65,17 @@ releases_str = """{
       },
       "content_type": "application/octet-stream",
       "state": "uploaded",
-      "size": 5767521,
-      "digest": "sha256:67d2e141a1df734ed50fc78350f041e85f92d0212bc263d2d7417c22d7fd262b",
+      "size": 6685025,
+      "digest": "sha256:8d30d75d9b84e9917e721e595122acd74c14c1aa54cda80802f49c83dc6e345d",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_android_arm64"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:24Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_android_arm64"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920919",
-      "id": 269920919,
-      "node_id": "RA_kwDOOm_Q8c4QFqqX",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768287",
+      "id": 284768287,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgf",
       "name": "recover-tool_linux_amd64",
       "label": "",
       "uploader": {
@@ -99,17 +101,17 @@ releases_str = """{
       },
       "content_type": "application/octet-stream",
       "state": "uploaded",
-      "size": 5394724,
-      "digest": "sha256:30aa94871a731d8bd9bf71f9a5b79d8da67661e4d9c86a8965d0dd9239a36a93",
+      "size": 6291748,
+      "digest": "sha256:f77fbf42e9bb900938ffa161edce750a217ecaed87744ada05999ee28ac6b9cb",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_linux_amd64"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:24Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_linux_amd64"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920917",
-      "id": 269920917,
-      "node_id": "RA_kwDOOm_Q8c4QFqqV",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768290",
+      "id": 284768290,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgi",
       "name": "recover-tool_linux_arm64",
       "label": "",
       "uploader": {
@@ -135,17 +137,17 @@ releases_str = """{
       },
       "content_type": "application/octet-stream",
       "state": "uploaded",
-      "size": 5243064,
-      "digest": "sha256:9eb983e354270cabc07c7efb63e08f3f842e1ae8fc0d70236f7144676c85684e",
+      "size": 6029496,
+      "digest": "sha256:1810a38c66339883ee7788db8acc6837f9ad53a99570057909be23cf633682c5",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_linux_arm64"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:24Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_linux_arm64"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920920",
-      "id": 269920920,
-      "node_id": "RA_kwDOOm_Q8c4QFqqY",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768291",
+      "id": 284768291,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgj",
       "name": "recover-tool_macos_amd64",
       "label": "",
       "uploader": {
@@ -171,17 +173,17 @@ releases_str = """{
       },
       "content_type": "application/octet-stream",
       "state": "uploaded",
-      "size": 5508208,
-      "digest": "sha256:87d5fed558336e24cdfcf8f963876cc6d00a4cf2b9c21fedb5225896c5b34a19",
+      "size": 6430880,
+      "digest": "sha256:49c30fde7892f23feb5d4146e4926bda44fe683be84089eedf655e74adcf0ccb",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_macos_amd64"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:25Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_macos_amd64"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920914",
-      "id": 269920914,
-      "node_id": "RA_kwDOOm_Q8c4QFqqS",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768293",
+      "id": 284768293,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgl",
       "name": "recover-tool_macos_arm64",
       "label": "",
       "uploader": {
@@ -207,17 +209,17 @@ releases_str = """{
       },
       "content_type": "application/octet-stream",
       "state": "uploaded",
-      "size": 5312066,
-      "digest": "sha256:314b06e2047794dd9911e1ca6b6073ab9de23e04acc8876bbb9f78cab31aa687",
+      "size": 6154818,
+      "digest": "sha256:80fabd5ac49eab8da28219cc7c59b475add7267bfe04e54f25b8d09349a7926b",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_macos_arm64"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:25Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_macos_arm64"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920915",
-      "id": 269920915,
-      "node_id": "RA_kwDOOm_Q8c4QFqqT",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768294",
+      "id": 284768294,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgm",
       "name": "recover-tool_windows_amd64.exe",
       "label": "",
       "uploader": {
@@ -243,17 +245,17 @@ releases_str = """{
       },
       "content_type": "application/x-msdos-program",
       "state": "uploaded",
-      "size": 5645824,
-      "digest": "sha256:49579f834c6006613713121dd96643c4881faa3c18b87b50a74bebf5537cc2c9",
+      "size": 6561280,
+      "digest": "sha256:7260144fc4560ce2df4457142018ad8f9076c9599c2a71c32b0e25f5b3975614",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_windows_amd64.exe"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:25Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_windows_amd64.exe"
     },
     {
-      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/269920921",
-      "id": 269920921,
-      "node_id": "RA_kwDOOm_Q8c4QFqqZ",
+      "url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/releases/assets/284768288",
+      "id": 284768288,
+      "node_id": "RA_kwDOOm_Q8c4Q-Tgg",
       "name": "recover-tool_windows_x86.exe",
       "label": "",
       "uploader": {
@@ -279,15 +281,15 @@ releases_str = """{
       },
       "content_type": "application/x-msdos-program",
       "state": "uploaded",
-      "size": 5275136,
-      "digest": "sha256:26fb8c68616698113030c14fa955b1e306779fd92ca36d0f60fd1f59f118ad29",
+      "size": 6108672,
+      "digest": "sha256:aeeaa76af598a00884896a5cc97d8bcac97225087ec9259d9db7d0e03689c4d2",
       "download_count": 0,
-      "created_at": "2025-07-04T09:31:37Z",
-      "updated_at": "2025-07-04T09:31:37Z",
-      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.1/recover-tool_windows_x86.exe"
+      "created_at": "2025-08-21T11:27:24Z",
+      "updated_at": "2025-08-21T11:27:25Z",
+      "browser_download_url": "https://github.com/TriM-Organization/bedrock-chunk-diff/releases/download/RecoverTool-v0.2.2/recover-tool_windows_x86.exe"
     }
   ],
-  "tarball_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/tarball/RecoverTool-v0.2.1",
-  "zipball_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/zipball/RecoverTool-v0.2.1",
-  "body": "Bump version to `0.2.1`"
+  "tarball_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/tarball/RecoverTool-v0.2.2",
+  "zipball_url": "https://api.github.com/repos/TriM-Organization/bedrock-chunk-diff/zipball/RecoverTool-v0.2.2",
+  "body": "Bump version to `0.2.2`"
 }"""
