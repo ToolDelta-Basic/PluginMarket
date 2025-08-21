@@ -15,6 +15,7 @@ from tooldelta import (
     plugin_entry,
     InternalBroadcast,
 )
+
 try:
     from tooldelta.utils.mc_translator import translate
 except ImportError:
@@ -95,7 +96,7 @@ def replace_cq(content: str):
 
 
 class QQLinker(Plugin):
-    version = (0, 0, 10)
+    version = (0, 0, 11)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -199,18 +200,8 @@ class QQLinker(Plugin):
                 else:
                     if translate is not None:
                         mjon = "\n".join(
-                            translate(
-                                i.Message,
-                                i.Parameters
-                            )
+                            translate(i.Message, i.Parameters)
                             for i in result.OutputMessages
-                        )
-                    elif game_text_handler := self.game_ctrl.game_data_handler:
-                        mjon = " ".join(
-                            json.loads(i)
-                            for i in game_text_handler.Handle_Text_Class1(
-                                result.as_dict["OutputMessages"]
-                            )
                         )
                     if result.SuccessCount:
                         if translate is not None:
@@ -267,13 +258,14 @@ class QQLinker(Plugin):
         self.add_trigger(
             ["/"], "[指令]", "向租赁服发送指令", sb_execute_cmd, op_only=True
         )
-        self.add_trigger(
-            ["list", "玩家列表"],
-            None,
-            "查看玩家列表",
-            lambda _, _2: send_player_list(),
-        )
         self.add_trigger(["help", "帮助"], None, "查看群服互通帮助", lookup_help)
+        if self.enable_playerlist:
+            self.add_trigger(
+                ["list", "玩家列表"],
+                None,
+                "查看玩家列表",
+                lambda _, _2: send_player_list(),
+            )
 
     @utils.thread_func("云链群服连接进程")
     def connect_to_websocket(self):
