@@ -53,7 +53,7 @@ class WorldBackupMain:
     def on_def(self) -> None:
         global chunkdiff, bwo
         _ = self.plugin().GetPluginAPI("世界の记忆", (0, 1, 3))
-        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 2, 1))
+        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 4, 2))
 
         pip = self.plugin().GetPluginAPI("pip")
         if 0:
