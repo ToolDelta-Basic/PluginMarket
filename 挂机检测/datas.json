@@ -2,7 +2,7 @@
   "author": "衍",
   "version": "0.0.1",
   "plugin-type": "classic",
-  "description": "更加安全的兑换码 支持自定义密钥每个人都插件都是独一无二的",
+  "description": "检测挂机玩家并踢出",
   "pre-plugins": {},
   "plugin-id": "114514",
   "enabled": true

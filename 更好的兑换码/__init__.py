@@ -2,6 +2,8 @@ from tooldelta import plugin_entry, Plugin, ToolDelta, Chat, utils, game_utils, 
 from tooldelta.utils import tempjson
 import binascii
 import zlib
+import msgpack
+import brotli
 import os
 import json
 
@@ -50,7 +52,7 @@ class NewPlugin(Plugin):
 
     def Preload(self):
         global AES, get_random_bytes, pad, unpad
-        self.GetPluginAPI("pip").require({"cffi": "cffi", "pycryptodome": "Crypto"})
+        self.GetPluginAPI("pip").require({"cffi": "cffi", "pycryptodome": "Crypto", "msgpack": "msgpack"})
 
         from Crypto.Cipher import AES
         from Crypto.Random import get_random_bytes
@@ -74,12 +76,12 @@ class NewPlugin(Plugin):
     def add_exchange_code(self, List: list[str]):
         dick = dick = {
             "id": int,  # 用于判断这个对话那么是否被使用过
-            "get_item": [],  # 给予使用兑换码的人物品(物品名字 数量 特殊值)
-            "get_tag_add": [],  # 给予使用兑换码的人标签
-            "get_tag_remove": [],  # 删除使用兑换码的人标签
-            "get_command": [],  # 对使用兑换码的人给予指令(execute用不了)
-            "get_command_freedom": [],  # 使用兑换码后会发送的指令
-            "get_structure": [],  # 对使用兑换码的人生成一个结构
+            #"get_item": [],  # 给予使用兑换码的人物品(物品名字 数量 特殊值)
+            #"get_tag_add": [],  # 给予使用兑换码的人标签
+            #"get_tag_remove": [],  # 删除使用兑换码的人标签
+            #"get_command": [],  # 对使用兑换码的人给予指令(execute用不了)
+            #"get_command_freedom": [],  # 使用兑换码后会发送的指令
+            #"get_structure": [],  # 对使用兑换码的人生成一个结构
         }
         while True:
             # dick['id'] = self.id
@@ -88,48 +90,54 @@ class NewPlugin(Plugin):
             )
             match age:
                 case "1":
+                    if "get_item" not in dick:
+                        dick["get_item"] = []
                     name = input("输入物品名称(英文名): ")
                     num = input("输入物品数量: ")
                     data = input("输入物品特殊值: ")
                     dick["get_item"].append({"name": name, "age": num, "data": data})
 
                 case "2":
+                    if "get_tag_add" not in dick:
+                        dick["get_tag_add"] = []
                     tag = input("输入要添加的标签: ")
                     dick["get_tag_add"].append(tag)
                 case "3":
+                    if "get_tag_remove" not in dick:
+                        dick["get_tag_remove"] = []
                     tag = input("输入要删除的标签: ")
                     dick["get_tag_remove"].append(tag)
                 case "4":
+                    if "get_command" not in dick:
+                        dick["get_command"] = []
                     command1 = input("输入要前缀指令(如tp, tag, gamemode): ")
                     command2 = input("输入要后缀缀指令(如xyz): ")
                     dick["get_command"].append(
                         {"command1": command1, "command2": command2}
                     )
                 case "5":
+                    if "get_command_freedom" not in dick:
+                        dick["get_command_freedom"] = []
                     command = input("输入要执行的完整指令: ")
                     dick["get_command_freedom"].append(command)
                 case "6":
+                    if "get_structure" not in dick:
+                        dick["get_structure"] = []
                     structure = input("输入要生成的结构名称: ")
                     dick["get_structure"].append(structure)
                 case "7":
-                    dick = dick = {
+                    dick = {
                         "id": int,  # 用于判断这个对话那么是否被使用过
-                        "get_item": [],  # 给予使用兑换码的人物品(物品名字 数量 特殊值)
-                        "get_tag_add": [],  # 给予使用兑换码的人标签
-                        "get_tag_remove": [],  # 删除使用兑换码的人标签
-                        "get_command": [],  # 对使用兑换码的人给予指令(execute用不了)
-                        "get_command_freedom": [],  # 使用兑换码后会发送的指令
-                        "get_structure": [],  # 对使用兑换码的人生成一个结构
                     }
                     fmts.print_inf("兑换码内容已重置")
                 case "8":
                     num = input("输入要生成的兑换码数量(空着默认是1): ")
                     if num == "":
-                        dick["id"] = self.id
                         self.id += 1
-                        dick_str = json.dumps(dick)
-                        dick_zlib = zlib.compress(dick_str.encode(), level=9)
-                        dick_ = aes_Encrypt(dick_zlib.hex(), self.key)
+                        dick["id"] = self.id
+                        dick_msgpack = msgpack.packb(dick)
+                        dick_brotli = brotli.compress(dick_msgpack, quality=11)
+                        dick_ = aes_Encrypt(dick_brotli.hex(), self.key)
                         dick_n = convert_chars(dick_)
                         fmts.print_inf(f"兑换码：{dick_n}")
                         fmts.print_inf(f"已经存储进兑换码历史记录里面json里面")
@@ -142,18 +150,15 @@ class NewPlugin(Plugin):
                         for i in range(int(num)):
                             self.id += 1
                             dick["id"] = self.id
-                            dick_str = json.dumps(dick)
-                            dick_zlib = zlib.compress(dick_str.encode(), level=9)
-                            dick_ = aes_Encrypt(dick_zlib.hex(), self.key)
+                            dick_msgpack = msgpack.packb(dick)
+                            dick_brotli = brotli.compress(dick_msgpack, quality=11)
+                            dick_ = aes_Encrypt(dick_brotli.hex(), self.key)
                             dick_n = convert_chars(dick_)
                             List.append(dick_n)
                         fmts.print_inf(f"兑换码：{List}")
                         fmts.print_inf("已经存储进兑换码历史记录里面json里面")
                         with open('兑换码历史记录.txt', 'a', encoding='utf-8') as f:
                             f.write(f'{List}\n')
-                        tempjson.load_and_write(
-                            "兑换码历史记录.json", f"{List}\n", False
-                        )
                         tempjson.unload_to_path("兑换码历史记录.json")
                         return
                 case "9":
@@ -176,24 +181,24 @@ class NewPlugin(Plugin):
                     return
                 data_map = convert_chars(data, reverse=True)
                 data_Decrypt = aes_Decrypt(data_map, self.key)
-                data_zlib = zlib.decompress(data_Decrypt, wbits=15)
-                json_data = json.loads(data_zlib.decode())
-                fmts.print_suc(f"兑换码内容：{json_data}")
-                if type(json_data) == dict:
+                data_brotli = brotli.decompress(data_Decrypt)
+                data_msgpack = msgpack.unpackb(data_brotli)
+                fmts.print_suc(f"兑换码内容：{data_msgpack}")
+                if type(data_msgpack) == dict:
                     id_list = tempjson.load_and_read(
                         "插件配置文件/兑换码已使用列表.json", default=[]
                     )
-                    if "id" in json_data:
-                        if not json_data["id"] in id_list:
+                    if "id" in data_msgpack:
+                        if not data_msgpack["id"] in id_list:
                             fmts.print_inf(f"玩家{player.name}使用了兑换码")
-                            id_list.append(json_data["id"])
+                            id_list.append(data_msgpack["id"])
                             tempjson.write(
                                 "插件配置文件/兑换码已使用列表.json", id_list
                             )
                             tempjson.unload_to_path(
                                 "插件配置文件/兑换码已使用列表.json"
                             )
-                            self.parsing(json_data, player.name, player_pos)
+                            self.parsing(data_msgpack, player.name, player_pos)
                             self.game_ctrl.player_title(player.name, "兑换成功")
                         else:
                             fmts.print_war(
@@ -236,8 +241,10 @@ class NewPlugin(Plugin):
                         self.game_ctrl.sendcmd(f"/{i}")
                 elif key == "get_structure":
                     for i in data[key]:
+                        print(i)
+                        print(player_pos)
                         self.game_ctrl.sendcmd(
-                            f"/structure load {i} {player_pos['x']} {player_pos['y']} {player_pos['z']}"
+                            f"/structure load {i} {player_pos['position']['x']} {player_pos['position']['y']} {player_pos['position']['z']}"
                         )
         except Exception as e:
             fmts.print_err("指令出现错误")
