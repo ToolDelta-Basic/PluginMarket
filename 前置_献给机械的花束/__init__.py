@@ -10,7 +10,7 @@ from tooldelta import Plugin, Frame, plugin_entry
 class FlowersForMachine(Plugin):
     name = "献给机械の花束"
     author = "2B, 9S and 6O"
-    version = (1, 2, 5)
+    version = (1, 2, 6)
 
     _base: FlowersForMachineBase
     _server_running: FlowersForMachineServerRunning
