@@ -9,7 +9,7 @@ class BDX_BDump(Plugin):
     def __init__(self, _):
         raise Exception(
             "bdx导入器Pro: 此组件现已弃用, 请前往 https://github.com/TriM-Organization/merry-memory/releases/latest "
-            + "获取 BDX 到 mcworld (存档) s的转换器, 然后使用 [简单世界导入] 插件导入转换所得产物"
+            + "获取 BDX 到 mcworld (存档) 的转换器, 然后使用 [简单世界导入] 插件导入转换所得产物"
         )
 
 
