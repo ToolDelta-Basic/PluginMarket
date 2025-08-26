@@ -1,5 +1,5 @@
 {
-    "author": "Q3CC & Claude", 
+    "author": "Q3CC", 
     "version": "1.0.0",
     "plugin-type": "classic",
     "description": "将mcfunction文件导入为游戏内指令方块链，支持自定义延展方向和尺寸",
