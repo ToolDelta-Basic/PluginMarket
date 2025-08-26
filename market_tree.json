@@ -612,7 +612,7 @@
     "bdx-builder-pro": {
       "name": "bdx导入器Pro",
       "author": "SuperScript",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "plugin-type": "classic"
     },
     "TD-ZBasic": {

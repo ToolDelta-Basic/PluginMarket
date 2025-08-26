@@ -733,13 +733,8 @@
         "__init__.py"
     ],
     "bdx导入器Pro": [
-        "bdx_operation.py",
         "datas.json",
-        "libbdxbuilder_linux_amd64.so",
-        "thisutils.py",
-        "lib.py",
-        "__init__.py",
-        "libbdxbuilder_windows_amd64.dll"
+        "__init__.py"
     ],
     "ZBasic_Lang_中文编程": [
         "syntax_lib.py",
