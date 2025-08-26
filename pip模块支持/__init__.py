@@ -22,13 +22,15 @@ class PipSupport(Plugin):
         pyexec = sys.executable
         if "py" not in pyexec:
             # 这不是 Python, 是 ToolDelta
-            install_opts = ["pip", "install", "--target", self.data_path, *packages]
+            install_opts = ["pip", "install", "-i", "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple", "--target", self.data_path, *packages]
         else:
             install_opts = [
                 sys.executable,
                 "-m",
                 "pip",
                 "install",
+                "-i",
+                "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple",
                 "--target",
                 self.data_path,
                 *packages,
