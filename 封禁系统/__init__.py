@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 7)
+    version = (1, 0, 8)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -399,6 +399,10 @@ class BanSystem(Plugin):
             )
             self.game_ctrl.sendwocmd(
                 f"kick {xuid} {self.format_msg(playername, ban_to, ban_reason, '踢出玩家提示格式')}"
+            )
+            # if not kicked
+            self.game_ctrl.sendwocmd(
+                f'kick "{playername}" {self.format_msg(playername, ban_to, ban_reason, "踢出玩家提示格式")}'
             )
             self.game_ctrl.say_to(
                 "@a",
