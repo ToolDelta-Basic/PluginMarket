@@ -15,7 +15,7 @@ from tooldelta.utils import fmts
 class WorldBackup(Plugin):
     name = "世界备份"
     author = "YoRHa and RATH"
-    version = (0, 1, 1)
+    version = (0, 1, 2)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -49,7 +49,7 @@ class WorldBackup(Plugin):
 
     def on_def(self):
         global bwo, bsdiff4, xxhash
-        _ = self.GetPluginAPI("世界の记忆", (0, 1, 1))
+        _ = self.GetPluginAPI("世界の记忆", (0, 1, 3))
 
         pip = self.GetPluginAPI("pip")
         if 0:

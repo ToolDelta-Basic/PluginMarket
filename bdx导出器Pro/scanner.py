@@ -50,12 +50,13 @@ def get_and_load_structure(
     while get_structure_retries < 10:
         try:
             r = sys.intr._request_structure_and_get((x, y, z), (sizex, sizey, sizez))
+            lib.LoadStructure(r, relative_x, absolute_y, relative_z)
             break
         except ValueError as err:
             if tp:
                 sys.game_ctrl.sendwocmd(f"tp @a[tag=robot] {x} 0 {z}")
             get_structure_retries += 1
-            if get_structure_retries > 10:
+            if get_structure_retries >= 10:
                 fmts.print_err("获取结构失败, 最大重试次数已超过")
                 raise
             else:
@@ -64,7 +65,6 @@ def get_and_load_structure(
         f"正在解析 {progress_text}         ",
         end="\r",
     )
-    lib.LoadStructure(r, relative_x, absolute_y, relative_z)
     fmts.print_inf(
         f"解析完成 {progress_text}         ",
         end="\r",

@@ -31,7 +31,7 @@ class AntiInfiniteBlockBase:
         self.nbt_unmarshal: Callable[[BytesIO], Any] | None = None
 
     def on_def(self):
-        _ = self.plugin.GetPluginAPI("世界の记忆", (0, 1, 1))
+        _ = self.plugin.GetPluginAPI("世界の记忆", (0, 1, 3))
         game_interact: "GameInteractive" = self.plugin.GetPluginAPI(
             "前置-世界交互", (2, 0, 0)
         )

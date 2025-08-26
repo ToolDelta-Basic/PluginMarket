@@ -17,7 +17,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 2, 1)
+    version = (0, 2, 2)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -44,7 +44,7 @@ class SimpleWorldImport(Plugin):
         global bwo, nbtlib, FlowersForMachine
 
         pip = self.GetPluginAPI("pip")
-        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 0, 0))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 2, 4))
 
         if 0:
             from pip模块支持 import PipSupport

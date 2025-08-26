@@ -56,9 +56,9 @@ class AutoSubChunkRequestSubChunkProcess:
         pending_blob_hash: list[HashWithPosition] = []
 
         # unloaded_sub_chunk holds a list that contains some failed sub chunk
-        # entries. These sub chunk failed is because of server has not loaded
-        # them, and will be load in the future.
-        # Therefore, we need to record these entires and reset packet.SubChunkRequest
+        # entries. These sub chunks failed due to  server has not loaded them,
+        # and will be load in the future.
+        # Therefore, we need to record these entires and resend packet.SubChunkRequest
         # to reget them.
         unloaded_sub_chunk: list[SubChunkPos] = []
 
@@ -101,7 +101,7 @@ class AutoSubChunkRequestSubChunkProcess:
                         b"",
                     )
                 # Or, this sub chunk is not loaded, and waiting server to load them.
-                # Therefore, we add to unloaded sub chunk list, and them reget them
+                # Therefore, we add to unloaded sub chunk list, and then reget them
                 # in a single packet.SubChunkRequest packet.
                 else:
                     unloaded_sub_chunk.append(

@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "plugin-type": "classic",
   "description": "导入bdx文件 (目前支持导入命令方块指令, 暂不支持导入NBT)",
   "pre-plugins": {

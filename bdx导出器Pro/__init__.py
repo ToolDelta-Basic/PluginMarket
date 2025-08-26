@@ -34,7 +34,7 @@ def get_op_pos(allplayers: list[str]):
 class BDXExporter(Plugin):
     name = "bdx导出器Pro"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)

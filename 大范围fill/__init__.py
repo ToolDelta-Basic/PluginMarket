@@ -4,6 +4,7 @@
 该插件提供了大范围方块填充功能，支持设置起点、终点坐标，
 并能够自动分块进行大区域的方块填充操作。
 """
+
 from tooldelta import Plugin, utils, fmts, game_utils, TYPE_CHECKING, plugin_entry
 
 
@@ -24,7 +25,7 @@ class LargeFill(Plugin):
         self.ex: float | None = None
         self.ey: float | None = None
         self.ez: float | None = None
-        self.chatbar = None
+        self.chatbar: ChatbarMenu
 
         self.ListenPreload(self.on_def)
 
@@ -43,7 +44,7 @@ class LargeFill(Plugin):
             ["llfill"],
             "[起点x] [起点y] [起点z] [终点x] [终点y] [终点z] [方块ID]",
             "单命令快捷大范围填充",
-            self.on_quick_fill
+            self.on_quick_fill,
         )
         self.frame.add_console_cmd_trigger(
             ["lfpos"], None, "获取所有人的坐标", self.get_all_pos
@@ -58,6 +59,7 @@ class LargeFill(Plugin):
             )
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         if TYPE_CHECKING:
+            global ChatbarMenu
             from 前置_聊天栏菜单 import ChatbarMenu
 
             self.chatbar: ChatbarMenu
@@ -99,9 +101,7 @@ class LargeFill(Plugin):
             fmts.print_err("参数错误，需要7个参数：起点x y z 终点x y z 方块ID")
             return
         try:
-            start_x, start_y, start_z, end_x, end_y, end_z = (
-                int(i) for i in args[:6]
-            )
+            start_x, start_y, start_z, end_x, end_y, end_z = (int(i) for i in args[:6])
             block_id = args[6]
         except ValueError:
             fmts.print_err("坐标参数必须为整数")
@@ -168,15 +168,13 @@ class LargeFill(Plugin):
                         end="\r",
                     )
                     self.game_ctrl.sendwscmd_with_resp(
-                        f"tp @a[name={self.game_ctrl.bot_name}] "
-                        f"{nowx} {nowy} {nowz}"
+                        f"tp @a[name={self.game_ctrl.bot_name}] {nowx} {nowy} {nowz}"
                     )
                     max_x = min(nowx + 31, ex)
                     max_y = min(nowy + 31, ey)
                     max_z = min(nowz + 31, ez)
                     self.game_ctrl.sendwscmd_with_resp(
-                        f"fill {nowx} {nowy} {nowz} {max_x} {max_y} {max_z} "
-                        f"{fillblock_id}"
+                        f"fill {nowx} {nowy} {nowz} {max_x} {max_y} {max_z} {fillblock_id}"
                     )
                     fmts.print_inf(
                         f"大范围填充: 已填充 {nowx}, {nowy}, {nowz} 区域     ",
@@ -188,9 +186,7 @@ class LargeFill(Plugin):
                 nowx += 32
             nowx = sx
             nowz += 32
-        fmts.print_suc(
-            f"大范围填充已完成: ({sx}, {sy}, {sz}) -> ({ex}, {ey}, {ez})"
-        )
+        fmts.print_suc(f"大范围填充已完成: ({sx}, {sy}, {sz}) -> ({ex}, {ey}, {ez})")
 
     def getpos_start(self):
         """获取起点坐标"""

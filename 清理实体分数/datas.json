@@ -1,0 +1,9 @@
+{
+  "author": "ZTAI",
+  "version": "1.0.0",
+  "plugin-type": "classic",
+  "description": "清理不可使用指令删除的实体记分项",
+  "pre-plugins": {},
+  "plugin-id": "resetscore",
+  "enabled": true
+}
