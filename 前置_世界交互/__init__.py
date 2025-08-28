@@ -29,7 +29,9 @@ class GameInteractive(Plugin):
         )
 
     def on_def(self):
-        global numpy, nbtlib, Structure, make_uuid_safe_string, UnMarshalBufferToPythonNBTObject
+        global numpy, nbtlib
+        global Block, Structure
+        global make_uuid_safe_string, UnMarshalBufferToPythonNBTObject
         pip = self.GetPluginAPI("pip")
 
         if 0:
@@ -44,8 +46,9 @@ class GameInteractive(Plugin):
         from bedrockworldoperator.utils.unmarshalNBT import (
             UnMarshalBufferToPythonNBTObject,
         )
-        from .structure import Structure
+        from .structure import Structure, Block
         from .safe_uuid import make_uuid_safe_string
+        self.Block = Block
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -209,7 +212,7 @@ class GameInteractive(Plugin):
 
     def _request_structure_and_get(
         self, position: tuple[int, int, int], size: tuple[int, int, int], timeout=5.0
-    ) -> BaseBytesPacket:
+    ) -> StructureTemplateDataResponse:
         structure_name = "mystructure:" + make_uuid_safe_string(uuid.uuid4())
 
         getter, setter = utils.create_result_cb()
@@ -237,7 +240,7 @@ class GameInteractive(Plugin):
         self.game_ctrl.sendPacket(PacketIDS.IDStructureTemplateDataRequest, pk)
 
         resp = getter(timeout)
-        if not isinstance(resp, BaseBytesPacket):
+        if not isinstance(resp, StructureTemplateDataResponse):
             raise ValueError(f"无法获取 {position} 的 {size} 结构")
         return resp
 
