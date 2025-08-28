@@ -233,6 +233,14 @@
         "__init__.py",
         "datas.json"
     ],
+    "[SilverWolf] 指令区工程导入导出": [
+        "dumper.py",
+        "__init__.py",
+        "file.py",
+        "loader.py",
+        "datas.json",
+        "define.py"
+    ],
     "签到系统": [
         "__init__.py",
         "datas.json"
