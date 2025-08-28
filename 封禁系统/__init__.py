@@ -64,7 +64,7 @@ class BanData:
 class BanSystem(Plugin):
     name = "封禁系统"
     author = "SuperScript"
-    version = (1, 0, 8)
+    version = (1, 0, 9)
     description = "便捷美观地封禁玩家, 同时也是一个前置插件"
 
     def __init__(self, frame):
@@ -297,7 +297,7 @@ class BanSystem(Plugin):
             )
 
     def on_qq_unban(self, qqid: int, _):
-        all_ban_player_xuids = os.listdir(self.data_path)
+        all_ban_player_xuids = os.listdir(self.data_path / "封禁数据")
         all_ban_playernames: list[tuple[str, str]] = []
         for i in all_ban_player_xuids:
             xuid = i.replace(".json", "")
@@ -317,7 +317,7 @@ class BanSystem(Plugin):
         resp = utils.try_int(self.qqlink.waitMsg(qqid))
         if resp and resp in range(1, len(all_ban_playernames) + 1):
             unban_player = all_ban_playernames[resp - 1][0]
-            self.del_ban_data(all_ban_playernames[resp - 1][0])
+            self.del_ban_data(all_ban_playernames[resp - 1][1])
             self.qqlink.sendmsg(
                 self.qqlink.linked_group, f"解封成功: 已解封 {unban_player}"
             )
@@ -399,10 +399,6 @@ class BanSystem(Plugin):
             )
             self.game_ctrl.sendwocmd(
                 f"kick {xuid} {self.format_msg(playername, ban_to, ban_reason, '踢出玩家提示格式')}"
-            )
-            # if not kicked
-            self.game_ctrl.sendwocmd(
-                f'kick "{playername}" {self.format_msg(playername, ban_to, ban_reason, "踢出玩家提示格式")}'
             )
             self.game_ctrl.say_to(
                 "@a",
