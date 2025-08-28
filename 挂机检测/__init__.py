@@ -66,10 +66,10 @@ class NewPlugin(Plugin):
         # 获取玩家坐标然后存起来用以下次判断时执行
         for id in name_list:
             if id != self.bot:
-                player_pos = game_utils.getPosXYZ(id)
-                self.player_list[id] = [{"x": player_pos[0], "y": player_pos[1], "z": player_pos[2]}, self.s]
+                player_pos = game_utils.getPos(id)
+                self.player_list[id] = [{"x": player_pos["position"]["x"], "y": player_pos["position"]["y"], "z": player_pos["position"]["z"], "yRot": player_pos["yRot"]}, self.s]
 
-        threading.Timer(self.s, self.time_list).start()
+        # threading.Timer(self.s, self.time_list).start()
         fmts.print_suc(self.player_list)
         self.time_list()
 
@@ -83,8 +83,9 @@ class NewPlugin(Plugin):
 
     def on_player_join(self, player: Player):
         # 玩家进入服务器在字典内创建一个值
-        data = game_utils.getPosXYZ(player.name)
-        self.player_list[player.name] = [{"x": data[0], "y": data[1], "z": data[2]}, self.s]
+
+        data = game_utils.getPos(player.name)
+        self.player_list[player.name] = [{"x": data["position"]["x"], "y": data["position"]["y"], "z": data["position"]["z"], "yRot": data["yRot"]}, self.s]
         fmts.print_suc(self.player_list)
 
     #utils.timer_events.timer_events_clear()
@@ -104,17 +105,18 @@ class NewPlugin(Plugin):
                 if dict_list[i][1] == 0:
                     dict_list[i][1] = self.s
                     name = i
-                    pos = game_utils.getPosXYZ(name)
-                    if dict_list[i][0]['x'] == pos[0] and dict_list[i][0]['y'] == pos[1] and dict_list[i][0]['z'] == pos[2]:
+                    pos = game_utils.getPos(name)
+                    if dict_list[i][0]["x"] == pos["position"]["x"] and dict_list[i][0]["y"] == pos["position"]["y"] and dict_list[i][0]["z"] == pos["position"]["z"] and dict_list[i][0]["yRot"] == pos["yRot"]:
                         fmts.print_suc(f"玩家{name}长时间挂机")
                         xuid = self.xuid_getter.get_xuid_by_name(name)
                         game_utils.sendcmd(f'/kick {xuid} {self.say}')
                     else:
-                        dict_list[i] = [{"x": pos[0], "y": pos[1], "z": pos[2]}, self.s]
+                        dict_list[i] = [{"x": pos["position"]["x"], "y": pos["position"]["y"], "z": pos["position"]["z"], "yRot": pos["yRot"]}, self.s]
             # 重新赋值回去
             self.player_list = dict_list
-        except:
-            fmts.print_err(f"出现未知错误")
+        except Exception as e:
+            fmts.print_err(f"出现未知错误:{e}")
+
 
 
 

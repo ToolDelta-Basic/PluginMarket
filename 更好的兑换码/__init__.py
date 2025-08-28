@@ -74,7 +74,7 @@ class NewPlugin(Plugin):
             fmts.print_load("错误的密钥模式请更改不然会出现错误")
 
     def add_exchange_code(self, List: list[str]):
-        dick = dick = {
+        dick = {
             "id": int,  # 用于判断这个对话那么是否被使用过
             #"get_item": [],  # 给予使用兑换码的人物品(物品名字 数量 特殊值)
             #"get_tag_add": [],  # 给予使用兑换码的人标签
@@ -84,7 +84,6 @@ class NewPlugin(Plugin):
             #"get_structure": [],  # 对使用兑换码的人生成一个结构
         }
         while True:
-            # dick['id'] = self.id
             age = input(
                 "1.给予物品(give)\n2.给予标签(tag)\n3.删除标签(tag)\n4.给予指令(选择器固定为玩家本人)\n5.自由指令(自己随便写指令)\n6.生成结构(在玩家的坐标位置生成一个结构)\n7.重置兑换码\n8.生成兑换码\n9.结束\n请选择兑换码会涵盖的内容:"
             )
@@ -189,15 +188,14 @@ class NewPlugin(Plugin):
                         "插件配置文件/兑换码已使用列表.json", default=[]
                     )
                     if "id" in data_msgpack:
+                        print(data_msgpack["id"])
+                        print(type(data_msgpack["id"]))
                         if not data_msgpack["id"] in id_list:
                             fmts.print_inf(f"玩家{player.name}使用了兑换码")
                             id_list.append(data_msgpack["id"])
-                            tempjson.write(
-                                "插件配置文件/兑换码已使用列表.json", id_list
-                            )
-                            tempjson.unload_to_path(
-                                "插件配置文件/兑换码已使用列表.json"
-                            )
+                            with open('插件配置文件/兑换码已使用列表.json', 'w', encoding='utf-8') as f:
+                                f.write(f"{id_list}")
+
                             self.parsing(data_msgpack, player.name, player_pos)
                             self.game_ctrl.player_title(player.name, "兑换成功")
                         else:
@@ -215,6 +213,8 @@ class NewPlugin(Plugin):
             except Exception as e:
                 fmts.print_err("信息无法被转换成字典")
                 player.show("你输入了未知信息")
+        else:
+            return
 
     @utils.thread_func("每次被调用都生成一个新的线程")
     def parsing(self, data: dict, player_name: str, player_pos: dict):
