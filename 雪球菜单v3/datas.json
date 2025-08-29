@@ -10,5 +10,6 @@
     "Cb2Bot通信": "0.0.1"
   },
   "limit_launcher": null,
-  "plugin-id": "雪球菜单v2"
+  "plugin-id": "雪球菜单v2",
+  "enabled": true
 }
