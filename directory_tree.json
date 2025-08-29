@@ -741,6 +741,12 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "简单世界导出": {
+        "readme.txt": 0,
+        "__init__.py": 0,
+        "uuid_safe_string.py": 0,
+        "datas.json": 0
+    },
     "[pkg]音乐杂合包": {
         "插件数据文件": {
             "点歌台": {

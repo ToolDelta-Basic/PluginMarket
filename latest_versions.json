@@ -51,7 +51,7 @@
   "fast-upgrade-plugins": "0.0.1",
   "计分板重置": "0.0.1",
   "头衔系统": "0.0.3",
-  "前置-世界交互": "2.0.5",
+  "前置-世界交互": "2.0.6",
   "home-point-setter": "0.0.2",
   "bdx-exporter": "0.1.0",
   "单方块空岛系统": "0.0.1",
@@ -118,5 +118,6 @@
   "reportsystem": "0.0.2",
   "插件接口获取修复": "0.0.1",
   "demo-plugin-shop-pro": "0.0.2",
-  "resetscore": "1.0.0"
+  "resetscore": "1.0.0",
+  "simple-bedworld-export": "0.0.1"
 }

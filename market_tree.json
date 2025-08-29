@@ -318,7 +318,7 @@
     "前置-世界交互": {
       "name": "前置_世界交互",
       "author": "SuperScript and Happy2018new",
-      "version": "2.0.5",
+      "version": "2.0.6",
       "plugin-type": "classic"
     },
     "home-point-setter": {
@@ -721,6 +721,12 @@
       "name": "清理实体分数",
       "author": "ZTAI",
       "version": "1.0.0",
+      "plugin-type": "classic"
+    },
+    "simple-bedworld-export": {
+      "name": "简单世界导出",
+      "author": "YoRHa",
+      "version": "0.0.1",
       "plugin-type": "classic"
     }
   },
