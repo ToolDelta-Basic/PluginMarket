@@ -88,19 +88,21 @@ class HoloPsychon(Plugin):
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-
-        pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+
+        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
+
+        pip = self.GetPluginAPI("pip")
         pip.require({"xxhash": "xxhash"})
 
         if self.need_upgrade_bwo():
             pip.upgrade("bedrock-world-operator")
             self.save_bwo_version()
+        else:
+            pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
         import bedrockworldoperator as bwo
         import xxhash

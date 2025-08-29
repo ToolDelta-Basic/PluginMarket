@@ -52,18 +52,20 @@ class WorldBackupMain:
 
     def on_def(self) -> None:
         global chunkdiff, bwo
+        if 0:
+            pip: PipSupport
+
         _ = self.plugin().GetPluginAPI("世界の记忆", (0, 1, 3))
         _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 4, 2))
 
         pip = self.plugin().GetPluginAPI("pip")
-        if 0:
-            pip: PipSupport
-        pip.require({"bedrock-chunk-diff": "bedrockchunkdiff"})
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
         if self.need_upgrade_chunkdiff():
             pip.upgrade("bedrock-chunk-diff")
-        self.save_chunkdiff_version()
+            self.save_chunkdiff_version()
+        else:
+            pip.require({"bedrock-chunk-diff": "bedrockchunkdiff"})
 
         import bedrockchunkdiff as chunkdiff
         import bedrockworldoperator as bwo

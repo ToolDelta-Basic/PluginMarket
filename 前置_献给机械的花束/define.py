@@ -90,17 +90,17 @@ class FlowersForMachineBase:
         tempjson.flush(version_path)
 
     def on_def(self):
-        pip = self.plugin.GetPluginAPI("pip")
-
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
+        pip = self.plugin.GetPluginAPI("pip")
         if self.need_upgrade_bwo():
             pip.upgrade("bedrock-world-operator")
             self.save_bwo_version()
+        else:
+            pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
         import bedrockworldoperator as bwo
         from bedrockworldoperator.utils.marshalNBT import MarshalPythonNBTObjectToWriter
