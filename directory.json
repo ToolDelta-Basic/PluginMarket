@@ -228,6 +228,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "雪球菜单v3": [
+        "__init__.py",
+        "datas.json"
+    ],
     "任务系统": [
         "readme.txt",
         "__init__.py",
@@ -712,10 +716,6 @@
         "datas.json"
     ],
     "插件接口获取修复": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "雪球菜单": [
         "__init__.py",
         "datas.json"
     ],

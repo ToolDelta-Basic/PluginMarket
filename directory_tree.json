@@ -237,6 +237,10 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "雪球菜单v3": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "任务系统": {
         "readme.txt": 0,
         "__init__.py": 0,
@@ -725,10 +729,6 @@
         "datas.json": 0
     },
     "插件接口获取修复": {
-        "__init__.py": 0,
-        "datas.json": 0
-    },
-    "雪球菜单": {
         "__init__.py": 0,
         "datas.json": 0
     },
