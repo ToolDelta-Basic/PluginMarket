@@ -15,7 +15,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 5)
+    version = (2, 0, 6)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -48,6 +48,7 @@ class GameInteractive(Plugin):
         )
         from .structure import Structure, Block
         from .safe_uuid import make_uuid_safe_string
+
         self.Block = Block
 
     def on_inject(self):

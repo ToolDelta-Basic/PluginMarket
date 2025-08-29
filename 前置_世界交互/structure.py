@@ -79,10 +79,10 @@ class Structure:
 
         # Then, we can start to init the block matrix and block palette
         self._block_matrix_0 = numpy.array(
-            structure["block_indices"][0], dtype=numpy.int16
+            structure["block_indices"][0], dtype=numpy.int32
         )
         self._block_matrix_1 = numpy.array(
-            structure["block_indices"][1], dtype=numpy.int16
+            structure["block_indices"][1], dtype=numpy.int32
         )
         self._palette = [
             BlockLayer(i["name"], i["states"], i["val"], i["version"])
@@ -145,3 +145,42 @@ class Structure:
 
         # Return
         return Block(fore_ground, back_ground, entity_data)
+
+    def block_palette(self) -> list[BlockLayer]:
+        """
+        block_palette 返回当前结构的底层调色板。
+        使用者应保证返回的列表不被修改
+
+        Returns:
+            list[BlockLayer]: 当前结构的底层调色板
+        """
+        return self._palette
+
+    def block_matrix(self, layer: int) -> numpy.ndarray:
+        """
+        block_matrix 返回 layer 所指示的层的密集方块矩阵。
+        返回的密集方块矩阵的元素都是 numpy.int32 类型。
+        使用者应保证返回的密集方块矩阵不被修改
+
+        Args:
+            layer (int): 要获取的层
+
+        Returns:
+            numpy.ndarray: 目标层的密集方块矩阵表示
+        """
+        if layer == 0:
+            return self._block_matrix_0
+        return self._block_matrix_1
+
+    def block_nbt_data(self) -> list[nbtlib.tag.Compound]:
+        """
+        block_nbt_data 返回该结构中所有的 NBT 方块
+        使用者应保证返回的字典不被修改
+
+        Returns:
+            list[nbtlib.tag.Compound]: 该结构中所有的 NBT 方块
+        """
+        result: list[nbtlib.tag.Compound] = []
+        for _, value in self._block_entity_data.items():
+            result.append(value)
+        return result

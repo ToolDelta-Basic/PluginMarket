@@ -1,0 +1,12 @@
+{
+  "author": "YoRHa",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "简易的存档导出实现, 您需要自行打包为 mcworld 哟",
+  "pre-plugins": {
+    "pip": "0.0.5",
+    "前置-世界交互": "2.0.6"
+  },
+  "plugin-id": "simple-bedworld-export",
+  "enabled": true
+}
