@@ -307,10 +307,10 @@
         "datas.json": 0
     },
     "bdx导出器Pro": {
-        "libbdxexporter.so": 0,
+        "lib-bdx-exporter_windows_amd64.dll": 0,
+        "lib-bdx-exporter_linux_amd64.so": 0,
         "__init__.py": 0,
         "scanner.py": 0,
-        "libbdxexporter.dll": 0,
         "bdx_utils.py": 0,
         "datas.json": 0,
         "lib.py": 0

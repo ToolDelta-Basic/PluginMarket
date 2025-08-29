@@ -324,7 +324,7 @@
     "bdx-exporter": {
       "name": "bdx导出器Pro",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.1.0",
       "plugin-type": "classic"
     },
     "单方块空岛系统": {

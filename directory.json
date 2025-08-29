@@ -298,10 +298,10 @@
         "datas.json"
     ],
     "bdx导出器Pro": [
-        "libbdxexporter.so",
+        "lib-bdx-exporter_windows_amd64.dll",
+        "lib-bdx-exporter_linux_amd64.so",
         "__init__.py",
         "scanner.py",
-        "libbdxexporter.dll",
         "bdx_utils.py",
         "datas.json",
         "lib.py"
