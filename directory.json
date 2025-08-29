@@ -302,13 +302,8 @@
         "datas.json"
     ],
     "bdx导出器Pro": [
-        "lib-bdx-exporter_windows_amd64.dll",
-        "lib-bdx-exporter_linux_amd64.so",
         "__init__.py",
-        "scanner.py",
-        "bdx_utils.py",
-        "datas.json",
-        "lib.py"
+        "datas.json"
     ],
     "单方块空岛系统": [
         "__init__.py",
