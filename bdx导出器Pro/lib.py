@@ -1,14 +1,19 @@
 import os
 import ctypes
-import msgpack
 from tooldelta import fmts
-from tooldelta.mc_bytes_packet.structure_template_data_response import StructureTemplateDataResponse
+from tooldelta.mc_bytes_packet.structure_template_data_response import (
+    StructureTemplateDataResponse,
+)
 from platform import uname
 
 if uname().system == "Windows":
-    lib_file = os.path.join(os.path.dirname(__file__), "libbdxexporter.dll")
+    lib_file = os.path.join(
+        os.path.dirname(__file__), "lib-bdx-exporter_windows_amd64.dll"
+    )
 elif uname().system == "Linux":
-    lib_file = os.path.join(os.path.dirname(__file__), "libbdxexporter.so")
+    lib_file = os.path.join(
+        os.path.dirname(__file__), "lib-bdx-exporter_linux_amd64.so"
+    )
 
 try:
     LIB = ctypes.cdll.LoadLibrary(lib_file)
@@ -46,7 +51,12 @@ def ReleaseLock():
     LIB.ReleaseLock()
 
 
-def LoadStructure(structure: StructureTemplateDataResponse, relative_x: int, absolute_y: int, relative_z: int):
+def LoadStructure(
+    structure: StructureTemplateDataResponse,
+    relative_x: int,
+    absolute_y: int,
+    relative_z: int,
+):
     bts: bytes = structure.StructureTemplate
     bts_len = len(bts)
 

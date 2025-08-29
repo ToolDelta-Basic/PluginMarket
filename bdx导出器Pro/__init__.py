@@ -5,6 +5,7 @@ from .scanner import export_to_structures
 
 POS = tuple[int, int, int]
 
+
 def get_input_pos():
     resp = input(fmts.fmt_info("请输入坐标(如 0 0 0): "))
     try:
@@ -34,7 +35,7 @@ def get_op_pos(allplayers: list[str]):
 class BDXExporter(Plugin):
     name = "bdx导出器Pro"
     author = "SuperScript"
-    version = (0, 0, 4)
+    version = (0, 1, 0)
 
     def __init__(self, frame):
         super().__init__(frame)

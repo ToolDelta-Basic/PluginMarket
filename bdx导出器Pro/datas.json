@@ -1,6 +1,6 @@
 {
   "author": "SuperScript",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "plugin-type": "classic",
   "description": "导出 bdx 文件\n控制台输入 export help 查看帮助\n目前支持导入: 普通建筑、命令方块、箱子内无 NBT 物品",
   "pre-plugins": {
