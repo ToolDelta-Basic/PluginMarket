@@ -18,7 +18,7 @@ from tooldelta import (
 class SimpleWorldExporter(Plugin):
     name = "简单世界导出"
     author = "YoRHa"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     world_api: "GameInteractive | None"
     should_close: bool
@@ -228,9 +228,9 @@ class SimpleWorldExporter(Plugin):
                     try:
                         structure_name = make_uuid_safe_string(str(uuid.uuid4()))
                         resp = self.game_ctrl.sendwscmd_with_resp(
-                            f'structure save "{structure_name}" '
-                            + f"{dump_start_x} {start_pos[1]} {dump_start_z} "
-                            + f"{dump_start_x} {end_pos[1]} {dump_start_z} "
+                            f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s '
+                            + f"positioned {dump_start_x} ~ ~ positioned ~ {start_pos[1]} ~ positioned ~ ~ {dump_start_z} run "
+                            + f'structure save "{structure_name}" ~ ~ ~ ~ {end_pos[1]} ~ '
                             + "false memory true",
                         )
                     except Exception:
