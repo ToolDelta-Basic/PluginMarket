@@ -169,7 +169,9 @@ class GameInteractive(Plugin):
                     f"无法放置命令方块方块: {resp.OutputMessages[0].Message}"
                 )
         time.sleep(limit_seconds2)
-        self.game_ctrl.sendPacket(78, command_block_update_packet)
+        self.game_ctrl.sendPacket(
+            PacketIDS.CommandBlockUpdate, command_block_update_packet
+        )
 
     def make_uuid_safe_string(self, unique_id: uuid.UUID) -> str:
         """
