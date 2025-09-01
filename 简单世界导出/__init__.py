@@ -64,7 +64,7 @@ class SimpleWorldExporter(Plugin):
             pip: PipSupport
 
         self.world_api: "GameInteractive | None" = self.GetPluginAPI(
-            "前置-世界交互", (2, 0, 6)
+            "前置-世界交互", (2, 0, 7)
         )
 
         pip = self.GetPluginAPI("pip")
