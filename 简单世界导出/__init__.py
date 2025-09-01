@@ -2,7 +2,6 @@ import threading
 import time
 import uuid
 import numpy
-from .uuid_safe_string import make_uuid_safe_string
 from tooldelta.utils import tempjson
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 from tooldelta import (
@@ -18,7 +17,7 @@ from tooldelta import (
 class SimpleWorldExporter(Plugin):
     name = "简单世界导出"
     author = "YoRHa"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     world_api: "GameInteractive | None"
     should_close: bool
@@ -226,7 +225,9 @@ class SimpleWorldExporter(Plugin):
                         return
                     # Check chunk load states
                     try:
-                        structure_name = make_uuid_safe_string(str(uuid.uuid4()))
+                        structure_name = self.world_api.make_uuid_safe_string(
+                            uuid.uuid4()
+                        )
                         resp = self.game_ctrl.sendwscmd_with_resp(
                             f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s '
                             + f"positioned {dump_start_x} ~ ~ positioned ~ {start_pos[1]} ~ positioned ~ ~ {dump_start_z} run "

@@ -15,7 +15,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 6)
+    version = (2, 0, 7)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -170,6 +170,19 @@ class GameInteractive(Plugin):
                 )
         time.sleep(limit_seconds2)
         self.game_ctrl.sendPacket(78, command_block_update_packet)
+
+    def make_uuid_safe_string(self, unique_id: uuid.UUID) -> str:
+        """
+        make_uuid_safe_string 返回 unique_id 的安全化表示，
+        这使得其不可能被网易屏蔽词所拦截
+
+        Args:
+            unique_id (str): 一个 UUID 实例
+
+        Returns:
+            str: 这个 UUID 的安全化字符串表示
+        """
+        return make_uuid_safe_string(unique_id)
 
     def get_structure(
         self, position: tuple[int, int, int], size: tuple[int, int, int]
