@@ -726,7 +726,6 @@
     "简单世界导出": [
         "readme.txt",
         "__init__.py",
-        "uuid_safe_string.py",
         "datas.json"
     ],
     "[pkg]音乐杂合包": [
