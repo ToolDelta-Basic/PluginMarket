@@ -78,7 +78,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript & Zhonger-Yuansi",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "plugin-type": "classic"
     },
     "demo-plugin-shop": {
