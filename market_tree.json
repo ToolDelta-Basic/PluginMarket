@@ -231,7 +231,7 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
-    "雪球菜单v2": {
+    "雪球菜单v3": {
       "name": "雪球菜单v3",
       "author": "SuperScript",
       "version": "0.1.7",
@@ -318,7 +318,7 @@
     "home-point-setter": {
       "name": "传送点设置",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "bdx-exporter": {
