@@ -360,7 +360,7 @@
     "ai聊天": {
       "name": "ai聊天",
       "author": "机入",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "union-maker": {
