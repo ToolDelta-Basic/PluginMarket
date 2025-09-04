@@ -8,9 +8,9 @@ function = print
 
 
 class HomePointSet(Plugin):
-    name = "Home点设置"
+    name = "传送点设置"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -37,17 +37,17 @@ class HomePointSet(Plugin):
     def on_def(self):
         self.funclib = self.GetPluginAPI("基本插件功能库")
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
-        self.snowmenu = self.GetPluginAPI("雪球菜单v2")
+        self.snowmenu = self.GetPluginAPI("雪球菜单v3")
         self.xuidm = self.GetPluginAPI("XUID获取")
         if TYPE_CHECKING:
             from 前置_基本插件功能库 import BasicFunctionLib
             from 前置_聊天栏菜单 import ChatbarMenu
-            from 雪球菜单 import SnowMenu
+            from 雪球菜单v3 import SnowMenuV3
             from 前置_玩家XUID获取 import XUIDGetter
 
             self.funclib: BasicFunctionLib
             self.chatbar: ChatbarMenu
-            self.snowmenu: SnowMenu
+            self.snowmenu: SnowMenuV3
             self.xuidm: XUIDGetter
 
     def on_inject(self):
