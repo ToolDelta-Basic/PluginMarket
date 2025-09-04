@@ -57,12 +57,6 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
-    "PianoInSettingPiano": {
-      "name": "设置栏钢琴师",
-      "author": "SuperScript",
-      "version": "0.0.9",
-      "plugin-type": "classic"
-    },
     "违规名称踢出": {
       "name": "违规名称踢出",
       "author": "大庆油田",

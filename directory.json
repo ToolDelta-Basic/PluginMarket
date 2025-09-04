@@ -49,11 +49,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "设置栏钢琴师": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
     "违规名称踢出": [
         "__init__.py",
         "词库.json",
