@@ -248,7 +248,7 @@ class QQLinker(Plugin):
                 )
                 if trigger.op_only:
                     output_msg += " （仅管理员可用）"
-            self.sendmsg(self.linked_group, output_msg)
+            self.sendmsg(self.linked_group, output_msg, do_remove_cq_code=True)
 
         self.frame.add_console_cmd_trigger(
             ["QQ", "发群"], "[消息]", "在群内发消息测试", self.on_sendmsg_test
