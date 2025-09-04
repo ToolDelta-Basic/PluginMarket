@@ -1,27 +1,38 @@
-import os
 from typing import TYPE_CHECKING
-from GetFile import get_github_repo_files
-from tooldelta import utils, Plugin, Player, plugin_entry
+from tooldelta import cfg, utils, Plugin, Player, plugin_entry
+from .GetFile import get_github_repo_files
+
+
+external_song_repo_owner = "Zhonger-Yuansi"
 
 
 class DJTable(Plugin):
     author = "SuperScript & Zhonger-Yuansi"
     name = "点歌台"
-    version = (0, 2, 4)
+    version = (0, 2, 5)
+
     MAX_SONGS_QUEUED = 6
     can_stop = False
 
     def __init__(self, frame):
         self.musics_list: list[tuple[str, Player]] = []
         super().__init__(frame)
-        os.makedirs(self.data_path, exist_ok=True)
-        os.makedirs(os.path.join(self.data_path, "音乐列表"), exist_ok=True)
-        self.mdir_external = os.path.join(self.data_path, "远程缓存")
-        os.makedirs(self.mdir_external, exist_ok=True)
+        (self.data_path / "音乐列表").mkdir(exist_ok=True)
+        self.mdir_external = self.data_path / "远程缓存"
+        self.mdir_external.mkdir(exist_ok=True)
+        config_default = {
+            f"是否获取来自 {external_song_repo_owner} 的远程音乐列表": True
+        }
+        config, _ = cfg.get_plugin_config_and_version(
+            self.name, cfg.auto_to_std(config_default), config_default, self.version
+        )
+        self.repo_message = None
+        self.use_external_repo = config[
+            f"是否获取来自 {external_song_repo_owner} 的远程音乐列表"
+        ]
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
-        self.repo_message = None
 
     def on_def(self):
         self.midiplayer = self.GetPluginAPI("MIDI播放器")
@@ -33,33 +44,37 @@ class DJTable(Plugin):
 
             self.midiplayer: ToolMidiMixer
             self.chatmenu: ChatbarMenu
-        mdir = os.path.join(self.data_path, "音乐列表")
-        for i in os.listdir(mdir):
-            if i.endswith(".mid"):
+        mdir = self.data_path / "音乐列表"
+        for i in mdir.iterdir():
+            if i.name.endswith(".mid"):
                 self.midiplayer.translate_midi_to_seq_file(
-                    os.path.join(mdir, i),
-                    os.path.join(mdir, i.replace(".mid", ".midseq")),
+                    str(i),
+                    str(mdir / i.name.replace(".mid", ".midseq")),
                 )
-                os.remove(os.path.join(mdir, i))
-        for i in os.listdir(mdir):
-            if i.endswith(".midseq"):
+                i.unlink()
+        for i in mdir.iterdir():
+            if i.name.endswith(".midseq"):
                 self.midiplayer.load_sound_seq_file(
-                    os.path.join(mdir, i), i.replace(".midseq", "")
+                    str(i), i.name.replace(".midseq", "")
                 )
-                midi_names.append(i.replace(".midseq", ""))
+                midi_names.append(i.name.replace(".midseq", ""))
         self.midis_list = midi_names
-        self.repo_url = "Zhonger-Yuansi/Midi-Repositories"
-        try:
-            repo_url = self.repo_url
-            # 获取文件列表和公告消息
-            remote_data = get_github_repo_files(repo_url)
-            original_list, self.repo_message = remote_data
-            self.remote_midis_list = [
-                name for name in original_list if name.lower() != "message"
-            ]
-        except Exception:
+        if self.use_external_repo:
+            self.print("正在获取远程音乐列表仓库..")
+            self.repo_url = "Zhonger-Yuansi/Midi-Repositories"
+            try:
+                repo_url = self.repo_url
+                # 获取文件列表和公告消息
+                remote_data = get_github_repo_files(repo_url)
+                original_list, self.repo_message = remote_data
+                self.remote_midis_list = [
+                    name for name in original_list if name.lower() != "message"
+                ]
+            except Exception:
+                self.remote_midis_list = []
+                self.repo_message = None
+        else:
             self.remote_midis_list = []
-            self.repo_message = None
 
     def on_inject(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives add song_point dummy 音乐点")
@@ -68,7 +83,7 @@ class DJTable(Plugin):
             ["点歌列表"], [], "查看点歌台点歌列表", self.lookup_songs_list
         )
         self.chatmenu.add_new_trigger(
-            ["点歌"], [("歌名", str, "")], "点歌", self.choose_menu
+            ["点歌"], [], "点歌", self.choose_menu
         )
         self.chatmenu.add_new_trigger(
             ["停止当前曲目"],
@@ -84,84 +99,80 @@ class DJTable(Plugin):
 
     def choose_menu(self, player: Player, args: tuple):
         song_list = self.midis_list
-        choose_song_name: str = args[0]
-        if choose_song_name == "":
-            total_songs = len(song_list)
-            midis_list = self.remote_midis_list
-            total_remote = len(midis_list)
-            if total_songs == 0 and total_remote == 0:
-                player.show("§6曲目列表空空如也...")
-                return
+        total_songs = len(song_list)
+        remote_midis_list = self.remote_midis_list
+        total_remote = len(remote_midis_list)
+        if total_songs == 0 and total_remote == 0:
+            player.show("§6曲目列表空空如也...")
+            return
 
-            combined_list = song_list + midis_list
-            page_size = 10
-            max_page = (len(combined_list) + page_size - 1) // page_size
-            current_page = 0
+        combined_list = song_list + remote_midis_list
+        page_size = 10
+        max_page = (len(combined_list) + page_size - 1) // page_size
+        current_page = 0
 
-            while True:
-                start = current_page * page_size
-                end = start + page_size
-                page_songs = combined_list[start:end]
+        while True:
+            start = current_page * page_size
+            end = start + page_size
+            page_songs = combined_list[start:end]
 
-                player.show(f"§a当前曲目列表 (第 {current_page + 1} / {max_page} 页)：")
-                for song_index, song_name in enumerate(page_songs):
-                    song_number = start + song_index + 1
-                    is_remote = song_number > len(song_list)
-                    suffix = " §7(远程)" if is_remote else ""
-                    player.show(f" §b{song_number} §f{song_name}{suffix}")
+            player.show(f"§a当前曲目列表 (第 {current_page + 1} / {max_page} 页)：")
+            for song_index, song_name in enumerate(page_songs):
+                song_number = start + song_index + 1
+                is_remote = song_number > len(song_list)
+                suffix = " §7(远程)" if is_remote else ""
+                player.show(f" §b{song_number} §f{song_name}{suffix}")
 
-                if self.repo_message:
-                    player.show(f"§7远程仓库: {self.repo_message}")
-                else:
-                    player.show("§7远程仓库: 当前暂无公告内容")
-
-                resp = player.input("§a请输入序号选择曲目 \n§e+ §f下一页\n§e- §f上一页\n§e退出 §f退出菜单", timeout=300)
-                if resp is None:
-                    player.show("§c操作超时")
-                    return
-                resp = resp.strip()
-                if resp == "+":
-                    current_page = min(current_page + 1, max_page - 1)
-                    continue
-                elif resp == "-":
-                    current_page = max(current_page - 1, 0)
-                    continue
-                elif resp == "退出":
-                    player.show("§7已退出点歌菜单")
-                    return
-
-                resp_int = utils.try_int(resp)
-                if resp_int is None:
-                    player.show("§c选项无效")
-                    continue
-
-                total_options = len(combined_list)
-                if resp_int < 1 or resp_int > total_options:
-                    player.show("§c选项不在范围内")
-                    continue
-
-                if resp_int <= len(song_list):
-                    music_name = song_list[resp_int - 1].removesuffix(".midseq")
-                else:
-                    remote_index = resp_int - len(song_list) - 1
-                    music_name = self.remote_midis_list[remote_index]
-                    if player.getScore("song_point") <= 0:
-                        player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
-                    else:
-                        self.game_ctrl.sendwocmd(
-                            f"/scoreboard players remove {player.safe_name} song_point 1")
-                        player.show("§e点歌§f>> §7正在下载并处理远程曲目，消耗1点音乐，请稍候...")
-                        self._download_process(player, music_name)
-                    return
-                break
-        else:
-            for song_name in song_list:
-                if song_name.removesuffix(".midseq") == choose_song_name:
-                    music_name = song_name.removesuffix(".midseq")
-                    break
+            if self.repo_message:
+                player.show(f"§7远程仓库: {self.repo_message}")
             else:
-                player.show("§c没有找到音乐")
+                player.show("§7远程仓库: 当前暂无公告内容")
+
+            resp = player.input(
+                "§a请输入序号选择曲目 \n§e+ §f下一页\n§e- §f上一页\n§e退出 §f退出菜单",
+                timeout=300,
+            )
+            if resp is None:
+                player.show("§c操作超时")
                 return
+            resp = resp.strip()
+            if resp == "+":
+                current_page = min(current_page + 1, max_page - 1)
+                continue
+            elif resp == "-":
+                current_page = max(current_page - 1, 0)
+                continue
+            elif resp == "退出":
+                player.show("§7已退出点歌菜单")
+                return
+
+            resp_int = utils.try_int(resp)
+            if resp_int is None:
+                player.show("§c选项无效")
+                continue
+
+            total_options = len(combined_list)
+            if resp_int < 1 or resp_int > total_options:
+                player.show("§c选项不在范围内")
+                continue
+
+            if resp_int <= len(song_list):
+                music_name = song_list[resp_int - 1].removesuffix(".midseq")
+            else:
+                remote_index = resp_int - len(song_list) - 1
+                music_name = self.remote_midis_list[remote_index]
+                if player.getScore("song_point") <= 0:
+                    player.show("§e点歌§f>> §c音乐点数不足，点歌一次需消耗§e1§c点")
+                else:
+                    self.game_ctrl.sendwocmd(
+                        f"/scoreboard players remove {player.safe_name} song_point 1"
+                    )
+                    player.show(
+                        "§e点歌§f>> §7正在下载并处理远程曲目，消耗1点音乐，请稍候..."
+                    )
+                    self._download_process(player, music_name)
+                return
+            break
 
         if len(self.musics_list) >= self.MAX_SONGS_QUEUED:
             self.game_ctrl.say_to("@a", "§e点歌§f>> §c等待列表已满，请等待这首歌播放完")
@@ -176,7 +187,7 @@ class DJTable(Plugin):
             self.game_ctrl.say_to(
                 "@a", f"§e点歌§f>> §e{player.name}§a成功点歌:{music_name}"
             )
-    
+
     def lookup_songs_list(self, player: Player, _):
         if not self.musics_list == []:
             player.show("§b◎§e当前点歌♬等待列表:")
@@ -218,42 +229,43 @@ class DJTable(Plugin):
         """下载远程音乐并完成转换及播放入队"""
         try:
             import requests
-            from urllib3.exceptions import InsecureRequestWarning
+            # from urllib3.exceptions import InsecureRequestWarning
 
-            #requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+            # requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
             """
-            
+
             清空外部缓存文件夹
             可能这会给面板带来一点流量占用
             但是MIDI仓库的主人不一定获取到MIDI作者的授权
             所以这一步至关重要
 
             """
-            for file in os.listdir(self.mdir_external):
+            for file in self.mdir_external.iterdir():
                 try:
-                    os.remove(os.path.join(self.mdir_external, file))
-                except Exception as e:
+                    file.unlink()
+                except Exception:
                     pass
 
             url = f"https://ghproxy.net/https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
             response = requests.get(url)
 
             if response.status_code == 200:
-                midi_path = os.path.join(self.mdir_external, f"{music_name}.mid")
+                midi_path = self.mdir_external / f"{music_name}.mid"
                 with open(midi_path, "wb") as file:
                     file.write(response.content)
 
-            midseq_path = os.path.join(self.mdir_external, f"{music_name}.midseq")
-            self.midiplayer.translate_midi_to_seq_file(midi_path, midseq_path)
-            os.remove(midi_path)
+            midseq_path = self.mdir_external / f"{music_name}.midseq"
+            self.midiplayer.translate_midi_to_seq_file(str(midi_path), str(midseq_path))
+            midi_path.unlink()
 
-            self.midiplayer.load_sound_seq_file(midseq_path, music_name)
+            self.midiplayer.load_sound_seq_file(str(midseq_path), music_name)
             self.musics_list.append((music_name, player))
             player.show("§e点歌§f>> §a远程曲目已加入播放队列！")
 
         except Exception as e:
             # self.logger.error(f"处理远程音乐异常: {e}")
-            player.show(f"§c处理远程曲目失败: {str(e)}")
+            player.show(f"§c处理远程曲目失败: {e!s}")
+
 
 entry = plugin_entry(DJTable)

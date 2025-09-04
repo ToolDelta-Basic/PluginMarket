@@ -1,8 +1,8 @@
 import os
 import requests
+import urllib3
 from urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+urllib3.disable_warnings(category=InsecureRequestWarning)
 
 def fetch_github_api(api_url):
     try:
