@@ -98,7 +98,7 @@ class FlowersForMachineServerRunning:
 
     def _download_server(self, server_path: str) -> bool:
         file_binary = requests.get(
-            "https://gh-proxy.com/https://github.com/OmineDev/flowers-for-machines/releases/download/v1.4.1/standard-server_linux_amd64"
+            "https://gh-proxy.com/https://github.com/OmineDev/flowers-for-machines/releases/download/v1.4.2/standard-server_linux_amd64"
         )
 
         if not file_binary.ok:
