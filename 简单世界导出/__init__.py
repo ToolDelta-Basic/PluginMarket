@@ -212,8 +212,8 @@ class SimpleWorldExporter(Plugin):
                 # Prepare
                 dump_start_x = start_pos[0] + (relative_chunk_posx << 4)
                 task_percent = round(current_progress / total_chunks * 100, 2)
-                self.game_ctrl.sendwscmd(
-                    f"execute as @a[name={self.game_ctrl.bot_name}] at @s run tp "
+                self.game_ctrl.sendwocmd(
+                    f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp '
                     + f"{dump_start_x} {start_pos[1]} {dump_start_z}",
                 )
 
