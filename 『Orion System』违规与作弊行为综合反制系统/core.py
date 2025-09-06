@@ -86,7 +86,7 @@ class OrionCore:
                         self.message_data.pop(k, None)
             time.sleep(1)
 
-    # 为什么要对数据包监听回调函数进行异步化？由于玩家刚进入游戏时(即PlayerList回调返回时)尚未创建该玩家的PlayerInfoMaintainer(玩家数据管理器)
+    # 由于玩家刚进入游戏时(即PlayerList回调返回时)尚未创建该玩家的PlayerInfoMaintainer(玩家数据管理器)
     # 故必须创建异步线程等待PlayerInfoMaintainer生成后才能访问其属性(如玩家能力权限)
     # 在PlayerList回调函数内部直接访问新进入游戏玩家的PlayerInfoMaintainer属性将会触发回调锁阻塞主线程！务必注意！
     def on_pre_PlayerList(self, packet: dict[Any, Any]) -> Literal[False]:
@@ -276,15 +276,22 @@ class OrionCore:
             except Exception:
                 return
 
-        # "TextType"=2:监听到玩家加入或退出游戏
+        # "TextType"=2:监听到玩家加入或退出游戏/玩家睡觉消息
         elif TextType == 2:
             try:
                 name = Parameters[0]
-                if self.online_condition.get(name) == "PreOnline":
-                    if Message == "§e%multiplayer.player.joined":
+                if Message == "§e%multiplayer.player.joined":
+                    if self.online_condition.get(name) == "PreOnline":
                         self.online_condition[name] = "Online"
-                    elif Message == "§e%multiplayer.player.left":
+                elif Message == "§e%multiplayer.player.left":
+                    if self.online_condition.get(name) == "PreOnline":
                         self.online_condition[name] = "Offline"
+                elif (
+                    Message == "chat.type.sleeping"
+                    and self.utils.in_whitelist(name) is False
+                ):
+                    xuid = self.plugin.xuid_getter.get_xuid_by_name(name, True)
+                    self.message_cache_area("", name, xuid, "Sleep")
             except Exception:
                 return
 
@@ -300,7 +307,7 @@ class OrionCore:
         if self.utils.in_whitelist(name) is False:
             self.blacklist_word_detect(message, name, xuid)
             self.message_length_detect(message, name, xuid)
-            self.message_cache_area(message, name, xuid)
+            self.message_cache_area(message, name, xuid, "Chat")
 
     @utils.thread_func("踢出玩家和写入封禁数据")
     def execute_ban(
@@ -1028,26 +1035,38 @@ class OrionCore:
             )
 
     @utils.thread_func("缓存玩家发言数据函数")
-    def message_cache_area(self, message: str, player: str, xuid: str) -> None:
+    def message_cache_area(
+        self, message: str, player: str, xuid: str, flag: str
+    ) -> None:
         """
         缓存玩家发言数据函数
         Args:
             message (str): 发言文本
             player (str): 玩家名称
             xuid (str): 玩家xuid
+            flag (str): 数据标签, 包括Chat(聊天文本)和Sleep(睡觉消息)
         """
-        if self.cfg.speak_speed_limit or self.cfg.repeat_message_limit:
+        if (
+            self.cfg.speak_speed_limit
+            or self.cfg.repeat_message_limit
+            or self.cfg.sleep_message_limit
+        ):
             with self.plugin.lock_timer:
                 if self.message_data.get(player) is None:
                     self.message_data[player] = {}
                     self.message_data[player]["message"] = [{}, {}]
+                    self.message_data[player]["sleep"] = 0
                     self.message_data[player]["timer"] = self.cfg.speak_detection_cycle
-                mess_list = self.message_data[player]["message"]
-                mess_list[0][message] = mess_list[0].get(message, 0) + 1
-                self.speak_speed_detect(player, xuid)
-                clean_message = self.utils.clean_text(message)
-                mess_list[1][clean_message] = mess_list[1].get(clean_message, 0) + 1
-                self.repeat_message_detect(player, xuid)
+                if flag == "Chat":
+                    mess_list = self.message_data[player]["message"]
+                    mess_list[0][message] = mess_list[0].get(message, 0) + 1
+                    self.speak_speed_detect(player, xuid)
+                    clean_message = self.utils.clean_text(message)
+                    mess_list[1][clean_message] = mess_list[1].get(clean_message, 0) + 1
+                    self.repeat_message_detect(player, xuid)
+                elif flag == "Sleep":
+                    self.message_data[player]["sleep"] += 1
+                    self.sleep_message_detect(player, xuid)
 
     @utils.thread_func("发言频率检测函数")
     def speak_speed_detect(self, player: str, xuid: str) -> None:
@@ -1100,6 +1119,31 @@ class OrionCore:
                             ),
                         )
                         return
+
+    @utils.thread_func("睡觉消息刷屏检测函数")
+    def sleep_message_detect(self, player: str, xuid: str) -> None:
+        """
+        睡觉消息刷屏检测函数
+        Args:
+            player (str): 玩家名称
+            xuid (str): 玩家xuid
+        """
+        if (
+            self.cfg.sleep_message_limit
+            and self.message_data[player]["sleep"] > self.cfg.max_sleep_count
+        ):
+            self.execute_ban(
+                player,
+                xuid,
+                self.cfg.ban_time_sleep_message_limit,
+                self.cfg.info_sleep_message_limit,
+                (
+                    player,
+                    xuid,
+                    self.cfg.max_sleep_count,
+                    self.cfg.speak_detection_cycle,
+                ),
+            )
 
     @utils.thread_func("玩家设备号获取函数")
     def get_player_device_id(self, player: str, xuid: str, SkinID: str) -> None:

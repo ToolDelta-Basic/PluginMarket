@@ -147,7 +147,7 @@ class OrionConfig:
             "权威",
             "乐子",
             "户籍",
-            "社工库",
+            "社工",
             "身份证",
             "开盒",
             "恶俗",
@@ -160,6 +160,8 @@ class OrionConfig:
         "发言字数限制": 50,
         "是否启用重复消息刷屏检测": True,
         "周期内重复消息刷屏数量限制": 3,
+        "是否启用睡觉消息刷屏检测": True,
+        "周期内睡觉消息刷屏数量限制": 3,
         "<<提示>> 如果您需要在踢出玩家的同时将其封禁，请务必按照以下格式修改配置": None,
         "<<提示>> 封禁时间=-1:永久封禁": None,
         "<<提示>> 封禁时间=0:仅踢出游戏，不作封禁，玩家可以立即重进": None,
@@ -184,6 +186,7 @@ class OrionConfig:
         "封禁时间_发言频率检测": "0年0月0日0时10分0秒",
         "封禁时间_发言字数检测": 60,
         "封禁时间_重复消息刷屏检测": "0年0月0日0时10分0秒",
+        "封禁时间_睡觉消息刷屏检测": 600,
         "<<提示>> 如果您想要自定义封禁的提示信息，请修改以下配置项": None,
         "<<提示>> 第1项为<控制台信息>，显示在面板上；第2项为<游戏内信息>，默认关闭，会通过/tellraw命令根据填入的目标选择器在游戏内进行广播；第3项为<对玩家信息>，显示给被/kick的玩家": None,
         "<<提示>> 封禁原因中的{}为参数传入部分，从0开始按顺序传入对应参数，如果你不希望显示这些信息，你可以删除它或者修改其中的数字索引": None,
@@ -263,6 +266,11 @@ class OrionConfig:
             "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 连续发送重复文本超出限制({2}条/{3}秒)，§a正在制裁",
             "游戏内": ["@a", "NN"],
             "玩家": "您连续发送重复文本超出限制({2}条/{3}秒)",
+        },
+        "信息_睡觉消息刷屏检测": {
+            "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 连续发送睡觉信息超出限制({2}条/{3}秒)，§a正在制裁",
+            "游戏内": ["@a", "NN"],
+            "玩家": "您连续发送睡觉信息超出限制({2}条/{3}秒)",
         },
         "信息_被封禁玩家进入游戏": {
             "控制台": "§a❀ §b[PlayerList] §c发现玩家 {0} (xuid:{1}) 被封禁，§a正在制裁，封禁时间至：{2}",
@@ -482,6 +490,8 @@ class OrionConfig:
         "发言字数限制": cfg.PInt,
         "是否启用重复消息刷屏检测": bool,
         "周期内重复消息刷屏数量限制": cfg.PInt,
+        "是否启用睡觉消息刷屏检测": bool,
+        "周期内睡觉消息刷屏数量限制": cfg.PInt,
         "当发现上述违规行为时，是否根据xuid封禁玩家": bool,
         "当发现上述违规行为时，是否根据设备号封禁玩家": bool,
         "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": bool,
@@ -500,6 +510,7 @@ class OrionConfig:
         "封禁时间_发言频率检测": (int, str),
         "封禁时间_发言字数检测": (int, str),
         "封禁时间_重复消息刷屏检测": (int, str),
+        "封禁时间_睡觉消息刷屏检测": (int, str),
         "信息_机器人IP外进反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_锁服反制(皮肤数据异常检查)": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_Steve/Alex皮肤反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -517,6 +528,7 @@ class OrionConfig:
         "信息_发言频率检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_发言字数检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_重复消息刷屏检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_睡觉消息刷屏检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_被封禁玩家进入游戏": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_被封禁设备号进入游戏": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_发现被封禁的在线玩家": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -774,6 +786,8 @@ class OrionConfig:
         self.max_speak_length: int = config["发言字数限制"]
         self.repeat_message_limit: bool = config["是否启用重复消息刷屏检测"]
         self.max_repeat_count: int = config["周期内重复消息刷屏数量限制"]
+        self.sleep_message_limit: bool = config["是否启用睡觉消息刷屏检测"]
+        self.max_sleep_count: int = config["周期内睡觉消息刷屏数量限制"]
         self.is_ban_player_by_xuid: bool = config[
             "当发现上述违规行为时，是否根据xuid封禁玩家"
         ]
@@ -826,6 +840,9 @@ class OrionConfig:
         self.ban_time_repeat_message_limit: int | Literal["Forever"] = config[
             "封禁时间_重复消息刷屏检测"
         ]
+        self.ban_time_sleep_message_limit: int | Literal["Forever"] = config[
+            "封禁时间_睡觉消息刷屏检测"
+        ]
         self.info_detect_bot: dict[str, str | list[str]] = config[
             "信息_机器人IP外进反制"
         ]
@@ -864,6 +881,9 @@ class OrionConfig:
         ]
         self.info_repeat_message_limit: dict[str, str | list[str]] = config[
             "信息_重复消息刷屏检测"
+        ]
+        self.info_sleep_message_limit: dict[str, str | list[str]] = config[
+            "信息_睡觉消息刷屏检测"
         ]
         self.info_banned_player: dict[str, str | list[str]] = config[
             "信息_被封禁玩家进入游戏"

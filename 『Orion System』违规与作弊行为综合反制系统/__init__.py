@@ -33,7 +33,7 @@ class Orion_System(Plugin):
 
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢『猎户座』"
-    version = (0, 4, 1)
+    version = (0, 4, 2)
 
     def __init__(self, frame) -> None:
         """
