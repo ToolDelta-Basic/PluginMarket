@@ -143,27 +143,6 @@
     "计分板支持": [
         "__init__.py"
     ],
-    "ZBasic_Lang_中文编程": [
-        "basic_types.py",
-        "syntax_lib.py",
-        "syntax_compile.py",
-        "readme.txt",
-        "executor.py",
-        "err_str.py",
-        "__init__.py",
-        "basic_codes.py",
-        "type_checker.py",
-        "compiler.py",
-        "datas.json"
-    ],
-    "ZBasic_Lang_中文编程/示例代码": [],
-    "ZBasic_Lang_中文编程/示例代码/进服欢迎": [
-        "玩家进入.txt",
-        "玩家退出.txt"
-    ],
-    "ZBasic_Lang_中文编程/示例代码/玩家转账": [
-        "玩家发言.txt"
-    ],
     "公告栏[Mono]": [
         "__init__.py",
         "datas.json"

@@ -165,12 +165,6 @@
       "version": "1.3.7",
       "plugin-type": "classic"
     },
-    "TD-ZBasic": {
-      "name": "ZBasic_Lang_中文编程",
-      "author": "SuperScript",
-      "version": "0.1.1",
-      "plugin-type": "classic"
-    },
     "ad": {
       "name": "公告栏[Mono]",
       "author": "Mono",

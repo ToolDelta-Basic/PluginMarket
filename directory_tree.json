@@ -149,28 +149,6 @@
     "计分板支持": {
         "__init__.py": 0
     },
-    "ZBasic_Lang_中文编程": {
-        "basic_types.py": 0,
-        "syntax_lib.py": 0,
-        "syntax_compile.py": 0,
-        "readme.txt": 0,
-        "executor.py": 0,
-        "err_str.py": 0,
-        "__init__.py": 0,
-        "basic_codes.py": 0,
-        "type_checker.py": 0,
-        "compiler.py": 0,
-        "datas.json": 0,
-        "示例代码": {
-            "进服欢迎": {
-                "玩家进入.txt": 0,
-                "玩家退出.txt": 0
-            },
-            "玩家转账": {
-                "玩家发言.txt": 0
-            }
-        }
-    },
     "公告栏[Mono]": {
         "pytz": {
             "tzinfo.py": 0,
