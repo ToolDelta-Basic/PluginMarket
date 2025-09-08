@@ -176,6 +176,71 @@ class QQLinker(Plugin):
         self.init_basic_triggers()
 
     def init_basic_triggers(self):
+        def query_inventory(sender: int, args: list[str]):
+            # 包含匹配（支持中文），仅在在线玩家中查找
+            keyword = " ".join(args).strip()
+            players = self.game_ctrl.players.getAllPlayers()
+            matches = [p for p in players if keyword in p.name]
+            if not matches:
+                self.sendmsg(self.linked_group, "未寻找到匹配的玩家")
+                return
+            if len(matches) > 1:
+                # 多个候选：列出前 5 个名称并终止
+                names = ", ".join(p.name for p in matches[:5])
+                suffix = "" if len(matches) <= 5 else f" 等 {len(matches)} 人"
+                self.sendmsg(self.linked_group, f"匹配到多个玩家：{names}{suffix}")
+                return
+
+            target = matches[0]
+            # 查询背包（QueriedInventory）
+            inv = target.queryInventory()
+            slots = inv.slots or []
+
+            # 组装完整 ID，修复缺省命名空间 / 缺少冒号等问题
+            def full_id() -> str:
+                item_id = getattr(s, "id", "")
+                ns = getattr(s, "namespace", "")
+                if ":" in item_id:
+                    return item_id
+                if ns and not ns.endswith(":"):
+                    ns += ":"
+                return f"{ns}{item_id}" if (ns or item_id) else ""
+
+            # 中文本地化（优先 item.*，失败回退 tile.*），失败则返回原始 ID
+            def localize() -> str:
+                fid = full_id()
+                core = fid.split(":", 1)[1] if ":" in fid else fid
+                if translate and core:
+                    for pref in ("item", "tile"):
+                        k = f"{pref}.{core}.name"
+                        zh = translate(k)
+                        if zh != k:
+                            return zh
+                return fid
+
+            lines: list[str] = []
+            for idx, slot in enumerate(slots):
+                # 空槽位跳过
+                if slot is None:
+                    continue
+                name = localize(slot)
+                aux = getattr(slot, "aux", 0)
+                cnt = getattr(slot, "stackSize", 0)
+                ench = getattr(slot, "enchantments", []) or []
+                if ench:
+                    # 展开附魔名称与等级
+                    ench_text = ", ".join(
+                        getattr(e, "name", f"type{getattr(e, 'type', '?')} Lv{getattr(e, 'level', '?')}")
+                        for e in ench
+                    )
+                    lines.append(f"- [{idx}] {name} x {cnt} (数据:{aux}; 附魔:{ench_text})")
+                else:
+                    lines.append(f"- [{idx}] {name} x {cnt} (数据:{aux})")
+
+            # 组织输出
+            text = "空" if not lines else "\n".join(lines)
+            self.sendmsg(self.linked_group, f"玩家名字:{target.name}\n背包物品:\n{text}")
+
         @utils.thread_func("群服执行指令并获取返回")
         def sb_execute_cmd(qqid: int, cmd: list[str]):
             if self.is_qq_op(qqid):
@@ -248,10 +313,18 @@ class QQLinker(Plugin):
                 )
                 if trigger.op_only:
                     output_msg += " （仅管理员可用）"
-            self.sendmsg(self.linked_group, output_msg, do_remove_cq_code=True)
+            self.sendmsg(self.linked_group, output_msg)
 
         self.frame.add_console_cmd_trigger(
             ["QQ", "发群"], "[消息]", "在群内发消息测试", self.on_sendmsg_test
+        )
+        # 查询背包（置于通用“/”触发器之前，避免被通配符吞掉）
+        self.add_trigger(
+            ["/查询背包"],
+            "[玩家名]",
+            "获取对方背包内物品,并输出在群里",
+            query_inventory,
+            args_pd=lambda n: n >= 1,
         )
         self.add_trigger(
             ["/"], "[指令]", "向租赁服发送指令", sb_execute_cmd, op_only=True
