@@ -63,6 +63,7 @@
         "datas.json"
     ],
     "点歌台": [
+        "readme.md",
         "__init__.py",
         "GetFile.py",
         "datas.json"
