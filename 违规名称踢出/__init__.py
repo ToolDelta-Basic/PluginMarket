@@ -17,8 +17,7 @@ class kill(Plugin):
     description = "简单的违规名称踢出"
 
     def __init__(self, frame: ToolDelta):
-        self.frame = frame
-        self.game_ctrl = frame.get_game_control()
+        super().__init__(frame)
         self.make_data_path()
         CFG_STD = {
             cfg.KeyGroup("包含以下字样的玩家将被踢出"): cfg.JsonList(str),
