@@ -1,4 +1,5 @@
 {
+  "death-and-respawn-listener": "前置_玩家死亡检测",
   "自定义聊天栏菜单": "自定义聊天栏菜单",
   "Random_Shop": "随机商店",
   "DateTimeSync": "时间同步计分板",
