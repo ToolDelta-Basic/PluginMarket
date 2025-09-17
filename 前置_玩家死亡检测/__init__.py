@@ -13,12 +13,6 @@ class NewPlugin(Plugin):
         self._die_cbs: list[Callable[[Player], None]] = []
         self._respawn_cbs: list[Callable[[Player], None]] = []
         self.ListenPacket(PacketIDS.PyRpc, self.on_pyrpc)
-        def on_die(player: Player):
-            self.print(f"{player.name} die")
-        def on_respawn(player: Player):
-            self.print(f"{player.name} respawn")
-        self.listen_player_die(on_die)
-        self.listen_player_respawn(on_respawn)
 
     def on_pyrpc(self, pk: dict):
         self._test_die(pk)
@@ -53,7 +47,7 @@ class NewPlugin(Plugin):
         eventType, contents = values[0:2]
         if eventType != "ModEventS2C":
             return
-        if len(contents) != 4:
+        elif len(contents) != 4:
             return
         eventName, eventData = contents[2:4]
         if eventName != "OnPlayerDie":
@@ -67,7 +61,6 @@ class NewPlugin(Plugin):
             self._on_die(player)
         else:
             self._on_respawn(player)
-        return
 
     def _on_die(self, player: Player):
         for cb in self._die_cbs:
