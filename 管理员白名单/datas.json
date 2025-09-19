@@ -1,0 +1,10 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.1",
+    "description": "踢出不在管理员白名单中的管理员 (安装后 reload 记得先修改配置文件把自己名字加进去！)",
+    "limit_launcher": null,
+    "pre-plugins": {
+    },
+    "plugin-type": "classic",
+    "plugin-id": "op-whitelist"
+}
