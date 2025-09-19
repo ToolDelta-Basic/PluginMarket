@@ -280,6 +280,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "管理员白名单": [
+        "__init__.py",
+        "datas.json"
+    ],
     "bdx导出器Pro": [
         "__init__.py",
         "datas.json"

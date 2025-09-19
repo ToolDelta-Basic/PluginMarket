@@ -321,6 +321,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "op-whitelist": {
+      "name": "管理员白名单",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "bdx-exporter": {
       "name": "bdx导出器Pro",
       "author": "SuperScript",
