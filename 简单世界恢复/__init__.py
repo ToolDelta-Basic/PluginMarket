@@ -31,7 +31,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 4, 2)
+    version = (0, 5, 0)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -80,7 +80,7 @@ class SimpleWorldRecover(Plugin):
 
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 2, 4))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 4, 0))
 
         if 0:
             from pip模块支持 import PipSupport
