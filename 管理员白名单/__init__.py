@@ -53,7 +53,7 @@ class OPWhiteList(Plugin):
     def test_op(self, player: Player):
         if player is self.game_ctrl.players.getBotInfo():
             return
-        if player.name not in self.config.name_whitelist:
+        if player.is_op() and player.name not in self.config.name_whitelist:
             self.game_ctrl.sendwocmd(f'kick {player.safe_name} "§c不在管理员白名单"')
             self.game_ctrl.say_to("@a", f"§c不在管理员白名单： {player.name}， 已踢出")
             if self.config.ban_seconds != 0:
