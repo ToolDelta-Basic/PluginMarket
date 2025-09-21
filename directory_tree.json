@@ -252,15 +252,6 @@
         "__init__.py": 0,
         "datas.json": 0
     },
-    "无限方块反制": {
-        "request_queue.py": 0,
-        "auto_request.py": 0,
-        "__init__.py": 0,
-        "on_sub_chunk.py": 0,
-        "moving_block_analysis.py": 0,
-        "datas.json": 0,
-        "define.py": 0
-    },
     "超频刷屏反制": {
         "__init__.py": 0,
         "datas.json": 0

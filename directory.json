@@ -244,15 +244,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "无限方块反制": [
-        "request_queue.py",
-        "auto_request.py",
-        "__init__.py",
-        "on_sub_chunk.py",
-        "moving_block_analysis.py",
-        "datas.json",
-        "define.py"
-    ],
     "超频刷屏反制": [
         "__init__.py",
         "datas.json"
