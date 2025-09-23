@@ -1,8 +1,11 @@
 import json
 import uuid
 import threading
-from tooldelta import Plugin, constants, utils, packets, Chat, Player, plugin_entry
+from tooldelta import Plugin, constants, utils, Chat, Player, plugin_entry
 from tooldelta.constants.netease import PYRPC_OP_SEND
+
+if 0:
+    from tooldelta.internal.types import Packet_CommandOutput
 
 
 def find_key_from_value(dic, val):
@@ -87,7 +90,7 @@ class BasicFunctionLib(Plugin):
         return choices_list[resp - 1]
 
     def multi_sendcmd_and_wait_resp(self, cmds: list[str], timeout: int):
-        cbs: dict[str, packets.Packet_CommandOutput] = {}
+        cbs: dict[str, "Packet_CommandOutput"] = {}
         evts: list[threading.Event] = []
 
         def _sendcmd2cb(cmd):
