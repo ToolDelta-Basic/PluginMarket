@@ -717,6 +717,12 @@
       "version": "1.0.0",
       "plugin-type": "classic"
     },
+    "q&a-questions": {
+      "name": "Q&A答题",
+      "author": "ToolDelta",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "simple-bedworld-export": {
       "name": "简单世界导出",
       "author": "YoRHa",

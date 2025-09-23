@@ -697,6 +697,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "Q&A答题": [
+        "__init__.py",
+        "datas.json"
+    ],
     "简单世界导出": [
         "readme.txt",
         "__init__.py",
