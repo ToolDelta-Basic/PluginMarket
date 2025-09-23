@@ -1,9 +1,10 @@
 {
-  "author": "SuperScript",
-  "version": "0.0.4",
-  "description": "可以在控制台让机器人执行特殊指令等, 处于FastBuilder启动模式下还可以快捷使用fb指令",
-  "limit_launcher": null,
-  "pre-plugins": {},
-  "plugin-type": "classic",
-  "plugin-id": "控制台执行MC指令"
+    "author": "SuperScript",
+    "version": "0.0.5",
+    "description": "可以在控制台让机器人执行特殊指令等, 还可以发送魔法(AI)指令\n - ws/: 发送 WebSocket 指令\n - ai/ 发送 ai 指令",
+    "limit_launcher": null,
+    "pre-plugins": {},
+    "plugin-type": "classic",
+    "plugin-id": "控制台执行MC指令",
+    "enabled": true
 }
