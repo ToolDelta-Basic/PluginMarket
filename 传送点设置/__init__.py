@@ -1,5 +1,5 @@
 import os
-from tooldelta import Plugin, Player, utils, game_utils, cfg, TYPE_CHECKING, plugin_entry
+from tooldelta import Plugin, Player, utils, cfg, TYPE_CHECKING, plugin_entry
 
 DIMENSIONS = ["overworld", "nether", "the_end", *(f"dim{i}" for i in range(3, 21))]
 DIMENSIONS_ZHCN = ["主世界", "下界", "末地", *(f"DIM-{i}" for i in range(3, 21))]
@@ -10,7 +10,7 @@ function = print
 class HomePointSet(Plugin):
     name = "传送点设置"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -38,7 +38,6 @@ class HomePointSet(Plugin):
         self.funclib = self.GetPluginAPI("基本插件功能库")
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         self.snowmenu = self.GetPluginAPI("雪球菜单v3")
-        self.xuidm = self.GetPluginAPI("XUID获取")
         if TYPE_CHECKING:
             from 前置_基本插件功能库 import BasicFunctionLib
             from 前置_聊天栏菜单 import ChatbarMenu
@@ -71,58 +70,49 @@ class HomePointSet(Plugin):
         )
         self.chatbar.add_new_trigger(
             self.cfg["聊天栏菜单内配置"]["传送到传送点触发词"],
-            [("传送点名", str, "")],
+            [],
             "前往传送点",
             self.on_home,
         )
 
-    def on_set_home(self, playerf: Player, args):
-        player = playerf.name
+    def on_set_home(self, player: Player, args):
         homes = self.read_homes(player)
         if len(homes) >= self.cfg["最多可设置的传送点"]:
-            self.game_ctrl.say_to(player, "§7[§cx§7] 传送点数量已达到上限")
+            player.show("§7[§cx§7] 传送点数量已达到上限")
             return
         resp = args[0]
         if len(resp) > 20 or resp == "***":
-            self.game_ctrl.say_to(
-                player, "§7[§cx§7] 不合规的传送点名， 取消传送点设置"
+            player.show("§7[§cx§7] 不合规的传送点名， 取消传送点设置"
             )
             return
         if resp in homes:
-            self.game_ctrl.say_to(player, "§7[§cx§7] 已有重命名传送点")
+            player.show("§7[§cx§7] 已有重命名传送点")
             return
-        pos_data = game_utils.getPos(player)
-        xyz_data = pos_data["position"]
+        dim, x,y,z = player.getPos()
         homes[resp] = [
-            pos_data["dimension"],
-            xyz_data["x"],
-            xyz_data["y"],
-            xyz_data["z"],
+            dim, x, y, z
         ]
         self.write_homes(player, homes)
-        self.game_ctrl.say_to(player, f"§7[§a√§7] §a传送点 {resp} 设置成功")
+        player.show(f"§7[§a√§7] §a传送点 {resp} 设置成功")
 
-    def on_list_home(self, playerf: Player, _):
-        player = playerf.name
+    def on_list_home(self, player: Player, _):
         homes = self.read_homes(player)
         if homes == {}:
-            self.game_ctrl.say_to(player, "§7[§6!§7] §6你还没有设置任何一个传送点")
+            player.show("§7[§6!§7] §6你还没有设置任何一个传送点")
             return
-        self.game_ctrl.say_to(player, "§a当前已设置的传送点：")
+        player.show("§a当前已设置的传送点：")
         for name, pos in homes.items():
             dim, x, y, z = pos
             dim_zhcn = DIMENSIONS_ZHCN[int(dim)]
-            self.game_ctrl.say_to(
-                player, f" §7- §f{name} §6（{dim_zhcn} {x:.1f}， {y:.1f}， {z:.1f}）"
+            player.show(f" §7- §f{name} §6（{dim_zhcn} {x:.1f}， {y:.1f}， {z:.1f}）"
             )
 
-    def on_del_home(self, playerf: Player, args: tuple):
-        player = playerf.name
+    def on_del_home(self, player: Player, args: tuple):
         homes = self.read_homes(player)
         if args[0] != "":
             dhome = args[0]
             if dhome not in homes.keys():
-                self.game_ctrl.say_to(player, "§7[§cx§7] §c该传送点不存在")
+                player.show("§7[§cx§7] §c该传送点不存在")
                 return
         else:
             hlist = list(homes.keys())
@@ -133,37 +123,34 @@ class HomePointSet(Plugin):
                 return
         del homes[dhome]
         self.write_homes(player, homes)
-        self.game_ctrl.say_to(player, f"§7[§a√§7] §a传送点 {dhome} 已删除")
+        player.show(f"§7[§a√§7] §a传送点 {dhome} 已删除")
 
-    def on_home(self, playerf: Player, args: tuple):
-        player = playerf.name
+    def on_home(self, player: Player, args: tuple):
         homes = self.read_homes(player)
-        if args[0] != "":
-            goto_home = args[0]
-            if goto_home not in homes.keys():
-                self.game_ctrl.say_to(player, "§7[§cx§7] §c该传送点不存在")
-                return
-        else:
-            hlist = list(homes.keys())
-            goto_home = self.funclib.list_select(
-                player, hlist, "§6选择一个传送点：", " §f%d §7- §6%s"
-            )
-            if goto_home is None:
-                return
+        # if args[0] != "":
+        #     goto_home = args[0]
+        #     if goto_home not in homes.keys():
+        #         player.show("§7[§cx§7] §c该传送点不存在")
+        #         return
+        # else:
+        hlist = list(homes.keys())
+        goto_home = self.funclib.list_select(
+            player, hlist, "§6选择一个传送点：", " §f%d §7- §6%s"
+        )
+        if goto_home is None:
+            return
         dim, x, y, z = homes[goto_home]
         dim_id = DIMENSIONS[int(dim)]
         self.game_ctrl.sendwocmd(
-            f"execute as {utils.to_player_selector(player)} at @s in {dim_id} run tp {x} {y} {z}"
+            f"execute as {player.safe_name} at @s in {dim_id} run tp {x} {y} {z}"
         )
-        self.game_ctrl.say_to(player, f"§7[§a√§7] §a已传送到 {goto_home}")
+        player.show(f"§7[§a√§7] §a已传送到 {goto_home}")
 
-    def read_homes(self, player: str) -> dict[str, list[float]]:
-        path = self.format_data_path("传送点列表", self.xuidm.get_xuid_by_name(player))
-        return utils.tempjson.load_and_read(path, False, default={})
+    def read_homes(self, player: Player) -> dict[str, list[float]]:
+        return utils.tempjson.load_and_read(self.data_path / "传送点列表" / player.xuid, False, default={})
 
-    def write_homes(self, player: str, content: dict[str, list[float]]):
-        path = self.format_data_path("传送点列表", self.xuidm.get_xuid_by_name(player))
-        utils.tempjson.load_and_write(path, content, False)
+    def write_homes(self, player: Player, content: dict[str, list[float]]):
+        utils.tempjson.load_and_write(self.data_path / "传送点列表" / player.xuid, content, False)
 
 
 entry = plugin_entry(HomePointSet)
