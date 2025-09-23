@@ -1,7 +1,8 @@
 import json
-import time
+import uuid
 import threading
-from tooldelta import Plugin, utils, packets, Chat, Player, plugin_entry
+from tooldelta import Plugin, constants, utils, packets, Chat, Player, plugin_entry
+from tooldelta.constants.netease import PYRPC_OP_SEND
 
 
 def find_key_from_value(dic, val):
@@ -12,14 +13,13 @@ def find_key_from_value(dic, val):
 
 
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 11)
+    version = (0, 0, 12)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.waitmsg_req = []
         self.waitmsg_result = {}
         self.ListenPlayerLeave(self.on_player_leave)
         self.ListenChat(self.on_player_message)
@@ -28,20 +28,18 @@ class BasicFunctionLib(Plugin):
         player = chat.player.name
         msg = chat.msg
 
-        if player in self.waitmsg_req:
-            self.waitmsg_result[player] = msg
-            self.waitmsg_req.remove(player)
+        if player in self.waitmsg_result:
+            self.waitmsg_result[player](msg)
 
     def on_player_leave(self, playerf: Player):
         player = playerf.name
-        if player in self.waitmsg_req:
-            self.waitmsg_result[player] = EXC_PLAYER_LEAVE
-            self.waitmsg_req.remove(player)
+        if player in self.waitmsg_result:
+            self.waitmsg_result[player](EXC_PLAYER_LEAVE)
 
     # -------------- API ---------------
     def list_select(
         self,
-        player: str,
+        player: Player,
         choices_list: list[str],
         list_prefix: str,
         list_format: str = " %d - %s",
@@ -70,21 +68,21 @@ class BasicFunctionLib(Plugin):
             None: 无法获得选项
         """
         if choices_list == []:
-            self.game_ctrl.say_to(player, if_list_empty)
+            player.show(if_list_empty)
             return None
-        self.game_ctrl.say_to(player, list_prefix)
+        player.show(list_prefix)
         for i, j in enumerate(choices_list):
-            self.game_ctrl.say_to(player, list_format % (i + 1, j))
-        self.game_ctrl.say_to(player, list_end)
-        resp = self.waitMsg(player, waitmsg_timeout)
+            player.show(list_format % (i + 1, j))
+        player.show(list_end)
+        resp = player.input(timeout=waitmsg_timeout)
         if resp is None:
-            self.game_ctrl.say_to(player, if_timeout)
+            player.show(if_timeout)
             return None
         elif (resp := utils.try_int(resp)) is None:
-            self.game_ctrl.say_to(player, if_not_int)
+            player.show(if_not_int)
             return None
         elif resp not in range(1, len(choices_list) + 1):
-            self.game_ctrl.say_to(player, if_not_in_range)
+            player.show(if_not_in_range)
             return None
         return choices_list[resp - 1]
 
@@ -248,58 +246,18 @@ class BasicFunctionLib(Plugin):
             return "air"
         return res.OutputMessages[0].Parameters[4].strip("%tile.").strip(".name")
 
-    def waitMsg(self, who: str, timeout: int = 30, exc=None):
+    def waitMsg_with_actbar(self, who: Player, msg: str, timeout: int = 30, exc=None):
         """
         使用其来等待一个玩家的聊天栏回复, 超时则引发exc给定的异常, 没有给定时超时返回None
         当过程中玩家退出了游戏, 则引发异常(为IOError)
         """
-        time.sleep(0.5)
-        if who not in self.waitmsg_req:
-            self.waitmsg_req.append(who)
-        timer = time.time()
-        while 1:
-            time.sleep(0.2)
-            if who in self.waitmsg_result.keys():
-                r = self.waitmsg_result[who]
-                del self.waitmsg_result[who]
-                if r == EXC_PLAYER_LEAVE:
-                    raise EXC_PLAYER_LEAVE
-                return r
-            if time.time() - timer >= timeout:
-                try:
-                    self.waitmsg_req.remove(who)
-                except Exception:
-                    pass
-                if exc is not None:
-                    raise exc
-                return None
-
-    def waitMsg_with_actbar(self, who: str, msg: str, timeout: int = 30, exc=None):
-        """
-        使用其来等待一个玩家的聊天栏回复, 超时则引发exc给定的异常, 没有给定时超时返回None
-        当过程中玩家退出了游戏, 则引发异常(为IOError)
-        """
-        time.sleep(0.5)
-        if who not in self.waitmsg_req:
-            self.waitmsg_req.append(who)
-        timer = time.time()
-        while 1:
-            self.game_ctrl.player_actionbar(who, msg)
-            time.sleep(0.2)
-            if who in self.waitmsg_result.keys():
-                r = self.waitmsg_result[who]
-                del self.waitmsg_result[who]
-                if r == EXC_PLAYER_LEAVE:
-                    raise EXC_PLAYER_LEAVE
-                return r
-            if time.time() - timer >= timeout:
-                try:
-                    self.waitmsg_req.remove(who)
-                except Exception:
-                    pass
-                if exc is not None:
-                    raise exc
-                return None
+        getter, setter = utils.create_result_cb()
+        self.waitmsg_result[who] = setter
+        res = getter(timeout)
+        del self.waitmsg_result[who]
+        if res is EXC_PLAYER_LEAVE:
+            raise EXC_PLAYER_LEAVE
+        return res
 
     def getPosXYZ(self, player, timeout=30) -> tuple[float, float, float]:
         "获取玩家坐标的X, Y, Z值"
@@ -315,6 +273,27 @@ class BasicFunctionLib(Plugin):
         "返回命令执行是否成功"
         res = self.game_ctrl.sendwscmd_with_resp(cmd, timeout).SuccessCount
         return bool(res)
+
+    def sendaicmd(self, cmd: str):
+        my_runtimeid = self.game_ctrl.players.getBotInfo().runtime_id
+        pk = {
+            "Value": [
+                "ModEventC2S",
+                [
+                    "Minecraft",
+                    "aiCommand",
+                    "ExecuteCommandEvent",
+                    {
+                        "playerId": str(my_runtimeid),
+                        "cmd": cmd,
+                        "uuid": str(uuid.uuid4()),
+                    },
+                ],
+                None,
+            ],
+            "OperationType": PYRPC_OP_SEND,
+        }
+        self.game_ctrl.sendPacket(constants.PacketIDS.PyRpc, pk)
 
 
 EXC_PLAYER_LEAVE = OSError("Player left when waiting msg.")
