@@ -660,7 +660,7 @@
     "控制台执行MC指令": {
       "name": "控制台执行MC指令",
       "author": "SuperScript",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "system_online": {
