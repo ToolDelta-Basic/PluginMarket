@@ -468,7 +468,7 @@
     "基本插件功能库": {
       "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.11",
+      "version": "0.0.12",
       "plugin-type": "classic"
     },
     "协管系统": {
