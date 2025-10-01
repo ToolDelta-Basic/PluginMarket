@@ -1,0 +1,9 @@
+{
+  "author": "猫七街",
+  "version": "0.1.0",
+  "plugin-type": "classic",
+  "description": "用于清理玩家的宠物背包\n详细使用方法请选择§c查看插件文档手册！",
+  "pre-plugins": {},
+  "plugin-id": "宠物背包清理",
+  "enabled": true
+}
