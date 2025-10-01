@@ -255,12 +255,6 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
-    "宠物背包清理": {
-      "name": "有效的宠物背包清理",
-      "author": "猫七街",
-      "version": "0.1.0",
-      "plugin-type": "classic"
-    },
     "机器人发言": {
       "name": "机器人发言",
       "author": "SuperScript",
@@ -679,6 +673,12 @@
       "name": "音乐播放器",
       "author": "SuperScript",
       "version": "0.1.2",
+      "plugin-type": "classic"
+    },
+    "宠物背包清理": {
+      "name": "宠物背包清理",
+      "author": "猫七街",
+      "version": "0.1.0",
       "plugin-type": "classic"
     },
     "世界备份": {

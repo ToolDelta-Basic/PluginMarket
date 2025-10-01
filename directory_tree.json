@@ -440,11 +440,6 @@
         "datas.json": 0,
         "__init__.py": 0
     },
-    "有效的宠物背包清理": {
-        "datas.json": 0,
-        "readme.md": 0,
-        "__init__.py": 0
-    },
     "机器人发言": {
         "datas.json": 0,
         "__init__.py": 0
@@ -821,6 +816,11 @@
         "__init__.py": 0
     },
     "market_tree.json": 0,
+    "宠物背包清理": {
+        "datas.json": 0,
+        "readme.md": 0,
+        "__init__.py": 0
+    },
     "世界备份": {
         "datas.json": 0,
         "__init__.py": 0
