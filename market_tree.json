@@ -183,12 +183,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "@玩家": {
-      "name": "@玩家",
-      "author": "wling",
-      "version": "0.0.5",
-      "plugin-type": "classic"
-    },
     "超频刷屏反制": {
       "name": "超频刷屏反制",
       "author": "SuperScript",
@@ -261,6 +255,12 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
+    "宠物背包清理": {
+      "name": "有效的宠物背包清理",
+      "author": "猫七街",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "机器人发言": {
       "name": "机器人发言",
       "author": "SuperScript",
@@ -321,6 +321,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "SilverWolfCmdL2E": {
+      "name": "银狼的指令区工程导入导出",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "MySQL": {
       "name": "MySQL连接器",
       "author": "小虫虫",
@@ -367,12 +373,6 @@
       "name": "巡逻",
       "author": "猫七街",
       "version": "0.0.8",
-      "plugin-type": "classic"
-    },
-    "SilverWolfCmdL2E": {
-      "name": "[SilverWolf] 指令区工程导入导出",
-      "author": "SuperScript",
-      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "Cb2Bot通信": {
@@ -469,6 +469,12 @@
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
       "version": "0.4.0",
+      "plugin-type": "classic"
+    },
+    "@玩家": {
+      "name": "更明显的@玩家",
+      "author": "wling",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "全服喇叭": {
@@ -673,12 +679,6 @@
       "name": "音乐播放器",
       "author": "SuperScript",
       "version": "0.1.2",
-      "plugin-type": "classic"
-    },
-    "宠物背包清理": {
-      "name": "宠物背包清理",
-      "author": "猫七街",
-      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "世界备份": {

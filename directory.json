@@ -368,10 +368,6 @@
         "datas.json",
         "__init__.py"
     ],
-    "@玩家": [
-        "datas.json",
-        "__init__.py"
-    ],
     "超频刷屏反制": [
         "datas.json",
         "__init__.py"
@@ -438,6 +434,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "有效的宠物背包清理": [
+        "datas.json",
+        "readme.md",
+        "__init__.py"
+    ],
     "机器人发言": [
         "datas.json",
         "__init__.py"
@@ -476,6 +477,14 @@
     ],
     "插件接口获取修复": [
         "datas.json",
+        "__init__.py"
+    ],
+    "银狼的指令区工程导入导出": [
+        "loader.py",
+        "file.py",
+        "datas.json",
+        "define.py",
+        "dumper.py",
         "__init__.py"
     ],
     "MySQL连接器": [
@@ -528,14 +537,6 @@
     ],
     "巡逻": [
         "datas.json",
-        "__init__.py"
-    ],
-    "[SilverWolf] 指令区工程导入导出": [
-        "loader.py",
-        "file.py",
-        "datas.json",
-        "define.py",
-        "dumper.py",
         "__init__.py"
     ],
     "前置_Cb2Bot通信": [
@@ -616,6 +617,10 @@
         "datas.json",
         "config_getter.py",
         "使用方法.md",
+        "__init__.py"
+    ],
+    "更明显的@玩家": [
+        "datas.json",
         "__init__.py"
     ],
     "全服喇叭": [
@@ -800,10 +805,6 @@
         "__init__.py"
     ],
     "挂机检测": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "宠物背包清理": [
         "datas.json",
         "__init__.py"
     ],
