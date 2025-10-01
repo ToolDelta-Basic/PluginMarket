@@ -16,9 +16,9 @@ class SilverwolfLoadAndExport(Plugin):
 
     def on_def(self):
         self.print("§bSilverWolf Command Loader And Exporter")
-        fmts.print_with_info("§bSilverWolf CommandArea Loader And Exporter", "§b SWCL §r")
-        fmts.print_with_info("§b指令区工程导入 / 导出程序 @ SuperScript", "§b SWCL §r")
-        fmts.print_with_info("§b控制台输入 cbdump / cbload 进行指令区工程导入导出", "§b SWCL §r")
+        self.print("§bSilverWolf CommandArea Loader And Exporter")
+        self.print("§b指令区工程导入 / 导出程序 @ SuperScript")
+        self.print("§b控制台输入 cbdump / cbload 进行指令区工程导入导出")
         self.intr = self.GetPluginAPI("前置-世界交互")
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         if TYPE_CHECKING:
