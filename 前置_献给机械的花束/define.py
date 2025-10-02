@@ -77,7 +77,7 @@ class FlowersForMachineBase:
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.2.2":
+        if loaded_dict["version"] != "1.4.0":
             return True
         return False
 
@@ -85,22 +85,22 @@ class FlowersForMachineBase:
         version_path = self.plugin.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.2.2"},
+            {"version": "1.4.0"},
         )
         tempjson.flush(version_path)
 
     def on_def(self):
-        pip = self.plugin.GetPluginAPI("pip")
-
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
+        pip = self.plugin.GetPluginAPI("pip")
         if self.need_upgrade_bwo():
             pip.upgrade("bedrock-world-operator")
             self.save_bwo_version()
+        else:
+            pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
         import bedrockworldoperator as bwo
         from bedrockworldoperator.utils.marshalNBT import MarshalPythonNBTObjectToWriter

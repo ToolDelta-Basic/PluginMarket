@@ -1,0 +1,8 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "导出指令区为 mcfunction 工程文件夹\n或者将工程文件夹内容导入为指令区\n支持简单断链/朝向保存等\n在控制台输入 cbdump / cbload 进行指令区导入导出",
+  "pre-plugins": {},
+  "plugin-id": "SilverWolfCmdL2E"
+}

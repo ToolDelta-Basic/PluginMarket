@@ -31,7 +31,7 @@ class chunkPos:
 class SimpleWorldRecover(Plugin):
     name = "简单世界恢复"
     author = "YoRHa"
-    version = (0, 4, 0)
+    version = (0, 5, 0)
 
     waiting_chunk_pos: chunkPos
     waiting_chunk_data: list[dict]
@@ -80,7 +80,7 @@ class SimpleWorldRecover(Plugin):
 
         pip = self.GetPluginAPI("pip")
         _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 1, 0))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 4, 0))
 
         if 0:
             from pip模块支持 import PipSupport
@@ -308,7 +308,7 @@ class SimpleWorldRecover(Plugin):
         block_states = bwo.runtime_id_to_state(block_runtime_id)
         try:
             self.game_ctrl.sendwocmd(
-                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}'
             )
         except Exception:
             pass
@@ -326,7 +326,7 @@ class SimpleWorldRecover(Plugin):
     @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_recover(self, cmd: list[str], called_by_api: bool):
         if self.flowers_for_machines is None:
-            fmts.print_err("do_world_recover: Should nerver happened")
+            fmts.print_err("do_world_recover: Should never happened")
             return
 
         if not called_by_api:
@@ -352,7 +352,7 @@ class SimpleWorldRecover(Plugin):
 
     def _do_world_recover(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("_do_world_recover: Should nerver happened")
+            fmts.print_err("_do_world_recover: Should never happened")
             return
 
         dim_id = self.get_bot_dimension()

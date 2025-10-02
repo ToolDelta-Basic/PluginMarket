@@ -1,0 +1,9 @@
+{
+  "author": "Eternal Crystal",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "Running a custom program.",
+  "pre-plugins": {},
+  "plugin-id": "简单程序启动器",
+  "enabled": true
+}

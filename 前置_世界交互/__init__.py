@@ -15,7 +15,7 @@ class GameInteractive(Plugin):
     name = "前置-世界交互"
     author = "SuperScript and Happy2018new"
     description = "前置插件, 提供世界交互功能的数据包, etc."
-    version = (2, 0, 5)
+    version = (2, 0, 7)
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -29,7 +29,9 @@ class GameInteractive(Plugin):
         )
 
     def on_def(self):
-        global numpy, nbtlib, Structure, make_uuid_safe_string, UnMarshalBufferToPythonNBTObject
+        global numpy, nbtlib
+        global Block, Structure
+        global make_uuid_safe_string, UnMarshalBufferToPythonNBTObject
         pip = self.GetPluginAPI("pip")
 
         if 0:
@@ -44,8 +46,10 @@ class GameInteractive(Plugin):
         from bedrockworldoperator.utils.unmarshalNBT import (
             UnMarshalBufferToPythonNBTObject,
         )
-        from .structure import Structure
+        from .structure import Structure, Block
         from .safe_uuid import make_uuid_safe_string
+
+        self.Block = Block
 
     def on_inject(self):
         self.frame.add_console_cmd_trigger(
@@ -54,7 +58,7 @@ class GameInteractive(Plugin):
 
     def on_structure_pkt(self, pk: BaseBytesPacket):
         if not isinstance(pk, StructureTemplateDataResponse):
-            raise Exception("on_structure_pkt: Should nerver happened")
+            raise Exception("on_structure_pkt: Should never happened")
 
         structure_name = pk.StructureName
         if structure_name in self.structure_callbacks:
@@ -165,7 +169,22 @@ class GameInteractive(Plugin):
                     f"无法放置命令方块方块: {resp.OutputMessages[0].Message}"
                 )
         time.sleep(limit_seconds2)
-        self.game_ctrl.sendPacket(78, command_block_update_packet)
+        self.game_ctrl.sendPacket(
+            PacketIDS.CommandBlockUpdate, command_block_update_packet
+        )
+
+    def make_uuid_safe_string(self, unique_id: uuid.UUID) -> str:
+        """
+        make_uuid_safe_string 返回 unique_id 的安全化表示，
+        这使得其不可能被网易屏蔽词所拦截
+
+        Args:
+            unique_id (str): 一个 UUID 实例
+
+        Returns:
+            str: 这个 UUID 的安全化字符串表示
+        """
+        return make_uuid_safe_string(unique_id)
 
     def get_structure(
         self, position: tuple[int, int, int], size: tuple[int, int, int]
@@ -180,7 +199,7 @@ class GameInteractive(Plugin):
         """
         structure = self._request_structure_and_get(position, size)
         if not isinstance(structure, StructureTemplateDataResponse):
-            raise Exception("get_structure: Should nerver happend")
+            raise Exception("get_structure: Should never happend")
 
         nbt_bytes = structure.StructureTemplate
         buf = BytesIO(nbt_bytes)
@@ -209,7 +228,7 @@ class GameInteractive(Plugin):
 
     def _request_structure_and_get(
         self, position: tuple[int, int, int], size: tuple[int, int, int], timeout=5.0
-    ) -> BaseBytesPacket:
+    ) -> StructureTemplateDataResponse:
         structure_name = "mystructure:" + make_uuid_safe_string(uuid.uuid4())
 
         getter, setter = utils.create_result_cb()
@@ -237,7 +256,7 @@ class GameInteractive(Plugin):
         self.game_ctrl.sendPacket(PacketIDS.IDStructureTemplateDataRequest, pk)
 
         resp = getter(timeout)
-        if not isinstance(resp, BaseBytesPacket):
+        if not isinstance(resp, StructureTemplateDataResponse):
             raise ValueError(f"无法获取 {position} 的 {size} 结构")
         return resp
 

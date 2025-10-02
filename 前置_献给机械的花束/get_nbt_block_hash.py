@@ -58,7 +58,7 @@ class GetNBTBlockHash:
         nbt_marshal = self.base().nbt_marshal
         if nbt_marshal is None:
             raise Exception(
-                "GetNBTBlockHashResponse/_send_request_to_server: Should nerver happened"
+                "GetNBTBlockHashResponse/_send_request_to_server: Should never happened"
             )
 
         args = {

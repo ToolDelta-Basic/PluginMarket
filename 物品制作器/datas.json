@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "plugin-type": "classic",
     "description": "可制作换行物品等; 详情请查看该插件附带的手册",
     "pre-plugins": {},

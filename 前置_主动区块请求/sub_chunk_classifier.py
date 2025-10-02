@@ -117,7 +117,7 @@ def sub_chunk_classifier(
                 )
                 for k in offset:
                     if k > 127 or k < -128:
-                        raise Exception("sub_chunk_classifier: Should nerver happened")
+                        raise Exception("sub_chunk_classifier: Should never happened")
                 packet.Offsets.append(offset)
 
             result.append(packet)

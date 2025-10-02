@@ -17,7 +17,7 @@ from tooldelta.utils.tooldelta_thread import ToolDeltaThread
 class SimpleWorldImport(Plugin):
     name = "简单世界导入"
     author = "YoRHa"
-    version = (0, 2, 0)
+    version = (0, 3, 0)
 
     should_close: bool = False
     running_mutex: threading.Lock
@@ -44,7 +44,7 @@ class SimpleWorldImport(Plugin):
         global bwo, nbtlib, FlowersForMachine
 
         pip = self.GetPluginAPI("pip")
-        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 0, 0))
+        self.flowers_for_machines = self.GetPluginAPI("献给机械の花束", (1, 4, 0))
 
         if 0:
             from pip模块支持 import PipSupport
@@ -175,7 +175,7 @@ class SimpleWorldImport(Plugin):
         block_states = bwo.runtime_id_to_state(block_runtime_id)
         try:
             self.game_ctrl.sendwocmd(
-                f"setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}"
+                f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run setblock {pos[0]} {pos[1]} {pos[2]} {block_states.Name} {self.as_block_states_string(block_states.States)}'
             )
         except Exception:
             pass
@@ -183,7 +183,7 @@ class SimpleWorldImport(Plugin):
     @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_import(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("do_world_import: Should nerver happened")
+            fmts.print_err("do_world_import: Should never happened")
             return
 
         if not self.running_mutex.acquire(timeout=0):
@@ -200,7 +200,7 @@ class SimpleWorldImport(Plugin):
 
     def _do_world_import(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("_do_world_import: Should nerver happened")
+            fmts.print_err("_do_world_import: Should never happened")
             return
 
         try:

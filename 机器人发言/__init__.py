@@ -1,4 +1,5 @@
 from tooldelta import Plugin, plugin_entry
+from tooldelta.constants import PacketIDS
 
 
 class NewPlugin(Plugin):
@@ -20,7 +21,7 @@ class NewPlugin(Plugin):
 
     def bot_say(self, msg):
         self.game_ctrl.sendPacket(
-            9,
+            PacketIDS.Text,
             {
                 "TextType": 1,
                 "NeedsTranslation": False,

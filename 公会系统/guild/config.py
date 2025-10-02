@@ -4,6 +4,12 @@ class Config:
     GUILD_CREATION_COST = 5000          #创建公会所需的积分
     MAX_GUILD_MEMBERS = 30              #一个公会最多多少人
     GUILD_SCOREBOARD = "money"          #公会积分板块
+    GUILD_FUNCTION_VAULT = True         #启用公会仓库功能
+    GUILD_FUNCTION_BASE = True          #启用公会据点功能
+    GUILD_FUNCTION_DONATION = True      #启用公会捐献功能
+    GUILD_FUNCTION_TASKS = True         #启用公会任务功能
+    GUILD_FUNCTION_EFFECT = True        #启用公会效果增益功能
+    GUILD_FUNCTION_RANKINGS = True      #启用公会排行榜功能
     EXP_PER_ONLINE_MEMBER = 10
     EXP_UPDATE_INTERVAL = 600 
     DAILY_LOGIN_EXP = 5

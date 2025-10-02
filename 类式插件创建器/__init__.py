@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from tooldelta import Plugin, Print, utils, constants, plugin_entry
 from tooldelta.utils.sys_args import sys_args_to_dict
 
@@ -28,11 +29,17 @@ class PluginCreator(Plugin):
             pname = args[0]
         while 1:
             if pname := (pname or input(Print.fmt_info("请输入插件名: ")).strip()):
-                plugin_dir_path = os.path.join(
-                    constants.TOOLDELTA_PLUGIN_DIR,
-                    constants.TOOLDELTA_CLASSIC_PLUGIN,
-                    pname,
-                )
+                basic_dir = constants.TOOLDELTA_PLUGIN_DIR
+                if isinstance(basic_dir, Path):
+                    plugin_dir_path = os.path.join(
+                        basic_dir / pname
+                    )
+                else:
+                    plugin_dir_path = os.path.join(
+                        constants.TOOLDELTA_PLUGIN_DIR,
+                        constants.TOOLDELTA_CLASSIC_PLUGIN,
+                        pname,
+                    )
                 if os.path.isdir(plugin_dir_path):
                     Print.print_war("已有重命名插件")
                     pname = ""

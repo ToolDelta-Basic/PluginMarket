@@ -1,0 +1,9 @@
+{
+  "author": "wling",
+  "version": "0.0.5",
+  "description": "让@更有效果！ (输入 @玩家名 时将获得更明显的艾特提示)",
+  "limit_launcher": null,
+  "pre-plugins": {},
+  "plugin-type": "classic",
+  "plugin-id": "@玩家"
+}

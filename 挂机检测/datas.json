@@ -1,0 +1,9 @@
+{
+  "author": "衍",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "检测挂机玩家并踢出",
+  "pre-plugins": {},
+  "plugin-id": "114514",
+  "enabled": true
+}

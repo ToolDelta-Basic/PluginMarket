@@ -20,7 +20,7 @@ def PyString(n: bytes):
 class TDItemMaker(Plugin):
     name = "特殊物品制作器"
     author = "SuperScript"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -36,11 +36,11 @@ class TDItemMaker(Plugin):
         from tooldelta.internal.launch_cli.neo_libs.neo_conn import LIB
 
         LIB.RenameItemWithAnvil.argtypes = [
-            ctypes.c_int,
-            ctypes.c_int,
-            ctypes.c_int,
-            ctypes.c_int32,
-            ctypes.c_int,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+            ctypes.c_uint32,
+            ctypes.c_uint8,
             ctypes.c_char_p,
         ]
         LIB.RenameItemWithAnvil.restype = ctypes.c_char_p
@@ -104,9 +104,9 @@ class TDItemMaker(Plugin):
         assert anvil_runtimeid != -1
         return PyString(
             self.LIB.RenameItemWithAnvil(
-                x,
-                y,
-                z,
+                ctypes.c_longlong(x),
+                ctypes.c_longlong(y),
+                ctypes.c_longlong(z),
                 anvil_runtimeid,
                 0,
                 item_new_name.encode(),

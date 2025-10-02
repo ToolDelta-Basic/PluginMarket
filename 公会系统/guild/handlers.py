@@ -118,28 +118,28 @@ def _handle_rankings(self, player: Player) -> bool:
     choice = game_utils.waitMsg(player.name, timeout=30)
 
     if choice == "1":
-        rankings = self.guild_manager.get_guild_rankings("level")
+        rankings = self.get_guild_rankings("level")
         title = "公会等级排行榜"
         formatter = lambda i, data: (
             f"§e{i}. §r{data[0].name} §7Lv.{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 成员: §a{len(data[0].members)}\n"
         )
     elif choice == "2":
-        rankings = self.guild_manager.get_guild_rankings("members")
+        rankings = self.get_guild_rankings("members")
         title = "公会成员数排行榜"
         formatter = lambda i, data: (
             f"§e{i}. §r{data[0].name} §7成员: §a{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
         )
     elif choice == "3":
-        rankings = self.guild_manager.get_guild_rankings("contribution")
+        rankings = self.get_guild_rankings("contribution")
         title = "公会贡献度排行榜"
         formatter = lambda i, data: (
             f"§e{i}. §r{data[0].name} §7贡献: §b{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
         )
     elif choice == "4":
-        rankings = self.guild_manager.get_guild_rankings("activity")
+        rankings = self.get_guild_rankings("activity")
         title = "公会活跃度排行榜"
         formatter = lambda i, data: (
             f"§e{i}. §r{data[0].name}\n"

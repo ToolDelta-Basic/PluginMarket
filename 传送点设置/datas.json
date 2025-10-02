@@ -1,13 +1,12 @@
 {
   "author": "SuperScript",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "plugin-type": "classic",
   "description": "使玩家像 /sethome /home 设置传送点; 在配置文件更改传送点设置命令",
   "pre-plugins": {
     "基本插件功能库": "0.0.1",
     "聊天栏菜单": "0.0.1",
-    "雪球菜单v2": "0.0.1",
-    "XUID获取": "0.0.1"
+    "雪球菜单v3": "0.0.1"
   },
   "plugin-id": "home-point-setter",
   "enabled": false

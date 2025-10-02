@@ -29,7 +29,7 @@ class wrapper:
 class HoloPsychon(Plugin):
     name = "世界の记忆"
     author = "9S, 米特奥拉, 阿尔泰尔 和 艾姬多娜"
-    version = (0, 1, 2)
+    version = (0, 2, 0)
 
     def __init__(self, frame: Frame):
         CFG_DEFAULT = {
@@ -74,7 +74,7 @@ class HoloPsychon(Plugin):
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.2.2":
+        if loaded_dict["version"] != "1.4.0":
             return True
         return False
 
@@ -82,25 +82,27 @@ class HoloPsychon(Plugin):
         version_path = self.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.2.2"},
+            {"version": "1.4.0"},
         )
         tempjson.flush(version_path)
 
     def on_def(self):
         global bwo, xxhash
-        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
-
-        pip = self.GetPluginAPI("pip")
         if 0:
             from pip模块支持 import PipSupport
 
             pip: PipSupport
-        pip.require({"bedrock-world-operator": "bedrockworldoperator"})
+
+        _ = self.GetPluginAPI("主动区块请求", (0, 2, 5))
+
+        pip = self.GetPluginAPI("pip")
         pip.require({"xxhash": "xxhash"})
 
         if self.need_upgrade_bwo():
             pip.upgrade("bedrock-world-operator")
             self.save_bwo_version()
+        else:
+            pip.require({"bedrock-world-operator": "bedrockworldoperator"})
 
         import bedrockworldoperator as bwo
         import xxhash

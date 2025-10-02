@@ -80,14 +80,14 @@ class ChestCache:
                 elif chest_b.is_pairlead:
                     return chest_b
                 else:
-                    raise Exception("find_chest: Should nerver happened")
+                    raise Exception("find_chest: Should never happened")
             else:
                 if not chest_a.is_pairlead:
                     return chest_a
                 elif not chest_b.is_pairlead:
                     return chest_b
                 else:
-                    raise Exception("find_chest: Should nerver happened")
+                    raise Exception("find_chest: Should never happened")
 
     def remove_chest_and_its_pair(self, requester: str, chest: PairChest):
         with self._mu:

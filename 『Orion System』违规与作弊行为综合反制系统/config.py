@@ -38,7 +38,7 @@ class OrionConfig:
         "<<提示>> 您可以通过 /scoreboard players set [玩家名称] [封禁记分板名称] [封禁时间(秒)] 来封禁对应玩家": None,
         "<<提示>> 封禁记分板的分数为封禁时间(秒)；若分数为-1，则永久封禁；若分数为0，仅踢出游戏，不作封禁，玩家可以立即重进": None,
         "<<提示>> 在封禁操作执行完毕后，对应玩家的封禁记分板分数将会重置": None,
-        "是否启用游戏内封禁记分板API": True,
+        "是否启用游戏内封禁记分板API": False,
         "--游戏内封禁记分板名称": "Ban_System",
         "--游戏内封禁记分板显示名称": "Ban_System",
         "是否隐藏违规行为踢出提示(可将玩家踢出提示转换成***)": False,
@@ -147,7 +147,7 @@ class OrionConfig:
             "权威",
             "乐子",
             "户籍",
-            "社工库",
+            "社工",
             "身份证",
             "开盒",
             "恶俗",
@@ -160,6 +160,8 @@ class OrionConfig:
         "发言字数限制": 50,
         "是否启用重复消息刷屏检测": True,
         "周期内重复消息刷屏数量限制": 3,
+        "是否启用睡觉消息刷屏检测": True,
+        "周期内睡觉消息刷屏数量限制": 3,
         "<<提示>> 如果您需要在踢出玩家的同时将其封禁，请务必按照以下格式修改配置": None,
         "<<提示>> 封禁时间=-1:永久封禁": None,
         "<<提示>> 封禁时间=0:仅踢出游戏，不作封禁，玩家可以立即重进": None,
@@ -184,6 +186,7 @@ class OrionConfig:
         "封禁时间_发言频率检测": "0年0月0日0时10分0秒",
         "封禁时间_发言字数检测": 60,
         "封禁时间_重复消息刷屏检测": "0年0月0日0时10分0秒",
+        "封禁时间_睡觉消息刷屏检测": 600,
         "<<提示>> 如果您想要自定义封禁的提示信息，请修改以下配置项": None,
         "<<提示>> 第1项为<控制台信息>，显示在面板上；第2项为<游戏内信息>，默认关闭，会通过/tellraw命令根据填入的目标选择器在游戏内进行广播；第3项为<对玩家信息>，显示给被/kick的玩家": None,
         "<<提示>> 封禁原因中的{}为参数传入部分，从0开始按顺序传入对应参数，如果你不希望显示这些信息，你可以删除它或者修改其中的数字索引": None,
@@ -215,7 +218,7 @@ class OrionConfig:
             "玩家": "您的账号等级({2}级)低于服务器准入等级({3}级)",
         },
         "信息_网易屏蔽词名称反制": {
-            "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称为网易屏蔽词，§a正在制裁",
+            "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称为网易屏蔽词，§a正在制裁，§7注意：当服务器较为卡顿时本项检测可能出现误判!",
             "游戏内": ["@a", "NN"],
             "玩家": "您的名称为网易屏蔽词",
         },
@@ -225,7 +228,7 @@ class OrionConfig:
             "玩家": "您的名称包括本服自定义违禁词({2})",
         },
         "信息_网易MC客户端无法搜索到玩家": {
-            "控制台": "§a❀ §b[PlayerList] §c由于我们无法在网易MC客户端搜索到玩家 {0} (xuid:{1}) ，§a正在制裁该玩家，§0这可能是由于“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的",
+            "控制台": "§a❀ §b[PlayerList] §c由于我们无法在网易MC客户端搜索到玩家 {0} (xuid:{1}) ，§a正在制裁该玩家，§7这可能是由于“本API调用过快”、“玩家为机器人”、“玩家名称为网易屏蔽词”、“玩家在10分钟内改过名字，但数据库暂未更新”等原因导致的",
             "游戏内": ["@a", "NN"],
             "玩家": "您必须通过 Microsoft 服务身份验证。",
         },
@@ -263,6 +266,11 @@ class OrionConfig:
             "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 连续发送重复文本超出限制({2}条/{3}秒)，§a正在制裁",
             "游戏内": ["@a", "NN"],
             "玩家": "您连续发送重复文本超出限制({2}条/{3}秒)",
+        },
+        "信息_睡觉消息刷屏检测": {
+            "控制台": "§a❀ §r[Text] §c发现 {0} (xuid:{1}) 连续发送睡觉信息超出限制({2}条/{3}秒)，§a正在制裁",
+            "游戏内": ["@a", "NN"],
+            "玩家": "您连续发送睡觉信息超出限制({2}条/{3}秒)",
         },
         "信息_被封禁玩家进入游戏": {
             "控制台": "§a❀ §b[PlayerList] §c发现玩家 {0} (xuid:{1}) 被封禁，§a正在制裁，封禁时间至：{2}",
@@ -381,7 +389,7 @@ class OrionConfig:
         "***********************************************************************************************************": None,
         "<<提示>> 猎户座插件附属功能：玩家权限管理器": None,
         "<<提示>> 可用于在玩家进入游戏时自动修改其权限，或者将记分板与玩家权限进行绑定，您可以通过修改对应的记分板分数来自动修改玩家权限": None,
-        "是否启用玩家权限管理器": True,
+        "是否启用玩家权限管理器": False,
         "玩家权限管理器白名单": [
             "style_天枢",
             "Happy2018new",
@@ -482,6 +490,8 @@ class OrionConfig:
         "发言字数限制": cfg.PInt,
         "是否启用重复消息刷屏检测": bool,
         "周期内重复消息刷屏数量限制": cfg.PInt,
+        "是否启用睡觉消息刷屏检测": bool,
+        "周期内睡觉消息刷屏数量限制": cfg.PInt,
         "当发现上述违规行为时，是否根据xuid封禁玩家": bool,
         "当发现上述违规行为时，是否根据设备号封禁玩家": bool,
         "--如果根据设备号封禁玩家，是否同时对其施加xuid封禁(由于每次查询设备号均需要一定时间，推荐开启该项)": bool,
@@ -500,6 +510,7 @@ class OrionConfig:
         "封禁时间_发言频率检测": (int, str),
         "封禁时间_发言字数检测": (int, str),
         "封禁时间_重复消息刷屏检测": (int, str),
+        "封禁时间_睡觉消息刷屏检测": (int, str),
         "信息_机器人IP外进反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_锁服反制(皮肤数据异常检查)": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_Steve/Alex皮肤反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -517,6 +528,7 @@ class OrionConfig:
         "信息_发言频率检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_发言字数检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_重复消息刷屏检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_睡觉消息刷屏检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_被封禁玩家进入游戏": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_被封禁设备号进入游戏": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_发现被封禁的在线玩家": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -774,6 +786,8 @@ class OrionConfig:
         self.max_speak_length: int = config["发言字数限制"]
         self.repeat_message_limit: bool = config["是否启用重复消息刷屏检测"]
         self.max_repeat_count: int = config["周期内重复消息刷屏数量限制"]
+        self.sleep_message_limit: bool = config["是否启用睡觉消息刷屏检测"]
+        self.max_sleep_count: int = config["周期内睡觉消息刷屏数量限制"]
         self.is_ban_player_by_xuid: bool = config[
             "当发现上述违规行为时，是否根据xuid封禁玩家"
         ]
@@ -826,6 +840,9 @@ class OrionConfig:
         self.ban_time_repeat_message_limit: int | Literal["Forever"] = config[
             "封禁时间_重复消息刷屏检测"
         ]
+        self.ban_time_sleep_message_limit: int | Literal["Forever"] = config[
+            "封禁时间_睡觉消息刷屏检测"
+        ]
         self.info_detect_bot: dict[str, str | list[str]] = config[
             "信息_机器人IP外进反制"
         ]
@@ -864,6 +881,9 @@ class OrionConfig:
         ]
         self.info_repeat_message_limit: dict[str, str | list[str]] = config[
             "信息_重复消息刷屏检测"
+        ]
+        self.info_sleep_message_limit: dict[str, str | list[str]] = config[
+            "信息_睡觉消息刷屏检测"
         ]
         self.info_banned_player: dict[str, str | list[str]] = config[
             "信息_被封禁玩家进入游戏"
