@@ -326,7 +326,7 @@ class SimpleWorldRecover(Plugin):
     @utils.thread_func("世界恢复进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_recover(self, cmd: list[str], called_by_api: bool):
         if self.flowers_for_machines is None:
-            fmts.print_err("do_world_recover: Should nerver happened")
+            fmts.print_err("do_world_recover: Should never happened")
             return
 
         if not called_by_api:
@@ -352,7 +352,7 @@ class SimpleWorldRecover(Plugin):
 
     def _do_world_recover(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("_do_world_recover: Should nerver happened")
+            fmts.print_err("_do_world_recover: Should never happened")
             return
 
         dim_id = self.get_bot_dimension()

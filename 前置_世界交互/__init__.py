@@ -58,7 +58,7 @@ class GameInteractive(Plugin):
 
     def on_structure_pkt(self, pk: BaseBytesPacket):
         if not isinstance(pk, StructureTemplateDataResponse):
-            raise Exception("on_structure_pkt: Should nerver happened")
+            raise Exception("on_structure_pkt: Should never happened")
 
         structure_name = pk.StructureName
         if structure_name in self.structure_callbacks:
@@ -199,7 +199,7 @@ class GameInteractive(Plugin):
         """
         structure = self._request_structure_and_get(position, size)
         if not isinstance(structure, StructureTemplateDataResponse):
-            raise Exception("get_structure: Should nerver happend")
+            raise Exception("get_structure: Should never happend")
 
         nbt_bytes = structure.StructureTemplate
         buf = BytesIO(nbt_bytes)

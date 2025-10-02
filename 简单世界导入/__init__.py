@@ -183,7 +183,7 @@ class SimpleWorldImport(Plugin):
     @utils.thread_func("世界导入进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_import(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("do_world_import: Should nerver happened")
+            fmts.print_err("do_world_import: Should never happened")
             return
 
         if not self.running_mutex.acquire(timeout=0):
@@ -200,7 +200,7 @@ class SimpleWorldImport(Plugin):
 
     def _do_world_import(self, cmd: list[str]):
         if self.flowers_for_machines is None:
-            fmts.print_err("_do_world_import: Should nerver happened")
+            fmts.print_err("_do_world_import: Should never happened")
             return
 
         try:

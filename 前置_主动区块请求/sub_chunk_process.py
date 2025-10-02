@@ -33,7 +33,7 @@ class AutoSubChunkRequestSubChunkProcess:
         usage="主动区块请求: 处理 Sub Chunk 数据包", thread_level=ToolDeltaThread.SYSTEM
     )
     def _on_sub_chunk(self, pk: BaseBytesPacket):
-        assert type(pk) is SubChunk, "Should Nerver happened"
+        assert type(pk) is SubChunk, "Should never happened"
 
         # Note that it's possible for self.base().blob_hash is not exist,
         # maybe the plugin was executed before it was injected.
