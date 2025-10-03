@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from tooldelta import cfg, utils, Plugin, Player, plugin_entry
+from tooldelta import cfg, utils, Plugin, Player, plugin_entry,fmts
 from .GetFile import get_github_repo_files
 
 
@@ -9,7 +9,7 @@ external_song_repo_owner = "Zhonger-Yuansi"
 class DJTable(Plugin):
     author = "SuperScript & Zhonger-Yuansi"
     name = "点歌台"
-    version = (0, 2, 5)
+    version = (0, 2, 6)
 
     MAX_SONGS_QUEUED = 6
     can_stop = False
@@ -59,6 +59,8 @@ class DJTable(Plugin):
                 )
                 midi_names.append(i.name.replace(".midseq", ""))
         self.midis_list = midi_names
+        
+    def get_list(self):
         if self.use_external_repo:
             self.print("正在获取远程音乐列表仓库..")
             self.repo_url = "Zhonger-Yuansi/Midi-Repositories"
@@ -75,7 +77,6 @@ class DJTable(Plugin):
                 self.repo_message = None
         else:
             self.remote_midis_list = []
-
     def on_inject(self):
         self.game_ctrl.sendwocmd("/scoreboard objectives add song_point dummy 音乐点")
         self.game_ctrl.sendwocmd("/scoreboard players add @a song_point 0")
@@ -95,9 +96,10 @@ class DJTable(Plugin):
         self.choose_music_thread()
 
     def on_player_join(self, _: Player):
-        self.game_ctrl.sendcmd("/scoreboard players add @a song_point 0")
+        self.game_ctrl.sendwocmd("/scoreboard players add @a song_point 0")
 
     def choose_menu(self, player: Player, args: tuple):
+        self.get_list()
         song_list = self.midis_list
         total_songs = len(song_list)
         remote_midis_list = self.remote_midis_list
@@ -246,14 +248,23 @@ class DJTable(Plugin):
                     file.unlink()
                 except Exception:
                     pass
+            mirrom_list = [
+                "",
+                "https://gh-proxy.com/",
+                "https://hk.gh-proxy.com/",
+                "https://cdn.gh-proxy.com/",
+                "https://edgeone.gh-proxy.com/"
 
-            url = f"https://ghproxy.net/https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
-            response = requests.get(url)
+            ]
+            for i in mirrom_list:
+                    url = f"{i}https://raw.githubusercontent.com/{self.repo_url}/main/{music_name}.mid"
+                    response = requests.get(url)
 
-            if response.status_code == 200:
-                midi_path = self.mdir_external / f"{music_name}.mid"
-                with open(midi_path, "wb") as file:
-                    file.write(response.content)
+                    if response.status_code == 200:
+                        midi_path = self.mdir_external / f"{music_name}.mid"
+                        with open(midi_path, "wb") as file:
+                            file.write(response.content)
+                        break
 
             midseq_path = self.mdir_external / f"{music_name}.midseq"
             self.midiplayer.translate_midi_to_seq_file(str(midi_path), str(midseq_path))
@@ -264,7 +275,8 @@ class DJTable(Plugin):
             player.show("§e点歌§f>> §a远程曲目已加入播放队列！")
 
         except Exception as e:
-            # self.logger.error(f"处理远程音乐异常: {e}")
+            
+            fmts.print_war(f"处理远程音乐异常: {e}")
             player.show(f"§c处理远程曲目失败: {e!s}")
 
 
