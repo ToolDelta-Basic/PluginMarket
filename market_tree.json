@@ -318,7 +318,7 @@
     "SilverWolfCmdL2E": {
       "name": "银狼的指令区工程导入导出",
       "author": "SuperScript",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "MySQL": {
