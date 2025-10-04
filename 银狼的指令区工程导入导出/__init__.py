@@ -7,7 +7,7 @@ from . import file, dumper, loader
 class SilverwolfLoadAndExport(Plugin):
     name = "[SilverWolf] 指令区工程导出"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -163,11 +163,11 @@ class SilverwolfLoadAndExport(Plugin):
                 except Exception:
                     fmts.print_err(f"文件 {mcf_file.name} 的坐标无效..")
                     return
-            try:
-                f = file.MCFProjectFile.load(mcf_file.read_text("utf-8"))
-            except Exception as err:
-                fmts.print_err(f"文件 {mcf_file.name} 解析出现问题: {err}")
-                return
+                try:
+                    f = file.MCFProjectFile.load(mcf_file.read_text("utf-8"))
+                except Exception as err:
+                    fmts.print_err(f"文件 {mcf_file.name} 解析出现问题: {err}")
+                    return
             self.print(f"正在导入链 {mcf_file.name}")
             loader.load_from_file(self, f, startx + rx, starty + ry, startz + rz)
         self.print("工程导入完成")
