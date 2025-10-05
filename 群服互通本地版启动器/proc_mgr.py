@@ -56,9 +56,13 @@ class ProcMgr:
                     break
             if otype is OutputType.STDOUT:
                 self.handle_specific_msg(odata)
-                fmts.print_inf(f"[CQ] {odata}")
+                print(" " * 6 + "[CQ] " + odata)
+                # Cannot work properly on Termux
+                # fmts.print_inf(f"[CQ] {odata}")
             elif otype is OutputType.STDERR:
-                fmts.print_err(f"[CQ] {odata}")
+                fmts.print_err(f"[CQerr] {odata}")
+                # Cannot work properly on Termux
+                # fmts.print_err(f"[CQ] {odata}")
         fmts.print_war("CQ 进程输出已退出")
 
     def handle_specific_msg(self, msg: str):
