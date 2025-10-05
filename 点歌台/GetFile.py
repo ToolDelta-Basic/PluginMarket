@@ -35,7 +35,7 @@ def get_github_repo_files(repo_url):
                 name = file['name']
                 main_name, ext = os.path.splitext(name)
                 if main_name.lower() == 'message': 
-                #SM的玩意，message.json就是过滤不掉，还是改下点歌台那里吧...
+
                     continue
                 if ext.lower() in ('.mid', '.midi'):
                     file_names.append(main_name)
@@ -60,8 +60,7 @@ def fetch_message_content(repo_url):
             headers = {
                 'User-Agent': 'Mozilla/5.0'
             }
-            #经过测试，ghproxy.net 似乎是唯一一个能直接下载的,而官方提供的github.tooldelta.top却选择了拒绝连接
-            message_url = f"https://ghproxy.net/https://raw.githubusercontent.com/{repo_url}/main/Message.json"
+            message_url = f"{i}https://raw.githubusercontent.com/{repo_url}/main/Message.json"
             message_response = requests.get(message_url, headers=headers, verify=False)
             if message_response.status_code == 200:
                 return message_response.json().get('message')
