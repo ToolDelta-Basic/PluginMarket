@@ -1,9 +1,10 @@
 import os
 import platform
+import asyncio
 from pathlib import Path
 from tooldelta import fmts
 from tooldelta.constants.tooldelta_cli import TDSPECIFIC_MIRROR
-from tooldelta.utils.urlmethod import download_file_singlethreaded
+from tooldelta.utils.urlmethod import download_file_urls
 
 
 def get_bin_name():
@@ -32,7 +33,7 @@ def ensure_execfile_exists(datpath: Path):
     exec_path = datpath / get_bin_name()
     if not exec_path.exists():
         fmts.print_inf("正在下载 gocq...")
-        download_file_singlethreaded(get_bin_download_url(), str(exec_path))
+        asyncio.run(download_file_urls([(get_bin_download_url(), exec_path)]))
         fmts.print_inf("正在下载 gocq... 完成")
         if not exec_path.name.endswith(".exe"):
             os.chmod(exec_path, 0o755)
