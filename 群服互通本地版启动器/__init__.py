@@ -8,7 +8,7 @@ importlib.reload(proc_mgr)
 
 
 class QQLinkerLauncher(Plugin):
-    version = (0, 1, 1)
+    version = (0, 0, 2)
     name = "云链群服本地版启动器"
 
     def __init__(self, f):

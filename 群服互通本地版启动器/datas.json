@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "使得群服互通可以在 ToolDelta 上并行直接启动, 不需要云链！",
     "limit_launcher": null,
     "pre-plugins": {
