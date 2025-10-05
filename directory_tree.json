@@ -843,6 +843,15 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "群服互通本地版启动器": {
+        "proc.py": 0,
+        "datas.json": 0,
+        "qlutils.py": 0,
+        "cfg_mgr.py": 0,
+        "cfg_formatter.py": 0,
+        "__init__.py": 0,
+        "proc_mgr.py": 0
+    },
     "兑换码": {
         "file.py": 0,
         "datas.json": 0,

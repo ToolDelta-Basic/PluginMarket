@@ -829,6 +829,15 @@
         "datas.json",
         "__init__.py"
     ],
+    "群服互通本地版启动器": [
+        "proc.py",
+        "datas.json",
+        "qlutils.py",
+        "cfg_mgr.py",
+        "cfg_formatter.py",
+        "__init__.py",
+        "proc_mgr.py"
+    ],
     "兑换码": [
         "file.py",
         "datas.json",

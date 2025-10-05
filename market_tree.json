@@ -711,6 +711,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "local-qqlink-launcher": {
+      "name": "群服互通本地版启动器",
+      "author": "SuperScript",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "兑换码": {
       "name": "兑换码",
       "author": "机入",
