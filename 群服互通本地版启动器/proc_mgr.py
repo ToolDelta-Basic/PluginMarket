@@ -33,7 +33,7 @@ class ProcMgr:
         path = ensure_execfile_exists(self.sys.data_path)
         if not has_proc():
             self.sys.print("GOCQ 进程正在启动..")
-            start_proc(str(path), str(path.parent))
+            start_proc(path)
             set_port(openat_port)
         self.output_stdout()
 

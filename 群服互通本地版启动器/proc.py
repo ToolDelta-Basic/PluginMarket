@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from enum import IntEnum
 from tooldelta import utils
 from queue import Queue, Empty
@@ -45,12 +46,12 @@ def set_ok(b: bool):
     ok = b
 
 
-def start_proc(execfile_path: str, cwd: str):
+def start_proc(execfile_path: Path):
     p = subprocess.Popen(
-        [execfile_path],
+        [execfile_path.name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        cwd=cwd,
+        cwd=execfile_path.parent,
         stdin=subprocess.PIPE,
     )
     set_proc(p)
