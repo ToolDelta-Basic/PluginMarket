@@ -47,8 +47,10 @@ def set_ok(b: bool):
 
 
 def start_proc(execfile_path: Path):
+    if not execfile_path.is_file():
+        raise FileNotFoundError(f"{execfile_path} is not a file")
     p = subprocess.Popen(
-        [execfile_path.name],
+        ["./" + execfile_path.name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=execfile_path.parent,
