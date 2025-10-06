@@ -347,6 +347,11 @@
         "睡觉统计": {
             "datas.json": 0,
             "__init__.py": 0
+        },
+        "多服聊天互通": {
+            "README.txt": 0,
+            "datas.json": 0,
+            "__init__.py": 0
         }
     },
     "入服欢迎": {
@@ -844,11 +849,6 @@
         "__init__.py": 0
     },
     "传送点设置": {
-        "datas.json": 0,
-        "__init__.py": 0
-    },
-    "多服聊天互通": {
-        "README.txt": 0,
         "datas.json": 0,
         "__init__.py": 0
     },

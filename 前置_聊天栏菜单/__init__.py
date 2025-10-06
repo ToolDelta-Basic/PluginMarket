@@ -44,19 +44,19 @@ def parse_arg(
             raise ValueError(f"{arg} 不合法")
         return val
     elif argtype is bool:
-        if arg == "true":
+        if arg == "是":
             return True
-        elif arg == "false":
+        elif arg == "否":
             return False
         else:
-            raise ValueError(f"{arg} 不是 true 或 false")
+            raise ValueError(f"{arg} 不是“是”或“否”")
     else:
         raise TypeError(f"无法解析参数类型 {argtype.__name__}")
 
 
 def arg_str(arg: str | float | bool):
     if isinstance(arg, bool):
-        return "true" if arg else "false"
+        return "是" if arg else "否"
     else:
         return str(arg)
 
@@ -128,7 +128,7 @@ def type_str(argtype: VALID_ARGUMENT_HINT_TYPES):
     elif argtype is float:
         return "数值"
     elif argtype is bool:
-        return "[true|false]"
+        return "是或否"
     else:
         return "未知类型"
 
@@ -169,7 +169,10 @@ class StandardChatbarTriggers:
         self.func(player, args_parsed)
 
     def execute_with_no_args(self, player: Player, command_prefix: str):
-        args = ask_for_args(player, command_prefix, self.argument_hints)
+        if self.no_default_args_num == 0:
+            args, _ = self._parse_args([])
+        else:
+            args = ask_for_args(player, command_prefix, self.argument_hints)
         if args is None:
             return
         self.func(player, args)
@@ -276,7 +279,7 @@ class StandardChatbarTriggers:
 class ChatbarMenu(Plugin):
     name = "聊天栏菜单新版"
     author = "SuperScript/猫猫"
-    version = (0, 4, 0)
+    version = (0, 4, 1)
     description = "前置插件, 提供聊天栏菜单功能"
 
     def __init__(self, frame):
