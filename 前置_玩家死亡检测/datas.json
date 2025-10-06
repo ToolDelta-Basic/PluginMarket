@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "监听玩家死亡和重生事件的前置插件",
+  "pre-plugins": {},
+  "plugin-id": "death-and-respawn-listener",
+  "enabled": true
+}

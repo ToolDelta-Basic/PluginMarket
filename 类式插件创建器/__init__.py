@@ -29,15 +29,15 @@ class PluginCreator(Plugin):
             pname = args[0]
         while 1:
             if pname := (pname or input(Print.fmt_info("请输入插件名: ")).strip()):
-                basic_dir = constants.TOOLDELTA_PLUGIN_DIR
+                basic_dir = constants.TOOLDELTA_PLUGIN_PATH
                 if isinstance(basic_dir, Path):
                     plugin_dir_path = os.path.join(
                         basic_dir / pname
                     )
                 else:
                     plugin_dir_path = os.path.join(
-                        constants.TOOLDELTA_PLUGIN_DIR,
-                        constants.TOOLDELTA_CLASSIC_PLUGIN,
+                        constants.TOOLDELTA_PLUGIN_PATH,
+                        constants.TOOLDELTA_CLASSIC_PLUGIN_PATH,
                         pname,
                     )
                 if os.path.isdir(plugin_dir_path):
