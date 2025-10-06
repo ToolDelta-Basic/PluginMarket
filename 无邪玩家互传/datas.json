@@ -1,0 +1,12 @@
+{
+    "author": "无邪",
+    "version": "1.0.0",
+    "description": "功能完善的玩家互传系统，支持传送请求、权限管理和智能拼音搜索功能",
+    "plugin-type": "classic",
+    "plugin-id": "无邪玩家互传",
+    "pre-plugins": {
+        "聊天栏菜单": "0.4.0",
+        "pip": "0.0.5"
+    }
+}
+}
