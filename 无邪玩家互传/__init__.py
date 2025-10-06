@@ -671,15 +671,15 @@ class WuxiePlayerTeleport(Plugin):
                 
                 with self._requests_lock:
                     expired_requests = []
-                    for请求in self.tpa_requests:
+                    for request in self.tpa_requests:
                         if request.is_expired():
-                            expired_requests.append(请求)
+                            expired_requests.append(request)
                     
-                    for请求in expired_requests:
-                        if请求in self.tpa_requests:
+                    for request in expired_requests:
+                        if request in self.tpa_requests:
                             request.sender.show(self.config["消息配置"]["请求超时"])
                             self.game_ctrl.say_to(request.target, f"§7 [§cTPA§7] §7来自§f {request.sender.name} §7的传送请求已超时")
-                            self.tpa_requests.remove(请求)
+                            self.tpa_requests.remove(request)
                 
                 with self._cooldowns_lock:
                     expired_cooldowns = [name for name, expire_time in self.player_cooldowns.items() if expire_time <= current_time]
