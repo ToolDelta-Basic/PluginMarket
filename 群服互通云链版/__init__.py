@@ -171,6 +171,8 @@ class QQLinker(Plugin):
         self.ListenChat(self.on_player_message)
         self.plugin = []
         self.available = False
+        self._manual_launch = False
+        self._manual_launch_port = -1
 
     def _load_item_name_map(self):
         """加载物品ID到中文名的映射表"""
@@ -262,13 +264,10 @@ class QQLinker(Plugin):
                             ench_names.append(self.enchantment_name_map[ench_id])
                 if ench_names:
                     return f"[{idx}] {name} x{cnt} ({', '.join(ench_names)})"
-                else:
-                    return f"[{idx}] {name} x{cnt}"
-            else:
-                if aux != 0:
-                    return f"[{idx}] {name} x{cnt} (数据:{aux})"
-                else:
-                    return f"[{idx}] {name} x{cnt}"
+                return f"[{idx}] {name} x{cnt}"
+            if aux != 0:
+                return f"[{idx}] {name} x{cnt} (数据:{aux})"
+            return f"[{idx}] {name} x{cnt}"
         
         lines: list[str] = []
         
@@ -513,21 +512,21 @@ class QQLinker(Plugin):
                         ench_id = getattr(e, 'type', None)
                         if ench_id is not None and ench_id in self.enchantment_name_map:
                             ench_parts.append(self.enchantment_name_map[ench_id])
-                        else:
-                            # 最后的回退：显示type和level
-                            ench_type = getattr(e, 'type', '?')
-                            ench_level = getattr(e, 'level', '?')
-                            ench_parts.append(f"type{ench_type} Lv{ench_level}")
+                        # 最后的回退：显示type和level
+                        ench_type = getattr(e, 'type', '?')
+                        ench_level = getattr(e, 'level', '?')
+                        ench_parts.append(f"type{ench_type} Lv{ench_level}")
                 ench_text = ", ".join(ench_parts)
                 if aux != 0:
-                    lines.append(f"\t- [{idx}] {name} x {cnt} (数据: {aux}; 附魔: {ench_text})")
-                else:
-                    lines.append(f"\t- [{idx}] {name} x {cnt} (附魔: {ench_text})")
-            else:
-                if aux != 0:
-                    lines.append(f"\t- [{idx}] {name} x {cnt} (数据: {aux})")
-                else:
-                    lines.append(f"\t- [{idx}] {name} x {cnt}")
+                    line = f"\t- [{idx}] {name} x {cnt} (数据: {aux}; 附魔: {ench_text})"
+                    lines.append(line)
+                    continue
+                lines.append(f"\t- [{idx}] {name} x {cnt} (附魔: {ench_text})")
+                continue
+            if aux != 0:
+                lines.append(f"\t- [{idx}] {name} x {cnt} (数据: {aux})")
+                continue
+            lines.append(f"\t- [{idx}] {name} x {cnt}")
         
         text = "该玩家背包中没有物品" if len(lines) == 0 else "\n".join(lines)
         self.sendmsg(self.linked_group, f"玩家 {target.name} 的背包信息如下: \n{text}")
@@ -548,6 +547,14 @@ class QQLinker(Plugin):
 
     def is_qq_op(self, qqid: int):
         return qqid in self.can_exec_cmd
+
+    def set_manual_launch(self, port: int):
+        self._manual_launch = True
+        self._manual_launch_port = port
+
+    def manual_launch(self):
+        self.connect_to_websocket()
+
 
     # ------------------------------------------------------
     def on_def(self):
