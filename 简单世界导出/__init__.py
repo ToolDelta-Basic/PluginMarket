@@ -17,7 +17,7 @@ from tooldelta import (
 class SimpleWorldExporter(Plugin):
     name = "简单世界导出"
     author = "YoRHa"
-    version = (0, 0, 3)
+    version = (0, 1, 0)
 
     world_api: "GameInteractive | None"
     should_close: bool
@@ -43,7 +43,7 @@ class SimpleWorldExporter(Plugin):
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.3.1":
+        if loaded_dict["version"] != "1.4.0":
             return True
         return False
 
@@ -51,7 +51,7 @@ class SimpleWorldExporter(Plugin):
         version_path = self.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.3.1"},
+            {"version": "1.4.0"},
         )
         tempjson.flush(version_path)
 
@@ -120,7 +120,7 @@ class SimpleWorldExporter(Plugin):
     @utils.thread_func("世界导出进程", thread_level=ToolDeltaThread.SYSTEM)
     def do_world_export(self, cmd: list[str]):
         if self.world_api is None:
-            fmts.print_err("简单世界导出: Should nerver happened")
+            fmts.print_err("简单世界导出: Should never happened")
             return
         if not self.running_mutex.acquire(timeout=0):
             fmts.print_err("简单世界导出: 同一时刻最多处理一个任务")
@@ -132,7 +132,7 @@ class SimpleWorldExporter(Plugin):
     def _do_world_export(self, cmd: list[str]):
         # Pre-check
         if self.world_api is None:
-            fmts.print_err("简单世界导出: Should nerver happened (mark 0)")
+            fmts.print_err("简单世界导出: Should never happened (mark 0)")
             return
 
         # Parse command line
@@ -279,7 +279,7 @@ class SimpleWorldExporter(Plugin):
                 # Init new empty chunk
                 c = bwo.new_chunk()
                 if not c.is_valid():
-                    fmts.print_err("简单世界导出: Should nerver happened (mark 1)")
+                    fmts.print_err("简单世界导出: Should never happened (mark 1)")
                     world.close_world()
                     return
                 foreground_blocks = c.blocks(0)

@@ -1,0 +1,2227 @@
+{
+    "0": {
+        "0": "air"
+    },
+    "1": {
+        "0": "stone",
+        "1": "granite",
+        "2": "polished_granite",
+        "3": "diorite",
+        "4": "polished_diorite",
+        "5": "andesite",
+        "6": "polished_andesite"
+    },
+    "2": {
+        "0": "grass_block"
+    },
+    "3": {
+        "0": "dirt [\"dirt_type\"=\"normal\"]",
+        "1": "dirt [\"dirt_type\"=\"coarse\"]",
+        "2": "podzol"
+    },
+    "4": {
+        "0": "cobblestone"
+    },
+    "5": {
+        "0": "oak_planks",
+        "1": "spruce_planks",
+        "2": "birch_planks",
+        "3": "jungle_planks",
+        "4": "acacia_planks",
+        "5": "dark_oak_planks"
+    },
+    "6": {
+        "0": "oak_sapling [\"age_bit\"=false]",
+        "1": "spruce_sapling [\"age_bit\"=false]",
+        "2": "birch_sapling [\"age_bit\"=false]",
+        "3": "jungle_sapling [\"age_bit\"=false]",
+        "4": "acacia_sapling [\"age_bit\"=false]",
+        "5": "dark_oak_sapling [\"age_bit\"=false]",
+        "8": "oak_sapling [\"age_bit\"=true]",
+        "9": "spruce_sapling [\"age_bit\"=true]",
+        "10": "birch_sapling [\"age_bit\"=true]",
+        "11": "jungle_sapling [\"age_bit\"=true]",
+        "12": "acacia_sapling [\"age_bit\"=true]",
+        "13": "dark_oak_sapling [\"age_bit\"=true]"
+    },
+    "7": {
+        "0": "bedrock"
+    },
+    "8": {
+        "0": "flowing_water [\"liquid_depth\"=0]",
+        "1": "flowing_water [\"liquid_depth\"=1]",
+        "2": "flowing_water [\"liquid_depth\"=2]",
+        "3": "flowing_water [\"liquid_depth\"=3]",
+        "4": "flowing_water [\"liquid_depth\"=4]",
+        "5": "flowing_water [\"liquid_depth\"=5]",
+        "6": "flowing_water [\"liquid_depth\"=6]",
+        "7": "flowing_water [\"liquid_depth\"=7]",
+        "8": "flowing_water [\"liquid_depth\"=8]",
+        "9": "flowing_water [\"liquid_depth\"=9]",
+        "10": "flowing_water [\"liquid_depth\"=10]",
+        "11": "flowing_water [\"liquid_depth\"=11]",
+        "12": "flowing_water [\"liquid_depth\"=12]",
+        "13": "flowing_water [\"liquid_depth\"=13]",
+        "14": "flowing_water [\"liquid_depth\"=14]",
+        "15": "flowing_water [\"liquid_depth\"=15]"
+    },
+    "9": {
+        "0": "water [\"liquid_depth\"=0]",
+        "1": "water [\"liquid_depth\"=1]",
+        "2": "water [\"liquid_depth\"=2]",
+        "3": "water [\"liquid_depth\"=3]",
+        "4": "water [\"liquid_depth\"=4]",
+        "5": "water [\"liquid_depth\"=5]",
+        "6": "water [\"liquid_depth\"=6]",
+        "7": "water [\"liquid_depth\"=7]",
+        "8": "water [\"liquid_depth\"=8]",
+        "9": "water [\"liquid_depth\"=9]",
+        "10": "water [\"liquid_depth\"=10]",
+        "11": "water [\"liquid_depth\"=11]",
+        "12": "water [\"liquid_depth\"=12]",
+        "13": "water [\"liquid_depth\"=13]",
+        "14": "water [\"liquid_depth\"=14]",
+        "15": "water [\"liquid_depth\"=15]"
+    },
+    "10": {
+        "0": "flowing_lava [\"liquid_depth\"=0]",
+        "1": "flowing_lava [\"liquid_depth\"=1]",
+        "2": "flowing_lava [\"liquid_depth\"=2]",
+        "3": "flowing_lava [\"liquid_depth\"=3]",
+        "4": "flowing_lava [\"liquid_depth\"=4]",
+        "5": "flowing_lava [\"liquid_depth\"=5]",
+        "6": "flowing_lava [\"liquid_depth\"=6]",
+        "7": "flowing_lava [\"liquid_depth\"=7]",
+        "8": "flowing_lava [\"liquid_depth\"=8]",
+        "9": "flowing_lava [\"liquid_depth\"=9]",
+        "10": "flowing_lava [\"liquid_depth\"=10]",
+        "11": "flowing_lava [\"liquid_depth\"=11]",
+        "12": "flowing_lava [\"liquid_depth\"=12]",
+        "13": "flowing_lava [\"liquid_depth\"=13]",
+        "14": "flowing_lava [\"liquid_depth\"=14]",
+        "15": "flowing_lava [\"liquid_depth\"=15]"
+    },
+    "11": {
+        "0": "lava [\"liquid_depth\"=0]",
+        "1": "lava [\"liquid_depth\"=1]",
+        "2": "lava [\"liquid_depth\"=2]",
+        "3": "lava [\"liquid_depth\"=3]",
+        "4": "lava [\"liquid_depth\"=4]",
+        "5": "lava [\"liquid_depth\"=5]",
+        "6": "lava [\"liquid_depth\"=6]",
+        "7": "lava [\"liquid_depth\"=7]",
+        "8": "lava [\"liquid_depth\"=8]",
+        "9": "lava [\"liquid_depth\"=9]",
+        "10": "lava [\"liquid_depth\"=10]",
+        "11": "lava [\"liquid_depth\"=11]",
+        "12": "lava [\"liquid_depth\"=12]",
+        "13": "lava [\"liquid_depth\"=13]",
+        "14": "lava [\"liquid_depth\"=14]",
+        "15": "lava [\"liquid_depth\"=15]"
+    },
+    "12": {
+        "0": "sand [\"sand_type\"=\"normal\"]",
+        "1": "sand [\"sand_type\"=\"red\"]"
+    },
+    "13": {
+        "0": "gravel"
+    },
+    "14": {
+        "0": "gold_ore"
+    },
+    "15": {
+        "0": "iron_ore"
+    },
+    "16": {
+        "0": "coal_ore"
+    },
+    "17": {
+        "0": "oak_log [\"pillar_axis\"=\"y\"]",
+        "1": "spruce_log [\"pillar_axis\"=\"y\"]",
+        "2": "birch_log [\"pillar_axis\"=\"y\"]",
+        "3": "jungle_log [\"pillar_axis\"=\"y\"]",
+        "4": "oak_log [\"pillar_axis\"=\"x\"]",
+        "5": "spruce_log [\"pillar_axis\"=\"x\"]",
+        "6": "birch_log [\"pillar_axis\"=\"x\"]",
+        "7": "jungle_log [\"pillar_axis\"=\"x\"]",
+        "8": "oak_log [\"pillar_axis\"=\"z\"]",
+        "9": "spruce_log [\"pillar_axis\"=\"z\"]",
+        "10": "birch_log [\"pillar_axis\"=\"z\"]",
+        "11": "jungle_log [\"pillar_axis\"=\"z\"]",
+        "12": "oak_wood",
+        "13": "spruce_wood",
+        "14": "birch_wood",
+        "15": "jungle_wood"
+    },
+    "18": {
+        "0": "oak_leaves [\"persistent_bit\"=false]",
+        "1": "spruce_leaves [\"persistent_bit\"=false]",
+        "2": "birch_leaves [\"persistent_bit\"=false]",
+        "3": "jungle_leaves [\"persistent_bit\"=false]",
+        "4": "oak_leaves [\"persistent_bit\"=true]",
+        "5": "spruce_leaves [\"persistent_bit\"=true]",
+        "6": "birch_leaves [\"persistent_bit\"=true]",
+        "7": "jungle_leaves [\"persistent_bit\"=true]",
+        "8": "oak_leaves [\"persistent_bit\"=false]",
+        "9": "spruce_leaves [\"persistent_bit\"=false]",
+        "10": "birch_leaves [\"persistent_bit\"=false]",
+        "11": "jungle_leaves [\"persistent_bit\"=false]",
+        "12": "oak_leaves [\"persistent_bit\"=true]",
+        "13": "spruce_leaves [\"persistent_bit\"=true]",
+        "14": "birch_leaves [\"persistent_bit\"=true]",
+        "15": "jungle_leaves [\"persistent_bit\"=true]"
+    },
+    "19": {
+        "0": "sponge [\"sponge_type\"=\"dry\"]",
+        "1": "sponge [\"sponge_type\"=\"wet\"]"
+    },
+    "20": {
+        "0": "glass"
+    },
+    "21": {
+        "0": "lapis_ore"
+    },
+    "22": {
+        "0": "lapis_block"
+    },
+    "23": {
+        "0": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=0]",
+        "1": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=1]",
+        "2": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=2]",
+        "3": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=3]",
+        "4": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=4]",
+        "5": "dispenser [\"triggered_bit\"=false,\"facing_direction\"=5]",
+        "8": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=0]",
+        "9": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=1]",
+        "10": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=2]",
+        "11": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=3]",
+        "12": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=4]",
+        "13": "dispenser [\"triggered_bit\"=true,\"facing_direction\"=5]"
+    },
+    "24": {
+        "0": "sandstone [\"sand_stone_type\"=\"default\"]",
+        "1": "sandstone [\"sand_stone_type\"=\"heiroglyphs\"]",
+        "2": "sandstone [\"sand_stone_type\"=\"cut\"]"
+    },
+    "25": {
+        "0": "noteblock"
+    },
+    "26": {
+        "0": "bed [\"head_piece_bit\"=false,\"direction\"=0,\"occupied_bit\"=false]",
+        "1": "bed [\"head_piece_bit\"=false,\"direction\"=1,\"occupied_bit\"=false]",
+        "2": "bed [\"head_piece_bit\"=false,\"direction\"=2,\"occupied_bit\"=false]",
+        "3": "bed [\"head_piece_bit\"=false,\"direction\"=3,\"occupied_bit\"=false]",
+        "4": "bed [\"head_piece_bit\"=false,\"direction\"=0,\"occupied_bit\"=true]",
+        "5": "bed [\"head_piece_bit\"=false,\"direction\"=1,\"occupied_bit\"=true]",
+        "6": "bed [\"head_piece_bit\"=false,\"direction\"=2,\"occupied_bit\"=true]",
+        "7": "bed [\"head_piece_bit\"=false,\"direction\"=3,\"occupied_bit\"=true]",
+        "8": "bed [\"head_piece_bit\"=true,\"direction\"=0,\"occupied_bit\"=false]",
+        "9": "bed [\"head_piece_bit\"=true,\"direction\"=1,\"occupied_bit\"=false]",
+        "10": "bed [\"head_piece_bit\"=true,\"direction\"=2,\"occupied_bit\"=false]",
+        "11": "bed [\"head_piece_bit\"=true,\"direction\"=3,\"occupied_bit\"=false]",
+        "12": "bed [\"head_piece_bit\"=true,\"direction\"=0,\"occupied_bit\"=true]",
+        "13": "bed [\"head_piece_bit\"=true,\"direction\"=1,\"occupied_bit\"=true]",
+        "14": "bed [\"head_piece_bit\"=true,\"direction\"=2,\"occupied_bit\"=true]",
+        "15": "bed [\"head_piece_bit\"=true,\"direction\"=3,\"occupied_bit\"=true]"
+    },
+    "27": {
+        "0": "golden_rail [\"rail_direction\"=0,\"rail_data_bit\"=false]",
+        "1": "golden_rail [\"rail_direction\"=1,\"rail_data_bit\"=false]",
+        "2": "golden_rail [\"rail_direction\"=2,\"rail_data_bit\"=false]",
+        "3": "golden_rail [\"rail_direction\"=3,\"rail_data_bit\"=false]",
+        "4": "golden_rail [\"rail_direction\"=4,\"rail_data_bit\"=false]",
+        "5": "golden_rail [\"rail_direction\"=5,\"rail_data_bit\"=false]",
+        "8": "golden_rail [\"rail_direction\"=0,\"rail_data_bit\"=true]",
+        "9": "golden_rail [\"rail_direction\"=1,\"rail_data_bit\"=true]",
+        "10": "golden_rail [\"rail_direction\"=2,\"rail_data_bit\"=true]",
+        "11": "golden_rail [\"rail_direction\"=3,\"rail_data_bit\"=true]",
+        "12": "golden_rail [\"rail_direction\"=4,\"rail_data_bit\"=true]",
+        "13": "golden_rail [\"rail_direction\"=5,\"rail_data_bit\"=true]"
+    },
+    "28": {
+        "0": "detector_rail [\"rail_direction\"=0,\"rail_data_bit\"=false]",
+        "1": "detector_rail [\"rail_direction\"=1,\"rail_data_bit\"=false]",
+        "2": "detector_rail [\"rail_direction\"=2,\"rail_data_bit\"=false]",
+        "3": "detector_rail [\"rail_direction\"=3,\"rail_data_bit\"=false]",
+        "4": "detector_rail [\"rail_direction\"=4,\"rail_data_bit\"=false]",
+        "5": "detector_rail [\"rail_direction\"=5,\"rail_data_bit\"=false]",
+        "8": "detector_rail [\"rail_direction\"=0,\"rail_data_bit\"=true]",
+        "9": "detector_rail [\"rail_direction\"=1,\"rail_data_bit\"=true]",
+        "10": "detector_rail [\"rail_direction\"=2,\"rail_data_bit\"=true]",
+        "11": "detector_rail [\"rail_direction\"=3,\"rail_data_bit\"=true]",
+        "12": "detector_rail [\"rail_direction\"=4,\"rail_data_bit\"=true]",
+        "13": "detector_rail [\"rail_direction\"=5,\"rail_data_bit\"=true]"
+    },
+    "29": {
+        "0": "sticky_piston [\"facing_direction\"=0]",
+        "1": "sticky_piston [\"facing_direction\"=1]",
+        "2": "sticky_piston [\"facing_direction\"=3]",
+        "3": "sticky_piston [\"facing_direction\"=2]",
+        "4": "sticky_piston [\"facing_direction\"=5]",
+        "5": "sticky_piston [\"facing_direction\"=4]",
+        "8": "sticky_piston [\"facing_direction\"=0]",
+        "9": "sticky_piston [\"facing_direction\"=1]",
+        "10": "sticky_piston [\"facing_direction\"=3]",
+        "11": "sticky_piston [\"facing_direction\"=2]",
+        "12": "sticky_piston [\"facing_direction\"=5]",
+        "13": "sticky_piston [\"facing_direction\"=4]"
+    },
+    "30": {
+        "0": "web"
+    },
+    "31": {
+        "0": "tallgrass",
+        "1": "short_grass",
+        "2": "fern"
+    },
+    "32": {
+        "0": "deadbush"
+    },
+    "33": {
+        "0": "piston [\"facing_direction\"=0]",
+        "1": "piston [\"facing_direction\"=1]",
+        "2": "piston [\"facing_direction\"=3]",
+        "3": "piston [\"facing_direction\"=2]",
+        "4": "piston [\"facing_direction\"=5]",
+        "5": "piston [\"facing_direction\"=4]",
+        "8": "piston [\"facing_direction\"=0]",
+        "9": "piston [\"facing_direction\"=1]",
+        "10": "piston [\"facing_direction\"=3]",
+        "11": "piston [\"facing_direction\"=2]",
+        "12": "piston [\"facing_direction\"=5]",
+        "13": "piston [\"facing_direction\"=4]"
+    },
+    "34": {
+        "0": "piston_arm_collision [\"facing_direction\"=0]",
+        "1": "piston_arm_collision [\"facing_direction\"=1]",
+        "2": "piston_arm_collision [\"facing_direction\"=3]",
+        "3": "piston_arm_collision [\"facing_direction\"=2]",
+        "4": "piston_arm_collision [\"facing_direction\"=5]",
+        "5": "piston_arm_collision [\"facing_direction\"=4]",
+        "8": "sticky_piston_arm_collision [\"facing_direction\"=0]",
+        "9": "sticky_piston_arm_collision [\"facing_direction\"=1]",
+        "10": "sticky_piston_arm_collision [\"facing_direction\"=3]",
+        "11": "sticky_piston_arm_collision [\"facing_direction\"=2]",
+        "12": "sticky_piston_arm_collision [\"facing_direction\"=5]",
+        "13": "sticky_piston_arm_collision [\"facing_direction\"=4]"
+    },
+    "35": {
+        "0": "white_wool",
+        "1": "orange_wool",
+        "2": "magenta_wool",
+        "3": "light_blue_wool",
+        "4": "yellow_wool",
+        "5": "lime_wool",
+        "6": "pink_wool",
+        "7": "gray_wool",
+        "8": "light_gray_wool",
+        "9": "cyan_wool",
+        "10": "purple_wool",
+        "11": "blue_wool",
+        "12": "brown_wool",
+        "13": "green_wool",
+        "14": "red_wool",
+        "15": "black_wool"
+    },
+    "37": {
+        "0": "yellow_flower"
+    },
+    "38": {
+        "0": "poppy",
+        "1": "blue_orchid",
+        "2": "allium",
+        "3": "azure_bluet",
+        "4": "red_tulip",
+        "5": "orange_tulip",
+        "6": "white_tulip",
+        "7": "pink_tulip",
+        "8": "oxeye_daisy"
+    },
+    "39": {
+        "0": "brown_mushroom"
+    },
+    "40": {
+        "0": "red_mushroom"
+    },
+    "41": {
+        "0": "gold_block"
+    },
+    "42": {
+        "0": "iron_block"
+    },
+    "43": {
+        "0": "double_stone_block_slab [\"stone_slab_type\"=\"smooth_stone\"]",
+        "1": "double_stone_block_slab [\"stone_slab_type\"=\"sandstone\"]",
+        "2": "double_stone_block_slab [\"stone_slab_type\"=\"wood\"]",
+        "3": "double_stone_block_slab [\"stone_slab_type\"=\"cobblestone\"]",
+        "4": "double_stone_block_slab [\"stone_slab_type\"=\"brick\"]",
+        "5": "double_stone_block_slab [\"stone_slab_type\"=\"stone_brick\"]",
+        "6": "double_stone_block_slab [\"stone_slab_type\"=\"nether_brick\"]",
+        "7": "double_stone_block_slab [\"stone_slab_type\"=\"quartz\"]",
+        "8": "smooth_stone",
+        "9": "sandstone [\"sand_stone_type\"=\"smooth\"]",
+        "10": "double_stone_block_slab [\"stone_slab_type\"=\"wood\"]",
+        "11": "double_stone_block_slab [\"stone_slab_type\"=\"cobblestone\"]",
+        "12": "double_stone_block_slab [\"stone_slab_type\"=\"brick\"]",
+        "13": "double_stone_block_slab [\"stone_slab_type\"=\"stone_brick\"]",
+        "14": "double_stone_block_slab [\"stone_slab_type\"=\"nether_brick\"]",
+        "15": "quartz_block [\"chisel_type\"=\"smooth\"]"
+    },
+    "44": {
+        "0": "smooth_stone_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "1": "sandstone_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "2": "petrified_oak_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "3": "cobblestone_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "4": "brick_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "5": "stone_brick_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "6": "nether_brick_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "7": "quartz_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "8": "smooth_stone_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "9": "sandstone_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "10": "petrified_oak_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "11": "cobblestone_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "12": "brick_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "13": "stone_brick_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "14": "nether_brick_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "15": "quartz_slab [\"minecraft:vertical_half\"=\"top\"]"
+    },
+    "45": {
+        "0": "brick_block"
+    },
+    "46": {
+        "0": "tnt [\"explode_bit\"=false]",
+        "1": "tnt [\"explode_bit\"=true]"
+    },
+    "47": {
+        "0": "bookshelf"
+    },
+    "48": {
+        "0": "mossy_cobblestone"
+    },
+    "49": {
+        "0": "obsidian"
+    },
+    "50": {
+        "0": "torch",
+        "1": "torch [\"torch_facing_direction\"=\"west\"]",
+        "2": "torch [\"torch_facing_direction\"=\"east\"]",
+        "3": "torch [\"torch_facing_direction\"=\"north\"]",
+        "4": "torch [\"torch_facing_direction\"=\"south\"]",
+        "5": "torch [\"torch_facing_direction\"=\"unknown\"]"
+    },
+    "51": {
+        "0": "fire [\"age\"=0]",
+        "1": "fire [\"age\"=1]",
+        "2": "fire [\"age\"=2]",
+        "3": "fire [\"age\"=3]",
+        "4": "fire [\"age\"=4]",
+        "5": "fire [\"age\"=5]",
+        "6": "fire [\"age\"=6]",
+        "7": "fire [\"age\"=7]",
+        "8": "fire [\"age\"=8]",
+        "9": "fire [\"age\"=9]",
+        "10": "fire [\"age\"=10]",
+        "11": "fire [\"age\"=11]",
+        "12": "fire [\"age\"=12]",
+        "13": "fire [\"age\"=13]",
+        "14": "fire [\"age\"=14]",
+        "15": "fire [\"age\"=15]"
+    },
+    "52": {
+        "0": "mob_spawner"
+    },
+    "53": {
+        "0": "oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "54": {
+        "0": "chest",
+        "1": "chest",
+        "2": "chest [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "chest [\"minecraft:cardinal_direction\"=\"south\"]",
+        "4": "chest [\"minecraft:cardinal_direction\"=\"west\"]",
+        "5": "chest [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "55": {
+        "0": "redstone_wire [\"redstone_signal\"=0]",
+        "1": "redstone_wire [\"redstone_signal\"=1]",
+        "2": "redstone_wire [\"redstone_signal\"=2]",
+        "3": "redstone_wire [\"redstone_signal\"=3]",
+        "4": "redstone_wire [\"redstone_signal\"=4]",
+        "5": "redstone_wire [\"redstone_signal\"=5]",
+        "6": "redstone_wire [\"redstone_signal\"=6]",
+        "7": "redstone_wire [\"redstone_signal\"=7]",
+        "8": "redstone_wire [\"redstone_signal\"=8]",
+        "9": "redstone_wire [\"redstone_signal\"=9]",
+        "10": "redstone_wire [\"redstone_signal\"=10]",
+        "11": "redstone_wire [\"redstone_signal\"=11]",
+        "12": "redstone_wire [\"redstone_signal\"=12]",
+        "13": "redstone_wire [\"redstone_signal\"=13]",
+        "14": "redstone_wire [\"redstone_signal\"=14]",
+        "15": "redstone_wire [\"redstone_signal\"=15]"
+    },
+    "56": {
+        "0": "diamond_ore"
+    },
+    "57": {
+        "0": "diamond_block"
+    },
+    "58": {
+        "0": "crafting_table"
+    },
+    "59": {
+        "0": "wheat [\"growth\"=0]",
+        "1": "wheat [\"growth\"=1]",
+        "2": "wheat [\"growth\"=2]",
+        "3": "wheat [\"growth\"=3]",
+        "4": "wheat [\"growth\"=4]",
+        "5": "wheat [\"growth\"=5]",
+        "6": "wheat [\"growth\"=6]",
+        "7": "wheat [\"growth\"=7]"
+    },
+    "60": {
+        "0": "farmland [\"moisturized_amount\"=0]",
+        "1": "farmland [\"moisturized_amount\"=1]",
+        "2": "farmland [\"moisturized_amount\"=2]",
+        "3": "farmland [\"moisturized_amount\"=3]",
+        "4": "farmland [\"moisturized_amount\"=4]",
+        "5": "farmland [\"moisturized_amount\"=5]",
+        "6": "farmland [\"moisturized_amount\"=6]",
+        "7": "farmland [\"moisturized_amount\"=7]"
+    },
+    "61": {
+        "0": "furnace",
+        "1": "furnace",
+        "2": "furnace [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "furnace [\"minecraft:cardinal_direction\"=\"south\"]",
+        "4": "furnace [\"minecraft:cardinal_direction\"=\"west\"]",
+        "5": "furnace [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "62": {
+        "0": "lit_furnace",
+        "1": "lit_furnace",
+        "2": "lit_furnace [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "lit_furnace [\"minecraft:cardinal_direction\"=\"south\"]",
+        "4": "lit_furnace [\"minecraft:cardinal_direction\"=\"west\"]",
+        "5": "lit_furnace [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "63": {
+        "0": "standing_sign [\"ground_sign_direction\"=0]",
+        "1": "standing_sign [\"ground_sign_direction\"=1]",
+        "2": "standing_sign [\"ground_sign_direction\"=2]",
+        "3": "standing_sign [\"ground_sign_direction\"=3]",
+        "4": "standing_sign [\"ground_sign_direction\"=4]",
+        "5": "standing_sign [\"ground_sign_direction\"=5]",
+        "6": "standing_sign [\"ground_sign_direction\"=6]",
+        "7": "standing_sign [\"ground_sign_direction\"=7]",
+        "8": "standing_sign [\"ground_sign_direction\"=8]",
+        "9": "standing_sign [\"ground_sign_direction\"=9]",
+        "10": "standing_sign [\"ground_sign_direction\"=10]",
+        "11": "standing_sign [\"ground_sign_direction\"=11]",
+        "12": "standing_sign [\"ground_sign_direction\"=12]",
+        "13": "standing_sign [\"ground_sign_direction\"=13]",
+        "14": "standing_sign [\"ground_sign_direction\"=14]",
+        "15": "standing_sign [\"ground_sign_direction\"=15]"
+    },
+    "64": {
+        "0": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "wooden_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "wooden_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "wooden_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "65": {
+        "0": "ladder [\"facing_direction\"=0]",
+        "1": "ladder [\"facing_direction\"=1]",
+        "2": "ladder [\"facing_direction\"=2]",
+        "3": "ladder [\"facing_direction\"=3]",
+        "4": "ladder [\"facing_direction\"=4]",
+        "5": "ladder [\"facing_direction\"=5]"
+    },
+    "66": {
+        "0": "rail [\"rail_direction\"=0]",
+        "1": "rail [\"rail_direction\"=1]",
+        "2": "rail [\"rail_direction\"=2]",
+        "3": "rail [\"rail_direction\"=3]",
+        "4": "rail [\"rail_direction\"=4]",
+        "5": "rail [\"rail_direction\"=5]",
+        "6": "rail [\"rail_direction\"=6]",
+        "7": "rail [\"rail_direction\"=7]",
+        "8": "rail [\"rail_direction\"=8]",
+        "9": "rail [\"rail_direction\"=9]"
+    },
+    "67": {
+        "0": "stone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "stone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "stone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "stone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "stone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "stone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "stone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "stone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "68": {
+        "0": "wall_sign [\"facing_direction\"=0]",
+        "1": "wall_sign [\"facing_direction\"=1]",
+        "2": "wall_sign [\"facing_direction\"=2]",
+        "3": "wall_sign [\"facing_direction\"=3]",
+        "4": "wall_sign [\"facing_direction\"=4]",
+        "5": "wall_sign [\"facing_direction\"=5]"
+    },
+    "69": {
+        "0": "lever [\"open_bit\"=false,\"lever_direction\"=\"down_north_south\"]",
+        "1": "lever [\"open_bit\"=false,\"lever_direction\"=\"east\"]",
+        "2": "lever [\"open_bit\"=false,\"lever_direction\"=\"west\"]",
+        "3": "lever [\"open_bit\"=false,\"lever_direction\"=\"south\"]",
+        "4": "lever [\"open_bit\"=false,\"lever_direction\"=\"north\"]",
+        "5": "lever [\"open_bit\"=false,\"lever_direction\"=\"up_east_west\"]",
+        "6": "lever [\"open_bit\"=false,\"lever_direction\"=\"up_north_south\"]",
+        "7": "lever [\"open_bit\"=false,\"lever_direction\"=\"down_east_west\"]",
+        "8": "lever [\"open_bit\"=true,\"lever_direction\"=\"down_north_south\"]",
+        "9": "lever [\"open_bit\"=true,\"lever_direction\"=\"east\"]",
+        "10": "lever [\"open_bit\"=true,\"lever_direction\"=\"west\"]",
+        "11": "lever [\"open_bit\"=true,\"lever_direction\"=\"south\"]",
+        "12": "lever [\"open_bit\"=true,\"lever_direction\"=\"north\"]",
+        "13": "lever [\"open_bit\"=true,\"lever_direction\"=\"up_east_west\"]",
+        "14": "lever [\"open_bit\"=true,\"lever_direction\"=\"up_north_south\"]",
+        "15": "lever [\"open_bit\"=true,\"lever_direction\"=\"down_east_west\"]"
+    },
+    "70": {
+        "0": "stone_pressure_plate [\"redstone_signal\"=0]",
+        "1": "stone_pressure_plate [\"redstone_signal\"=1]",
+        "2": "stone_pressure_plate [\"redstone_signal\"=2]",
+        "3": "stone_pressure_plate [\"redstone_signal\"=3]",
+        "4": "stone_pressure_plate [\"redstone_signal\"=4]",
+        "5": "stone_pressure_plate [\"redstone_signal\"=5]",
+        "6": "stone_pressure_plate [\"redstone_signal\"=6]",
+        "7": "stone_pressure_plate [\"redstone_signal\"=7]",
+        "8": "stone_pressure_plate [\"redstone_signal\"=8]",
+        "9": "stone_pressure_plate [\"redstone_signal\"=9]",
+        "10": "stone_pressure_plate [\"redstone_signal\"=10]",
+        "11": "stone_pressure_plate [\"redstone_signal\"=11]",
+        "12": "stone_pressure_plate [\"redstone_signal\"=12]",
+        "13": "stone_pressure_plate [\"redstone_signal\"=13]",
+        "14": "stone_pressure_plate [\"redstone_signal\"=14]",
+        "15": "stone_pressure_plate [\"redstone_signal\"=15]"
+    },
+    "71": {
+        "0": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "iron_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "iron_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "iron_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "72": {
+        "0": "wooden_pressure_plate [\"redstone_signal\"=0]",
+        "1": "wooden_pressure_plate [\"redstone_signal\"=1]",
+        "2": "wooden_pressure_plate [\"redstone_signal\"=2]",
+        "3": "wooden_pressure_plate [\"redstone_signal\"=3]",
+        "4": "wooden_pressure_plate [\"redstone_signal\"=4]",
+        "5": "wooden_pressure_plate [\"redstone_signal\"=5]",
+        "6": "wooden_pressure_plate [\"redstone_signal\"=6]",
+        "7": "wooden_pressure_plate [\"redstone_signal\"=7]",
+        "8": "wooden_pressure_plate [\"redstone_signal\"=8]",
+        "9": "wooden_pressure_plate [\"redstone_signal\"=9]",
+        "10": "wooden_pressure_plate [\"redstone_signal\"=10]",
+        "11": "wooden_pressure_plate [\"redstone_signal\"=11]",
+        "12": "wooden_pressure_plate [\"redstone_signal\"=12]",
+        "13": "wooden_pressure_plate [\"redstone_signal\"=13]",
+        "14": "wooden_pressure_plate [\"redstone_signal\"=14]",
+        "15": "wooden_pressure_plate [\"redstone_signal\"=15]"
+    },
+    "73": {
+        "0": "redstone_ore"
+    },
+    "74": {
+        "0": "lit_redstone_ore"
+    },
+    "75": {
+        "0": "unlit_redstone_torch",
+        "1": "unlit_redstone_torch [\"torch_facing_direction\"=\"west\"]",
+        "2": "unlit_redstone_torch [\"torch_facing_direction\"=\"east\"]",
+        "3": "unlit_redstone_torch [\"torch_facing_direction\"=\"north\"]",
+        "4": "unlit_redstone_torch [\"torch_facing_direction\"=\"south\"]",
+        "5": "unlit_redstone_torch [\"torch_facing_direction\"=\"unknown\"]"
+    },
+    "76": {
+        "0": "redstone_torch",
+        "1": "redstone_torch [\"torch_facing_direction\"=\"west\"]",
+        "2": "redstone_torch [\"torch_facing_direction\"=\"east\"]",
+        "3": "redstone_torch [\"torch_facing_direction\"=\"north\"]",
+        "4": "redstone_torch [\"torch_facing_direction\"=\"south\"]",
+        "5": "redstone_torch [\"torch_facing_direction\"=\"unknown\"]"
+    },
+    "77": {
+        "0": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=0]",
+        "1": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=5]",
+        "2": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=4]",
+        "3": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=3]",
+        "4": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=2]",
+        "5": "stone_button [\"button_pressed_bit\"=false,\"facing_direction\"=1]",
+        "8": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=0]",
+        "9": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=5]",
+        "10": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=4]",
+        "11": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=3]",
+        "12": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=2]",
+        "13": "stone_button [\"button_pressed_bit\"=true,\"facing_direction\"=1]"
+    },
+    "78": {
+        "0": "snow_layer [\"height\"=0]",
+        "1": "snow_layer [\"height\"=1]",
+        "2": "snow_layer [\"height\"=2]",
+        "3": "snow_layer [\"height\"=3]",
+        "4": "snow_layer [\"height\"=4]",
+        "5": "snow_layer [\"height\"=5]",
+        "6": "snow_layer [\"height\"=6]",
+        "7": "snow_layer [\"height\"=7]"
+    },
+    "79": {
+        "0": "ice"
+    },
+    "80": {
+        "0": "snow"
+    },
+    "81": {
+        "0": "cactus [\"age\"=0]",
+        "1": "cactus [\"age\"=1]",
+        "2": "cactus [\"age\"=2]",
+        "3": "cactus [\"age\"=3]",
+        "4": "cactus [\"age\"=4]",
+        "5": "cactus [\"age\"=5]",
+        "6": "cactus [\"age\"=6]",
+        "7": "cactus [\"age\"=7]",
+        "8": "cactus [\"age\"=8]",
+        "9": "cactus [\"age\"=9]",
+        "10": "cactus [\"age\"=10]",
+        "11": "cactus [\"age\"=11]",
+        "12": "cactus [\"age\"=12]",
+        "13": "cactus [\"age\"=13]",
+        "14": "cactus [\"age\"=14]",
+        "15": "cactus [\"age\"=15]"
+    },
+    "82": {
+        "0": "clay"
+    },
+    "83": {
+        "0": "reeds [\"age\"=0]",
+        "1": "reeds [\"age\"=1]",
+        "2": "reeds [\"age\"=2]",
+        "3": "reeds [\"age\"=3]",
+        "4": "reeds [\"age\"=4]",
+        "5": "reeds [\"age\"=5]",
+        "6": "reeds [\"age\"=6]",
+        "7": "reeds [\"age\"=7]",
+        "8": "reeds [\"age\"=8]",
+        "9": "reeds [\"age\"=9]",
+        "10": "reeds [\"age\"=10]",
+        "11": "reeds [\"age\"=11]",
+        "12": "reeds [\"age\"=12]",
+        "13": "reeds [\"age\"=13]",
+        "14": "reeds [\"age\"=14]",
+        "15": "reeds [\"age\"=15]"
+    },
+    "84": {
+        "0": "jukebox"
+    },
+    "85": {
+        "0": "oak_fence"
+    },
+    "86": {
+        "0": "carved_pumpkin [\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "carved_pumpkin [\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "carved_pumpkin [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "carved_pumpkin [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "87": {
+        "0": "netherrack"
+    },
+    "88": {
+        "0": "soul_sand"
+    },
+    "89": {
+        "0": "glowstone"
+    },
+    "90": {
+        "0": "portal",
+        "1": "portal[\"portal_axis\"=\"x\"]",
+        "2": "portal[\"portal_axis\"=\"z\"]"
+    },
+    "91": {
+        "0": "lit_pumpkin [\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "lit_pumpkin [\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "lit_pumpkin [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "lit_pumpkin [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "92": {
+        "0": "cake [\"bite_counter\"=0]",
+        "1": "cake [\"bite_counter\"=1]",
+        "2": "cake [\"bite_counter\"=2]",
+        "3": "cake [\"bite_counter\"=3]",
+        "4": "cake [\"bite_counter\"=4]",
+        "5": "cake [\"bite_counter\"=5]",
+        "6": "cake [\"bite_counter\"=6]"
+    },
+    "93": {
+        "0": "unpowered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "unpowered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "unpowered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "unpowered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "unpowered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "unpowered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "unpowered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "unpowered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"east\"]",
+        "8": "unpowered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"south\"]",
+        "9": "unpowered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"west\"]",
+        "10": "unpowered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"north\"]",
+        "11": "unpowered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"east\"]",
+        "12": "unpowered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"south\"]",
+        "13": "unpowered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"west\"]",
+        "14": "unpowered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"north\"]",
+        "15": "unpowered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "94": {
+        "0": "powered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "powered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "powered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "powered_repeater [\"repeater_delay\"=0,\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "powered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "powered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "powered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "powered_repeater [\"repeater_delay\"=1,\"minecraft:cardinal_direction\"=\"east\"]",
+        "8": "powered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"south\"]",
+        "9": "powered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"west\"]",
+        "10": "powered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"north\"]",
+        "11": "powered_repeater [\"repeater_delay\"=2,\"minecraft:cardinal_direction\"=\"east\"]",
+        "12": "powered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"south\"]",
+        "13": "powered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"west\"]",
+        "14": "powered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"north\"]",
+        "15": "powered_repeater [\"repeater_delay\"=3,\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "95": {
+        "0": "white_stained_glass",
+        "1": "orange_stained_glass",
+        "2": "magenta_stained_glass",
+        "3": "light_blue_stained_glass",
+        "4": "yellow_stained_glass",
+        "5": "lime_stained_glass",
+        "6": "pink_stained_glass",
+        "7": "gray_stained_glass",
+        "8": "light_gray_stained_glass",
+        "9": "cyan_stained_glass",
+        "10": "purple_stained_glass",
+        "11": "blue_stained_glass",
+        "12": "brown_stained_glass",
+        "13": "green_stained_glass",
+        "14": "red_stained_glass",
+        "15": "black_stained_glass"
+    },
+    "96": {
+        "0": "trapdoor [\"upside_down_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "1": "trapdoor [\"upside_down_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "2": "trapdoor [\"upside_down_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "3": "trapdoor [\"upside_down_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "4": "trapdoor [\"upside_down_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "5": "trapdoor [\"upside_down_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "6": "trapdoor [\"upside_down_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "7": "trapdoor [\"upside_down_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "8": "trapdoor [\"upside_down_bit\"=true,\"direction\"=3,\"open_bit\"=false]",
+        "9": "trapdoor [\"upside_down_bit\"=true,\"direction\"=2,\"open_bit\"=false]",
+        "10": "trapdoor [\"upside_down_bit\"=true,\"direction\"=1,\"open_bit\"=false]",
+        "11": "trapdoor [\"upside_down_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "12": "trapdoor [\"upside_down_bit\"=true,\"direction\"=3,\"open_bit\"=true]",
+        "13": "trapdoor [\"upside_down_bit\"=true,\"direction\"=2,\"open_bit\"=true]",
+        "14": "trapdoor [\"upside_down_bit\"=true,\"direction\"=1,\"open_bit\"=true]",
+        "15": "trapdoor [\"upside_down_bit\"=true,\"direction\"=0,\"open_bit\"=true]"
+    },
+    "97": {
+        "0": "monster_egg [\"monster_egg_stone_type\"=\"stone\"]",
+        "1": "monster_egg [\"monster_egg_stone_type\"=\"cobblestone\"]",
+        "2": "monster_egg [\"monster_egg_stone_type\"=\"stone_brick\"]",
+        "3": "monster_egg [\"monster_egg_stone_type\"=\"mossy_stone_brick\"]",
+        "4": "monster_egg [\"monster_egg_stone_type\"=\"cracked_stone_brick\"]",
+        "5": "monster_egg [\"monster_egg_stone_type\"=\"chiseled_stone_brick\"]"
+    },
+    "98": {
+        "0": "stonebrick [\"stone_brick_type\"=\"default\"]",
+        "1": "stonebrick [\"stone_brick_type\"=\"mossy\"]",
+        "2": "stonebrick [\"stone_brick_type\"=\"cracked\"]",
+        "3": "stonebrick [\"stone_brick_type\"=\"chiseled\"]"
+    },
+    "99": {
+        "0": "brown_mushroom_block [\"huge_mushroom_bits\"=0]",
+        "1": "brown_mushroom_block [\"huge_mushroom_bits\"=1]",
+        "2": "brown_mushroom_block [\"huge_mushroom_bits\"=2]",
+        "3": "brown_mushroom_block [\"huge_mushroom_bits\"=3]",
+        "4": "brown_mushroom_block [\"huge_mushroom_bits\"=4]",
+        "5": "brown_mushroom_block [\"huge_mushroom_bits\"=5]",
+        "6": "brown_mushroom_block [\"huge_mushroom_bits\"=6]",
+        "7": "brown_mushroom_block [\"huge_mushroom_bits\"=7]",
+        "8": "brown_mushroom_block [\"huge_mushroom_bits\"=8]",
+        "9": "brown_mushroom_block [\"huge_mushroom_bits\"=9]",
+        "10": "brown_mushroom_block [\"huge_mushroom_bits\"=10]",
+        "14": "brown_mushroom_block [\"huge_mushroom_bits\"=14]",
+        "15": "brown_mushroom_block [\"huge_mushroom_bits\"=15]"
+    },
+    "100": {
+        "0": "red_mushroom_block [\"huge_mushroom_bits\"=0]",
+        "1": "red_mushroom_block [\"huge_mushroom_bits\"=1]",
+        "2": "red_mushroom_block [\"huge_mushroom_bits\"=2]",
+        "3": "red_mushroom_block [\"huge_mushroom_bits\"=3]",
+        "4": "red_mushroom_block [\"huge_mushroom_bits\"=4]",
+        "5": "red_mushroom_block [\"huge_mushroom_bits\"=5]",
+        "6": "red_mushroom_block [\"huge_mushroom_bits\"=6]",
+        "7": "red_mushroom_block [\"huge_mushroom_bits\"=7]",
+        "8": "red_mushroom_block [\"huge_mushroom_bits\"=8]",
+        "9": "red_mushroom_block [\"huge_mushroom_bits\"=9]",
+        "10": "red_mushroom_block [\"huge_mushroom_bits\"=10]",
+        "14": "red_mushroom_block [\"huge_mushroom_bits\"=14]",
+        "15": "red_mushroom_block [\"huge_mushroom_bits\"=15]"
+    },
+    "101": {
+        "0": "iron_bars"
+    },
+    "102": {
+        "0": "glass_pane"
+    },
+    "103": {
+        "0": "melon_block"
+    },
+    "104": {
+        "0": "pumpkin_stem[\"growth\"=0]",
+        "1": "pumpkin_stem[\"growth\"=1]",
+        "2": "pumpkin_stem[\"growth\"=2]",
+        "3": "pumpkin_stem[\"growth\"=3]",
+        "4": "pumpkin_stem[\"growth\"=4]",
+        "5": "pumpkin_stem[\"growth\"=5]",
+        "6": "pumpkin_stem[\"growth\"=6]",
+        "7": "pumpkin_stem[\"growth\"=7]"
+    },
+    "105": {
+        "0": "melon_stem[\"growth\"=0]",
+        "1": "melon_stem[\"growth\"=1]",
+        "2": "melon_stem[\"growth\"=2]",
+        "3": "melon_stem[\"growth\"=3]",
+        "4": "melon_stem[\"growth\"=4]",
+        "5": "melon_stem[\"growth\"=5]",
+        "6": "melon_stem[\"growth\"=6]",
+        "7": "melon_stem[\"growth\"=7]"
+    },
+    "106": {
+        "0": "vine",
+        "1": "vine [\"vine_direction_bits\"=1]",
+        "2": "vine [\"vine_direction_bits\"=2]",
+        "3": "vine [\"vine_direction_bits\"=3]",
+        "4": "vine [\"vine_direction_bits\"=4]",
+        "5": "vine [\"vine_direction_bits\"=5]",
+        "6": "vine [\"vine_direction_bits\"=6]",
+        "7": "vine [\"vine_direction_bits\"=7]",
+        "8": "vine [\"vine_direction_bits\"=8]",
+        "9": "vine [\"vine_direction_bits\"=9]",
+        "10": "vine [\"vine_direction_bits\"=10]",
+        "11": "vine [\"vine_direction_bits\"=11]",
+        "12": "vine [\"vine_direction_bits\"=12]",
+        "13": "vine [\"vine_direction_bits\"=13]",
+        "14": "vine [\"vine_direction_bits\"=14]",
+        "15": "vine [\"vine_direction_bits\"=15]"
+    },
+    "107": {
+        "0": "fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "108": {
+        "0": "brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "109": {
+        "0": "stone_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "stone_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "stone_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "stone_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "stone_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "stone_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "stone_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "stone_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "110": {
+        "0": "mycelium"
+    },
+    "111": {
+        "0": "waterlily"
+    },
+    "112": {
+        "0": "nether_brick"
+    },
+    "113": {
+        "0": "nether_brick_fence"
+    },
+    "114": {
+        "0": "nether_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "nether_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "nether_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "nether_brick_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "nether_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "nether_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "nether_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "nether_brick_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "115": {
+        "0": "nether_wart [\"age\"=0]",
+        "1": "nether_wart [\"age\"=1]",
+        "2": "nether_wart [\"age\"=2]",
+        "3": "nether_wart [\"age\"=3]"
+    },
+    "116": {
+        "0": "enchanting_table"
+    },
+    "117": {
+        "0": "brewing_stand [\"brewing_stand_slot_a_bit\"=false,\"brewing_stand_slot_b_bit\"=false,\"brewing_stand_slot_c_bit\"=false]",
+        "1": "brewing_stand [\"brewing_stand_slot_a_bit\"=true,\"brewing_stand_slot_b_bit\"=false,\"brewing_stand_slot_c_bit\"=false]",
+        "2": "brewing_stand [\"brewing_stand_slot_a_bit\"=false,\"brewing_stand_slot_b_bit\"=true,\"brewing_stand_slot_c_bit\"=false]",
+        "3": "brewing_stand [\"brewing_stand_slot_a_bit\"=true,\"brewing_stand_slot_b_bit\"=true,\"brewing_stand_slot_c_bit\"=false]",
+        "4": "brewing_stand [\"brewing_stand_slot_a_bit\"=false,\"brewing_stand_slot_b_bit\"=false,\"brewing_stand_slot_c_bit\"=true]",
+        "5": "brewing_stand [\"brewing_stand_slot_a_bit\"=true,\"brewing_stand_slot_b_bit\"=false,\"brewing_stand_slot_c_bit\"=true]",
+        "6": "brewing_stand [\"brewing_stand_slot_a_bit\"=false,\"brewing_stand_slot_b_bit\"=true,\"brewing_stand_slot_c_bit\"=true]",
+        "7": "brewing_stand [\"brewing_stand_slot_a_bit\"=true,\"brewing_stand_slot_b_bit\"=true,\"brewing_stand_slot_c_bit\"=true]"
+    },
+    "118": {
+        "0": "cauldron [\"fill_level\"=0]",
+        "1": "cauldron [\"fill_level\"=2]",
+        "2": "cauldron [\"fill_level\"=4]",
+        "3": "cauldron [\"fill_level\"=6]"
+    },
+    "119": {
+        "0": "end_portal"
+    },
+    "120": {
+        "0": "end_portal_frame [\"end_portal_eye_bit\"=false,\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "end_portal_frame [\"end_portal_eye_bit\"=false,\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "end_portal_frame [\"end_portal_eye_bit\"=false,\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "end_portal_frame [\"end_portal_eye_bit\"=false,\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "end_portal_frame [\"end_portal_eye_bit\"=true,\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "end_portal_frame [\"end_portal_eye_bit\"=true,\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "end_portal_frame [\"end_portal_eye_bit\"=true,\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "end_portal_frame [\"end_portal_eye_bit\"=true,\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "121": {
+        "0": "end_stone"
+    },
+    "122": {
+        "0": "dragon_egg"
+    },
+    "123": {
+        "0": "redstone_lamp"
+    },
+    "124": {
+        "0": "lit_redstone_lamp"
+    },
+    "125": {
+        "0": "oak_double_slab",
+        "1": "spruce_double_slab",
+        "2": "birch_double_slab",
+        "3": "jungle_double_slab",
+        "4": "acacia_double_slab",
+        "5": "dark_oak_double_slab"
+    },
+    "126": {
+        "0": "oak_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "1": "spruce_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "2": "birch_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "3": "jungle_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "4": "acacia_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "5": "dark_oak_slab [\"minecraft:vertical_half\"=\"bottom\"]",
+        "8": "oak_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "9": "spruce_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "10": "birch_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "11": "jungle_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "12": "acacia_slab [\"minecraft:vertical_half\"=\"top\"]",
+        "13": "dark_oak_slab [\"minecraft:vertical_half\"=\"top\"]"
+    },
+    "127": {
+        "0": "cocoa [\"direction\"=0,\"age\"=0]",
+        "1": "cocoa [\"direction\"=1,\"age\"=0]",
+        "2": "cocoa [\"direction\"=2,\"age\"=0]",
+        "3": "cocoa [\"direction\"=3,\"age\"=0]",
+        "4": "cocoa [\"direction\"=0,\"age\"=1]",
+        "5": "cocoa [\"direction\"=1,\"age\"=1]",
+        "6": "cocoa [\"direction\"=2,\"age\"=1]",
+        "7": "cocoa [\"direction\"=3,\"age\"=1]",
+        "8": "cocoa [\"direction\"=0,\"age\"=2]",
+        "9": "cocoa [\"direction\"=1,\"age\"=2]",
+        "10": "cocoa [\"direction\"=2,\"age\"=2]",
+        "11": "cocoa [\"direction\"=3,\"age\"=2]"
+    },
+    "128": {
+        "0": "sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "129": {
+        "0": "emerald_ore"
+    },
+    "130": {
+        "0": "ender_chest",
+        "1": "ender_chest",
+        "2": "ender_chest [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "ender_chest [\"minecraft:cardinal_direction\"=\"south\"]",
+        "4": "ender_chest [\"minecraft:cardinal_direction\"=\"west\"]",
+        "5": "ender_chest [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "131": {
+        "0": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=false,\"direction\"=0]",
+        "1": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=false,\"direction\"=1]",
+        "2": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=false,\"direction\"=2]",
+        "3": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=false,\"direction\"=3]",
+        "4": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=true,\"direction\"=0]",
+        "5": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=true,\"direction\"=1]",
+        "6": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=true,\"direction\"=2]",
+        "7": "tripwire_hook [\"powered_bit\"=false,\"attached_bit\"=true,\"direction\"=3]",
+        "8": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=false,\"direction\"=0]",
+        "9": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=false,\"direction\"=1]",
+        "10": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=false,\"direction\"=2]",
+        "11": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=false,\"direction\"=3]",
+        "12": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=true,\"direction\"=0]",
+        "13": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=true,\"direction\"=1]",
+        "14": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=true,\"direction\"=2]",
+        "15": "tripwire_hook [\"powered_bit\"=true,\"attached_bit\"=true,\"direction\"=3]"
+    },
+    "132": {
+        "0": "trip_wire [\"disarmed_bit\"=false,\"powered_bit\"=false,\"attached_bit\"=false]",
+        "1": "trip_wire [\"disarmed_bit\"=false,\"powered_bit\"=true,\"attached_bit\"=false]",
+        "4": "trip_wire [\"disarmed_bit\"=false,\"powered_bit\"=false,\"attached_bit\"=true]",
+        "5": "trip_wire [\"disarmed_bit\"=false,\"powered_bit\"=true,\"attached_bit\"=true]",
+        "8": "trip_wire [\"disarmed_bit\"=true,\"powered_bit\"=false,\"attached_bit\"=false]",
+        "9": "trip_wire [\"disarmed_bit\"=true,\"powered_bit\"=true,\"attached_bit\"=false]",
+        "12": "trip_wire [\"disarmed_bit\"=true,\"powered_bit\"=false,\"attached_bit\"=true]",
+        "13": "trip_wire [\"disarmed_bit\"=true,\"powered_bit\"=true,\"attached_bit\"=true]"
+    },
+    "133": {
+        "0": "emerald_block"
+    },
+    "134": {
+        "0": "spruce_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "spruce_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "spruce_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "spruce_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "spruce_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "spruce_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "spruce_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "spruce_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "135": {
+        "0": "birch_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "birch_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "birch_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "birch_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "birch_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "birch_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "birch_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "birch_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "136": {
+        "0": "jungle_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "jungle_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "jungle_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "jungle_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "jungle_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "jungle_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "jungle_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "jungle_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "137": {
+        "0": "command_block [\"conditional_bit\"=false,\"facing_direction\"=0]",
+        "1": "command_block [\"conditional_bit\"=false,\"facing_direction\"=1]",
+        "2": "command_block [\"conditional_bit\"=false,\"facing_direction\"=2]",
+        "3": "command_block [\"conditional_bit\"=false,\"facing_direction\"=3]",
+        "4": "command_block [\"conditional_bit\"=false,\"facing_direction\"=4]",
+        "5": "command_block [\"conditional_bit\"=false,\"facing_direction\"=5]",
+        "8": "command_block [\"conditional_bit\"=true,\"facing_direction\"=0]",
+        "9": "command_block [\"conditional_bit\"=true,\"facing_direction\"=1]",
+        "10": "command_block [\"conditional_bit\"=true,\"facing_direction\"=2]",
+        "11": "command_block [\"conditional_bit\"=true,\"facing_direction\"=3]",
+        "12": "command_block [\"conditional_bit\"=true,\"facing_direction\"=4]",
+        "13": "command_block [\"conditional_bit\"=true,\"facing_direction\"=5]"
+    },
+    "138": {
+        "0": "beacon"
+    },
+    "139": {
+        "0": "cobblestone_wall [\"wall_block_type\"=\"cobblestone\"]",
+        "1": "cobblestone_wall [\"wall_block_type\"=\"mossy_cobblestone\"]"
+    },
+    "140": {
+        "0": "flower_pot [\"update_bit\"=false]",
+        "1": "flower_pot [\"update_bit\"=true]",
+        "2": "flower_pot [\"update_bit\"=true]",
+        "3": "flower_pot [\"update_bit\"=true]",
+        "4": "flower_pot [\"update_bit\"=true]",
+        "5": "flower_pot [\"update_bit\"=true]",
+        "6": "flower_pot [\"update_bit\"=true]",
+        "7": "flower_pot [\"update_bit\"=true]",
+        "8": "flower_pot [\"update_bit\"=true]",
+        "9": "flower_pot [\"update_bit\"=true]",
+        "10": "flower_pot [\"update_bit\"=true]",
+        "11": "flower_pot [\"update_bit\"=true]",
+        "12": "flower_pot [\"update_bit\"=true]",
+        "13": "flower_pot [\"update_bit\"=true]",
+        "14": "flower_pot [\"update_bit\"=true]",
+        "15": "flower_pot [\"update_bit\"=true]"
+    },
+    "141": {
+        "0": "carrots [\"growth\"=0]",
+        "1": "carrots [\"growth\"=1]",
+        "2": "carrots [\"growth\"=2]",
+        "3": "carrots [\"growth\"=3]",
+        "4": "carrots [\"growth\"=4]",
+        "5": "carrots [\"growth\"=5]",
+        "6": "carrots [\"growth\"=6]",
+        "7": "carrots [\"growth\"=7]"
+    },
+    "142": {
+        "0": "potatoes [\"growth\"=0]",
+        "1": "potatoes [\"growth\"=1]",
+        "2": "potatoes [\"growth\"=2]",
+        "3": "potatoes [\"growth\"=3]",
+        "4": "potatoes [\"growth\"=4]",
+        "5": "potatoes [\"growth\"=5]",
+        "6": "potatoes [\"growth\"=6]",
+        "7": "potatoes [\"growth\"=7]"
+    },
+    "143": {
+        "0": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=0]",
+        "1": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=5]",
+        "2": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=4]",
+        "3": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=3]",
+        "4": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=2]",
+        "5": "wooden_button [\"button_pressed_bit\"=false,\"facing_direction\"=1]",
+        "8": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=0]",
+        "9": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=5]",
+        "10": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=4]",
+        "11": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=3]",
+        "12": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=2]",
+        "13": "wooden_button [\"button_pressed_bit\"=true,\"facing_direction\"=1]"
+    },
+    "144": {
+        "0": "skull [\"facing_direction\"=1]",
+        "1": "skull [\"facing_direction\"=1]",
+        "2": "skull [\"facing_direction\"=2]",
+        "3": "skull [\"facing_direction\"=3]",
+        "4": "skull [\"facing_direction\"=4]",
+        "5": "skull [\"facing_direction\"=5]",
+        "8": "skull [\"facing_direction\"=1]",
+        "9": "skull [\"facing_direction\"=1]",
+        "10": "skull [\"facing_direction\"=2]",
+        "11": "skull [\"facing_direction\"=3]",
+        "12": "skull [\"facing_direction\"=4]",
+        "13": "skull [\"facing_direction\"=5]"
+    },
+    "145": {
+        "0": "anvil [\"damage\"=\"undamaged\",\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "anvil [\"damage\"=\"undamaged\",\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "anvil [\"damage\"=\"undamaged\",\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "anvil [\"damage\"=\"undamaged\",\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "anvil [\"damage\"=\"slightly_damaged\",\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "anvil [\"damage\"=\"slightly_damaged\",\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "anvil [\"damage\"=\"slightly_damaged\",\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "anvil [\"damage\"=\"slightly_damaged\",\"minecraft:cardinal_direction\"=\"east\"]",
+        "8": "anvil [\"damage\"=\"very_damaged\",\"minecraft:cardinal_direction\"=\"south\"]",
+        "9": "anvil [\"damage\"=\"very_damaged\",\"minecraft:cardinal_direction\"=\"west\"]",
+        "10": "anvil [\"damage\"=\"very_damaged\",\"minecraft:cardinal_direction\"=\"north\"]",
+        "11": "anvil [\"damage\"=\"very_damaged\",\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "146": {
+        "0": "trapped_chest",
+        "1": "trapped_chest",
+        "2": "trapped_chest [\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "trapped_chest [\"minecraft:cardinal_direction\"=\"south\"]",
+        "4": "trapped_chest [\"minecraft:cardinal_direction\"=\"west\"]",
+        "5": "trapped_chest [\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "147": {
+        "0": "light_weighted_pressure_plate [\"redstone_signal\"=0]",
+        "1": "light_weighted_pressure_plate [\"redstone_signal\"=1]",
+        "2": "light_weighted_pressure_plate [\"redstone_signal\"=2]",
+        "3": "light_weighted_pressure_plate [\"redstone_signal\"=3]",
+        "4": "light_weighted_pressure_plate [\"redstone_signal\"=4]",
+        "5": "light_weighted_pressure_plate [\"redstone_signal\"=5]",
+        "6": "light_weighted_pressure_plate [\"redstone_signal\"=6]",
+        "7": "light_weighted_pressure_plate [\"redstone_signal\"=7]",
+        "8": "light_weighted_pressure_plate [\"redstone_signal\"=8]",
+        "9": "light_weighted_pressure_plate [\"redstone_signal\"=9]",
+        "10": "light_weighted_pressure_plate [\"redstone_signal\"=10]",
+        "11": "light_weighted_pressure_plate [\"redstone_signal\"=11]",
+        "12": "light_weighted_pressure_plate [\"redstone_signal\"=12]",
+        "13": "light_weighted_pressure_plate [\"redstone_signal\"=13]",
+        "14": "light_weighted_pressure_plate [\"redstone_signal\"=14]",
+        "15": "light_weighted_pressure_plate [\"redstone_signal\"=15]"
+    },
+    "148": {
+        "0": "heavy_weighted_pressure_plate [\"redstone_signal\"=0]",
+        "1": "heavy_weighted_pressure_plate [\"redstone_signal\"=1]",
+        "2": "heavy_weighted_pressure_plate [\"redstone_signal\"=2]",
+        "3": "heavy_weighted_pressure_plate [\"redstone_signal\"=3]",
+        "4": "heavy_weighted_pressure_plate [\"redstone_signal\"=4]",
+        "5": "heavy_weighted_pressure_plate [\"redstone_signal\"=5]",
+        "6": "heavy_weighted_pressure_plate [\"redstone_signal\"=6]",
+        "7": "heavy_weighted_pressure_plate [\"redstone_signal\"=7]",
+        "8": "heavy_weighted_pressure_plate [\"redstone_signal\"=8]",
+        "9": "heavy_weighted_pressure_plate [\"redstone_signal\"=9]",
+        "10": "heavy_weighted_pressure_plate [\"redstone_signal\"=10]",
+        "11": "heavy_weighted_pressure_plate [\"redstone_signal\"=11]",
+        "12": "heavy_weighted_pressure_plate [\"redstone_signal\"=12]",
+        "13": "heavy_weighted_pressure_plate [\"redstone_signal\"=13]",
+        "14": "heavy_weighted_pressure_plate [\"redstone_signal\"=14]",
+        "15": "heavy_weighted_pressure_plate [\"redstone_signal\"=15]"
+    },
+    "149": {
+        "0": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"east\"]",
+        "8": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"south\"]",
+        "9": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"west\"]",
+        "10": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"north\"]",
+        "11": "unpowered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"east\"]",
+        "12": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"south\"]",
+        "13": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"west\"]",
+        "14": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"north\"]",
+        "15": "unpowered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "150": {
+        "0": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"south\"]",
+        "1": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"west\"]",
+        "2": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"north\"]",
+        "3": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"east\"]",
+        "4": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"south\"]",
+        "5": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"west\"]",
+        "6": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"north\"]",
+        "7": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"east\"]",
+        "8": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"south\"]",
+        "9": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"west\"]",
+        "10": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"north\"]",
+        "11": "powered_comparator [\"output_subtract_bit\"=false,\"minecraft:cardinal_direction\"=\"east\"]",
+        "12": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"south\"]",
+        "13": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"west\"]",
+        "14": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"north\"]",
+        "15": "powered_comparator [\"output_subtract_bit\"=true,\"minecraft:cardinal_direction\"=\"east\"]"
+    },
+    "151": {
+        "0": "daylight_detector [\"redstone_signal\"=0]",
+        "1": "daylight_detector [\"redstone_signal\"=1]",
+        "2": "daylight_detector [\"redstone_signal\"=2]",
+        "3": "daylight_detector [\"redstone_signal\"=3]",
+        "4": "daylight_detector [\"redstone_signal\"=4]",
+        "5": "daylight_detector [\"redstone_signal\"=5]",
+        "6": "daylight_detector [\"redstone_signal\"=6]",
+        "7": "daylight_detector [\"redstone_signal\"=7]",
+        "8": "daylight_detector [\"redstone_signal\"=8]",
+        "9": "daylight_detector [\"redstone_signal\"=9]",
+        "10": "daylight_detector [\"redstone_signal\"=10]",
+        "11": "daylight_detector [\"redstone_signal\"=11]",
+        "12": "daylight_detector [\"redstone_signal\"=12]",
+        "13": "daylight_detector [\"redstone_signal\"=13]",
+        "14": "daylight_detector [\"redstone_signal\"=14]",
+        "15": "daylight_detector [\"redstone_signal\"=15]"
+    },
+    "152": {
+        "0": "redstone_block"
+    },
+    "153": {
+        "0": "quartz_ore"
+    },
+    "154": {
+        "0": "hopper [\"facing_direction\"=0,\"toggle_bit\"=true]",
+        "1": "hopper [\"facing_direction\"=1,\"toggle_bit\"=true]",
+        "2": "hopper [\"facing_direction\"=2,\"toggle_bit\"=true]",
+        "3": "hopper [\"facing_direction\"=3,\"toggle_bit\"=true]",
+        "4": "hopper [\"facing_direction\"=4,\"toggle_bit\"=true]",
+        "5": "hopper [\"facing_direction\"=5,\"toggle_bit\"=true]",
+        "8": "hopper [\"facing_direction\"=0,\"toggle_bit\"=false]",
+        "9": "hopper [\"facing_direction\"=1,\"toggle_bit\"=false]",
+        "10": "hopper [\"facing_direction\"=2,\"toggle_bit\"=false]",
+        "11": "hopper [\"facing_direction\"=3,\"toggle_bit\"=false]",
+        "12": "hopper [\"facing_direction\"=4,\"toggle_bit\"=false]",
+        "13": "hopper [\"facing_direction\"=5,\"toggle_bit\"=false]"
+    },
+    "155": {
+        "0": "quartz_block [\"chisel_type\"=\"default\"]",
+        "1": "quartz_block [\"chisel_type\"=\"chiseled\"]",
+        "2": "quartz_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"y\"]",
+        "3": "quartz_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"x\"]",
+        "4": "quartz_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"z\"]",
+        "6": "quartz_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"x\"]",
+        "10": "quartz_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"z\"]"
+    },
+    "156": {
+        "0": "quartz_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "quartz_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "quartz_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "quartz_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "quartz_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "quartz_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "quartz_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "quartz_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "157": {
+        "0": "activator_rail [\"rail_direction\"=0,\"rail_data_bit\"=false]",
+        "1": "activator_rail [\"rail_direction\"=1,\"rail_data_bit\"=false]",
+        "2": "activator_rail [\"rail_direction\"=2,\"rail_data_bit\"=false]",
+        "3": "activator_rail [\"rail_direction\"=3,\"rail_data_bit\"=false]",
+        "4": "activator_rail [\"rail_direction\"=4,\"rail_data_bit\"=false]",
+        "5": "activator_rail [\"rail_direction\"=5,\"rail_data_bit\"=false]",
+        "8": "activator_rail [\"rail_direction\"=0,\"rail_data_bit\"=true]",
+        "9": "activator_rail [\"rail_direction\"=1,\"rail_data_bit\"=true]",
+        "10": "activator_rail [\"rail_direction\"=2,\"rail_data_bit\"=true]",
+        "11": "activator_rail [\"rail_direction\"=3,\"rail_data_bit\"=true]",
+        "12": "activator_rail [\"rail_direction\"=4,\"rail_data_bit\"=true]",
+        "13": "activator_rail [\"rail_direction\"=5,\"rail_data_bit\"=true]"
+    },
+    "158": {
+        "0": "dropper [\"triggered_bit\"=false,\"facing_direction\"=0]",
+        "1": "dropper [\"triggered_bit\"=false,\"facing_direction\"=1]",
+        "2": "dropper [\"triggered_bit\"=false,\"facing_direction\"=2]",
+        "3": "dropper [\"triggered_bit\"=false,\"facing_direction\"=3]",
+        "4": "dropper [\"triggered_bit\"=false,\"facing_direction\"=4]",
+        "5": "dropper [\"triggered_bit\"=false,\"facing_direction\"=5]",
+        "8": "dropper [\"triggered_bit\"=true,\"facing_direction\"=0]",
+        "9": "dropper [\"triggered_bit\"=true,\"facing_direction\"=1]",
+        "10": "dropper [\"triggered_bit\"=true,\"facing_direction\"=2]",
+        "11": "dropper [\"triggered_bit\"=true,\"facing_direction\"=3]",
+        "12": "dropper [\"triggered_bit\"=true,\"facing_direction\"=4]",
+        "13": "dropper [\"triggered_bit\"=true,\"facing_direction\"=5]"
+    },
+    "159": {
+        "0": "white_terracotta",
+        "1": "orange_terracotta",
+        "2": "magenta_terracotta",
+        "3": "light_blue_terracotta",
+        "4": "yellow_terracotta",
+        "5": "lime_terracotta",
+        "6": "pink_terracotta",
+        "7": "gray_terracotta",
+        "8": "light_gray_terracotta",
+        "9": "cyan_terracotta",
+        "10": "purple_terracotta",
+        "11": "blue_terracotta",
+        "12": "brown_terracotta",
+        "13": "green_terracotta",
+        "14": "red_terracotta",
+        "15": "black_terracotta"
+    },
+    "160": {
+        "0": "white_stained_glass_pane",
+        "1": "orange_stained_glass_pane",
+        "2": "magenta_stained_glass_pane",
+        "3": "light_blue_stained_glass_pane",
+        "4": "yellow_stained_glass_pane",
+        "5": "lime_stained_glass_pane",
+        "6": "pink_stained_glass_pane",
+        "7": "gray_stained_glass_pane",
+        "8": "light_gray_stained_glass_pane",
+        "9": "cyan_stained_glass_pane",
+        "10": "purple_stained_glass_pane",
+        "11": "blue_stained_glass_pane",
+        "12": "brown_stained_glass_pane",
+        "13": "green_stained_glass_pane",
+        "14": "red_stained_glass_pane",
+        "15": "black_stained_glass_pane"
+    },
+    "161": {
+        "0": "acacia_leaves [\"persistent_bit\"=false]",
+        "1": "dark_oak_leaves [\"persistent_bit\"=false]",
+        "4": "acacia_leaves [\"persistent_bit\"=true]",
+        "5": "dark_oak_leaves [\"persistent_bit\"=true]",
+        "8": "acacia_leaves [\"persistent_bit\"=false]",
+        "9": "dark_oak_leaves [\"persistent_bit\"=false]",
+        "12": "acacia_leaves [\"persistent_bit\"=true]",
+        "13": "dark_oak_leaves [\"persistent_bit\"=true]"
+    },
+    "162": {
+        "0": "acacia_log [\"pillar_axis\"=\"y\"]",
+        "1": "dark_oak_log [\"pillar_axis\"=\"y\"]",
+        "4": "acacia_log [\"pillar_axis\"=\"x\"]",
+        "5": "dark_oak_log [\"pillar_axis\"=\"x\"]",
+        "8": "acacia_log [\"pillar_axis\"=\"z\"]",
+        "9": "dark_oak_log [\"pillar_axis\"=\"z\"]",
+        "12": "acacia_wood",
+        "13": "dark_oak_wood"
+    },
+    "163": {
+        "0": "acacia_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "acacia_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "acacia_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "acacia_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "acacia_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "acacia_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "acacia_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "acacia_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "164": {
+        "0": "dark_oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "dark_oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "dark_oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "dark_oak_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "dark_oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "dark_oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "dark_oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "dark_oak_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "165": {
+        "0": "slime"
+    },
+    "166": {
+        "0": "barrier"
+    },
+    "167": {
+        "0": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "1": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "2": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "3": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "4": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "5": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "6": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "7": "iron_trapdoor [\"upside_down_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "8": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=3,\"open_bit\"=false]",
+        "9": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=2,\"open_bit\"=false]",
+        "10": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=1,\"open_bit\"=false]",
+        "11": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "12": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=3,\"open_bit\"=true]",
+        "13": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=2,\"open_bit\"=true]",
+        "14": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=1,\"open_bit\"=true]",
+        "15": "iron_trapdoor [\"upside_down_bit\"=true,\"direction\"=0,\"open_bit\"=true]"
+    },
+    "168": {
+        "0": "prismarine [\"prismarine_block_type\"=\"default\"]",
+        "1": "prismarine [\"prismarine_block_type\"=\"bricks\"]",
+        "2": "prismarine [\"prismarine_block_type\"=\"dark\"]"
+    },
+    "169": {
+        "0": "sea_lantern"
+    },
+    "170": {
+        "0": "hay_block [\"pillar_axis\"=\"y\"]",
+        "4": "hay_block [\"pillar_axis\"=\"x\"]",
+        "8": "hay_block [\"pillar_axis\"=\"z\"]"
+    },
+    "171": {
+        "0": "white_carpet",
+        "1": "orange_carpet",
+        "2": "magenta_carpet",
+        "3": "light_blue_carpet",
+        "4": "yellow_carpet",
+        "5": "lime_carpet",
+        "6": "pink_carpet",
+        "7": "gray_carpet",
+        "8": "light_gray_carpet",
+        "9": "cyan_carpet",
+        "10": "purple_carpet",
+        "11": "blue_carpet",
+        "12": "brown_carpet",
+        "13": "green_carpet",
+        "14": "red_carpet",
+        "15": "black_carpet"
+    },
+    "172": {
+        "0": "hardened_clay"
+    },
+    "173": {
+        "0": "coal_block"
+    },
+    "174": {
+        "0": "packed_ice"
+    },
+    "175": {
+        "0": "sunflower [\"upper_block_bit\"=false]",
+        "1": "lilac [\"upper_block_bit\"=false]",
+        "2": "tall_grass [\"upper_block_bit\"=false]",
+        "3": "large_fern [\"upper_block_bit\"=false]",
+        "4": "rose_bush [\"upper_block_bit\"=false]",
+        "5": "peony [\"upper_block_bit\"=false]",
+        "8": "sunflower [\"upper_block_bit\"=true]",
+        "9": "lilac [\"upper_block_bit\"=true]",
+        "10": "tall_grass [\"upper_block_bit\"=true]",
+        "11": "large_fern [\"upper_block_bit\"=true]",
+        "12": "rose_bush [\"upper_block_bit\"=true]",
+        "13": "peony [\"upper_block_bit\"=true]"
+    },
+    "176": {
+        "0": "standing_banner [\"ground_sign_direction\"=0]",
+        "1": "standing_banner [\"ground_sign_direction\"=1]",
+        "2": "standing_banner [\"ground_sign_direction\"=2]",
+        "3": "standing_banner [\"ground_sign_direction\"=3]",
+        "4": "standing_banner [\"ground_sign_direction\"=4]",
+        "5": "standing_banner [\"ground_sign_direction\"=5]",
+        "6": "standing_banner [\"ground_sign_direction\"=6]",
+        "7": "standing_banner [\"ground_sign_direction\"=7]",
+        "8": "standing_banner [\"ground_sign_direction\"=8]",
+        "9": "standing_banner [\"ground_sign_direction\"=9]",
+        "10": "standing_banner [\"ground_sign_direction\"=10]",
+        "11": "standing_banner [\"ground_sign_direction\"=11]",
+        "12": "standing_banner [\"ground_sign_direction\"=12]",
+        "13": "standing_banner [\"ground_sign_direction\"=13]",
+        "14": "standing_banner [\"ground_sign_direction\"=14]",
+        "15": "standing_banner [\"ground_sign_direction\"=15]"
+    },
+    "177": {
+        "0": "wall_banner",
+        "1": "wall_banner",
+        "2": "wall_banner [\"facing_direction\"=2]",
+        "3": "wall_banner [\"facing_direction\"=3]",
+        "4": "wall_banner [\"facing_direction\"=4]",
+        "5": "wall_banner [\"facing_direction\"=5]"
+    },
+    "178": {
+        "0": "daylight_detector_inverted [\"redstone_signal\"=0]",
+        "1": "daylight_detector_inverted [\"redstone_signal\"=1]",
+        "2": "daylight_detector_inverted [\"redstone_signal\"=2]",
+        "3": "daylight_detector_inverted [\"redstone_signal\"=3]",
+        "4": "daylight_detector_inverted [\"redstone_signal\"=4]",
+        "5": "daylight_detector_inverted [\"redstone_signal\"=5]",
+        "6": "daylight_detector_inverted [\"redstone_signal\"=6]",
+        "7": "daylight_detector_inverted [\"redstone_signal\"=7]",
+        "8": "daylight_detector_inverted [\"redstone_signal\"=8]",
+        "9": "daylight_detector_inverted [\"redstone_signal\"=9]",
+        "10": "daylight_detector_inverted [\"redstone_signal\"=10]",
+        "11": "daylight_detector_inverted [\"redstone_signal\"=11]",
+        "12": "daylight_detector_inverted [\"redstone_signal\"=12]",
+        "13": "daylight_detector_inverted [\"redstone_signal\"=13]",
+        "14": "daylight_detector_inverted [\"redstone_signal\"=14]",
+        "15": "daylight_detector_inverted [\"redstone_signal\"=15]"
+    },
+    "179": {
+        "0": "red_sandstone [\"sand_stone_type\"=\"default\"]",
+        "1": "red_sandstone [\"sand_stone_type\"=\"heiroglyphs\"]",
+        "2": "red_sandstone [\"sand_stone_type\"=\"cut\"]"
+    },
+    "180": {
+        "0": "red_sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "red_sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "red_sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "red_sandstone_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "red_sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "red_sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "red_sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "red_sandstone_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "181": {
+        "0": "double_stone_block_slab2 [\"stone_slab_type_2\"=\"red_sandstone\"]",
+        "8": "red_sandstone [\"sand_stone_type\"=\"smooth\"]"
+    },
+    "182": {
+        "0": "stone_block_slab2 [\"stone_slab_type_2\"=\"red_sandstone\",\"minecraft:vertical_half\"=\"bottom\"]",
+        "8": "stone_block_slab2 [\"stone_slab_type_2\"=\"red_sandstone\",\"minecraft:vertical_half\"=\"top\"]"
+    },
+    "183": {
+        "0": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "spruce_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "184": {
+        "0": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "birch_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "185": {
+        "0": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "jungle_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "186": {
+        "0": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "dark_oak_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "187": {
+        "0": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "9": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "10": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "11": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "12": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "13": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "14": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "15": "acacia_fence_gate [\"in_wall_bit\"=false,\"direction\"=3,\"open_bit\"=true]"
+    },
+    "188": {
+        "0": "spruce_fence"
+    },
+    "189": {
+        "0": "birch_fence"
+    },
+    "190": {
+        "0": "jungle_fence"
+    },
+    "191": {
+        "0": "dark_oak_fence"
+    },
+    "192": {
+        "0": "acacia_fence"
+    },
+    "193": {
+        "0": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "spruce_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "spruce_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "spruce_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "194": {
+        "0": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "birch_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "birch_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "birch_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "195": {
+        "0": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "jungle_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "jungle_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "jungle_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "196": {
+        "0": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "acacia_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "acacia_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "acacia_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "197": {
+        "0": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=false]",
+        "1": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=false]",
+        "2": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=false]",
+        "3": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=false]",
+        "4": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=0,\"open_bit\"=true]",
+        "5": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=1,\"open_bit\"=true]",
+        "6": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=2,\"open_bit\"=true]",
+        "7": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=false,\"direction\"=3,\"open_bit\"=true]",
+        "8": "dark_oak_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "9": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "10": "dark_oak_door [\"door_hinge_bit\"=false,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]",
+        "11": "dark_oak_door [\"door_hinge_bit\"=true,\"upper_block_bit\"=true,\"direction\"=0,\"open_bit\"=false]"
+    },
+    "198": {
+        "0": "end_rod [\"facing_direction\"=0]",
+        "1": "end_rod [\"facing_direction\"=1]",
+        "2": "end_rod [\"facing_direction\"=3]",
+        "3": "end_rod [\"facing_direction\"=2]",
+        "4": "end_rod [\"facing_direction\"=5]",
+        "5": "end_rod [\"facing_direction\"=4]"
+    },
+    "199": {
+        "0": "chorus_plant"
+    },
+    "200": {
+        "0": "chorus_flower [\"age\"=0]",
+        "1": "chorus_flower [\"age\"=1]",
+        "2": "chorus_flower [\"age\"=2]",
+        "3": "chorus_flower [\"age\"=3]",
+        "4": "chorus_flower [\"age\"=4]",
+        "5": "chorus_flower [\"age\"=5]"
+    },
+    "201": {
+        "0": "purpur_block [\"chisel_type\"=\"default\"]"
+    },
+    "202": {
+        "0": "purpur_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"y\"]",
+        "4": "purpur_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"x\"]",
+        "8": "purpur_block [\"chisel_type\"=\"lines\",\"pillar_axis\"=\"z\"]"
+    },
+    "203": {
+        "0": "purpur_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=0]",
+        "1": "purpur_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=1]",
+        "2": "purpur_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=2]",
+        "3": "purpur_stairs [\"upside_down_bit\"=false,\"weirdo_direction\"=3]",
+        "4": "purpur_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=0]",
+        "5": "purpur_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=1]",
+        "6": "purpur_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=2]",
+        "7": "purpur_stairs [\"upside_down_bit\"=true,\"weirdo_direction\"=3]"
+    },
+    "204": {
+        "0": "double_stone_block_slab2 [\"stone_slab_type_2\"=\"purpur\"]"
+    },
+    "205": {
+        "0": "stone_block_slab2 [\"stone_slab_type_2\"=\"purpur\",\"minecraft:vertical_half\"=\"bottom\"]",
+        "8": "stone_block_slab2 [\"stone_slab_type_2\"=\"purpur\",\"minecraft:vertical_half\"=\"top\"]"
+    },
+    "206": {
+        "0": "end_bricks"
+    },
+    "207": {
+        "0": "beetroot [\"growth\"=0]",
+        "1": "beetroot [\"growth\"=2]",
+        "2": "beetroot [\"growth\"=4]",
+        "3": "beetroot [\"growth\"=7]"
+    },
+    "208": {
+        "0": "grass_path"
+    },
+    "209": {
+        "0": "end_gateway"
+    },
+    "210": {
+        "0": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=0]",
+        "1": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=1]",
+        "2": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=2]",
+        "3": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=3]",
+        "4": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=4]",
+        "5": "repeating_command_block [\"conditional_bit\"=false,\"facing_direction\"=5]",
+        "8": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=0]",
+        "9": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=1]",
+        "10": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=2]",
+        "11": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=3]",
+        "12": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=4]",
+        "13": "repeating_command_block [\"conditional_bit\"=true,\"facing_direction\"=5]"
+    },
+    "211": {
+        "0": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=0]",
+        "1": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=1]",
+        "2": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=2]",
+        "3": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=3]",
+        "4": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=4]",
+        "5": "chain_command_block [\"conditional_bit\"=false,\"facing_direction\"=5]",
+        "8": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=0]",
+        "9": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=1]",
+        "10": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=2]",
+        "11": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=3]",
+        "12": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=4]",
+        "13": "chain_command_block [\"conditional_bit\"=true,\"facing_direction\"=5]"
+    },
+    "212": {
+        "0": "frosted_ice [\"age\"=0]",
+        "1": "frosted_ice [\"age\"=1]",
+        "2": "frosted_ice [\"age\"=2]",
+        "3": "frosted_ice [\"age\"=3]"
+    },
+    "213": {
+        "0": "magma"
+    },
+    "214": {
+        "0": "nether_wart_block"
+    },
+    "215": {
+        "0": "red_nether_brick"
+    },
+    "216": {
+        "0": "bone_block [\"pillar_axis\"=\"y\"]",
+        "4": "bone_block [\"pillar_axis\"=\"x\"]",
+        "8": "bone_block [\"pillar_axis\"=\"z\"]"
+    },
+    "217": {
+        "0": "structure_void"
+    },
+    "218": {
+        "0": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"down\"]",
+        "1": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"up\"]",
+        "2": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"north\"]",
+        "3": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"south\"]",
+        "4": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"west\"]",
+        "5": "observer [\"powered_bit\"=false,\"minecraft:facing_direction\"=\"east\"]",
+        "8": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"down\"]",
+        "9": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"up\"]",
+        "10": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"north\"]",
+        "11": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"south\"]",
+        "12": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"west\"]",
+        "13": "observer [\"powered_bit\"=true,\"minecraft:facing_direction\"=\"east\"]"
+    },
+    "219": {
+        "0": "white_shulker_box",
+        "1": "white_shulker_box",
+        "2": "white_shulker_box",
+        "3": "white_shulker_box",
+        "4": "white_shulker_box",
+        "5": "white_shulker_box"
+    },
+    "220": {
+        "0": "orange_shulker_box",
+        "1": "orange_shulker_box",
+        "2": "orange_shulker_box",
+        "3": "orange_shulker_box",
+        "4": "orange_shulker_box",
+        "5": "orange_shulker_box"
+    },
+    "221": {
+        "0": "magenta_shulker_box",
+        "1": "magenta_shulker_box",
+        "2": "magenta_shulker_box",
+        "3": "magenta_shulker_box",
+        "4": "magenta_shulker_box",
+        "5": "magenta_shulker_box"
+    },
+    "222": {
+        "0": "light_blue_shulker_box",
+        "1": "light_blue_shulker_box",
+        "2": "light_blue_shulker_box",
+        "3": "light_blue_shulker_box",
+        "4": "light_blue_shulker_box",
+        "5": "light_blue_shulker_box"
+    },
+    "223": {
+        "0": "yellow_shulker_box",
+        "1": "yellow_shulker_box",
+        "2": "yellow_shulker_box",
+        "3": "yellow_shulker_box",
+        "4": "yellow_shulker_box",
+        "5": "yellow_shulker_box"
+    },
+    "224": {
+        "0": "lime_shulker_box",
+        "1": "lime_shulker_box",
+        "2": "lime_shulker_box",
+        "3": "lime_shulker_box",
+        "4": "lime_shulker_box",
+        "5": "lime_shulker_box"
+    },
+    "225": {
+        "0": "pink_shulker_box",
+        "1": "pink_shulker_box",
+        "2": "pink_shulker_box",
+        "3": "pink_shulker_box",
+        "4": "pink_shulker_box",
+        "5": "pink_shulker_box"
+    },
+    "226": {
+        "0": "gray_shulker_box",
+        "1": "gray_shulker_box",
+        "2": "gray_shulker_box",
+        "3": "gray_shulker_box",
+        "4": "gray_shulker_box",
+        "5": "gray_shulker_box"
+    },
+    "227": {
+        "0": "light_gray_shulker_box",
+        "1": "light_gray_shulker_box",
+        "2": "light_gray_shulker_box",
+        "3": "light_gray_shulker_box",
+        "4": "light_gray_shulker_box",
+        "5": "light_gray_shulker_box"
+    },
+    "228": {
+        "0": "cyan_shulker_box",
+        "1": "cyan_shulker_box",
+        "2": "cyan_shulker_box",
+        "3": "cyan_shulker_box",
+        "4": "cyan_shulker_box",
+        "5": "cyan_shulker_box"
+    },
+    "229": {
+        "0": "purple_shulker_box",
+        "1": "purple_shulker_box",
+        "2": "purple_shulker_box",
+        "3": "purple_shulker_box",
+        "4": "purple_shulker_box",
+        "5": "purple_shulker_box"
+    },
+    "230": {
+        "0": "blue_shulker_box",
+        "1": "blue_shulker_box",
+        "2": "blue_shulker_box",
+        "3": "blue_shulker_box",
+        "4": "blue_shulker_box",
+        "5": "blue_shulker_box"
+    },
+    "231": {
+        "0": "brown_shulker_box",
+        "1": "brown_shulker_box",
+        "2": "brown_shulker_box",
+        "3": "brown_shulker_box",
+        "4": "brown_shulker_box",
+        "5": "brown_shulker_box"
+    },
+    "232": {
+        "0": "green_shulker_box",
+        "1": "green_shulker_box",
+        "2": "green_shulker_box",
+        "3": "green_shulker_box",
+        "4": "green_shulker_box",
+        "5": "green_shulker_box"
+    },
+    "233": {
+        "0": "red_shulker_box",
+        "1": "red_shulker_box",
+        "2": "red_shulker_box",
+        "3": "red_shulker_box",
+        "4": "red_shulker_box",
+        "5": "red_shulker_box"
+    },
+    "234": {
+        "0": "black_shulker_box",
+        "1": "black_shulker_box",
+        "2": "black_shulker_box",
+        "3": "black_shulker_box",
+        "4": "black_shulker_box",
+        "5": "black_shulker_box"
+    },
+    "235": {
+        "0": "white_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "white_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "white_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "white_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "236": {
+        "0": "orange_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "orange_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "orange_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "orange_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "237": {
+        "0": "magenta_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "magenta_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "magenta_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "magenta_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "238": {
+        "0": "light_blue_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "light_blue_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "light_blue_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "light_blue_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "239": {
+        "0": "yellow_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "yellow_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "yellow_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "yellow_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "240": {
+        "0": "lime_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "lime_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "lime_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "lime_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "241": {
+        "0": "pink_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "pink_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "pink_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "pink_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "242": {
+        "0": "gray_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "gray_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "gray_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "gray_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "243": {
+        "0": "silver_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "silver_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "silver_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "silver_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "244": {
+        "0": "cyan_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "cyan_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "cyan_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "cyan_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "245": {
+        "0": "purple_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "purple_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "purple_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "purple_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "246": {
+        "0": "blue_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "blue_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "blue_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "blue_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "247": {
+        "0": "brown_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "brown_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "brown_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "brown_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "248": {
+        "0": "green_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "green_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "green_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "green_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "249": {
+        "0": "red_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "red_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "red_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "red_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "250": {
+        "0": "black_glazed_terracotta [\"facing_direction\"=3]",
+        "1": "black_glazed_terracotta [\"facing_direction\"=4]",
+        "2": "black_glazed_terracotta [\"facing_direction\"=2]",
+        "3": "black_glazed_terracotta [\"facing_direction\"=5]"
+    },
+    "251": {
+        "0": "white_concrete",
+        "1": "orange_concrete",
+        "2": "magenta_concrete",
+        "3": "light_blue_concrete",
+        "4": "yellow_concrete",
+        "5": "lime_concrete",
+        "6": "pink_concrete",
+        "7": "gray_concrete",
+        "8": "light_gray_concrete",
+        "9": "cyan_concrete",
+        "10": "purple_concrete",
+        "11": "blue_concrete",
+        "12": "brown_concrete",
+        "13": "green_concrete",
+        "14": "red_concrete",
+        "15": "black_concrete"
+    },
+    "252": {
+        "0": "white_concrete_powder",
+        "1": "orange_concrete_powder",
+        "2": "magenta_concrete_powder",
+        "3": "light_blue_concrete_powder",
+        "4": "yellow_concrete_powder",
+        "5": "lime_concrete_powder",
+        "6": "pink_concrete_powder",
+        "7": "gray_concrete_powder",
+        "8": "light_gray_concrete_powder",
+        "9": "cyan_concrete_powder",
+        "10": "purple_concrete_powder",
+        "11": "blue_concrete_powder",
+        "12": "brown_concrete_powder",
+        "13": "green_concrete_powder",
+        "14": "red_concrete_powder",
+        "15": "black_concrete_powder"
+    },
+    "255": {
+        "0": "structure_block [\"structure_block_type\"=\"save\"]",
+        "1": "structure_block [\"structure_block_type\"=\"load\"]",
+        "2": "structure_block [\"structure_block_type\"=\"corner\"]",
+        "3": "structure_block [\"structure_block_type\"=\"data\"]"
+    }
+}

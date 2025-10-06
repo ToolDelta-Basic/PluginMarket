@@ -59,6 +59,7 @@ def remove_cq_code(content: str):
         cq_start = content.find("[CQ:")
     return content
 
+
 def remove_color(content: str):
     return re.compile(r"§(.)").sub("", content)
 
@@ -87,7 +88,7 @@ def replace_cq(content: str):
 class QQLinker(Plugin):
     """QQ群与 Minecraft 服务器互通插件."""
     
-    version = (0, 1, 1)
+    version = (0, 1, 2)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
@@ -171,6 +172,8 @@ class QQLinker(Plugin):
         self.ListenChat(self.on_player_message)
         self.plugin = []
         self.available = False
+        self._manual_launch = False
+        self._manual_launch_port = -1
 
     def _load_item_name_map(self):
         """加载物品ID到中文名的映射表"""
@@ -549,6 +552,13 @@ class QQLinker(Plugin):
     def is_qq_op(self, qqid: int):
         return qqid in self.can_exec_cmd
 
+    def set_manual_launch(self, port: int):
+        self._manual_launch = True
+        self._manual_launch_port = port
+
+    def manual_launch(self):
+        self.connect_to_websocket()
+
     # ------------------------------------------------------
     def on_def(self):
         """加载前置API和Pillow库."""
@@ -582,7 +592,8 @@ class QQLinker(Plugin):
 
     def on_inject(self):
         self.print("尝试连接到群服互通机器人..")
-        self.connect_to_websocket()
+        if not self._manual_launch:
+            self.connect_to_websocket()
         self.init_basic_triggers()
 
     def init_basic_triggers(self):
@@ -688,8 +699,12 @@ class QQLinker(Plugin):
         header = None
         if self.cfg["云链设置"]["校验码"] is not None:
             header = {"Authorization": f"Bearer {self.cfg['云链设置']['校验码']}"}
-        self.ws = websocket.WebSocketApp(  # type: ignore
-            self.cfg["云链设置"]["地址"],
+        self.ws = websocket.WebSocketApp(
+            (
+                f"ws://127.0.0.1:{self._manual_launch_port}"
+                if self._manual_launch
+                else self.cfg["云链设置"]["地址"]
+            ),
             header,
             on_message=lambda a, b: self.on_ws_message(a, b) and None,
             on_error=self.on_ws_error,

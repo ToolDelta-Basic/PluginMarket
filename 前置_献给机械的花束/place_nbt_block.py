@@ -55,7 +55,7 @@ class PlaceNBTBlock:
         nbt_marshal = self.base().nbt_marshal
         if nbt_marshal is None:
             raise Exception(
-                "PlaceNBTBlock/_send_request_to_server: Should nerver happened"
+                "PlaceNBTBlock/_send_request_to_server: Should never happened"
             )
 
         args = {

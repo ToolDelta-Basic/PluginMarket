@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "不定时在租赁服抛出题目, 让你的玩家回答并赢取奖励！ 答题配置可在配置文件进行修改",
+  "pre-plugins": {},
+  "plugin-id": "q&a-questions",
+  "enabled": true
+}
