@@ -55,6 +55,7 @@ class TpaRequest:
     """TPA传送请求类"""
 
     def __init__(self, sender: Player, target: str, request_type="to", timeout=60):
+        """初始化TPA请求"""
         self.sender = sender
         self.target = target
         self.request_type = request_type
@@ -175,9 +176,7 @@ class WuxiePlayerTeleport(Plugin):
     def on_active(self):
         """插件激活回调"""
         self.pinyin_converter = PinyinConverter(
-            self.pypinyin_available,
-            self.lazy_pinyin,
-            self.style
+            self.pypinyin_available, self.lazy_pinyin, self.style
         )
 
         if self.chatbar_menu:
@@ -191,7 +190,6 @@ class WuxiePlayerTeleport(Plugin):
         status = "§a拼音搜索已启用" if self.pypinyin_available else "§e拼音搜索未启用"
         self.game_ctrl.say_to("@a", f"§a无邪玩家互传系统已加载 {status}")
         utils.createThread(self.cleanup_expired_requests, usage="TPA请求清理")
-
 
     def on_player_leave(self, player: Player):
         """玩家离开回调"""
