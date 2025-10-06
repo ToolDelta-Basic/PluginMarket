@@ -7,7 +7,6 @@ import threading
 
 
 class PinyinConverter:
-    """拼音转换器"""
     def __init__(self, pypinyin_available=False, lazy_pinyin=None, style=None):
         self.pypinyin_available = pypinyin_available
         self.lazy_pinyin = lazy_pinyin
@@ -189,10 +188,15 @@ class WuxiePlayerTeleport(Plugin):
             for req in self.tpa_requests:
                 if req.sender.name == player_name:
                     requests_to_remove.append(req)
-                    self.game_ctrl.say_to(req.target, f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消")
+                    self.game_ctrl.say_to(
+                        req.target,
+                        f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消"
+                    )
                 elif req.target == player_name:
                     requests_to_remove.append(req)
-                    req.sender.show(f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消")
+                    req.sender.show(
+                        f"§7 [§fTPA§7] §f{player_name} §7已下线 , 传送请求自动取消"
+                    )
             
             for req in requests_to_remove:
                 if req in self.tpa_requests:
@@ -259,7 +263,6 @@ class WuxiePlayerTeleport(Plugin):
             player.show("§7   §c拼音搜索需要安装pypinyin库")
     
     def show_player_selection(self, player: Player, mode: str):
-        """显示玩家选择菜单"""
         online_players = self.get_online_players()
         if player.name in online_players:
             online_players.remove(player.name)
@@ -296,8 +299,7 @@ class WuxiePlayerTeleport(Plugin):
                     else:
                         self.request_teleport_here(player, target)
                     return
-                else:
-                    player.show("§7 [§cTPA§7] §7序号无效 , 请重新输入")
+                player.show("§7 [§cTPA§7] §7序号无效 , 请重新输入")
             except ValueError:
                 player.show("§7 [§cTPA§7] §7请输入有效的序号")
     
@@ -357,9 +359,17 @@ class WuxiePlayerTeleport(Plugin):
         
         return None
     
-    def _check_similarity(self, query: str, player_lower: str, player_pinyin: str) -> bool:
-        match_count = sum(1 for char in query if char in player_lower or char in player_pinyin)
-        return match_count >= len(query) * self.MIN_SIMILARITY_RATIO and match_count > 1
+    def _check_similarity(
+        self, query: str, player_lower: str, player_pinyin: str
+    ) -> bool:
+        match_count = sum(
+            1 for char in query
+            if char in player_lower or char in player_pinyin
+        )
+        return (
+            match_count >= len(query) * self.MIN_SIMILARITY_RATIO
+            and match_count > 1
+        )
     
     def _merge_and_limit_matches(self, matches: dict) -> list[str]:
         all_matches = (
@@ -371,7 +381,9 @@ class WuxiePlayerTeleport(Plugin):
         )
         return all_matches[:self.MAX_SEARCH_RESULTS]
     
-    def _fuzzy_pinyin_match(self, query: str, player_pinyin: str, player_initials: str) -> bool:
+    def _fuzzy_pinyin_match(
+        self, query: str, player_pinyin: str, player_initials: str
+    ) -> bool:
         if len(query) < 2:
             return False
         
@@ -398,9 +410,11 @@ class WuxiePlayerTeleport(Plugin):
             matches.remove(player.name)
             
         if not matches:
-            player.show(self.config["消息配置"]["玩家不存在"].format(player=query))
+            player.show(
+                self.config["消息配置"]["玩家不存在"].format(player=query)
+            )
             return
-            
+
         if len(matches) == 1:
             target = matches[0]
             if mode == "to":
@@ -434,8 +448,7 @@ class WuxiePlayerTeleport(Plugin):
                     else:
                         self.request_teleport_here(player, target)
                     return
-                else:
-                    player.show("§7 [§cTPA§7] §7序号无效 , 请重新输入")
+                player.show("§7 [§cTPA§7] §7序号无效 , 请重新输入")
             except ValueError:
                 player.show("§7 [§cTPA§7] §7请输入有效的序号")
     
@@ -444,7 +457,9 @@ class WuxiePlayerTeleport(Plugin):
             return
             
         if not self.is_player_online(target_name):
-            player.show(self.config["消息配置"]["玩家不存在"].format(player=target_name))
+            player.show(
+                self.config["消息配置"]["玩家不存在"].format(player=target_name)
+            )
             return
             
         if self.has_pending_request(player):
@@ -461,7 +476,9 @@ class WuxiePlayerTeleport(Plugin):
         
         self.set_cooldown(player)
         
-        player.show(self.config["消息配置"]["请求已发送"].format(target=target_name))
+        player.show(
+            self.config["消息配置"]["请求已发送"].format(target=target_name)
+        )
         self.game_ctrl.say_to(
             target_name,
             f"§7 [§6TPA§7] §f{player.name} §7请求传送到你这里\n"
@@ -473,7 +490,9 @@ class WuxiePlayerTeleport(Plugin):
             return
             
         if not self.is_player_online(target_name):
-            player.show(self.config["消息配置"]["玩家不存在"].format(player=target_name))
+            player.show(
+                self.config["消息配置"]["玩家不存在"].format(player=target_name)
+            )
             return
             
         if self.has_pending_request(player):
@@ -489,7 +508,9 @@ class WuxiePlayerTeleport(Plugin):
             self.tpa_requests.append(request)
         
         self.set_cooldown(player)
-        player.show(self.config["消息配置"]["请求已发送"].format(target=target_name))
+        player.show(
+            self.config["消息配置"]["请求已发送"].format(target=target_name)
+        )
         self.game_ctrl.say_to(
             target_name,
             f"§7 [§6TPA§7] §f{player.name} §7请求你传送到他那里\n"
@@ -505,7 +526,9 @@ class WuxiePlayerTeleport(Plugin):
         success = self.execute_teleport(request)
         if success:
             player.show(self.config["消息配置"]["传送成功"])
-            request.sender.show(self.config["消息配置"]["请求被接受"].format(sender=player.name))
+            request.sender.show(
+                self.config["消息配置"]["请求被接受"].format(sender=player.name)
+            )
         else:
             player.show(self.config["消息配置"]["传送失败"])
             request.sender.show("§7 [§cTPA§7] §f传送失败")
@@ -520,8 +543,12 @@ class WuxiePlayerTeleport(Plugin):
             player.show("§7 [§cTPA§7] §7你没有待处理的传送请求")
             return
             
-        player.show(f"§7 [§cTPA§7] §7已拒绝§f {request.sender.name} §7的传送请求")
-        request.sender.show(self.config["消息配置"]["请求被拒绝"].format(sender=player.name))
+        player.show(
+            f"§7 [§cTPA§7] §7已拒绝§f {request.sender.name} §7的传送请求"
+        )
+        request.sender.show(
+            self.config["消息配置"]["请求被拒绝"].format(sender=player.name)
+        )
         
         with self._requests_lock:
             if request in self.tpa_requests:
@@ -533,8 +560,13 @@ class WuxiePlayerTeleport(Plugin):
             player.show("§7 [§cTPA§7] §7你没有待处理的传送请求")
             return
             
-        player.show(f"§7 [§fTPA§7] §7已取消向§f {request.target} §7发送的传送请求")
-        self.game_ctrl.say_to(request.target, f"§7 [§fTPA§7] §f{player.name} §7取消了传送请求")
+        player.show(
+            f"§7 [§fTPA§7] §7已取消向§f {request.target} §7发送的传送请求"
+        )
+        self.game_ctrl.say_to(
+            request.target,
+            f"§7 [§fTPA§7] §f{player.name} §7取消了传送请求"
+        )
         
         with self._requests_lock:
             if request in self.tpa_requests:
@@ -544,8 +576,14 @@ class WuxiePlayerTeleport(Plugin):
         player_name = player.name
         
         with self._requests_lock:
-            sent_requests = [req for req in self.tpa_requests if req.sender.name == player_name]
-            received_requests = [req for req in self.tpa_requests if req.target == player_name]
+            sent_requests = [
+                req for req in self.tpa_requests
+                if req.sender.name == player_name
+            ]
+            received_requests = [
+                req for req in self.tpa_requests
+                if req.target == player_name
+            ]
         
         if not sent_requests and not received_requests:
             player.show("§7 [§fTPA§7] §7你没有待处理的传送请求")
@@ -558,14 +596,20 @@ class WuxiePlayerTeleport(Plugin):
             for req in sent_requests:
                 remaining = req.timeout - (time.time() - req.timestamp)
                 type_str = "传送到" if req.request_type == "to" else "拉取"
-                player.show(f"§7   §f{type_str}§e {req.target} §7(剩余§f {int(remaining)} §7秒)")
+                player.show(
+                    f"§7   §f{type_str}§e {req.target} "
+                    f"§7(剩余§f {int(remaining)} §7秒)"
+                )
                 
         if received_requests:
             player.show("§7 [§6TPA§7] §f收到的请求:")
             for req in received_requests:
                 remaining = req.timeout - (time.time() - req.timestamp)
                 type_str = "传送到你这里" if req.request_type == "to" else "传送到他那里"
-                player.show(f"§7   §e{req.sender.name} §f请求{type_str} §7(剩余§f {int(remaining)} §7秒)")
+                player.show(
+                    f"§7   §e{req.sender.name} §f请求{type_str} "
+                    f"§7(剩余§f {int(remaining)} §7秒)"
+                )
     
     def toggle_preference(self, player: Player):
         player_name = player.name
@@ -596,7 +640,10 @@ class WuxiePlayerTeleport(Plugin):
         if player.is_op():
             cooldown_players = len(self.player_cooldowns)
             player.show(f"§7 冷却中玩家: §f{cooldown_players}")
-            disabled_players = len([p for p, enabled in self.player_preferences.items() if not enabled])
+            disabled_players = len([
+                p for p, enabled in self.player_preferences.items()
+                if not enabled
+            ])
             player.show(f"§7 关闭接收玩家: §f{disabled_players}")
     
     def execute_teleport(self, request: TpaRequest) -> bool:
@@ -624,19 +671,25 @@ class WuxiePlayerTeleport(Plugin):
             if player_name in self.player_cooldowns:
                 remaining = self.player_cooldowns[player_name] - time.time()
                 if remaining > 0:
-                    player.show(self.config["消息配置"]["冷却中"].format(time=int(remaining)))
+                    player.show(
+                        self.config["消息配置"]["冷却中"].format(
+                            time=int(remaining)
+                        )
+                    )
                     return False
         return True
     
     def set_cooldown(self, player: Player):
         if not player.is_op():
             with self._cooldowns_lock:
-                self.player_cooldowns[player.name] = time.time() + self.config["冷却时间"]
+                self.player_cooldowns[player.name] = (
+                    time.time() + self.config["冷却时间"]
+                )
     
     def get_online_players(self) -> list[str]:
         try:
             return list(self.game_ctrl.allplayers)
-        except:
+        except Exception:
             return []
     
     def is_player_online(self, player_name: str) -> bool:
@@ -644,7 +697,10 @@ class WuxiePlayerTeleport(Plugin):
     
     def has_pending_request(self, player: Player) -> bool:
         with self._requests_lock:
-            return any(req.sender.name == player.name for req in self.tpa_requests)
+            return any(
+                req.sender.name == player.name
+                for req in self.tpa_requests
+            )
     
     def can_receive_requests(self, player_name: str) -> bool:
         with self._preferences_lock:
@@ -677,12 +733,22 @@ class WuxiePlayerTeleport(Plugin):
                     
                     for request in expired_requests:
                         if request in self.tpa_requests:
-                            request.sender.show(self.config["消息配置"]["请求超时"])
-                            self.game_ctrl.say_to(request.target, f"§7 [§cTPA§7] §7来自§f {request.sender.name} §7的传送请求已超时")
+                            request.sender.show(
+                                self.config["消息配置"]["请求超时"]
+                            )
+                            self.game_ctrl.say_to(
+                                request.target,
+                                f"§7 [§cTPA§7] §7来自§f {request.sender.name} "
+                                f"§7的传送请求已超时"
+                            )
                             self.tpa_requests.remove(request)
                 
                 with self._cooldowns_lock:
-                    expired_cooldowns = [name for name, expire_time in self.player_cooldowns.items() if expire_time <= current_time]
+                    expired_cooldowns = [
+                        name for name, expire_time
+                        in self.player_cooldowns.items()
+                        if expire_time <= current_time
+                    ]
                     for player_name in expired_cooldowns:
                         del self.player_cooldowns[player_name]
                         
