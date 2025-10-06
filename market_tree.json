@@ -36,7 +36,7 @@
     "choose-song": {
       "name": "点歌台",
       "author": "SuperScript & Zhonger-Yuansi",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "plugin-type": "classic"
     },
     "bdx-exporter": {
