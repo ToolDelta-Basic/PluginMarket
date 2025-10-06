@@ -462,7 +462,7 @@
     "聊天栏菜单": {
       "name": "前置_聊天栏菜单",
       "author": "SuperScript",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "plugin-type": "classic"
     },
     "@玩家": {
