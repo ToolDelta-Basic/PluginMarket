@@ -360,8 +360,8 @@ class WuxiePlayerTeleport(Plugin):
         player_initials = self.pinyin_converter.get_pinyin_initials(player)
 
         if (player_lower.startswith(query) or
-            player_pinyin.startswith(query) or
-            player_initials.startswith(query)):
+                player_pinyin.startswith(query) or
+                player_initials.startswith(query)):
             return "start"
 
         if query in player_lower or query in player_pinyin or query in player_initials:
@@ -380,6 +380,7 @@ class WuxiePlayerTeleport(Plugin):
     def _check_similarity(
         self, query: str, player_lower: str, player_pinyin: str
     ) -> bool:
+        """检查相似度"""
         match_count = sum(
             1 for char in query
             if char in player_lower or char in player_pinyin
@@ -403,6 +404,7 @@ class WuxiePlayerTeleport(Plugin):
     def _fuzzy_pinyin_match(
         self, query: str, player_pinyin: str, player_initials: str
     ) -> bool:
+        """模糊拼音匹配"""
         if len(query) < 2:
             return False
 
