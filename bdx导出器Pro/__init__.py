@@ -130,7 +130,7 @@ class BDXExporter(Plugin):
                 fmts.print_inf(" - export set §7设置起点")
                 fmts.print_inf(" - export setend §7设置终点")
                 fmts.print_inf(" - export <文件名>.bdx §7导出为 bdx")
-                fmts.print_inf(" - export <起点x> <起点y> <起点z> <终点x> <终点y> <终点z> <文件名> §7一键导出")
+                fmts.print_inf(" - export <起点x> <起点y> <起点z> <终点x> <终点y> <终点z> <文件名>.bdx §7一键导出")
         else:
             if self.start is None or self.end is None:
                 fmts.print_err("请先设置起点和终点")
