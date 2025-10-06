@@ -102,28 +102,28 @@ def read_string(f):
 def read_tag_payload(f, tag_type):
     if tag_type == TAG_BYTE:
         return read_signed_byte(f)
-    elif tag_type == TAG_SHORT:
+    if tag_type == TAG_SHORT:
         return read_short(f)
-    elif tag_type == TAG_INT:
+    if tag_type == TAG_INT:
         return read_int(f)
-    elif tag_type == TAG_LONG:
+    if tag_type == TAG_LONG:
         return read_long(f)
-    elif tag_type == TAG_FLOAT:
+    if tag_type == TAG_FLOAT:
         return read_float(f)
-    elif tag_type == TAG_DOUBLE:
+    if tag_type == TAG_DOUBLE:
         return read_double(f)
-    elif tag_type == TAG_BYTE_ARRAY:
+    if tag_type == TAG_BYTE_ARRAY:
         return read_byte_array(f)
-    elif tag_type == TAG_STRING:
+    if tag_type == TAG_STRING:
         return read_string(f)
-    elif tag_type == TAG_LIST:
+    if tag_type == TAG_LIST:
         child_type = read_byte(f)
         length = read_int(f)
         lst = []
         for _ in range(length):
             lst.append(read_tag_payload(f, child_type))
         return lst
-    elif tag_type == TAG_COMPOUND:
+    if tag_type == TAG_COMPOUND:
         comp = {}
         while True:
             t = read_byte(f)
@@ -132,20 +132,19 @@ def read_tag_payload(f, tag_type):
             name = read_string(f).lower()
             comp[name] = read_tag_payload(f, t)
         return comp
-    elif tag_type == TAG_INT_ARRAY:
+    if tag_type == TAG_INT_ARRAY:
         length = read_int(f)
         arr = []
         for _ in range(length):
             arr.append(read_int(f))
         return arr
-    elif tag_type == TAG_LONG_ARRAY:
+    if tag_type == TAG_LONG_ARRAY:
         length = read_int(f)
         arr = []
         for _ in range(length):
             arr.append(read_long(f))
         return arr
-    else:
-        raise NotImplementedError(f"标签类型 {tag_type} 未实现")
+    raise NotImplementedError(f"标签类型 {tag_type} 未实现")
 
 
 # ----------------------------------------------------------------------------------

@@ -137,7 +137,8 @@ class Core:
             return None
         return os.path.join(self.data_path, selected_file)
 
-    def get_pos(self):
+    @staticmethod
+    def get_pos():
         fmts.print_inf(
             "\n§a❀ §b请输入您想要导入到服务器的哪个维度? §e(输入0-20之间的整数)"
         )
