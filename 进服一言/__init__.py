@@ -12,7 +12,7 @@ import requests
 class NewPlugin(Plugin):
     name = "进服一言"
     author = "机入"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -27,7 +27,7 @@ class NewPlugin(Plugin):
         playername = player.name
         try:
             time.sleep(10)  # 等待玩家完全进入
-            data = requests.get("https://v1.xqapi.com/v1.php?y =默认&type=text")
+            data = requests.get("https://v1.hitokoto.cn/?c=j&encode=text") #参数说明 a动画 b漫画 c游戏 d文学 e原创 f来自网络 g其他 h影视 i诗词 j网易云 k哲学 l抖机灵其他作为动画 类型处理
             if data.status_code == 200:
                 self.game_ctrl.say_to(playername, f"一言: {data.text}")
             else:
