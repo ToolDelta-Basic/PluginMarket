@@ -59,6 +59,7 @@ def remove_cq_code(content: str):
         cq_start = content.find("[CQ:")
     return content
 
+
 def remove_color(content: str):
     return re.compile(r"§(.)").sub("", content)
 
@@ -86,13 +87,13 @@ def replace_cq(content: str):
 
 class QQLinker(Plugin):
     """QQ群与 Minecraft 服务器互通插件."""
-    
+
     version = (0, 1, 2)
     name = "云链群服互通"
     author = "大庆油田"
     description = "提供简单的群服互通"
     QQMsgTrigger = QQMsgTrigger
-    
+
     # 背包UI常量 (inventory.png 176x166)
     INVENTORY_WIDTH = 176
     INVENTORY_HEIGHT = 166
@@ -251,7 +252,7 @@ class QQLinker(Plugin):
             aux = getattr(slot, "aux", 0)
             cnt = getattr(slot, "stackSize", 0)
             ench = getattr(slot, "enchantments", [])
-            
+
             if ench:
                 ench_names = []
                 for e in ench:
@@ -268,39 +269,39 @@ class QQLinker(Plugin):
             if aux != 0:
                 return f"[{idx}] {name} x{cnt} (数据:{aux})"
             return f"[{idx}] {name} x{cnt}"
-        
+
         lines: list[str] = []
-        
+
         # 快捷栏 (slots 0-8)
         hotbar_items = []
         for idx in range(9):
             if idx < len(slots) and slots[idx] is not None:
                 hotbar_items.append(format_slot(idx, slots[idx]))
-        
+
         if hotbar_items:
             lines.append("▶ 快捷栏:")
             lines.extend(hotbar_items)
-        
+
         # 主背包 (slots 9-35)
         main_items = []
         for idx in range(9, 36):
             if idx < len(slots) and slots[idx] is not None:
                 main_items.append(format_slot(idx, slots[idx]))
-        
+
         if main_items:
             if hotbar_items:  # 如果有快捷栏，加个空行
                 lines.append("")
             lines.append("▶ 主背包:")
             lines.extend(main_items)
-        
+
         return "\n".join(lines) if lines else "背包为空"
 
     def _get_slot_position(self, slot_index: int) -> tuple[int, int] | None:
         """根据slot索引计算在背包UI中的像素坐标.
-        
+
         Args:
             slot_index: 背包格子索引 (0-8快捷栏, 9-35主背包)
-            
+
         Returns:
             (x, y) 坐标或None如果索引超出范围
         """
@@ -310,7 +311,7 @@ class QQLinker(Plugin):
             x = self.GRID_START_X + col * self.SLOT_STEP
             y = self.HOTBAR_START_Y
             return (x, y)
-        
+
         if 9 <= slot_index <= 35:
             # 主背包：9-17第一行，18-26第二行，27-35第三行
             slot_in_main = slot_index - 9
@@ -319,58 +320,58 @@ class QQLinker(Plugin):
             x = self.GRID_START_X + col * self.SLOT_STEP
             y = self.MAIN_INVENTORY_START_Y + row * self.SLOT_STEP
             return (x, y)
-        
+
         return None
 
     def _render_inventory_image(self, player_name: str, slots: list) -> str | None:
         """渲染背包为图片.
-        
+
         Args:
             player_name: 玩家名称
             slots: 背包格子列表
-            
+
         Returns:
             临时图片文件路径或None如果渲染失败
         """
         if not self.pillow_available or self.Image is None:
             return None
-        
+
         try:
             # 加载背包UI底图
             ui_path = os.path.join(os.path.dirname(__file__), "背包绘制", "inventory.png")
             if not os.path.exists(ui_path):
                 return None
-            
+
             inventory_img = self.Image.open(ui_path).convert("RGBA")
-            
+
             # 裁剪到标准尺寸
-            if (inventory_img.size[0] > self.INVENTORY_WIDTH or 
+            if (inventory_img.size[0] > self.INVENTORY_WIDTH or
                 inventory_img.size[1] > self.INVENTORY_HEIGHT):
                 inventory_img = inventory_img.crop(
                     (0, 0, self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT)
                 )
-            
+
             # 材质目录
             texture_dir = os.path.join(os.path.dirname(__file__), "背包绘制", "材质图片", "items")
-            
+
             # 遍历物品slot
             for idx, slot in enumerate(slots):
                 if slot is None:
                     continue
-                
+
                 pos = self._get_slot_position(idx)
                 if pos is None:
                     continue
-                
+
                 # 获取物品材质
                 full_id = self._get_full_item_id(slot)
                 if not full_id:
                     continue
-                
+
                 # 移除命名空间
                 item_id = full_id.split(":", 1)[1] if ":" in full_id else full_id
                 texture_path = os.path.join(texture_dir, f"{item_id}.png")
-                
+
                 # 如果材质不存在，尝试常见变体
                 if not os.path.exists(texture_path):
                     # 尝试添加常见后缀
@@ -379,7 +380,7 @@ class QQLinker(Plugin):
                         if os.path.exists(alt_path):
                             texture_path = alt_path
                             break
-                
+
                 if os.path.exists(texture_path):
                     try:
                         item_img = self.Image.open(texture_path).convert("RGBA")
@@ -393,8 +394,8 @@ class QQLinker(Plugin):
                         # 材质加载失败，绘制灰色背景
                         draw = self.ImageDraw.Draw(inventory_img)
                         draw.rectangle(
-                            [pos[0], pos[1], 
-                             pos[0] + self.SLOT_SIZE - 1, 
+                            [pos[0], pos[1],
+                             pos[0] + self.SLOT_SIZE - 1,
                              pos[1] + self.SLOT_SIZE - 1],
                             fill=self.MISSING_TEXTURE_COLOR
                         )
@@ -402,12 +403,12 @@ class QQLinker(Plugin):
                     # 没有材质，绘制灰色背景
                     draw = self.ImageDraw.Draw(inventory_img)
                     draw.rectangle(
-                        [pos[0], pos[1], 
-                         pos[0] + self.SLOT_SIZE - 1, 
+                        [pos[0], pos[1],
+                         pos[0] + self.SLOT_SIZE - 1,
                          pos[1] + self.SLOT_SIZE - 1],
                         fill=self.MISSING_TEXTURE_COLOR
                     )
-                
+
                 # 绘制数量
                 cnt = getattr(slot, "stackSize", 0)
                 if cnt > 1:
@@ -419,16 +420,16 @@ class QQLinker(Plugin):
                     # 阴影+白色文字
                     draw.text((text_x + 1, text_y + 1), text, fill=(0, 0, 0, 255))
                     draw.text((text_x, text_y), text, fill=(255, 255, 255, 255))
-            
+
             # 保存到临时文件
             temp_dir = tempfile.gettempdir()
             output_path = os.path.join(
-                temp_dir, 
+                temp_dir,
                 f"inventory_{player_name}_{int(time.time())}.png"
             )
             inventory_img.save(output_path, "PNG")
             return output_path
-            
+
         except Exception as e:
             self.print(f"§c渲染背包图片失败: {e}")
             return None
@@ -439,38 +440,38 @@ class QQLinker(Plugin):
             keyword = " ".join(args).strip()
             players = self.game_ctrl.players.getAllPlayers()
             matches = [p for p in players if keyword in p.name]
-            
+
             if len(matches) == 0:
                 self.sendmsg(self.linked_group, "未寻找到匹配的玩家")
                 return
-            
+
             if len(matches) > 1:
                 names = ", ".join(p.name for p in matches[:5])
                 suffix = "" if len(matches) <= 5 else f" 等 {len(matches)} 人"
                 self.sendmsg(self.linked_group, f"匹配到多个玩家：{names}{suffix}")
                 return
-            
+
             target = matches[0]
             inv = target.queryInventory()
             slots = inv.slots or []
         except Exception as e:
             self.sendmsg(self.linked_group, f"查询失败: {e}")
             return
-        
+
         # 如果Pillow可用，生成图片
         if self.pillow_available:
             img_path = self._render_inventory_image(target.name, slots)
-            
+
             if img_path:
                 try:
                     # 读取图片并转换为base64
                     with open(img_path, 'rb') as f:
                         img_data = f.read()
                     img_base64 = base64.b64encode(img_data).decode('utf-8')
-                    
+
                     # 生成文本版本
                     text_lines = self._generate_text_inventory(slots)
-                    
+
                     # 发送图片+文本
                     combined_msg = (
                         f"玩家 {target.name} 的背包:\n"
@@ -478,7 +479,7 @@ class QQLinker(Plugin):
                         f"\n文本版本：\n{text_lines}"
                     )
                     self.sendmsg(self.linked_group, combined_msg, do_remove_cq_code=False)
-                    
+
                     # 删除临时文件
                     try:
                         os.remove(img_path)
@@ -487,18 +488,18 @@ class QQLinker(Plugin):
                     return
                 except Exception as e:
                     self.print(f"§c发送背包图片失败: {e}")
-        
+
         # 回退到文本模式
         lines: list[str] = []
         for idx, slot in enumerate(slots):
             if slot is None:
                 continue
-            
+
             name = self._localize_item(slot)
             aux = getattr(slot, "aux", 0)
             cnt = getattr(slot, "stackSize", 0)
             ench = getattr(slot, "enchantments", [])
-            
+
             if ench:
                 # 展开附魔名称：优先使用name属性，否则用映射表翻译type ID
                 ench_parts = []
@@ -527,7 +528,7 @@ class QQLinker(Plugin):
                 lines.append(f"\t- [{idx}] {name} x {cnt} (数据: {aux})")
                 continue
             lines.append(f"\t- [{idx}] {name} x {cnt}")
-        
+
         text = "该玩家背包中没有物品" if len(lines) == 0 else "\n".join(lines)
         self.sendmsg(self.linked_group, f"玩家 {target.name} 的背包信息如下: \n{text}")
 
@@ -584,12 +585,13 @@ class QQLinker(Plugin):
                 self.ImageDraw = None
                 self.ImageFont = None
                 self.print(f"§c无法加载Pillow库: {e}，背包图片功能将不可用")
-        
+
         self.tps_calc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
 
     def on_inject(self):
         self.print("尝试连接到群服互通机器人..")
-        self.connect_to_websocket()
+        if not self._manual_launch:
+            self.connect_to_websocket()
         self.init_basic_triggers()
 
     def init_basic_triggers(self):
