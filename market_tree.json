@@ -615,6 +615,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "schematic导入器": {
+      "name": "schematic导入器",
+      "author": "style_天枢",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "largefill": {
       "name": "大范围fill",
       "author": "System",

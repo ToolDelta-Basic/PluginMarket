@@ -752,6 +752,15 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "schematic导入器": {
+        "datas.json": 0,
+        "nbt_parser.py": 0,
+        "Minecraft_BE_block_id.json": 0,
+        "chunk_painter.py": 0,
+        "core.py": 0,
+        "config.py": 0,
+        "__init__.py": 0
+    },
     "[pkg]防挂插件包": {
         "datas.json": 0
     },
