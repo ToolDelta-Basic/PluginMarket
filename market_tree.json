@@ -738,7 +738,7 @@
     "nice-tpa": {
       "name": "多功能玩家互传",
       "author": "wling/SuperScript",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "plugin-type": "classic"
     }
   },
