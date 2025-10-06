@@ -344,6 +344,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "desperated_plugins/多服聊天互通": [
+        "README.txt",
+        "datas.json",
+        "__init__.py"
+    ],
     "入服欢迎": [
         "datas.json",
         "__init__.py"
@@ -830,11 +835,6 @@
         "__init__.py"
     ],
     "传送点设置": [
-        "datas.json",
-        "__init__.py"
-    ],
-    "多服聊天互通": [
-        "README.txt",
         "datas.json",
         "__init__.py"
     ],

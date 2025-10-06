@@ -711,12 +711,6 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
-    "MCChatLinker-TD": {
-      "name": "多服聊天互通",
-      "author": "WuMing",
-      "version": "0.0.1",
-      "plugin-type": "classic"
-    },
     "local-qqlink-launcher": {
       "name": "群服互通本地版启动器",
       "author": "SuperScript",
