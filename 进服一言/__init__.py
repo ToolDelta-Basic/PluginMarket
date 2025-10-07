@@ -14,18 +14,18 @@ from enum import Enum
 
 class HitokotoType(str, Enum):
     """一言分类枚举"""
-    动画 = "a"
-    漫画 = "b"
-    游戏 = "c"
-    文学 = "d"
-    原创 = "e"
-    来自网络 = "f"
-    其他 = "g"
-    影视 = "h"
-    诗词 = "i"
-    网易云 = "j"
-    哲学 = "k"
-    抖机灵 = "l"
+    ANIMATION = "a"      # 动画
+    COMIC = "b"          # 漫画
+    GAME = "c"           # 游戏
+    LITERATURE = "d"     # 文学
+    ORIGINAL = "e"       # 原创
+    INTERNET = "f"       # 来自网络
+    OTHER = "g"          # 其他
+    FILM = "h"           # 影视
+    POETRY = "i"         # 诗词
+    NETEASE_MUSIC = "j"  # 网易云
+    PHILOSOPHY = "k"     # 哲学
+    FUNNY = "l"          # 抖机灵
 
 
 class NewPlugin(Plugin):
@@ -43,9 +43,9 @@ class NewPlugin(Plugin):
         }
         # 默认配置
         DEFAULT_CFG = {
-            "一言分类": "网易云",
+            "一言分类": "NETEASE_MUSIC",
             "等待时间": 10,
-            "分类说明": "可选: 动画, 漫画, 游戏, 文学, 原创, 来自网络, 其他, 影视, 诗词, 网易云, 哲学, 抖机灵（我也不知道这是什么）",
+            "分类说明": "可选: ANIMATION(动画), COMIC(漫画), GAME(游戏), LITERATURE(文学), ORIGINAL(原创), INTERNET(来自网络), OTHER(其他), FILM(影视), POETRY(诗词), NETEASE_MUSIC(网易云), PHILOSOPHY(哲学), FUNNY(抖机灵)",
         }
         # 获取配置
         self.cfg, _ = cfg.get_plugin_config_and_version(
@@ -62,8 +62,8 @@ class NewPlugin(Plugin):
         category = self.cfg["一言分类"]
         valid_categories = [member.name for member in HitokotoType]
         if category not in valid_categories:
-            fmts.print_war(f"配置的分类 '{category}' 无效, 将使用默认分类 '网易云'")
-            self.category_code = HitokotoType.网易云.value
+            fmts.print_war(f"配置的分类 '{category}' 无效, 将使用默认分类 'NETEASE_MUSIC'")
+            self.category_code = HitokotoType.NETEASE_MUSIC.value
         else:
             self.category_code = HitokotoType[category].value
             fmts.print_suc(f"一言分类已设置为: {category}")
