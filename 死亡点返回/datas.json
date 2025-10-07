@@ -1,6 +1,6 @@
 {
   "author": "果_k",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "plugin-type": "classic",
   "description": "支持多维度的返回死亡点",
   "pre-plugins": {},
