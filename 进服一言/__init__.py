@@ -74,8 +74,12 @@ class NewPlugin(Plugin):
         try:
             time.sleep(self.cfg["等待时间"])  # 等待玩家完全进入
             data = requests.get(
-                f"https://v1.hitokoto.cn/?c={self.category_code}&encode=text",
-                timeout=10
+                f"https://v1.hitokoto.cn",
+                params={
+                    "c": self.category_code,
+                    "encode": "text",
+                },
+                timeout=10,
             )
             if data.status_code == 200:
                 if data.text.strip():
