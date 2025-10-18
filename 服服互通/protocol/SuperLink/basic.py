@@ -8,10 +8,14 @@ from collections.abc import Callable
 from socket import gaierror
 from websockets.exceptions import ConnectionClosed
 from tooldelta import utils, InternalBroadcast
-from tooldelta.utils.cfg_meta import load_by_schema
 from ..interface.basic import BasicProtocol
 from ..interface.define import Data, format_data
 from .define import SuperLinkConfig, MsgTypeEnum
+
+try:
+    from tooldelta.utils.cfg_meta import load_by_schema # pyright: ignore[reportAttributeAccessIssue]
+except ImportError:
+    from tooldelta.utils.cfg_meta import load_param_and_type_check as load_by_schema
 
 class SuperLinkProtocol(BasicProtocol):
     def __init__(self, frame, ws_ip, cfgs):
