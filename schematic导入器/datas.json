@@ -1,9 +1,11 @@
 {
   "author": "style_天枢",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "plugin-type": "classic",
   "description": "schematic导入器",
-  "pre-plugins": {},
+  "pre-plugins": {
+    "基本插件功能库": "0.0.12"
+  },
   "plugin-id": "schematic导入器",
   "enabled": true
 }

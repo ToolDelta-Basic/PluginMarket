@@ -13,17 +13,17 @@ if TYPE_CHECKING:
 
 
 class Core:
-    def __init__(self, plugin: "SchematicLoader"):
+    def __init__(self, plugin: "SchematicLoader") -> None:
         self.plugin = plugin
         self.data_path = plugin.data_path
         self.running_mutex = threading.Lock()
 
-    def entry(self):
+    def entry(self) -> None:
         self.plugin.frame.add_console_cmd_trigger(
             ["schematic"], None, "schematic导入器", self.main
         )
 
-    def main(self, _):
+    def main(self, _: list[str]) -> None:
         MAPPING_JSON_NAME = "Minecraft_BE_block_id.json"
         MAPPING_JSON_PATH = os.path.join(
             "插件文件", "ToolDelta类式插件", self.plugin.name, MAPPING_JSON_NAME
@@ -42,7 +42,7 @@ class Core:
         if file_path is None:
             return
         dim, x, y, z = self.get_pos()
-        if None in (dim, x, y, z):
+        if dim is None or x is None or y is None or z is None:
             return
         try:
             root_name, root = NBTParser.parse_nbt_gzip(file_path)
@@ -68,7 +68,9 @@ class Core:
         self.chunk_paint_thread(blocks_info, block_mapping, dim, x, y, z)
 
     @utils.thread_func("schematic导入进程")
-    def chunk_paint_thread(self, blocks_info, block_mapping, dim, x, y, z):
+    def chunk_paint_thread(
+        self, blocks_info: dict, block_mapping: dict, dim: str, x: int, y: int, z: int
+    ) -> None:
         if not self.running_mutex.acquire(timeout=0):
             fmts.print_inf("§c❀ 警告: 同一时刻最多处理一个导入任务!")
             return
@@ -83,7 +85,7 @@ class Core:
             self.running_mutex.release()
 
     @staticmethod
-    def load_mapping(json_path):
+    def load_mapping(json_path: str) -> dict[str, dict[str, str]]:
         if not json_path or not os.path.exists(json_path):
             return {}
         with open(json_path, encoding="utf-8") as f:
@@ -104,7 +106,7 @@ class Core:
                 mapping[key] = inner
         return mapping
 
-    def get_files(self):
+    def get_files(self) -> list[str]:
         file_ext = ".schematic"
         files = []
         for i in os.listdir(self.data_path):
@@ -113,7 +115,7 @@ class Core:
                 files.append(i)
         return files
 
-    def select_file(self, files):
+    def select_file(self, files: list[str]) -> str | None:
         fmts.print_inf("\n§a❀ 已发现以下建筑文件~")
         fmts.print_inf(
             "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
@@ -138,7 +140,7 @@ class Core:
         return os.path.join(self.data_path, selected_file)
 
     @staticmethod
-    def get_pos():
+    def get_pos() -> tuple[None, None, None, None] | tuple[str, int, int, int]:
         fmts.print_inf(
             "\n§a❀ §b请输入您想要导入到服务器的哪个维度? §e(输入0-20之间的整数)"
         )

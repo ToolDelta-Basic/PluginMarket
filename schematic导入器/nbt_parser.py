@@ -2,7 +2,7 @@
 
 import gzip
 import struct
-from io import BytesIO
+import numpy as np
 
 # ----------------------------------------------------------------------------------
 
@@ -161,16 +161,41 @@ def load_blocks_from_root(root):
     width = int(get_tag(root, "width"))
     height = int(get_tag(root, "height"))
     length = int(get_tag(root, "length"))
-    blocks = list(get_tag(root, "blocks"))
+    blocks_raw = get_tag(root, "blocks")
+    data_raw = root.get("data", bytearray([0]) * len(blocks_raw))
 
-    data = list(root.get("data", bytearray([0]) * len(blocks)))
+    try:
+        blocks_np = np.frombuffer(memoryview(blocks_raw), dtype=np.uint8).copy()
+    except Exception:
+        blocks_np = np.array(list(blocks_raw), dtype=np.uint8)
+
+    if len(data_raw) < blocks_np.size:
+        data_np = np.zeros(blocks_np.size, dtype=np.uint8)
+        if len(data_raw) > 0:
+            data_np[: len(data_raw)] = np.frombuffer(
+                memoryview(data_raw), dtype=np.uint8
+            )
+    else:
+        try:
+            data_np = np.frombuffer(memoryview(data_raw), dtype=np.uint8).copy()
+        except Exception:
+            data_np = np.array(list(data_raw), dtype=np.uint8)
+
+    expected = width * height * length
+    if blocks_np.size != expected:
+        raise ValueError(
+            f"发现 blocks 数量与 width * height * length 不匹配: {blocks_np.size} != {expected}"
+        )
+
+    blocks_np = blocks_np.reshape((height, length, width))
+    data_np = data_np.reshape((height, length, width))
 
     return {
         "width": width,
         "height": height,
         "length": length,
-        "blocks": blocks,
-        "data": data,
+        "blocks": blocks_np,
+        "data": data_np,
     }
 
 
@@ -181,12 +206,11 @@ def load_blocks_from_root(root):
 
 def parse_nbt_gzip(path):
     with gzip.open(path, "rb") as gz:
-        f = BytesIO(gz.read())  # type: ignore
-    tag_type = read_byte(f)
-    if tag_type != TAG_COMPOUND:
-        raise ValueError(f"发现文件头不是 TAG_Compound(10) ,而是 {tag_type}")
-    root_name = read_string(f)
-    root_payload = read_tag_payload(f, TAG_COMPOUND)
+        tag_type = read_byte(gz)
+        if tag_type != TAG_COMPOUND:
+            raise ValueError(f"发现文件头不是 TAG_Compound(10) ,而是 {tag_type}")
+        root_name = read_string(gz)
+        root_payload = read_tag_payload(gz, TAG_COMPOUND)
     return root_name, root_payload
 
 
