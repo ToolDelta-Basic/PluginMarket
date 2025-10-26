@@ -1,0 +1,12 @@
+{
+  "plugin-id": "server-blacklist-gateway",
+  "author": "丸山彩",
+  "version": "0.5.3",
+  "description": "通过nv1拉黑式封禁玩家，同时是一个前置插件",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "聊天栏菜单": "0.0.1",
+    "前置_玩家XUID获取": "0.0.7",
+    "『Orion System』违规与作弊行为综合反制系统": "0.3.9"
+  }
+}
