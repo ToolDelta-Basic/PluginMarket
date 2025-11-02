@@ -120,7 +120,7 @@
     "玩家历史": {
       "name": "玩家记录",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "简单世界恢复": {
