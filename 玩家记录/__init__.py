@@ -52,7 +52,7 @@ class PlayerHistory:
 class PlayerHistoryPlugin(Plugin):
     name = "玩家记录"
     author = "SuperScript"
-    version = (0, 0, 1)
+    version = (0, 0, 3)
     description = "easter egg: Welcome to Zootopia!"
 
     def __init__(self, frame):
@@ -109,15 +109,12 @@ class PlayerHistoryPlugin(Plugin):
 
     def record_player(self, player: Player):
         h = self.get_players_history()
-        print(h)
         old = h.get(player.xuid)
         if old is not None:
-            print(player.name, player.device_id)
             h[player.xuid] = PlayerHistory.load_from_player(
                 player, old.first_join, old.deviceID or player.device_id
             )
         else:
-            print("[new]", player.name, player.device_id)
             h[player.xuid] = PlayerHistory.load_from_player(player)
 
     def get_players_history(self):
@@ -128,11 +125,6 @@ class PlayerHistoryPlugin(Plugin):
                     self.format_data_path("player_history.json")
                 ).items()
             }
-            print(
-                utils.tempjson.load_and_read(
-                    self.format_data_path("player_history.json")
-                )
-            )
         return self._cached_player_history
 
     def flush_players_history(self):
