@@ -447,6 +447,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "mcstructure导入器[可导入命令]": {
+      "name": "mcstructure导入器[可导入命令]",
+      "author": "style_天枢",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "进服默认权限(必备)": {
       "name": "权限管理",
       "author": "权威-马牛逼",

@@ -625,6 +625,15 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "mcstructure导入器[可导入命令]": {
+        "command_loader.py": 0,
+        "datas.json": 0,
+        "nbt_parser.py": 0,
+        "chunk_painter.py": 0,
+        "core.py": 0,
+        "config.py": 0,
+        "__init__.py": 0
+    },
     "权限管理": {
         "datas.json": 0,
         "__init__.py": 0
