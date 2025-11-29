@@ -100,13 +100,14 @@ class ToolSoundSequence:
 class ToolMidiMixer(Plugin):
     author = "SuperScript"
     name = "库-MIDI播放器"
-    version = (0, 2, 7)
+    version = (0, 2, 8)
     midi_seqs: ClassVar[dict[str, ToolSoundSequence]] = {}
     playsound_threads: ClassVar[dict[int, utils.createThread]] = {}
     _id_counter = 0
 
     def __init__(self, frame):
         super().__init__(frame)
+        self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_inject)
 
     # ---------------- API ---------------------
@@ -169,7 +170,7 @@ class ToolMidiMixer(Plugin):
             seq = name_or_seq
         else:
             seq = self.midi_seqs[name_or_seq]
-        scmd = self.game_ctrl.sendwocmd
+        scmd = self.sendaicmd
         for instrument, vol, pitch, delay in seq:
             time.sleep(delay / 20)
             scmd(
@@ -192,6 +193,13 @@ class ToolMidiMixer(Plugin):
             yield instrument, vol, pitch, delay / 20
 
     # ------------------------------------------
+    def on_preload(self):
+        basic_apis = self.GetPluginAPI("基本插件功能库")
+        if 0:
+            from ..前置_基本插件功能库 import BasicFunctionLib
+            basic_apis: BasicFunctionLib
+        self.sendaicmd = basic_apis.sendaicmd
+    
     def _playsound_at_target_thread(
         self, name_or_seq: str | ToolSoundSequence, target: str, idc: int
     ):
@@ -199,7 +207,7 @@ class ToolMidiMixer(Plugin):
             seq = name_or_seq
         else:
             seq = self.midi_seqs[name_or_seq]
-        scmd = self.game_ctrl.sendwocmd
+        scmd = self.sendaicmd
         try:
             for instrument, vol, pitch, delay in seq:
                 time.sleep(delay / 20)
