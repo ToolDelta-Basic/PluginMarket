@@ -162,7 +162,7 @@
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.2.6",
+      "version": "0.2.8",
       "plugin-type": "classic"
     },
     "入服欢迎": {
