@@ -734,6 +734,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "服务器黑名单封禁系统": [
+        "datas.json",
+        "README.md",
+        "__init__.py"
+    ],
     "封禁系统": [
         "datas.json",
         "__init__.py"

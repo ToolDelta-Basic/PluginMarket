@@ -585,6 +585,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "服务器黑名单封禁系统": {
+      "name": "服务器黑名单封禁系统",
+      "author": "丸山彩",
+      "version": "0.5.4",
+      "plugin-type": "classic"
+    },
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
