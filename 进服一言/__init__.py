@@ -28,9 +28,9 @@ class HitokotoType(str, Enum):
     FUNNY = "l"          # 抖机灵
 
 
-class NewPlugin(Plugin):
+class JoinHitokoto(Plugin):
     name = "进服一言"
-    author = "机入 & Q3CC"
+    author = "机入"
     version = (0, 0, 2)
 
     def __init__(self, frame):
@@ -92,4 +92,4 @@ class NewPlugin(Plugin):
             fmts.print_err(f"一言异常: {e}")
 
 
-entry = plugin_entry(NewPlugin)
+entry = plugin_entry(JoinHitokoto)
