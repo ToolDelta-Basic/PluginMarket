@@ -693,6 +693,12 @@
       "version": "0.1.2",
       "plugin-type": "classic"
     },
+    "无邪玩家互传": {
+      "name": "无邪玩家互传",
+      "author": "无邪",
+      "version": "1.0.0",
+      "plugin-type": "classic"
+    },
     "宠物背包清理": {
       "name": "宠物背包清理",
       "author": "猫七街",

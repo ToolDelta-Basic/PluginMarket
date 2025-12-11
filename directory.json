@@ -836,6 +836,10 @@
         "readme.txt",
         "__init__.py"
     ],
+    "无邪玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
     "挂机检测": [
         "datas.json",
         "__init__.py"
