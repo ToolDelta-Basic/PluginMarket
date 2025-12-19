@@ -614,6 +614,15 @@
         "datas.json",
         "__init__.py"
     ],
+    "mcstructure导入器[可导入命令]": [
+        "command_loader.py",
+        "datas.json",
+        "nbt_parser.py",
+        "chunk_painter.py",
+        "core.py",
+        "config.py",
+        "__init__.py"
+    ],
     "权限管理": [
         "datas.json",
         "__init__.py"
@@ -725,6 +734,11 @@
         "datas.json",
         "__init__.py"
     ],
+    "服务器黑名单封禁系统": [
+        "datas.json",
+        "README.md",
+        "__init__.py"
+    ],
     "封禁系统": [
         "datas.json",
         "__init__.py"
@@ -778,6 +792,11 @@
         "自定义聊天栏菜单.json",
         "聊天栏菜单.json"
     ],
+    "活力API": [
+        "datas.json",
+        "README.md",
+        "__init__.py"
+    ],
     "管理员白名单": [
         "datas.json",
         "__init__.py"
@@ -820,6 +839,10 @@
     "音乐播放器": [
         "datas.json",
         "readme.txt",
+        "__init__.py"
+    ],
+    "无邪玩家互传": [
+        "datas.json",
         "__init__.py"
     ],
     "挂机检测": [

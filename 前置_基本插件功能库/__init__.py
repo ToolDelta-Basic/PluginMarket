@@ -278,6 +278,7 @@ class BasicFunctionLib(Plugin):
         return bool(res)
 
     def sendaicmd(self, cmd: str):
+        "发送一条魔法指令。"
         my_runtimeid = self.game_ctrl.players.getBotInfo().runtime_id
         pk = {
             "Value": [

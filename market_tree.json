@@ -120,7 +120,7 @@
     "玩家历史": {
       "name": "玩家记录",
       "author": "SuperScript",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "简单世界恢复": {
@@ -162,7 +162,7 @@
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.2.6",
+      "version": "0.2.8",
       "plugin-type": "classic"
     },
     "入服欢迎": {
@@ -447,6 +447,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "mcstructure导入器[可导入命令]": {
+      "name": "mcstructure导入器[可导入命令]",
+      "author": "style_天枢",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "进服默认权限(必备)": {
       "name": "权限管理",
       "author": "权威-马牛逼",
@@ -579,6 +585,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "服务器黑名单封禁系统": {
+      "name": "服务器黑名单封禁系统",
+      "author": "丸山彩",
+      "version": "0.5.4",
+      "plugin-type": "classic"
+    },
     "封禁系统": {
       "name": "封禁系统",
       "author": "SuperScript",
@@ -627,6 +639,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "vitality-keepalive": {
+      "name": "活力API",
+      "author": "Q3CC",
+      "version": "0.1.5",
+      "plugin-type": "classic"
+    },
     "op-whitelist": {
       "name": "管理员白名单",
       "author": "SuperScript",
@@ -647,8 +665,8 @@
     },
     "进服一言": {
       "name": "进服一言",
-      "author": "机入",
-      "version": "0.0.1",
+      "author": "机入 & Q3CC",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "cb-say-supporter": {
@@ -679,6 +697,12 @@
       "name": "音乐播放器",
       "author": "SuperScript",
       "version": "0.1.2",
+      "plugin-type": "classic"
+    },
+    "无邪玩家互传": {
+      "name": "无邪玩家互传",
+      "author": "无邪",
+      "version": "1.0.0",
       "plugin-type": "classic"
     },
     "宠物背包清理": {

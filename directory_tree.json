@@ -625,6 +625,15 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "mcstructure导入器[可导入命令]": {
+        "command_loader.py": 0,
+        "datas.json": 0,
+        "nbt_parser.py": 0,
+        "chunk_painter.py": 0,
+        "core.py": 0,
+        "config.py": 0,
+        "__init__.py": 0
+    },
     "权限管理": {
         "datas.json": 0,
         "__init__.py": 0
@@ -737,6 +746,11 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "服务器黑名单封禁系统": {
+        "datas.json": 0,
+        "README.md": 0,
+        "__init__.py": 0
+    },
     "封禁系统": {
         "datas.json": 0,
         "__init__.py": 0
@@ -790,6 +804,11 @@
             "聊天栏菜单.json": 0
         }
     },
+    "活力API": {
+        "datas.json": 0,
+        "README.md": 0,
+        "__init__.py": 0
+    },
     "管理员白名单": {
         "datas.json": 0,
         "__init__.py": 0
@@ -832,6 +851,10 @@
     "音乐播放器": {
         "datas.json": 0,
         "readme.txt": 0,
+        "__init__.py": 0
+    },
+    "无邪玩家互传": {
+        "datas.json": 0,
         "__init__.py": 0
     },
     "directory_tree.json": 0,
