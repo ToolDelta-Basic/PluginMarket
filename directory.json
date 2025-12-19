@@ -792,6 +792,11 @@
         "自定义聊天栏菜单.json",
         "聊天栏菜单.json"
     ],
+    "活力API": [
+        "datas.json",
+        "README.md",
+        "__init__.py"
+    ],
     "管理员白名单": [
         "datas.json",
         "__init__.py"

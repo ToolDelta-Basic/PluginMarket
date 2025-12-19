@@ -804,6 +804,11 @@
             "聊天栏菜单.json": 0
         }
     },
+    "活力API": {
+        "datas.json": 0,
+        "README.md": 0,
+        "__init__.py": 0
+    },
     "管理员白名单": {
         "datas.json": 0,
         "__init__.py": 0

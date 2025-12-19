@@ -639,6 +639,12 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
+    "vitality-keepalive": {
+      "name": "活力API",
+      "author": "Q3CC",
+      "version": "0.1.5",
+      "plugin-type": "classic"
+    },
     "op-whitelist": {
       "name": "管理员白名单",
       "author": "SuperScript",
