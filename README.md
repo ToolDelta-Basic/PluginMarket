@@ -1,7 +1,7 @@
 # ToolDelta 插件市场 Official
 
 **ToolDelta 插件市场** 是 **[ToolDelta](https://github.com/ToolDelta-Basic/ToolDelta)** 的官方插件市场源。
-现在已经拥有 **127 个插件**、 **3 个整合包** 了！
+现在已经拥有 **128 个插件**、 **3 个整合包** 了！
 
 **如何使用插件市场？**
   - 直接在启动器进入插件市场
