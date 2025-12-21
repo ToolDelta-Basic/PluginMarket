@@ -501,6 +501,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "Lumelta": {
+      "name": "Lumelta",
+      "author": "Yeah",
+      "version": "1.1.1",
+      "plugin-type": "classic"
+    },
     "计分板重置": {
       "name": "计分板重置",
       "author": "猫七街",
