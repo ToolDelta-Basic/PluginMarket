@@ -252,7 +252,7 @@ class SkinAbnormalStandalone(Plugin):
                         self._poke_nv1_login_state()
                         continue
                     raise
-    
+
         except Exception as e:
             try:
                 fmts.print_war(f"[皮肤异常拉黑] 活力刷新失败：{e}")
