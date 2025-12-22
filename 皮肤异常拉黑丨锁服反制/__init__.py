@@ -244,7 +244,11 @@ class SkinAbnormalStandalone(Plugin):
                     return
                 except Exception as e:
                     msg = str(e)
-                    if ("vitality refresh failed:" in msg) and ("请先使用一次对应sdkuid的机器人账号" in msg) and attempt < 2:
+                    if (
+                        "vitality refresh failed:" in msg
+                        and "请先使用一次对应sdkuid的机器人账号" in msg
+                        and attempt < 2
+                    ):
                         self._poke_nv1_login_state()
                         continue
                     raise
@@ -291,7 +295,11 @@ class SkinAbnormalStandalone(Plugin):
 
     def _poke_nv1_login_state(self):
         try:
-            requests.get(self._URL_POKE_LOGIN, headers=self._headers(), timeout=self._TIMEOUT_SEC)
+            requests.get(
+                self._URL_POKE_LOGIN,
+                headers=self._headers(),
+                timeout=self._TIMEOUT_SEC,
+            )
         except Exception:
             pass
 
@@ -516,7 +524,16 @@ class SkinAbnormalStandalone(Plugin):
             if not isinstance(ent, dict):
                 continue
 
-            name = str(_get(ent, "Username", "Name", "PlayerName", default="") or "").strip()
+            name = str(
+                _get(
+                    ent,
+                    "Username",
+                    "Name",
+                    "PlayerName",
+                    default="",
+                )
+                or ""
+            ).strip()
             if not name:
                 continue
             if self._cooldown_hit(name):
