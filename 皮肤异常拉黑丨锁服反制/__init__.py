@@ -294,7 +294,7 @@ class SkinAbnormalStandalone(Plugin):
             pass
 
     def _poke_nv1_login_state(self):
-    """刷新NV1登录状态。"""
+        """刷新NV1登录状态。"""
         try:
             requests.get(
                 self._URL_POKE_LOGIN,
