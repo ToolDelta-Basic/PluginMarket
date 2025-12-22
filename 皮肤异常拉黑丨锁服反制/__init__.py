@@ -512,18 +512,18 @@ class SkinAbnormalStandalone(Plugin):
         if not isinstance(entries, list) or not entries:
             return False
 
-        for entry in entries:
-            if not isinstance(entry, dict):
+        for ent in entries:
+            if not isinstance(ent, dict):
                 continue
 
-            name = str(_get(entry, "Username", "Name", "PlayerName", default="") or "").strip()
+            name = str(_get(ent, "Username", "Name", "PlayerName", default="") or "").strip()
             if not name:
                 continue
             if self._cooldown_hit(name):
                 continue
 
-            skin = _get(entry, "Skin", "skin", default=None)
-            skin_dict = skin if isinstance(skin, dict) else entry
+            skin = _get(ent, "Skin", "skin", default=None)
+            skin_dict = skin if isinstance(skin, dict) else ent
 
             abnormal, why = self._is_abnormal_skin_like_orion1_strict(skin_dict)
             if not abnormal:
