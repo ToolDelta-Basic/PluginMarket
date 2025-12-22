@@ -1,7 +1,7 @@
 {
     "plugin-id": "皮肤异常拉黑丨锁服反制",
     "author": "丸山彩",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "将皮肤数据异常玩家拉入租赁服黑名单，防御这类锁服，同时用活力API保护服主账号不被封禁。",
     "plugin-type": "classic",
     "pre-plugins": {}
