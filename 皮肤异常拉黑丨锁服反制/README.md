@@ -13,5 +13,5 @@
 ## 使用方法
 - 在 https://nv1.nethard.pro/app/openapi 重置OpenAPI Key并在OpenAPI账号处登录服主账号
 - 生成配置文件后把API-Key填入配置文件，然后重载插件
-- 如果服主账号需要登录上线，请在控制台发送停止命令，默认skinbanstop
-- 服主账号下线后请在控制台发送开启命令，默认skinbanstart
+- 如果服主账号需要登录上线，请在控制台发送停止命令（默认skinbanstop），否则每隔一段时间账号会被顶出
+- 服主账号下线后请在控制台发送开启命令（默认skinbanstart），以重启功能

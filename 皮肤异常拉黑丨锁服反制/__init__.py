@@ -40,7 +40,7 @@ def _b64_to_bytes(v) -> bytes:
 class SkinAbnormalStandalone(Plugin):
     name = "皮肤异常拉黑丨锁服反制"
     author = "丸山彩"
-    version = (0, 2, 3)
+    version = (0, 2, 4)
 
     _ALLOW_CAPE = False
     _ANIM_COUNTS = {0, 1}
@@ -57,6 +57,7 @@ class SkinAbnormalStandalone(Plugin):
 
     _URL_GET_SAUTH = "https://nv1.nethard.pro/api/open-api/user/getLoginUserSAuth"
     _URL_VITALITY_REFRESH = "https://nv1.nethard.pro/api/vitalityApi/refresh"
+    _URL_POKE_LOGIN = "https://nv1.nethard.pro/api/open-api/user/getLoginUserInfo"
 
     _X_CALLER = "gameaccount"
     _COOKIE = "locale=en-us"
@@ -237,7 +238,21 @@ class SkinAbnormalStandalone(Plugin):
             sdkuid = self._sdkuid or self._get_sdkuid_from_sauth()
             if not sdkuid:
                 return
-            self._call_vitality_refresh(sdkuid)
+            for attempt in range(3):
+                try:
+                    self._call_vitality_refresh(sdkuid)
+                    return
+                except Exception as e:
+                    msg = str(e)
+                    if (
+                        "vitality refresh failed:" in msg
+                        and "请先使用一次对应sdkuid的机器人账号" in msg
+                        and attempt < 2
+                    ):
+                        self._poke_nv1_login_state()
+                        continue
+                    raise
+
         except Exception as e:
             try:
                 fmts.print_war(f"[皮肤异常拉黑] 活力刷新失败：{e}")
@@ -275,6 +290,17 @@ class SkinAbnormalStandalone(Plugin):
             raise RuntimeError(f"vitality refresh failed: {obj!r}")
         try:
             fmts.print_suc(f"[皮肤异常拉黑] 已刷新活力")
+        except Exception:
+            pass
+
+    def _poke_nv1_login_state(self):
+        """刷新NV1登录状态。"""
+        try:
+            requests.get(
+                self._URL_POKE_LOGIN,
+                headers=self._headers(),
+                timeout=self._TIMEOUT_SEC,
+            )
         except Exception:
             pass
 
@@ -495,18 +521,27 @@ class SkinAbnormalStandalone(Plugin):
         if not isinstance(entries, list) or not entries:
             return False
 
-        for entry in entries:
-            if not isinstance(entry, dict):
+        for ent in entries:
+            if not isinstance(ent, dict):
                 continue
 
-            name = str(_get(entry, "Username", "Name", "PlayerName", default="") or "").strip()
+            name = str(
+                _get(
+                    ent,
+                    "Username",
+                    "Name",
+                    "PlayerName",
+                    default="",
+                )
+                or ""
+            ).strip()
             if not name:
                 continue
             if self._cooldown_hit(name):
                 continue
 
-            skin = _get(entry, "Skin", "skin", default=None)
-            skin_dict = skin if isinstance(skin, dict) else entry
+            skin = _get(ent, "Skin", "skin", default=None)
+            skin_dict = skin if isinstance(skin, dict) else ent
 
             abnormal, why = self._is_abnormal_skin_like_orion1_strict(skin_dict)
             if not abnormal:
