@@ -201,6 +201,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "皮肤异常拉黑丨锁服反制": {
+      "name": "皮肤异常拉黑丨锁服反制",
+      "author": "丸山彩",
+      "version": "0.2.3",
+      "plugin-type": "classic"
+    },
     "井字棋": {
       "name": "井字棋",
       "author": "SuperScript",
@@ -493,6 +499,12 @@
       "name": "定时任务",
       "author": "System",
       "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "Lumelta": {
+      "name": "Lumelta",
+      "author": "Yeah",
+      "version": "1.1.1",
       "plugin-type": "classic"
     },
     "计分板重置": {

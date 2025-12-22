@@ -401,6 +401,11 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "皮肤异常拉黑丨锁服反制": {
+        "datas.json": 0,
+        "README.md": 0,
+        "__init__.py": 0
+    },
     "井字棋": {
         "datas.json": 0,
         "__init__.py": 0
@@ -668,7 +673,89 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
-    "Lumelta": {},
+    "Lumelta": {
+        "neomega_storage": {
+            "NOTICE": 0,
+            "lang": {
+                "LuaLoader": {
+                    "全物品商店.lua": 0,
+                    "creator.lua": 0,
+                    "领地.lua": 0,
+                    "Python系统监测.lua": 0,
+                    "coromega.lua": 0,
+                    "后台发送命令.lua": 0
+                }
+            },
+            "config": {
+                "返回死亡点": {
+                    "返回死亡点[Built-In]-1.json": 0
+                },
+                "creator[lua]": {
+                    "creator[LuaLoader]-1.json": 0
+                },
+                "backend_menu.lua": 0,
+                "cq_http_core.lua": 0,
+                "game_menu.lua": 0,
+                "Python系统监测[lua]": {
+                    "Python系统监测[LuaLoader]-1.json": 0
+                },
+                "全物品商店[lua]": {
+                    "全物品商店[LuaLoader]-更合理的价格表.json": 0
+                },
+                "后台发送命令[lua]": {
+                    "后台发送命令[LuaLoader]-1.json": 0
+                },
+                "neomega框架配置.json": 0,
+                "领地[lua]": {
+                    "领地[LuaLoader]-1.json": 0
+                }
+            }
+        },
+        "NOTICE": 0,
+        "LICENSE": 0,
+        "datas.json": 0,
+        ".gitignore": 0,
+        "README.md": 0,
+        "__init__.py": 0,
+        "wrap": {
+            "omega.py": 0,
+            "builtin_plugins": {
+                "返回死亡点": {
+                    "__init__.py": 0
+                }
+            },
+            "loosejson.py": 0,
+            "lua.py": 0,
+            "database.py": 0,
+            "conversion.py": 0,
+            "omega_sub_modules": {
+                "bot_uq.py": 0,
+                "players.py": 0,
+                "storage.py": 0,
+                "async_http.py": 0,
+                "storage_path.py": 0,
+                "websocket.py": 0,
+                "flex.py": 0,
+                "menu.py": 0,
+                "cmds.py": 0,
+                "builder.py": 0,
+                "common.py": 0,
+                "cqhttp.py": 0,
+                "bot_action.py": 0,
+                "share.py": 0,
+                "listen.py": 0,
+                "__init__.py": 0,
+                "system.py": 0
+            },
+            "user_data.py": 0,
+            "make.py": 0,
+            "json.py": 0,
+            "control.py": 0,
+            "safe.py": 0,
+            "config.py": 0,
+            "__init__.py": 0
+        }
+    },
     "计分板重置": {
         "data_operation.py": 0,
         "datas.json": 0,
