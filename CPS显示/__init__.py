@@ -15,6 +15,7 @@ except ImportError:
 
 @dataclass
 class _Subscription:
+
     sub_id: int
     threshold: float
     cooldown: float
@@ -114,8 +115,8 @@ class SwingCPSAPI(Plugin):
     ) -> int:
         if threshold <= 0:
             threshold = 0.1
-        if cooldown < 0:
-            cooldown = 0.0
+
+        cooldown = max(cooldown, 0.0)
 
         sub_id = self._next_sub_id
         self._next_sub_id += 1
@@ -133,15 +134,18 @@ class SwingCPSAPI(Plugin):
         return self._subs.pop(int(sub_id), None) is not None
 
     def _make_mapping_cb(self, pkt_name: str):
+
         def _cb(pkt):
             try:
                 self._update_mapping(pkt_name, pkt)
             except Exception:
                 pass
             return False
+
         return _cb
 
-    def _get_int(self, d, keys):
+    @staticmethod
+    def _get_int(d, keys):
         if not isinstance(d, dict):
             return None
         for k in keys:
@@ -150,7 +154,8 @@ class SwingCPSAPI(Plugin):
                 return v
         return None
 
-    def _get_str(self, d, keys):
+    @staticmethod
+    def _get_str(d, keys):
         if not isinstance(d, dict):
             return None
         for k in keys:
@@ -165,21 +170,40 @@ class SwingCPSAPI(Plugin):
         pn = pkt_name.lower()
 
         if pn == "addplayer":
-            rt = self._get_int(pkt, ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"])
-            name = self._get_str(pkt, ["Username", "username", "PlayerName", "playername", "Name", "name"])
+            rt = self._get_int(
+                pkt,
+                ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"],
+            )
+            name = self._get_str(
+                pkt,
+                ["Username", "username", "PlayerName", "playername", "Name", "name"],
+            )
             if rt is not None and name:
                 self.rt_to_name[rt] = name
             return
 
         if pn == "playerlist":
-            for key in ("Records", "records", "Entries", "entries", "players", "Players"):
+            for key in (
+                "Records",
+                "records",
+                "Entries",
+                "entries",
+                "players",
+                "Players",
+            ):
                 arr = pkt.get(key)
                 if isinstance(arr, list):
                     for it in arr:
                         if not isinstance(it, dict):
                             continue
-                        rt = self._get_int(it, ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"])
-                        name = self._get_str(it, ["Username", "username", "PlayerName", "playername", "Name", "name"])
+                        rt = self._get_int(
+                            it,
+                            ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"],
+                        )
+                        name = self._get_str(
+                            it,
+                            ["Username", "username", "PlayerName", "playername", "Name", "name"],
+                        )
                         if rt is not None and name:
                             self.rt_to_name[rt] = name
                     return
@@ -285,7 +309,8 @@ class SwingCPSAPI(Plugin):
         self._refresh_mapping_from_online_players(force=True)
         return self.rt_to_name.get(rt)
 
-    def _get_runtime_id_from_player_obj(self, p) -> Optional[int]:
+    @staticmethod
+    def _get_runtime_id_from_player_obj(p) -> Optional[int]:
         candidates = [
             "entity_runtime_id",
             "runtime_id",
@@ -317,7 +342,8 @@ class SwingCPSAPI(Plugin):
 
         return None
 
-    def _escape_selector_name(self, name: str) -> str:
+    @staticmethod
+    def _escape_selector_name(name: str) -> str:
         return name.replace("\\", "\\\\").replace('"', '\\"')
 
     def _send_title(self, player_name: str, cps: float):
@@ -342,5 +368,6 @@ class SwingCPSAPI(Plugin):
         if interval <= 0:
             interval = period
         self.config["显示间隔秒"] = interval
+
 
 entry = plugin_entry(SwingCPSAPI, "CPS显示")
