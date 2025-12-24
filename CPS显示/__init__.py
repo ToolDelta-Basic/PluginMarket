@@ -144,6 +144,7 @@ class SwingCPSAPI(Plugin):
         return self._subs.pop(int(sub_id), None) is not None
 
     def _make_mapping_cb(self, pkt_name: str):
+        """生成用于更新映射的包回调函数"""
 
         def _cb(pkt):
             """监听包时更新映射"""
