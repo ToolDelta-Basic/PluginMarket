@@ -13,6 +13,15 @@ from urllib.parse import urlparse
 
 
 class QuickPluginInstaller(Plugin):
+    """
+    插件快捷安装工具
+
+    提供命令行快捷安装插件的功能，支持通过插件 ID 或名称搜索并安装
+    插件和插件整合包。支持自定义插件市场源和快速安装模式。
+
+    命令格式: plg add <插件名> [-url <URL>] [-y]
+    """
+
     name = "插件快捷安装"
     author = "Q3CC"
     version = (0, 0, 1)
@@ -34,7 +43,8 @@ class QuickPluginInstaller(Plugin):
         )
         # self.print_suc("已注册插件管理命令: plg")
 
-    def _parse_install_args(self, args: list[str]):
+    @staticmethod
+    def _parse_install_args(args: list[str]):
         """解析 add 子命令参数"""
         plugin_keyword = None
         custom_url = None
@@ -83,7 +93,8 @@ class QuickPluginInstaller(Plugin):
             # 未知子命令，显示帮助
             self._show_help()
 
-    def _show_help(self):
+    @staticmethod
+    def _show_help():
         """显示帮助信息"""
         fmts.clean_print("§bplg §7- 插件管理工具")
         fmts.clean_print("")
@@ -99,9 +110,63 @@ class QuickPluginInstaller(Plugin):
         fmts.clean_print("§6示例:")
         fmts.clean_print("  §fplg add 聊天栏菜单")
         fmts.clean_print("  §fplg add economy §b-y")
-        fmts.clean_print("  §fplg add chatbar §b-url §fhttps://example.com/market")
+        fmts.clean_print(
+            "  §fplg add chatbar §b-url §fhttps://example.com/market"
+        )
         fmts.clean_print("")
         fmts.clean_print("§7提示: 安装后使用 §breload §7重载生效")
+
+    @staticmethod
+    def _search_plugin_or_package(
+        plugin_keyword: str,
+        plugins_section: dict,
+        packages_section: dict,
+        plugin_id_map: dict
+    ):
+        """
+        搜索插件或整合包
+
+        Args:
+            plugin_keyword: 搜索关键词
+            plugins_section: 插件列表数据
+            packages_section: 整合包列表数据
+            plugin_id_map: 插件 ID 映射表
+
+        Returns:
+            tuple: (found_item, found_item_id, is_package)
+        """
+        # 1. 在普通插件中搜索 - 通过 ID 精确匹配
+        if plugin_keyword in plugin_id_map:
+            found_item_id = plugin_keyword
+            found_item = plugins_section.get(plugin_keyword)
+            if found_item:
+                return found_item, found_item_id, False
+
+        # 2. 在普通插件中搜索 - 通过名称模糊搜索
+        for pid, pname in plugin_id_map.items():
+            if pname and plugin_keyword.lower() in pname.lower():
+                found_item = plugins_section.get(pid)
+                if found_item:
+                    return found_item, pid, False
+
+        # 3. 在普通插件中搜索 - 通过插件数据的名称搜索
+        for pid, pdata in plugins_section.items():
+            plugin_name = pdata.get("name") or ""
+            if plugin_keyword.lower() in plugin_name.lower():
+                return pdata, pid, False
+
+        # 4. 在整合包中搜索 - 通过整合包名称
+        for pkg_name, pkg_data in packages_section.items():
+            # 整合包名称可能带 [pkg] 前缀，也可能不带
+            pkg_display_name = pkg_name.replace("[pkg]", "").strip()
+            if plugin_keyword.lower() in pkg_display_name.lower():
+                if pkg_name.startswith("[pkg]"):
+                    pkg_id = pkg_name
+                else:
+                    pkg_id = f"[pkg]{pkg_name}"
+                return pkg_data, pkg_id, True
+
+        return None, None, False
 
     def install_plugin_quick(self, args: list[str]):
         """
@@ -131,20 +196,33 @@ class QuickPluginInstaller(Plugin):
                     fmts.clean_print("§c仅支持 http/https 插件市场源")
                     return
 
-                # 安全检查：只允许本地回环地址使用 http，其他必须使用 https
+                # 安全检查：只允许本地回环地址使用 http
                 if url_lower.startswith("http://"):
                     try:
                         parsed = urlparse(custom_url)
-                        hostname = parsed.hostname or parsed.netloc.split(':')[0]
-                        is_loopback = hostname.lower() in {"localhost", "127.0.0.1", "::1"}
+                        hostname = (
+                            parsed.hostname or parsed.netloc.split(':')[0]
+                        )
+                        loopback_hosts = {
+                            "localhost", "127.0.0.1", "::1"
+                        }
+                        is_loopback = hostname.lower() in loopback_hosts
                     except Exception:
                         is_loopback = False
 
                     if not is_loopback:
-                        fmts.clean_print("§c仅支持 https 插件市场源以确保下载安全")
-                        fmts.clean_print("§c提示: http 协议仅允许用于 localhost/127.0.0.1")
+                        fmts.clean_print(
+                            "§c仅支持 https 插件市场源以确保下载安全"
+                        )
+                        fmts.clean_print(
+                            "§c提示: http 协议仅允许用于 "
+                            "localhost/127.0.0.1"
+                        )
                         return
-                    fmts.clean_print("§e警告: 使用不安全的 http 协议（仅限本地回环地址）")
+                    fmts.clean_print(
+                        "§e警告: 使用不安全的 http 协议"
+                        "（仅限本地回环地址）"
+                    )
 
                 market.plugin_market_content_url = custom_url
                 fmts.clean_print(f"§6使用自定义插件市场源: {custom_url}")
@@ -161,41 +239,14 @@ class QuickPluginInstaller(Plugin):
                 return
 
             # 搜索插件和整合包
-            found_item = None
-            found_item_id = None
-            is_package = False
-
-            # 1. 在普通插件中搜索 - 通过 ID 精确匹配
-            if plugin_keyword in plugin_id_map:
-                found_item_id = plugin_keyword
-                found_item = plugins_section.get(plugin_keyword)
-
-            # 2. 在普通插件中搜索 - 通过名称模糊搜索
-            if not found_item:
-                for pid, pname in plugin_id_map.items():
-                    if pname and plugin_keyword.lower() in pname.lower():
-                        found_item_id = pid
-                        found_item = plugins_section.get(pid)
-                        break
-
-            # 3. 在普通插件中搜索 - 通过插件数据的名称搜索
-            if not found_item:
-                for pid, pdata in plugins_section.items():
-                    if plugin_keyword.lower() in (pdata.get("name") or "").lower():
-                        found_item_id = pid
-                        found_item = pdata
-                        break
-
-            # 4. 在整合包中搜索 - 通过整合包名称
-            if not found_item:
-                for pkg_name, pkg_data in packages_section.items():
-                    # 整合包名称可能带 [pkg] 前缀，也可能不带
-                    pkg_display_name = pkg_name.replace("[pkg]", "").strip()
-                    if plugin_keyword.lower() in pkg_display_name.lower():
-                        found_item_id = pkg_name if pkg_name.startswith("[pkg]") else f"[pkg]{pkg_name}"
-                        found_item = pkg_data
-                        is_package = True
-                        break
+            found_item, found_item_id, is_package = (
+                self._search_plugin_or_package(
+                    plugin_keyword,
+                    plugins_section,
+                    packages_section,
+                    plugin_id_map
+                )
+            )
 
             if not found_item or not found_item_id:
                 fmts.clean_print(f"§c未找到插件或整合包: {plugin_keyword}")
@@ -204,32 +255,46 @@ class QuickPluginInstaller(Plugin):
 
             # 根据类型处理
             if is_package:
-                # 处理整合包
                 self._install_package(found_item_id, skip_confirm)
             else:
-                # 处理普通插件
-                self._install_single_plugin(found_item_id, plugin_id_map, found_item, skip_confirm)
+                self._install_single_plugin(
+                    found_item_id,
+                    plugin_id_map,
+                    found_item,
+                    skip_confirm
+                )
 
         except Exception as e:
             import traceback
             fmts.clean_print(f"§c安装插件时出错: {e}")
             fmts.clean_print("§c详细错误:")
-            fmts.clean_print("§c" + traceback.format_exc().replace("\n", "\n§c"))
+            error_trace = traceback.format_exc().replace("\n", "\n§c")
+            fmts.clean_print(f"§c{error_trace}")
         finally:
             # 恢复原市场源，避免污染其他命令
             if custom_url:
                 market.plugin_market_content_url = original_market_url
 
-    def _install_single_plugin(self, plugin_id: str, plugin_id_map: dict, found_plugin: dict, skip_confirm: bool):
+    def _install_single_plugin(
+        self,
+        plugin_id: str,
+        plugin_id_map: dict,
+        found_plugin: dict,
+        skip_confirm: bool
+    ):
         """安装单个插件"""
         # 获取插件详细数据
         plugin_data = market.get_plugin_data_from_market(plugin_id)
         if not plugin_data:
             fmts.clean_print(f"§c未能获取插件 {plugin_id} 的详情，安装已取消")
-            fmts.clean_print("§6提示: 请检查插件市场源是否正常或插件 ID 是否正确")
+            fmts.clean_print(
+                "§6提示: 请检查插件市场源是否正常或插件 ID 是否正确"
+            )
             return
 
-        plugin_name = plugin_id_map.get(plugin_id, found_plugin.get("name", plugin_id))
+        plugin_name = plugin_id_map.get(
+            plugin_id, found_plugin.get("name", plugin_id)
+        )
 
         # 显示插件信息
         fmts.clean_print("§a找到插件:")
@@ -242,14 +307,21 @@ class QuickPluginInstaller(Plugin):
 
         # 显示前置插件
         if plugin_data.pre_plugins:
-            pre_plugins_str = ", ".join([f"{k} v{v}" for k, v in plugin_data.pre_plugins.items()])
+            pre_plugins_list = [
+                f"{k} v{v}"
+                for k, v in plugin_data.pre_plugins.items()
+            ]
+            pre_plugins_str = ", ".join(pre_plugins_list)
             fmts.clean_print(f"  前置插件: §f{pre_plugins_str}")
 
         # 二次确认
         if not skip_confirm:
             fmts.clean_print("")
             try:
-                confirm = input(fmts.clean_fmt("§6是否下载安装此插件? (§aY§6/§cN§6): ")).strip().lower()
+                prompt = fmts.clean_fmt(
+                    "§6是否下载安装此插件? (§aY§6/§cN§6): "
+                )
+                confirm = input(prompt).strip().lower()
             except EOFError:
                 fmts.clean_print("§c未收到输入，已取消安装")
                 return
@@ -268,8 +340,12 @@ class QuickPluginInstaller(Plugin):
         # 获取整合包详细数据
         package_data = market.get_package_data_from_market(package_id)
         if not package_data:
-            fmts.clean_print(f"§c未能获取整合包 {package_id} 的详情，安装已取消")
-            fmts.clean_print("§6提示: 请检查插件市场源是否正常或整合包名称是否正确")
+            fmts.clean_print(
+                f"§c未能获取整合包 {package_id} 的详情，安装已取消"
+            )
+            fmts.clean_print(
+                "§6提示: 请检查插件市场源是否正常或整合包名称是否正确"
+            )
             return
 
         package_name = package_id.replace("[pkg]", "").strip()
@@ -299,7 +375,10 @@ class QuickPluginInstaller(Plugin):
         if not skip_confirm:
             fmts.clean_print("")
             try:
-                confirm = input(fmts.clean_fmt("§6是否下载安装此整合包? (§aY§6/§cN§6): ")).strip().lower()
+                prompt = fmts.clean_fmt(
+                    "§6是否下载安装此整合包? (§aY§6/§cN§6): "
+                )
+                confirm = input(prompt).strip().lower()
             except EOFError:
                 fmts.clean_print("§c未收到输入，已取消安装")
                 return
