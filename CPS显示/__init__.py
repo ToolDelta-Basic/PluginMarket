@@ -352,6 +352,8 @@ class SwingCPSAPI(Plugin):
 
     def _send_title(self, player_name: str, cps: float):
         """向玩家发送 titleraw 显示 CPS"""
+        self.funclib.sendaicmd("/gamerule sendcommandfeedback false")
+
         cps_s = f"{cps:.1f}"
         space = self.config["前置空格"]
         color = self.config["颜色前缀"]
