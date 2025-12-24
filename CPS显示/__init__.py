@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable, Deque, Dict, Optional
+from typing import Callable, Deque, Dict, Optional, List, Tuple
 
-from tooldelta import Plugin, plugin_entry, ToolDelta, Print, cfg
+from tooldelta import Plugin, plugin_entry, ToolDelta, Print, cfg, game_utils, utils
 
 try:
     from tooldelta.constants import PacketIDS
@@ -29,13 +29,22 @@ class SwingCPSAPI(Plugin):
 
     name = "CPS显示"
     author = "丸山彩"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
+
+    _MODE1_DEDUP_EPS = 0.051
+
+    _MODE1_IGNORE_MIN = 0.0
+    _MODE1_IGNORE_MAX = 0.051
+
+    _MODE2_FIRST_DIST_IF_MOB = 1.0
+    _MODE2_FIRST_SECOND_PLAYER_DIST_MAX = 10.0
 
     def __init__(self, frame: ToolDelta):
         """初始化插件状态与监听"""
         super().__init__(frame)
 
         default_cfg = {
+            "模式": 1,
             "检测周期秒": 1.0,
             "是否显示": True,
             "显示间隔秒": 1.0,
@@ -43,6 +52,7 @@ class SwingCPSAPI(Plugin):
             "颜色前缀": "§e",
         }
         std_cfg = {
+            "模式": int,
             "检测周期秒": float,
             "是否显示": bool,
             "显示间隔秒": float,
@@ -66,6 +76,9 @@ class SwingCPSAPI(Plugin):
         self._next_sub_id = 1
         self._subs: Dict[int, _Subscription] = {}
 
+        self._pending_actions: Dict[str, Deque[float]] = {}
+        self._last_sound42_ts: Dict[str, float] = {}
+
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         self.ListenPlayerLeave(self.on_player_leave)
@@ -79,7 +92,10 @@ class SwingCPSAPI(Plugin):
             if pid is not None:
                 self.ListenPacket(int(pid), self._make_mapping_cb(attr))
 
-        self.ListenPacket(int(PacketIDS.Animate), self.on_pkt_animate)
+        self.ListenPacket(int(PacketIDS.LevelSoundEvent), self.on_pkt_sound)
+
+        animate_pid = getattr(PacketIDS, "Animate", 44)
+        self.ListenPacket(int(animate_pid), self.on_pkt_animate_action)
 
         self._clamp_config()
 
@@ -103,6 +119,9 @@ class SwingCPSAPI(Plugin):
         self._swing_times.pop(name, None)
         self._last_cps.pop(name, None)
         self._last_title_ts.pop(name, None)
+
+        self._pending_actions.pop(name, None)
+        self._last_sound42_ts.pop(name, None)
 
         for sub in self._subs.values():
             sub.last_fire_by_player.pop(name, None)
@@ -208,7 +227,6 @@ class SwingCPSAPI(Plugin):
             ):
                 arr = pkt.get(key)
                 if isinstance(arr, list):
-
                     for it in arr:
                         if not isinstance(it, dict):
                             continue
@@ -236,57 +254,232 @@ class SwingCPSAPI(Plugin):
                             self.rt_to_name[rt] = name
                     return
 
-    def on_pkt_animate(self, pkt: dict):
-        """统计挥手次数并计算 CPS"""
+    def on_pkt_animate_action(self, pkt: dict):
+        """模式1：挥手动作"""
         try:
+            if int(self.config.get("模式", 1)) != 1:
+                return False
+
             if not isinstance(pkt, dict):
                 return False
 
             if pkt.get("ActionType", None) != 1:
                 return False
 
-            rt = pkt.get("EntityRuntimeID", None)
-            if not isinstance(rt, int):
+            rt = self._get_int(
+                pkt,
+                ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"],
+            )
+            if rt is None:
                 return False
 
             name = self.rt_to_name.get(rt)
             if not name:
-                name = self._resolve_name_from_online_players(rt)
+                name = self._resolve_name_from_online_players(int(rt))
+            if not name:
+                return False
+
+            now_real = time.time()
+
+            self._flush_pending_actions(name, now_real)
+
+            dq = self._pending_actions.get(name)
+            if dq is None:
+                dq = deque()
+                self._pending_actions[name] = dq
+            dq.append(now_real)
+
+        except Exception as e:
+            Print.print_err(f"[{self.name}] 处理 Animate 动作包出错：{e}")
+
+        return False
+
+    def on_pkt_sound(self, pkt: dict):
+        """两种模式：LevelSoundEvent"""
+        try:
+            if not isinstance(pkt, dict):
+                return False
+
+            st = pkt.get("SoundType", None)
+            if not isinstance(st, int):
+                return False
+
+            pos = pkt.get("Position", None)
+            if not isinstance(pos, (list, tuple)) or len(pos) < 3:
+                return False
+
+            sx, sy, sz = pos[0], pos[1], pos[2]
+            if not all(isinstance(t, (int, float)) for t in (sx, sy, sz)):
+                return False
+
+            tx = float(sx)
+            ty = float(sy) - 0.9
+            tz = float(sz) - 1.0
+
+            mode = int(self.config.get("模式", 1))
+            now_real = time.time()
+
+            if mode == 1:
+                if st != 42:
+                    return False
+
+                name = self._bind_nearest_player_by_sound(tx, ty, tz)
                 if not name:
                     return False
 
-            now = time.time()
-            period = float(self.config["检测周期秒"])
-            show_enabled = bool(self.config["是否显示"])
-            title_interval = float(self.config["显示间隔秒"])
+                self._last_sound42_ts[name] = now_real
 
-            dq = self._swing_times.get(name)
-            if dq is None:
-                dq = deque()
-                self._swing_times[name] = dq
+                self._flush_pending_actions(name, now_real)
 
-            dq.append(now)
+                dq = self._pending_actions.get(name)
+                if dq:
+                    dt = now_real - dq[-1]
+                    if (dt > self._MODE1_IGNORE_MIN) and (dt <= self._MODE1_IGNORE_MAX):
+                        dq.pop()
 
-            cutoff = now - period
-            while dq and dq[0] < cutoff:
-                dq.popleft()
+                self._record_event(name, now_real)
+                return False
 
-            cps = len(dq) / period
-            self._last_cps[name] = cps
+            if st == 42:
+                name = self._bind_nearest_player_by_sound(tx, ty, tz)
+                if not name:
+                    return False
+                self._record_event(name, now_real)
+                return False
 
-            if self._subs:
-                self._fire_subscriptions(name, cps, now)
+            if st == 43:
+                attacker = self._bind_attacker_for_attack_sound(tx, ty, tz)
+                if not attacker:
+                    return False
+                self._record_event(attacker, now_real)
+                return False
 
-            if show_enabled and self.funclib is not None:
-                last_ts = self._last_title_ts.get(name, 0.0)
-                if (now - last_ts) >= title_interval:
-                    self._last_title_ts[name] = now
-                    self._send_title(name, cps)
+            return False
 
         except Exception as e:
-            Print.print_err(f"[{self.name}] 处理 Animate 包出错：{e}")
+            Print.print_err(f"[{self.name}] 处理 LevelSoundEvent 包出错：{e}")
 
         return False
+
+    def _flush_pending_actions(self, name: str, now_real: float):
+        """把超过 EPS 的 pending 动作刷入统计"""
+        dq = self._pending_actions.get(name)
+        if not dq:
+            return
+
+        eps = self._MODE1_DEDUP_EPS
+
+        while dq and (now_real - dq[0]) >= eps:
+            ts = dq.popleft()
+            self._record_event(name, ts)
+
+    def _record_event(self, name: str, event_ts: float):
+        """把一次挥手/攻击计入统计窗口并显示/触发订阅"""
+        period = float(self.config["检测周期秒"])
+        show_enabled = bool(self.config["是否显示"])
+        title_interval = float(self.config["显示间隔秒"])
+        now_real = time.time()
+
+        dq = self._swing_times.get(name)
+        if dq is None:
+            dq = deque()
+            self._swing_times[name] = dq
+
+        dq.append(event_ts)
+
+        cutoff = event_ts - period
+        while dq and dq[0] < cutoff:
+            dq.popleft()
+
+        cps = len(dq) / period
+        self._last_cps[name] = cps
+
+        if self._subs:
+            self._fire_subscriptions(name, cps, now_real)
+
+        if show_enabled and self.funclib is not None:
+            last_ts = self._last_title_ts.get(name, 0.0)
+            if (now_real - last_ts) >= title_interval:
+                self._last_title_ts[name] = now_real
+                self._send_title(name, cps)
+
+    def _get_single_pos(self, player: str):
+        """获取单个玩家的坐标"""
+        return player, game_utils.getPosXYZ(player)
+
+    def _gather_positions(self):
+        try:
+            players = self.game_ctrl.allplayers
+        except Exception:
+            return []
+        try:
+            return utils.thread_gather([(self._get_single_pos, (p,)) for p in players])
+        except Exception:
+            return []
+
+    def _bind_nearest_player_by_sound(self, x: float, y: float, z: float) -> Optional[str]:
+        """选处理后声音点最近的玩家"""
+        ress = self._gather_positions()
+        best_name = None
+        best_d2 = None
+
+        for pname, (px, py, pz) in ress:
+            try:
+                if not isinstance(pname, str) or not pname:
+                    continue
+                dx = float(px) - x
+                dy = float(py) - y
+                dz = float(pz) - z
+                d2 = dx * dx + dy * dy + dz * dz
+                if best_d2 is None or d2 < best_d2:
+                    best_d2 = d2
+                    best_name = pname
+            except Exception:
+                continue
+
+        return best_name
+
+    def _bind_attacker_for_attack_sound(self, x: float, y: float, z: float) -> Optional[str]:
+        """选择攻击者"""
+        ress = self._gather_positions()
+        candidates: List[Tuple[float, str, float, float, float]] = []
+
+        for pname, (px, py, pz) in ress:
+            try:
+                if not isinstance(pname, str) or not pname:
+                    continue
+                fpx, fpy, fpz = float(px), float(py), float(pz)
+                dx = fpx - x
+                dy = fpy - y
+                dz = fpz - z
+                d2 = dx * dx + dy * dy + dz * dz
+                candidates.append((d2, pname, fpx, fpy, fpz))
+            except Exception:
+                continue
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda t: t[0])
+        d2_1, name1, x1, y1, z1 = candidates[0]
+        dist1 = d2_1 ** 0.5
+
+        if dist1 > self._MODE2_FIRST_DIST_IF_MOB:
+            return name1
+
+        if len(candidates) < 2:
+            return None
+
+        d2_2, name2, x2, y2, z2 = candidates[1]
+        dxp = x1 - x2
+        dyp = y1 - y2
+        dzp = z1 - z2
+        dist12 = (dxp * dxp + dyp * dyp + dzp * dzp) ** 0.5
+
+        if dist12 > self._MODE2_FIRST_SECOND_PLAYER_DIST_MAX:
+            return None
+
+        return name2
 
     def _fire_subscriptions(self, player_name: str, cps: float, now: float):
         """触发所有阈值订阅回调"""
@@ -367,6 +560,11 @@ class SwingCPSAPI(Plugin):
 
     def _clamp_config(self):
         """修正配置"""
+        mode = int(self.config.get("模式", 1))
+        if mode not in (1, 2):
+            mode = 1
+        self.config["模式"] = mode
+
         period = float(self.config.get("检测周期秒", 1.0))
         if period <= 0:
             period = 1.0
