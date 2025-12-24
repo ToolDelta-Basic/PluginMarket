@@ -168,6 +168,26 @@ class QuickPluginInstaller(Plugin):
 
         return None, None, False
 
+    @staticmethod
+    def _confirm_installation(prompt_text: str) -> bool:
+        """
+        请求用户确认安装
+
+        Args:
+            prompt_text: 提示文本
+
+        Returns:
+            bool: 用户是否确认安装
+        """
+        fmts.clean_print("")
+        try:
+            prompt = fmts.clean_fmt(prompt_text)
+            confirm = input(prompt).strip().lower()
+        except EOFError:
+            fmts.clean_print("§c未收到输入，已取消安装")
+            return False
+        return confirm in ["y", "yes", "是", "确定", "确认"]
+
     def install_plugin_quick(self, args: list[str]):
         """
         快捷安装插件
@@ -275,8 +295,8 @@ class QuickPluginInstaller(Plugin):
             if custom_url:
                 market.plugin_market_content_url = original_market_url
 
+    @staticmethod
     def _install_single_plugin(
-        self,
         plugin_id: str,
         plugin_id_map: dict,
         found_plugin: dict,
@@ -316,16 +336,10 @@ class QuickPluginInstaller(Plugin):
 
         # 二次确认
         if not skip_confirm:
-            fmts.clean_print("")
-            try:
-                prompt = fmts.clean_fmt(
-                    "§6是否下载安装此插件? (§aY§6/§cN§6): "
-                )
-                confirm = input(prompt).strip().lower()
-            except EOFError:
-                fmts.clean_print("§c未收到输入，已取消安装")
-                return
-            if confirm not in ["y", "yes", "是", "确定", "确认"]:
+            confirmed = QuickPluginInstaller._confirm_installation(
+                "§6是否下载安装此插件? (§aY§6/§cN§6): "
+            )
+            if not confirmed:
                 fmts.clean_print("§c已取消安装")
                 return
 
@@ -335,7 +349,8 @@ class QuickPluginInstaller(Plugin):
         fmts.clean_print(f"§a插件 §f{plugin_name} §a安装完成!")
         fmts.clean_print("§6提示: 使用 §breload§6 命令重载插件使其生效")
 
-    def _install_package(self, package_id: str, skip_confirm: bool):
+    @staticmethod
+    def _install_package(package_id: str, skip_confirm: bool):
         """安装插件整合包"""
         # 获取整合包详细数据
         package_data = market.get_package_data_from_market(package_id)
@@ -373,16 +388,10 @@ class QuickPluginInstaller(Plugin):
 
         # 二次确认
         if not skip_confirm:
-            fmts.clean_print("")
-            try:
-                prompt = fmts.clean_fmt(
-                    "§6是否下载安装此整合包? (§aY§6/§cN§6): "
-                )
-                confirm = input(prompt).strip().lower()
-            except EOFError:
-                fmts.clean_print("§c未收到输入，已取消安装")
-                return
-            if confirm not in ["y", "yes", "是", "确定", "确认"]:
+            confirmed = QuickPluginInstaller._confirm_installation(
+                "§6是否下载安装此整合包? (§aY§6/§cN§6): "
+            )
+            if not confirmed:
                 fmts.clean_print("§c已取消安装")
                 return
 
