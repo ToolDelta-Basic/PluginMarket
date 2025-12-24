@@ -28,7 +28,7 @@ class PluginInstaller:
             fmts.clean_print("§c仅支持 http/https 插件市场源")
             return False
 
-        # 安全检查：只允许本地回环地址使用 http
+        # 安全警告：使用 http 协议
         if url_lower.startswith("http://"):
             try:
                 parsed = urlparse(custom_url)
@@ -38,17 +38,17 @@ class PluginInstaller:
             except Exception:
                 is_loopback = False
 
-            if not is_loopback:
+            if is_loopback:
                 fmts.clean_print(
-                    "§c仅支持 https 插件市场源以确保下载安全"
+                    "§e警告: 使用不安全的 http 协议（本地回环地址）"
+                )
+            else:
+                fmts.clean_print(
+                    "§c警告: 使用不安全的 http 协议可能导致安全风险"
                 )
                 fmts.clean_print(
-                    "§c提示: http 协议仅允许用于 localhost/127.0.0.1"
+                    "§c建议使用 https 协议以确保下载安全"
                 )
-                return False
-            fmts.clean_print(
-                "§e警告: 使用不安全的 http 协议（仅限本地回环地址）"
-            )
 
         return True
 
