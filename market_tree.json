@@ -201,6 +201,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "皮肤异常拉黑丨锁服反制": {
+      "name": "皮肤异常拉黑丨锁服反制",
+      "author": "丸山彩",
+      "version": "0.2.4",
+      "plugin-type": "classic"
+    },
     "井字棋": {
       "name": "井字棋",
       "author": "SuperScript",
@@ -495,6 +501,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "Lumelta": {
+      "name": "Lumelta",
+      "author": "Yeah",
+      "version": "1.1.1",
+      "plugin-type": "classic"
+    },
     "计分板重置": {
       "name": "计分板重置",
       "author": "猫七街",
@@ -637,6 +649,12 @@
       "name": "大范围fill",
       "author": "System",
       "version": "0.0.2",
+      "plugin-type": "classic"
+    },
+    "vitality-keepalive": {
+      "name": "活力API",
+      "author": "Q3CC",
+      "version": "0.1.5",
       "plugin-type": "classic"
     },
     "op-whitelist": {
