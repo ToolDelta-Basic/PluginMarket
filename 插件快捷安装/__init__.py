@@ -116,6 +116,38 @@ class QuickPluginInstaller(Plugin):
         fmts.clean_print("")
         fmts.clean_print("§7提示: 安装后使用 §breload §7重载生效")
 
+    @staticmethod
+    def _fetch_market_data():
+        """获取并验证插件市场数据"""
+        market_tree = market.get_market_tree() or {}
+        plugins_section = market_tree.get("MarketPlugins") or {}
+        packages_section = market_tree.get("Packages") or {}
+        plugin_id_map = market.get_plugin_id_name_map() or {}
+
+        if not plugins_section and not packages_section:
+            fmts.clean_print("§c插件市场数据为空或未加载")
+            return None
+
+        return plugins_section, packages_section, plugin_id_map
+
+    @staticmethod
+    def _handle_installation(
+        found_item_id,
+        is_package,
+        plugin_id_map,
+        found_item,
+        skip_confirm
+    ):
+        """处理插件或整合包的安装"""
+        if is_package:
+            PluginInstaller.install_package(found_item_id, skip_confirm)
+        else:
+            PluginInstaller.install_single_plugin(
+                found_item_id,
+                plugin_id_map,
+                found_item,
+                skip_confirm
+            )
 
     def install_plugin_quick(self, args: list[str]):
         """
@@ -144,20 +176,16 @@ class QuickPluginInstaller(Plugin):
             if custom_url:
                 if not PluginInstaller.validate_custom_url(custom_url):
                     return
-
                 market.plugin_market_content_url = custom_url
                 fmts.clean_print(f"§6使用自定义插件市场源: {custom_url}")
 
             # 获取插件市场数据
             fmts.clean_print(f"§6正在搜索插件: §f{plugin_keyword}")
-            market_tree = market.get_market_tree() or {}
-            plugins_section = market_tree.get("MarketPlugins") or {}
-            packages_section = market_tree.get("Packages") or {}
-            plugin_id_map = market.get_plugin_id_name_map() or {}
-
-            if not plugins_section and not packages_section:
-                fmts.clean_print("§c插件市场数据为空或未加载")
+            market_data = self._fetch_market_data()
+            if not market_data:
                 return
+
+            plugins_section, packages_section, plugin_id_map = market_data
 
             # 搜索插件和整合包
             found_item, found_item_id, is_package = (
@@ -176,16 +204,14 @@ class QuickPluginInstaller(Plugin):
                 fmts.clean_print("§6提示: 请检查名称或 ID 是否正确")
                 return
 
-            # 根据类型处理
-            if is_package:
-                PluginInstaller.install_package(found_item_id, skip_confirm)
-            else:
-                PluginInstaller.install_single_plugin(
-                    found_item_id,
-                    plugin_id_map,
-                    found_item,
-                    skip_confirm
-                )
+            # 处理安装
+            self._handle_installation(
+                found_item_id,
+                is_package,
+                plugin_id_map,
+                found_item,
+                skip_confirm
+            )
 
         except Exception as e:
             import traceback
@@ -197,7 +223,6 @@ class QuickPluginInstaller(Plugin):
             # 恢复原市场源，避免污染其他命令
             if custom_url:
                 market.plugin_market_content_url = original_market_url
-
 
 
 # 创建插件入口
