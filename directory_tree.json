@@ -625,6 +625,12 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "插件快捷安装": {
+        "installer.py": 0,
+        "datas.json": 0,
+        "README.md": 0,
+        "__init__.py": 0
+    },
     "latest_versions.json": 0,
     "前置_tps计算器": {
         "datas.json": 0,

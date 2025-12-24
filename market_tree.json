@@ -447,6 +447,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "quick_plugin_installer": {
+      "name": "插件快捷安装",
+      "author": "Q3CC",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "tpscalculator": {
       "name": "前置_tps计算器",
       "author": "SuperScript",
