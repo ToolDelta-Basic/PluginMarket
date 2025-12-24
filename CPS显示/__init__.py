@@ -31,10 +31,10 @@ class SwingCPSAPI(Plugin):
     author = "丸山彩"
     version = (0, 0, 2)
 
-    _MODE1_DEDUP_EPS = 0.051
+    _MODE1_DEDUP_EPS = 0.052
 
-    _MODE1_IGNORE_MIN = 0.0
-    _MODE1_IGNORE_MAX = 0.051
+    _MODE1_IGNORE_MIN = -0.003
+    _MODE1_IGNORE_MAX = 0.052
 
     _MODE2_FIRST_DIST_IF_MOB = 1.0
     _MODE2_FIRST_SECOND_PLAYER_DIST_MAX = 10.0
