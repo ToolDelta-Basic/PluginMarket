@@ -15,6 +15,7 @@ except ImportError:
 
 @dataclass
 class _Subscription:
+    """CPS 阈值订阅项"""
 
     sub_id: int
     threshold: float
@@ -24,12 +25,14 @@ class _Subscription:
 
 
 class SwingCPSAPI(Plugin):
+    """CPS 显示插件，对外提供接口"""
 
     name = "CPS显示"
     author = "丸山彩"
     version = (0, 0, 1)
 
     def __init__(self, frame: ToolDelta):
+        """初始化插件状态与监听"""
         super().__init__(frame)
 
         default_cfg = {
@@ -68,6 +71,7 @@ class SwingCPSAPI(Plugin):
         self.ListenPlayerLeave(self.on_player_leave)
 
     def on_preload(self):
+        """获取前置库 API，并注册包监听"""
         self.funclib = self.GetPluginAPI("基本插件功能库")
 
         for attr in ("AddPlayer", "PlayerList"):
@@ -80,6 +84,7 @@ class SwingCPSAPI(Plugin):
         self._clamp_config()
 
     def on_active(self):
+        """检查前置插件与重载后在线玩家映射补齐"""
         if self.funclib is None:
             self.funclib = self.GetPluginAPI("基本插件功能库")
 
@@ -89,6 +94,7 @@ class SwingCPSAPI(Plugin):
         self._refresh_mapping_from_online_players(force=True)
 
     def on_player_leave(self, player):
+        """玩家离线时清理统计缓存"""
         try:
             name = player.name
         except Exception:
@@ -102,9 +108,11 @@ class SwingCPSAPI(Plugin):
             sub.last_fire_by_player.pop(name, None)
 
     def get_cps(self, player_name: str) -> float:
+        """获取指定玩家最近一次计算到的"""
         return float(self._last_cps.get(player_name, 0.0))
 
     def get_all_cps(self) -> Dict[str, float]:
+        """获取所有玩家 CPS 快照"""
         return dict(self._last_cps)
 
     def subscribe(
@@ -113,6 +121,7 @@ class SwingCPSAPI(Plugin):
         handler: Callable[[str, float], None],
         cooldown: float = 1.0,
     ) -> int:
+        """订阅：当CPS达到阈值触发 handler(player_name, cps)"""
         if threshold <= 0:
             threshold = 0.1
 
@@ -131,11 +140,13 @@ class SwingCPSAPI(Plugin):
         return sub_id
 
     def unsubscribe(self, sub_id: int) -> bool:
+        """取消订阅"""
         return self._subs.pop(int(sub_id), None) is not None
 
     def _make_mapping_cb(self, pkt_name: str):
 
         def _cb(pkt):
+            """监听包时更新映射"""
             try:
                 self._update_mapping(pkt_name, pkt)
             except Exception:
@@ -146,6 +157,7 @@ class SwingCPSAPI(Plugin):
 
     @staticmethod
     def _get_int(d, keys):
+        """从 dict 中按 keys 顺序取第一个 int 值"""
         if not isinstance(d, dict):
             return None
         for k in keys:
@@ -156,6 +168,7 @@ class SwingCPSAPI(Plugin):
 
     @staticmethod
     def _get_str(d, keys):
+        """从 dict 中按 keys 顺序取第一个非空 str 值"""
         if not isinstance(d, dict):
             return None
         for k in keys:
@@ -165,6 +178,7 @@ class SwingCPSAPI(Plugin):
         return None
 
     def _update_mapping(self, pkt_name: str, pkt):
+        """根据 AddPlayer/PlayerList 包更新 runtimeId->name 映射。"""
         if not isinstance(pkt, dict):
             return
         pn = pkt_name.lower()
@@ -193,22 +207,36 @@ class SwingCPSAPI(Plugin):
             ):
                 arr = pkt.get(key)
                 if isinstance(arr, list):
+
                     for it in arr:
                         if not isinstance(it, dict):
                             continue
                         rt = self._get_int(
                             it,
-                            ["EntityRuntimeID", "entityRuntimeId", "RuntimeID", "runtimeId"],
+                            [
+                                "EntityRuntimeID",
+                                "entityRuntimeId",
+                                "RuntimeID",
+                                "runtimeId",
+                            ],
                         )
                         name = self._get_str(
                             it,
-                            ["Username", "username", "PlayerName", "playername", "Name", "name"],
+                            [
+                                "Username",
+                                "username",
+                                "PlayerName",
+                                "playername",
+                                "Name",
+                                "name",
+                            ],
                         )
                         if rt is not None and name:
                             self.rt_to_name[rt] = name
                     return
 
     def on_pkt_animate(self, pkt: dict):
+        """统计挥手次数并计算 CPS"""
         try:
             if not isinstance(pkt, dict):
                 return False
@@ -260,6 +288,7 @@ class SwingCPSAPI(Plugin):
         return False
 
     def _fire_subscriptions(self, player_name: str, cps: float, now: float):
+        """触发所有阈值订阅回调"""
         for sub in list(self._subs.values()):
             if cps < sub.threshold:
                 continue
@@ -275,6 +304,7 @@ class SwingCPSAPI(Plugin):
                 Print.print_war(f"[{self.name}] 订阅回调异常（sub_id={sub.sub_id}）：{e}")
 
     def _refresh_mapping_from_online_players(self, force: bool = False):
+        """从在线玩家列表刷新映射"""
         now = time.time()
         if (not force) and (now - self._last_players_scan_ts) < 0.5:
             return
@@ -301,6 +331,7 @@ class SwingCPSAPI(Plugin):
                 continue
 
     def _resolve_name_from_online_players(self, rt: int) -> Optional[str]:
+        """从在线玩家列表补齐映射缺失"""
         self._refresh_mapping_from_online_players(force=False)
         name = self.rt_to_name.get(rt)
         if name:
@@ -311,47 +342,20 @@ class SwingCPSAPI(Plugin):
 
     @staticmethod
     def _get_runtime_id_from_player_obj(p) -> Optional[int]:
-        candidates = [
-            "entity_runtime_id",
-            "runtime_id",
-            "runtimeId",
-            "entityRuntimeId",
-            "EntityRuntimeID",
-            "RuntimeID",
-        ]
-        for attr in candidates:
-            try:
-                v = getattr(p, attr, None)
-                if isinstance(v, int):
-                    return v
-            except Exception:
-                pass
-
+        """从 Player 对象读取 runtime_id"""
         try:
-            for attr in dir(p):
-                if "runtime" not in attr.lower():
-                    continue
-                try:
-                    v = getattr(p, attr, None)
-                    if isinstance(v, int):
-                        return v
-                except Exception:
-                    continue
+            v = getattr(p, "runtime_id", None)
+            return v if isinstance(v, int) else None
         except Exception:
-            pass
-
-        return None
-
-    @staticmethod
-    def _escape_selector_name(name: str) -> str:
-        return name.replace("\\", "\\\\").replace('"', '\\"')
+            return None
 
     def _send_title(self, player_name: str, cps: float):
+        """向玩家发送 titleraw 显示 CPS"""
         cps_s = f"{cps:.1f}"
         space = self.config["前置空格"]
         color = self.config["颜色前缀"]
 
-        selector_name = self._escape_selector_name(player_name)
+        selector_name = player_name
         cmd = (
             f'/titleraw @a[name="{selector_name}"] title '
             f'{{"rawtext":[{{"text":"{space}{color}cps:{cps_s}"}}]}}'
@@ -359,6 +363,7 @@ class SwingCPSAPI(Plugin):
         self.funclib.sendaicmd(cmd)
 
     def _clamp_config(self):
+        """修正配置"""
         period = float(self.config.get("检测周期秒", 1.0))
         if period <= 0:
             period = 1.0
