@@ -297,69 +297,79 @@ class SwingCPSAPI(Plugin):
     def on_pkt_sound(self, pkt: dict):
         """两种模式：LevelSoundEvent"""
         try:
-            if not isinstance(pkt, dict):
+            parsed = self._parse_level_sound_event(pkt)
+            if not parsed:
                 return False
 
-            st = pkt.get("SoundType", None)
-            if not isinstance(st, int):
-                return False
-
-            pos = pkt.get("Position", None)
-            if not isinstance(pos, (list, tuple)) or len(pos) < 3:
-                return False
-
-            sx, sy, sz = pos[0], pos[1], pos[2]
-            if not all(isinstance(t, (int, float)) for t in (sx, sy, sz)):
-                return False
-
-            tx = float(sx)
-            ty = float(sy) - 0.9
-            tz = float(sz) - 1.0
-
+            st, tx, ty, tz, now_real = parsed
             mode = int(self.config.get("模式", 1))
-            now_real = time.time()
 
             if mode == 1:
-                if st != 42:
-                    return False
-
-                name = self._bind_nearest_player_by_sound(tx, ty, tz)
-                if not name:
-                    return False
-
-                self._last_sound42_ts[name] = now_real
-
-                self._flush_pending_actions(name, now_real)
-
-                dq = self._pending_actions.get(name)
-                if dq:
-                    dt = now_real - dq[-1]
-                    if (dt > self._MODE1_IGNORE_MIN) and (dt <= self._MODE1_IGNORE_MAX):
-                        dq.pop()
-
-                self._record_event(name, now_real)
-                return False
-
-            if st == 42:
-                name = self._bind_nearest_player_by_sound(tx, ty, tz)
-                if not name:
-                    return False
-                self._record_event(name, now_real)
-                return False
-
-            if st == 43:
-                attacker = self._bind_attacker_for_attack_sound(tx, ty, tz)
-                if not attacker:
-                    return False
-                self._record_event(attacker, now_real)
-                return False
-
-            return False
+                self._handle_sound_mode1(st, tx, ty, tz, now_real)
+            else:
+                self._handle_sound_mode2(st, tx, ty, tz, now_real)
 
         except Exception as e:
             Print.print_err(f"[{self.name}] 处理 LevelSoundEvent 包出错：{e}")
 
         return False
+
+    @staticmethod
+    def _parse_level_sound_event(
+        pkt: dict,
+    ) -> Optional[Tuple[int, float, float, float, float]]:
+        """解析 LevelSoundEvent"""
+        if not isinstance(pkt, dict):
+            return None
+        st = pkt.get("SoundType", None)
+        if not isinstance(st, int):
+            return None
+        pos = pkt.get("Position", None)
+        if not isinstance(pos, (list, tuple)) or len(pos) < 3:
+            return None
+        sx, sy, sz = pos[0], pos[1], pos[2]
+        if not all(isinstance(t, (int, float)) for t in (sx, sy, sz)):
+            return None
+        tx = float(sx)
+        ty = float(sy) - 0.9
+        tz = float(sz) - 1.0
+        now_real = time.time()
+        return st, tx, ty, tz, now_real
+
+    def _handle_sound_mode1(
+        self, st: int, tx: float, ty: float, tz: float, now_real: float
+    ) -> None:
+        """模式1：空挥(42)，按规则忽略动作"""
+        if st != 42:
+            return
+        name = self._bind_nearest_player_by_sound(tx, ty, tz)
+        if not name:
+            return
+        self._last_sound42_ts[name] = now_real
+        self._flush_pending_actions(name, now_real)
+        dq = self._pending_actions.get(name)
+        if dq:
+            dt = now_real - dq[-1]
+            if self._MODE1_IGNORE_MIN < dt <= self._MODE1_IGNORE_MAX:
+                dq.pop()
+        self._record_event(name, now_real)
+
+    def _handle_sound_mode2(
+        self, st: int, tx: float, ty: float, tz: float, now_real: float
+    ) -> None:
+        """模式2：空挥(42)+攻击(43)"""
+        if st == 42:
+            name = self._bind_nearest_player_by_sound(tx, ty, tz)
+            if not name:
+                return
+            self._record_event(name, now_real)
+            return
+        if st == 43:
+            attacker = self._bind_attacker_for_attack_sound(tx, ty, tz)
+            if not attacker:
+                return
+            self._record_event(attacker, now_real)
+            return
 
     def _flush_pending_actions(self, name: str, now_real: float):
         """把超过 EPS 的 pending 动作刷入统计"""
@@ -403,11 +413,13 @@ class SwingCPSAPI(Plugin):
                 self._last_title_ts[name] = now_real
                 self._send_title(name, cps)
 
-    def _get_single_pos(self, player: str):
+    @staticmethod
+    def _get_single_pos(player: str):
         """获取单个玩家的坐标"""
         return player, game_utils.getPosXYZ(player)
 
     def _gather_positions(self):
+        """获取坐标"""
         try:
             players = self.game_ctrl.allplayers
         except Exception:
@@ -417,7 +429,9 @@ class SwingCPSAPI(Plugin):
         except Exception:
             return []
 
-    def _bind_nearest_player_by_sound(self, x: float, y: float, z: float) -> Optional[str]:
+    def _bind_nearest_player_by_sound(
+        self, x: float, y: float, z: float
+    ) -> Optional[str]:
         """选处理后声音点最近的玩家"""
         ress = self._gather_positions()
         best_name = None
@@ -439,7 +453,9 @@ class SwingCPSAPI(Plugin):
 
         return best_name
 
-    def _bind_attacker_for_attack_sound(self, x: float, y: float, z: float) -> Optional[str]:
+    def _bind_attacker_for_attack_sound(
+        self, x: float, y: float, z: float
+    ) -> Optional[str]:
         """选择攻击者"""
         ress = self._gather_positions()
         candidates: List[Tuple[float, str, float, float, float]] = []
@@ -470,7 +486,7 @@ class SwingCPSAPI(Plugin):
         if len(candidates) < 2:
             return None
 
-        d2_2, name2, x2, y2, z2 = candidates[1]
+        _, name2, x2, y2, z2 = candidates[1]
         dxp = x1 - x2
         dyp = y1 - y2
         dzp = z1 - z2
