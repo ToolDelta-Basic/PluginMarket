@@ -414,46 +414,73 @@ class SwingCPSAPI(Plugin):
                 self._last_title_ts[name] = now_real
                 self._send_title(name, cps)
 
+    def _ws_querytarget_all(self):
+        """WS 执行 /querytarget @a，成功返回 Parameters[0]，失败返回 None。"""
+        resp = self.game_ctrl.sendwscmd_with_resp("/querytarget @a", 1)
+        if (not resp.OutputMessages) or (not resp.OutputMessages[0].Success):
+            return None
+        return resp.OutputMessages[0].Parameters[0]
+
+    @staticmethod
+    def _parse_querytarget_parameter(parameter):
+        """把 Parameters[0] 解析成 list。"""
+        if isinstance(parameter, str):
+            return json.loads(parameter)
+        return parameter
+
+    def _build_uuid_to_name(self):
+        """players_uuid(name->uuid) 反转为 uuid->name。"""
+        players_uuid = getattr(self.game_ctrl, "players_uuid", None)
+        if not isinstance(players_uuid, dict):
+            return None
+        return {
+            v: k
+            for k, v in players_uuid.items()
+            if isinstance(v, str)
+        }
+
+    @staticmethod
+    def _extract_positions(result_list, uuid_to_name):
+        """从 querytarget list 中抽取 (玩家名, (x,y,z)) 列表。"""
+        if not isinstance(result_list, list):
+            return []
+
+        ress = []
+        for it in result_list:
+            if not isinstance(it, dict):
+                continue
+
+            uid = it.get("uniqueId")
+            pos = it.get("position")
+            if not isinstance(uid, str):
+                continue
+            if not isinstance(pos, dict):
+                continue
+
+            pname = uuid_to_name.get(uid) if uuid_to_name else None
+            if not isinstance(pname, str) or not pname:
+                continue
+
+            x = pos.get("x")
+            y = pos.get("y")
+            z = pos.get("z")
+            if not all(isinstance(v, (int, float)) for v in (x, y, z)):
+                continue
+
+            ress.append((pname, (float(x), float(y), float(z))))
+
+        return ress
+
     def _gather_positions(self):
         """获取坐标： /querytarget @a"""
         try:
-            resp = self.game_ctrl.sendwscmd_with_resp("/querytarget @a", 1)
-            if (not resp.OutputMessages) or (not resp.OutputMessages[0].Success):
+            parameter = self._ws_querytarget_all()
+            if parameter is None:
                 return []
-            parameter = resp.OutputMessages[0].Parameters[0]
-            result_list = json.loads(parameter) if isinstance(parameter, str) else parameter
-            if not isinstance(result_list, list):
-                return []
-    
-            players_uuid = getattr(self.game_ctrl, "players_uuid", None)
-            uuid_to_name = None
-            if isinstance(players_uuid, dict):
-                uuid_to_name = {v: k for k, v in players_uuid.items() if isinstance(v, str)}
-    
-            ress = []
-            for it in result_list:
-                if not isinstance(it, dict):
-                    continue
-                uid = it.get("uniqueId")
-                pos = it.get("position")
-                if not isinstance(uid, str):
-                    continue
-                if not isinstance(pos, dict):
-                    continue
-    
-                pname = uuid_to_name.get(uid) if uuid_to_name else None
-                if not isinstance(pname, str) or not pname:
-                    continue
-    
-                x = pos.get("x")
-                y = pos.get("y")
-                z = pos.get("z")
-                if not all(isinstance(v, (int, float)) for v in (x, y, z)):
-                    continue
-    
-                ress.append((pname, (float(x), float(y), float(z))))
-    
-            return ress
+
+            result_list = self._parse_querytarget_parameter(parameter)
+            uuid_to_name = self._build_uuid_to_name()
+            return self._extract_positions(result_list, uuid_to_name)
         except Exception:
             return []
 
