@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import time
 from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, Optional, List, Tuple
 
-from tooldelta import Plugin, plugin_entry, ToolDelta, Print, cfg, game_utils, utils
+from tooldelta import Plugin, plugin_entry, ToolDelta, Print, cfg
 
 try:
     from tooldelta.constants import PacketIDS
@@ -29,7 +30,7 @@ class SwingCPSAPI(Plugin):
 
     name = "CPS显示"
     author = "丸山彩"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     _MODE1_DEDUP_EPS = 0.052
 
@@ -331,8 +332,8 @@ class SwingCPSAPI(Plugin):
         if not all(isinstance(t, (int, float)) for t in (sx, sy, sz)):
             return None
         tx = float(sx)
-        ty = float(sy) - 0.9
-        tz = float(sz) - 1.0
+        ty = float(sy) + 0.72
+        tz = float(sz)
         now_real = time.time()
         return st, tx, ty, tz, now_real
 
@@ -413,19 +414,46 @@ class SwingCPSAPI(Plugin):
                 self._last_title_ts[name] = now_real
                 self._send_title(name, cps)
 
-    @staticmethod
-    def _get_single_pos(player: str):
-        """获取单个玩家的坐标"""
-        return player, game_utils.getPosXYZ(player)
-
     def _gather_positions(self):
-        """获取坐标"""
+        """获取坐标： /querytarget @a"""
         try:
-            players = self.game_ctrl.allplayers
-        except Exception:
-            return []
-        try:
-            return utils.thread_gather([(self._get_single_pos, (p,)) for p in players])
+            resp = self.game_ctrl.sendwscmd_with_resp("/querytarget @a", 1)
+            if (not resp.OutputMessages) or (not resp.OutputMessages[0].Success):
+                return []
+            parameter = resp.OutputMessages[0].Parameters[0]
+            result_list = json.loads(parameter) if isinstance(parameter, str) else parameter
+            if not isinstance(result_list, list):
+                return []
+    
+            players_uuid = getattr(self.game_ctrl, "players_uuid", None)
+            uuid_to_name = None
+            if isinstance(players_uuid, dict):
+                uuid_to_name = {v: k for k, v in players_uuid.items() if isinstance(v, str)}
+    
+            ress = []
+            for it in result_list:
+                if not isinstance(it, dict):
+                    continue
+                uid = it.get("uniqueId")
+                pos = it.get("position")
+                if not isinstance(uid, str):
+                    continue
+                if not isinstance(pos, dict):
+                    continue
+    
+                pname = uuid_to_name.get(uid) if uuid_to_name else None
+                if not isinstance(pname, str) or not pname:
+                    continue
+    
+                x = pos.get("x")
+                y = pos.get("y")
+                z = pos.get("z")
+                if not all(isinstance(v, (int, float)) for v in (x, y, z)):
+                    continue
+    
+                ress.append((pname, (float(x), float(y), float(z))))
+    
+            return ress
         except Exception:
             return []
 
