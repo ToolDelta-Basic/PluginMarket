@@ -2,14 +2,13 @@ import json
 import os
 import time
 import re
-from typing import Dict, Any, List, Set, Optional
+from typing import Dict, Any, List
 
 from tooldelta import Plugin, plugin_entry, utils, fmts, cfg
 from tooldelta.utils import mc_translator
 
 
 class PlayerScoreRecorder(Plugin):
-
     author = "54875644"
     version = (0, 0, 2)
     name = "记录玩家积分版数值"
@@ -50,40 +49,30 @@ class PlayerScoreRecorder(Plugin):
         self.frame.add_console_cmd_trigger(
             ["积分查询"], "[玩家名]", "查询玩家计分板数值", self._console_query
         )
-        
-        # 注册配置重载命令
-        self.frame.add_console_cmd_trigger(
-            ["重载计分板配置"], None, "重新加载计分板配置文件", self._reload_config
-        )
 
-    # ---------------- 配置文件管理 ----------------
     def _load_config(self):
         """加载插件配置文件"""
         try:
             # 定义配置结构
             config_schema = {
-                "目标计分板": cfg.JsonList(str),  # 要记录的计分板列表
-                "更新间隔": cfg.PInt,  # 更新间隔（秒），正整数
-                "启用调试模式": bool,  # 是否启用调试输出
-                "启用聊天栏菜单": bool,  # 是否启用聊天栏菜单
-                "自动保存间隔": cfg.PInt,  # 自动保存间隔（秒）
+                "目标计分板": cfg.JsonList(str),
+                "更新间隔": cfg.PInt,
+                "启用调试模式": bool,
             }
             
             # 默认配置
             default_config = {
-                "目标计分板": ["1", "2", "3", "4"],
+                "目标计分板": ["1", "2", "3", "4"],  # 修改目标计分板
                 "更新间隔": 60,
                 "启用调试模式": False,
-                "启用聊天栏菜单": True,
-                "自动保存间隔": 300,  # 每5分钟自动保存一次
             }
             
             # 使用cfg模块加载配置
             self.config, config_version = cfg.get_plugin_config_and_version(
-                self.name,  # 插件名称
+                self.name,
                 config_schema,
                 default_config,
-                (0, 0, 2)  # 配置版本
+                (1, 0, 0)
             )
             
             # 应用配置
@@ -92,11 +81,12 @@ class PlayerScoreRecorder(Plugin):
             
             # 输出配置信息
             fmts.print_suc(f"[{self.name}] 配置加载成功")
-            fmts.print_inf(f"[{self.name}] 目标计分板: {', '.join(self.TARGET_OBJECTIVES)}")
+            obj_str = ', '.join(self.TARGET_OBJECTIVES)
+            fmts.print_inf(f"[{self.name}] 目标计分板: {obj_str}")
             fmts.print_inf(f"[{self.name}] 更新间隔: {self.config['更新间隔']}秒")
             
             if len(self.TARGET_OBJECTIVES) == 0:
-                fmts.print_err(f"[{self.name}] 警告: 目标计分板列表为空，插件可能无法正常工作")
+                fmts.print_err(f"[{self.name}] 警告: 目标计分板列表为空")
                 
         except Exception as e:
             fmts.print_err(f"[{self.name}] 加载配置失败: {e}")
@@ -104,23 +94,12 @@ class PlayerScoreRecorder(Plugin):
             
             # 使用默认配置
             self.config = {
-                "目标计分板": ["ID", "显示UID", "白1", "抽奖次数", "进来次数", "在线时间", "金币", "cmdop"],
+                "目标计分板": ["1", "2", "3", "4"],
                 "更新间隔": 60,
                 "启用调试模式": False,
-                "启用聊天栏菜单": True,
-                "自动保存间隔": 300,
             }
             self.TARGET_OBJECTIVES = self.config["目标计分板"]
             self.debug_mode = False
-
-    def _reload_config(self, args: List[str] = None):
-        """重新加载配置"""
-        try:
-            self._load_config()
-            fmts.print_suc(f"[{self.name}] 配置已重新加载")
-            fmts.print_inf(f"[{self.name}] 当前目标计分板: {', '.join(self.TARGET_OBJECTIVES)}")
-        except Exception as e:
-            fmts.print_err(f"[{self.name}] 重新加载配置失败: {e}")
 
     def _debug_print(self, message: str):
         """调试输出，仅在调试模式启用时输出"""
@@ -151,14 +130,6 @@ class PlayerScoreRecorder(Plugin):
                     return data
         except json.JSONDecodeError as e:
             fmts.print_err(f"[{self.name}] 数据文件格式错误: {e}")
-            # 备份损坏的文件
-            backup_path = f"{self.save_path}.backup.{int(time.time())}"
-            try:
-                import shutil
-                shutil.copy2(self.save_path, backup_path)
-                fmts.print_inf(f"[{self.name}] 已备份损坏的文件到: {backup_path}")
-            except Exception:
-                pass
         except Exception as e:
             fmts.print_err(f"[{self.name}] 读取数据文件失败: {e}")
             
@@ -176,10 +147,6 @@ class PlayerScoreRecorder(Plugin):
     # ---------------- 聊天栏菜单集成 ----------------
     def on_preload(self):
         """预加载阶段：注册聊天栏菜单"""
-        if not self.config.get("启用聊天栏菜单", True):
-            fmts.print_inf(f"[{self.name}] 聊天栏菜单已禁用")
-            return
-            
         try:
             # 获取聊天栏菜单插件API
             chatbar = self.GetPluginAPI("聊天栏菜单")
@@ -230,7 +197,8 @@ class PlayerScoreRecorder(Plugin):
             # 添加最后更新时间
             last_update = pdata.get('last_update', 0)
             if last_update > 0:
-                time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_update))
+                time_str = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                        time.localtime(last_update))
                 messages.append(f"§6最后更新: §f{time_str}")
             
             # 发送给玩家
@@ -252,13 +220,16 @@ class PlayerScoreRecorder(Plugin):
     def on_active(self):
         """插件激活"""
         fmts.print_suc(f"[{self.name}] 插件已激活")
-        fmts.print_inf(f"[{self.name}] 监控的计分板: {', '.join(self.TARGET_OBJECTIVES)}")
+        obj_str = ', '.join(self.TARGET_OBJECTIVES)
+        fmts.print_inf(f"[{self.name}] 监控的计分板: {obj_str}")
         
         # 启动守护线程
         if not self._running:
             self._running = True
-            self._thread = utils.createThread(self._loop, usage=f"{self.name}/更新线程")
-            fmts.print_inf(f"[{self.name}] 更新线程已启动，间隔: {self.config['更新间隔']}秒")
+            self._thread = utils.createThread(self._loop, 
+                                            usage=f"{self.name}/更新线程")
+            interval = self.config['更新间隔']
+            fmts.print_inf(f"[{self.name}] 更新线程已启动，间隔: {interval}秒")
 
     def on_disable(self):
         """插件停用"""
@@ -267,8 +238,9 @@ class PlayerScoreRecorder(Plugin):
         
         # 等待线程结束
         try:
-            if self._thread and hasattr(self._thread, "is_alive") and self._thread.is_alive():
-                self._thread.join(timeout=2)
+            if self._thread and hasattr(self._thread, "is_alive"):
+                if self._thread.is_alive():
+                    self._thread.join(timeout=2)
         except Exception:
             pass
             
@@ -312,7 +284,6 @@ class PlayerScoreRecorder(Plugin):
     def _loop(self):
         """后台循环：定期更新在线玩家的数据"""
         update_interval = self.config.get("更新间隔", 60)
-        save_interval = self.config.get("自动保存间隔", 300)
         last_save_time = time.time()
         
         while self._running:
@@ -324,11 +295,12 @@ class PlayerScoreRecorder(Plugin):
                     self._update_online_players_once()
                     self._last_update_time = current_time
                     
-                    # 检查是否需要自动保存
-                    if current_time - last_save_time >= save_interval:
+                    # 每5分钟自动保存一次
+                    if current_time - last_save_time >= 300:
                         self._save_data()
                         last_save_time = current_time
-                        self._debug_print(f"自动保存完成，玩家数量: {len(self.player_scores)}")
+                        player_count = len(self.player_scores)
+                        self._debug_print(f"自动保存完成，玩家数量: {player_count}")
                 
             except Exception as e:
                 fmts.print_err(f"[{self.name}] 主循环出错: {e}")
@@ -346,10 +318,14 @@ class PlayerScoreRecorder(Plugin):
         
         try:
             # 发送命令获取计分板数据
-            result = self.game_ctrl.sendwscmd("/scoreboard players list @a", waitForResp=True, timeout=10)
+            result = self.game_ctrl.sendwscmd(
+                "/scoreboard players list @a", 
+                waitForResp=True, 
+                timeout=10
+            )
             
             if result is None:
-                self._debug_print("sendwscmd返回None，命令执行失败")
+                self._debug_print("命令执行失败")
                 return {}
             
             # 提取结果文本
@@ -372,25 +348,22 @@ class PlayerScoreRecorder(Plugin):
                                         translate_args=True
                                     )
                                     result_text += translated + "\n"
-                                except Exception as e:
-                                    self._debug_print(f"翻译失败: {e}")
+                                except Exception:
                                     result_text += translation_key + "\n"
-                except Exception as e:
-                    self._debug_print(f"处理字典结果失败: {e}")
+                except Exception:
+                    pass
             
             # 如果获取到了文本，解析它
             if result_text:
-                self._debug_print(f"获取到计分板数据，文本长度: {len(result_text)}")
                 all_scores = self._parse_scoreboard_text(result_text)
-            else:
-                self._debug_print("无法获取命令返回的文本结果")
                 
         except Exception as e:
             fmts.print_err(f"[{self.name}] 获取计分板数据失败: {e}")
         
         return all_scores
 
-    def _parse_scoreboard_text(self, text: str) -> Dict[str, Dict[str, int]]:
+    @staticmethod
+    def _parse_scoreboard_text(text: str) -> Dict[str, Dict[str, int]]:
         """解析计分板命令返回的文本"""
         scores = {}
         current_player = None
@@ -406,7 +379,10 @@ class PlayerScoreRecorder(Plugin):
             # 检查是否是玩家行
             if "正在为" in line and "显示" in line and "个追踪目标：" in line:
                 # 提取玩家名
-                match = re.search(r'正在为\s+([^\s]+)\s+显示\s+\d+\s+个追踪目标：', line)
+                match = re.search(
+                    r'正在为\s+([^\s]+)\s+显示\s+\d+\s+个追踪目标：', 
+                    line
+                )
                 if match:
                     current_player = match.group(1)
                     scores[current_player] = {}
@@ -456,65 +432,42 @@ class PlayerScoreRecorder(Plugin):
 
             online_names = [getattr(p, "name", str(p)) for p in online_players]
             
-            # 只记录在线玩家数量，不逐个打印
-            self._debug_print(f"在线玩家: {len(online_names)}人")
-
             # 更新在线玩家的数据
             updated_count = 0
-            updated_players = []
             
             for name in online_names:
                 # 确保存在条目
                 if name not in self.player_scores:
-                    self.player_scores[name] = {"player_name": name, "last_update": 0}
+                    self.player_scores[name] = {"player_name": name, 
+                                               "last_update": 0}
                     for obj in self.TARGET_OBJECTIVES:
                         self.player_scores[name][obj] = 0
 
                 # 检查是否有任何更新
                 has_update = False
-                updated_fields = []
                 
                 # 从获取的数据中提取该玩家的计分板数据
                 player_scores = all_scores.get(name, {})
                 
                 # 更新我们关注的计分板项
                 for obj in self.TARGET_OBJECTIVES:
-                    # 处理计分板项名称映射
-                    target_obj = obj
-                    if obj == "在线时间":
-                        # 尝试不同的名称
-                        if "在线时间" in player_scores:
-                            target_obj = "在线时间"
-                        elif "游玩时长" in player_scores:
-                            target_obj = "游玩时长"
-                    
-                    if target_obj in player_scores:
-                        new_score = player_scores[target_obj]
+                    if obj in player_scores:
+                        new_score = player_scores[obj]
                         old_score = self.player_scores[name].get(obj, 0)
                         
                         if new_score != old_score:
                             self.player_scores[name][obj] = new_score
                             has_update = True
-                            updated_fields.append(obj)
                 
                 # 如果有更新，更新时间戳
                 if has_update:
                     self.player_scores[name]["last_update"] = int(time.time())
                     updated_count += 1
-                    updated_players.append((name, updated_fields))
 
             # 保存数据
             if updated_count > 0:
                 self._save_data()
-                # 只显示有更新的玩家数量，不显示详细信息
                 fmts.print_inf(f"[{self.name}] 更新了 {updated_count} 个玩家的数据")
-                
-                # 只有在调试模式才显示详细信息
-                if self.debug_mode and updated_players:
-                    for player_name, fields in updated_players:
-                        fmts.print_inf(f"  {player_name}: {', '.join(fields)}")
-            else:
-                self._debug_print("检查了所有在线玩家，数据无变化")
                 
         except Exception as e:
             fmts.print_err(f"[{self.name}] 更新玩家数据失败: {e}")
@@ -543,7 +496,8 @@ class PlayerScoreRecorder(Plugin):
                     
             last_update = pdata.get('last_update', 0)
             if last_update > 0:
-                time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_update))
+                time_str = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                        time.localtime(last_update))
                 fmts.print_inf(f"  最后更新: {time_str}")
                 
         except Exception as e:
@@ -553,11 +507,9 @@ class PlayerScoreRecorder(Plugin):
     def __del__(self):
         try:
             self._running = False
-            if self._thread and hasattr(self._thread, "is_alive") and self._thread.is_alive():
-                try:
+            if self._thread and hasattr(self._thread, "is_alive"):
+                if self._thread.is_alive():
                     self._thread.join(timeout=1)
-                except Exception:
-                    pass
             self._save_data()
         except Exception:
             pass
