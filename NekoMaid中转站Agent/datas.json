@@ -1,0 +1,10 @@
+{
+  "author": "Codex",
+  "version": "0.1.0",
+  "plugin-type": "classic",
+  "description": "ToolDelta -> neko-relay -> NekoMaid 前端（maid.neko-craft.com）中转站 Agent。兼容 neko-relay 的 agent_hello/cmd/rpc/status 协议，信息输出风格贴合 ToolDelta。",
+  "pre-plugins": {},
+  "plugin-id": "neko-maid-relay-agent-td",
+  "enabled": true
+}
+
