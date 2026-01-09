@@ -901,6 +901,11 @@
         "示例-系统启动.mcfunction",
         "示例-定时任务.mcfunction"
     ],
+    "NekoMaid中转站Agent": [
+        "datas.json",
+        "readme.md",
+        "__init__.py"
+    ],
     "白名单&管理员检测": [
         "datas.json",
         "__init__.py"

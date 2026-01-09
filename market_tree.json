@@ -675,6 +675,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "neko-maid-relay-agent-td": {
+      "name": "NekoMaid中转站Agent",
+      "author": "Codex",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "白名单&管理员检测": {
       "name": "白名单&管理员检测",
       "author": "猫七街",
