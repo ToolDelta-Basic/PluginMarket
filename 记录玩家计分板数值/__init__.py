@@ -9,17 +9,6 @@ from tooldelta.utils import mc_translator
 
 
 class PlayerScoreRecorder(Plugin):
-    """
-    玩家计分板数值记录插件
-    
-    功能：
-    - 通过配置文件自定义要记录的计分板项
-    - 仅在玩家在线时更新该玩家的数据
-    - 离线玩家保持最后一次在线时的数据
-    - 每 60 秒更新一次在线玩家数据
-    - 支持聊天栏菜单查询
-    """
-
     author = "54875644"
     version = (0, 0, 2)  # 修改版本号
     name = "记录玩家积分版数值"
@@ -226,7 +215,8 @@ class PlayerScoreRecorder(Plugin):
             # 添加最后更新时间
             last_update = pdata.get('last_update', 0)
             if last_update > 0:
-                time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_update))
+                time_str = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                        time.localtime(last_update))
                 messages.append(f"§6最后更新: §f{time_str}")
             
             # 发送给玩家
@@ -475,17 +465,8 @@ class PlayerScoreRecorder(Plugin):
                 
                 # 更新我们关注的计分板项
                 for obj in self.TARGET_OBJECTIVES:
-                    # 处理计分板项名称映射
-                    target_obj = obj
-                    if obj == "在线时间":
-                        # 尝试不同的名称
-                        if "在线时间" in player_scores:
-                            target_obj = "在线时间"
-                        elif "游玩时长" in player_scores:
-                            target_obj = "游玩时长"
-                    
-                    if target_obj in player_scores:
-                        new_score = player_scores[target_obj]
+                    if obj in player_scores:
+                        new_score = player_scores[obj]
                         old_score = self.player_scores[name].get(obj, 0)
                         
                         if new_score != old_score:
@@ -511,7 +492,6 @@ class PlayerScoreRecorder(Plugin):
                         fmts.print_inf(f"  {player_name}: {', '.join(fields)}")
             else:
                 self._debug_print("检查了所有在线玩家，数据无变化")
-                
         except Exception as e:
             fmts.print_err(f"[{self.name}] 更新玩家数据失败: {e}")
 
@@ -523,12 +503,10 @@ class PlayerScoreRecorder(Plugin):
                 fmts.print_inf("用法: 积分查询 <玩家名>")
                 fmts.print_inf("可用计分板: " + ", ".join(self.TARGET_OBJECTIVES))
                 return
-                
             pname = args[0]
             if pname not in self.player_scores:
                 fmts.print_inf(f"未找到玩家 {pname} 的记录")
                 return
-                
             pdata = self.player_scores[pname]
             fmts.print_inf(f"=== 玩家 {pname} 的计分板 ===")
             
@@ -536,12 +514,12 @@ class PlayerScoreRecorder(Plugin):
             for obj in self.TARGET_OBJECTIVES:
                 if obj in pdata:
                     fmts.print_inf(f"  {obj}: {pdata[obj]}")
-                    
+            
             last_update = pdata.get('last_update', 0)
             if last_update > 0:
-                time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_update))
+                time_str = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                        time.localtime(last_update))
                 fmts.print_inf(f"  最后更新: {time_str}")
-                
         except Exception as e:
             fmts.print_err(f"[{self.name}] 控制台查询出错: {e}")
 
@@ -549,7 +527,8 @@ class PlayerScoreRecorder(Plugin):
     def __del__(self):
         try:
             self._running = False
-            if self._thread and hasattr(self._thread, "is_alive") and self._thread.is_alive():
+            if (self._thread and hasattr(self._thread, "is_alive") 
+                    and self._thread.is_alive()):
                 try:
                     self._thread.join(timeout=1)
                 except Exception:
