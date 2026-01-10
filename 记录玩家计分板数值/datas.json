@@ -1,0 +1,10 @@
+{
+  "plugin-id": "记录玩家积分版数值",
+  "author": "54875644",
+  "version": "0.0.2",
+  "description": "一个可以记录积分版的插件",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "聊天栏菜单": "0.4.1"
+  }
+}
