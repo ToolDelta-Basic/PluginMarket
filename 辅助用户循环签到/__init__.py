@@ -10,6 +10,7 @@ from tooldelta import Plugin, ToolDelta, Print, cfg, plugin_entry, utils
 
 class NV1TimedSignIn(Plugin):
     """循环签到插件"""
+    
     name = "辅助用户循环签到"
     author = "丸山彩"
     version = (0, 0, 1)
