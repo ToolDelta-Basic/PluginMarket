@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import threading
-import time
 from typing import Any, Dict, Optional
 
 from tooldelta import Plugin, ToolDelta, Print, cfg, plugin_entry, utils
 
 
 class NV1TimedSignIn(Plugin):
+    """"""
     name = "辅助用户循环签到"
     author = "丸山彩"
     version = (0, 0, 1)
@@ -35,6 +35,7 @@ class NV1TimedSignIn(Plugin):
         self.ListenFrameExit(self.on_exit)
 
     def on_preload(self):
+        """"""
         self.frame.add_console_cmd_trigger(
             ["nv1sign"],
             "手动执行一次 NV1 登录+签到",
@@ -43,16 +44,20 @@ class NV1TimedSignIn(Plugin):
         )
 
     def on_active(self):
+        """"""
         if bool(self.config.get("是否启用循环签到", True)):
             utils.createThread(self._interval_loop, (), f"{self.name}-interval")
 
     def on_exit(self, *_):
+        """"""
         self._stop_evt.set()
 
     def cmd_nv1sign(self, _args):
+        """"""
         utils.createThread(self._run_once_safe, (), f"{self.name}-manual")
 
     def _interval_loop(self):
+        """"""
         while not self._stop_evt.is_set():
             self._run_once_safe()
 
@@ -68,6 +73,7 @@ class NV1TimedSignIn(Plugin):
                 break
 
     def _run_once_safe(self):
+        """"""
         try:
             self._login_and_sign()
         except Exception as e:
@@ -75,9 +81,11 @@ class NV1TimedSignIn(Plugin):
 
     @staticmethod
     def _sha256_hex(s: str) -> str:
+        """"""
         return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
     def _login_and_sign(self):
+        """"""
         import requests
 
         username = str(self.config.get("username", "")).strip()
@@ -145,6 +153,7 @@ class NV1TimedSignIn(Plugin):
 
     @staticmethod
     def _safe_json_dict(text: str) -> Optional[Dict[str, Any]]:
+        """"""
         try:
             obj = json.loads(text)
             return obj if isinstance(obj, dict) else None
