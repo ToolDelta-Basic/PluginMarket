@@ -1,0 +1,8 @@
+{
+    "plugin-id": "辅助用户循环签到",
+    "author": "丸山彩",
+    "version": "0.0.1",
+    "description": "NV1 辅助用户循环签到，用于给机器人涨经验值",
+    "plugin-type": "classic",
+    "pre-plugins": {}
+}
