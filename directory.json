@@ -66,6 +66,10 @@
         "readme.txt",
         "__init__.py"
     ],
+    "灵魂出窍": [
+        "datas.json",
+        "__init__.py"
+    ],
     "[pkg]音乐杂合包": [
         "datas.json"
     ],

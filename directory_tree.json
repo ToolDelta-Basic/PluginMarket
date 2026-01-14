@@ -67,6 +67,10 @@
         "readme.txt": 0,
         "__init__.py": 0
     },
+    "灵魂出窍": {
+        "datas.json": 0,
+        "__init__.py": 0
+    },
     "[pkg]音乐杂合包": {
         "datas.json": 0,
         "插件数据文件": {

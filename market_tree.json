@@ -81,6 +81,12 @@
       "version": "0.0.4",
       "plugin-type": "classic"
     },
+    "灵魂出窍": {
+      "name": "灵魂出窍",
+      "author": "镜流",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "玩家转账": {
       "name": "玩家转账",
       "author": "猫七街",
