@@ -1,0 +1,11 @@
+{
+    "author": "镜流",
+    "version": "0.0.1",
+    "description": "灵魂出窍系统 允许玩家以旁观者模式暂时离开身体探索世界 不懂效果的上网搜一下",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "聊天栏菜单": ">=0.0.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "灵魂出窍"
+}
