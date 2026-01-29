@@ -46,7 +46,7 @@ class NV1TimedSignIn(Plugin):
 
     def on_active(self):
         """Active"""
-        if bool(self.config.get("是否启用循环签到", True)):
+        if self.config.get("是否启用循环签到", True):
             utils.createThread(self._interval_loop, (), f"{self.name}-interval")
 
     def on_exit(self, *_):
