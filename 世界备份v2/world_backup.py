@@ -38,7 +38,7 @@ class WorldBackupMain:
         )
         if "bedrock-chunk-diff" not in loaded_dict:
             return True
-        if loaded_dict["bedrock-chunk-diff"] != "0.3.0":
+        if loaded_dict["bedrock-chunk-diff"] != "0.4.0":
             return True
         return False
 
@@ -46,7 +46,7 @@ class WorldBackupMain:
         version_path = self.plugin().format_data_path("depends_version.json")
         tempjson.write(
             version_path,
-            {"bedrock-chunk-diff": "0.3.0"},
+            {"bedrock-chunk-diff": "0.4.0"},
         )
         tempjson.flush(version_path)
 
@@ -55,8 +55,8 @@ class WorldBackupMain:
         if 0:
             pip: PipSupport
 
-        _ = self.plugin().GetPluginAPI("世界の记忆", (0, 2, 0))
-        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 4, 2))
+        _ = self.plugin().GetPluginAPI("世界の记忆", (0, 3, 0))
+        _ = self.plugin().GetPluginAPI("简单世界恢复", (0, 6, 0))
 
         pip = self.plugin().GetPluginAPI("pip")
         pip.require({"bedrock-world-operator": "bedrockworldoperator"})

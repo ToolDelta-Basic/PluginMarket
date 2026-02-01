@@ -1,11 +1,11 @@
 {
   "author": "YoRHa",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "plugin-type": "classic",
   "description": "一个简单的世界导入实现，目的在于提供一个操作基岩版存档的演示，但不实现任何关于 NBT 方块的部分\n使用方法: 启动插件后将 mcworld 文件夹置于 插件数据文件/简易世界导入/ 目录下, 然后在控制台输入 ? 查看 import/ 命令帮助",
   "pre-plugins": {
     "pip": "0.0.5",
-    "献给机械の花束": "1.4.0"
+    "献给机械の花束": "1.5.0"
   },
   "plugin-id": "simple-bedworld-import",
   "enabled": true
