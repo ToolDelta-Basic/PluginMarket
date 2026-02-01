@@ -18,7 +18,7 @@
     "simple-bedworld-export": {
       "name": "简单世界导出",
       "author": "YoRHa",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "plugin-type": "classic"
     },
     "server-link": {
@@ -132,7 +132,7 @@
     "简单世界恢复": {
       "name": "简单世界恢复",
       "author": "YoRHa",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "plugin-type": "classic"
     },
     "cloud-qqlink": {
@@ -240,7 +240,7 @@
     "世界备份第二世代": {
       "name": "世界备份v2",
       "author": "YoRHa and RATH",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "plugin-type": "classic"
     },
     "云黑": {
@@ -444,7 +444,7 @@
     "世界の记忆": {
       "name": "世界の记忆",
       "author": "9S, Meteora·Österreich, Altair and Echidna",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "plugin-type": "classic"
     },
     "SkyblockSystem": {
@@ -534,7 +534,7 @@
     "simple-bedworld-import": {
       "name": "简单世界导入",
       "author": "YoRHa",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "plugin-type": "classic"
     },
     "循环获取玩家坐标": {
@@ -570,7 +570,7 @@
     "献给机械の花束": {
       "name": "前置_献给机械的花束",
       "author": "2B, 9S and 6O",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "plugin-type": "classic"
     },
     "CheckBotAlive": {
@@ -744,7 +744,7 @@
     "世界备份": {
       "name": "世界备份",
       "author": "YoRHa and RATH",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "plugin-type": "classic"
     },
     "better-announcebar": {
