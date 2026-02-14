@@ -10,7 +10,13 @@ from .command_block_tool import CommandBlockTool
 if TYPE_CHECKING:
     from . import MCAgent
 
+
 class MenuSession:
+    """Session manager for interactive menu interactions.
+    
+    Captures player input/output during menu execution and manages
+    the communication between AI and menu systems.
+    """
     def __init__(self, player: Player, trigger_word: str):
         self.player = player
         self.trigger_word = trigger_word
@@ -55,7 +61,13 @@ class MenuSession:
         self.is_active = False
 
 
+
 class MinecraftAITool:
+    """Minecraft AI Tool executor for handling game operations.
+    
+    Provides tools for AI to interact with Minecraft game mechanics,
+    including player management, world manipulation, and menu interactions.
+    """
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl

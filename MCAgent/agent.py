@@ -9,7 +9,13 @@ from .permission import PermissionLevel
 if TYPE_CHECKING:
     from . import MCAgent
 
+
 class AIAgent:
+    """AI Agent for handling chat requests and tool calling with Minecraft integration.
+    
+    This class manages conversations, API requests, and tool execution for AI-powered
+    Minecraft assistance.
+    """
     API_PROVIDERS = {
         "deepseek": {
             "base_url": "https://api.deepseek.com",
@@ -22,14 +28,14 @@ class AIAgent:
             "format": "openai"
         }
     }
-    
+
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.conversations = {}
         self.active_requests = set()
         self.cancel_requests = set()  # 存储需要取消的请求
         self.mc_tools = MinecraftAITool(plugin)
-        
+
     def get_api_config(self, provider: str = "deepseek") -> Dict[str, str]:
         """Get API configuration for specified provider"""
         provider = provider.lower()
@@ -37,8 +43,11 @@ class AIAgent:
             fmts.print_wrn(f"未知的API提供商: {provider}，使用默认的deepseek")
             provider = "deepseek"
         return self.API_PROVIDERS[provider]
-        
-    def extract_content_from_response(self, response_data: Dict[str, Any]) -> Optional[str]:
+
+    @staticmethod
+    def extract_content_from_response(
+        response_data: Dict[str, Any]
+    ) -> Optional[str]:
         """Extract content from API response"""
         try:
             if (
@@ -53,8 +62,10 @@ class AIAgent:
         except (TypeError, KeyError, IndexError) as e:
             fmts.print_err(f"从API响应中提取内容时出错: {e}")
             return None
-    
-    def extract_content_from_siliconflow_response(self, response_data: Dict[str, Any]) -> Optional[str]:
+
+    def extract_content_from_siliconflow_response(
+        self, response_data: Dict[str, Any]
+    ) -> Optional[str]:
         """Extract content from SiliconFlow API response"""
         try:
             if isinstance(response_data, dict) and "content" in response_data:
@@ -65,35 +76,43 @@ class AIAgent:
                             return block.get("text")
                 elif isinstance(content, str):
                     return content
-            
+
             return self.extract_content_from_response(response_data)
         except (TypeError, KeyError, IndexError) as e:
             fmts.print_err(f"从硅基流动API响应中提取内容时出错: {e}")
             return None
-    
-    def calculate_cost(self, total_tokens: int, cost_per_million: float = 8.0) -> float:
+
+    @staticmethod
+    def calculate_cost(
+        total_tokens: int, cost_per_million: float = 8.0
+    ) -> float:
         """Calculate API usage cost based on token count"""
         return (total_tokens / 1_000_000) * cost_per_million
-    
-    def load_conversation_history(self, player_name: str, conversation_type: str = "default") -> list:
+
+    def load_conversation_history(
+        self, player_name: str, conversation_type: str = "default"
+    ) -> list:
         """Load conversation history from disk"""
-        file_path = Utils.make_data_file(self.plugin, f"agent_conversations_{conversation_type}.json")
+        file_path = Utils.make_data_file(
+            self.plugin, f"agent_conversations_{conversation_type}.json"
+        )
         history_data = Utils.disk_read(file_path)
-        
+
         if player_name in history_data:
             return history_data[player_name]
         return []
-    
-    def clean_orphaned_tool_messages(self, messages: list) -> list:
+
+    @staticmethod
+    def clean_orphaned_tool_messages(messages: list) -> list:
         """Clean orphaned tool messages that don't have corresponding tool_calls"""
         cleaned_messages = []
-        
-        for i, msg in enumerate(messages):
+
+        for msg in messages:
             # 如果是tool消息，检查前面是否有对应的assistant tool_calls
             if msg.get("role") == "tool":
                 tool_call_id = msg.get("tool_call_id")
                 has_valid_tool_call = False
-                
+
                 # 向前查找最近的assistant消息
                 for j in range(len(cleaned_messages) - 1, -1, -1):
                     if cleaned_messages[j].get("role") == "assistant":
@@ -103,63 +122,86 @@ class AIAgent:
                                 has_valid_tool_call = True
                                 break
                         break
-                
+
                 # 只保留有效的tool消息
                 if has_valid_tool_call:
                     cleaned_messages.append(msg)
                 # else: skip orphaned tool messages
             else:
                 cleaned_messages.append(msg)
-        
+
         return cleaned_messages
-    
-    def save_conversation_history(self, player_name: str, messages: list, conversation_type: str = "default", max_history_length: int = 15) -> None:
+
+    def save_conversation_history(
+        self,
+        player_name: str,
+        messages: list,
+        conversation_type: str = "default",
+        max_history_length: int = 15
+    ) -> None:
         """Save conversation history to disk"""
         cleaned_messages = self.clean_orphaned_tool_messages(messages)
-        limited_messages = self._limit_conversation_history(cleaned_messages, max_history_length, player_name)
-        
-        file_path = Utils.make_data_file(self.plugin, f"agent_conversations_{conversation_type}.json")
+        limited_messages = self._limit_conversation_history(
+            cleaned_messages, max_history_length, player_name
+        )
+
+        file_path = Utils.make_data_file(
+            self.plugin, f"agent_conversations_{conversation_type}.json"
+        )
         history_data = Utils.disk_read(file_path)
         history_data[player_name] = limited_messages
         Utils.disk_write(file_path, history_data)
-    
-    def _limit_conversation_history(self, messages: list, max_history_length: int, player_name: str = "未知玩家") -> list:
+
+    @staticmethod
+    def _limit_conversation_history(
+        messages: list,
+        max_history_length: int,
+        player_name: str = "未知玩家"
+    ) -> list:
         """Limit conversation history to specified length"""
         if not messages:
             return messages
-        
-        system_msg = messages[0] if messages and messages[0].get("role") == "system" else None
+
+        system_msg = (
+            messages[0] if messages and messages[0].get("role") == "system"
+            else None
+        )
         non_system_messages = messages[1:] if system_msg else messages
-        
-        user_message_count = sum(1 for msg in non_system_messages if msg.get("role") == "user")
-        
+
+        user_message_count = sum(
+            1 for msg in non_system_messages if msg.get("role") == "user"
+        )
+
         if user_message_count <= max_history_length:
             return messages
-        
+
         users_to_remove = user_message_count - max_history_length
         user_count = 0
         cutoff_index = 0
-        
+
         for i, msg in enumerate(non_system_messages):
             if msg.get("role") == "user":
                 user_count += 1
                 if user_count > users_to_remove:
                     cutoff_index = i
                     break
-        
+
         recent_messages = non_system_messages[cutoff_index:]
-        
+
         if system_msg:
             limited_messages = [system_msg] + recent_messages
         else:
             limited_messages = recent_messages
-        
+
         return limited_messages
-    
-    def get_conversation_key(self, player_name: str, conversation_type: str = "default") -> str:
+
+    @staticmethod
+    def get_conversation_key(
+        player_name: str, conversation_type: str = "default"
+    ) -> str:
         """Generate conversation key for player"""
         return f"{player_name}_{conversation_type}"
-    
+
     def send_request(
         self,
         player_name: str,

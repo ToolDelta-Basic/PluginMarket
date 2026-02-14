@@ -9,7 +9,13 @@ from tooldelta.constants.netease import PYRPC_OP_SEND
 if TYPE_CHECKING:
     from . import MCAgent
 
+
 class Utils:
+    """Utility functions for file operations and data management.
+    
+    Provides helper methods for disk I/O, timestamp generation,
+    and data file management.
+    """
     def __init__(self, plugin: "MCAgent"):
         self.file_path = os.path.join(os.path.dirname(__file__), "data.json")
         self.plugin = plugin

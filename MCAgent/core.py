@@ -4,7 +4,13 @@ from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 if TYPE_CHECKING:
     from . import MCAgent
 
+
 class Core:
+    """Core functionality handler for MCAgent plugin.
+    
+    Manages main plugin operations including AI assistant interactions,
+    conversation management, and menu integrations.
+    """
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl

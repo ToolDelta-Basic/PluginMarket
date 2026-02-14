@@ -5,8 +5,14 @@ from typing import TYPE_CHECKING, Dict, Any, Optional, List
 from tooldelta import Player
 if TYPE_CHECKING:
     from . import MCAgent
-    
+
+
 class ToolLogger:
+    """Tool execution logger for tracking and auditing tool calls.
+    
+    Logs tool executions with timestamps, parameters, and results
+    for security and debugging purposes.
+    """
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.log_file_path = self._get_log_file_path()
