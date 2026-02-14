@@ -12,10 +12,11 @@ if TYPE_CHECKING:
 
 class Utils:
     """Utility functions for file operations and data management.
-    
+
     Provides helper methods for disk I/O, timestamp generation,
     and data file management.
     """
+
     def __init__(self, plugin: "MCAgent"):
         self.file_path = os.path.join(os.path.dirname(__file__), "data.json")
         self.plugin = plugin
@@ -57,11 +58,11 @@ class Utils:
     def make_data_file(plugin, filename: str) -> str:
         plugin.make_data_path()
         data_file_path = os.path.join(plugin.data_path, filename)
-        
+
         if not os.path.exists(data_file_path):
             with open(data_file_path, 'w', encoding='utf-8') as f:
                 json.dump({}, f, ensure_ascii=False, indent=4)
-        
+
         return data_file_path
 
     def sendaicmd(self, cmd: str):

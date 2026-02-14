@@ -7,7 +7,7 @@ class CommandBlockTool:
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl
-    
+
     @staticmethod
     def make_packet_command_block_update(
         position: Tuple[int, int, int],
@@ -34,7 +34,7 @@ class CommandBlockTool:
             "TickDelay": tick_delay,
             "ExecuteOnFirstTick": execute_on_first_tick,
         }
-    
+
     def _place_command_block_internal(
         self,
         command_block_update_packet: Dict[str, Any],
@@ -46,9 +46,9 @@ class CommandBlockTool:
         mode_prefix = ["", "repeating_", "chain_"][command_block_update_packet["Mode"]]
         position = command_block_update_packet["Position"]
         cmd = f"/setblock {position[0]} {position[1]} {position[2]} {mode_prefix}command_block {facing}"
-        
+
         tp_cmd = f"/execute at @s in {in_dim} run tp {position[0]} {position[1]} {position[2]}"
-        
+
         if limit_seconds > 0:
             self.game_ctrl.sendcmd(tp_cmd)
             self.game_ctrl.sendcmd(cmd)
@@ -57,14 +57,14 @@ class CommandBlockTool:
             tp_result = self.game_ctrl.sendwscmd_with_resp(tp_cmd)
             if tp_result.SuccessCount == 0:
                 raise ValueError("无法tp至对应坐标")
-            
+
             setblock_result = self.game_ctrl.sendwscmd_with_resp(cmd)
             if setblock_result.SuccessCount == 0 and "noChange" not in setblock_result.OutputMessages[0].Message:
                 raise ValueError(f"无法放置命令方块: {setblock_result.OutputMessages[0].Message}")
-        
+
         time.sleep(limit_seconds2)
         self.game_ctrl.sendPacket(78, command_block_update_packet)
-    
+
     def place_command_block(
         self,
         x: int,
@@ -93,7 +93,7 @@ class CommandBlockTool:
                 should_track_output=should_track_output,
                 execute_on_first_tick=execute_on_first_tick
             )
-            
+
             self._place_command_block_internal(
                 command_block_update_packet=packet,
                 facing=facing,
@@ -101,10 +101,10 @@ class CommandBlockTool:
                 limit_seconds2=0.0,
                 in_dim=in_dim
             )
-            
+
             mode_names = {0: "脉冲", 1: "循环", 2: "连锁"}
             mode_name = mode_names.get(mode, "未知")
-            
+
             return {
                 "success": True,
                 "message": f"已在 ({x}, {y}, {z}) 放置{mode_name}命令方块",
@@ -114,7 +114,7 @@ class CommandBlockTool:
                 "facing": facing,
                 "dimension": in_dim
             }
-            
+
         except ValueError as e:
             return {
                 "success": False,
@@ -125,7 +125,7 @@ class CommandBlockTool:
                 "success": False,
                 "error": f"放置命令方块异常: {str(e)}"
             }
-    
+
     def place_impulse_command_block(
         self,
         x: int,
@@ -146,7 +146,7 @@ class CommandBlockTool:
             name=name,
             in_dim=in_dim
         )
-    
+
     def place_repeating_command_block(
         self,
         x: int,
@@ -169,7 +169,7 @@ class CommandBlockTool:
             name=name,
             in_dim=in_dim
         )
-    
+
     def place_chain_command_block(
         self,
         x: int,

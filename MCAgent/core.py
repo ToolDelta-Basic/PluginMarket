@@ -7,42 +7,43 @@ if TYPE_CHECKING:
 
 class Core:
     """Core functionality handler for MCAgent plugin.
-    
+
     Manages main plugin operations including AI assistant interactions,
     conversation management, and menu integrations.
     """
+
     def __init__(self, plugin: "MCAgent"):
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl
         self.players = plugin.players
         self.neomega = self.get_neomega()
-        
+
     def get_neomega(self):
         if isinstance(self.plugin.frame.launcher, FrameNeOmgAccessPoint):
             return self.plugin.frame.launcher.omega
         else:
             raise ValueError("此启动框架无法使用 NeOmega API")
-    
+
     def ClearChat(self, player: Player, args: tuple):
         from .permission import PermissionLevel
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
-        
+
         if player_permission.value < PermissionLevel.CREATIVE.value:
             player.show(self.plugin.Info['无权限提示'])
             return True
-        
+
         self.clear_chat_history(player, "tools")
         return True
-    
+
     def CancelAI(self, player: Player, args: tuple):
         """取消当前正在进行的AI请求"""
         from .permission import PermissionLevel
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
-        
+
         if player_permission.value < PermissionLevel.CREATIVE.value:
             player.show(self.plugin.Info['无权限提示'])
             return True
-        
+
         # 尝试取消请求
         if self.plugin.agent.cancel_request(player.name):
             player.show("§a╔═══════════════════════╗")
@@ -55,12 +56,12 @@ class Core:
             player.show("§c║ §4§l无活动请求 §c║")
             player.show("§c╚═══════════════════════╝")
             player.show("§c✗ 您当前没有正在进行的AI请求")
-        
+
         return True
-    
+
     def clear_chat_history(self, player: Player, conversation_type: str = "tools"):
         ui = self.plugin.ui_texts['清除对话']
-        
+
         success = self.plugin.agent.clear_conversation_history(player.name, conversation_type)
         if success:
             player.show(ui['成功框'])
@@ -73,17 +74,17 @@ class Core:
             player.show(ui['失败框底'])
             player.show(ui['失败消息'])
 
-    
+
     def AIAssistant(self, player: Player, args: tuple):
         ui = self.plugin.ui_texts['AI助手']
-        
+
         from .permission import PermissionLevel
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
-        
+
         if player_permission.value < PermissionLevel.CREATIVE.value:
             player.show(self.plugin.Info['无权限提示'])
             return True
-        
+
         if args:
             try:
                 if isinstance(args[0], list):
@@ -104,29 +105,29 @@ class Core:
             except Exception as e:
                 player.show(ui['输入错误'].format(error=str(e)))
                 return True
-        
+
         # 检查是否是退出命令
         if message and message.lower() in ['退出', 'exit', 'quit', 'cancel', 'q']:
             player.show("§a已取消操作")
             return True
-        
+
         if not message:
             player.show(ui['消息不能为空'])
             return True
-        
+
         self.chat_with_tools(player, message)
         return True
-    
+
     def chat_with_tools(self, player: Player, message: str):
         config = self.plugin.agent_config
-        
+
         api_provider = config.get('API提供商', 'deepseek').lower()
-        
+
         if api_provider == 'siliconflow':
             model = config.get('硅基流动模型名称', 'deepseek/deepseek-chat')
         else:
             model = config.get('模型名称', 'deepseek-chat')
-        
+
         default_system_prompt = """你是Minecraft基岩版AI助手，帮助玩家执行游戏操作。
 】
 1. 操作玩家前必须先调用get_online_players获取在线列表
@@ -177,7 +178,7 @@ AI: interact_with_menu("Steve", "职业", user_input="确认")  # 确认
 完成！
 
 保持友好、简洁、专业"""
-        
+
         self.plugin.agent.chat_with_tools(
             player=player,
             message=message,
