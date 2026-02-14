@@ -1,6 +1,6 @@
-from typing import List, Dict, Any
+from typing import Any
 
-def get_all_tool_schemas() -> List[Dict[str, Any]]:
+def get_all_tool_schemas() -> list[dict[str, Any]]:
     """Get all tool schema definitions for AI model"""
     return [
         {

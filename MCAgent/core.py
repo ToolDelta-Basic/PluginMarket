@@ -29,7 +29,7 @@ class Core:
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
 
         if player_permission.value < PermissionLevel.CREATIVE.value:
-            player.show(self.plugin.Info['无权限提示'])
+            player.show(self.plugin.Info["无权限提示"])
             return True
 
         self.clear_chat_history(player, "tools")
@@ -41,7 +41,7 @@ class Core:
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
 
         if player_permission.value < PermissionLevel.CREATIVE.value:
-            player.show(self.plugin.Info['无权限提示'])
+            player.show(self.plugin.Info["无权限提示"])
             return True
 
         # 尝试取消请求
@@ -60,59 +60,59 @@ class Core:
         return True
 
     def clear_chat_history(self, player: Player, conversation_type: str = "tools"):
-        ui = self.plugin.ui_texts['清除对话']
+        ui = self.plugin.ui_texts["清除对话"]
 
         success = self.plugin.agent.clear_conversation_history(player.name, conversation_type)
         if success:
-            player.show(ui['成功框'])
-            player.show(ui['成功标题'])
-            player.show(ui['成功框底'])
-            player.show(ui['成功消息'])
+            player.show(ui["成功框"])
+            player.show(ui["成功标题"])
+            player.show(ui["成功框底"])
+            player.show(ui["成功消息"])
         else:
-            player.show(ui['失败框'])
-            player.show(ui['失败标题'])
-            player.show(ui['失败框底'])
-            player.show(ui['失败消息'])
+            player.show(ui["失败框"])
+            player.show(ui["失败标题"])
+            player.show(ui["失败框底"])
+            player.show(ui["失败消息"])
 
 
     def AIAssistant(self, player: Player, args: tuple):
-        ui = self.plugin.ui_texts['AI助手']
+        ui = self.plugin.ui_texts["AI助手"]
 
         from .permission import PermissionLevel
         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
 
         if player_permission.value < PermissionLevel.CREATIVE.value:
-            player.show(self.plugin.Info['无权限提示'])
+            player.show(self.plugin.Info["无权限提示"])
             return True
 
         if args:
             try:
                 if isinstance(args[0], list):
-                    message = ' '.join(args[0])
+                    message = " ".join(args[0])
                 else:
-                    message = ' '.join(args)
+                    message = " ".join(args)
             except Exception as e:
-                player.show(ui['参数格式错误'].format(error=str(e)))
+                player.show(ui["参数格式错误"].format(error=str(e)))
                 return True
         else:
             try:
                 player.show("§7§l提示: 输入消息时请勿使用其他菜单命令")
                 player.show("§7如需退出，请输入 §e退出 §7或 §ecancel")
-                message = player.input(ui['输入提示'], 120)
+                message = player.input(ui["输入提示"], 120)
             except TimeoutError:
                 player.show("§c输入超时，已自动退出")
                 return True
             except Exception as e:
-                player.show(ui['输入错误'].format(error=str(e)))
+                player.show(ui["输入错误"].format(error=str(e)))
                 return True
 
         # 检查是否是退出命令
-        if message and message.lower() in ['退出', 'exit', 'quit', 'cancel', 'q']:
+        if message and message.lower() in ["退出", "exit", "quit", "cancel", "q"]:
             player.show("§a已取消操作")
             return True
 
         if not message:
-            player.show(ui['消息不能为空'])
+            player.show(ui["消息不能为空"])
             return True
 
         self.chat_with_tools(player, message)
@@ -121,12 +121,12 @@ class Core:
     def chat_with_tools(self, player: Player, message: str):
         config = self.plugin.agent_config
 
-        api_provider = config.get('API提供商', 'deepseek').lower()
+        api_provider = config.get("API提供商", "deepseek").lower()
 
-        if api_provider == 'siliconflow':
-            model = config.get('硅基流动模型名称', 'deepseek/deepseek-chat')
+        if api_provider == "siliconflow":
+            model = config.get("硅基流动模型名称", "deepseek/deepseek-chat")
         else:
-            model = config.get('模型名称', 'deepseek-chat')
+            model = config.get("模型名称", "deepseek-chat")
 
         default_system_prompt = """你是Minecraft基岩版AI助手，帮助玩家执行游戏操作。
 】
@@ -182,11 +182,11 @@ AI: interact_with_menu("Steve", "职业", user_input="确认")  # 确认
         self.plugin.agent.chat_with_tools(
             player=player,
             message=message,
-            system_prompt=config.get('工具系统提示词', default_system_prompt),
-            api_key=config['APIkey'],
+            system_prompt=config.get("工具系统提示词", default_system_prompt),
+            api_key=config["APIkey"],
             model=model,
-            max_history_length=config['最大历史长度'],
+            max_history_length=config["最大历史长度"],
             conversation_type="tools",
-            max_tool_calls=config.get('最大工具调用次数', 10),
+            max_tool_calls=config.get("最大工具调用次数", 10),
             api_provider=api_provider
         )

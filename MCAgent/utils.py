@@ -2,7 +2,7 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from tooldelta.utils import tempjson
 from tooldelta import constants
 from tooldelta.constants.netease import PYRPC_OP_SEND
@@ -22,7 +22,7 @@ class Utils:
         self.plugin = plugin
 
     @staticmethod
-    def disk_read(path: str) -> Dict[Any, Any]:
+    def disk_read(path: str) -> dict[Any, Any]:
         data = tempjson.load_and_read(
             path, need_file_exists=False, default={}, timeout=2
         )
@@ -30,7 +30,7 @@ class Utils:
         return data
 
     @staticmethod
-    def disk_read_need_exists(path: str) -> Dict[Any, Any]:
+    def disk_read_need_exists(path: str) -> dict[Any, Any]:
         data = tempjson.load_and_read(
             path, need_file_exists=True, default={}, timeout=2
         )
@@ -38,7 +38,7 @@ class Utils:
         return data
 
     @staticmethod
-    def disk_write(path: str, data: Dict[Any, Any]) -> None:
+    def disk_write(path: str, data: dict[Any, Any]) -> None:
         tempjson.load_and_write(
             path,
             data,
@@ -49,7 +49,7 @@ class Utils:
         tempjson.unload_to_path(path)
 
     @staticmethod
-    def now() -> Tuple[int, str]:
+    def now() -> tuple[int, str]:
         timestamp_now = int(time.time())
         date_now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_now))
         return (timestamp_now, date_now)
@@ -60,7 +60,7 @@ class Utils:
         data_file_path = os.path.join(plugin.data_path, filename)
 
         if not os.path.exists(data_file_path):
-            with open(data_file_path, 'w', encoding='utf-8') as f:
+            with open(data_file_path, "w", encoding="utf-8") as f:
                 json.dump({}, f, ensure_ascii=False, indent=4)
 
         return data_file_path

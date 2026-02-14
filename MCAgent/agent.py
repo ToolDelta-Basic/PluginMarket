@@ -1,6 +1,6 @@
 import json
 import time
-from typing import TYPE_CHECKING, Optional, Dict, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 import requests
 from tooldelta import Player, fmts, utils
 from .utils import Utils
@@ -17,7 +17,7 @@ class AIAgent:
     Minecraft assistance.
     """
 
-    API_PROVIDERS = {
+    API_PROVIDERS: ClassVar[dict[str, dict[str, str]]] = {
         "deepseek": {
             "base_url": "https://api.deepseek.com",
             "chat_endpoint": "/v1/chat/completions",
@@ -37,7 +37,7 @@ class AIAgent:
         self.cancel_requests = set()  # 存储需要取消的请求
         self.mc_tools = MinecraftAITool(plugin)
 
-    def get_api_config(self, provider: str = "deepseek") -> Dict[str, str]:
+    def get_api_config(self, provider: str = "deepseek") -> dict[str, str]:
         """Get API configuration for specified provider"""
         provider = provider.lower()
         if provider not in self.API_PROVIDERS:
@@ -47,8 +47,8 @@ class AIAgent:
 
     @staticmethod
     def extract_content_from_response(
-        response_data: Dict[str, Any]
-    ) -> Optional[str]:
+        response_data: dict[str, Any]
+    ) -> str | None:
         """Extract content from API response"""
         try:
             if (
@@ -65,8 +65,8 @@ class AIAgent:
             return None
 
     def extract_content_from_siliconflow_response(
-        self, response_data: Dict[str, Any]
-    ) -> Optional[str]:
+        self, response_data: dict[str, Any]
+    ) -> str | None:
         """Extract content from SiliconFlow API response"""
         try:
             if isinstance(response_data, dict) and "content" in response_data:
@@ -190,7 +190,7 @@ class AIAgent:
         recent_messages = non_system_messages[cutoff_index:]
 
         if system_msg:
-            limited_messages = [system_msg] + recent_messages
+            limited_messages = [system_msg, *recent_messages]
         else:
             limited_messages = recent_messages
 
@@ -331,7 +331,7 @@ class AIAgent:
 
                 # 重新组装消息列表（保留系统提示词）
                 if system_msg:
-                    messages = [system_msg] + recent_messages
+                    messages = [system_msg, *recent_messages]
                 else:
                     messages = recent_messages
 
@@ -343,11 +343,11 @@ class AIAgent:
             return result
 
         except requests.exceptions.RequestException as e:
-            return f"网络请求异常：{str(e)}"
+            return f"网络请求异常：{e!s}"
         except UnicodeError as e:
-            return f"编码异常：{str(e)}"
+            return f"编码异常：{e!s}"
         except Exception as e:
-            return f"未知错误：{str(e)}"
+            return f"未知错误：{e!s}"
 
     def handle_stream_response(
         self,
@@ -378,7 +378,7 @@ class AIAgent:
         try:
             for line in response.iter_lines():
                 if line:
-                    decoded_line = line.decode('utf-8')
+                    decoded_line = line.decode("utf-8")
                     if decoded_line.startswith("data: "):
                         data = decoded_line[6:]  # 移除 "data: " 前缀
 
@@ -387,9 +387,9 @@ class AIAgent:
 
                         try:
                             chunk_data = json.loads(data)
-                            if 'choices' in chunk_data and len(chunk_data['choices']) > 0:
-                                delta = chunk_data['choices'][0].get('delta', {})
-                                content = delta.get('content', '')
+                            if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                                delta = chunk_data["choices"][0].get("delta", {})
+                                content = delta.get("content", "")
 
                                 if content:
                                     full_response += content
@@ -420,7 +420,7 @@ class AIAgent:
             return full_response
 
         except Exception as e:
-            fmts.print_err(f"流式传输过程中发生错误: {str(e)}")
+            fmts.print_err(f"流式传输过程中发生错误: {e!s}")
             return full_response
 
     def clear_conversation_history(self, player_name: str, conversation_type: str = "default") -> bool:
@@ -440,7 +440,7 @@ class AIAgent:
 
             return True
         except Exception as e:
-            fmts.print_err(f"清除对话历史时出错: {str(e)}")
+            fmts.print_err(f"清除对话历史时出错: {e!s}")
             return False
 
     def get_conversation_history(self, player_name: str, conversation_type: str = "default") -> list:
@@ -482,15 +482,15 @@ class AIAgent:
         Returns:
             bool: 执行结果
         """
-        ui = self.plugin.ui_texts['基础对话']
+        ui = self.plugin.ui_texts["基础对话"]
 
         if not message:
-            player.show(ui['输入为空'])
+            player.show(ui["输入为空"])
             return False
 
-        player.show(ui['处理中框'])
-        player.show(ui['处理中标题'])
-        player.show(ui['处理中框底'])
+        player.show(ui["处理中框"])
+        player.show(ui["处理中标题"])
+        player.show(ui["处理中框底"])
         player.show(f"§f{message}")
 
         # 发送请求
@@ -509,17 +509,17 @@ class AIAgent:
         # 处理响应
         if isinstance(result, str):
             # 错误消息
-            player.show(ui['错误框'])
-            player.show(ui['错误标题'])
-            player.show(ui['错误框底'])
+            player.show(ui["错误框"])
+            player.show(ui["错误标题"])
+            player.show(ui["错误框底"])
             player.show(f"§c{result}")
             return False
         elif isinstance(result, requests.Response):
             # 流式响应
             full_response = self.handle_stream_response(player, result, player.name, conversation_type, 100, max_history_length)
-            player.show(ui['响应框'])
-            player.show(ui['响应标题'])
-            player.show(ui['响应框底'])
+            player.show(ui["响应框"])
+            player.show(ui["响应标题"])
+            player.show(ui["响应框底"])
             player.show(f"§f{full_response}")
             fmts.print_inf(f"Player {player.name} request: {message}, response: {full_response}")
             return True
@@ -528,28 +528,28 @@ class AIAgent:
             content = self.extract_content_from_response(result)
 
             if content is None:
-                player.show(ui['提取内容失败'])
+                player.show(ui["提取内容失败"])
                 return False
 
             # 显示回复和token消耗
-            player.show(ui['响应框'])
-            player.show(ui['响应标题'])
-            player.show(ui['响应框底'])
+            player.show(ui["响应框"])
+            player.show(ui["响应标题"])
+            player.show(ui["响应框底"])
             player.show(f"§f{content}")
 
-            if 'usage' in result and 'total_tokens' in result['usage']:
-                total_tokens = result['usage']['total_tokens']
+            if "usage" in result and "total_tokens" in result["usage"]:
+                total_tokens = result["usage"]["total_tokens"]
                 cost = self.calculate_cost(total_tokens)
-                player.show(ui['统计分隔线'])
-                player.show(ui['统计信息'].format(tokens=total_tokens, cost=f"{cost:.6f}"))
-                player.show(ui['统计分隔线'])
+                player.show(ui["统计分隔线"])
+                player.show(ui["统计信息"].format(tokens=total_tokens, cost=f"{cost:.6f}"))
+                player.show(ui["统计分隔线"])
                 fmts.print_inf(f"Player {player.name} request: {message}, response: {content}, tokens: {total_tokens}")
             else:
                 fmts.print_inf(f"Player {player.name} request: {message}, response: {content}")
 
             return True
         else:
-            player.show(ui['响应格式无效'])
+            player.show(ui["响应格式无效"])
             return False
 
 
@@ -580,7 +580,7 @@ class AIAgent:
         max_tool_calls: int = 10,
         api_provider: str = "deepseek",
         timeout: int = 90
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Send request with tool calling support to AI API
 
@@ -597,7 +597,7 @@ class AIAgent:
             timeout (int): API请求超时时间（秒）
 
         Returns:
-            Dict[str, Any]: 包含响应和执行信息的字典
+            dict[str, Any]: 包含响应和执行信息的字典
         """
         if not api_key:
             return {"success": False, "error": "错误：未提供 API 密钥"}
@@ -664,11 +664,13 @@ class AIAgent:
                     "tool_choice": "auto"
                 }
 
-                ui = self.plugin.ui_texts['AI助手']
-                player.show(ui['思考中'].format(current=tool_call_count + 1, max=max_tool_calls))
+                ui = self.plugin.ui_texts["AI助手"]
+                player.show(ui["思考中"].format(current=tool_call_count + 1, max=max_tool_calls))
                 player.show("§7§o提示: 输入 §e取消 §7可以中止AI处理")
 
-                url = f"{api_config['base_url']}{api_config['chat_endpoint']}"
+                base_url = api_config["base_url"]
+                chat_endpoint = api_config["chat_endpoint"]
+                url = f"{base_url}{chat_endpoint}"
                 response = requests.post(
                     url,
                     headers=headers,
@@ -685,44 +687,44 @@ class AIAgent:
                 result = response.json()
 
                 # 累计token消耗
-                if 'usage' in result and 'total_tokens' in result['usage']:
-                    total_tokens += result['usage']['total_tokens']
+                if "usage" in result and "total_tokens" in result["usage"]:
+                    total_tokens += result["usage"]["total_tokens"]
 
                 # 获取AI响应
-                if 'choices' not in result or len(result['choices']) == 0:
+                if "choices" not in result or len(result["choices"]) == 0:
                     return {"success": False, "error": "API响应格式错误"}
 
-                choice = result['choices'][0]
-                assistant_message = choice['message']
+                choice = result["choices"][0]
+                assistant_message = choice["message"]
 
                 # 添加助手消息到历史
                 messages.append(assistant_message)
 
                 # 检查是否有工具调用
-                if assistant_message.get('tool_calls'):
+                if assistant_message.get("tool_calls"):
                     tool_call_count += 1
 
                     # 处理每个工具调用
-                    for tool_call in assistant_message['tool_calls']:
-                        tool_name = tool_call['function']['name']
-                        tool_args = json.loads(tool_call['function']['arguments'])
-                        tool_id = tool_call['id']
+                    for tool_call in assistant_message["tool_calls"]:
+                        tool_name = tool_call["function"]["name"]
+                        tool_args = json.loads(tool_call["function"]["arguments"])
+                        tool_id = tool_call["id"]
 
                         # 检查玩家权限等级
                         player_permission = self.plugin.permission_manager.get_player_permission_level(player)
                         is_full_permission = (player_permission == PermissionLevel.FULL)
 
                         # 记录工具调用 - 使用配置的UI文本
-                        log_msg = ui['工具调用框顶'].format(count=tool_call_count)
+                        log_msg = ui["工具调用框顶"].format(count=tool_call_count)
                         player.show(log_msg)
                         tool_execution_logs.append(log_msg)
 
-                        tool_info = ui['工具名称'].format(tool=tool_name)
+                        tool_info = ui["工具名称"].format(tool=tool_name)
                         player.show(tool_info)
                         tool_execution_logs.append(tool_info)
 
                         # 显示参数信息（仅完全权限用户）
-                        args_info = ui['工具参数'].format(args=json.dumps(tool_args, ensure_ascii=False))
+                        args_info = ui["工具参数"].format(args=json.dumps(tool_args, ensure_ascii=False))
                         if is_full_permission:
                             player.show(args_info)
                         tool_execution_logs.append(args_info)
@@ -731,15 +733,15 @@ class AIAgent:
                         tool_result = self.mc_tools.execute_tool(tool_name, tool_args, player)
 
                         # 显示结果信息
-                        if tool_result.get('success'):
-                            result_msg = ui['工具结果成功'].format(message=tool_result.get('message', 'Success'))
+                        if tool_result.get("success"):
+                            result_msg = ui["工具结果成功"].format(message=tool_result.get("message", "Success"))
                         else:
-                            result_msg = ui['工具结果失败'].format(error=tool_result.get('error', 'Unknown error'))
+                            result_msg = ui["工具结果失败"].format(error=tool_result.get("error", "Unknown error"))
 
                         player.show(result_msg)
                         tool_execution_logs.append(result_msg)
 
-                        footer = ui['工具调用框底']
+                        footer = ui["工具调用框底"]
                         player.show(footer)
                         tool_execution_logs.append(footer)
 
@@ -754,7 +756,7 @@ class AIAgent:
                     continue
 
                 # 没有工具调用，获取最终回复
-                final_content = assistant_message.get('content', '')
+                final_content = assistant_message.get("content", "")
 
                 if not final_content:
                     return {"success": False, "error": "AI未返回有效内容"}
@@ -788,11 +790,11 @@ class AIAgent:
             }
 
         except requests.exceptions.RequestException as e:
-            return {"success": False, "error": f"网络请求异常：{str(e)}"}
+            return {"success": False, "error": f"网络请求异常：{e!s}"}
         except json.JSONDecodeError as e:
-            return {"success": False, "error": f"JSON解析错误：{str(e)}"}
+            return {"success": False, "error": f"JSON解析错误：{e!s}"}
         except Exception as e:
-            return {"success": False, "error": f"未知错误：{str(e)}"}
+            return {"success": False, "error": f"未知错误：{e!s}"}
 
     def _process_format_instruction(self, content: str, player: Player) -> str:
         """AI now directly uses Minecraft color codes, no additional processing needed.
@@ -861,10 +863,10 @@ class AIAgent:
         Returns:
             bool: 执行结果
         """
-        ui = self.plugin.ui_texts['AI助手']
+        ui = self.plugin.ui_texts["AI助手"]
 
         if not message:
-            player.show(ui['输入为空'])
+            player.show(ui["输入为空"])
             return False
 
         # 检查是否有正在进行的请求
@@ -880,13 +882,13 @@ class AIAgent:
         self.active_requests.add(player.name)
 
         try:
-            player.show(ui['处理中框'])
-            player.show(ui['处理中标题'])
-            player.show(ui['处理中框底'])
+            player.show(ui["处理中框"])
+            player.show(ui["处理中标题"])
+            player.show(ui["处理中框底"])
             player.show(f"§f{message}")
-            player.show(ui['分隔线'])
-            player.show(ui['工具说明'])
-            player.show(ui['分隔线'])
+            player.show(ui["分隔线"])
+            player.show(ui["工具说明"])
+            player.show(ui["分隔线"])
 
             # 发送请求
             result = self.send_request_with_tools(
@@ -899,42 +901,42 @@ class AIAgent:
                 conversation_type,
                 max_tool_calls,
                 api_provider,
-                self.plugin.agent_config.get('API请求超时秒数', 90)  # 从配置读取超时时间
+                self.plugin.agent_config.get("API请求超时秒数", 90)  # 从配置读取超时时间
             )
 
             # 处理响应 并检查取消
-            if not result.get('success'):
-                if result.get('cancelled'):
+            if not result.get("success"):
+                if result.get("cancelled"):
                     player.show("§6╔═══════════════════════╗")
                     player.show("§6║ §e§l操作已取消 §6║")
                     player.show("§6╚═══════════════════════╝")
                     player.show("§e✓ AI请求已成功取消")
                     return False
 
-                player.show(ui['错误框'])
-                player.show(ui['错误标题'])
-                player.show(ui['错误框底'])
+                player.show(ui["错误框"])
+                player.show(ui["错误标题"])
+                player.show(ui["错误框底"])
                 player.show(f"§c{result.get('error', 'Unknown error')}")
 
                 return False
 
-            content = result.get('content', '')
+            content = result.get("content", "")
 
             if content:
-                player.show(ui['响应框'])
-                player.show(ui['响应标题'])
-                player.show(ui['响应框底'])
+                player.show(ui["响应框"])
+                player.show(ui["响应标题"])
+                player.show(ui["响应框底"])
                 player.show(content)
 
-            total_tokens = result.get('total_tokens', 0)
-            tool_calls_count = result.get('tool_calls_count', 0)
+            total_tokens = result.get("total_tokens", 0)
+            tool_calls_count = result.get("tool_calls_count", 0)
             cost = self.calculate_cost(total_tokens)
 
             player.show("")
-            player.show(ui['统计标题'])
-            player.show(ui['工具调用次数'].format(count=tool_calls_count))
-            player.show(ui['Token使用'].format(tokens=total_tokens))
-            player.show(ui['费用'].format(cost=f"{cost:.6f}"))
+            player.show(ui["统计标题"])
+            player.show(ui["工具调用次数"].format(count=tool_calls_count))
+            player.show(ui["Token使用"].format(tokens=total_tokens))
+            player.show(ui["费用"].format(cost=f"{cost:.6f}"))
 
             fmts.print_inf(
                 f"玩家 {player.name} 请求: {message}, "

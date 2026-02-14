@@ -37,22 +37,22 @@ class MCAgent(Plugin):
     def on_def(self):
         """Register chatbar menu triggers."""
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
-        
+
         always_registered = [
             ([ "助手", "ai"], ..., "MC Agent(支持工具调用)", self.core.AIAssistant),
             (["清除对话", "clear"], [], "清除AI对话历史", self.core.ClearChat),
             (["退出助手", "取消", "cancel"], [], "取消当前AI请求", self.core.CancelAI),
         ]
-        
+
         for trigger in always_registered:
             self.chatbar.add_new_trigger(*trigger)
-    
+
     def get_core(self):
         return self.core
-    
+
     def get_agent(self):
         return self.agent
-    
+
     def get_utils(self):
         return utils
 

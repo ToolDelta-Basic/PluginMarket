@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import TYPE_CHECKING, Dict, Any, Optional, List
+from typing import TYPE_CHECKING, Any
 from tooldelta import Player
 if TYPE_CHECKING:
     from . import MCAgent
@@ -29,29 +29,29 @@ class ToolLogger:
         log_filename = f"tool_calls_{date_str}.json"
         return os.path.join(self.plugin.data_path, log_filename)
 
-    def _load_logs(self) -> List[Dict[str, Any]]:
+    def _load_logs(self) -> list[dict[str, Any]]:
         if not os.path.exists(self.log_file_path):
             return []
 
         try:
-            with open(self.log_file_path, 'r', encoding='utf-8') as f:
+            with open(self.log_file_path, encoding="utf-8") as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (json.JSONDecodeError, OSError):
             return []
 
-    def _save_logs(self, logs: List[Dict[str, Any]]) -> None:
+    def _save_logs(self, logs: list[dict[str, Any]]) -> None:
         try:
-            with open(self.log_file_path, 'w', encoding='utf-8') as f:
+            with open(self.log_file_path, "w", encoding="utf-8") as f:
                 json.dump(logs, f, ensure_ascii=False, indent=2)
-        except IOError as e:
+        except OSError as e:
             print(f"保存日志失败: {e}")
 
     def log_tool_call(
         self,
         tool_name: str,
-        caller: Optional[Player],
-        parameters: Dict[str, Any],
-        result: Dict[str, Any]
+        caller: Player | None,
+        parameters: dict[str, Any],
+        result: dict[str, Any]
     ) -> None:
         if tool_name not in self.logged_tools:
             return
@@ -80,15 +80,15 @@ class ToolLogger:
         logs.append(log_entry)
         self._save_logs(logs)
 
-    def get_logs_by_tool(self, tool_name: str) -> List[Dict[str, Any]]:
+    def get_logs_by_tool(self, tool_name: str) -> list[dict[str, Any]]:
         logs = self._load_logs()
         return [log for log in logs if log.get("tool_name") == tool_name]
 
-    def get_logs_by_caller(self, caller_name: str) -> List[Dict[str, Any]]:
+    def get_logs_by_caller(self, caller_name: str) -> list[dict[str, Any]]:
         logs = self._load_logs()
         return [log for log in logs if log.get("caller", {}).get("name") == caller_name]
 
-    def get_logs_by_date(self, date_str: str) -> List[Dict[str, Any]]:
+    def get_logs_by_date(self, date_str: str) -> list[dict[str, Any]]:
         logs = self._load_logs()
         return [log for log in logs if log.get("datetime", "").startswith(date_str)]
 

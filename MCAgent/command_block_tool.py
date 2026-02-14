@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Dict, Any, Tuple
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from . import MCAgent
 
@@ -10,7 +10,7 @@ class CommandBlockTool:
 
     @staticmethod
     def make_packet_command_block_update(
-        position: Tuple[int, int, int],
+        position: tuple[int, int, int],
         command: str,
         mode: int = 0,
         need_redstone: bool = False,
@@ -19,7 +19,7 @@ class CommandBlockTool:
         name: str = "",
         should_track_output: bool = True,
         execute_on_first_tick: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "Block": True,
             "Position": list(position),
@@ -37,7 +37,7 @@ class CommandBlockTool:
 
     def _place_command_block_internal(
         self,
-        command_block_update_packet: Dict[str, Any],
+        command_block_update_packet: dict[str, Any],
         facing: int = 0,
         limit_seconds: float = 0.0,
         limit_seconds2: float = 0.0,
@@ -80,7 +80,7 @@ class CommandBlockTool:
         should_track_output: bool = True,
         execute_on_first_tick: bool = True,
         in_dim: str = "overworld"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             packet = self.make_packet_command_block_update(
                 position=(x, y, z),
@@ -136,7 +136,7 @@ class CommandBlockTool:
         need_redstone: bool = False,
         name: str = "",
         in_dim: str = "overworld"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self.place_command_block(
             x=x, y=y, z=z,
             command=command,
@@ -158,7 +158,7 @@ class CommandBlockTool:
         tick_delay: int = 0,
         name: str = "",
         in_dim: str = "overworld"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self.place_command_block(
             x=x, y=y, z=z,
             command=command,
@@ -181,7 +181,7 @@ class CommandBlockTool:
         tick_delay: int = 0,
         name: str = "",
         in_dim: str = "overworld"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self.place_command_block(
             x=x, y=y, z=z,
             command=command,
