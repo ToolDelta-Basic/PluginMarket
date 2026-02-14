@@ -12,6 +12,7 @@ from tooldelta import (
     plugin_entry,
 )
 from tooldelta.utils.tooldelta_thread import ToolDeltaThread
+from .task_store import TaskStore
 
 
 class SimpleWorldImport(Plugin):
@@ -24,6 +25,9 @@ class SimpleWorldImport(Plugin):
 
     flowers_for_machines: "FlowersForMachine | None"
     _chest_cache_requester: str
+    _task_store: TaskStore
+    _resume_task: dict | None
+    _current_task_id: str
 
     def __init__(self, frame: Frame):
         self.frame = frame
@@ -39,6 +43,9 @@ class SimpleWorldImport(Plugin):
         self.ListenActive(self.on_inject)
         self.ListenFrameExit(self.on_close)
         self.make_data_path()
+        self._task_store = TaskStore(self.format_data_path("任务数据.json"))
+        self._resume_task = None
+        self._current_task_id = ""
 
     def on_def(self):
         global bwo, nbtlib, FlowersForMachine
@@ -70,6 +77,12 @@ class SimpleWorldImport(Plugin):
             ),
             "导入存档内的建筑物",
             self.runner,
+        )
+        self.frame.add_console_cmd_trigger(
+            ["continue/"],
+            "[任务编号]",
+            "续导未完成的导入任务",
+            self.runner_continue,
         )
 
     def on_close(self, _: FrameExit):
@@ -254,16 +267,52 @@ class SimpleWorldImport(Plugin):
             (start_pos[0], start_pos[2]),
             (end_pos[0], end_pos[2]),
         )
+        # 续导/新任务 初始化
+        total_chunks = len(bot_path)
+        start_index = 0
+        current_task_id = ""
+        resume_task = self._resume_task
+        has_task = True
+        if resume_task is not None:
+            try:
+                start_index = int(resume_task.get("progress_index", 0))
+                current_task_id = str(resume_task.get("task_id", ""))
+            except Exception:
+                start_index = 0
+                current_task_id = ""
+        else:
+            # 普通任务：创建任务
+            try:
+                new_task = {
+                    "task_id": "",
+                    "world_name": filename,
+                    "dimension": int(cmd[1]),
+                    "source_start": [start_pos[0], start_pos[1], start_pos[2]],
+                    "source_end": [end_pos[0], end_pos[1], end_pos[2]],
+                    "dest_start": [result_start_pos[0], result_start_pos[1], result_start_pos[2]],
+                    "progress_index": 0,
+                    "total_chunks": total_chunks,
+                }
+                current_task_id = self._task_store.add_task(new_task)
+            except Exception:
+                current_task_id = ""
+        if current_task_id == "":
+            has_task = False
+        # 续导状态使用一次后即清空
+        self._resume_task = None
 
-        progress = 0
-        for origin_chunk_pos in bot_path:
+        progress = start_index
+        for idx, origin_chunk_pos in enumerate(bot_path):
+            # 跳过已完成的区块（续导）
+            if idx < start_index:
+                continue
             # 检查用户是否重载
             if self.should_close:
                 world.close_world()
                 return
 
             # 显示处理进度
-            finish_ratio = round(progress / (len(bot_path)) * 100)
+            finish_ratio = round(progress / (total_chunks) * 100)
             fmts.print_inf(f"正在处理 {origin_chunk_pos} 处的区块 ({finish_ratio}%)")
             progress += 1
 
@@ -272,6 +321,13 @@ class SimpleWorldImport(Plugin):
             chunk_range = chunk.range()
             if not chunk.is_valid():
                 fmts.print_war(f"位于 {origin_chunk_pos} 的区块没有找到, 跳过")
+                # 完成一个区块后更新任务进度（即便区块不存在也视为处理过）
+                if has_task:
+                    next_index = idx + 1
+                    if next_index < total_chunks:
+                        self._task_store.update_progress(current_task_id, next_index)
+                    else:
+                        self._task_store.remove_task(current_task_id)
                 continue
 
             # (sub_x, sub_z) 相对于当前正在处理的区
@@ -306,7 +362,31 @@ class SimpleWorldImport(Plugin):
                 )
                 # 发送指令等待返回, 让机器人确保在进行下一步前租赁服已经将机器人传送到目标地点
                 # 对于租赁服较为卡顿的时候, 它的作用尤为明显
-                self.game_ctrl.sendwscmd_with_resp("testforblock ~ ~ ~ air")
+                attempts = 0
+                while attempts < 30:
+                    try:
+                        resp = self.game_ctrl.sendwscmd_with_resp(
+                            f'execute as @a[name="{self.game_ctrl.bot_name}"] at @s run tp ~ ~ ~ true',
+                            timeout=3,
+                        )
+                        try:
+                            resp_text = str(resp.as_dict)
+                        except Exception:
+                            resp_text = str(resp)
+                        if "无法将" in resp_text:
+                            fmts.print_inf("等待区块加载")
+                            time.sleep(1)
+                            attempts += 1
+                            continue
+                        break
+                    except Exception:
+                        fmts.print_inf("等待区块加载")
+                        attempts += 1
+                        continue
+                else:
+                    fmts.print_err("检测区块超时过久")
+                    world.close_world()
+                    return
             except Exception:
                 pass
 
@@ -357,7 +437,7 @@ class SimpleWorldImport(Plugin):
                     )
                     continue
 
-                # 这个子区块是空的（全是空气）,
+                # 这个子区块是空的（全是空气）, 
                 # 所以完全安全地跳过
                 if sub_chunk.empty():
                     continue
@@ -510,6 +590,14 @@ class SimpleWorldImport(Plugin):
                     # 0.001 = 1/1000
                     time.sleep(0.001)
 
+            # 当前区块的子区块导入任务全部执行完毕，更新任务进度
+            if has_task:
+                next_index = idx + 1
+                if next_index < total_chunks:
+                    self._task_store.update_progress(current_task_id, next_index)
+                else:
+                    self._task_store.remove_task(current_task_id)
+
         # 一定要记得关掉打开的存档哟,
         # 千万别忘了
         world.close_world()
@@ -517,6 +605,46 @@ class SimpleWorldImport(Plugin):
 
     def runner(self, cmd: list[str]):
         self.do_world_import(cmd)
+
+    def runner_continue(self, cmd: list[str]):
+        unfinished = self._task_store.list_unfinished()
+        if len(unfinished) == 0:
+            fmts.print_inf("无未完成任务")
+            return
+        if len(cmd) == 0:
+            for i, t in enumerate(unfinished):
+                try:
+                    ss = t.get("source_start", [0, 0, 0])
+                    se = t.get("source_end", [0, 0, 0])
+                    ds = t.get("dest_start", [0, 0, 0])
+                    tc = int(t.get("total_chunks", 0))
+                    pi = int(t.get("progress_index", 0))
+                    fmts.print_inf(
+                        f"[{i}] 地图={t.get('world_name','')} 维度={t.get('dimension',0)} 起点=({ss[0]},{ss[1]},{ss[2]}) 终点=({se[0]},{se[1]},{se[2]}) 目标=({ds[0]},{ds[1]},{ds[2]}) 进度={pi}/{tc}"
+                    )
+                except Exception:
+                    continue
+            fmts.print_inf('请输入 "continue/ [编号]" 开始续导')
+            return
+        try:
+            selection = int(cmd[0])
+        except Exception:
+            fmts.print_war("非法数字，已取消执行")
+            return
+        if selection < 0 or selection >= len(unfinished):
+            fmts.print_war("非法数字，已取消执行")
+            return
+        task = unfinished[selection]
+        self._resume_task = task
+        filename = str(task.get("world_name", ""))
+        dm = str(task.get("dimension", 0))
+        ss = task.get("source_start", [0, 0, 0])
+        se = task.get("source_end", [0, 0, 0])
+        ds = task.get("dest_start", [0, 0, 0])
+        start_str = f"({ss[0]},{ss[1]},{ss[2]})"
+        end_str = f"({se[0]},{se[1]},{se[2]})"
+        dest_str = f"({ds[0]},{ds[1]},{ds[2]})"
+        self.do_world_import([filename, dm, start_str, end_str, dest_str])
 
 
 entry = plugin_entry(SimpleWorldImport)
