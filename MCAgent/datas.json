@@ -1,0 +1,8 @@
+{
+  "author": "果_k",
+  "version": "1.0.0",
+  "plugin-type": "classic",
+  "description": "MCAgent插件",
+  "pre-plugins": {},
+  "plugin-id": "MCAgent"
+}
