@@ -1,0 +1,11 @@
+{
+  "author": "style_天枢",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "mcstructure导入器[可导入命令]",
+  "pre-plugins": {
+    "基本插件功能库": "0.0.12"
+  },
+  "plugin-id": "mcstructure导入器[可导入命令]",
+  "enabled": true
+}

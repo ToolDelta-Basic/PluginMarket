@@ -1,0 +1,8 @@
+{
+    "plugin-id": "vitality-keepalive",
+    "author": "Q3CC",
+    "version": "0.1.5",
+    "description": "活力API保活插件",
+    "plugin-type": "classic",
+    "pre-plugins": {}
+}

@@ -9,7 +9,7 @@ from tooldelta.utils.tooldelta_thread import ThreadExit
 
 class WorldEdit(Plugin):
     author = "SuperScript"
-    version = (0, 0, 10)
+    version = (0, 0, 11)
     name = "简易建造"
     description = "以更方便的方法在租赁服进行创作"
 
@@ -303,7 +303,11 @@ class WorldEdit(Plugin):
                 b = area.get_block((x, 0, z))
                 mapping[x].append(
                     BLOCK_AIR
-                    if (b.name.endswith("air") or b.name.endswith("light_block"))
+                    if (
+                        b.foreground is None
+                        or b.foreground.name.endswith("air")
+                        or b.foreground.name.endswith("light_block")
+                    )
                     else BLOCK_BORDER
                 )
         mapping[32][32] = BLOCK_FILL

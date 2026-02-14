@@ -1,6 +1,6 @@
 {
     "author": "SuperScript",
-    "version": "0.2.6",
+    "version": "0.2.8",
     "description": "所有使用解析和播放midi音乐功能的插件的前置组件",
     "limit_launcher": null,
     "pre-plugins": {},

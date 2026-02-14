@@ -17,7 +17,7 @@ from tooldelta import (
 class SimpleWorldExporter(Plugin):
     name = "简单世界导出"
     author = "YoRHa"
-    version = (0, 1, 0)
+    version = (0, 2, 0)
 
     world_api: "GameInteractive | None"
     should_close: bool
@@ -43,7 +43,7 @@ class SimpleWorldExporter(Plugin):
         )
         if "version" not in loaded_dict:
             return True
-        if loaded_dict["version"] != "1.4.0":
+        if loaded_dict["version"] != "1.5.0":
             return True
         return False
 
@@ -51,7 +51,7 @@ class SimpleWorldExporter(Plugin):
         version_path = self.format_data_path("bwo_version.json")
         tempjson.write(
             version_path,
-            {"version": "1.4.0"},
+            {"version": "1.5.0"},
         )
         tempjson.flush(version_path)
 

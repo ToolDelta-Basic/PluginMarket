@@ -1,0 +1,11 @@
+{
+    "author": "SuperScript",
+    "version": "0.0.3",
+    "description": "使得群服互通可以在 ToolDelta 上并行直接启动, 不需要云链！",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "cloud-qqlink": "0.1.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "local-qqlink-launcher"
+}

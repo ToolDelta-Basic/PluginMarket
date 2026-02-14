@@ -12,7 +12,7 @@ from .recover import WorldBackupRecover
 class WorldBackupNextGen(Plugin):
     name = "世界备份第二世代"
     author = "YoRHa and RATH"
-    version = (1, 5, 0)
+    version = (1, 6, 0)
 
     def __init__(self, frame: Frame) -> None:
         super().__init__(frame)
