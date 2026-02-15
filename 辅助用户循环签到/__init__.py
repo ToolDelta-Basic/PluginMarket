@@ -95,6 +95,7 @@ class NV1TimedSignIn(Plugin):
         return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
     def _get_timeout(self) -> float:
+        """从配置读取并解析请求超时秒"""
         timeout = self.config.get("请求超时秒", 10.0)
         try:
             timeout_f = float(timeout)
@@ -103,11 +104,13 @@ class NV1TimedSignIn(Plugin):
         return timeout_f
 
     def _get_session(self) -> requests.Session:
+        """获取/创建复用的 requests.Session"""
         if self._sess is None:
             self._sess = requests.Session()
         return self._sess
 
     def _get_password_hash(self, password_plain: str) -> str:
+        """缓存 password 的 SHA-256"""
         if self._pwd_plain_cached == password_plain and isinstance(
             self._pwd_hash_cached, str
         ):
@@ -129,7 +132,13 @@ class NV1TimedSignIn(Plugin):
         """请求封装统一用 resp.json()"""
         url = f"{self.API_BASE}{endpoint}"
         sess = self._get_session()
-        resp = sess.request(method, url, json=json_body, headers=headers, timeout=timeout)
+        resp = sess.request(
+            method,
+            url,
+            json=json_body,
+            headers=headers,
+            timeout=timeout,
+        )
         status = int(getattr(resp, "status_code", 0) or 0)
         text = (getattr(resp, "text", "") or "")[:300]
 
@@ -140,7 +149,9 @@ class NV1TimedSignIn(Plugin):
 
         return obj if isinstance(obj, dict) else None, status, text
 
-    def _is_login_expired(self, j: Optional[Dict[str, Any]], status: int) -> bool:
+    @staticmethod
+    def _is_login_expired(j: Optional[Dict[str, Any]]) -> bool:
+        """判断登录失效：success=false 且 message=请先登录"""
         if not isinstance(j, dict):
             return False
         return (j.get("success") is False) and (j.get("message") == "请先登录")
@@ -152,8 +163,9 @@ class NV1TimedSignIn(Plugin):
         headers: Dict[str, str],
         timeout: float,
     ) -> bool:
+        """执行登录请求并更新登录状态"""
         payload = {"username": username, "password": password_hash}
-        j, status, text = self._request_json(
+        j, _status, text = self._request_json(
             "POST",
             "/user/login",
             json_body=payload,
@@ -180,7 +192,8 @@ class NV1TimedSignIn(Plugin):
         headers: Dict[str, str],
         timeout: float,
     ) -> Optional[Dict[str, Any]]:
-        j, status, text = self._request_json(
+        """执行签到请求并返回响应"""
+        j, _status, text = self._request_json(
             "GET",
             "/helper-bot/daily-sign",
             headers=headers,
@@ -191,7 +204,7 @@ class NV1TimedSignIn(Plugin):
             Print.print_err(f"[{self.name}] 签到失败：{text}")
             return None
 
-        if self._is_login_expired(j, status):
+        if self._is_login_expired(j):
             return j
 
         success = bool(j.get("success", False))
@@ -224,7 +237,7 @@ class NV1TimedSignIn(Plugin):
 
         sign_json = self._do_sign(headers=headers, timeout=timeout_f)
 
-        if sign_json is not None and self._is_login_expired(sign_json, 0):
+        if sign_json is not None and self._is_login_expired(sign_json):
             if self._ensure_login(username, password_hash, headers, timeout_f):
                 sign_json = self._do_sign(headers=headers, timeout=timeout_f)
             else:
