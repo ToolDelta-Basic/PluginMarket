@@ -702,7 +702,7 @@
     "pip": {
       "name": "pip模块支持",
       "author": "SuperScript",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "XUID获取": {
