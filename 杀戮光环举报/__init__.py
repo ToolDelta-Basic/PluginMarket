@@ -12,12 +12,16 @@ from tooldelta import Plugin, Print, ToolDelta, cfg, plugin_entry
 
 @dataclass
 class _ReportCase:
+    """一次举报检测任务"""
+
     reporter: str
     target: str
     created_ts: float
 
 
 class KillAuraReport(Plugin):
+    """杀戮光环举报"""
+
     name = "杀戮光环举报"
     author = "丸山彩"
     version = (0, 0, 1)
@@ -77,6 +81,7 @@ class KillAuraReport(Plugin):
         self.ListenPacket(self._PKT_LEVEL_SOUND_EVENT, self.on_pkt_sound)
 
     def on_preload(self):
+        """Preload"""
         self.funclib = self.GetPluginAPI("基本插件功能库")
         try:
             self.ban_api = self.GetPluginAPI("封禁系统", force=False)
@@ -84,6 +89,7 @@ class KillAuraReport(Plugin):
             self.ban_api = None
 
     def on_active(self):
+        """Active"""
         if not self._worker_started:
             self._worker_started = True
             t = threading.Thread(target=self._worker_loop, name="KillAuraReportWorker")
@@ -91,6 +97,7 @@ class KillAuraReport(Plugin):
             t.start()
 
     def on_chat(self, chat):
+        """处理举报入口：r / r 玩家名"""
         msg = getattr(chat, "msg", "")
         player = getattr(chat, "player", None)
         if player is None:
@@ -117,6 +124,7 @@ class KillAuraReport(Plugin):
         return False
 
     def _start_pick_flow(self, reporter: str):
+        """启动分页选择流程线程"""
         th = threading.Thread(
             target=self._pick_flow_thread,
             args=(reporter,),
@@ -125,18 +133,91 @@ class KillAuraReport(Plugin):
         )
         th.start()
 
+    @staticmethod
+    def _clamp_page(page: int, total_pages: int) -> int:
+        """限制页面范围"""
+        if total_pages <= 1:
+            return 0
+        return max(0, min(page, total_pages - 1))
+
+    def _format_pick_page(
+        self,
+        *,
+        reporter: str,
+        players: List[str],
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[str], str, int, int]:
+        """格式化某一页的玩家列表提示"""
+        total_pages = (len(players) + page_size - 1) // page_size
+        if total_pages <= 0:
+            total_pages = 1
+
+        page = self._clamp_page(page, total_pages)
+
+        start = page * page_size
+        end = min(start + page_size, len(players))
+        shown = players[start:end]
+
+        lines = [
+            f"§e请输入序号举报玩家（第 §b{page + 1}§e/§b{total_pages}§e 页）",
+            "§7输入 §f+§7 下一页，§f-§7 上一页，§f.§7 退出选择",
+        ]
+        for i, n in enumerate(shown, start=1):
+            lines.append(f"§f{i}. §b{n}")
+
+        if len(players) > end:
+            lines.append(f"§7（后面还有 {len(players) - end} 人）")
+        if start > 0:
+            lines.append(f"§7（前面还有 {start} 人）")
+
+        return shown, "\n".join(lines), page, total_pages
+
+    def _handle_pick_input(
+        self,
+        *,
+        resp: str,
+        page: int,
+        total_pages: int,
+        shown: List[str],
+    ) -> Tuple[str, Optional[int], Optional[str]]:
+        """处理一次分页输入"""
+        resp = resp.strip()
+
+        if resp in (".", "q", "Q"):
+            return ("exit", None, None)
+
+        if resp == "+":
+            if page < total_pages - 1:
+                return ("page", page + 1, None)
+            return ("invalid", None, None)
+
+        if resp == "-":
+            if page > 0:
+                return ("page", page - 1, None)
+            return ("invalid", None, None)
+
+        if not resp.isdigit():
+            return ("invalid", None, None)
+
+        idx = int(resp)
+        if idx < 1 or idx > len(shown):
+            return ("invalid", None, None)
+
+        return ("select", None, shown[idx - 1])
+
     def _pick_flow_thread(self, reporter: str):
+        """分页展示在线玩家并接收输入"""
         try:
             from tooldelta import game_utils
         except Exception:
             self._tell(reporter, "§c缺少 game_utils，无法进行交互输入。")
             return
 
-        maxn = int(self.config.get("每页显示人数", 15))
-        maxn = max(1, min(maxn, 50))
+        page_size = int(self.config.get("每页显示人数", 15))
+        page_size = max(1, min(page_size, 50))
 
         page = 0
-
         while True:
             players = self._get_online_player_names()
             players = [p for p in players if p != reporter]
@@ -145,70 +226,41 @@ class KillAuraReport(Plugin):
                 self._tell(reporter, "§e当前没有可举报的在线玩家。")
                 return
 
-            total_pages = (len(players) + maxn - 1) // maxn
-            if total_pages <= 0:
-                total_pages = 1
-
-            if page < 0:
-                page = 0
-            if page > (total_pages - 1):
-                page = total_pages - 1
-
-            start = page * maxn
-            end = min(start + maxn, len(players))
-            shown = players[start:end]
-
-            lines = [
-                f"§e请输入序号举报玩家（第 §b{page + 1}§e/§b{total_pages}§e 页）",
-                "§7输入 §f+§7 下一页，§f-§7 上一页，§f.§7 退出选择",
-            ]
-            for i, n in enumerate(shown, start=1):
-                lines.append(f"§f{i}. §b{n}")
-
-            if len(players) > end:
-                lines.append(f"§7（后面还有 {len(players) - end} 人）")
-            if start > 0:
-                lines.append(f"§7（前面还有 {start} 人）")
-
-            self._tell(reporter, "\n".join(lines))
+            shown, text, page, total_pages = self._format_pick_page(
+                reporter=reporter,
+                players=players,
+                page=page,
+                page_size=page_size,
+            )
+            self._tell(reporter, text)
 
             resp = game_utils.waitMsg(reporter)
             if not isinstance(resp, str):
                 return
-            resp = resp.strip()
 
-            if resp in (".", "q", "Q"):
+            action, new_page, target = self._handle_pick_input(
+                resp=resp,
+                page=page,
+                total_pages=total_pages,
+                shown=shown,
+            )
+
+            if action == "exit":
                 self._tell(reporter, "§7已退出选择。")
                 return
 
-            if resp == "+":
-                if page < total_pages - 1:
-                    page += 1
-                else:
-                    self._tell(reporter, "§7已经是最后一页。")
+            if action == "page" and isinstance(new_page, int):
+                page = self._clamp_page(new_page, total_pages)
                 continue
 
-            if resp == "-":
-                if page > 0:
-                    page -= 1
-                else:
-                    self._tell(reporter, "§7已经是第一页。")
-                continue
+            if action == "select" and isinstance(target, str):
+                self._enqueue_report(reporter, target)
+                return
 
-            if not resp.isdigit():
-                self._tell(reporter, "§c输入无效：请发送序号 / + / - / .")
-                continue
-
-            idx = int(resp)
-            if idx < 1 or idx > len(shown):
-                self._tell(reporter, "§c序号超出范围，请重新输入。")
-                continue
-
-            target = shown[idx - 1]
-            self._enqueue_report(reporter, target)
-            return
+            self._tell(reporter, "§c输入无效：请发送序号 / + / - / .")
 
     def _enqueue_report(self, reporter: str, target: str):
+        """将举报任务加入队列"""
         if target not in self._get_online_player_names():
             self._tell(reporter, f"§c玩家 §f{target}§c 不在线或名字不匹配。")
             return
@@ -231,6 +283,7 @@ class KillAuraReport(Plugin):
         self._q_event.set()
 
     def _worker_loop(self):
+        """顺序处理举报任务"""
         while True:
             self._q_event.wait()
             while True:
@@ -247,6 +300,7 @@ class KillAuraReport(Plugin):
                         self._queued_targets.discard(case.target)
 
     def _run_case(self, case: _ReportCase):
+        """执行一次检测流程"""
         target = case.target
 
         if target not in self._get_online_player_names():
@@ -290,7 +344,7 @@ class KillAuraReport(Plugin):
 
                 tp_cmd = (
                     f'/execute at @a[name="{target}"] rotated as @a[name="{target}"] '
-                    f"positioned ^ ^ ^-0.5 run tp ~ ~ ~"
+                    "positioned ^ ^ ^-0.5 run tp ~ ~ ~"
                 )
 
                 tp_ok = False
@@ -307,7 +361,7 @@ class KillAuraReport(Plugin):
                     self._punish(target, reporter=case.reporter)
                     break
 
-                if time.time() - start_ts > max_round:
+                if (time.time() - start_ts) > max_round:
                     self._tell(
                         case.reporter,
                         f"§7{int(max_round)} 秒内未检测到异常：§f{target}",
@@ -331,6 +385,7 @@ class KillAuraReport(Plugin):
                 pass
 
     def _refresh_bot_pos(self):
+        """刷新机器人自身坐标缓存"""
         pos = self._querytarget_self_pos()
         if pos is None:
             return
@@ -338,6 +393,7 @@ class KillAuraReport(Plugin):
             self._bot_pos = pos
 
     def _should_punish(self, *, per_sec: int, sustain: float) -> bool:
+        """根据 1 秒窗口受击次数 + 持续时间判断是否处罚"""
         with self._case_lock:
             if self._current is None:
                 return False
@@ -358,10 +414,12 @@ class KillAuraReport(Plugin):
         return False
 
     def _punish(self, target: str, reporter: str):
+        """执行踢出与可选封禁"""
         self._tell(reporter, f"§c判定异常：§f{target}§c")
 
         try:
-            self.game_ctrl.sendwscmd_with_resp(f'/kick @a[name="{target}"]', 2)
+            kick_cmd = f'/kick @a[name="{target}"]'
+            self.game_ctrl.sendwscmd_with_resp(kick_cmd, 2)
         except Exception:
             pass
 
@@ -375,6 +433,7 @@ class KillAuraReport(Plugin):
                 Print.print_war(f"[{self.name}] 调用封禁系统失败：{e}")
 
     def on_pkt_sound(self, pkt: dict):
+        """监听攻击声音 SoundType=43，若在半径内则记一次受击"""
         try:
             sound_type = int(pkt.get("SoundType", -1))
         except Exception:
@@ -415,6 +474,7 @@ class KillAuraReport(Plugin):
         return False
 
     def _get_online_player_names(self) -> List[str]:
+        """获取在线玩家名列表"""
         names: List[str] = []
         try:
             for p in list(self.game_ctrl.players):
@@ -426,6 +486,7 @@ class KillAuraReport(Plugin):
         return names
 
     def _tell(self, player_name: str, text: str):
+        """tellraw 给单个玩家"""
         try:
             raw = {"rawtext": [{"text": text}]}
             raw_s = json.dumps(raw, ensure_ascii=False)
@@ -436,7 +497,7 @@ class KillAuraReport(Plugin):
 
     @staticmethod
     def _ws_has_receipt(resp: Any, *, allow_empty: bool = False) -> bool:
-        """回执处理"""
+        """判断 ws 指令是否收到回执"""
         if isinstance(resp, list):
             if not resp:
                 return bool(allow_empty)
@@ -456,9 +517,11 @@ class KillAuraReport(Plugin):
 
     @staticmethod
     def _ws_is_success(resp: Any) -> bool:
+        """是否成功"""
         return KillAuraReport._ws_has_receipt(resp, allow_empty=False)
 
     def _ws_get_first_parameter(self, resp: Any) -> Optional[Any]:
+        """获取 ws 回执中的第一个参数"""
         try:
             out = getattr(resp, "OutputMessages", None)
             if out and out[0].Success:
@@ -479,6 +542,7 @@ class KillAuraReport(Plugin):
         return None
 
     def _parse_querytarget_parameter(self, parameter: Any) -> Optional[List[dict]]:
+        """把 querytarget 参数解析为 list[dict]"""
         try:
             if isinstance(parameter, str):
                 obj = json.loads(parameter)
@@ -489,6 +553,7 @@ class KillAuraReport(Plugin):
             return None
 
     def _querytarget_self_pos(self) -> Optional[Tuple[float, float, float]]:
+        """querytarget @s 获取机器人坐标"""
         try:
             resp = self.game_ctrl.sendwscmd_with_resp("/querytarget @s", 2)
             parameter = self._ws_get_first_parameter(resp)
