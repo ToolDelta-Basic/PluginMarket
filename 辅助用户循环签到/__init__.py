@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import threading
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
+import requests
 from tooldelta import Plugin, ToolDelta, Print, cfg, plugin_entry, utils
 
 
@@ -13,7 +13,9 @@ class NV1TimedSignIn(Plugin):
 
     name = "辅助用户循环签到"
     author = "丸山彩"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
+
+    API_BASE = "https://nv1.nethard.pro/api"
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -30,6 +32,13 @@ class NV1TimedSignIn(Plugin):
         )
 
         self._stop_evt = threading.Event()
+
+        self._sess: Optional[requests.Session] = None
+
+        self._pwd_plain_cached: Optional[str] = None
+        self._pwd_hash_cached: Optional[str] = None
+
+        self._logged_in = False
 
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
@@ -85,10 +94,116 @@ class NV1TimedSignIn(Plugin):
         """字符串做 SHA-256"""
         return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-    def _login_and_sign(self):
-        """登录 NV1 并签到"""
-        import requests
+    def _get_timeout(self) -> float:
+        timeout = self.config.get("请求超时秒", 10.0)
+        try:
+            timeout_f = float(timeout)
+        except Exception:
+            timeout_f = 10.0
+        return timeout_f
 
+    def _get_session(self) -> requests.Session:
+        if self._sess is None:
+            self._sess = requests.Session()
+        return self._sess
+
+    def _get_password_hash(self, password_plain: str) -> str:
+        if self._pwd_plain_cached == password_plain and isinstance(
+            self._pwd_hash_cached, str
+        ):
+            return self._pwd_hash_cached
+        pwd_hash = self._sha256_hex(password_plain)
+        self._pwd_plain_cached = password_plain
+        self._pwd_hash_cached = pwd_hash
+        return pwd_hash
+
+    def _request_json(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        json_body: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: float = 10.0,
+    ) -> Tuple[Optional[Dict[str, Any]], int, str]:
+        """请求封装统一用 resp.json()"""
+        url = f"{self.API_BASE}{endpoint}"
+        sess = self._get_session()
+        resp = sess.request(method, url, json=json_body, headers=headers, timeout=timeout)
+        status = int(getattr(resp, "status_code", 0) or 0)
+        text = (getattr(resp, "text", "") or "")[:300]
+
+        try:
+            obj = resp.json()
+        except Exception:
+            return None, status, text
+
+        return obj if isinstance(obj, dict) else None, status, text
+
+    def _is_login_expired(self, j: Optional[Dict[str, Any]], status: int) -> bool:
+        if not isinstance(j, dict):
+            return False
+        return (j.get("success") is False) and (j.get("message") == "请先登录")
+
+    def _ensure_login(
+        self,
+        username: str,
+        password_hash: str,
+        headers: Dict[str, str],
+        timeout: float,
+    ) -> bool:
+        payload = {"username": username, "password": password_hash}
+        j, status, text = self._request_json(
+            "POST",
+            "/user/login",
+            json_body=payload,
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if j is None:
+            Print.print_err(f"[{self.name}] 登录失败：{text}")
+            self._logged_in = False
+            return False
+
+        if not bool(j.get("success", False)):
+            msg = j.get("message", "登录失败")
+            Print.print_err(f"[{self.name}] 登录失败：{msg}")
+            self._logged_in = False
+            return False
+
+        self._logged_in = True
+        return True
+
+    def _do_sign(
+        self,
+        headers: Dict[str, str],
+        timeout: float,
+    ) -> Optional[Dict[str, Any]]:
+        j, status, text = self._request_json(
+            "GET",
+            "/helper-bot/daily-sign",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if j is None:
+            Print.print_err(f"[{self.name}] 签到失败：{text}")
+            return None
+
+        if self._is_login_expired(j, status):
+            return j
+
+        success = bool(j.get("success", False))
+        if not success:
+            msg = j.get("message", "签到失败")
+            Print.print_err(f"[{self.name}] success=false：{msg}")
+            return None
+
+        return j
+
+    def _login_and_sign(self):
+        """登录 NV1 并签到，复用 Session，登录失效时重登一次"""
         username = str(self.config.get("username", "")).strip()
         password_plain = str(self.config.get("password", ""))
 
@@ -96,16 +211,8 @@ class NV1TimedSignIn(Plugin):
             Print.print_err(f"[{self.name}] 请先在配置中填写 username/password")
             return
 
-        password_hash = self._sha256_hex(password_plain)
-
-        timeout = self.config.get("请求超时秒", 10.0)
-        try:
-            timeout_f = float(timeout)
-        except Exception:
-            timeout_f = 10.0
-
-        login_url = "https://nv1.nethard.pro/api/user/login"
-        sign_url = "https://nv1.nethard.pro/api/helper-bot/daily-sign"
+        password_hash = self._get_password_hash(password_plain)
+        timeout_f = self._get_timeout()
 
         headers = {
             "Accept": "application/json, text/plain, */*",
@@ -115,30 +222,18 @@ class NV1TimedSignIn(Plugin):
             "User-Agent": "Mozilla/5.0",
         }
 
-        sess = requests.Session()
+        sign_json = self._do_sign(headers=headers, timeout=timeout_f)
 
-        payload = {"username": username, "password": password_hash}
-        r1 = sess.post(login_url, json=payload, headers=headers, timeout=timeout_f)
-        login_json = self._safe_json_dict(r1.text)
-
-        if login_json is None:
-            Print.print_err(f"[{self.name}] 登录失败：{r1.text[:300]}")
-            return
-
-        if not bool(login_json.get("success", False)):
-            msg = login_json.get("message", "登录失败")
-            Print.print_err(f"[{self.name}] 登录失败：{msg}")
-            return
-
-        r2 = sess.get(sign_url, headers=headers, timeout=timeout_f)
-        sign_json = self._safe_json_dict(r2.text)
+        if sign_json is not None and self._is_login_expired(sign_json, 0):
+            if self._ensure_login(username, password_hash, headers, timeout_f):
+                sign_json = self._do_sign(headers=headers, timeout=timeout_f)
+            else:
+                return
 
         if sign_json is None:
-            Print.print_err(f"[{self.name}] 签到失败：{r2.text[:300]}")
             return
 
-        success = bool(sign_json.get("success", False))
-        if not success:
+        if not bool(sign_json.get("success", False)):
             msg = sign_json.get("message", "签到失败")
             Print.print_err(f"[{self.name}] success=false：{msg}")
             return
@@ -151,15 +246,6 @@ class NV1TimedSignIn(Plugin):
             level = data.get("level", None)
 
         Print.print_inf(f"[{self.name}] success=true：nickname={nickname} level={level}")
-
-    @staticmethod
-    def _safe_json_dict(text: str) -> Optional[Dict[str, Any]]:
-        """将文本解析为 dict JSON"""
-        try:
-            obj = json.loads(text)
-            return obj if isinstance(obj, dict) else None
-        except Exception:
-            return None
 
 
 entry = plugin_entry(NV1TimedSignIn)
