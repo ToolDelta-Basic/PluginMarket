@@ -173,8 +173,8 @@ class KillAuraReport(Plugin):
 
         return shown, "\n".join(lines), page, total_pages
 
+    @staticmethod
     def _handle_pick_input(
-        self,
         *,
         resp: str,
         page: int,
@@ -520,7 +520,8 @@ class KillAuraReport(Plugin):
         """是否成功"""
         return KillAuraReport._ws_has_receipt(resp, allow_empty=False)
 
-    def _ws_get_first_parameter(self, resp: Any) -> Optional[Any]:
+    @staticmethod
+    def _ws_get_first_parameter(resp: Any) -> Optional[Any]:
         """获取 ws 回执中的第一个参数"""
         try:
             out = getattr(resp, "OutputMessages", None)
@@ -541,7 +542,8 @@ class KillAuraReport(Plugin):
             return params[0]
         return None
 
-    def _parse_querytarget_parameter(self, parameter: Any) -> Optional[List[dict]]:
+    @staticmethod
+    def _parse_querytarget_parameter(parameter: Any) -> Optional[List[dict]]:
         """把 querytarget 参数解析为 list[dict]"""
         try:
             if isinstance(parameter, str):
