@@ -2,12 +2,12 @@ import sys
 import importlib
 import subprocess
 from tooldelta import Plugin, utils, fmts, plugin_entry
-
+from importlib.metadata import version, PackageNotFoundError
 
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 5)
+    version = (0, 0, 6)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -19,6 +19,23 @@ class PipSupport(Plugin):
 
     # -------------------------  API  -----------------------------
     def install(self, packages: list[str], upgrade = False):
+        if not packages:
+            return
+        pending: list[str] = []
+        for spec in packages:
+            name, sep, pinned = spec.partition("==")
+            try:
+                installed = version(name)
+            except PackageNotFoundError:
+                pending.append(spec)
+                continue
+            if not sep or installed == pinned:
+                continue  # 版本满足，跳过
+            pending.append(spec)  # 版本不满足，继续安装
+        if not pending:
+            return
+        packages = pending
+
         pyexec = sys.executable
         if "py" not in pyexec:
             # 这不是 Python, 是 ToolDelta
