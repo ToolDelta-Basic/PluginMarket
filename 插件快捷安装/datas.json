@@ -1,0 +1,8 @@
+{
+  "plugin-id": "quick_plugin_installer",
+  "author": "Q3CC",
+  "version": "0.0.1",
+  "description": "提供快捷安装插件的命令: plg add <插件ID/名称>\n支持通过插件 ID 或名称搜索并安装插件和插件整合包\n支持自定义插件市场源 (-url 参数)\n支持跳过二次确认的快速安装模式 (-y 参数)\n自动下载和安装插件及其前置插件\n可扩展的命令架构，便于后期添加更多子命令",
+  "plugin-type": "classic",
+  "pre-plugins": {}
+}
