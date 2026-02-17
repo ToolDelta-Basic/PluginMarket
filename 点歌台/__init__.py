@@ -24,7 +24,6 @@ class DJTable(Plugin):
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
-        self.ListenPlayerJoin(self.on_player_join)
 
     def on_def(self):
         self.midiplayer = self.GetPluginAPI("MIDI播放器")
@@ -70,10 +69,6 @@ class DJTable(Plugin):
             op_only=True,
         )
         self.choose_music_thread()
-
-    @staticmethod
-    def on_player_join(_: Player):
-        pass
 
     @staticmethod
     def get_proxies():
