@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from tooldelta import cfg, utils, Plugin, Player, plugin_entry,fmts
+from tooldelta import cfg, utils, Plugin, Player, plugin_entry
 from bs4 import BeautifulSoup
 import requests
 import aiohttp
@@ -21,12 +21,6 @@ class DJTable(Plugin):
         self.musics_list: list[tuple[str, Player]] = []
         super().__init__(frame)
         (self.data_path / "音乐列表").mkdir(exist_ok=True)
-        self.mdir_external = self.data_path / "远程缓存"
-        self.mdir_external.mkdir(exist_ok=True)
-        config_default = {}
-        config, _ = cfg.get_plugin_config_and_version(
-            self.name, cfg.auto_to_std(config_default), config_default, self.version
-        )
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -77,10 +71,12 @@ class DJTable(Plugin):
         )
         self.choose_music_thread()
 
-    def on_player_join(self, _: Player):
-        self.game_ctrl.sendwocmd("/scoreboard players add @a song_point 0")
+    @staticmethod
+    def on_player_join(_: Player):
+        pass
 
-    def get_proxies(self):
+    @staticmethod
+    def get_proxies():
         """获取代理列表"""
         try:
             proxy_url = "https://proxy.scdn.io/api/get_proxy.php"
@@ -93,12 +89,12 @@ class DJTable(Plugin):
             if proxy_data.get('code') == 200 and proxy_data.get('data', {}).get('proxies'):
                 proxies_list = proxy_data['data']['proxies']
                 return proxies_list
-            else:
-                return []
-        except Exception as e:
+            return []
+        except Exception:
             return []
     
-    async def try_proxy(self, proxy, session, url, headers, result_container):
+    @staticmethod
+    async def try_proxy(proxy, session, url, headers, result_container):
         """尝试使用单个代理"""
         if result_container.get('success'):
             return
@@ -123,13 +119,14 @@ class DJTable(Plugin):
         except Exception:
             pass
     
-    async def test_proxies_async(self, proxies_list, search_url, headers):
+    @staticmethod
+    async def test_proxies_async(proxies_list, search_url, headers):
         """异步测试多个代理"""
         result_container = {'success': False, 'response': None, 'proxy': None}
 
         connector = aiohttp.TCPConnector(limit=len(proxies_list))
         async with aiohttp.ClientSession(connector=connector) as session:
-            tasks = [self.try_proxy(proxy, session, search_url, headers, result_container) for proxy in proxies_list]
+            tasks = [DJTable.try_proxy(proxy, session, search_url, headers, result_container) for proxy in proxies_list]
             await asyncio.gather(*tasks)
         
         return result_container
@@ -172,7 +169,7 @@ class DJTable(Plugin):
                 # 在非主线程中创建新的事件循环
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(self.test_proxies_async(proxies_list, search_url, headers))
+            result = loop.run_until_complete(DJTable.test_proxies_async(proxies_list, search_url, headers))
             
             if result['success']:
                 # 构建响应对象
@@ -187,7 +184,7 @@ class DJTable(Plugin):
         
         # 所有尝试都失败了
         if not success:
-            player.show(f"§e点歌§f>> §c所有尝试都失败了，请稍后再试，这并非面板商或插件问题，请重试以重新下载")
+            player.show("§e点歌§f>> §c所有尝试都失败了，请稍后再试，这并非面板商或插件问题，请重试以重新下载")
             return None
         
         # 解析 HTML 并提取音乐信息
