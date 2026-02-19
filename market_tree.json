@@ -24,7 +24,7 @@
     "控制台执行MC指令": {
       "name": "控制台执行MC指令",
       "author": "SuperScript",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "循环获取玩家坐标": {
@@ -678,7 +678,7 @@
     "基本插件功能库": {
       "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.12",
+      "version": "0.0.13",
       "plugin-type": "classic"
     },
     "server-link": {
