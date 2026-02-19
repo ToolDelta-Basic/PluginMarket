@@ -1,10 +1,10 @@
 {
     "author": "SuperScript",
-    "version": "0.0.6",
+    "version": "0.0.5",
     "description": "可以在控制台让机器人执行特殊指令等, 还可以发送魔法(AI)指令\n - ws/: 发送 WebSocket 指令\n - ai/ 发送 ai 指令",
     "limit_launcher": null,
     "pre-plugins": {
-        "基本插件功能库": "0.0.13"
+        "基本插件功能库": "0.0.12"
     },
     "plugin-type": "classic",
     "plugin-id": "控制台执行MC指令",
