@@ -3,9 +3,9 @@ import uuid
 import threading
 from tooldelta import Plugin, constants, utils, Chat, Player, plugin_entry
 from tooldelta.constants.netease import PYRPC_OP_SEND
+from typing import Any
 
-if 0:
-    from tooldelta.internal.types import Packet_CommandOutput
+from tooldelta.internal.types import Packet_CommandOutput
 
 
 def find_key_from_value(dic, val):
@@ -16,13 +16,16 @@ def find_key_from_value(dic, val):
 
 
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 12)
+    version = (0, 0, 13)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
 
     def __init__(self, frame):
         super().__init__(frame)
+        self.ListenPacket(constants.PacketIDS.IDCommandOutput, self._cmdoutput)
+        self.aicmd_resp_lock = threading.Lock()
+        self.current_aicmd_cb = None
         self.waitmsg_result = {}
         self.ListenPlayerLeave(self.on_player_leave)
         self.ListenChat(self.on_player_message)
@@ -278,7 +281,6 @@ class BasicFunctionLib(Plugin):
         return bool(res)
 
     def sendaicmd(self, cmd: str):
-        "发送一条魔法指令。"
         my_runtimeid = self.game_ctrl.players.getBotInfo().runtime_id
         pk = {
             "Value": [
@@ -298,6 +300,30 @@ class BasicFunctionLib(Plugin):
             "OperationType": PYRPC_OP_SEND,
         }
         self.game_ctrl.sendPacket(constants.PacketIDS.PyRpc, pk)
+
+    def sendaicmd_with_resp(self, cmd: str, timeout: float = 5) -> Packet_CommandOutput:
+        self.aicmd_resp_lock.acquire()
+        try:
+            getter, setter = utils.create_result_cb(dict)
+            self.current_aicmd_cb = setter
+            self.sendaicmd(cmd)
+            res = getter(timeout=timeout)
+            if res is None:
+                raise TimeoutError(f"魔法指令返回超时: {cmd}")
+            return Packet_CommandOutput(res)
+        finally:
+            self.current_aicmd_cb = None
+            self.aicmd_resp_lock.release()
+
+    def _cmdoutput(self, packet: dict[str, Any]):
+        origin_data = packet.get("CommandOrigin", {})
+        origin = origin_data.get("Origin")
+        output_type = packet.get("OutputType")
+        if origin == 0 and output_type == 4:
+            if self.current_aicmd_cb is not None:
+                self.current_aicmd_cb(packet)
+                self.current_aicmd_cb = None
+        return False
 
 
 EXC_PLAYER_LEAVE = OSError("Player left when waiting msg.")
