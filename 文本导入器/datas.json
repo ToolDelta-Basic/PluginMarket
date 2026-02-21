@@ -1,0 +1,9 @@
+{
+  "author": "SuperScript",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "导入文字",
+  "pre-plugins": {},
+  "plugin-id": "文字导入器",
+  "enabled": true
+}
