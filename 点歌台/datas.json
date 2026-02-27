@@ -1,12 +1,15 @@
 {
   "author": "SuperScript & Zhonger-Yuansi",
-  "version": "0.2.6",
-  "description": "想在在服内点歌？ 使用这个点歌台插件吧！\n歌曲MIDI文件需要放置于 §6插件数据文件/点歌台/音乐列表§f 下或者使用远程音乐仓库(配置文件中开启获取远程音乐)\n在服内输入 help 可查看点歌指令\n消耗的音乐点于计分板 song_point, 可自行添加分数",
+  "version": "1.0.0",
+  "description": "想在在服内点歌？ 使用这个点歌台插件吧！\n歌曲MIDI文件需要放置于 §6插件数据文件/点歌台/音乐列表§f 下或者使用网络源\n在服内输入 help 可查看点歌指令\n消耗的音乐点于计分板 song_point, 可自行添加分数",
   "limit_launcher": null,
   "pre-plugins": {
+    "pip": "0.0.5",
     "聊天栏菜单": "0.1.13",
-    "MC-MIDIPlayer": "0.0.1"
+    "MC-MIDIPlayer": "0.0.1",
+    "基本插件功能库": "0.0.12"
   },
+  "enabled": true,
   "plugin-type": "classic",
   "plugin-id": "choose-song"
 }
