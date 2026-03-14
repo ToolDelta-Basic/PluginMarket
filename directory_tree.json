@@ -335,10 +335,6 @@
         "config_getter.py": 0,
         "datas.json": 0
     },
-    "bdx导入器Pro": {
-        "__init__.py": 0,
-        "datas.json": 0
-    },
     "五子棋小游戏": {
         "__init__.py": 0,
         "datas.json": 0
@@ -518,6 +514,10 @@
             "README.txt": 0,
             "datas.json": 0
         },
+        "bdx导入器Pro": {
+            "__init__.py": 0,
+            "datas.json": 0
+        },
         "bdx导出器": {
             "bdx_utils": {
                 "writer.py": 0,
@@ -533,6 +533,10 @@
             "struct_loader.py": 0
         },
         "睡觉统计": {
+            "__init__.py": 0,
+            "datas.json": 0
+        },
+        "bdx导出器Pro": {
             "__init__.py": 0,
             "datas.json": 0
         },
@@ -889,10 +893,6 @@
         "datas.json": 0
     },
     "命令发送监视器": {
-        "__init__.py": 0,
-        "datas.json": 0
-    },
-    "bdx导出器Pro": {
         "__init__.py": 0,
         "datas.json": 0
     },

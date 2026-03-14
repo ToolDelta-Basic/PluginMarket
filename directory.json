@@ -328,10 +328,6 @@
         "config_getter.py",
         "datas.json"
     ],
-    "bdx导入器Pro": [
-        "__init__.py",
-        "datas.json"
-    ],
     "五子棋小游戏": [
         "__init__.py",
         "datas.json"
@@ -511,6 +507,10 @@
         "README.txt",
         "datas.json"
     ],
+    "desperated_plugins/bdx导入器Pro": [
+        "__init__.py",
+        "datas.json"
+    ],
     "desperated_plugins/bdx导出器": [
         "progress_bar.py",
         "utils.py",
@@ -526,6 +526,10 @@
         "construct_file.py"
     ],
     "desperated_plugins/睡觉统计": [
+        "__init__.py",
+        "datas.json"
+    ],
+    "desperated_plugins/bdx导出器Pro": [
         "__init__.py",
         "datas.json"
     ],
@@ -874,10 +878,6 @@
         "datas.json"
     ],
     "命令发送监视器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "bdx导出器Pro": [
         "__init__.py",
         "datas.json"
     ],

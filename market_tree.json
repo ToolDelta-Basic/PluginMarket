@@ -387,12 +387,6 @@
       "version": "0.4.1",
       "plugin-type": "classic"
     },
-    "bdx-builder-pro": {
-      "name": "bdx导入器Pro",
-      "author": "SuperScript",
-      "version": "0.2.0",
-      "plugin-type": "classic"
-    },
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
@@ -733,12 +727,6 @@
       "name": "命令发送监视器",
       "author": "ToolDelta",
       "version": "0.0.1",
-      "plugin-type": "classic"
-    },
-    "bdx-exporter": {
-      "name": "bdx导出器Pro",
-      "author": "SuperScript",
-      "version": "0.2.1",
       "plugin-type": "classic"
     },
     "Lumelta": {
