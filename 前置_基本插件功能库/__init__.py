@@ -2,7 +2,11 @@ import json
 import uuid
 import threading
 from tooldelta import Plugin, constants, utils, Chat, Player, plugin_entry
-from tooldelta.constants.netease import PYRPC_OP_SEND
+
+try:
+    from tooldelta.mc_bytes_packet.py_rpc import PYRPC_OP_SEND
+except ImportError:
+    from tooldelta.constants.netease import PYRPC_OP_SEND # type: ignore
 
 if 0:
     from tooldelta.internal.types import Packet_CommandOutput
@@ -16,7 +20,7 @@ def find_key_from_value(dic, val):
 
 
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 12)
+    version = (0, 0, 13)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
