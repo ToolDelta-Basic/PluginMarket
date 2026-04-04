@@ -4,8 +4,8 @@
     "description": "提供了进服验证，以保证进服玩家在指定qq群内",
     "limit_launcher": null,
     "pre-plugins": {
-        "cloud-qqlink": "0.0.8"
+        "群服互通": "0.0.8"
     },
     "plugin-type": "classic",
     "plugin-id": "PlayerJoinverify"
-  }
+}
