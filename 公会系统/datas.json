@@ -8,6 +8,5 @@
     "XUID获取": "0.0.1"
   },
   "plugin-id": "union-maker",
-  "plugin-type": "classic",
-  "enabled": false
+  "plugin-type": "classic"
 }
