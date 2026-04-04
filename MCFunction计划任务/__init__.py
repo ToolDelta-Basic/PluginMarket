@@ -74,7 +74,8 @@ class MCFunctionExecutor(Plugin):
         if msg not in self.triggers_prepared:
             return
         for evt in self.events[EVT_MSG]:
-            evt.execute(self.game_ctrl, {"[玩家名]": player})
+            if evt.extras["trigger"] == msg:
+                evt.execute(self.game_ctrl, {"[玩家名]": player})
 
     def on_player_death(self, player: str, killer, _):
         for evt in self.events[EVT_PLAYERDEATH]:
@@ -83,16 +84,15 @@ class MCFunctionExecutor(Plugin):
     @staticmethod
     def parse_comments(content: str):
         kws: dict[str, str] = {}
-        pre_arg = None
         for line in content.split("\n"):
             if not line.strip().startswith("#"):
                 continue
-            for maybe_arg in line.split():
-                if pre_arg is not None:
-                    kws[pre_arg] = maybe_arg
-                    pre_arg = None
-                elif len(maybe_arg) > 1 and maybe_arg[-1] in [":", "："]:
-                    pre_arg = maybe_arg[:-1]
+            line = line.strip("# ")
+            blocks = line.split()
+            if len(blocks) > 1 and (
+                blocks[0].endswith(":") or blocks[0].endswith("：")
+            ):
+                kws[blocks[0][:-1]] = " ".join(blocks[1:])
         return kws
 
     def prepare_triggers(self):
@@ -125,9 +125,7 @@ class MCFunctionExecutor(Plugin):
                     elif _timer[-1] in ("s", "秒"):
                         _timer = _timer[-1]
                     if (timer := utils.try_int(_timer)) is None:
-                        fmts.print_err(
-                            f"Mcf文件 {filename} 为定时任务, 却无法识别间隔"
-                        )
+                        fmts.print_err(f"Mcf文件 {filename} 为定时任务, 却无法识别间隔")
                         raise SystemExit
                     self.events[EVT_TIMER].append(
                         MCFunction(filename, content, kws["事件"], {"delay": timer})
