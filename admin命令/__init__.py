@@ -21,7 +21,6 @@ class AdminCommand(Plugin):
 
     def on_chat(self, chat: Chat):
         player = chat.player
-        playername = chat.player.name
         msg = chat.msg
         if not chat.player.is_op():
             return
@@ -34,36 +33,40 @@ class AdminCommand(Plugin):
                     """§r输入§l§b.clear§r清空背包\n§r输入§l§b.adminbag§r获取管理员物品\n§r输入§l§a.wt§r天气与时间控制菜单(§o§a开放§r)"""
                 )
             case ".gm1" | ".gmc" | ".cz":  # 改创造模式
-                self.game_ctrl.sendwscmd("/gamemode 1 " + playername)
+                self.game_ctrl.sendwscmd("/gamemode 1 " + player.safe_name)
                 player.show("您的状态已刷新")
             case ".cmdarea" | ".cmdArea":  # 前往指令区
                 self.game_ctrl.sendwscmd(
-                    f"/tp {playername} {self.cmdarea.get('x')} {self.cmdarea.get('y')} {self.cmdarea.get('z')}"
+                    f"/tp {player.safe_name} {self.cmdarea.get('x')} {self.cmdarea.get('y')} {self.cmdarea.get('z')}"
                 )
                 player.show("§b已将您传送至指令区.")
             case ".inv" | ".INV":  # 改为隐身
                 self.game_ctrl.sendwscmd(
-                    f"effect {playername} invisibility 99999 1 true"
+                    f"effect {player.safe_name} invisibility 99999 1 true"
                 )
                 player.show("您的状态已刷新")
             case ".nv" | ".NV":  # 改为夜视
                 self.game_ctrl.sendwscmd(
-                    f"effect {playername} night_vision 99999 1 true"
+                    f"effect {player.safe_name} night_vision 99999 1 true"
                 )
                 player.show("您的状态已刷新")
             case ".ec" | ".EC":  # 清除药水效果
-                self.game_ctrl.sendwscmd("/effect " + playername + " clear")
+                self.game_ctrl.sendwscmd("/effect " + player.safe_name + " clear")
                 player.show("您的状态已刷新")
             case ".clear" | ".CLEAR":  # 清空背包
-                self.game_ctrl.sendwscmd("/clear " + playername + "")
+                self.game_ctrl.sendwscmd("/clear " + player.safe_name + "")
                 player.show("您的背包已清空")
             case ".adminbag" | ".adminbag":  # 获取管理员物品
-                self.game_ctrl.sendwscmd("/give " + playername + " chain_command_block")
-                self.game_ctrl.sendwscmd("/give " + playername + " deny")
-                self.game_ctrl.sendwscmd("/give " + playername + " allow")
-                self.game_ctrl.sendwscmd("/give " + playername + " border_block")
-                self.game_ctrl.sendwscmd("/give " + playername + " barrier")
-                self.game_ctrl.sendwscmd("/give " + playername + " structure_block")
+                self.game_ctrl.sendwscmd(
+                    "/give " + player.safe_name + " chain_command_block"
+                )
+                self.game_ctrl.sendwscmd("/give " + player.safe_name + " deny")
+                self.game_ctrl.sendwscmd("/give " + player.safe_name + " allow")
+                self.game_ctrl.sendwscmd("/give " + player.safe_name + " border_block")
+                self.game_ctrl.sendwscmd("/give " + player.safe_name + " barrier")
+                self.game_ctrl.sendwscmd(
+                    "/give " + player.safe_name + " structure_block"
+                )
                 player.show(
                     "§b已给予:链命令方块|拒绝方块|允许方块|边界方块|屏障|结构方块",
                 )
