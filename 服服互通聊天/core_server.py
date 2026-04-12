@@ -83,7 +83,7 @@ async def handle_client(websocket, _path):
 
 async def main():
     """启动 WebSocket 服务器。"""
-    host = "0.0.0.0"  # deepsource ignore: BAN-B104
+    host = "0.0.0.0"  # skipcq: BAN-B104
     port = 8765  # 你可以在这里修改中转服务器开放的端口
     logging.info("🚀 服服互通中转服务器正在启动，监听 ws://%s:%d", host, port)
 
