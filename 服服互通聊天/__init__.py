@@ -1,25 +1,32 @@
-import json
-import time
-import threading
 import asyncio
 import importlib
+import json
 import subprocess
 import sys
-from tooldelta import Plugin, plugin_entry, Config, utils
+import threading
+
+from tooldelta import Config, Plugin, plugin_entry
 from tooldelta.constants import PacketIDS
 
-# 自动安装依赖
-def install_package(package):
+
+def install_package(package: str) -> None:
+    """自动安装缺失的依赖包。"""
     if importlib.util.find_spec(package) is None:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package, "-q"])
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package, "-q"]
+            )
         except Exception:
             pass
 
+
 install_package("websockets")
-import websockets
+import websockets  # noqa: E402
+
 
 class CrossServerChat(Plugin):
+    """服服互通聊天插件。"""
+
     name = "服服互通聊天"
     author = "哈茶块"
     version = (1, 0, 2)
@@ -35,7 +42,7 @@ class CrossServerChat(Plugin):
 
         # 【核心修复】防止重载插件时旧的后台线程继续存活导致消息重复发送
         if hasattr(self.frame, "_cross_server_chat_instance"):
-            old_inst = self.frame._cross_server_chat_instance
+            old_inst = getattr(self.frame, "_cross_server_chat_instance", None)
             if old_inst:
                 try:
                     old_inst.stop()
@@ -59,7 +66,7 @@ class CrossServerChat(Plugin):
         self.ListenPacket(PacketIDS.Text, self.on_chat)
 
     def stop(self):
-        """停止后台服务，供重载时安全清理旧线程"""
+        """停止后台服务，供重载时安全清理旧线程。"""
         self.is_running = False
         if self.ws_conn and self.loop:
             try:
@@ -69,18 +76,18 @@ class CrossServerChat(Plugin):
                 pass
 
     def on_def(self):
-        """插件加载时启动后台 WebSocket 线程"""
+        """插件加载时启动后台 WebSocket 线程。"""
         self.print_inf(f"准备连接到频道: [{self.cfg['频道名称']}]")
         threading.Thread(target=self.run_ws_client, daemon=True).start()
 
     def run_ws_client(self):
-        """在新线程中初始化异步事件循环"""
+        """在新线程中初始化异步事件循环。"""
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self.ws_main())
 
     async def ws_main(self):
-        """维持与中转服务器的持久连接"""
+        """维持与中转服务器的持久连接。"""
         uri = self.cfg["中转服务器地址"]
         channel = self.cfg["频道名称"]
 
@@ -89,7 +96,7 @@ class CrossServerChat(Plugin):
                 self.print_inf(f"正在尝试连接中转服务器: {uri} ...")
                 async with websockets.connect(uri) as ws:
                     self.ws_conn = ws
-                    self.print_suc("成功连接到中转服务器！互通服务已上线。")
+                    self.print_suc("✅ 成功连接到中转服务器！互通服务已上线。")
 
                     # 1. 握手阶段：告诉服务器我属于哪个频道
                     await ws.send(json.dumps({"type": "auth", "channel": channel}))
@@ -99,7 +106,7 @@ class CrossServerChat(Plugin):
                     send_task = asyncio.create_task(self.ws_send(ws))
 
                     # 3. 等待任意一个任务出错（例如连接断开）
-                    done, pending = await asyncio.wait(
+                    _, pending = await asyncio.wait(
                         [recv_task, send_task],
                         return_when=asyncio.FIRST_COMPLETED
                     )
@@ -127,7 +134,7 @@ class CrossServerChat(Plugin):
                     await asyncio.sleep(1)
 
     async def ws_recv(self, ws):
-        """接收中转服务器发来的跨服消息"""
+        """接收中转服务器发来的跨服消息。"""
         async for msg in ws:
             if not self.is_running:
                 break
@@ -145,7 +152,7 @@ class CrossServerChat(Plugin):
                 self.print_err(f"处理跨服消息时出错: {e}")
 
     async def ws_send(self, ws):
-        """将队列里的本地消息发送给中转服务器"""
+        """将队列里的本地消息发送给中转服务器。"""
         while self.is_running:
             try:
                 # 使用 wait_for 限制等待时间，确保能实时检测到 self.is_running 的变化
@@ -157,7 +164,7 @@ class CrossServerChat(Plugin):
                 break
 
     def on_chat(self, pkt):
-        """监听本地玩家聊天"""
+        """监听本地玩家聊天。"""
         player = pkt.get("SourceName", "")
         msg = pkt.get("Message", "").strip()
         text_type = pkt.get("TextType", 0)
@@ -193,5 +200,6 @@ class CrossServerChat(Plugin):
             )
 
         return False
+
 
 entry = plugin_entry(CrossServerChat)
