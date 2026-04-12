@@ -1,27 +1,9 @@
 import asyncio
-import importlib
 import json
-import subprocess
-import sys
 import threading
 
 from tooldelta import Config, Plugin, plugin_entry
 from tooldelta.constants import PacketIDS
-
-
-def install_package(package: str) -> None:
-    """自动安装缺失的依赖包。"""
-    if importlib.util.find_spec(package) is None:
-        try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", package, "-q"]
-            )
-        except Exception:
-            pass
-
-
-install_package("websockets")
-import websockets  # noqa: E402
 
 
 class CrossServerChat(Plugin):
@@ -29,7 +11,7 @@ class CrossServerChat(Plugin):
 
     name = "服服互通聊天"
     author = "哈茶块"
-    version = (1, 0, 2)
+    version = (1, 0, 3)
 
     CONFIG_TEMPLATE = {
         "中转服务器地址": "ws://core.aurorabot.top",
@@ -38,9 +20,10 @@ class CrossServerChat(Plugin):
     }
 
     def __init__(self, frame):
+        """初始化插件，处理热重载。"""
         super().__init__(frame)
 
-        # 【核心修复】防止重载插件时旧的后台线程继续存活导致消息重复发送
+        #  防止重载插件时旧的后台线程继续存活导致消息重复发送
         if hasattr(self.frame, "_cross_server_chat_instance"):
             old_inst = getattr(self.frame, "_cross_server_chat_instance", None)
             if old_inst:
@@ -77,6 +60,12 @@ class CrossServerChat(Plugin):
 
     def on_def(self):
         """插件加载时启动后台 WebSocket 线程。"""
+        try:
+            self.GetPluginAPI("pip").require("websockets")
+        except Exception as e:
+            self.print_err(f"无法调用内置 pip 模块检查依赖，请确保已安装 [pip模块支持] 插件: {e}")
+            return
+
         self.print_inf(f"准备连接到频道: [{self.cfg['频道名称']}]")
         threading.Thread(target=self.run_ws_client, daemon=True).start()
 
@@ -88,6 +77,9 @@ class CrossServerChat(Plugin):
 
     async def ws_main(self):
         """维持与中转服务器的持久连接。"""
+        # 此时 websockets 必定已经被官方 pip 模块处理好了，可以直接局部导入
+        import websockets
+
         uri = self.cfg["中转服务器地址"]
         channel = self.cfg["频道名称"]
 
@@ -96,7 +88,7 @@ class CrossServerChat(Plugin):
                 self.print_inf(f"正在尝试连接中转服务器: {uri} ...")
                 async with websockets.connect(uri) as ws:
                     self.ws_conn = ws
-                    self.print_suc("✅ 成功连接到中转服务器！互通服务已上线。")
+                    self.print_suc("成功连接到中转服务器！互通服务已上线。")
 
                     # 1. 握手阶段：告诉服务器我属于哪个频道
                     await ws.send(json.dumps({"type": "auth", "channel": channel}))
@@ -118,7 +110,7 @@ class CrossServerChat(Plugin):
             except Exception as e:
                 # 只有在非关闭状态下才打印断开提示
                 if self.is_running:
-                    self.print_err(f"❌ 与中转服务器连接断开或无法连接: {e}")
+                    self.print_err(f" 与中转服务器连接断开或无法连接: {e}")
             finally:
                 self.ws_conn = None
 
