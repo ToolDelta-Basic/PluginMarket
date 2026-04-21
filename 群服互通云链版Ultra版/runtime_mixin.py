@@ -359,7 +359,8 @@ class QQLinkerRuntimeMixin:
         - at 消息后面补换行，让群里显示更自然
         """
 
-        assert self.ws
+        if not self.ws:
+            raise AssertionError
         if not self.available:
             self.print(f"§6未连接, 忽略发送至 {group} 的消息 {msg}")
             return
