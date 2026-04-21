@@ -1,6 +1,6 @@
 {
   "plugin-id": "solo-song-request",
-  "author": "OpenAI",
+  "author": "小六神",
   "version": "0.0.1",
   "description": "免费本地点歌插件。任何人都可以点歌，不消耗积分或道具，点的歌只有点歌人自己能听见。支持 q 退出、+/- 翻页、本地歌曲模糊搜索，以及配置每页显示数量。",
   "plugin-type": "classic",

@@ -1,129 +1,195 @@
-from tooldelta import (
-    Plugin,
-    cfg,
-    fmts,
-    game_utils,
-    utils,
-    Player,
-    plugin_entry,
-)
-
-from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 import time
+from typing import Any
+
+from tooldelta import Player, Plugin, cfg, fmts, game_utils, plugin_entry, utils
+from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
 
 
-class whitelist_and_opcheck(Plugin):
+class WhitelistAndOpCheck(Plugin):
     name = "白名单&管理员检测云链联动版"
     author = "猫七街"
     version = (1, 1, 2)
+    description = "白名单与管理员状态检测，并向其他插件暴露可复用的管理 API。"
+
+    DEFAULT_CFG = {
+        "检查时间（秒）": 60.0,
+        "白名单": {
+            "开启状态": False,
+            "踢出提示词": "请先加入白名单",
+            "白名单玩家": {"xuid1": "player_name1", "xuid2": "player_name2"},
+        },
+        "管理员检测": {
+            "开启状态": False,
+            "提示词": "你没有管理员权限",
+            "管理员列表": {"xuid1": "player_name1", "xuid2": "player_name2"},
+        },
+    }
+
+    STD_CFG = {
+        "检查时间（秒）": float,
+        "白名单": {"开启状态": bool, "踢出提示词": str, "白名单玩家": {}},
+        "管理员检测": {"开启状态": bool, "提示词": str, "管理员列表": {}},
+    }
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.bot = None
-        self._default_cfg = {
-            "检查时间（秒）": 60.0,
-            "白名单": {
-                "开启状态": False,
-                "踢出提示词": "请先加入白名单",
-                "白名单玩家": {"xuid1": "player_name1", "xuid2": "player_name2"},
-            },
-            "管理员检测": {
-                "开启状态": False,
-                "提示词": "你没有管理员权限",
-                "管理员列表": {"xuid1": "player_name1", "xuid2": "player_name2"},
-            },
-        }
-        self._std_cfg = {
-            "检查时间（秒）": float,
-            "白名单": {"开启状态": bool, "踢出提示词": str, "白名单玩家": {}},
-            "管理员检测": {"开启状态": bool, "提示词": str, "管理员列表": {}},
-        }
-        try:
-            raw_cfg, _ = cfg.get_plugin_config_and_version(
-                self.name, {}, self._default_cfg, self.version
-            )
-            self._cfg = self.merge_with_default(raw_cfg, self._default_cfg)
-            cfg.check_auto(self._std_cfg, self._cfg)
-            cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-        except Exception as e:
-            fmts.print_err(f"加载配置文件出错: {e}")
-            self._cfg = self.merge_with_default({}, self._default_cfg)
-            cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-        self.ListenPreload(self.on_def)
-        self.ListenActive(self.on_inject)
+        self.neomega = None
+        self.bot_name = ""
+        self._cfg = self.load_config()
+
+        self.ListenPreload(self.on_preload)
+        self.ListenActive(self.on_active)
         self.ListenPlayerJoin(self.on_player_join)
 
-    # ---------------- API ----------------
     @classmethod
-    def merge_with_default(cls, raw: dict | None, default: dict):
-        result = {}
-        for key, value in default.items():
-            if isinstance(value, dict):
-                next_raw = raw.get(key, {}) if isinstance(raw, dict) else {}
-                result[key] = cls.merge_with_default(
-                    next_raw if isinstance(next_raw, dict) else {},
-                    value,
-                )
-            else:
-                if isinstance(raw, dict) and key in raw:
-                    result[key] = raw[key]
-                else:
-                    result[key] = value
-        if isinstance(raw, dict):
-            for key, value in raw.items():
-                if key not in result:
-                    result[key] = value
-        return result
+    def merge_with_default(cls, raw: Any, default: Any):
+        if isinstance(default, dict):
+            result = {
+                key: cls.merge_with_default(None, value)
+                for key, value in default.items()
+            }
+            if isinstance(raw, dict):
+                for key, value in raw.items():
+                    if key in result:
+                        result[key] = cls.merge_with_default(value, result[key])
+                    else:
+                        result[key] = value
+            return result
+        return raw if raw is not None else default
+
+    def load_config(self) -> dict[str, Any]:
+        try:
+            raw_cfg, _ = cfg.get_plugin_config_and_version(
+                self.name,
+                {},
+                self.DEFAULT_CFG,
+                self.version,
+            )
+            merged_cfg = self.merge_with_default(raw_cfg, self.DEFAULT_CFG)
+            cfg.check_auto(self.STD_CFG, merged_cfg)
+        except Exception as err:
+            fmts.print_err(f"加载配置文件出错: {err}")
+            merged_cfg = self.merge_with_default({}, self.DEFAULT_CFG)
+        cfg.upgrade_plugin_config(self.name, merged_cfg, self.version)
+        return merged_cfg
 
     def save_cfg(self):
         cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
 
+    def on_preload(self):
+        self.get_xuid = self.GetPluginAPI("XUID获取")
+
+    def on_active(self):
+        self.neomega = self.require_neomega()
+        self.bot_name = self.neomega.get_bot_basic_info().BotName
+        self.frame.add_console_cmd_trigger(
+            ["白名单"],
+            None,
+            "在控制台修改白名单（需要玩家先登录一次服务器）",
+            self.console_manage_whitelist,
+        )
+        self.frame.add_console_cmd_trigger(
+            ["OP操作"],
+            None,
+            "在控制台修改服务器 OP（需要玩家先登录一次服务器）",
+            self.console_manage_admins,
+        )
+        self.start_periodic_check()
+
+    def require_neomega(self):
+        if isinstance(self.frame.launcher, FrameNeOmgAccessPoint):
+            return self.frame.launcher.omega
+        raise ValueError("此启动框架无法使用 NeOmega API")
+
+    def on_player_join(self, player: Player):
+        if self._is_bot_player(player.name):
+            return
+        if self._cfg["白名单"]["开启状态"]:
+            self.enforce_whitelist(player.name, player.xuid)
+        if self._cfg["管理员检测"]["开启状态"]:
+            self.enforce_admin_state(player.name, player.xuid)
+
+    def _is_bot_player(self, player_name: str) -> bool:
+        return bool(self.bot_name) and player_name == self.bot_name
+
     def resolve_player_xuid(self, player_name: str) -> tuple[str | None, str]:
         try:
-            player_uuid = self.get_xuid.get_xuid_by_name(player_name, allow_offline=True)
-            return player_uuid, ""
+            player_xuid = self.get_xuid.get_xuid_by_name(player_name, allow_offline=True)
         except Exception:
             return None, "玩家未加入过服务器或无法获取 XUID"
+        return player_xuid, ""
 
     def add_whitelist_player(self, player_name: str) -> tuple[bool, str]:
-        player_uuid, error = self.resolve_player_xuid(player_name)
-        if player_uuid is None:
-            return False, error
-        if player_uuid in self._cfg["白名单"]["白名单玩家"]:
-            return False, "玩家已存在白名单中"
-        self._cfg["白名单"]["白名单玩家"][player_uuid] = player_name
-        self.save_cfg()
-        return True, f"已添加玩家 {player_name} 到白名单"
+        return self.add_player_mapping(
+            player_name,
+            "白名单",
+            "白名单玩家",
+            "玩家已存在白名单中",
+            "已添加玩家 {player_name} 到白名单",
+        )
 
     def remove_whitelist_player(self, player_name: str) -> tuple[bool, str]:
-        player_uuid, error = self.resolve_player_xuid(player_name)
-        if player_uuid is None:
-            return False, error
-        if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
-            return False, "玩家不存在白名单中"
-        self._cfg["白名单"]["白名单玩家"].pop(player_uuid)
-        self.save_cfg()
-        return True, f"已从白名单中移除玩家 {player_name}"
+        return self.remove_player_mapping(
+            player_name,
+            "白名单",
+            "白名单玩家",
+            "玩家不存在白名单中",
+            "已从白名单中移除玩家 {player_name}",
+        )
 
     def add_admin_player(self, player_name: str) -> tuple[bool, str]:
-        player_uuid, error = self.resolve_player_xuid(player_name)
-        if player_uuid is None:
-            return False, error
-        if player_uuid in self._cfg["管理员检测"]["管理员列表"]:
-            return False, "玩家已经是服务器管理员"
-        self._cfg["管理员检测"]["管理员列表"][player_uuid] = player_name
-        self.save_cfg()
-        return True, f"已添加玩家 {player_name} 为服务器管理员"
+        return self.add_player_mapping(
+            player_name,
+            "管理员检测",
+            "管理员列表",
+            "玩家已经是服务器管理员",
+            "已添加玩家 {player_name} 为服务器管理员",
+        )
 
     def remove_admin_player(self, player_name: str) -> tuple[bool, str]:
-        player_uuid, error = self.resolve_player_xuid(player_name)
-        if player_uuid is None:
+        return self.remove_player_mapping(
+            player_name,
+            "管理员检测",
+            "管理员列表",
+            "玩家不是服务器管理员",
+            "已将玩家 {player_name} 从服务器管理员中移除",
+        )
+
+    def add_player_mapping(
+        self,
+        player_name: str,
+        section: str,
+        key: str,
+        duplicate_message: str,
+        success_message: str,
+    ) -> tuple[bool, str]:
+        player_xuid, error = self.resolve_player_xuid(player_name)
+        if player_xuid is None:
             return False, error
-        if player_uuid not in self._cfg["管理员检测"]["管理员列表"]:
-            return False, "玩家不是服务器管理员"
-        self._cfg["管理员检测"]["管理员列表"].pop(player_uuid)
+        mapping = self._cfg[section][key]
+        if player_xuid in mapping:
+            return False, duplicate_message
+        mapping[player_xuid] = player_name
         self.save_cfg()
-        return True, f"已将玩家 {player_name} 从服务器管理员中移除"
+        return True, success_message.format(player_name=player_name)
+
+    def remove_player_mapping(
+        self,
+        player_name: str,
+        section: str,
+        key: str,
+        missing_message: str,
+        success_message: str,
+    ) -> tuple[bool, str]:
+        player_xuid, error = self.resolve_player_xuid(player_name)
+        if player_xuid is None:
+            return False, error
+        mapping = self._cfg[section][key]
+        if player_xuid not in mapping:
+            return False, missing_message
+        mapping.pop(player_xuid)
+        self.save_cfg()
+        return True, success_message.format(player_name=player_name)
 
     def set_whitelist_enabled(self, enabled: bool) -> tuple[bool, str]:
         self._cfg["白名单"]["开启状态"] = enabled
@@ -142,7 +208,7 @@ class whitelist_and_opcheck(Plugin):
         self.save_cfg()
         return True, f"检测周期已设置为 {seconds} 秒"
 
-    def get_runtime_status(self) -> dict:
+    def get_runtime_status(self) -> dict[str, int | float | bool]:
         return {
             "check_interval": self._cfg["检查时间（秒）"],
             "whitelist_enabled": self._cfg["白名单"]["开启状态"],
@@ -151,230 +217,95 @@ class whitelist_and_opcheck(Plugin):
             "admin_count": len(self._cfg["管理员检测"]["管理员列表"]),
         }
 
-    def on_def(self):
-        self.get_xuid = self.GetPluginAPI("XUID获取")
-
-    def get_neomega(self):
-        if isinstance(self.frame.launcher, FrameNeOmgAccessPoint):
-            return self.frame.launcher.omega
-
-        else:
-            raise ValueError("此启动框架无法使用 NeOmega API")
-
-    def on_player_join(self, player: Player):
-        player_name = player.name
-        xuid = player.xuid
-
-        if self._cfg["白名单"]["开启状态"]:
-            self.whitelist_check(player_name, xuid)
-
-        if self._cfg["管理员检测"]["开启状态"]:
-            self.operation_check(player_name)
-
-    def whitelist_check(self, player_name: str | None, xuid: str):
-        player = self.player(player_name)
-        player_uuid = player[1]
-        if player_name == self.bot.BotName:
+    def enforce_whitelist(self, player_name: str, player_xuid: str):
+        if player_xuid in self._cfg["白名单"]["白名单玩家"]:
             return
+        self.game_ctrl.sendwocmd(
+            f"kick {player_xuid} {self._cfg['白名单']['踢出提示词']}"
+        )
 
-        if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
+    def enforce_admin_state(self, player_name: str, player_xuid: str):
+        is_registered_admin = player_xuid in self._cfg["管理员检测"]["管理员列表"]
+        is_server_op = game_utils.is_op(player_name)
+
+        if is_server_op and not is_registered_admin:
+            self.game_ctrl.sendwocmd(f"/say 检测到存在非法管理员：{player_name}")
+            self.game_ctrl.sendwocmd(f"/deop {player_name}")
             self.game_ctrl.sendwocmd(
-                f"kick {xuid} " + self._cfg["白名单"]["踢出提示词"]
+                f"/tell {player_name} {self._cfg['管理员检测']['提示词']}"
             )
             return
 
-        return
+        if not is_server_op and is_registered_admin:
+            self.game_ctrl.sendwocmd(f"/op {player_name}")
 
-    def operation_check(self, player_name: str | None):
-        player = self.player(player_name)
-        player_uuid = player[1]
-        if player_name == self.bot.BotName:
-            return
+    def console_manage_whitelist(self, _args: list[str]):
+        self.console_manage_player_mapping(
+            title="白名单",
+            add_action=self.add_whitelist_player,
+            remove_action=self.remove_whitelist_player,
+            add_prompt="请输入要添加的玩家昵称：",
+            remove_prompt="请输入要移除的玩家昵称：",
+        )
 
-        flag = game_utils.is_op(player_name)
-        if flag:
-            if player_uuid not in self._cfg["管理员检测"]["管理员列表"]:
-                self.game_ctrl.sendwocmd(f"/say 检测到存在非法管理员：{player_name}")
-                self.game_ctrl.sendwocmd(f"/deop {player_name}")
-                self.game_ctrl.sendwocmd(
-                    f"/tell {player_name} {self._cfg['管理员检测']['提示词']}"
-                )
+    def console_manage_admins(self, _args: list[str]):
+        self.console_manage_player_mapping(
+            title="服务器管理员",
+            add_action=self.add_admin_player,
+            remove_action=self.remove_admin_player,
+            add_prompt="请输入要添加的玩家昵称：",
+            remove_prompt="请输入要移除的玩家昵称：",
+        )
+
+    def console_manage_player_mapping(
+        self,
+        title: str,
+        add_action,
+        remove_action,
+        add_prompt: str,
+        remove_prompt: str,
+    ):
+        option_add = f"添加{title}"
+        option_remove = f"移除{title}"
+        while True:
+            fmts.print_inf("选择你要进行的操作：")
+            fmts.print_inf(f"1. {option_add}")
+            fmts.print_inf(f"2. {option_remove}")
+            fmts.print_inf("q. 退出操作")
+            choice = input().strip().lower()
+            if choice == "q":
+                fmts.print_inf("已退出操作")
                 return
+            if choice == "1":
+                player_name = input(fmts.fmt_info(add_prompt)).strip()
+                ok, message = add_action(player_name)
+                self.print_console_result(ok, message)
+                return
+            if choice == "2":
+                player_name = input(fmts.fmt_info(remove_prompt)).strip()
+                ok, message = remove_action(player_name)
+                self.print_console_result(ok, message)
+                return
+            fmts.print_err("无效的选项")
 
+    @staticmethod
+    def print_console_result(ok: bool, message: str):
+        if ok:
+            fmts.print_suc(message)
         else:
-            if player_uuid in self._cfg["管理员检测"]["管理员列表"]:
-                self.game_ctrl.sendwocmd(f"/op {player_name}")
-                return
+            fmts.print_err(message)
 
-        return
-
-    def whitelist_console_set(self, args: list):
-        fmts.print_inf("选择你要进行的操作：")
-        fmts.print_inf("1. 添加玩家到白名单")
-        fmts.print_inf("2. 从白名单中移除玩家")
-        fmts.print_inf("q. 退出操作")
+    @utils.thread_func("循环检测白名单和管理员")
+    def start_periodic_check(self):
         while True:
-            choice = input()
-            if choice == "q":
-                fmts.print_inf("已退出操作")
-                return
-
-            if choice == "1":
-                player_name = input(fmts.fmt_info("请输入要添加的玩家昵称："))
-                try:
-                    player_uuid = self.get_xuid.get_xuid_by_name(player_name)
-
-                except:
-                    fmts.print_err("玩家未加入过服务器")
-                    return
-
-                if player_uuid in self._cfg["白名单"]["白名单玩家"]:
-                    fmts.print_inf("玩家已存在白名单中")
-                    return
-
-                self._cfg["白名单"]["白名单玩家"][player_uuid] = player_name
-                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                fmts.print_suc(f"已添加玩家{player_name}到白名单")
-                return
-
-            if choice == "2":
-                player_name = input(fmts.fmt_info("请输入玩家昵称："))
-                try:
-                    player_uuid = self.get_xuid.get_xuid_by_name(player_name)
-
-                except:
-                    player_uuid = ""
-                if player_uuid not in self._cfg["白名单"]["白名单玩家"]:
-                    fmts.print_inf("玩家不存在白名单中")
-                    return
-
-                self._cfg["白名单"]["白名单玩家"].pop(player_uuid)
-                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                fmts.print_suc(f"已从白名单中移除玩家{player_name}")
-                return
-
-            fmts.print_err("无效的选项")
-            fmts.print_inf("选择你要进行的操作：")
-            fmts.print_inf("1. 添加玩家到白名单")
-            fmts.print_inf("2. 从白名单中移除玩家")
-            fmts.print_inf("q. 退出操作")
-
-    def operation_console(self, args: list):
-        fmts.print_inf("选择你要进行的操作：")
-        fmts.print_inf("1. 添加OP")
-        fmts.print_inf("2. 移除OP")
-        fmts.print_inf("q. 退出操作")
-        while True:
-            choice = input()
-            if choice == "q":
-                fmts.print_inf("已退出操作")
-                return
-
-            if choice == "1":
-                player_name = input(fmts.fmt_info("请输入要添加的玩家昵称："))
-                try:
-                    player_uuid = self.get_xuid.get_xuid_by_name(player_name)
-
-                except:
-                    fmts.print_err("玩家未加入过服务器")
-                    return
-
-                if player_uuid in self._cfg["管理员检测"]["管理员列表"]:
-                    fmts.print_err("玩家已经是OP")
-                    return
-
-                self._cfg["管理员检测"]["管理员列表"][player_uuid] = player_name
-                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                fmts.print_suc(f"已添加玩家{player_name}为OP")
-                return
-
-            if choice == "2":
-                player_name = input(fmts.fmt_info("请输入玩家昵称："))
-                try:
-                    player_uuid = self.get_xuid.get_xuid_by_name(player_name)
-
-                except:
-                    player_uuid = ""
-
-                if player_uuid not in self._cfg["管理员检测"]["管理员列表"]:
-                    fmts.print_inf("玩家不是OP")
-                    return
-
-                self._cfg["管理员检测"]["管理员列表"].pop(player_uuid)
-                cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
-                fmts.print_inf(f"已将玩家{player_name}从OP中移除")
-                return
-            fmts.print_err("无效的选项")
-            fmts.print_inf("选择你要进行的操作：")
-            fmts.print_inf("1. 添加OP")
-            fmts.print_inf("2. 移除OP")
-            fmts.print_inf("q. 退出操作")
-
-    def auto_check(self):
-        while True:
-            time.sleep(self._cfg["检查时间（秒）"])
-            players = self.frame.get_players().getAllPlayers()
-            for player in players:
-                name = player.name
-                xuid = player.xuid
+            time.sleep(float(self._cfg["检查时间（秒）"]))
+            for player in self.frame.get_players().getAllPlayers():
+                if self._is_bot_player(player.name):
+                    continue
                 if self._cfg["白名单"]["开启状态"]:
-                    self.whitelist_check(name, xuid)
-
+                    self.enforce_whitelist(player.name, player.xuid)
                 if self._cfg["管理员检测"]["开启状态"]:
-                    self.operation_check(name)
-
-    def player(self, player_name: str | None = None, player_uuid: str | None = None):
-        if player_name is not None:
-            player = [player_name, None]
-            try:
-                player_uuid = self.get_xuid.get_xuid_by_name(
-                    player_name, allow_offline=True
-                )
-            except Exception as e:
-                # 增强异常处理：避免 KeyError
-                if player_name in self.game_ctrl.players_uuid:
-                    player_uuid = self.game_ctrl.players_uuid[player_name]
-                else:
-                    fmts.print_err(f"玩家 {player_name} 未在线或不存在")
-                    player_uuid = ""
-            player[1] = player_uuid
-            return player
-        elif player_uuid is not None:
-            player = [None, player_uuid]
-            try:
-                player_name = self.get_xuid.get_name_by_xuid(player_uuid)
-            except Exception as e:
-                # 增强异常处理：避免 AttributeError
-                if hasattr(self, "neomega"):
-                    player_name = self.neomega.get_player_by_uuid(player_uuid).name
-                else:
-                    fmts.print_err(f"无效的 UUID: {player_uuid}")
-                    player_name = ""
-            player[0] = player_name
-            return player
-        else:
-            fmts.print_err("player() 方法需要至少一个参数")
-            return [None, None]
-
-    def on_inject(self):
-        neomega = self.get_neomega()
-        self.neomega = self.get_neomega()
-        self.bot = neomega.get_bot_basic_info()
-        self.frame.add_console_cmd_trigger(
-            ["白名单"],
-            None,
-            "在控制台修改白名单（需要玩家先登录一次服务器）",
-            self.whitelist_console_set,
-        )
-        self.frame.add_console_cmd_trigger(
-            ["OP操作"],
-            None,
-            "在控制台修改服务器OP（需要玩家先登录一次服务器）",
-            self.operation_console,
-        )
-        self.auto_check_task = utils.createThread(
-            self.auto_check, (), "循环检测白名单和管理员"
-        )
+                    self.enforce_admin_state(player.name, player.xuid)
 
 
-entry = plugin_entry(whitelist_and_opcheck, "白名单&管理员检测云链联动版")
+entry = plugin_entry(WhitelistAndOpCheck, "白名单&管理员检测云链联动版")
