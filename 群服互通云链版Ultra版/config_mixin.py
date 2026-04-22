@@ -390,7 +390,6 @@ class QQLinkerConfigMixin:
 
     def save_group_state(self, group_id: int, state: dict[str, list[int]]):
         """保存并顺手归一化群权限状态。"""
-
         path = self.group_state_path(group_id)
         normalized = {
             "admins": self.normalize_int_list(state.get("admins", [])),
@@ -401,7 +400,6 @@ class QQLinkerConfigMixin:
 
     def ensure_group_state(self, group_id: int):
         """确保群权限文件一定存在，而且结构可读。"""
-
         path = self.group_state_path(group_id)
         if os.path.isfile(path):
             state = self.read_group_state(group_id)
@@ -411,7 +409,6 @@ class QQLinkerConfigMixin:
 
     def is_group_super_admin(self, group_id: int, qqid: int):
         """判断某个 QQ 是否是指定群的超级管理员。"""
-
         return qqid in self.read_group_state(group_id)["super_admins"]
 
     def is_group_admin(self, group_id: int, qqid: int):
@@ -419,7 +416,6 @@ class QQLinkerConfigMixin:
 
         普通管理员和超级管理员在大多数执行权限上是并列的，所以这里统一封装成一个入口。
         """
-
         state = self.read_group_state(group_id)
         return qqid in state["super_admins"] or qqid in state["admins"]
 
@@ -431,7 +427,6 @@ class QQLinkerConfigMixin:
 
     def add_group_role(self, group_id: int, qqid: int, is_super: bool):
         """给群成员授予管理员或超级管理员身份。"""
-
         state = self.read_group_state(group_id)
         if is_super:
             if qqid in state["super_admins"]:
@@ -451,7 +446,6 @@ class QQLinkerConfigMixin:
 
     def remove_group_role(self, group_id: int, qqid: int, is_super: bool):
         """移除群成员的管理员或超级管理员身份。"""
-
         state = self.read_group_state(group_id)
         if is_super:
             if qqid not in state["super_admins"]:
@@ -538,7 +532,6 @@ class QQLinkerConfigMixin:
     @staticmethod
     def normalize_string_triggers(raw: Any, fallback: list[str]):
         """把触发词列表清洗成无空值、无重复的稳定序列。"""
-
         triggers: list[str] = []
         if isinstance(raw, list):
             for item in raw:
@@ -568,11 +561,9 @@ class QQLinkerConfigMixin:
 
     def set_manual_launch(self, port: int):
         """切换到“本地启动器负责拉起云链”的模式。"""
-
         self._manual_launch = True
         self._manual_launch_port = port
 
     def manual_launch(self):
         """给本地启动器调用的显式连接入口。"""
-
         self.connect_to_websocket()
