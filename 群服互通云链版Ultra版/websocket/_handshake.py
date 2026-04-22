@@ -188,8 +188,14 @@ def _validate(headers, key: str, subprotocols) -> tuple:
     if isinstance(result, str):
         result = result.encode("utf-8")
 
+    # RFC 6455 明确要求此处使用 SHA-1 来计算 Sec-WebSocket-Accept，
+    # 这里不是密码学场景，因此显式声明 usedforsecurity=False。
     value = f"{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11".encode("utf-8")
-    hashed = base64encode(hashlib.sha1(value).digest()).strip().lower()
+    try:
+        digest = hashlib.new("sha1", value, usedforsecurity=False).digest()
+    except TypeError:
+        digest = hashlib.new("sha1", value).digest()
+    hashed = base64encode(digest).strip().lower()
 
     if hmac.compare_digest(hashed, result):
         return True, subproto

@@ -172,8 +172,7 @@ class WebSocket:
         """
         if self.handshake_response:
             return self.handshake_response.subprotocol
-        else:
-            return None
+        return None
 
     subprotocol = property(getsubprotocol)
 
@@ -183,8 +182,7 @@ class WebSocket:
         """
         if self.handshake_response:
             return self.handshake_response.status
-        else:
-            return None
+        return None
 
     status = property(getstatus)
 
@@ -194,8 +192,7 @@ class WebSocket:
         """
         if self.handshake_response:
             return self.handshake_response.headers
-        else:
-            return None
+        return None
 
     def is_ssl(self):
         try:
@@ -390,13 +387,12 @@ class WebSocket:
             data_received: Union[bytes, str] = data
             if isinstance(data_received, bytes):
                 return data_received.decode("utf-8")
-            elif isinstance(data_received, str):
+            if isinstance(data_received, str):
                 return data_received
-        elif opcode == ABNF.OPCODE_BINARY:
+        if opcode == ABNF.OPCODE_BINARY:
             data_binary: bytes = data
             return data_binary
-        else:
-            return ""
+        return ""
 
     def recv_data(self, control_frame: bool = False) -> tuple:
         """
