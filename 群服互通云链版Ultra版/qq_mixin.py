@@ -12,27 +12,37 @@ except ImportError:
 # 日常群聊交互放在这一层：帮助、背包查询、管理员菜单、联动检查菜单。
 class QQLinkerQQMixin:
     """负责群聊菜单、查询类功能以及白名单联动命令。"""
-
     @utils.thread_func("群服执行指令并获取返回")
     def on_qq_execute_cmd(self, group_id: int, qqid: int, cmd: list[str]):
         """在群里执行 Minecraft 指令，并把执行结果回发到群里。"""
-
         if not self.is_group_admin(group_id, qqid):
             self.sendmsg(group_id, "你没有权限执行此指令")
             return
         res = self.execute_cmd_and_get_zhcn_cb(" ".join(cmd))
         self.sendmsg(group_id, res)
 
+    def _reply_to_qq(self, group_id: int, qqid: int, text: str):
+        """向指定群成员回复一条文本消息。"""
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] {text}",
+            do_remove_cq_code=False,
+        )
+
+    def _reply_result(self, group_id: int, qqid: int, ok: bool, msg: str):
+        """统一回发成功/失败结果。"""
+        self._reply_to_qq(group_id, qqid, f"{'😄' if ok else '😭'} {msg}")
+
     def on_qq_help(self, group_id: int, sender: int, _):
         """根据当前群配置和权限状态动态生成帮助菜单。"""
-
         options: list[str] = []
         options.append(
             f"{'/'.join(self.get_group_help_triggers(group_id))} - 查看群服互通帮助菜单"
         )
         if self.is_group_super_admin(group_id, sender):
             options.append(
-                f"{' / '.join(self.get_group_admin_menu_triggers(group_id))} - 打开普通管理员管理菜单"
+                f"{' / '.join(self.get_group_admin_menu_triggers(group_id))}"
+                " - 打开普通管理员管理菜单"
             )
         options.append(
             f"{self.get_group_cmd_prefix(group_id)}[指令] - 向租赁服发送指令"
@@ -49,10 +59,12 @@ class QQLinkerQQMixin:
             f"{' / '.join(self.get_group_orion_ban_triggers(group_id))} - Orion QQ 封禁菜单"
         )
         options.append(
-            f"{' / '.join(self.get_group_orion_unban_triggers(group_id))} - Orion QQ 解封菜单"
+            f"{' / '.join(self.get_group_orion_unban_triggers(group_id))}"
+            " - Orion QQ 解封菜单"
         )
         options.append(
-            f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - 白名单&管理员检测云链联动版 管理菜单"
+            f"{' / '.join(self.get_group_checker_menu_triggers(group_id))}"
+            " - 白名单&管理员检测云链联动版 管理菜单"
         )
         text = self.plugin_ui_menu(
             "群服互通云链版Ultra版",
@@ -60,11 +72,10 @@ class QQLinkerQQMixin:
             options,
             ["输入 . 退出"],
         )
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {text}", do_remove_cq_code=False)
+        self._reply_to_qq(group_id, sender, text)
 
     def on_qq_player_list(self, group_id: int, _sender: int, _):
         """把在线玩家列表和可用 TPS 信息发到群里。"""
-
         group_cfg = self.group_cfgs[group_id]
         if not group_cfg["指令设置"]["是否允许查看玩家列表"]:
             self.sendmsg(group_id, "当前群未启用玩家列表查询")
@@ -83,10 +94,9 @@ class QQLinkerQQMixin:
 
     def qq_inventory_menu(self, group_id: int, qqid: int):
         """分页展示在线玩家，并允许在群里进一步查询某个人的背包。"""
-
         online_names = list(self.game_ctrl.allplayers)
         if not online_names:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 当前没有在线玩家", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "当前没有在线玩家")
             return
         page = 1
         per_page = self.get_group_inventory_items_per_page(group_id)
@@ -114,35 +124,39 @@ class QQLinkerQQMixin:
             self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {text}", do_remove_cq_code=False)
             user_input = self.waitMsg(qqid, timeout=120, group_id=group_id)
             if user_input is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
                 return
             user_input = user_input.strip()
             if user_input.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
                 return
             if user_input == "+":
                 # 菜单保持在同一条交互链里，翻页只改当前页码。
                 if page < total_pages:
                     page += 1
                 else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是最后一页啦~", do_remove_cq_code=False)
+                    self._reply_to_qq(group_id, qqid, "❀ 已经是最后一页啦~")
                 continue
             if user_input == "-":
                 if page > 1:
                     page -= 1
                 else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是第一页啦~", do_remove_cq_code=False)
+                    self._reply_to_qq(group_id, qqid, "❀ 已经是第一页啦~")
                 continue
             if match := re.fullmatch(r"^([1-9]\d*)页$", user_input):
                 page_num = int(match.group(1))
                 if 1 <= page_num <= total_pages:
                     page = page_num
                 else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 不存在第 {page_num} 页！请重新输入！", do_remove_cq_code=False)
+                    self._reply_to_qq(
+                        group_id,
+                        qqid,
+                        f"❀ 不存在第 {page_num} 页！请重新输入！",
+                    )
                 continue
             choice = utils.try_int(user_input)
             if choice is None or choice not in range(start_index, end_index + 1):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
                 continue
             self.show_player_inventory(group_id, qqid, online_names[choice - 1])
             return
@@ -150,7 +164,6 @@ class QQLinkerQQMixin:
     @staticmethod
     def simple_paginate(total_len: int, per_page: int, page: int):
         """在缺少 utils.paginate 时使用的本地分页兜底实现。"""
-
         total_pages = max(1, (total_len + per_page - 1) // per_page)
         page = max(1, min(page, total_pages))
         start_index = (page - 1) * per_page + 1
@@ -159,15 +172,14 @@ class QQLinkerQQMixin:
 
     def show_player_inventory(self, group_id: int, qqid: int, player_name: str):
         """把背包槽位整理成适合群聊阅读的文本。"""
-
         player_obj = self.game_ctrl.players.getPlayerByName(player_name)
         if player_obj is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 玩家 {player_name} 当前已不在线", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, f"玩家 {player_name} 当前已不在线")
             return
         try:
             inventory = player_obj.queryInventory()
         except Exception as err:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 查询背包失败: {err}", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, f"查询背包失败: {err}")
             return
         items: list[str] = []
         for idx, slot in enumerate(inventory.slots):
@@ -203,7 +215,6 @@ class QQLinkerQQMixin:
     @staticmethod
     def translate_item_name(item_id: str):
         """尽量把物品 ID 翻译成中文显示名，失败时退回原始 ID。"""
-
         if not isinstance(item_id, str) or item_id == "":
             return "未知物品"
         item_tail = item_id.split(":")[-1]
@@ -223,7 +234,11 @@ class QQLinkerQQMixin:
         """尝试从物品槽位对象里提取自定义名称。"""
         for attr in ("customName", "custom_name", "name"):
             value = getattr(slot, attr, None)
-            if isinstance(value, str) and value.strip() and value.strip() != getattr(slot, "id", ""):
+            if (
+                isinstance(value, str)
+                and value.strip()
+                and value.strip() != getattr(slot, "id", "")
+            ):
                 return value.strip()
         return ""
 
@@ -256,19 +271,18 @@ class QQLinkerQQMixin:
     def on_qq_add_admin(self, group_id: int, sender: int, args: list[str]):
         """给当前群添加普通管理员。"""
         if not self.is_group_super_admin(group_id, sender):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 只有本群超级管理员可以添加管理员", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, sender, "只有本群超级管理员可以添加管理员")
             return
         try:
             qqid = int(args[0])
         except (TypeError, ValueError):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] QQ号格式有误", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, sender, "QQ号格式有误")
             return
         _ok, msg = self.add_group_role(group_id, qqid, is_super=False)
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {msg}", do_remove_cq_code=False)
+        self._reply_to_qq(group_id, sender, msg)
 
     def qq_admin_menu(self, group_id: int, qqid: int):
         """给群超级管理员使用的普通管理员管理菜单。"""
-
         if not self.is_group_super_admin(group_id, qqid):
             self.sendmsg(
                 group_id,
@@ -289,13 +303,13 @@ class QQLinkerQQMixin:
             timeout=120,
         )
         if choice is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
         if choice.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         if choice not in ("1", "2"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
             return
         qq_text = self.qq_prompt(
             group_id,
@@ -309,30 +323,25 @@ class QQLinkerQQMixin:
             timeout=120,
         )
         if qq_text is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
         if qq_text.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         qqid_target = utils.try_int(qq_text)
         if qqid_target is None or qqid_target <= 0:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ QQ号格式有误", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ QQ号格式有误")
             return
         if choice == "1":
             ok, msg = self.add_group_role(group_id, qqid_target, is_super=False)
         else:
             ok, msg = self.remove_group_role(group_id, qqid_target, is_super=False)
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, qqid, ok, msg)
 
     def ensure_whitelist_checker(self, group_id: int, sender: int):
         """检查白名单联动插件是否可用，避免菜单点进去后才报空引用。"""
-
         if self.whitelist_checker is None:
-            self.sendmsg(
-                group_id,
-                f"[CQ:at,qq={sender}] 未检测到插件 白名单&管理员检测云链联动版",
-                do_remove_cq_code=False,
-            )
+            self._reply_to_qq(group_id, sender, "未检测到插件 白名单&管理员检测云链联动版")
             return False
         return True
 
@@ -341,28 +350,28 @@ class QQLinkerQQMixin:
         if not self.ensure_whitelist_checker(group_id, sender):
             return
         ok, msg = self.whitelist_checker.add_whitelist_player(args[0])
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_whitelist_remove(self, group_id: int, sender: int, args: list[str]):
         """通过群命令把玩家移出白名单。"""
         if not self.ensure_whitelist_checker(group_id, sender):
             return
         ok, msg = self.whitelist_checker.remove_whitelist_player(args[0])
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_server_admin_add(self, group_id: int, sender: int, args: list[str]):
         """通过群命令把玩家登记为服务器管理员。"""
         if not self.ensure_whitelist_checker(group_id, sender):
             return
         ok, msg = self.whitelist_checker.add_admin_player(args[0])
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_server_admin_remove(self, group_id: int, sender: int, args: list[str]):
         """通过群命令把玩家从服务器管理员名单中移除。"""
         if not self.ensure_whitelist_checker(group_id, sender):
             return
         ok, msg = self.whitelist_checker.remove_admin_player(args[0])
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_whitelist_toggle(self, group_id: int, sender: int, args: list[str]):
         """通过群命令切换白名单检测开关。"""
@@ -370,10 +379,10 @@ class QQLinkerQQMixin:
             return
         action = args[0].strip()
         if action not in ("开启", "关闭", "on", "off"):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 参数错误，格式：白名单检测 [开启/关闭]", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, sender, "参数错误，格式：白名单检测 [开启/关闭]")
             return
         ok, msg = self.whitelist_checker.set_whitelist_enabled(action in ("开启", "on"))
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_admin_check_toggle(self, group_id: int, sender: int, args: list[str]):
         """通过群命令切换管理员检测开关。"""
@@ -381,10 +390,10 @@ class QQLinkerQQMixin:
             return
         action = args[0].strip()
         if action not in ("开启", "关闭", "on", "off"):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 参数错误，格式：管理员检测 [开启/关闭]", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, sender, "参数错误，格式：管理员检测 [开启/关闭]")
             return
         ok, msg = self.whitelist_checker.set_admin_check_enabled(action in ("开启", "on"))
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_check_interval(self, group_id: int, sender: int, args: list[str]):
         """通过群命令修改联动插件的轮询周期。"""
@@ -393,10 +402,10 @@ class QQLinkerQQMixin:
         try:
             seconds = float(args[0])
         except (TypeError, ValueError):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 参数错误，格式：检测周期 [秒数]", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, sender, "参数错误，格式：检测周期 [秒数]")
             return
         ok, msg = self.whitelist_checker.set_check_interval(seconds)
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_check_status(self, group_id: int, sender: int, _args: list[str]):
         """把联动插件当前状态摘要发回群里。"""
@@ -440,10 +449,10 @@ class QQLinkerQQMixin:
             timeout=120,
         )
         if choice is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
         if choice.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
 
         if choice in ("1", "2", "3", "4"):
@@ -465,10 +474,10 @@ class QQLinkerQQMixin:
                 timeout=120,
             )
             if player_name is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
                 return
             if player_name.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
                 return
             if choice == "1":
                 self.on_qq_whitelist_add(group_id, qqid, [player_name])
@@ -494,17 +503,17 @@ class QQLinkerQQMixin:
                 timeout=120,
             )
             if action is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
                 return
             if action.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
                 return
             if action == "1":
                 action_arg = ["开启"]
             elif action == "2":
                 action_arg = ["关闭"]
             else:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
                 return
             if choice == "5":
                 self.on_qq_whitelist_toggle(group_id, qqid, action_arg)
@@ -525,10 +534,10 @@ class QQLinkerQQMixin:
                 timeout=120,
             )
             if seconds is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
                 return
             if seconds.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
                 return
             self.on_qq_check_interval(group_id, qqid, [seconds])
             return
@@ -537,4 +546,4 @@ class QQLinkerQQMixin:
             self.on_qq_check_status(group_id, qqid, [])
             return
 
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+        self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")

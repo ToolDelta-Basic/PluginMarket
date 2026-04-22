@@ -15,7 +15,6 @@ EASTER_EGG_QQIDS = {2528622340: ("SuperScript", "Super")}
 
 class QQMsgTrigger:
     """群聊触发词的运行时描述对象。"""
-
     def __init__(
         self,
         triggers: list[str],
@@ -82,13 +81,11 @@ def remove_cq_code(content: str):
 
 def remove_color(content: str):
     """去掉 Minecraft 风格颜色码，避免群昵称和消息混进格式符。"""
-
     return re.compile(r"§(.)").sub("", content)
 
 
 def replace_cq(content: str):
     """把常见 CQ 片段替换成可读占位文本，方便转发到游戏里。"""
-
     for rule, replacement in (
         (CQ_IMAGE_RULE, "[图片]"),
         (CQ_FILE_RULE, "[文件]"),

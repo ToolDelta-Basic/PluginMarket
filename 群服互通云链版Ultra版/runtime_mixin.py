@@ -25,7 +25,6 @@ except ImportError:
 # 运行时层只管消息流转：执行指令、WebSocket、广播、群服互通分发。
 class QQLinkerRuntimeMixin:
     """负责云链运行时、消息分发与 WebSocket 生命周期。"""
-
     def execute_cmd_and_get_zhcn_cb(self, cmd: str):
         """执行 MC 指令，并把原始返回整理成适合群聊展示的文本。"""
         try:

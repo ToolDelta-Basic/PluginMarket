@@ -10,7 +10,6 @@ class QQLinkerOrionMixin:
 
     def require_orion(self):
         """返回可用的 Orion 实例，不可用时抛出明确异常。"""
-
         if self.orion is None:
             raise RuntimeError("Orion_System 插件不可用")
         return self.orion
@@ -61,7 +60,6 @@ class QQLinkerOrionMixin:
 
     def qq_prompt(self, group_id: int, qqid: int, text: str, timeout: int = 60):
         """发送一段提示文本，并等待同群同 QQ 的下一条回复。"""
-
         self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {text}", do_remove_cq_code=False)
         resp = self.waitMsg(qqid, timeout=timeout, group_id=group_id)
         if isinstance(resp, str):
@@ -444,7 +442,6 @@ class QQLinkerOrionMixin:
 
     def qq_get_orion_ban_time(self, group_id: int, qqid: int):
         """统一处理群里输入的封禁时长。"""
-
         prompt = self.orion_ui_menu(
             "封禁时间输入",
             [],
@@ -470,7 +467,6 @@ class QQLinkerOrionMixin:
 
     def qq_get_orion_reason(self, group_id: int, qqid: int):
         """获取封禁原因，允许直接回车走默认文案。"""
-
         user_input = self.qq_prompt(
             group_id,
             qqid,
@@ -495,7 +491,6 @@ class QQLinkerOrionMixin:
 
     def qq_orion_ban_menu(self, group_id: int, qqid: int):
         """交互式 Orion 封禁菜单。"""
-
         if self.orion is None:
             self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
             return
@@ -584,7 +579,6 @@ class QQLinkerOrionMixin:
 
     def qq_orion_unban_menu(self, group_id: int, qqid: int):
         """交互式 Orion 解封菜单。"""
-
         if self.orion is None:
             self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
             return
@@ -652,7 +646,6 @@ class QQLinkerOrionMixin:
 
     def resolve_orion_target(self, target: str):
         """把群里的输入尽量解析成稳定的 `(xuid, 玩家名)` 组合。"""
-
         if self.orion is None:
             return None, None, "未检测到 Orion_System 插件"
         if not hasattr(self.orion, "xuid_getter"):
@@ -678,7 +671,6 @@ class QQLinkerOrionMixin:
 
     def orion_ban_player(self, target: str, ban_time_raw: str, reason: str):
         """非交互式封禁入口，给命令行式调用使用。"""
-
         xuid, player_name, error = self.resolve_orion_target(target)
         if error:
             return False, error
@@ -801,7 +793,6 @@ class QQLinkerOrionMixin:
 
     def on_console_add_qq_op(self, _args: list[str]):
         """控制台侧管理群管理员，主要给服主离线处理配置时使用。"""
-
         if not self.group_order:
             fmts.print_err("当前没有配置任何群聊")
             return

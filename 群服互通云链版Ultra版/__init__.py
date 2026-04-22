@@ -16,6 +16,7 @@ from .orion_mixin import QQLinkerOrionMixin
 from .qq_mixin import QQLinkerQQMixin
 from .runtime_mixin import QQLinkerRuntimeMixin
 
+
 # 入口类只负责装配 mixin 和生命周期注册，具体业务逻辑拆在各模块里。
 class QQLinker(
     QQLinkerQQMixin,
@@ -42,7 +43,6 @@ class QQLinker(
         这里不直接做网络连接或重逻辑初始化，只准备后续各 mixin 需要共享的状态容器。
         真正依赖外部插件 API 的动作，会留到 `on_def` / `on_inject` 再做。
         """
-
         super().__init__(frame)
         self.make_data_path()
         self.group_state_dir = self.format_data_path("群聊权限数据")
@@ -88,7 +88,6 @@ class QQLinker(
         这些对象都可能被多个 mixin 使用，所以统一在入口层绑定一次，
         后面各模块直接读 `self.xxx`，不用重复向 ToolDelta 申请。
         """
-
         self.tps_calc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
         self.orion = self.GetPluginAPI("Orion_System", force=False)
         self.whitelist_checker = self.GetPluginAPI("白名单&管理员检测云链联动版", force=False)
@@ -98,7 +97,6 @@ class QQLinker(
 
         这一步才真正尝试连云链，因为这时前置 API、配置和游戏控制器都已经可用。
         """
-
         self.print("尝试连接到群服互通云链版Ultra版机器人..")
         if not self._manual_launch:
             self.connect_to_websocket()
@@ -106,7 +104,6 @@ class QQLinker(
 
     def init_basic_triggers(self):
         """注册给控制台使用的少量入口命令。"""
-
         self.frame.add_console_cmd_trigger(
             ["QQ", "发群"],
             "[群号可选] [消息]",
