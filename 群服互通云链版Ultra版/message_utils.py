@@ -15,6 +15,7 @@ EASTER_EGG_QQIDS = {2528622340: ("SuperScript", "Super")}
 
 class QQMsgTrigger:
     """群聊触发词的运行时描述对象。"""
+
     def __init__(
         self,
         triggers: list[str],

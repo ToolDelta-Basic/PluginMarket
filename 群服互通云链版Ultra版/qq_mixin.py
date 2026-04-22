@@ -12,6 +12,7 @@ except ImportError:
 # 日常群聊交互放在这一层：帮助、背包查询、管理员菜单、联动检查菜单。
 class QQLinkerQQMixin:
     """负责群聊菜单、查询类功能以及白名单联动命令。"""
+
     @utils.thread_func("群服执行指令并获取返回")
     def on_qq_execute_cmd(self, group_id: int, qqid: int, cmd: list[str]):
         """在群里执行 Minecraft 指令，并把执行结果回发到群里。"""
@@ -422,31 +423,121 @@ class QQLinkerQQMixin:
         )
         self.sendmsg(group_id, output, do_remove_cq_code=False)
 
+    def _qq_checker_prompt(
+        self,
+        group_id: int,
+        qqid: int,
+        subtitle: str,
+        options: list[str],
+        hints: list[str],
+    ):
+        """统一构造白名单联动菜单提示并等待回复。"""
+        return self.qq_prompt(
+            group_id,
+            qqid,
+            self.plugin_ui_menu(
+                "白名单&管理员检测云链联动版",
+                subtitle,
+                options,
+                hints,
+            ),
+            timeout=120,
+        )
+
+    def _qq_checker_handle_player_action(self, group_id: int, qqid: int, choice: str):
+        """处理添加/移除白名单与服务器管理员这四类玩家操作。"""
+        title_map = {
+            "1": "白名单 添加玩家",
+            "2": "白名单 移除玩家",
+            "3": "管理员 添加玩家",
+            "4": "管理员 移除玩家",
+        }
+        handler_map = {
+            "1": self.on_qq_whitelist_add,
+            "2": self.on_qq_whitelist_remove,
+            "3": self.on_qq_server_admin_add,
+            "4": self.on_qq_server_admin_remove,
+        }
+        player_name = self._qq_checker_prompt(
+            group_id,
+            qqid,
+            title_map[choice],
+            [],
+            ["请输入玩家名称", "输入 . 退出"],
+        )
+        if player_name is None:
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
+            return
+        if player_name.lower() in ("q", ".", "。"):
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
+            return
+        handler_map[choice](group_id, qqid, [player_name])
+
+    def _qq_checker_handle_toggle_action(self, group_id: int, qqid: int, choice: str):
+        """处理白名单检测和管理员检测的开关菜单。"""
+        subtitle = "白名单检测 设置" if choice == "5" else "管理员检测 设置"
+        handler = (
+            self.on_qq_whitelist_toggle
+            if choice == "5"
+            else self.on_qq_admin_check_toggle
+        )
+        action = self._qq_checker_prompt(
+            group_id,
+            qqid,
+            subtitle,
+            ["开启", "关闭"],
+            ["输入 [1-2] 之间的数字以选择 对应操作", "输入 . 退出"],
+        )
+        if action is None:
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
+            return
+        if action.lower() in ("q", ".", "。"):
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
+            return
+        action_arg = {"1": ["开启"], "2": ["关闭"]}.get(action)
+        if action_arg is None:
+            self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
+            return
+        handler(group_id, qqid, action_arg)
+
+    def _qq_checker_handle_interval_action(self, group_id: int, qqid: int):
+        """处理检测周期设置菜单。"""
+        seconds = self._qq_checker_prompt(
+            group_id,
+            qqid,
+            "检测周期 设置",
+            [],
+            ["请输入检测周期秒数", "输入 . 退出"],
+        )
+        if seconds is None:
+            self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
+            return
+        if seconds.lower() in ("q", ".", "。"):
+            self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
+            return
+        self.on_qq_check_interval(group_id, qqid, [seconds])
+
     def qq_checker_menu(self, group_id: int, qqid: int):
         """在群里打开白名单与管理员检测联动菜单。"""
         if not self.ensure_whitelist_checker(group_id, qqid):
             return
         # 这个菜单本质上是把白名单插件暴露出来的 API 做了一层群聊版操作面板。
         # 这样权限仍然统一归群服互通管理，而不是把原插件的控制台能力原样暴露出来。
-        choice = self.qq_prompt(
+        choice = self._qq_checker_prompt(
             group_id,
             qqid,
-            self.plugin_ui_menu(
-                "白名单&管理员检测云链联动版",
-                "管理系统",
-                [
-                    "添加玩家到白名单",
-                    "从白名单中移除玩家",
-                    "添加服务器管理员",
-                    "移除服务器管理员",
-                    "开启/关闭 白名单检测",
-                    "开启/关闭 管理员检测",
-                    "设置检测周期",
-                    "查看当前状态",
-                ],
-                ["输入 [1-8] 之间的数字以选择 对应功能", "输入 . 退出"],
-            ),
-            timeout=120,
+            "管理系统",
+            [
+                "添加玩家到白名单",
+                "从白名单中移除玩家",
+                "添加服务器管理员",
+                "移除服务器管理员",
+                "开启/关闭 白名单检测",
+                "开启/关闭 管理员检测",
+                "设置检测周期",
+                "查看当前状态",
+            ],
+            ["输入 [1-8] 之间的数字以选择 对应功能", "输入 . 退出"],
         )
         if choice is None:
             self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
@@ -456,90 +547,15 @@ class QQLinkerQQMixin:
             return
 
         if choice in ("1", "2", "3", "4"):
-            title_map = {
-                "1": "白名单 添加玩家",
-                "2": "白名单 移除玩家",
-                "3": "管理员 添加玩家",
-                "4": "管理员 移除玩家",
-            }
-            player_name = self.qq_prompt(
-                group_id,
-                qqid,
-                self.plugin_ui_menu(
-                    "白名单&管理员检测云链联动版",
-                    title_map[choice],
-                    [],
-                    ["请输入玩家名称", "输入 . 退出"],
-                ),
-                timeout=120,
-            )
-            if player_name is None:
-                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
-                return
-            if player_name.lower() in ("q", ".", "。"):
-                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
-                return
-            if choice == "1":
-                self.on_qq_whitelist_add(group_id, qqid, [player_name])
-            elif choice == "2":
-                self.on_qq_whitelist_remove(group_id, qqid, [player_name])
-            elif choice == "3":
-                self.on_qq_server_admin_add(group_id, qqid, [player_name])
-            else:
-                self.on_qq_server_admin_remove(group_id, qqid, [player_name])
+            self._qq_checker_handle_player_action(group_id, qqid, choice)
             return
 
         if choice in ("5", "6"):
-            subtitle = "白名单检测 设置" if choice == "5" else "管理员检测 设置"
-            action = self.qq_prompt(
-                group_id,
-                qqid,
-                self.plugin_ui_menu(
-                    "白名单&管理员检测云链联动版",
-                    subtitle,
-                    ["开启", "关闭"],
-                    ["输入 [1-2] 之间的数字以选择 对应操作", "输入 . 退出"],
-                ),
-                timeout=120,
-            )
-            if action is None:
-                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
-                return
-            if action.lower() in ("q", ".", "。"):
-                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
-                return
-            if action == "1":
-                action_arg = ["开启"]
-            elif action == "2":
-                action_arg = ["关闭"]
-            else:
-                self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
-                return
-            if choice == "5":
-                self.on_qq_whitelist_toggle(group_id, qqid, action_arg)
-            else:
-                self.on_qq_admin_check_toggle(group_id, qqid, action_arg)
+            self._qq_checker_handle_toggle_action(group_id, qqid, choice)
             return
 
         if choice == "7":
-            seconds = self.qq_prompt(
-                group_id,
-                qqid,
-                self.plugin_ui_menu(
-                    "白名单&管理员检测云链联动版",
-                    "检测周期 设置",
-                    [],
-                    ["请输入检测周期秒数", "输入 . 退出"],
-                ),
-                timeout=120,
-            )
-            if seconds is None:
-                self._reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
-                return
-            if seconds.lower() in ("q", ".", "。"):
-                self._reply_to_qq(group_id, qqid, "❀ 已退出菜单")
-                return
-            self.on_qq_check_interval(group_id, qqid, [seconds])
+            self._qq_checker_handle_interval_action(group_id, qqid)
             return
 
         if choice == "8":

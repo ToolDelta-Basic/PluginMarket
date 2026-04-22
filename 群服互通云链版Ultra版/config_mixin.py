@@ -19,6 +19,7 @@ from .message_utils import QQMsgTrigger
 # 配置迁移、群权限状态和触发词读取都收在这一层，避免散到业务逻辑里。
 class QQLinkerConfigMixin:
     """配置、群状态和触发词的基础能力集合。"""
+
     @staticmethod
     def group_default(group_id: int = 194838530):
         """返回单个群聊的默认配置骨架。"""
