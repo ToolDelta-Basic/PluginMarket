@@ -820,7 +820,8 @@ class QQLinkerOrionMixin:
                 continue
             return self.group_order[group_index - 1]
 
-    def _prompt_console_remove_flag(self):
+    @staticmethod
+    def _prompt_console_remove_flag():
         """在控制台里选择是添加还是删除管理员。"""
         while True:
             action_input = input("请输入操作类型 (1=添加, 2=删除, q=退出): ").strip().lower()
@@ -831,7 +832,8 @@ class QQLinkerOrionMixin:
                 return action_input == "2"
             fmts.print_err("操作类型无效")
 
-    def _prompt_console_super_flag(self):
+    @staticmethod
+    def _prompt_console_super_flag():
         """在控制台里选择普通管理员还是超级管理员。"""
         while True:
             role_input = input("请输入角色类型 (1=普通管理员, 2=超级管理员, q=退出): ").strip().lower()
@@ -842,7 +844,8 @@ class QQLinkerOrionMixin:
                 return role_input == "2"
             fmts.print_err("角色类型无效")
 
-    def _prompt_console_qqid(self, is_remove: bool):
+    @staticmethod
+    def _prompt_console_qqid(is_remove: bool):
         """在控制台里读取要增删的 QQ 号。"""
         while True:
             qq_input = input(
