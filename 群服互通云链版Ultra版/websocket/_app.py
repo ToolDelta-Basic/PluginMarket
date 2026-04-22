@@ -432,6 +432,98 @@ class WebSocketApp:
         self.has_done_teardown = False
         self.keep_running = True
 
+        def read() -> bool:
+            if not self.keep_running:
+                return teardown()
+
+            try:
+                op_code, frame = self.sock.recv_data_frame(True)
+            except (
+                WebSocketConnectionClosedException,
+                KeyboardInterrupt,
+                SSLEOFError,
+            ) as e:
+                if custom_dispatcher:
+                    return handleDisconnect(e, bool(reconnect))
+                raise
+
+            if op_code == ABNF.OPCODE_CLOSE:
+                return teardown(frame)
+            if op_code == ABNF.OPCODE_PING:
+                self._callback(self.on_ping, frame.data)
+            elif op_code == ABNF.OPCODE_PONG:
+                self.last_pong_tm = time.time()
+                self._callback(self.on_pong, frame.data)
+            elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:
+                self._callback(self.on_data, frame.data, frame.opcode, frame.fin)
+                self._callback(self.on_cont_message, frame.data, frame.fin)
+            else:
+                data = frame.data
+                if op_code == ABNF.OPCODE_TEXT and not skip_utf8_validation:
+                    data = data.decode("utf-8")
+                self._callback(self.on_data, data, frame.opcode, True)
+                self._callback(self.on_message, data)
+
+            return True
+
+        def check() -> bool:
+            if self.ping_timeout:
+                has_timeout_expired = (
+                    time.time() - self.last_ping_tm > self.ping_timeout
+                )
+                has_pong_not_arrived_after_last_ping = (
+                    self.last_pong_tm - self.last_ping_tm < 0
+                )
+                has_pong_arrived_too_late = (
+                    self.last_pong_tm - self.last_ping_tm > self.ping_timeout
+                )
+
+                if (
+                    self.last_ping_tm
+                    and has_timeout_expired
+                    and (
+                        has_pong_not_arrived_after_last_ping
+                        or has_pong_arrived_too_late
+                    )
+                ):
+                    raise WebSocketTimeoutException("ping/pong timed out")
+            return True
+
+        def handleDisconnect(
+            e: Union[
+                WebSocketConnectionClosedException,
+                ConnectionRefusedError,
+                KeyboardInterrupt,
+                SystemExit,
+                Exception,
+            ],
+            reconnecting: bool = False,
+        ) -> bool:
+            self.has_errored = True
+            self._stop_ping_thread()
+            if not reconnecting:
+                self._callback(self.on_error, e)
+
+            if isinstance(e, (KeyboardInterrupt, SystemExit)):
+                teardown()
+                # 这里的 e 来自外层回调参数，不处在 except 语句块里，
+                # 不能用 bare raise；按原异常类型重建后继续向上传播。
+                if isinstance(e, KeyboardInterrupt):
+                    raise KeyboardInterrupt(*e.args) from e
+                raise SystemExit(*e.args) from e
+
+            if reconnect:
+                _logging.info("%s - reconnect", e)
+                if custom_dispatcher:
+                    _logging.debug(
+                        "Calling custom dispatcher reconnect [%s frames in stack]",
+                        len(inspect.stack()),
+                    )
+                    dispatcher.reconnect(reconnect, setSock)
+            else:
+                _logging.error("%s - goodbye", e)
+                teardown()
+
         def teardown(close_frame: ABNF = None):
             """
             Tears down the connection.
@@ -512,102 +604,10 @@ class WebSocketApp:
                 ConnectionRefusedError,
                 KeyboardInterrupt,
                 SystemExit,
-                Exception,
             ) as e:
                 handleDisconnect(e, reconnecting)
-
-        def read() -> bool:
-            if not self.keep_running:
-                return teardown()
-
-            try:
-                op_code, frame = self.sock.recv_data_frame(True)
-            except (
-                WebSocketConnectionClosedException,
-                KeyboardInterrupt,
-                SSLEOFError,
-            ) as e:
-                if custom_dispatcher:
-                    return handleDisconnect(e, bool(reconnect))
-                else:
-                    raise
-
-            if op_code == ABNF.OPCODE_CLOSE:
-                return teardown(frame)
-            elif op_code == ABNF.OPCODE_PING:
-                self._callback(self.on_ping, frame.data)
-            elif op_code == ABNF.OPCODE_PONG:
-                self.last_pong_tm = time.time()
-                self._callback(self.on_pong, frame.data)
-            elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:
-                self._callback(self.on_data, frame.data, frame.opcode, frame.fin)
-                self._callback(self.on_cont_message, frame.data, frame.fin)
-            else:
-                data = frame.data
-                if op_code == ABNF.OPCODE_TEXT and not skip_utf8_validation:
-                    data = data.decode("utf-8")
-                self._callback(self.on_data, data, frame.opcode, True)
-                self._callback(self.on_message, data)
-
-            return True
-
-        def check() -> bool:
-            if self.ping_timeout:
-                has_timeout_expired = (
-                    time.time() - self.last_ping_tm > self.ping_timeout
-                )
-                has_pong_not_arrived_after_last_ping = (
-                    self.last_pong_tm - self.last_ping_tm < 0
-                )
-                has_pong_arrived_too_late = (
-                    self.last_pong_tm - self.last_ping_tm > self.ping_timeout
-                )
-
-                if (
-                    self.last_ping_tm
-                    and has_timeout_expired
-                    and (
-                        has_pong_not_arrived_after_last_ping
-                        or has_pong_arrived_too_late
-                    )
-                ):
-                    raise WebSocketTimeoutException("ping/pong timed out")
-            return True
-
-        def handleDisconnect(
-            e: Union[
-                WebSocketConnectionClosedException,
-                ConnectionRefusedError,
-                KeyboardInterrupt,
-                SystemExit,
-                Exception,
-            ],
-            reconnecting: bool = False,
-        ) -> bool:
-            self.has_errored = True
-            self._stop_ping_thread()
-            if not reconnecting:
-                self._callback(self.on_error, e)
-
-            if isinstance(e, (KeyboardInterrupt, SystemExit)):
-                teardown()
-                # 这里的 e 来自外层回调参数，不处在 except 语句块里，
-                # 不能用 bare raise；按原异常类型重建后继续向上传播。
-                if isinstance(e, KeyboardInterrupt):
-                    raise KeyboardInterrupt(*e.args) from e
-                raise SystemExit(*e.args) from e
-
-            if reconnect:
-                _logging.info("%s - reconnect", e)
-                if custom_dispatcher:
-                    _logging.debug(
-                        "Calling custom dispatcher reconnect [%s frames in stack]",
-                        len(inspect.stack()),
-                    )
-                    dispatcher.reconnect(reconnect, setSock)
-            else:
-                _logging.error("%s - goodbye", e)
-                teardown()
+            except Exception as e:
+                handleDisconnect(e, reconnecting)
 
         custom_dispatcher = bool(dispatcher)
         dispatcher = self.create_dispatcher(
@@ -665,9 +665,8 @@ class WebSocketApp:
             if isinstance(reason, bytes):
                 reason = reason.decode("utf-8")
             return [close_status_code, reason]
-        else:
-            # Most likely reached this because len(close_frame_data.data) < 2
-            return [None, None]
+        # Most likely reached this because len(close_frame_data.data) < 2
+        return [None, None]
 
     def _callback(self, callback, *args) -> None:
         if callback:

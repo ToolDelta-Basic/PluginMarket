@@ -407,9 +407,8 @@ class frame_buffer:
         if shortage == 0:
             self.recv_buffer = []
             return unified
-        else:
-            self.recv_buffer = [unified[bufsize:]]
-            return unified[:bufsize]
+        self.recv_buffer = [unified[bufsize:]]
+        return unified[:bufsize]
 
 
 class continuous_frame:
