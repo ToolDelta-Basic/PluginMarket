@@ -127,7 +127,10 @@ class WhitelistAndOpCheck(Plugin):
     def resolve_player_xuid(self, player_name: str) -> tuple[str | None, str]:
         """根据玩家名解析 XUID，失败时返回错误信息。"""
         try:
-            player_xuid = self.get_xuid.get_xuid_by_name(player_name, allow_offline=True)
+            player_xuid = self.get_xuid.get_xuid_by_name(
+                player_name,
+                allow_offline=True,
+            )
         except Exception:
             return None, "玩家未加入过服务器或无法获取 XUID"
         return player_xuid, ""

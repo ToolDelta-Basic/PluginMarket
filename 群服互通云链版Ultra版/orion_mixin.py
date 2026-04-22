@@ -15,6 +15,19 @@ class QQLinkerOrionMixin:
             raise RuntimeError("Orion_System 插件不可用")
         return self.orion
 
+    def reply_to_qq(self, group_id: int, qqid: int, text: str):
+        """向指定群成员回复一条文本消息。"""
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] {text}",
+            do_remove_cq_code=False,
+        )
+
+    def reply_result(self, group_id: int, qqid: int, ok: bool, msg: str):
+        """把统一格式的成功/失败结果回发到群里。"""
+        prefix = "😄" if ok else "😭"
+        self.reply_to_qq(group_id, qqid, f"{prefix} {msg}")
+
     def on_qq_orion_ban(self, group_id: int, sender: int, args: list[str]):
         """群聊侧的 Orion 封禁入口。
 
@@ -24,7 +37,7 @@ class QQLinkerOrionMixin:
         """
 
         if not self.is_group_admin(group_id, sender):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 你没有权限执行此指令", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, sender, "你没有权限执行此指令")
             return
         if args == []:
             self.qq_orion_ban_menu(group_id, sender)
@@ -33,18 +46,18 @@ class QQLinkerOrionMixin:
         ban_time_raw = args[1]
         reason = " ".join(args[2:]).strip() or "群聊管理员封禁"
         ok, msg = self.orion_ban_player(target, ban_time_raw, reason)
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self.reply_result(group_id, sender, ok, msg)
 
     def on_qq_orion_unban(self, group_id: int, sender: int, args: list[str]):
         """群聊侧的 Orion 解封入口。"""
         if not self.is_group_admin(group_id, sender):
-            self.sendmsg(group_id, f"[CQ:at,qq={sender}] 你没有权限执行此指令", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, sender, "你没有权限执行此指令")
             return
         if args == []:
             self.qq_orion_unban_menu(group_id, sender)
             return
         ok, msg = self.orion_unban_player(args[0])
-        self.sendmsg(group_id, f"[CQ:at,qq={sender}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+        self.reply_result(group_id, sender, ok, msg)
 
     def qq_prompt(self, group_id: int, qqid: int, text: str, timeout: int = 60):
         """发送一段提示文本，并等待同群同 QQ 的下一条回复。"""
@@ -185,6 +198,181 @@ class QQLinkerOrionMixin:
             return {}
         return data if isinstance(data, dict) else {}
 
+    def _show_paginated_orion_menu(
+        self,
+        group_id: int,
+        qqid: int,
+        title: str,
+        matched_items: list[dict[str, object]],
+        page: int,
+        per_page: int,
+        select_hint: str,
+        search_hint: str | None,
+    ):
+        """渲染一页列表菜单，并返回用户输入与分页边界。"""
+        total_pages, start_index, end_index = self.orion.utils.paginate(
+            len(matched_items),
+            per_page,
+            page,
+        )
+        output_lines = [
+            item["display"]
+            for item in matched_items[start_index - 1 : end_index]
+        ]
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] "
+            + self.orion_ui_list(
+                title,
+                output_lines,
+                page,
+                total_pages,
+                select_hint.format(start_index=start_index, end_index=end_index),
+                search_hint,
+            ),
+            do_remove_cq_code=False,
+        )
+        user_input = self.waitMsg(qqid, timeout=60, group_id=group_id)
+        return user_input, total_pages, start_index, end_index
+
+    def _handle_paginated_orion_input(
+        self,
+        group_id: int,
+        qqid: int,
+        user_input: str | None,
+        page: int,
+        total_pages: int,
+        allow_search: bool,
+        search: str,
+    ):
+        """统一处理分页菜单中的翻页、退出、搜索和选择输入。"""
+        if user_input is None:
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单",
+                do_remove_cq_code=False,
+            )
+            return "exit", None
+
+        user_input = user_input.strip()
+        if user_input.lower() in ("q", ".", "。"):
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 已退出菜单",
+                do_remove_cq_code=False,
+            )
+            return "exit", None
+
+        if user_input == "+":
+            if page < total_pages:
+                return "page", page + 1
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 已经是最后一页啦~",
+                do_remove_cq_code=False,
+            )
+            return "retry", None
+
+        if user_input == "-":
+            if page > 1:
+                return "page", page - 1
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 已经是第一页啦~",
+                do_remove_cq_code=False,
+            )
+            return "retry", None
+
+        if match := re.fullmatch(r"^([1-9]\d*)页$", user_input):
+            page_num = int(match.group(1))
+            if 1 <= page_num <= total_pages:
+                return "page", page_num
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 不存在第 {page_num} 页！请重新输入！",
+                do_remove_cq_code=False,
+            )
+            return "retry", None
+
+        choice = utils.try_int(user_input)
+        if choice is not None:
+            return "choice", choice
+
+        if allow_search:
+            return "search", user_input.replace("\\", "")
+
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] ❀ 您的输入有误",
+            do_remove_cq_code=False,
+        )
+        return "retry", search
+
+    def _select_paginated_orion_items(
+        self,
+        group_id: int,
+        qqid: int,
+        title: str,
+        build_matches,
+        empty_message: str,
+        select_hint: str,
+        search_hint: str | None,
+        allow_search: bool = True,
+    ):
+        """执行一套通用的分页选择流程。"""
+        search = ""
+        page = 1
+        per_page = self.get_orion_items_per_page(group_id)
+        while True:
+            matched_items = build_matches(search)
+            if not matched_items:
+                self.sendmsg(
+                    group_id,
+                    f"[CQ:at,qq={qqid}] {empty_message}",
+                    do_remove_cq_code=False,
+                )
+                return None
+
+            user_input, total_pages, start_index, end_index = (
+                self._show_paginated_orion_menu(
+                    group_id,
+                    qqid,
+                    title,
+                matched_items,
+                page,
+                per_page,
+                    select_hint,
+                    search_hint,
+                )
+            )
+            action, value = self._handle_paginated_orion_input(
+                group_id,
+                qqid,
+                user_input,
+                page,
+                total_pages,
+                allow_search,
+                search,
+            )
+            if action == "exit":
+                return None
+            if action == "page":
+                page = value
+                continue
+            if action == "search":
+                search = value
+                page = 1
+                continue
+            if action == "retry":
+                continue
+            if action == "choice" and value in range(start_index, end_index + 1):
+                return matched_items[value - 1]
+            self.sendmsg(
+                group_id,
+                f"[CQ:at,qq={qqid}] ❀ 您的输入有误",
+                do_remove_cq_code=False,
+            )
+
     def qq_select_orion_xuid(
         self,
         group_id: int,
@@ -197,155 +385,62 @@ class QQLinkerOrionMixin:
 
         返回 `(xuid, 玩家名)`，失败或退出时返回 `(None, None)`。
         """
-
-        if not xuid_data:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 没有可用的玩家记录", do_remove_cq_code=False)
-            return None, None
-        search = ""
-        page = 1
-        per_page = self.get_orion_items_per_page(group_id)
-        while True:
-            # 这里允许边翻页边改搜索词，避免在群里做一次性的大列表输出。
-            matched_items = [
-                (xuid, name)
+        selected = self._select_paginated_orion_items(
+            group_id,
+            qqid,
+            title,
+            lambda search: [
+                {
+                    "value": (xuid, name),
+                    "display": (
+                        f"{xuid} - {name}"
+                        f" - {self.orion_xuid_status_text(xuid)}"
+                    ),
+                }
                 for xuid, name in xuid_data.items()
                 if search == "" or search in xuid or search in name
-            ]
-            if not matched_items:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 找不到您输入的 xuid 或玩家名称", do_remove_cq_code=False)
-                return None, None
-            total_pages, start_index, end_index = self.orion.utils.paginate(
-                len(matched_items),
-                per_page,
-                page,
-            )
-            output_lines = [
-                f"{xuid} - {name} - {self.orion_xuid_status_text(xuid)}"
-                for xuid, name in matched_items[start_index - 1 : end_index]
-            ]
-            self.sendmsg(
-                group_id,
-                f"[CQ:at,qq={qqid}] "
-                + self.orion_ui_list(
-                    title,
-                    output_lines,
-                    page,
-                    total_pages,
-                    f"[{start_index}-{end_index}] 之间的数字以选择 对应玩家",
-                    "xuid、玩家名称或玩家部分名称 可尝试搜索",
-                ),
-                do_remove_cq_code=False,
-            )
-            user_input = self.waitMsg(qqid, timeout=60, group_id=group_id)
-            if user_input is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
-                return None, None
-            user_input = user_input.strip()
-            if user_input.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
-                return None, None
-            if user_input == "+":
-                if page < total_pages:
-                    page += 1
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是最后一页啦~", do_remove_cq_code=False)
-                continue
-            if user_input == "-":
-                if page > 1:
-                    page -= 1
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是第一页啦~", do_remove_cq_code=False)
-                continue
-            if match := re.fullmatch(r"^([1-9]\d*)页$", user_input):
-                page_num = int(match.group(1))
-                if 1 <= page_num <= total_pages:
-                    page = page_num
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 不存在第 {page_num} 页！请重新输入！", do_remove_cq_code=False)
-                continue
-            choice = utils.try_int(user_input)
-            if choice is not None and choice in range(start_index, end_index + 1):
-                return matched_items[choice - 1]
-            if allow_search:
-                search = user_input.replace("\\", "")
-                page = 1
-                continue
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
-
-    def qq_select_orion_device(self, group_id: int, qqid: int, title: str, device_data: dict[str, dict[str, list[str]]]):
-        """从设备号列表里分页选择目标设备。"""
-
-        if not device_data:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 没有可用的设备号记录", do_remove_cq_code=False)
+            ],
+            "找不到您输入的 xuid 或玩家名称",
+            "[{start_index}-{end_index}] 之间的数字以选择 对应玩家",
+            "xuid、玩家名称或玩家部分名称 可尝试搜索",
+            allow_search=allow_search,
+        )
+        if selected is None:
             return None, None
-        search = ""
-        page = 1
-        per_page = self.get_orion_items_per_page(group_id)
-        while True:
-            # 设备号菜单除了设备本身，也支持按关联过的玩家名称做反查。
-            matched_items = []
-            for device_id, player_info in device_data.items():
-                formatted = self.format_device_history(player_info)
-                if search == "" or search in device_id or search in formatted:
-                    matched_items.append((device_id, player_info, formatted))
-            if not matched_items:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 找不到您输入的设备号或玩家名称", do_remove_cq_code=False)
-                return None, None
-            total_pages, start_index, end_index = self.orion.utils.paginate(
-                len(matched_items),
-                per_page,
-                page,
-            )
-            output_lines = [
-                f"{device_id} - {formatted} - {self.orion_device_status_text(device_id)}"
-                for device_id, _player_info, formatted in matched_items[start_index - 1 : end_index]
-            ]
-            self.sendmsg(
-                group_id,
-                f"[CQ:at,qq={qqid}] "
-                + self.orion_ui_list(
-                    title,
-                    output_lines,
-                    page,
-                    total_pages,
-                    f"[{start_index}-{end_index}] 之间的数字以选择 对应设备号",
-                    "设备号、玩家名称或玩家部分名称 可尝试搜索",
-                ),
-                do_remove_cq_code=False,
-            )
-            user_input = self.waitMsg(qqid, timeout=60, group_id=group_id)
-            if user_input is None:
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
-                return None, None
-            user_input = user_input.strip()
-            if user_input.lower() in ("q", ".", "。"):
-                self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
-                return None, None
-            if user_input == "+":
-                if page < total_pages:
-                    page += 1
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是最后一页啦~", do_remove_cq_code=False)
-                continue
-            if user_input == "-":
-                if page > 1:
-                    page -= 1
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已经是第一页啦~", do_remove_cq_code=False)
-                continue
-            if match := re.fullmatch(r"^([1-9]\d*)页$", user_input):
-                page_num = int(match.group(1))
-                if 1 <= page_num <= total_pages:
-                    page = page_num
-                else:
-                    self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 不存在第 {page_num} 页！请重新输入！", do_remove_cq_code=False)
-                continue
-            choice = utils.try_int(user_input)
-            if choice is not None and choice in range(start_index, end_index + 1):
-                device_id, player_info, _formatted = matched_items[choice - 1]
-                return device_id, player_info
-            search = user_input.replace("\\", "")
-            page = 1
+        return selected["value"]
+
+    def qq_select_orion_device(
+        self,
+        group_id: int,
+        qqid: int,
+        title: str,
+        device_data: dict[str, dict[str, list[str]]],
+    ):
+        """从设备号列表里分页选择目标设备。"""
+        selected = self._select_paginated_orion_items(
+            group_id,
+            qqid,
+            title,
+            lambda search: [
+                {
+                    "value": (device_id, player_info),
+                    "display": (
+                        f"{device_id} - {self.format_device_history(player_info)}"
+                        f" - {self.orion_device_status_text(device_id)}"
+                    ),
+                }
+                for device_id, player_info in device_data.items()
+                if search == ""
+                or search in device_id
+                or search in self.format_device_history(player_info)
+            ],
+            "找不到您输入的设备号或玩家名称",
+            "[{start_index}-{end_index}] 之间的数字以选择 对应设备号",
+            "设备号、玩家名称或玩家部分名称 可尝试搜索",
+        )
+        if selected is None:
+            return None, None
+        return selected["value"]
 
     def qq_get_orion_ban_time(self, group_id: int, qqid: int):
         """统一处理群里输入的封禁时长。"""
@@ -362,14 +457,14 @@ class QQLinkerOrionMixin:
         )
         user_input = self.qq_prompt(group_id, qqid, prompt, timeout=120)
         if user_input is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return None
         if user_input.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return None
         ban_time = self.orion.utils.ban_time_format(user_input) if self.orion else 0
         if ban_time == 0:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您输入的封禁时间有误", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 您输入的封禁时间有误")
             return None
         return ban_time
 
@@ -391,10 +486,10 @@ class QQLinkerOrionMixin:
             timeout=120,
         )
         if user_input is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return None
         if user_input.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return None
         return user_input or "群聊管理员封禁"
 
@@ -402,7 +497,7 @@ class QQLinkerOrionMixin:
         """交互式 Orion 封禁菜单。"""
 
         if self.orion is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 未检测到 Orion_System 插件", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
             return
         choice = self.qq_prompt(
             group_id,
@@ -415,13 +510,18 @@ class QQLinkerOrionMixin:
             timeout=120,
         )
         if choice is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
         if choice.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         if choice == "1":
-            xuid, player_name = self.qq_select_orion_xuid(group_id, qqid, "在线玩家封禁", self.build_online_xuid_data())
+            xuid, player_name = self.qq_select_orion_xuid(
+                group_id,
+                qqid,
+                "在线玩家封禁",
+                self.build_online_xuid_data(),
+            )
             if not xuid or not player_name:
                 return
             ban_time = self.qq_get_orion_ban_time(group_id, qqid)
@@ -430,11 +530,22 @@ class QQLinkerOrionMixin:
             reason = self.qq_get_orion_reason(group_id, qqid)
             if reason is None:
                 return
-            ok, msg = self.apply_orion_xuid_ban(xuid, player_name, ban_time, reason, online_only=True)
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+            ok, msg = self.apply_orion_xuid_ban(
+                xuid,
+                player_name,
+                ban_time,
+                reason,
+                online_only=True,
+            )
+            self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "2":
-            xuid, player_name = self.qq_select_orion_xuid(group_id, qqid, "历史玩家封禁", self.build_historical_xuid_data())
+            xuid, player_name = self.qq_select_orion_xuid(
+                group_id,
+                qqid,
+                "历史玩家封禁",
+                self.build_historical_xuid_data(),
+            )
             if not xuid or not player_name:
                 return
             ban_time = self.qq_get_orion_ban_time(group_id, qqid)
@@ -444,10 +555,15 @@ class QQLinkerOrionMixin:
             if reason is None:
                 return
             ok, msg = self.apply_orion_xuid_ban(xuid, player_name, ban_time, reason)
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+            self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "3":
-            device_id, player_info = self.qq_select_orion_device(group_id, qqid, "设备号封禁", self.build_device_history_data())
+            device_id, player_info = self.qq_select_orion_device(
+                group_id,
+                qqid,
+                "设备号封禁",
+                self.build_device_history_data(),
+            )
             if not device_id or not player_info:
                 return
             ban_time = self.qq_get_orion_ban_time(group_id, qqid)
@@ -456,16 +572,21 @@ class QQLinkerOrionMixin:
             reason = self.qq_get_orion_reason(group_id, qqid)
             if reason is None:
                 return
-            ok, msg = self.apply_orion_device_ban(device_id, player_info, ban_time, reason)
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+            ok, msg = self.apply_orion_device_ban(
+                device_id,
+                player_info,
+                ban_time,
+                reason,
+            )
+            self.reply_result(group_id, qqid, ok, msg)
             return
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+        self.reply_to_qq(group_id, qqid, "❀ 您的输入有误")
 
     def qq_orion_unban_menu(self, group_id: int, qqid: int):
         """交互式 Orion 解封菜单。"""
 
         if self.orion is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] 未检测到 Orion_System 插件", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
             return
         choice = self.qq_prompt(
             group_id,
@@ -478,10 +599,10 @@ class QQLinkerOrionMixin:
             timeout=120,
         )
         if choice is None:
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 回复超时！ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
         if choice.lower() in ("q", ".", "。"):
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 已退出菜单", do_remove_cq_code=False)
+            self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         if choice == "1":
             xuid_dir = f"{self.orion.data_path}/{self.orion.config_mgr.xuid_dir}"
@@ -490,14 +611,23 @@ class QQLinkerOrionMixin:
                 for xuid_json in os.listdir(xuid_dir):
                     xuid = xuid_json.replace(".json", "")
                     try:
-                        xuid_data[xuid] = self.orion.xuid_getter.get_name_by_xuid(xuid, True)
+                        xuid_data[xuid] = self.orion.xuid_getter.get_name_by_xuid(
+                            xuid,
+                            True,
+                        )
                     except Exception:
                         xuid_data[xuid] = xuid
-            xuid, player_name = self.qq_select_orion_xuid(group_id, qqid, "xuid 解封", xuid_data, allow_search=True)
+            xuid, player_name = self.qq_select_orion_xuid(
+                group_id,
+                qqid,
+                "xuid 解封",
+                xuid_data,
+                allow_search=True,
+            )
             if not xuid or not player_name:
                 return
             ok, msg = self.apply_orion_xuid_unban(xuid, player_name)
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+            self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "2":
             device_dir = f"{self.orion.data_path}/{self.orion.config_mgr.device_id_dir}"
@@ -507,13 +637,18 @@ class QQLinkerOrionMixin:
                 for device_json in os.listdir(device_dir):
                     device_id = device_json.replace(".json", "")
                     device_data[device_id] = player_data.get(device_id, {})
-            device_id, player_info = self.qq_select_orion_device(group_id, qqid, "设备号解封", device_data)
+            device_id, player_info = self.qq_select_orion_device(
+                group_id,
+                qqid,
+                "设备号解封",
+                device_data,
+            )
             if not device_id or player_info is None:
                 return
             ok, msg = self.apply_orion_device_unban(device_id, player_info)
-            self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {'😄' if ok else '😭'} {msg}", do_remove_cq_code=False)
+            self.reply_result(group_id, qqid, ok, msg)
             return
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] ❀ 您的输入有误", do_remove_cq_code=False)
+        self.reply_to_qq(group_id, qqid, "❀ 您的输入有误")
 
     def resolve_orion_target(self, target: str):
         """把群里的输入尽量解析成稳定的 `(xuid, 玩家名)` 组合。"""
@@ -651,7 +786,11 @@ class QQLinkerOrionMixin:
         os.remove(path)
         return True, f"已通过 Orion 解封 {player_name} (xuid:{xuid})"
 
-    def apply_orion_device_unban(self, device_id: str, player_info: dict[str, list[str]]):
+    def apply_orion_device_unban(
+        self,
+        device_id: str,
+        player_info: dict[str, list[str]],
+    ):
         """删除 Orion 中某个设备号的封禁记录。"""
         orion = self.require_orion()
         path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"
@@ -670,7 +809,8 @@ class QQLinkerOrionMixin:
         for index, group_id in enumerate(self.group_order, start=1):
             state = self.read_group_state(group_id)
             fmts.print_inf(
-                f"{index}. 群 {group_id} (管理员:{len(state['admins'])} 超级管理员:{len(state['super_admins'])})"
+                f"{index}. 群 {group_id} "
+                f"(管理员:{len(state['admins'])} 超级管理员:{len(state['super_admins'])})"
             )
         while True:
             group_input = input("请输入群序号，输入 q 退出: ").strip().lower()
@@ -678,7 +818,10 @@ class QQLinkerOrionMixin:
                 fmts.print_inf("已退出QQ群管理员添加菜单")
                 return
             group_index = utils.try_int(group_input)
-            if group_index is None or group_index not in range(1, len(self.group_order) + 1):
+            if group_index is None or group_index not in range(
+                1,
+                len(self.group_order) + 1,
+            ):
                 fmts.print_err("群序号无效")
                 continue
             target_group = self.group_order[group_index - 1]
@@ -702,7 +845,9 @@ class QQLinkerOrionMixin:
                 break
             fmts.print_err("角色类型无效")
         while True:
-            qq_input = input(f"请输入要{'删除' if is_remove else '添加'}的QQ号，输入 q 退出: ").strip().lower()
+            qq_input = input(
+                f"请输入要{'删除' if is_remove else '添加'}的QQ号，输入 q 退出: "
+            ).strip().lower()
             if qq_input == "q":
                 fmts.print_inf("已退出QQ群管理员增删菜单")
                 return
