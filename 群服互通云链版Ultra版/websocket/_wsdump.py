@@ -41,8 +41,7 @@ def get_encoding() -> str:
     encoding = getattr(sys.stdin, "encoding", "")
     if not encoding:
         return "utf-8"
-    else:
-        return encoding.lower()
+    return encoding.lower()
 
 
 OPCODE_DATA = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
@@ -120,7 +119,6 @@ class InteractiveConsole(RawInput, code.InteractiveConsole):
     @staticmethod
     def write(data: str) -> None:
         sys.stdout.write("\033[2K\033[E")
-        # sys.stdout.write("\n")
         sys.stdout.write("\033[34m< " + data + "\033[39m")
         sys.stdout.write("\n> ")
         sys.stdout.flush()

@@ -115,11 +115,9 @@ def recv(sock: socket.socket, bufsize: int) -> bytes:
             bytes_ = sock.recv(bufsize)
         else:
             bytes_ = _recv()
-    except TimeoutError:
-        raise WebSocketTimeoutException("Connection timed out")
     except socket.timeout as e:
         message = extract_err_message(e)
-        raise WebSocketTimeoutException(message)
+        raise WebSocketTimeoutException(message or "Connection timed out")
     except SSLError as e:
         message = extract_err_message(e)
         if isinstance(message, str) and "timed out" in message:
@@ -174,8 +172,7 @@ def send(sock: socket.socket, data: Union[bytes, str]) -> int:
     try:
         if sock.gettimeout() == 0:
             return sock.send(data)
-        else:
-            return _send()
+        return _send()
     except socket.timeout as e:
         message = extract_err_message(e)
         raise WebSocketTimeoutException(message)

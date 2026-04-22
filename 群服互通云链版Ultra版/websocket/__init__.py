@@ -17,11 +17,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from ._abnf import *
-from ._app import WebSocketApp, setReconnect
+from ._app import WebSocketApp as _WebSocketApp, setReconnect as _setReconnect
 from ._core import *
 from ._exceptions import *
 from ._logging import *
 from ._socket import *
+
+WebSocketApp = _WebSocketApp
+setReconnect = _setReconnect
 
 __version__ = "1.8.0"
 __all__ = [name for name in globals() if not name.startswith("_")]

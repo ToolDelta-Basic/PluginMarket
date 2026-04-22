@@ -450,8 +450,7 @@ def extract_err_message(exception: Exception) -> Union[str, None]:
     if exception.args:
         exception_message: str = exception.args[0]
         return exception_message
-    else:
-        return None
+    return None
 
 
 def extract_error_code(exception: Exception) -> Union[int, None]:

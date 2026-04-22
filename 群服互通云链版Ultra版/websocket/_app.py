@@ -60,16 +60,13 @@ class DispatcherBase:
 
     @staticmethod
     def reconnect(seconds: int, reconnector: Callable) -> None:
-        try:
-            _logging.info(
-                "reconnect() - retrying in %s seconds [%s frames in stack]",
-                seconds,
-                len(inspect.stack()),
-            )
-            time.sleep(seconds)
-            reconnector(reconnecting=True)
-        except KeyboardInterrupt:
-            raise
+        _logging.info(
+            "reconnect() - retrying in %s seconds [%s frames in stack]",
+            seconds,
+            len(inspect.stack()),
+        )
+        time.sleep(seconds)
+        reconnector(reconnecting=True)
 
 
 class Dispatcher(DispatcherBase):

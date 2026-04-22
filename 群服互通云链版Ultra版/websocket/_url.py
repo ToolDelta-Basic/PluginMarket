@@ -81,8 +81,7 @@ def _is_ip_address(addr: str) -> bool:
         socket.inet_aton(addr)
     except socket.error:
         return False
-    else:
-        return True
+    return True
 
 
 def _is_subnet_address(hostname: str) -> bool:

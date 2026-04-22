@@ -193,8 +193,7 @@ def _validate(headers, key: str, subprotocols) -> tuple:
 
     if hmac.compare_digest(hashed, result):
         return True, subproto
-    else:
-        return False, None
+    return False, None
 
 
 def _create_sec_websocket_key() -> str:
