@@ -47,6 +47,7 @@ def setReconnect(reconnectInterval: int) -> None:
 
 class DispatcherBase:
     """Base dispatcher that coordinates socket reads and reconnects."""
+
     def __init__(self, app: Any, ping_timeout: Union[float, int, None]) -> None:
         """Store the owning app and ping timeout used by the dispatcher."""
         self.app = app
@@ -72,6 +73,7 @@ class DispatcherBase:
 
 class Dispatcher(DispatcherBase):
     """Dispatcher for plain sockets using ``selectors``."""
+
     def read(
         self,
         sock: socket.socket,
@@ -92,6 +94,7 @@ class Dispatcher(DispatcherBase):
 
 class SSLDispatcher(DispatcherBase):
     """Dispatcher for SSL sockets that may already have pending bytes."""
+
     def read(
         self,
         sock: socket.socket,
@@ -127,6 +130,7 @@ class SSLDispatcher(DispatcherBase):
 
 class WrappedDispatcher:
     """Adapter for custom dispatcher implementations."""
+
     def __init__(self, app, ping_timeout: Union[float, int, None], dispatcher) -> None:
         """Wrap a custom dispatcher and register its abort signal handler."""
         self.app = app
@@ -156,6 +160,7 @@ class WrappedDispatcher:
 
 class WebSocketApp:
     """Higher-level WebSocket API similar to the JavaScript WebSocket object."""
+
     def __init__(
         self,
         url: str,

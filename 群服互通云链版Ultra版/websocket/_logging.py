@@ -19,6 +19,7 @@ limitations under the License.
 
 import logging
 
+# skipcq: PY-A6006
 _logger = logging.getLogger("websocket")  # skipcq: PY-A6006
 try:
     from logging import NullHandler

@@ -447,14 +447,12 @@ class WebSocket:
             if frame.opcode == ABNF.OPCODE_CLOSE:
                 self.send_close()
                 return frame.opcode, frame
-            if frame.opcode == ABNF.OPCODE_PING:
-                if len(frame.data) < 126:
-                    self.pong(frame.data)
-                else:
-                    raise WebSocketProtocolException("Ping message is too long")
-                if control_frame:
-                    return frame.opcode, frame
-            if frame.opcode == ABNF.OPCODE_PONG:
+            if frame.opcode in (ABNF.OPCODE_PING, ABNF.OPCODE_PONG):
+                if frame.opcode == ABNF.OPCODE_PING:
+                    if len(frame.data) < 126:
+                        self.pong(frame.data)
+                    else:
+                        raise WebSocketProtocolException("Ping message is too long")
                 if control_frame:
                     return frame.opcode, frame
 

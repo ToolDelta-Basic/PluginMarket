@@ -23,6 +23,7 @@ from typing import Optional
 
 class SimpleCookieJar:
     """Store cookies returned by WebSocket handshake responses."""
+
     def __init__(self) -> None:
         """Initialize the in-memory cookie jar."""
         self.jar: dict = {}

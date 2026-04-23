@@ -20,36 +20,43 @@ limitations under the License.
 
 class WebSocketException(Exception):
     """Base exception for websocket-client errors."""
+
     __slots__ = ()
 
 
 class WebSocketProtocolException(WebSocketException):
     """Raised when the WebSocket protocol is invalid."""
+
     __slots__ = ()
 
 
 class WebSocketPayloadException(WebSocketException):
     """Raised when a WebSocket payload is invalid."""
+
     __slots__ = ()
 
 
 class WebSocketConnectionClosedException(WebSocketException):
     """Raised when the remote host closed the connection."""
+
     __slots__ = ()
 
 
 class WebSocketTimeoutException(WebSocketException):
     """Raised on socket timeout during reads or writes."""
+
     __slots__ = ()
 
 
 class WebSocketProxyException(WebSocketException):
     """Raised when a proxy-related error occurs."""
+
     __slots__ = ()
 
 
 class WebSocketBadStatusException(WebSocketException):
     """Raised when the handshake returns an unexpected HTTP status code."""
+
     def __init__(
         self,
         message: str,
@@ -67,4 +74,5 @@ class WebSocketBadStatusException(WebSocketException):
 
 class WebSocketAddressException(WebSocketException):
     """Raised when websocket address information cannot be resolved."""
+
     __slots__ = ()
