@@ -18,21 +18,9 @@ limitations under the License.
 """
 
 import logging
+from logging import NullHandler
 
-# skipcq: PY-A6006
-_logger = logging.getLogger("websocket")  # skipcq: PY-A6006
-try:
-    from logging import NullHandler
-except ImportError:
-
-    class NullHandler(logging.Handler):
-        """Fallback ``NullHandler`` for older Python versions."""
-
-        def emit(self, record) -> None:
-            """Discard all log records."""
-            return None
-
-
+_logger = logging.getLogger("websocket")
 _logger.addHandler(NullHandler())
 
 _TRACE_STATE = {"enabled": False}
