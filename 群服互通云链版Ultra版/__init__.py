@@ -26,6 +26,7 @@ class QQLinker(
     QQLinkerConfigMixin,
     Plugin,
 ):
+    """群服互通云链版 Ultra 的插件入口类。"""
     version = (1, 0, 0)
     name = "群服互通云链版Ultra版"
     author = "大庆油田 / 小六神"
@@ -34,6 +35,7 @@ class QQLinker(
 
     @staticmethod
     def console_menu_header(title: str) -> str:
+        """生成控制台使用的 Orion 风格标题栏。"""
         return (
             "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓"
             "§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧\n"
@@ -42,6 +44,7 @@ class QQLinker(
 
     @staticmethod
     def console_menu_footer(page_label: str, body: str) -> str:
+        """生成控制台使用的 Orion 风格页脚。"""
         return (
             "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓 "
             f"§r§7[ §b{page_label} §7] "
@@ -50,19 +53,19 @@ class QQLinker(
         )
 
     def print_console_info(self, text: str):
-        # 按统一 UI 风格输出控制台普通信息。
+        """按统一 UI 风格输出控制台普通信息。"""
         fmts.print_inf(f"§a❀ §b{text}")
 
     def print_console_success(self, text: str):
-        # 按统一 UI 风格输出控制台成功信息。
+        """按统一 UI 风格输出控制台成功信息。"""
         fmts.print_suc(f"§a❀ §b{text}")
 
     def print_console_warn(self, text: str):
-        # 按统一 UI 风格输出控制台警告信息。
+        """按统一 UI 风格输出控制台警告信息。"""
         fmts.print_war(f"§6❀ §e{text}")
 
     def print_console_error(self, text: str):
-        # 按统一 UI 风格输出控制台错误信息。
+        """按统一 UI 风格输出控制台错误信息。"""
         fmts.print_err(f"§c❀ §e{text}")
 
     def print_console_card(
@@ -72,6 +75,7 @@ class QQLinker(
         body_lines: list[str],
         level: str = "info",
     ):
+        """按 Orion 风格打印一张控制台信息卡片。"""
         card = (
             self.console_menu_header(title)
             + "\n"
@@ -164,7 +168,7 @@ class QQLinker(
         self.init_basic_triggers()
 
     def init_basic_triggers(self):
-        # 注册给控制台使用的少量入口命令。
+        """注册给控制台使用的少量入口命令。"""
         self.frame.add_console_cmd_trigger(
             ["QQ", "发群"],
             "[群号可选] [消息]",
