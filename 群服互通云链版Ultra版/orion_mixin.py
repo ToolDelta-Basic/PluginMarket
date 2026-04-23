@@ -38,19 +38,23 @@ class QQLinkerOrionMixin:
         self.print_console_card(title, page_label, body_lines, level="info")
         return input(fmts.fmt_info(f"§a❀ §b{prompt}")).strip()
 
-    def print_console_info(self, text: str):
+    @staticmethod
+    def print_console_info(text: str):
         """按统一 UI 风格输出控制台普通信息。"""
         fmts.print_inf(f"§a❀ §b{text}")
 
-    def print_console_success(self, text: str):
+    @staticmethod
+    def print_console_success(text: str):
         """按统一 UI 风格输出控制台成功信息。"""
         fmts.print_suc(f"§a❀ §b{text}")
 
-    def print_console_warn(self, text: str):
+    @staticmethod
+    def print_console_warn(text: str):
         """按统一 UI 风格输出控制台警告信息。"""
         fmts.print_war(f"§6❀ §e{text}")
 
-    def print_console_error(self, text: str):
+    @staticmethod
+    def print_console_error(text: str):
         """按统一 UI 风格输出控制台错误信息。"""
         fmts.print_err(f"§c❀ §e{text}")
 

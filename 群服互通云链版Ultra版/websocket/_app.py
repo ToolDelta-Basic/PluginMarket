@@ -322,7 +322,7 @@ class WebSocketApp:
                 except Exception as e:
                     _logging.debug("Failed to send ping: %s", e)
 
-    def run_forever(
+    def run_forever(  # skipcq: PY-R1000
         self,
         sockopt: tuple = None,
         sslopt: dict = None,
@@ -395,7 +395,6 @@ class WebSocketApp:
             False if the `WebSocketApp` is closed or caught KeyboardInterrupt,
             True if any other exception was raised during a loop.
         """
-
         if reconnect is None:
             reconnect = RECONNECT_SETTINGS["interval"]
 
@@ -438,7 +437,7 @@ class WebSocketApp:
                 return teardown(frame)
             if op_code == ABNF.OPCODE_PING:
                 self._callback(self.on_ping, frame.data)
-            elif op_code == ABNF.OPCODE_PONG:
+            if op_code == ABNF.OPCODE_PONG:
                 self.last_pong_tm = time.time()
                 self._callback(self.on_pong, frame.data)
             elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:

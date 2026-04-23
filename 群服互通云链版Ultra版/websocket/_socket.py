@@ -54,6 +54,7 @@ __all__ = [
 
 class sock_opt:
     """Container for socket and SSL options used during connection setup."""
+
     def __init__(self, sockopt: list, sslopt: dict) -> None:
         """Normalize and store socket-related option dictionaries."""
         if sockopt is None:
@@ -127,8 +128,7 @@ def recv(sock: socket.socket, bufsize: int) -> bytes:
         message = extract_err_message(e)
         if isinstance(message, str) and "timed out" in message:
             raise WebSocketTimeoutException(message)
-        else:
-            raise
+        raise
 
     if not bytes_:
         raise WebSocketConnectionClosedException("Connection to remote host was lost.")
@@ -189,5 +189,4 @@ def send(sock: socket.socket, data: Union[bytes, str]) -> int:
         message = extract_err_message(e)
         if isinstance(message, str) and "timed out" in message:
             raise WebSocketTimeoutException(message)
-        else:
-            raise
+        raise

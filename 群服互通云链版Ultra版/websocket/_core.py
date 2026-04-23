@@ -112,9 +112,7 @@ class WebSocket:
             self.readlock = NoLock()
 
     def __iter__(self):
-        """
-        Allow iteration over websocket, implying sequential `recv` executions.
-        """
+        """Allow iteration over websocket messages."""
         while True:
             yield self.recv()
 
@@ -291,7 +289,6 @@ class WebSocket:
         opcode: int
             Operation code (opcode) to send.
         """
-
         frame = ABNF.create_frame(payload, opcode)
         return self.send_frame(frame)
 
@@ -325,8 +322,8 @@ class WebSocket:
         data = frame.format()
         length = len(data)
         if isEnabledForTrace():
-            trace("++Sent raw: %r" % data)
-            trace("++Sent decoded: %s" % frame.__str__())
+            trace(f"++Sent raw: {data!r}")
+            trace(f"++Sent decoded: {frame}")
         with self.lock:
             while data:
                 sent_length = self._send(data)
@@ -436,7 +433,7 @@ class WebSocket:
                 # handle error:
                 # 'NoneType' object has no attribute 'opcode'
                 raise WebSocketProtocolException(f"Not a valid frame {frame}")
-            elif frame.opcode in (
+            if frame.opcode in (
                 ABNF.OPCODE_TEXT,
                 ABNF.OPCODE_BINARY,
                 ABNF.OPCODE_CONT,
@@ -447,17 +444,17 @@ class WebSocket:
                 if self.cont_frame.is_fire(frame):
                     return self.cont_frame.extract(frame)
 
-            elif frame.opcode == ABNF.OPCODE_CLOSE:
+            if frame.opcode == ABNF.OPCODE_CLOSE:
                 self.send_close()
                 return frame.opcode, frame
-            elif frame.opcode == ABNF.OPCODE_PING:
+            if frame.opcode == ABNF.OPCODE_PING:
                 if len(frame.data) < 126:
                     self.pong(frame.data)
                 else:
                     raise WebSocketProtocolException("Ping message is too long")
                 if control_frame:
                     return frame.opcode, frame
-            elif frame.opcode == ABNF.OPCODE_PONG:
+            if frame.opcode == ABNF.OPCODE_PONG:
                 if control_frame:
                     return frame.opcode, frame
 

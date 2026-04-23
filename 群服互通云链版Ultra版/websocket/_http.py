@@ -48,19 +48,23 @@ except Exception:
 
     class ProxyError(Exception):
         """Fallback proxy error used when python-socks is unavailable."""
+
         __slots__ = ()
 
     class ProxyTimeoutError(Exception):
         """Fallback proxy timeout error used when python-socks is unavailable."""
+
         __slots__ = ()
 
     class ProxyConnectionError(Exception):
         """Fallback proxy connection error used when python-socks is unavailable."""
+
         __slots__ = ()
 
 
 class proxy_info:
     """Normalized proxy configuration extracted from connection options."""
+
     def __init__(self, **options):
         """Parse proxy-related options into a small structured object."""
         self.proxy_host = options.get("http_proxy_host")

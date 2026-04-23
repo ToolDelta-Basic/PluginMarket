@@ -51,6 +51,7 @@ ENCODING = get_encoding()
 
 class VAction(argparse.Action):
     """Argparse action that counts repeated ``-v`` occurrences."""
+
     def __call__(
         self,
         parser: argparse.Namespace,
@@ -108,6 +109,7 @@ def parse_args() -> argparse.Namespace:
 
 class RawInput:
     """Compatibility wrapper around ``input`` that normalizes encoding."""
+
     @staticmethod
     def raw_input(prompt: str = "") -> str:
         """Read a line and normalize it to UTF-8 encoded bytes when needed."""
@@ -123,6 +125,7 @@ class RawInput:
 
 class InteractiveConsole(RawInput, code.InteractiveConsole):
     """Interactive console that renders inbound messages with terminal color."""
+
     @staticmethod
     def write(data: str) -> None:
         """Render received data above the current prompt."""
@@ -138,6 +141,7 @@ class InteractiveConsole(RawInput, code.InteractiveConsole):
 
 class NonInteractive(RawInput):
     """Console facade for non-interactive stdout output."""
+
     @staticmethod
     def write(data: str) -> None:
         """Write received data directly to stdout."""
@@ -150,7 +154,7 @@ class NonInteractive(RawInput):
         return self.raw_input("")
 
 
-def main() -> None:
+def main() -> None:  # skipcq: PY-R1000
     """Run the standalone websocket dump client."""
     start_time = time.time()
     args = parse_args()

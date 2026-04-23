@@ -299,6 +299,7 @@ class ABNF:
 
 class frame_buffer:
     """Buffer and decode raw bytes into complete WebSocket frames."""
+
     _HEADER_MASK_INDEX = 5
     _HEADER_LENGTH_INDEX = 6
 
@@ -430,6 +431,7 @@ class frame_buffer:
 
 class continuous_frame:
     """Collect fragmented frames until a full logical message is available."""
+
     def __init__(self, fire_cont_frame: bool, skip_utf8_validation: bool) -> None:
         """Initialize continuation-frame assembly state."""
         self.fire_cont_frame = fire_cont_frame

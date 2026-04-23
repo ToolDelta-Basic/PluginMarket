@@ -47,6 +47,7 @@ CookieJar = SimpleCookieJar()
 
 class handshake_response:
     """Container for handshake status, headers, and negotiated subprotocol."""
+
     def __init__(self, status: int, headers: dict, subprotocol):
         """Store handshake metadata returned by the server."""
         self.status = status
@@ -83,7 +84,7 @@ def _pack_hostname(hostname: str) -> str:
     return hostname
 
 
-def _get_handshake_headers(
+def _get_handshake_headers(  # skipcq: PY-R1000
     resource: str, url: str, host: str, port: int, options: dict
 ) -> tuple:
     """Build the HTTP headers used for the WebSocket opening handshake."""

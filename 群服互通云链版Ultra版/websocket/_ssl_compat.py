@@ -34,18 +34,22 @@ except ImportError:
     # dummy class of SSLError for environment without ssl support
     class SSLError(Exception):
         """Fallback SSL error used when Python lacks SSL support."""
+
         __slots__ = ()
 
     class SSLEOFError(Exception):
         """Fallback EOF SSL error used when Python lacks SSL support."""
+
         __slots__ = ()
 
     class SSLWantReadError(Exception):
         """Fallback read-wait SSL error used when Python lacks SSL support."""
+
         __slots__ = ()
 
     class SSLWantWriteError(Exception):
         """Fallback write-wait SSL error used when Python lacks SSL support."""
+
         __slots__ = ()
 
     ssl = None

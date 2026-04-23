@@ -7,7 +7,7 @@ try:
 except ImportError:
     from . import websocket
 
-from tooldelta import Chat, InternalBroadcast, Player, fmts, utils
+from tooldelta import Chat, InternalBroadcast, Player, utils
 
 from .message_utils import (
     EASTER_EGG_QQIDS,
@@ -122,7 +122,7 @@ class QQLinkerRuntimeMixin:
                 self._print_cloud_status(
                     "群服互通 云链连接",
                     "连接中",
-                    [f"正在尝试连接云链", f"目标地址: {target}"],
+                    ["正在尝试连接云链", f"目标地址: {target}"],
                     level="info",
                 )
                 session_id = self._start_ws_session()
@@ -582,7 +582,7 @@ class QQLinkerRuntimeMixin:
             self._print_cloud_status(
                 "群服互通 云链连接",
                 "忽略发送",
-                [f"当前未连接云链", f"已忽略发送到群 {group} 的消息"],
+                ["当前未连接云链", f"已忽略发送到群 {group} 的消息"],
                 level="warn",
             )
             return
