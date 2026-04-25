@@ -48,6 +48,9 @@ class OrionConfig:
         "是否启用4D皮肤反制": False,
         "是否启用账号等级限制": True,
         "服务器准入等级": 1,
+        "是否启用名称长度检测": True,
+        "名称长度最短限制": 2,
+        "名称长度最长限制": 12,
         "是否启用网易屏蔽词名称反制": True,
         "--网易屏蔽词名称检测等待时间(秒)": 2,
         "是否启用自定义违禁词名称反制": True,
@@ -176,6 +179,7 @@ class OrionConfig:
         "封禁时间_Steve/Alex皮肤反制": 0,
         "封禁时间_4D皮肤反制": 0,
         "封禁时间_账号等级限制": 0,
+        "封禁时间_名称长度检测": -1,
         "封禁时间_网易屏蔽词名称反制": 0,
         "封禁时间_自定义违禁词名称反制": 0,
         "封禁时间_网易MC客户端无法搜索到玩家": 0,
@@ -216,6 +220,11 @@ class OrionConfig:
             "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 账号等级({2}级)低于服务器准入等级({3}级)，§a正在制裁",
             "游戏内": ["@a", "NN"],
             "玩家": "您的账号等级({2}级)低于服务器准入等级({3}级)",
+        },
+        "信息_名称长度检测": {
+            "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称长度超过{2}-{3}字符限制，§a正在制裁",
+            "游戏内": ["@a", "NN"],
+            "玩家": "服务器发送了破损的数据包。",
         },
         "信息_网易屏蔽词名称反制": {
             "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称为网易屏蔽词，§a正在制裁，§7注意：当服务器较为卡顿时本项检测可能出现误判!",
@@ -464,6 +473,9 @@ class OrionConfig:
         "是否启用4D皮肤反制": bool,
         "是否启用账号等级限制": bool,
         "服务器准入等级": cfg.PInt,
+        "是否启用名称长度检测": bool,
+        "名称长度最短限制": cfg.PInt,
+        "名称长度最长限制": cfg.PInt,
         "是否启用网易屏蔽词名称反制": bool,
         "--网易屏蔽词名称检测等待时间(秒)": cfg.PNumber,
         "是否启用自定义违禁词名称反制": bool,
@@ -500,6 +512,7 @@ class OrionConfig:
         "封禁时间_Steve/Alex皮肤反制": (int, str),
         "封禁时间_4D皮肤反制": (int, str),
         "封禁时间_账号等级限制": (int, str),
+        "封禁时间_名称长度检测": (int, str),
         "封禁时间_网易屏蔽词名称反制": (int, str),
         "封禁时间_自定义违禁词名称反制": (int, str),
         "封禁时间_网易MC客户端无法搜索到玩家": (int, str),
@@ -516,6 +529,7 @@ class OrionConfig:
         "信息_Steve/Alex皮肤反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_4D皮肤反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_账号等级限制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_名称长度检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_网易屏蔽词名称反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_自定义违禁词名称反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_网易MC客户端无法搜索到玩家": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -742,6 +756,9 @@ class OrionConfig:
         self.is_ban_4D_skin: bool = config["是否启用4D皮肤反制"]
         self.is_level_limit: bool = config["是否启用账号等级限制"]
         self.server_level: int = config["服务器准入等级"]
+        self.name_length_limit = config["是否启用名称长度检测"]
+        self.min_name_length = config["名称长度最短限制"]
+        self.max_name_length = config["名称长度最长限制"]
         self.is_detect_netease_banned_word: bool = config["是否启用网易屏蔽词名称反制"]
         self.detect_netease_banned_word_timeout: int | float = config[
             "--网易屏蔽词名称检测等待时间(秒)"
@@ -810,6 +827,9 @@ class OrionConfig:
         self.ban_time_level_limit: int | Literal["Forever"] = config[
             "封禁时间_账号等级限制"
         ]
+        self.ban_time_name_length_limit: int | Literal["Forever"] = config[
+            "封禁时间_名称长度检测"
+        ]
         self.ban_time_detect_netease_banned_word: int | Literal["Forever"] = config[
             "封禁时间_网易屏蔽词名称反制"
         ]
@@ -854,6 +874,9 @@ class OrionConfig:
         ]
         self.info_4D_skin: dict[str, str | list[str]] = config["信息_4D皮肤反制"]
         self.info_level_limit: dict[str, str | list[str]] = config["信息_账号等级限制"]
+        self.info_name_length_limit: dict[str, str | list[str]] = config[
+            "信息_名称长度检测"
+        ]
         self.info_detect_netease_banned_word: dict[str, str | list[str]] = config[
             "信息_网易屏蔽词名称反制"
         ]
