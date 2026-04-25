@@ -33,7 +33,7 @@ class Orion_System(Plugin):
 
     name = "『Orion System』违规与作弊行为综合反制系统"
     author = "style_天枢『猎户座』"
-    version = (0, 4, 3)
+    version = (0, 4, 4)
 
     def __init__(self, frame) -> None:
         """
@@ -65,13 +65,21 @@ class Orion_System(Plugin):
         """插件加载完成后调用此方法"""
         self.xuid_getter = self.GetPluginAPI("XUID获取")
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
+        pip = self.GetPluginAPI("pip")
+        pip.require({"regex": "regex"})
+        import regex
+
+        self.regex = regex
+
         # 进行类型检查
         if TYPE_CHECKING:
             from 前置_玩家XUID获取 import XUIDGetter
             from 前置_聊天栏菜单 import ChatbarMenu
+            from pip模块支持 import PipSupport
 
             self.xuid_getter: XUIDGetter
             self.chatbar: ChatbarMenu
+            pip: PipSupport
 
     def on_active(self) -> None:
         """机器人进入租赁服后调用此方法"""

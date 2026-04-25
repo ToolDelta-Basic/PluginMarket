@@ -161,6 +161,7 @@ class OrionCore:
                 self.ban_4D_skin(Username, xuid, GeometryDataEngineVersion)
                 self.ban_player_level_too_low(Username, xuid, GrowthLevels)
                 self.player_name_length_detect(Username, xuid)
+                self.ban_player_with_illegal_name(Username, xuid)
                 self.ban_player_with_netease_banned_word(Username, xuid)
                 self.ban_player_with_self_banned_word(Username, xuid)
                 self.check_player_info(Username, xuid, GrowthLevels, packet)
@@ -824,27 +825,41 @@ class OrionCore:
         Args:
             Username (str): 玩家名称
             xuid (str): 玩家xuid
-        Warnings:
-            本项检测踢出玩家时必须使用xuid, 使用玩家名称可能会失效
         """
         if self.cfg.name_length_limit and not (
             self.cfg.min_name_length <= len(Username) <= self.cfg.max_name_length
         ):
-            infos = self.cfg.info_name_length_limit
-            infos_args = (
+            self.execute_ban(
                 Username,
                 xuid,
-                self.cfg.min_name_length,
-                self.cfg.max_name_length,
+                self.cfg.ban_time_name_length_limit,
+                self.cfg.info_name_length_limit,
+                (
+                    Username,
+                    xuid,
+                    self.cfg.min_name_length,
+                    self.cfg.max_name_length,
+                ),
             )
-            ban_time = self.cfg.ban_time_name_length_limit
-            player_info = infos.get("玩家")
-            if isinstance(player_info, str):
-                reason = OrionUtils.text_format(player_info, infos_args)
-                self.utils.kick(xuid, reason)
-                self.utils.print_inf(infos, infos_args)
-                self.ban_player_by_xuid(Username, xuid, ban_time, reason)
-                self.ban_player_by_device_id(Username, xuid, ban_time, reason)
+
+    @utils.thread_func("反制非法名称玩家函数")
+    def ban_player_with_illegal_name(self, Username: str, xuid: str) -> None:
+        """
+        反制非法名称玩家函数
+        Args:
+            Username (str): 玩家名称
+            xuid (str): 玩家xuid
+        """
+        if self.cfg.is_ban_illegal_name:
+            pattern = self.plugin.regex.compile(r"^[\p{Han}a-zA-Z0-9_]+$")
+            if not bool(pattern.match(Username)):
+                self.execute_ban(
+                    Username,
+                    xuid,
+                    self.cfg.ban_time_illegal_name,
+                    self.cfg.info_illegal_name,
+                    (Username, xuid),
+                )
 
     @utils.thread_func("反制网易屏蔽词名称玩家函数")
     def ban_player_with_netease_banned_word(self, Username: str, xuid: str) -> None:

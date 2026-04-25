@@ -51,6 +51,7 @@ class OrionConfig:
         "是否启用名称长度检测": True,
         "名称长度最短限制": 2,
         "名称长度最长限制": 12,
+        "是否启用非法名称反制(名称中出现汉字, 英文字母, 阿拉伯数字, 下划线之外的字符)": True,
         "是否启用网易屏蔽词名称反制": True,
         "--网易屏蔽词名称检测等待时间(秒)": 2,
         "是否启用自定义违禁词名称反制": True,
@@ -180,6 +181,7 @@ class OrionConfig:
         "封禁时间_4D皮肤反制": 0,
         "封禁时间_账号等级限制": 0,
         "封禁时间_名称长度检测": -1,
+        "封禁时间_非法名称反制": -1,
         "封禁时间_网易屏蔽词名称反制": 0,
         "封禁时间_自定义违禁词名称反制": 0,
         "封禁时间_网易MC客户端无法搜索到玩家": 0,
@@ -223,6 +225,11 @@ class OrionConfig:
         },
         "信息_名称长度检测": {
             "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称长度超过{2}-{3}字符限制，§a正在制裁",
+            "游戏内": ["@a", "NN"],
+            "玩家": "服务器发送了破损的数据包。",
+        },
+        "信息_非法名称反制": {
+            "控制台": "§a❀ §b[PlayerList] §c发现 {0} (xuid:{1}) 名称中出现汉字, 英文字母, 阿拉伯数字, 下划线之外的字符，§a正在制裁",
             "游戏内": ["@a", "NN"],
             "玩家": "服务器发送了破损的数据包。",
         },
@@ -434,7 +441,7 @@ class OrionConfig:
         "<<提示>> <插件数据文件更新按钮>默认为True，当新版本插件首次启动时可能会按照新版本插件的要求更新数据文件的格式，并在插件数据文件更新完毕后自动调整为False": None,
         "插件数据文件更新按钮": True,
         "<<提示>> 以下为<隐藏违规行为踢出提示使用的屏蔽词>，请不要随意修改，除非该屏蔽词失效": None,
-        "隐藏违规行为踢出提示使用的屏蔽词": " 加Q",
+        "隐藏违规行为踢出提示使用的屏蔽词": " HK",
         "<<提示>> 以下为游戏内封禁记分板和玩家权限管理器记分板的检查周期，您可以自由调整，但为了防止卡顿我们不建议调太短": None,
         "记分板监听器检查周期(秒)": 5,
         "<<提示>> 简约模式: 可一键关闭全部非必要插件输出，使控制台更简洁(如设备号获取失败、客户端搜索失败、崩服数据包等)": None,
@@ -476,6 +483,7 @@ class OrionConfig:
         "是否启用名称长度检测": bool,
         "名称长度最短限制": cfg.PInt,
         "名称长度最长限制": cfg.PInt,
+        "是否启用非法名称反制(名称中出现汉字, 英文字母, 阿拉伯数字, 下划线之外的字符)": bool,
         "是否启用网易屏蔽词名称反制": bool,
         "--网易屏蔽词名称检测等待时间(秒)": cfg.PNumber,
         "是否启用自定义违禁词名称反制": bool,
@@ -513,6 +521,7 @@ class OrionConfig:
         "封禁时间_4D皮肤反制": (int, str),
         "封禁时间_账号等级限制": (int, str),
         "封禁时间_名称长度检测": (int, str),
+        "封禁时间_非法名称反制": (int, str),
         "封禁时间_网易屏蔽词名称反制": (int, str),
         "封禁时间_自定义违禁词名称反制": (int, str),
         "封禁时间_网易MC客户端无法搜索到玩家": (int, str),
@@ -530,6 +539,7 @@ class OrionConfig:
         "信息_4D皮肤反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_账号等级限制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_名称长度检测": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
+        "信息_非法名称反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_网易屏蔽词名称反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_自定义违禁词名称反制": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
         "信息_网易MC客户端无法搜索到玩家": cfg.AnyKeyValue((str, cfg.JsonList(str, 2))),
@@ -759,6 +769,9 @@ class OrionConfig:
         self.name_length_limit = config["是否启用名称长度检测"]
         self.min_name_length = config["名称长度最短限制"]
         self.max_name_length = config["名称长度最长限制"]
+        self.is_ban_illegal_name = config[
+            "是否启用非法名称反制(名称中出现汉字, 英文字母, 阿拉伯数字, 下划线之外的字符)"
+        ]
         self.is_detect_netease_banned_word: bool = config["是否启用网易屏蔽词名称反制"]
         self.detect_netease_banned_word_timeout: int | float = config[
             "--网易屏蔽词名称检测等待时间(秒)"
@@ -830,6 +843,9 @@ class OrionConfig:
         self.ban_time_name_length_limit: int | Literal["Forever"] = config[
             "封禁时间_名称长度检测"
         ]
+        self.ban_time_illegal_name: int | Literal["Forever"] = config[
+            "封禁时间_非法名称反制"
+        ]
         self.ban_time_detect_netease_banned_word: int | Literal["Forever"] = config[
             "封禁时间_网易屏蔽词名称反制"
         ]
@@ -877,6 +893,7 @@ class OrionConfig:
         self.info_name_length_limit: dict[str, str | list[str]] = config[
             "信息_名称长度检测"
         ]
+        self.info_illegal_name: dict[str, str | list[str]] = config["信息_非法名称反制"]
         self.info_detect_netease_banned_word: dict[str, str | list[str]] = config[
             "信息_网易屏蔽词名称反制"
         ]
