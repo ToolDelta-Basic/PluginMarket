@@ -1,0 +1,10 @@
+{
+  "plugin-id": "server-interconnection",
+  "author": "哈茶块",
+  "version": "1.0.3",
+  "description": "实现服服互通！可以让多个服务器内的聊天消息互通",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "pip模块支持": "0.0.6"
+  }
+}
