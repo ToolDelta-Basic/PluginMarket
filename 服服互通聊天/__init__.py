@@ -1,7 +1,7 @@
 import asyncio
 import json
 import threading
-import time
+import time  # skipcq: PY-W2000
 
 from tooldelta import Config, Plugin, plugin_entry, game_utils
 from tooldelta.constants import PacketIDS
@@ -62,7 +62,7 @@ class CrossServerChat(Plugin):
     def get_online_players(self):
         """核心修复：万能在线玩家获取方法，兼容所有 ToolDelta 版本和接入核心"""
         players = []
-        
+
         # 1. 尝试使用游戏目标选择器 (最稳定)
         try:
             res = game_utils.getTarget("@a")
@@ -70,9 +70,10 @@ class CrossServerChat(Plugin):
                 players = res
         except Exception:
             pass
-            
-        if players: return players
-        
+
+        if players:
+            return players
+
         # 2. 尝试从 players 对象管理器中提取
         try:
             if hasattr(self.game_ctrl, "players"):
@@ -80,16 +81,18 @@ class CrossServerChat(Plugin):
                 players = [p.name if hasattr(p, 'name') else str(p) for p in p_list]
         except Exception:
             pass
-            
-        if players: return players
-        
+
+        if players:
+            return players
+
         # 3. 兜底方案：旧版直接属性
         try:
-            if hasattr(self.game_ctrl, "all_players") and isinstance(self.game_ctrl.all_players, list):
+            has_all = hasattr(self.game_ctrl, "all_players")
+            if has_all and isinstance(self.game_ctrl.all_players, list):
                 players = self.game_ctrl.all_players
         except Exception:
             pass
-            
+
         return players
 
     def on_def(self):
@@ -97,7 +100,8 @@ class CrossServerChat(Plugin):
         try:
             self.GetPluginAPI("pip").require("websockets")
         except Exception as e:
-            self.print_err(f"无法调用内置 pip 模块检查依赖，请确保已安装 [pip模块支持] 插件: {e}")
+            err_msg = f"无法调用内置 pip 模块检查依赖，请确保已安装 [pip模块支持] 插件: {e}"
+            self.print_err(err_msg)
             return
 
         self.print_inf(f"准备连接到频道: [{self.cfg['频道名称']}]")
@@ -198,13 +202,13 @@ class CrossServerChat(Plugin):
                 # 2. 跨服机制事件 (系统提示/名单返回等)
                 elif msg_type == "event":
                     sub_type = data.get("sub_type")
-                    
+
                     # 后端把拼接好的全服名单发给我们了，直接展示给请求的玩家
                     if sub_type == "reply_list":
                         target = data.get("target")
                         reply_content = data.get("content")
                         self.game_ctrl.say_to(target, reply_content)
-                        
+
                     # 后端告诉我们发送私聊失败了 (查无此人)
                     elif sub_type == "private_msg_error":
                         target = data.get("target")
@@ -217,7 +221,10 @@ class CrossServerChat(Plugin):
                     local_players = self.get_online_players()
                     # 检查是不是发给自己服务器里的人的，如果是，就拦截下来显示
                     if target in local_players:
-                        fmt_msg = f"§d[私聊] §7[§b{server_name}§7] §e{sender} §f-> §e你§f: §r{content}"
+                        fmt_msg = (
+                            f"§d[私聊] §7[§b{server_name}§7] §e{sender} "
+                            f"§f-> §e你§f: §r{content}"
+                        )
                         self.game_ctrl.say_to(target, fmt_msg)
 
             except Exception as e:
@@ -234,7 +241,7 @@ class CrossServerChat(Plugin):
             except Exception:
                 break
 
-    def on_chat(self, pkt):
+    def on_chat(self, pkt):  # skipcq: PY-R1000
         """监听本地玩家聊天。"""
         player = pkt.get("SourceName", "")
         msg = pkt.get("Message", "").strip()
@@ -256,7 +263,7 @@ class CrossServerChat(Plugin):
             cmd_str = msg.split(" ", 1)[1].strip()
             target_player = ""
             content = ""
-            
+
             # 支持用双引号包裹带空格的玩家名 (如: .msg "Player A" 你好)
             if cmd_str.startswith('"'):
                 end_idx = cmd_str.find('"', 1)
@@ -270,7 +277,10 @@ class CrossServerChat(Plugin):
             else:
                 parts = cmd_str.split(" ", 1)
                 if len(parts) < 2:
-                    self.game_ctrl.say_to(player, "§c格式错误！用法: .msg <玩家名> <内容> (如果名字带空格请用双引号包裹)")
+                    self.game_ctrl.say_to(
+                        player,
+                        "§c格式错误！用法: .msg <玩家名> <内容> (名字带空格请用双引号)"
+                    )
                     return True
                 target_player = parts[0]
                 content = parts[1]
@@ -279,8 +289,15 @@ class CrossServerChat(Plugin):
 
             # 优先尝试本服内私聊
             if target_player in local_players:
-                self.game_ctrl.say_to(target_player, f"§d[私聊] §7[§b{self.cfg['当前服务器名称']}§7] §e{player} §f-> §e你§f: §r{content}")
-                self.game_ctrl.say_to(player, f"§d[私聊] §f你 -> §e{target_player}§f: §r{content}")
+                self.game_ctrl.say_to(
+                    target_player,
+                    f"§d[私聊] §7[§b{self.cfg['当前服务器名称']}§7] "
+                    f"§e{player} §f-> §e你§f: §r{content}"
+                )
+                self.game_ctrl.say_to(
+                    player,
+                    f"§d[私聊] §f你 -> §e{target_player}§f: §r{content}"
+                )
                 return True
 
             # 本服找不到，直接甩给后端让它去找
@@ -296,7 +313,10 @@ class CrossServerChat(Plugin):
                     self.msg_queue.put(json.dumps(data)),
                     self.loop
                 )
-                self.game_ctrl.say_to(player, f"§d[私聊] §f你 -> §e{target_player}§f: §r{content}")
+                self.game_ctrl.say_to(
+                    player,
+                    f"§d[私聊] §f你 -> §e{target_player}§f: §r{content}"
+                )
             else:
                 self.game_ctrl.say_to(player, "§c互通服务未连接，无法发送跨服私聊。")
             return True
@@ -319,7 +339,13 @@ class CrossServerChat(Plugin):
             else:
                 # 断网时只显示本地
                 local_players = self.get_online_players()
-                self.game_ctrl.say_to(player, f"§e==== 🌐 本服在线: {len(local_players)} 人 ====\n§7[§b{self.cfg['当前服务器名称']}§7] §f{', '.join(local_players)}\n§c(跨服网络未连接)")
+                local_str = ", ".join(local_players)
+                msg_str = (
+                    f"§e==== 🌐 本服在线: {len(local_players)} 人 ====\n"
+                    f"§7[§b{self.cfg['当前服务器名称']}§7] §f{local_str}\n"
+                    "§c(跨服网络未连接)"
+                )
+                self.game_ctrl.say_to(player, msg_str)
             return True
 
         # 过滤其他插件可能会用到的指令前缀
