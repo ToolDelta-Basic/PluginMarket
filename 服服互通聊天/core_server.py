@@ -10,11 +10,11 @@ logging.basicConfig(
 )
 
 # 存储所有连接的客户端详细信息
-# 结构：{ websocket: {"channel": "大厅", "server_name": "生存一区", "players": ["Steve", "Alex"]} }
+# 结构: { websocket: {"channel": "大厅", "server_name": "一区", "players": []} }
 clients = {}
 
 
-async def handle_client(websocket, _path):
+async def handle_client(websocket, _path):  # skipcq: PY-R1000
     """处理每个客户端连接及数据路由"""
     try:
         # 握手认证
@@ -31,10 +31,15 @@ async def handle_client(websocket, _path):
         clients[websocket] = {
             "channel": channel,
             "server_name": server_name,
-            "players": [] # 重点：在此缓存该服务器定时上报的在线玩家名单
+            "players": []  # 重点：在此缓存该服务器定时上报的在线玩家名单
         }
 
-        logging.info("🔗 新子服接入: [%s] (%s) | 当前总节点: %d", server_name, channel, len(clients))
+        logging.info(
+            "🔗 新子服接入: [%s] (%s) | 当前总节点: %d",
+            server_name,
+            channel,
+            len(clients)
+        )
 
         # 智能数据路由
         async for message in websocket:
@@ -53,7 +58,7 @@ async def handle_client(websocket, _path):
                         await target_ws.send(message)
                     except Exception:
                         pass
-                        
+
             # 2. 接收子服定时上报的状态，并更新缓存
             elif msg_type == "status":
                 clients[websocket]["players"] = data.get("players", [])
@@ -65,23 +70,23 @@ async def handle_client(websocket, _path):
                 # 前端要求后端下发整理好的全网名单
                 if sub_type == "request_list":
                     requester = data.get("requester")
-                    
+
                     # 后端瞬间聚合内存中的数据
                     total_players = 0
                     servers_data = {}
-                    
+
                     for ws, info in clients.items():
                         if info["channel"] == my_info["channel"]:
                             p_list = info["players"]
                             servers_data[info["server_name"]] = p_list
                             total_players += len(p_list)
-                            
+
                     # 直接在后端完成排版
                     lines = [f"§e==== 🌐 全网同频道在线: {total_players} 人 ===="]
                     for srv, p_list in servers_data.items():
                         p_str = ", ".join(p_list) if p_list else "§8无人在线"
                         lines.append(f"§7[§b{srv}§7] §a({len(p_list)}人) §f{p_str}")
-                        
+
                     # 把拼接好的文本发回给那个发请求的子服
                     reply_msg = {
                         "type": "event",
@@ -98,19 +103,25 @@ async def handle_client(websocket, _path):
             elif msg_type == "private_msg":
                 target = data.get("target")
                 sender = data.get("player")
-                
+
                 routed = False
                 for ws, info in clients.items():
                     # 遍历缓存，如果人在那个服的名单里，就发过去
-                    if info["channel"] == my_info["channel"] and target in info["players"]:
+                    is_same_channel = info["channel"] == my_info["channel"]
+                    if is_same_channel and target in info["players"]:
                         try:
                             await ws.send(message)
                             routed = True
-                            logging.info(f"✉️ 跨服私聊路由: {sender} -> {target} (已投递至 {info['server_name']})")
+                            logging.info(
+                                "✉️ 跨服私聊路由: %s -> %s (已投递至 %s)",
+                                sender,
+                                target,
+                                info["server_name"]
+                            )
                         except Exception:
                             pass
                         break
-                        
+
                 # 如果翻遍了所有缓存都没这个人，给发送者回个错误提示
                 if not routed:
                     error_msg = {
@@ -132,7 +143,12 @@ async def handle_client(websocket, _path):
         if websocket in clients:
             info = clients[websocket]
             del clients[websocket]
-            logging.info("❌ 子服断开: [%s] (%s) | 剩余节点: %d", info["server_name"], info["channel"], len(clients))
+            logging.info(
+                "❌ 子服断开: [%s] (%s) | 剩余节点: %d",
+                info["server_name"],
+                info["channel"],
+                len(clients)
+            )
 
 
 async def main():
