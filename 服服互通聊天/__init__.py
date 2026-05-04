@@ -1,14 +1,13 @@
 import asyncio
 import json
 import threading
-import time  # skipcq: PY-W2000
 
 from tooldelta import Config, Plugin, plugin_entry, game_utils
 from tooldelta.constants import PacketIDS
 
 
 class CrossServerChat(Plugin):
-    """服服互通聊天插件"""
+    """服服互通聊天插件 (频道鉴权版)。"""
 
     name = "服服互通聊天"
     author = "哈茶块"
@@ -18,12 +17,14 @@ class CrossServerChat(Plugin):
     CONFIG_TEMPLATE = {
         "中转服务器地址": "ws://core.aurorabot.top",
         "当前服务器名称": "你的服务器名称",
-        "频道名称": "全球大厅", # 默认进入官方公开频道。如需建立私人网络请改为自定义名称
+        # 默认进入官方公开频道。如需建立私人网络请改为自定义名称
+        "频道名称": "全球大厅",
         "频道类型(公开/私密)": "公开",
         "频道密钥(仅私密需填)": ""
     }
 
     def __init__(self, frame):
+        """初始化插件，处理热重载。"""
         super().__init__(frame)
 
         if hasattr(self.frame, "_cross_server_chat_instance"):
@@ -51,6 +52,7 @@ class CrossServerChat(Plugin):
         self.ListenPacket(PacketIDS.Text, self.on_chat)
 
     def stop(self):
+        """停止后台服务，供重载时安全清理旧线程。"""
         self.is_running = False
         if self.ws_conn and self.loop:
             try:
@@ -59,29 +61,41 @@ class CrossServerChat(Plugin):
                 pass
 
     def get_online_players(self):
+        """获取所有在线玩家列表，兼容多核心版本。"""
         players = []
         try:
             res = game_utils.getTarget("@a")
-            if isinstance(res, list): players = res
-        except Exception: pass
-        if players: return players
+            if isinstance(res, list):
+                players = res
+        except Exception:
+            pass
+
+        if players:
+            return players
 
         try:
             if hasattr(self.game_ctrl, "players"):
                 p_list = self.game_ctrl.players.getAllPlayers()
-                players = [p.name if hasattr(p, 'name') else str(p) for p in p_list]
-        except Exception: pass
-        if players: return players
+                players = [
+                    p.name if hasattr(p, 'name') else str(p) for p in p_list
+                ]
+        except Exception:
+            pass
+
+        if players:
+            return players
 
         try:
             has_all = hasattr(self.game_ctrl, "all_players")
             if has_all and isinstance(self.game_ctrl.all_players, list):
                 players = self.game_ctrl.all_players
-        except Exception: pass
+        except Exception:
+            pass
 
         return players
 
     def on_def(self):
+        """插件预加载时检查依赖并启动线程。"""
         try:
             self.GetPluginAPI("pip").require("websockets")
         except Exception as e:
@@ -95,11 +109,13 @@ class CrossServerChat(Plugin):
         threading.Thread(target=self.run_ws_client, daemon=True).start()
 
     def run_ws_client(self):
+        """在新线程中初始化异步事件循环。"""
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self.ws_main())
 
     async def ws_main(self):
+        """维持与中转服务器的持久连接。"""
         import websockets
 
         uri = self.cfg["中转服务器地址"]
@@ -109,7 +125,7 @@ class CrossServerChat(Plugin):
             try:
                 self.print_inf(f"正在尝试连接中转服务器: {uri} ...")
                 async with websockets.connect(uri) as ws:
-                    
+
                     # 1. 鉴权握手
                     auth_data = {
                         "type": "auth",
@@ -119,17 +135,17 @@ class CrossServerChat(Plugin):
                         "channel_key": self.cfg.get("频道密钥(仅私密需填)", "")
                     }
                     await ws.send(json.dumps(auth_data))
-                    
+
                     # 2. 等待服务端反馈 (5秒超时)
                     auth_resp_str = await asyncio.wait_for(ws.recv(), timeout=5.0)
                     auth_resp = json.loads(auth_resp_str)
-                    
+
                     if auth_resp.get("type") == "auth_fail":
                         self.print_err(f"❌ 互通连接被拒绝: {auth_resp.get('msg')}")
-                        self.print_war("请修改 [插件配置文件/服服互通聊天.json] 后使用 reload 重载插件。")
-                        self.is_running = False # 彻底阻断，防止刷屏重连
+                        self.print_war("请修改配置后使用 reload 重载插件。")
+                        self.is_running = False  # 彻底阻断，防止刷屏重连
                         return
-                        
+
                     self.ws_conn = ws
                     self.print_suc("✅ 鉴权通过，互通服务已上线！")
 
@@ -163,6 +179,7 @@ class CrossServerChat(Plugin):
                     await asyncio.sleep(1)
 
     async def status_report_loop(self, ws):
+        """定时高频上报本服务器的真实玩家名单给后端缓存。"""
         while self.is_running:
             try:
                 local_players = self.get_online_players()
@@ -176,6 +193,7 @@ class CrossServerChat(Plugin):
             await asyncio.sleep(3)
 
     async def ws_recv(self, ws):
+        """接收中转服务器发来的跨服消息。"""
         async for msg in ws:
             if not self.is_running:
                 break
@@ -216,6 +234,7 @@ class CrossServerChat(Plugin):
                 self.print_err(f"处理跨服消息时出错: {e}")
 
     async def ws_send(self, ws):
+        """将队列里的本地消息发送给中转服务器。"""
         while self.is_running:
             try:
                 msg = await asyncio.wait_for(self.msg_queue.get(), timeout=1.0)
@@ -226,13 +245,17 @@ class CrossServerChat(Plugin):
                 break
 
     def on_chat(self, pkt):  # skipcq: PY-R1000
+        """监听本地玩家聊天并处理指令分发。"""
         player = pkt.get("SourceName", "")
         msg = pkt.get("Message", "").strip()
         text_type = pkt.get("TextType", 0)
 
-        if not player or not msg: return False
-        if text_type != 1: return False
-        if player == self.game_ctrl.bot_name: return False
+        if not player or not msg:
+            return False
+        if text_type != 1:
+            return False
+        if player == self.game_ctrl.bot_name:
+            return False
 
         if msg.startswith(".msg ") or msg.startswith(".w "):
             cmd_str = msg.split(" ", 1)[1].strip()
@@ -315,7 +338,8 @@ class CrossServerChat(Plugin):
                 self.game_ctrl.say_to(player, msg_str)
             return True
 
-        if msg.startswith("/") or msg.startswith("."): return False
+        if msg.startswith("/") or msg.startswith("."):
+            return False
 
         if self.is_running and self.loop and self.ws_conn:
             data = {
@@ -330,5 +354,6 @@ class CrossServerChat(Plugin):
             )
 
         return False
+
 
 entry = plugin_entry(CrossServerChat)
