@@ -1,0 +1,62 @@
+# managers/config_mgr.py
+"""配置管理器（支持动态注册节，自动持久化）"""
+import json
+import os
+from typing import Any
+
+class ConfigManager:
+    def __init__(self, file_path: str = "config.json", data_dir: str = None):
+        self._file_path = file_path
+        self._data: dict = {}
+        self._defaults: dict = {}
+        self.data_dir = data_dir or os.path.dirname(os.path.abspath(file_path))
+
+    def register_section(self, section: str, defaults: dict[str, Any]):
+        if section not in self._defaults:
+            self._defaults[section] = defaults
+        if self._data and section not in self._data:
+            self._data[section] = defaults
+            self.save()
+
+    def load(self):
+        if os.path.exists(self._file_path):
+            with open(self._file_path, 'r', encoding='utf-8') as f:
+                loaded = json.load(f)
+            self._data = self._deep_merge(self._defaults, loaded)
+        else:
+            self._data = dict(self._defaults)
+        self.save()
+
+    def save(self):
+        with open(self._file_path, 'w', encoding='utf-8') as f:
+            json.dump(self._data, f, ensure_ascii=False, indent=2)
+
+    def get(self, key: str, default=None):
+        keys = key.split('.')
+        value = self._data
+        try:
+            for k in keys:
+                value = value[k]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    def set(self, key: str, value: Any):
+        keys = key.split('.')
+        data = self._data
+        for k in keys[:-1]:
+            data = data.setdefault(k, {})
+        data[keys[-1]] = value
+
+    def get_data_dir(self) -> str:
+        return self.data_dir
+
+    @staticmethod
+    def _deep_merge(base: dict, override: dict) -> dict:
+        merged = {}
+        for k in set(base) | set(override):
+            if k in base and k in override and isinstance(base[k], dict) and isinstance(override[k], dict):
+                merged[k] = ConfigManager._deep_merge(base[k], override[k])
+            else:
+                merged[k] = override.get(k) if k in override else base[k]
+        return merged

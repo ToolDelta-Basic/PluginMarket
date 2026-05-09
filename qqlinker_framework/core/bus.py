@@ -1,0 +1,56 @@
+# core/bus.py
+"""事件总线 (EventBus) —— 带递归深度保护 + 线程安全"""
+import asyncio
+import logging
+import threading
+import traceback
+from contextvars import ContextVar
+from typing import Callable, Any
+from .events import BaseEvent
+
+_recursion_depth: ContextVar[int] = ContextVar('event_recursion_depth', default=0)
+MAX_EVENT_DEPTH = 10
+
+class EventBus:
+    def __init__(self):
+        self._subscribers: dict[str, list[tuple[int, Callable]]] = {}
+        self._lock = threading.Lock()
+
+    def subscribe(self, event_type: str, handler: Callable, priority: int = 0):
+        """订阅事件（同步，线程安全）"""
+        with self._lock:
+            if event_type not in self._subscribers:
+                self._subscribers[event_type] = []
+            self._subscribers[event_type].append((priority, handler))
+            self._subscribers[event_type].sort(key=lambda x: x[0], reverse=True)
+
+    def unsubscribe(self, event_type: str, handler: Callable):
+        """取消订阅（同步，线程安全）"""
+        with self._lock:
+            if event_type in self._subscribers:
+                self._subscribers[event_type] = [
+                    (p, h) for p, h in self._subscribers[event_type] if h != handler
+                ]
+
+    async def publish(self, event: BaseEvent):
+        depth = _recursion_depth.get()
+        if depth >= MAX_EVENT_DEPTH:
+            logging.getLogger(__name__).error("事件 %s 达到最大递归深度 %d，已丢弃", type(event).__name__, MAX_EVENT_DEPTH)
+            return
+        _recursion_depth.set(depth + 1)
+        try:
+            event_type = type(event).__name__
+            with self._lock:
+                handlers = list(self._subscribers.get(event_type, []))
+            for _, handler in handlers:
+                try:
+                    if asyncio.iscoroutinefunction(handler):
+                        await handler(event)
+                    else:
+                        handler(event)
+                except Exception as e:
+                    logging.getLogger(__name__).error(
+                        "事件处理异常 %s: %s\n%s", event_type, e, traceback.format_exc()
+                    )
+        finally:
+            _recursion_depth.set(depth)
