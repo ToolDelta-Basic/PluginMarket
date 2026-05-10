@@ -99,4 +99,3 @@ class Module(ABC):
             tool_definition: 工具字典，需包含 'name' 等字段。
         """
         self._tools.append(tool_definition)
-        

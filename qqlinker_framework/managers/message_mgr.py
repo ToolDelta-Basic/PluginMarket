@@ -7,8 +7,6 @@ from typing import Optional
 
 
 class SendPriority(IntEnum):
-    """消息发送优先级枚举。"""
-
     HIGH = 0
     NORMAL = 1
     LOW = 2
@@ -18,11 +16,6 @@ class MessageManager:
     """基于令牌桶的削峰填谷消息队列管理器。"""
 
     def __init__(self, adapter):
-        """初始化消息管理器。
-
-        Args:
-            adapter: 平台适配器实例。
-        """
         self._adapter = adapter
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._running = False
@@ -33,13 +26,11 @@ class MessageManager:
         self._lock = asyncio.Lock()
 
     async def start(self):
-        """启动后台发送协程。"""
         if not self._running:
             self._running = True
             self._worker_task = asyncio.create_task(self._worker())
 
     async def stop(self):
-        """停止后台协程。"""
         self._running = False
         if self._worker_task:
             self._worker_task.cancel()
@@ -54,13 +45,6 @@ class MessageManager:
         message: str,
         priority: SendPriority = SendPriority.NORMAL,
     ):
-        """将群消息推入发送队列。
-
-        Args:
-            group_id: 群号。
-            message: 消息文本。
-            priority: 优先级。
-        """
         await self._queue.put((priority, ("group", group_id, message)))
 
     async def send_private(
@@ -69,17 +53,9 @@ class MessageManager:
         message: str,
         priority: SendPriority = SendPriority.NORMAL,
     ):
-        """将私聊消息推入发送队列。
-
-        Args:
-            user_id: QQ 号。
-            message: 消息文本。
-            priority: 优先级。
-        """
         await self._queue.put((priority, ("private", user_id, message)))
 
     async def _worker(self):
-        """后台工作协程，不断从队列取任务并限流发送。"""
         logger = logging.getLogger(__name__)
         while self._running:
             try:
@@ -93,11 +69,6 @@ class MessageManager:
                 logger.error("消息发送异常: %s", e)
 
     async def _dispatch(self, task: tuple):
-        """执行实际发送操作。
-
-        Args:
-            task: (priority, (msg_type, target, text))
-        """
         _, (msg_type, target, text) = task
         loop = asyncio.get_running_loop()
         if msg_type == "group":
@@ -110,7 +81,6 @@ class MessageManager:
             )
 
     async def _wait_for_token(self):
-        """令牌桶限流等待。"""
         async with self._lock:
             now = time.monotonic()
             elapsed = now - self._last_refill
@@ -125,4 +95,3 @@ class MessageManager:
             wait_time = (1 - self._tokens) / self._rate_limit
             self._tokens = 0
         await asyncio.sleep(wait_time)
-        

@@ -51,4 +51,3 @@ def listen(event_type: str, priority: int = 0):
         return func
 
     return decorator
-    

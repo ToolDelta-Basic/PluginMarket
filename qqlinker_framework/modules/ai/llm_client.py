@@ -14,11 +14,6 @@ class LLMClientFactory:
     """封装 LLM API 请求，支持同步/异步工具调用和多轮对话。"""
 
     def __init__(self, config):
-        """初始化 LLM 客户端配置。
-
-        Args:
-            config: ConfigManager 实例。
-        """
         self.config = config
         self.api_base = config.get(
             "AI助手.API地址", "https://api.siliconflow.cn/v1"
@@ -33,17 +28,6 @@ class LLMClientFactory:
         max_rounds: int = 5,
         tool_executor: Optional[Callable] = None,
     ) -> str:
-        """执行 LLM 对话，自动处理工具调用循环。
-
-        Args:
-            messages: 对话消息列表。
-            tools: OpenAI 工具 schema 列表。
-            max_rounds: 最大工具调用轮次。
-            tool_executor: 工具执行回调。
-
-        Returns:
-            LLM 最终回复文本。
-        """
         if not self.api_key:
             return "AI API 密钥未配置"
         if not aiohttp:
@@ -67,20 +51,20 @@ class LLMClientFactory:
             }
 
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        f"{self.api_base}/chat/completions",
-                        json=payload,
-                        headers=headers,
-                        timeout=aiohttp.ClientTimeout(total=60),
-                    ) as resp:
-                        if resp.status != 200:
-                            text = await resp.text()
-                            logging.getLogger(__name__).error(
-                                "LLM API 错误 %d: %s", resp.status, text
-                            )
-                            return f"AI 请求失败: {resp.status}"
-                        data = await resp.json()
+                async with aiohttp.ClientSession() as session, \
+                        session.post(
+                            f"{self.api_base}/chat/completions",
+                            json=payload,
+                            headers=headers,
+                            timeout=aiohttp.ClientTimeout(total=60),
+                        ) as resp:
+                    if resp.status != 200:
+                        text = await resp.text()
+                        logging.getLogger(__name__).error(
+                            "LLM API 错误 %d: %s", resp.status, text
+                        )
+                        return f"AI 请求失败: {resp.status}"
+                    data = await resp.json()
 
                 choice = data["choices"][0]
                 message = choice["message"]
@@ -92,7 +76,7 @@ class LLMClientFactory:
                         name = func["name"]
                         try:
                             args = json.loads(func["arguments"])
-                        except:
+                        except Exception:
                             args = {}
                         if tool_executor:
                             try:
@@ -121,4 +105,3 @@ class LLMClientFactory:
                 return f"AI 服务异常: {str(e)}"
 
         return "工具调用次数过多"
-        

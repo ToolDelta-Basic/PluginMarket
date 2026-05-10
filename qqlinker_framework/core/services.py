@@ -52,4 +52,3 @@ class ServiceContainer:
             是否存在。
         """
         return name in self._services or name in self._factories
-        

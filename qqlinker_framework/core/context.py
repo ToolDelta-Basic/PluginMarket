@@ -54,4 +54,3 @@ class CommandContext:
             await self._message_mgr.send_group(self.group_id, text)
         else:
             self.adapter.send_group_msg(self.group_id, text)
-            

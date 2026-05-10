@@ -80,4 +80,3 @@ class EventBus:
                     )
         finally:
             _recursion_depth.set(depth)
-            

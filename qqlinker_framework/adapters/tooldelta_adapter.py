@@ -11,11 +11,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     """基于 ToolDelta 的平台适配器，封装游戏控制、事件监听和 WebSocket 通信。"""
 
     def __init__(self, plugin_instance: Plugin):
-        """初始化适配器并注册原生事件监听。
-
-        Args:
-            plugin_instance: ToolDelta 插件实例。
-        """
         self.plugin = plugin_instance
         self.game_ctrl = plugin_instance.game_ctrl
         self._config_mgr = None
@@ -34,28 +29,12 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self.main_loop = None
 
     def set_ws_client(self, ws_client: WsClient):
-        """设置 WebSocket 客户端实例。
-
-        Args:
-            ws_client: WsClient 实例。
-        """
         self._ws_client = ws_client
 
     def set_config_mgr(self, config_mgr):
-        """设置配置管理器，用于权限检查等。
-
-        Args:
-            config_mgr: ConfigManager 实例。
-        """
         self._config_mgr = config_mgr
 
-    # ---------- 游戏控制 ----------
     def send_game_command(self, cmd: str):
-        """发送游戏命令，异常时记录日志。
-
-        Args:
-            cmd: 完整的游戏命令。
-        """
         try:
             self.game_ctrl.sendcmd(cmd)
         except Exception as e:
@@ -64,12 +43,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             )
 
     def send_game_message(self, target: str, text: str):
-        """向游戏内发送消息，异常时记录日志。
-
-        Args:
-            target: 目标选择器或玩家名。
-            text: 消息文本。
-        """
         try:
             self.game_ctrl.say_to(target, text)
         except Exception as e:
@@ -78,27 +51,12 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             )
 
     def get_online_players(self) -> List[str]:
-        """获取当前在线玩家列表，异常时返回空列表。
-
-        Returns:
-            玩家名称列表。
-        """
         try:
             return list(self.game_ctrl.allplayers.keys())
         except Exception:
             return []
 
-    # ---------- QQ消息 ----------
     def send_group_msg(self, group_id: int, message: str) -> bool:
-        """发送群消息，通过 WebSocket 客户端。
-
-        Args:
-            group_id: 群号。
-            message: 消息内容。
-
-        Returns:
-            是否成功发送。
-        """
         if not self._ws_client:
             logging.getLogger(__name__).warning("WebSocket 客户端不可用")
             return False
@@ -108,15 +66,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         return self._ws_client.send_group_msg(group_id, message)
 
     def send_private_msg(self, user_id: int, message: str) -> bool:
-        """发送私聊消息。
-
-        Args:
-            user_id: QQ 号。
-            message: 消息内容。
-
-        Returns:
-            是否成功发送。
-        """
         if not self._ws_client:
             logging.getLogger(__name__).warning("WebSocket 客户端不可用")
             return False
@@ -125,13 +74,7 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return False
         return self._ws_client.send_private_msg(user_id, message)
 
-    # ---------- 事件监听（增加异常隔离）----------
     def _on_game_chat(self, chat: Chat):
-        """处理游戏聊天事件，分发给所有注册的处理器。
-
-        Args:
-            chat: ToolDelta 的 Chat 对象。
-        """
         for h in self._chat_handlers:
             try:
                 h(chat.player.name, chat.msg)
@@ -139,11 +82,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 logging.getLogger(__name__).error("游戏聊天处理器异常: %s", e)
 
     def _on_player_join(self, player: Player):
-        """处理玩家加入事件，分发给所有注册的处理器。
-
-        Args:
-            player: ToolDelta 的 Player 对象。
-        """
         for h in self._player_join_handlers:
             try:
                 h(player.name)
@@ -151,11 +89,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 logging.getLogger(__name__).error("玩家加入处理器异常: %s", e)
 
     def _on_player_leave(self, player: Player):
-        """处理玩家离开事件，分发给所有注册的处理器。
-
-        Args:
-            player: ToolDelta 的 Player 对象。
-        """
         for h in self._player_leave_handlers:
             try:
                 h(player.name)
@@ -163,43 +96,18 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 logging.getLogger(__name__).error("玩家离开处理器异常: %s", e)
 
     def listen_game_chat(self, handler: Callable[[str, str], None]):
-        """注册游戏聊天处理器。
-
-        Args:
-            handler: 回调 (player_name, message)。
-        """
         self._chat_handlers.append(handler)
 
     def listen_player_join(self, handler: Callable[[str], None]):
-        """注册玩家加入处理器。
-
-        Args:
-            handler: 回调 (player_name)。
-        """
         self._player_join_handlers.append(handler)
 
     def listen_player_leave(self, handler: Callable[[str], None]):
-        """注册玩家离开处理器。
-
-        Args:
-            handler: 回调 (player_name)。
-        """
         self._player_leave_handlers.append(handler)
 
     def listen_group_message(self, handler: Callable[[Dict[str, Any]], None]):
-        """注册原始群消息处理器。
-
-        Args:
-            handler: 回调，接收原始消息字典。
-        """
         self._group_message_handlers.append(handler)
 
     def trigger_raw_group_handlers(self, data: dict):
-        """触发所有原始群消息处理器，异常捕获。
-
-        Args:
-            data: 原始消息字典。
-        """
         for handler in self._group_message_handlers:
             try:
                 handler(data)
@@ -209,37 +117,12 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def register_console_command(
         self, triggers: List[str], hint: str, usage: str, func: Callable
     ):
-        """注册控制台命令，委托给 ToolDelta 框架。
-
-        Args:
-            triggers: 命令触发词列表。
-            hint: 参数提示。
-            usage: 用途说明。
-            func: 回调函数。
-        """
         self.plugin.frame.add_console_cmd_trigger(triggers, hint, usage, func)
 
     def get_plugin_api(self, name: str) -> Optional[Any]:
-        """获取其他插件的 API 实例。
-
-        Args:
-            name: 插件名。
-
-        Returns:
-            插件实例或 None。
-        """
         return self.plugin.GetPluginAPI(name)
 
     def is_user_admin(self, user_id: int, config_mgr=None) -> bool:
-        """根据配置中的管理员列表检查用户权限。
-
-        Args:
-            user_id: QQ 号。
-            config_mgr: 配置管理器，若为 None 则使用内部实例。
-
-        Returns:
-            是否为管理员。
-        """
         cfg = config_mgr or self._config_mgr
         if cfg is None:
             return False
@@ -248,4 +131,3 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return user_id in [int(q) for q in admin_list]
         except (TypeError, ValueError):
             return False
-            

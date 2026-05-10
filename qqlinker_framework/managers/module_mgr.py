@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 """模块管理器 – 负责模块的注册、依赖排序、生命周期调度及热插拔"""
 import inspect
 import logging
@@ -54,18 +55,18 @@ class ModuleManager:
         for mod in modules:
             try:
                 await mod.on_init()
-                for tool_def in mod._tools:  # noqa: protected-access
+                for tool_def in mod._tools:
                     self.host.tool_mgr.register_tool(tool_def)
-                for cmd_info in mod._commands.values():  # noqa: protected-access
+                for cmd_info in mod._commands.values():
                     self.host.command_mgr.register(**cmd_info)
             except Exception as e:
                 logger.error(
                     "模块 '%s' 初始化失败: %s，已跳过启动", mod.name, e
                 )
                 self._loaded_modules.pop(mod.name, None)
-                for trigger in mod._commands:  # noqa: protected-access
+                for trigger in mod._commands:
                     self.host.command_mgr.unregister(trigger)
-                for tool_def in mod._tools:  # noqa: protected-access
+                for tool_def in mod._tools:
                     tool_name = tool_def.get("name")
                     if tool_name:
                         self.host.tool_mgr.unregister_tool(tool_name)
@@ -102,17 +103,17 @@ class ModuleManager:
             logger.warning("卸载模块失败：模块 '%s' 未加载", module_name)
             return False
         await mod.on_stop()
-        for event_type, handler, _ in mod._event_handlers:  # noqa: protected-access
+        for event_type, handler, _ in mod._event_handlers:
             self.event_bus.unsubscribe(event_type, handler)
-        mod._event_handlers.clear()  # noqa: protected-access
-        for trigger in list(mod._commands.keys()):  # noqa: protected-access
+        mod._event_handlers.clear()
+        for trigger in list(mod._commands.keys()):
             self.host.command_mgr.unregister(trigger)
-        mod._commands.clear()  # noqa: protected-access
-        for tool_def in mod._tools:  # noqa: protected-access
+        mod._commands.clear()
+        for tool_def in mod._tools:
             tool_name = tool_def.get("name")
             if tool_name:
                 self.host.tool_mgr.unregister_tool(tool_name)
-        mod._tools.clear()  # noqa: protected-access
+        mod._tools.clear()
         logger.info("模块 '%s' 卸载成功", module_name)
         return True
 
@@ -145,9 +146,9 @@ class ModuleManager:
         self._scan_decorators(temp_mod)
         try:
             await temp_mod.on_init()
-            for tool_def in temp_mod._tools:  # noqa: protected-access
+            for tool_def in temp_mod._tools:
                 self.host.tool_mgr.register_tool(tool_def)
-            for cmd_info in temp_mod._commands.values():  # noqa: protected-access
+            for cmd_info in temp_mod._commands.values():
                 self.host.command_mgr.register(**cmd_info)
         except Exception as e:
             logger.error("模块 '%s' 初始化失败: %s", temp_mod.name, e)
@@ -191,7 +192,7 @@ class ModuleManager:
             mod, predicate=inspect.ismethod
         ):
             if hasattr(method, '_command_info'):
-                info = method._command_info  # noqa: protected-access
+                info = method._command_info
                 mod.register_command(
                     info['trigger'],
                     method,
@@ -201,7 +202,7 @@ class ModuleManager:
                     argument_hint=info.get('argument_hint', ''),
                 )
             if hasattr(method, '_event_info'):
-                info = method._event_info  # noqa: protected-access
+                info = method._event_info
                 mod.listen(
                     info['event_type'], method, info.get('priority', 0)
                 )

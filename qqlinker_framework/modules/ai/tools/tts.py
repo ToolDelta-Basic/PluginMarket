@@ -1,6 +1,5 @@
 # modules/ai/tools/tts.py
 """文本转语音工具（硅基流动）"""
-import logging
 import base64
 
 try:
@@ -10,21 +9,14 @@ except ImportError:
     aiohttp = None
     HAS_AIOHTTP = False
 
+
 def register_tools(tool_manager):
     """注册 siliconflow_tts 工具。"""
-    async def handler(params: dict, context: dict, config: dict) -> str:
-        """调用硅基流动 TTS API，返回 base64 音频。
 
-        Args:
-            params: {"text": "文本内容"}
-            context: 执行上下文。
-            config: 提供者配置，需包含 "硅基流动"。
-
-        Returns:
-            base64编码的音频数据，前缀 base64://。
-        """
+    async def handler(params: dict, _context: dict, config: dict) -> str:
         if not HAS_AIOHTTP:
-            return "aiohttp 依赖未安装，请执行 'qqdeps install' 安装，或手动 pip install aiohttp"
+            return ("aiohttp 依赖未安装，请执行 'qqdeps install' 安装，"
+                    "或手动 pip install aiohttp")
         text = params.get("text", "")
         if not text:
             return "请提供文本内容"
@@ -42,9 +34,14 @@ def register_tools(tool_manager):
             "voice": voice,
             "response_format": "mp3"
         }
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload, headers=headers, timeout=30) as resp:
+            async with session.post(
+                url, json=payload, headers=headers, timeout=30
+            ) as resp:
                 if resp.status != 200:
                     return f"语音生成失败: {resp.status}"
                 audio_data = await resp.read()
@@ -59,6 +56,5 @@ def register_tools(tool_manager):
         "timeout": 30,
         "enabled": HAS_AIOHTTP,
         "category": "ai",
-        "required_config_keys": ["硅基流动"]
+        "required_config_keys": ["硅基流动"],
     })
-    

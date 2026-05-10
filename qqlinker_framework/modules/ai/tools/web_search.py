@@ -8,19 +8,11 @@ try:
 except ImportError:
     aiohttp = None
 
+
 def register_tools(tool_manager):
     """注册 web_search 工具。"""
-    async def handler(params: dict, context: dict, config: dict) -> str:
-        """执行网络搜索。
 
-        Args:
-            params: {"query": "搜索关键词"}
-            context: 执行上下文。
-            config: 提供者配置，需包含 "百度千帆"。
-
-        Returns:
-            搜索结果文本。
-        """
+    async def handler(params: dict, _context: dict, config: dict) -> str:
         if aiohttp is None:
             return "aiohttp 未安装"
         query = params.get("query", "")
@@ -32,7 +24,10 @@ def register_tools(tool_manager):
         if not token:
             return "百度千帆 API 密钥未配置"
         url = f"{address}/v2/ai_search/web_search"
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
         payload = {
             "messages": [{"role": "user", "content": query}],
             "search_source": "baidu_search_v2",
@@ -40,7 +35,9 @@ def register_tools(tool_manager):
         }
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, headers=headers, timeout=15) as resp:
+                async with session.post(
+                    url, json=payload, headers=headers, timeout=15
+                ) as resp:
                     if resp.status != 200:
                         return f"搜索失败: HTTP {resp.status}"
                     data = await resp.json()
@@ -60,11 +57,12 @@ def register_tools(tool_manager):
         "name": "web_search",
         "description": "网络搜索。参数：query (搜索关键词)",
         "api_type": "generic",
-        "parameters": {"query": {"type": "string", "description": "搜索关键词"}},
+        "parameters": {
+            "query": {"type": "string", "description": "搜索关键词"}
+        },
         "callback": handler,
         "timeout": 15,
         "enabled": True,
         "category": "network",
-        "required_config_keys": ["百度千帆"]
+        "required_config_keys": ["百度千帆"],
     })
-    
