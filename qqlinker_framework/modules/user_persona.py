@@ -68,6 +68,7 @@ class UserPersonaModule(Module):
 
     @command(".设定")
     async def _cmd_set(self, ctx):
+        """处理 .设定 命令，保存用户人设。"""
         persona = " ".join(ctx.args) if ctx.args else ""
         if not persona:
             await ctx.reply("请提供人设描述，例如：.设定 我喜欢编程")
@@ -81,6 +82,7 @@ class UserPersonaModule(Module):
 
     @command(".清除人设")
     async def _cmd_clear(self, ctx):
+        """处理 .清除人设 命令，移除用户人设。"""
         svc = self.services.get("persona")
         svc.clear_persona(ctx.user_id)
         await ctx.reply("已清除你的人设")
