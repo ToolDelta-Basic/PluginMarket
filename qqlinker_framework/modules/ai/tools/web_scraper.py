@@ -2,7 +2,6 @@
 """网页抓取工具 —— 通过 Scrapling API 获取网页原文"""
 import asyncio
 import logging
-from typing import Optional
 
 try:
     import aiohttp
@@ -23,33 +22,33 @@ async def _fetch_via_scrapling(url: str, address: str, token: str,
     payload = {"url": url}
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{address}/fetch",
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=timeout)
-            ) as resp:
-                if resp.status == 401:
-                    return "抓取失败：API 密钥无效"
-                if resp.status == 402:
-                    return "抓取失败：账户余额不足，请签到或充值"
-                if resp.status != 200:
-                    data = await resp.text()
-                    return f"抓取失败：HTTP {resp.status} - {data[:200]}"
+        async with aiohttp.ClientSession() as session, \
+                session.post(
+                    f"{address}/fetch",
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=timeout)
+                ) as resp:
+            if resp.status == 401:
+                return "抓取失败：API 密钥无效"
+            if resp.status == 402:
+                return "抓取失败：账户余额不足，请签到或充值"
+            if resp.status != 200:
+                data = await resp.text()
+                return f"抓取失败：HTTP {resp.status} - {data[:200]}"
 
-                data = await resp.json()
-                content = data.get("content", "")
-                title = data.get("title", "")
-                if not content:
-                    return f"抓取成功但内容为空（标题：{title}）"
+            data = await resp.json()
+            content = data.get("content", "")
+            title = data.get("title", "")
+            if not content:
+                return f"抓取成功但内容为空（标题：{title}）"
 
-                if len(content) > 5000:
-                    content = content[:5000] + "…（内容已截断）"
+            if len(content) > 5000:
+                content = content[:5000] + "…（内容已截断）"
 
-                if title:
-                    return f"网页标题：{title}\n\n{content}"
-                return content
+            if title:
+                return f"网页标题：{title}\n\n{content}"
+            return content
 
     except asyncio.TimeoutError:
         return f"请求超时（{timeout}秒）"
@@ -64,6 +63,7 @@ def register_tools(tool_manager):
     """注册 web_scraper 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """执行网页抓取。"""
         url = params.get("url", "")
         if not url:
             return "请提供要抓取的网页 URL"

@@ -11,6 +11,7 @@ def register_tools(tool_manager):
     """注册 speech_to_text 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """调用硅基流动 ASR API，识别音频文件。"""
         if aiohttp is None:
             return "aiohttp 未安装"
         audio_url = params.get("url", "")

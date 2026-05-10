@@ -28,6 +28,7 @@ class LLMClientFactory:
         max_rounds: int = 5,
         tool_executor: Optional[Callable] = None,
     ) -> str:
+        """执行 LLM 对话，自动处理工具调用循环。"""
         if not self.api_key:
             return "AI API 密钥未配置"
         if not aiohttp:

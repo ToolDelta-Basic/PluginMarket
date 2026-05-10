@@ -1,7 +1,5 @@
 # modules/ai/tools/web_search.py
 """网络搜索工具（百度千帆）"""
-import logging
-from typing import Optional
 
 try:
     import aiohttp
@@ -13,6 +11,7 @@ def register_tools(tool_manager):
     """注册 web_search 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """执行网络搜索。"""
         if aiohttp is None:
             return "aiohttp 未安装"
         query = params.get("query", "")
@@ -34,22 +33,22 @@ def register_tools(tool_manager):
             "resource_type_filter": [{"type": "web", "top_k": 5}]
         }
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url, json=payload, headers=headers, timeout=15
-                ) as resp:
-                    if resp.status != 200:
-                        return f"搜索失败: HTTP {resp.status}"
-                    data = await resp.json()
-                    refs = data.get("references", [])
-                    if not refs:
-                        return "未找到相关结果"
-                    lines = ["搜索结果："]
-                    for ref in refs[:3]:
-                        title = ref.get("title", "")
-                        content = ref.get("content", "")[:200]
-                        lines.append(f"📄 {title}\n{content}")
-                    return "\n\n".join(lines)
+            async with aiohttp.ClientSession() as session, \
+                    session.post(
+                        url, json=payload, headers=headers, timeout=15
+                    ) as resp:
+                if resp.status != 200:
+                    return f"搜索失败: HTTP {resp.status}"
+                data = await resp.json()
+                refs = data.get("references", [])
+                if not refs:
+                    return "未找到相关结果"
+                lines = ["搜索结果："]
+                for ref in refs[:3]:
+                    title = ref.get("title", "")
+                    content = ref.get("content", "")[:200]
+                    lines.append(f"📄 {title}\n{content}")
+                return "\n\n".join(lines)
         except Exception as e:
             return f"搜索异常: {str(e)}"
 

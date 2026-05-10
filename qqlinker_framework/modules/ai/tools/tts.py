@@ -14,6 +14,7 @@ def register_tools(tool_manager):
     """注册 siliconflow_tts 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """调用硅基流动 TTS API，返回 base64 音频。"""
         if not HAS_AIOHTTP:
             return ("aiohttp 依赖未安装，请执行 'qqdeps install' 安装，"
                     "或手动 pip install aiohttp")
@@ -38,14 +39,14 @@ def register_tools(tool_manager):
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url, json=payload, headers=headers, timeout=30
-            ) as resp:
-                if resp.status != 200:
-                    return f"语音生成失败: {resp.status}"
-                audio_data = await resp.read()
-                return f"base64://{base64.b64encode(audio_data).decode('utf-8')}"
+        async with aiohttp.ClientSession() as session, \
+                session.post(
+                    url, json=payload, headers=headers, timeout=30
+                ) as resp:
+            if resp.status != 200:
+                return f"语音生成失败: {resp.status}"
+            audio_data = await resp.read()
+            return f"base64://{base64.b64encode(audio_data).decode('utf-8')}"
 
     tool_manager.register_tool({
         "name": "siliconflow_tts",

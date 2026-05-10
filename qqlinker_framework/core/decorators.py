@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 """声明式装饰器"""
 from typing import Callable
 
@@ -10,19 +11,11 @@ def command(
     op_only: bool = False,
     argument_hint: str = "",
 ):
-    """标记一个方法为命令处理器。
-
-    Args:
-        trigger: 命令触发词。
-        cmd_type: 类型，group 或 console。
-        description: 命令描述。
-        op_only: 是否仅管理员可用。
-        argument_hint: 参数提示。
-    """
+    """标记一个方法为命令处理器。"""
 
     def decorator(func: Callable):
-        """内部装饰器，将命令信息附加到函数上。"""
-        func._command_info = {  # noqa: protected-access
+        """将命令信息附加到函数上。"""
+        func._command_info = {
             "trigger": trigger,
             "type": cmd_type,
             "description": description,
@@ -35,16 +28,11 @@ def command(
 
 
 def listen(event_type: str, priority: int = 0):
-    """标记一个方法为事件监听器。
-
-    Args:
-        event_type: 事件类名。
-        priority: 优先级。
-    """
+    """标记一个方法为事件监听器。"""
 
     def decorator(func: Callable):
-        """内部装饰器，将事件监听信息附加到函数上。"""
-        func._event_info = {  # noqa: protected-access
+        """将事件监听信息附加到函数上。"""
+        func._event_info = {
             "event_type": event_type,
             "priority": priority,
         }

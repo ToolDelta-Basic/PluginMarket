@@ -11,6 +11,7 @@ def register_tools(tool_manager):
     """注册 generate_image 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """调用硅基流动生成图片，返回 IMAGE 标签。"""
         if aiohttp is None:
             return "aiohttp 未安装"
         prompt = params.get("prompt", "")

@@ -11,6 +11,7 @@ def register_tools(tool_manager):
     """注册 rerank_documents 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:
+        """调用硅基流动 Rerank API，对文档进行相关性排序。"""
         if aiohttp is None:
             return "aiohttp 未安装"
         query = params.get("query", "")
