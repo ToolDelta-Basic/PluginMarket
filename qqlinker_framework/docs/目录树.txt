@@ -1,0 +1,60 @@
+qqlinker_framework/
+├── __init__.py
+├── datas.json
+├── core/
+│   ├── __init__.py
+│   ├── host.py
+│   ├── bus.py
+│   ├── module.py
+│   ├── decorators.py
+│   ├── services.py
+│   ├── context.py
+│   ├── routing.py
+│   ├── autodiscover.py
+│   └── events.py
+├── managers/
+│   ├── __init__.py
+│   ├── config_mgr.py
+│   ├── package_mgr.py
+│   ├── module_mgr.py
+│   ├── command_mgr.py
+│   ├── tool_mgr.py
+│   └── message_mgr.py
+├── adapters/
+│   ├── __init__.py
+│   ├── base.py
+│   └── tooldelta_adapter.py
+├── services/
+│   ├── __init__.py
+│   ├── ws_client.py
+│   └── dedup/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── exceptions.py
+│       ├── layered_dedup.py
+│       ├── redis_client.py
+│       └── bloom_filter.py
+├── modules/
+│   ├── __init__.py
+│   ├── dummy.py
+│   ├── game_forwarder.py
+│   ├── game_admin.py
+│   ├── help.py
+│   ├── orion_bridge.py
+│   └── ai/
+│       ├── __init__.py
+│       ├── core.py
+│       ├── llm_client.py
+│       ├── auditor.py
+│       └── tools/
+│           ├── __init__.py
+│           ├── generate_image.py
+│           ├── rerank.py
+│           ├── speech_to_text.py
+│           ├── tts.py
+│           ├── web_scraper.py
+│           └── web_search.py
+└── docs/
+    ├── API文档.md
+    ├── 模块开发指南.md
+    └── 平台迁移说明.md
