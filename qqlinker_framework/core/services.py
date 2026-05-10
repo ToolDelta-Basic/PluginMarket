@@ -1,6 +1,7 @@
 """服务容器 (ServiceContainer)"""
 from typing import Any, Callable
 
+
 class ServiceContainer:
     """简单的服务注册与获取容器，支持单例和工厂延迟创建。"""
 
@@ -51,3 +52,4 @@ class ServiceContainer:
             是否存在。
         """
         return name in self._services or name in self._factories
+        

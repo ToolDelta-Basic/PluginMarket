@@ -1,4 +1,3 @@
-# services/dedup/redis_client.py
 """Redis 客户端封装，支持自动重连与冷却。"""
 import threading
 import time
@@ -12,6 +11,7 @@ except ImportError:
 
 from .config import DedupConfig
 from .exceptions import RedisUnavailableError
+
 
 class RedisClient:
     """Redis 客户端封装，提供自动重连和故障冷却机制。"""
@@ -45,7 +45,7 @@ class RedisClient:
                 password=self.config.redis_password,
                 socket_timeout=self.config.redis_timeout,
                 socket_connect_timeout=self.config.redis_timeout,
-                decode_responses=True
+                decode_responses=True,
             )
             client.ping()
             return client
@@ -64,7 +64,10 @@ class RedisClient:
             return None
         with self._lock:
             if self._client is None:
-                if time.time() - self._last_failure_time < self._failure_cooldown:
+                if (
+                    time.time() - self._last_failure_time
+                    < self._failure_cooldown
+                ):
                     return None
                 try:
                     self._client = self._connect()
@@ -108,3 +111,4 @@ class RedisClient:
         except Exception:
             self.reset()
             return None
+            

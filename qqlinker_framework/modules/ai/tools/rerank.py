@@ -76,3 +76,4 @@ def register_tools(tool_manager):
         "category": "ai",
         "required_config_keys": ["硅基流动"]
     })
+    

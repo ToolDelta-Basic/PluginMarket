@@ -1,4 +1,3 @@
-# managers/tool_mgr.py
 """通用工具管理器 —— 管理工具注册、配置注入与执行"""
 import asyncio
 import os
@@ -7,27 +6,33 @@ import logging
 import inspect
 from typing import Callable, Dict, List, Optional, Any
 
-try:
-    import aiohttp
-except ImportError:
-    aiohttp = None
 
 class ToolDefinition:
     """单个工具的描述、配置与回调封装。"""
 
-    def __init__(self, name: str, description: str, parameters: dict,
-                 callback: Optional[Callable] = None, timeout: int = 30,
-                 enabled: bool = True, risk_level: str = "low",
-                 require_confirm: bool = False, admin_only: bool = False,
-                 api_type: str = "generic", category: str = "general",
-                 required_config_keys: Optional[List[str]] = None, **extra):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        parameters: dict,
+        callback: Optional[Callable] = None,
+        timeout: int = 30,
+        enabled: bool = True,
+        risk_level: str = "low",
+        require_confirm: bool = False,
+        admin_only: bool = False,
+        api_type: str = "generic",
+        category: str = "general",
+        required_config_keys: Optional[List[str]] = None,
+        **extra,
+    ):
         """初始化工具定义。
 
         Args:
             name: 工具名称，必须唯一。
             description: 工具描述。
             parameters: OpenAI Function Calling 的参数 schema。
-            callback: 工具执行回调（可选），签名需接受 (arguments, context, config) 或 (arguments, context)。
+            callback: 工具执行回调。
             timeout: 执行超时（秒）。
             enabled: 是否启用。
             risk_level: 风险等级。
@@ -35,7 +40,7 @@ class ToolDefinition:
             admin_only: 是否仅管理员可使用。
             api_type: API 类型标签。
             category: 工具分类。
-            required_config_keys: 需要的 API 提供者名称列表，执行时自动注入其配置。
+            required_config_keys: 需要的 API 提供者名称列表。
             **extra: 额外属性。
         """
         self.name = name
@@ -66,10 +71,11 @@ class ToolDefinition:
                 "parameters": {
                     "type": "object",
                     "properties": self.parameters,
-                    "required": list(self.parameters.keys())
-                }
-            }
+                    "required": list(self.parameters.keys()),
+                },
+            },
         }
+
 
 class ToolManager:
     """工具管理器：注册、配置注入、执行调度。"""
@@ -89,10 +95,12 @@ class ToolManager:
             services: ServiceContainer 实例，需包含 'config' 服务。
         """
         self._config = services.get("config")
-        self._config.register_section("工具系统", {
-            "数据目录": ""
-        })
-        data_dir = self._config.get_data_dir() if hasattr(self._config, 'get_data_dir') else "."
+        self._config.register_section("工具系统", {"数据目录": ""})
+        data_dir = (
+            self._config.get_data_dir()
+            if hasattr(self._config, 'get_data_dir')
+            else "."
+        )
         custom_dir = self._config.get("工具系统.数据目录", "")
         if custom_dir:
             self._tool_folder = custom_dir
@@ -110,7 +118,9 @@ class ToolManager:
                 with open(config_path, "r", encoding="utf-8") as f:
                     self._tool_config = json.load(f)
             except Exception as e:
-                logging.getLogger(__name__).error("读取工具配置文件失败: %s", e)
+                logging.getLogger(__name__).error(
+                    "读取工具配置文件失败: %s", e
+                )
 
         self._initialized = True
 
@@ -124,28 +134,36 @@ class ToolManager:
             "api_providers": {
                 "硅基流动": {
                     "地址": "https://api.siliconflow.cn/v1",
-                    "令牌": "请填写你的API密钥"
+                    "令牌": "请填写你的API密钥",
                 },
                 "百度千帆": {
                     "地址": "https://qianfan.baidubce.com",
-                    "令牌": "请填写你的百度千帆API密钥"
+                    "令牌": "请填写你的百度千帆API密钥",
+                },
+                "Scrapling服务": {
+                    "地址": "http://183.66.27.45:8090",
+                    "令牌": "你的API密钥",
                 },
                 "网页抓取代理": {
                     "地址": "http://proxy:8080",
-                    "令牌": None
-                }
+                    "令牌": None,
+                },
             }
         }
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(example, f, ensure_ascii=False, indent=2)
         self._tool_config = example
-        logging.getLogger(__name__).info("已生成示例工具配置文件，请修改 %s", config_path)
+        logging.getLogger(__name__).info(
+            "已生成示例工具配置文件，请修改 %s", config_path
+        )
 
-    def add_provider(self, name: str, address: str, token: Optional[str] = None) -> bool:
+    def add_provider(
+        self, name: str, address: str, token: Optional[str] = None
+    ) -> bool:
         """添加新的 API 提供者，若已存在则返回 False。
 
         Args:
-            name: 提供者名称（如“硅基流动”）。
+            name: 提供者名称。
             address: API 地址。
             token: 访问令牌。
 
@@ -154,7 +172,9 @@ class ToolManager:
         """
         providers = self._tool_config.setdefault("api_providers", {})
         if name in providers:
-            logging.getLogger(__name__).warning("API 提供者 '%s' 已存在", name)
+            logging.getLogger(__name__).warning(
+                "API 提供者 '%s' 已存在", name
+            )
             return False
         providers[name] = {"地址": address, "令牌": token}
         self._save_tool_config()
@@ -183,7 +203,9 @@ class ToolManager:
                     continue
                 self._register_from_dict(data)
             except Exception as e:
-                logging.getLogger(__name__).error("加载工具文件 %s 失败: %s", fname, e)
+                logging.getLogger(__name__).error(
+                    "加载工具文件 %s 失败: %s", fname, e
+                )
 
     def _register_from_dict(self, data: dict):
         """从字典注册工具实例。
@@ -205,11 +227,25 @@ class ToolManager:
             api_type=data.get("api_type", "generic"),
             category=data.get("category", "general"),
             required_config_keys=data.get("required_config_keys", []),
-            **{k: v for k, v in data.items() if k not in [
-                "name","description","parameters","callback","timeout","enabled",
-                "risk_level","require_confirm","admin_only","api_type","category",
-                "required_config_keys"
-            ]}
+            **{
+                k: v
+                for k, v in data.items()
+                if k
+                not in [
+                    "name",
+                    "description",
+                    "parameters",
+                    "callback",
+                    "timeout",
+                    "enabled",
+                    "risk_level",
+                    "require_confirm",
+                    "admin_only",
+                    "api_type",
+                    "category",
+                    "required_config_keys",
+                ]
+            },
         )
 
     def register_tool(self, tool_def: dict) -> bool:
@@ -226,7 +262,9 @@ class ToolManager:
             logging.getLogger(__name__).warning("工具定义缺少 name")
             return False
         if name in self.tools:
-            logging.getLogger(__name__).warning("工具 %s 已存在，注册失败", name)
+            logging.getLogger(__name__).warning(
+                "工具 %s 已存在，注册失败", name
+            )
             return False
         self._register_from_dict(tool_def)
         return True
@@ -274,8 +312,11 @@ class ToolManager:
         Returns:
             schema 字典列表。
         """
-        return [t.to_openai_schema() for t in self.tools.values()
-                if t.enabled or not only_enabled]
+        return [
+            t.to_openai_schema()
+            for t in self.tools.values()
+            if t.enabled or not only_enabled
+        ]
 
     def set_enabled(self, name: str, enabled: bool):
         """设置工具的启用状态。
@@ -288,7 +329,9 @@ class ToolManager:
         if tool:
             tool.enabled = enabled
 
-    def is_tool_available(self, name: str, context: dict = None) -> bool:
+    def is_tool_available(
+        self, name: str, context: dict = None
+    ) -> bool:
         """检查工具是否可用（考虑启用状态和管理员限制）。
 
         Args:
@@ -301,7 +344,9 @@ class ToolManager:
         tool = self.tools.get(name)
         if not tool or not tool.enabled:
             return False
-        if tool.admin_only and (not context or not context.get("is_admin")):
+        if tool.admin_only and (
+            not context or not context.get("is_admin")
+        ):
             return False
         return True
 
@@ -317,13 +362,15 @@ class ToolManager:
         providers = self._tool_config.get("api_providers", {})
         return providers.get(provider_name, {})
 
-    async def execute(self, name: str, arguments: dict, context: dict = None) -> str:
+    async def execute(
+        self, name: str, arguments: dict, context: dict = None
+    ) -> str:
         """执行一个工具，并返回结果字符串。
 
         Args:
             name: 工具名称。
             arguments: 工具参数。
-            context: 执行上下文（如 user_id, is_admin）。
+            context: 执行上下文。
 
         Returns:
             工具执行结果文本。
@@ -333,7 +380,9 @@ class ToolManager:
             return f"工具 '{name}' 不存在"
         if not tool.enabled:
             return f"工具 '{name}' 已禁用"
-        if tool.admin_only and (not context or not context.get("is_admin")):
+        if tool.admin_only and (
+            not context or not context.get("is_admin")
+        ):
             return "权限不足：该工具仅限管理员使用"
 
         tool_config = {}
@@ -350,17 +399,27 @@ class ToolManager:
                     result = tool.callback(arguments, context, tool_config)
                 else:
                     result = tool.callback(arguments, context)
-                if asyncio.iscoroutinefunction(tool.callback) or asyncio.iscoroutine(result):
-                    return await asyncio.wait_for(result, timeout=tool.timeout)
+                if (
+                    asyncio.iscoroutinefunction(tool.callback)
+                    or asyncio.iscoroutine(result)
+                ):
+                    return await asyncio.wait_for(
+                        result, timeout=tool.timeout
+                    )
                 else:
                     return result
             return await self._execute_by_api_type(tool, arguments)
         except asyncio.TimeoutError:
             return f"工具 '{name}' 执行超时 ({tool.timeout}秒)"
         except Exception as e:
-            logging.getLogger(__name__).error("工具 '%s' 执行异常: %s", name, e)
+            logging.getLogger(__name__).error(
+                "工具 '%s' 执行异常: %s", name, e
+            )
             return f"工具执行出错: {str(e)}"
 
-    async def _execute_by_api_type(self, tool: ToolDefinition, args: dict) -> str:
+    async def _execute_by_api_type(
+        self, tool: ToolDefinition, args: dict
+    ) -> str:
         """根据 API 类型执行工具（扩展点）。"""
         return "该工具未提供回调函数，无法执行"
+        

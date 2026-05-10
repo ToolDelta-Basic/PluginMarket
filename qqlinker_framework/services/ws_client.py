@@ -1,4 +1,3 @@
-# services/ws_client.py
 """WebSocket 客户端服务，支持自动重连和 OneBot 消息收发。"""
 import json
 import threading
@@ -11,6 +10,7 @@ try:
     HAS_WEBSOCKET = True
 except ImportError:
     HAS_WEBSOCKET = False
+
 
 class WsClient:
     """WebSocket 客户端，负责连接 OneBot 实现端。"""
@@ -25,7 +25,9 @@ class WsClient:
             ImportError: 如果未安装 websocket-client。
         """
         if not HAS_WEBSOCKET:
-            raise ImportError("websocket-client 未安装，无法使用 WsClient")
+            raise ImportError(
+                "websocket-client 未安装，无法使用 WsClient"
+            )
         self.address = config.get("ws_address", "ws://127.0.0.1:8080")
         self.token = config.get("ws_token", "")
         self.ws: Optional[websocket.WebSocketApp] = None
@@ -52,7 +54,9 @@ class WsClient:
         """启动连接线程，自动重连。"""
         self._reconnect = True
         self._current_delay = self._initial_delay
-        self._thread = threading.Thread(target=self._run_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._run_forever, daemon=True
+        )
         self._thread.start()
 
     def disconnect(self):
@@ -66,14 +70,18 @@ class WsClient:
         logger = logging.getLogger(__name__)
         while self._reconnect:
             try:
-                header = {"Authorization": f"Bearer {self.token}"} if self.token else None
+                header = (
+                    {"Authorization": f"Bearer {self.token}"}
+                    if self.token
+                    else None
+                )
                 self.ws = websocket.WebSocketApp(
                     self.address,
                     header=header,
                     on_open=self._on_open,
                     on_message=self._on_message,
                     on_error=self._on_error,
-                    on_close=self._on_close
+                    on_close=self._on_close,
                 )
                 self.ws.run_forever(ping_interval=20, ping_timeout=10)
             except Exception as e:
@@ -83,7 +91,9 @@ class WsClient:
                 break
             with self._lock:
                 delay = self._current_delay
-                self._current_delay = min(self._current_delay * 2, self._max_delay)
+                self._current_delay = min(
+                    self._current_delay * 2, self._max_delay
+                )
             logger.info("将在 %d 秒后重连...", delay)
             time.sleep(delay)
 
@@ -100,7 +110,10 @@ class WsClient:
             data = json.loads(message)
         except:
             return
-        if data.get("post_type") != "message" or data.get("message_type") != "group":
+        if (
+            data.get("post_type") != "message"
+            or data.get("message_type") != "group"
+        ):
             return
         if self._on_message_callback:
             self._on_message_callback(data)
@@ -129,7 +142,7 @@ class WsClient:
             return False
         data = {
             "action": "send_group_msg",
-            "params": {"group_id": group_id, "message": message}
+            "params": {"group_id": group_id, "message": message},
         }
         try:
             self.ws.send(json.dumps(data).encode('utf-8'))
@@ -153,7 +166,7 @@ class WsClient:
             return False
         data = {
             "action": "send_private_msg",
-            "params": {"user_id": user_id, "message": message}
+            "params": {"user_id": user_id, "message": message},
         }
         try:
             self.ws.send(json.dumps(data).encode('utf-8'))
@@ -161,3 +174,4 @@ class WsClient:
         except Exception as e:
             logger.error("发送私聊消息失败: %s", e)
             return False
+            

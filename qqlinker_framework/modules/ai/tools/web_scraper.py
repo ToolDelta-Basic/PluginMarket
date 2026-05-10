@@ -106,3 +106,4 @@ def register_tools(tool_manager):
         "category": "network",
         "required_config_keys": ["Scrapling服务"]
     })
+    

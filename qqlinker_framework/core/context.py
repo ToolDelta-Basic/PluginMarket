@@ -1,6 +1,7 @@
 """命令上下文"""
 from typing import List
 
+
 class CommandContext:
     """封装一次命令请求的相关信息与方法。
 
@@ -14,8 +15,16 @@ class CommandContext:
         _message_mgr: 消息管理器（可选），用于限流发送。
     """
 
-    def __init__(self, user_id: int, group_id: int, nickname: str,
-                 message: str, args: List[str], adapter, message_mgr=None):
+    def __init__(
+        self,
+        user_id: int,
+        group_id: int,
+        nickname: str,
+        message: str,
+        args: List[str],
+        adapter,
+        message_mgr=None,
+    ):
         """初始化命令上下文。
 
         Args:
@@ -45,3 +54,4 @@ class CommandContext:
             await self._message_mgr.send_group(self.group_id, text)
         else:
             self.adapter.send_group_msg(self.group_id, text)
+            

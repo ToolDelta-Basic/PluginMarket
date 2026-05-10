@@ -12,3 +12,4 @@ class RedisUnavailableError(DedupError):
 class LockAcquireError(DedupError):
     """分布式锁获取失败异常。"""
     pass
+    

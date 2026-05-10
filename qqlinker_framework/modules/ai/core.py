@@ -1,23 +1,26 @@
-# modules/ai/core.py
 """
 AI 核心模块：提供 LLM 对话、工具调用、审核拦截、基础记忆
 """
 import time
+import logging
+import traceback
+import re
+from typing import Dict, List
 from ...core.module import Module
 from ...core.events import GroupMessageEvent
 from .llm_client import LLMClientFactory
 from .auditor import Auditor
 from .tools import register_all
-from typing import Dict, List
-import logging
-import traceback
-import re
+
 
 class AICore(Module):
     """AI 核心模块：集成 LLM 对话、工具调用、审核和会话记忆。"""
+
     name = "ai_core"
     version = (0, 1, 0)
-    required_services = ["config", "message", "tool", "adapter", "dedup"]
+    required_services = [
+        "config", "message", "tool", "adapter", "dedup"
+    ]
 
     def __init__(self, services, event_bus):
         """初始化 AI 核心模块。
@@ -29,7 +32,7 @@ class AICore(Module):
         super().__init__(services, event_bus)
         self.conversations: Dict[int, List[Dict]] = {}
         self.conversation_last_active: Dict[int, float] = {}
-        self.conversation_max_age = 1800  # 30 分钟无活动清除
+        self.conversation_max_age = 1800
         self.max_memory = 5
 
     async def on_init(self):
@@ -46,8 +49,8 @@ class AICore(Module):
                 "是否启用": True,
                 "违规词模式": ["傻逼", "操你", "fuck"],
                 "违规次数上限": 3,
-                "处理动作": "禁言"
-            }
+                "处理动作": "禁言",
+            },
         })
 
         self.llm_factory = LLMClientFactory(self.config)
@@ -57,9 +60,12 @@ class AICore(Module):
 
         triggers = self.config.get("AI助手.触发词", ["/ai"])
         for trigger in triggers:
-            self.register_command(trigger, self._cmd_ai_handler,
-                                  description="与 AI 对话",
-                                  argument_hint="<问题>")
+            self.register_command(
+                trigger,
+                self._cmd_ai_handler,
+                description="与 AI 对话",
+                argument_hint="<问题>",
+            )
 
         self.listen("GroupMessageEvent", self.on_group_message, priority=10)
 
@@ -68,7 +74,9 @@ class AICore(Module):
         try:
             await self._handle_ai(ctx)
         except Exception as e:
-            logging.getLogger(__name__).error("AI 命令异常: %s\n%s", e, traceback.format_exc())
+            logging.getLogger(__name__).error(
+                "AI 命令异常: %s\n%s", e, traceback.format_exc()
+            )
             await ctx.reply(f"AI 服务内部错误: {str(e)}")
 
     async def _handle_ai(self, ctx):
@@ -92,23 +100,31 @@ class AICore(Module):
         messages = history + [{"role": "user", "content": question}]
 
         tools_schema = self.tool.get_tools_schema(only_enabled=True)
-        logging.getLogger(__name__).info("可用工具: %s", [t["function"]["name"] for t in tools_schema])
+        logging.getLogger(__name__).info(
+            "可用工具: %s",
+            [t["function"]["name"] for t in tools_schema],
+        )
 
         response = await self.llm_factory.chat(
             messages=messages,
             tools=tools_schema if tools_schema else None,
             max_rounds=self.config.get("AI助手.最大工具轮次", 5),
-            tool_executor=self._execute_tool
+            tool_executor=self._execute_tool,
         )
 
-        self._add_to_history(user_id, {"role": "user", "content": question})
+        self._add_to_history(
+            user_id, {"role": "user", "content": question}
+        )
         if response:
-            self._add_to_history(user_id, {"role": "assistant", "content": response})
+            self._add_to_history(
+                user_id, {"role": "assistant", "content": response}
+            )
 
-        # 图片处理
         image_urls = re.findall(r'\[IMAGE:(.*?)\]', response)
         for url in image_urls:
-            await self.message.send_group(ctx.group_id, f"[CQ:image,file={url}]")
+            await self.message.send_group(
+                ctx.group_id, f"[CQ:image,file={url}]"
+            )
             response = response.replace(f"[IMAGE:{url}]", "").strip()
 
         if response:
@@ -127,14 +143,20 @@ class AICore(Module):
             工具执行结果。
         """
         try:
-            return await self.tool.execute(tool_name, arguments, context={"user_id": 0})
+            return await self.tool.execute(
+                tool_name, arguments, context={"user_id": 0}
+            )
         except Exception as e:
-            logging.getLogger(__name__).error("工具执行失败 %s: %s", tool_name, e)
+            logging.getLogger(__name__).error(
+                "工具执行失败 %s: %s", tool_name, e
+            )
             return f"工具调用失败: {str(e)}"
 
     async def on_group_message(self, event: GroupMessageEvent):
         """处理群消息事件，执行内容审核。"""
-        self.auditor.process_message(event.user_id, event.group_id, event.message)
+        self.auditor.process_message(
+            event.user_id, event.group_id, event.message
+        )
 
     def _cleanup_expired(self, user_id: int):
         """清除长时间未活动的会话历史。
@@ -175,4 +197,7 @@ class AICore(Module):
         self.conversations[user_id].append(msg)
         max_total = self.max_memory * 2
         if len(self.conversations[user_id]) > max_total:
-            self.conversations[user_id] = self.conversations[user_id][-max_total:]
+            self.conversations[user_id] = self.conversations[user_id][
+                -max_total:
+            ]
+            

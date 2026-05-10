@@ -10,6 +10,7 @@ from .events import BaseEvent
 _recursion_depth: ContextVar[int] = ContextVar('event_recursion_depth', default=0)
 MAX_EVENT_DEPTH = 10
 
+
 class EventBus:
     """线程安全的发布-订阅事件总线，支持协程处理器。"""
 
@@ -53,7 +54,11 @@ class EventBus:
         """
         depth = _recursion_depth.get()
         if depth >= MAX_EVENT_DEPTH:
-            logging.getLogger(__name__).error("事件 %s 达到最大递归深度 %d，已丢弃", type(event).__name__, MAX_EVENT_DEPTH)
+            logging.getLogger(__name__).error(
+                "事件 %s 达到最大递归深度 %d，已丢弃",
+                type(event).__name__,
+                MAX_EVENT_DEPTH,
+            )
             return
         _recursion_depth.set(depth + 1)
         try:
@@ -68,7 +73,11 @@ class EventBus:
                         handler(event)
                 except Exception as e:
                     logging.getLogger(__name__).error(
-                        "事件处理异常 %s: %s\n%s", event_type, e, traceback.format_exc()
+                        "事件处理异常 %s: %s\n%s",
+                        event_type,
+                        e,
+                        traceback.format_exc(),
                     )
         finally:
             _recursion_depth.set(depth)
+            

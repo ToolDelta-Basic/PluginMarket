@@ -1,12 +1,13 @@
-# managers/module_mgr.py
 """模块管理器 – 负责模块的注册、依赖排序、生命周期调度及热插拔"""
 import inspect
 import logging
 from typing import Type, List, Optional
-from ..core.module import Module          
+from ..core.module import Module
+
 
 class ModuleManager:
     """负责模块的注册、依赖排序、生命周期调度及热插拔。"""
+
     def __init__(self, host):
         """初始化模块管理器。
 
@@ -40,7 +41,11 @@ class ModuleManager:
             try:
                 mod = cls(self.services, self.event_bus)
             except Exception as e:
-                logger.error("模块 '%s' 实例化失败: %s，已跳过", getattr(cls, 'name', cls.__name__), e)
+                logger.error(
+                    "模块 '%s' 实例化失败: %s，已跳过",
+                    getattr(cls, 'name', cls.__name__),
+                    e,
+                )
                 continue
             self._scan_decorators(mod)
             modules.append(mod)
@@ -54,10 +59,10 @@ class ModuleManager:
                 for cmd_info in mod._commands.values():
                     self.host.command_mgr.register(**cmd_info)
             except Exception as e:
-                logger.error("模块 '%s' 初始化失败: %s，已跳过启动", mod.name, e)
-                # 如果初始化失败，将该模块从已加载列表中移除，并继续
+                logger.error(
+                    "模块 '%s' 初始化失败: %s，已跳过启动", mod.name, e
+                )
                 self._loaded_modules.pop(mod.name, None)
-                # 清理其已注册的命令/工具（如果部分已注册）
                 for trigger in mod._commands:
                     self.host.command_mgr.unregister(trigger)
                 for tool_def in mod._tools:
@@ -66,16 +71,17 @@ class ModuleManager:
                         self.host.tool_mgr.unregister_tool(tool_name)
                 continue
 
-        # 启动模块（仅成功初始化的模块）
         started_modules = []
         for mod in modules:
             if mod.name not in self._loaded_modules:
-                continue  # 初始化失败的模块
+                continue
             try:
                 await mod.on_start()
                 started_modules.append(mod)
             except Exception as e:
-                logger.error("模块 '%s' 启动失败: %s，已跳过", mod.name, e)
+                logger.error(
+                    "模块 '%s' 启动失败: %s，已跳过", mod.name, e
+                )
                 self._loaded_modules.pop(mod.name, None)
 
         logger.info("成功加载 %d 个模块", len(started_modules))
@@ -110,7 +116,9 @@ class ModuleManager:
         logger.info("模块 '%s' 卸载成功", module_name)
         return True
 
-    async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+    async def load_module(
+        self, module_cls: Type[Module]
+    ) -> Optional[Module]:
         """动态加载一个新模块实例。
 
         Args:
@@ -123,10 +131,16 @@ class ModuleManager:
         try:
             temp_mod = module_cls(self.services, self.event_bus)
         except Exception as e:
-            logger.error("模块 '%s' 实例化失败: %s", getattr(module_cls, 'name', module_cls.__name__), e)
+            logger.error(
+                "模块 '%s' 实例化失败: %s",
+                getattr(module_cls, 'name', module_cls.__name__),
+                e,
+            )
             return None
         if temp_mod.name in self._loaded_modules:
-            logger.warning("模块 '%s' 已加载，跳过重复加载", temp_mod.name)
+            logger.warning(
+                "模块 '%s' 已加载，跳过重复加载", temp_mod.name
+            )
             return None
         self._scan_decorators(temp_mod)
         try:
@@ -172,20 +186,26 @@ class ModuleManager:
         Args:
             mod: 模块实例。
         """
-        for _, method in inspect.getmembers(mod, predicate=inspect.ismethod):
+        for _, method in inspect.getmembers(
+            mod, predicate=inspect.ismethod
+        ):
             if hasattr(method, '_command_info'):
                 info = method._command_info
                 mod.register_command(
-                    info['trigger'], method,
+                    info['trigger'],
+                    method,
                     cmd_type=info.get('type', 'group'),
                     description=info.get('description', ''),
                     op_only=info.get('op_only', False),
-                    argument_hint=info.get('argument_hint', '')
+                    argument_hint=info.get('argument_hint', ''),
                 )
             if hasattr(method, '_event_info'):
                 info = method._event_info
-                mod.listen(info['event_type'], method, info.get('priority', 0))
+                mod.listen(
+                    info['event_type'], method, info.get('priority', 0)
+                )
 
     def get_loaded_modules(self) -> List[str]:
         """获取已加载的模块名称列表。"""
         return list(self._loaded_modules.keys())
+        

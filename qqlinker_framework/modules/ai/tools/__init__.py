@@ -21,3 +21,4 @@ def register_all(tool_manager):
                 logging.getLogger(__name__).info("已注册工具组: %s", modname)
         except Exception as e:
             logging.getLogger(__name__).error("无法加载工具模块 %s: %s", modname, e)
+            

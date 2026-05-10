@@ -1,4 +1,3 @@
-# services/dedup/layered_dedup.py
 """多层去重引擎：本地TTL缓存 + Redis + 布隆过滤器。"""
 import time
 import hashlib
@@ -16,7 +15,7 @@ from .config import DedupConfig
 from .redis_client import RedisClient
 from .bloom_filter import BloomFilter
 
-# ---------- 优化的 TTL 缓存（基于堆的 O(log n) 淘汰）----------
+
 class _SimpleTTLCache:
     """基于堆的 TTL 缓存实现，提供 O(log n) 的过期淘汰。"""
 
@@ -94,7 +93,6 @@ class _SimpleTTLCache:
                 del self._cache[k]
 
 
-# ---------- 多层去重管理器 ----------
 class LayeredDedup:
     """多层去重管理器：本地缓存 + Redis + 布隆过滤器，支持降级。"""
 
@@ -106,15 +104,31 @@ class LayeredDedup:
         """
         self.config = config
         if CACHETOOLS_AVAILABLE:
-            self._local_id_cache = TTLCache(maxsize=config.local_max_size, ttl=config.local_id_ttl)
-            self._local_content_cache = TTLCache(maxsize=config.local_max_size, ttl=config.local_content_ttl)
+            self._local_id_cache = TTLCache(
+                maxsize=config.local_max_size, ttl=config.local_id_ttl
+            )
+            self._local_content_cache = TTLCache(
+                maxsize=config.local_max_size,
+                ttl=config.local_content_ttl,
+            )
         else:
-            self._local_id_cache = _SimpleTTLCache(maxsize=config.local_max_size, ttl=config.local_id_ttl)
-            self._local_content_cache = _SimpleTTLCache(maxsize=config.local_max_size, ttl=config.local_content_ttl)
+            self._local_id_cache = _SimpleTTLCache(
+                maxsize=config.local_max_size, ttl=config.local_id_ttl
+            )
+            self._local_content_cache = _SimpleTTLCache(
+                maxsize=config.local_max_size,
+                ttl=config.local_content_ttl,
+            )
 
         self._local_lock = threading.RLock()
-        self.redis = RedisClient(config) if config.redis_enabled else None
-        self.bloom = BloomFilter(config, self.redis) if self.redis and config.bloom_enabled else None
+        self.redis = (
+            RedisClient(config) if config.redis_enabled else None
+        )
+        self.bloom = (
+            BloomFilter(config, self.redis)
+            if self.redis and config.bloom_enabled
+            else None
+        )
 
         self.stats = {"local_hits": 0, "redis_hits": 0}
 
@@ -140,17 +154,22 @@ class LayeredDedup:
         Returns:
             True 表示新消息，False 表示重复。
         """
-        # 1. 本地缓存
         with self._local_lock:
             if msg_id in self._local_id_cache:
                 self.stats["local_hits"] += 1
                 return False
             self._local_id_cache[msg_id] = time.time()
 
-        # 2. Redis 检查
         if self.redis:
             try:
-                result = self.redis.execute("set", f"dedup:msgid:{msg_id}", "1", "nx", "ex", self.config.redis_id_ttl)
+                result = self.redis.execute(
+                    "set",
+                    f"dedup:msgid:{msg_id}",
+                    "1",
+                    "nx",
+                    "ex",
+                    self.config.redis_id_ttl,
+                )
                 if result is True:
                     return True
                 else:
@@ -172,7 +191,7 @@ class LayeredDedup:
 
         Args:
             content: 文本内容。
-            user_id: 用户标识（如玩家名哈希）。
+            user_id: 用户标识。
 
         Returns:
             True 表示新内容，False 表示重复。
@@ -191,7 +210,14 @@ class LayeredDedup:
 
         if self.redis:
             try:
-                result = self.redis.execute("set", f"dedup:content:{fingerprint}", "1", "nx", "ex", self.config.redis_content_ttl)
+                result = self.redis.execute(
+                    "set",
+                    f"dedup:content:{fingerprint}",
+                    "1",
+                    "nx",
+                    "ex",
+                    self.config.redis_content_ttl,
+                )
                 if result is True:
                     with self._local_lock:
                         self._local_content_cache[fingerprint] = time.time()
@@ -213,7 +239,9 @@ class LayeredDedup:
                 self._local_content_cache[fingerprint] = time.time()
             return True
 
-    def acquire_lock(self, resource: str, ttl: Optional[int] = None) -> bool:
+    def acquire_lock(
+        self, resource: str, ttl: Optional[int] = None
+    ) -> bool:
         """获取分布式锁（如果启用）。
 
         Args:
@@ -229,7 +257,9 @@ class LayeredDedup:
         lock_key = f"dedup:lock:{resource}"
         lock_value = f"{time.time()}:{threading.get_ident()}"
         for _ in range(self.config.lock_retry_times):
-            result = self.redis.execute("set", lock_key, lock_value, "nx", "ex", ttl)
+            result = self.redis.execute(
+                "set", lock_key, lock_value, "nx", "ex", ttl
+            )
             if result:
                 return True
             time.sleep(self.config.lock_retry_delay)
@@ -259,11 +289,12 @@ class LayeredDedup:
         stats = self.stats.copy()
         with self._local_lock:
             stats["local_id_cache_size"] = len(self._local_id_cache)
-            stats["local_content_cache_size"] = len(self._local_content_cache)
+            stats["local_content_cache_size"] = len(
+                self._local_content_cache
+            )
         return stats
 
 
-# ---------- 并发处理守卫 ----------
 class ProcessingGuardV2:
     """并发处理守卫，防止同一任务被重复处理。"""
 
@@ -289,7 +320,10 @@ class ProcessingGuardV2:
         """
         now = time.time()
         with self._local_lock:
-            if key in self._local_processing and now - self._local_processing[key] < self._lock_ttl:
+            if (
+                key in self._local_processing
+                and now - self._local_processing[key] < self._lock_ttl
+            ):
                 return False
             self._local_processing[key] = now
         if self.dedup.config.lock_enabled:
@@ -309,3 +343,4 @@ class ProcessingGuardV2:
             self._local_processing.pop(key, None)
         if self.dedup.config.lock_enabled:
             self.dedup.release_lock(f"proc:{key}")
+            

@@ -4,6 +4,7 @@ from typing import Callable
 from .services import ServiceContainer
 from .bus import EventBus
 
+
 class Module(ABC):
     """所有业务模块的抽象基类。
 
@@ -13,6 +14,7 @@ class Module(ABC):
         dependencies: 依赖的其他模块名列表。
         required_services: 所需的服务名称列表，会自动注入为属性。
     """
+
     name: str = ""
     version: tuple = (0, 0, 1)
     dependencies: list[str] = []
@@ -32,7 +34,9 @@ class Module(ABC):
         self.event_bus = event_bus
         for srv_name in self.required_services:
             if not services.has(srv_name):
-                raise RuntimeError(f"模块 {self.name} 需要服务 '{srv_name}'，但未注册")
+                raise RuntimeError(
+                    f"模块 {self.name} 需要服务 '{srv_name}'，但未注册"
+                )
             setattr(self, srv_name, services.get(srv_name))
         self._commands: dict[str, dict] = {}
         self._event_handlers: list[tuple] = []
@@ -41,19 +45,23 @@ class Module(ABC):
     @abstractmethod
     async def on_init(self):
         """模块初始化逻辑（抽象方法）。"""
-        ...
 
     async def on_start(self):
         """模块启动时的额外逻辑（可选）。"""
-        pass
 
     async def on_stop(self):
         """模块停止时的清理逻辑（可选）。"""
-        pass
 
-    def register_command(self, trigger: str, callback: Callable, *,
-                         cmd_type: str = "group", description: str = "",
-                         op_only: bool = False, argument_hint: str = ""):
+    def register_command(
+        self,
+        trigger: str,
+        callback: Callable,
+        *,
+        cmd_type: str = "group",
+        description: str = "",
+        op_only: bool = False,
+        argument_hint: str = "",
+    ):
         """注册一条命令。
 
         Args:
@@ -70,7 +78,7 @@ class Module(ABC):
             "callback": callback,
             "description": description,
             "op_only": op_only,
-            "argument_hint": argument_hint
+            "argument_hint": argument_hint,
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0):
@@ -91,3 +99,4 @@ class Module(ABC):
             tool_definition: 工具字典，需包含 'name' 等字段。
         """
         self._tools.append(tool_definition)
+        

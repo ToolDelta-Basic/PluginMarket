@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any
 
+
 class ConfigManager:
     """基于 JSON 文件的配置管理器，支持默认值自动合并和动态注册节。"""
 
@@ -16,7 +17,9 @@ class ConfigManager:
         self._file_path = file_path
         self._data: dict = {}
         self._defaults: dict = {}
-        self.data_dir = data_dir or os.path.dirname(os.path.abspath(file_path))
+        self.data_dir = data_dir or os.path.dirname(
+            os.path.abspath(file_path)
+        )
 
     def register_section(self, section: str, defaults: dict[str, Any]):
         """注册一个配置节及其默认值，如果配置文件中缺少则写入默认值。
@@ -95,8 +98,14 @@ class ConfigManager:
         """
         merged = {}
         for k in set(base) | set(override):
-            if k in base and k in override and isinstance(base[k], dict) and isinstance(override[k], dict):
+            if (
+                k in base
+                and k in override
+                and isinstance(base[k], dict)
+                and isinstance(override[k], dict)
+            ):
                 merged[k] = ConfigManager._deep_merge(base[k], override[k])
             else:
                 merged[k] = override.get(k) if k in override else base[k]
         return merged
+        

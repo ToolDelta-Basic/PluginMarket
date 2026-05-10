@@ -1,4 +1,3 @@
-# modules/game_admin.py
 """游戏管理指令模块：玩家列表、指令执行、脚本串联、白名单校验"""
 from ..core.module import Module
 from ..core.decorators import command
@@ -10,8 +9,10 @@ DEFAULT_DANGEROUS_ARGS = [
     "debug", "seed", "defaultgamemode", "difficulty"
 ]
 
+
 class GameAdmin(Module):
-    """提供游戏管理命令：.list、.cmd、.run。"""
+    """游戏管理模块：.list 查看在线玩家，.cmd/.run 执行游戏指令。"""
+
     name = "game_admin"
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
@@ -23,28 +24,37 @@ class GameAdmin(Module):
             "允许查看玩家列表": True,
             "管理员QQ": [0],
             "允许执行的命令列表": [
-                "list", "say", "tell", "msg", "w", "tellraw", "scoreboard",
-                "title", "playsound", "particle", "gamemode", "time", "weather",
-                "tp", "kill", "give", "clear", "effect", "enchant", "xp",
-                "spawnpoint", "setworldspawn", "gamerule", "difficulty",
-                "defaultgamemode", "seed"
+                "list", "say", "tell", "msg", "w", "tellraw",
+                "scoreboard", "title", "playsound", "particle",
+                "gamemode", "time", "weather", "tp", "kill",
+                "give", "clear", "effect", "enchant", "xp",
+                "spawnpoint", "setworldspawn", "gamerule",
+                "difficulty", "defaultgamemode", "seed"
             ],
             "危险参数": DEFAULT_DANGEROUS_ARGS,
             "允许脚本串联": True,
             "脚本最大指令数": 10
         })
-        self.register_command(".list", self.cmd_list, description="查看在线玩家列表")
-        self.register_command(".cmd", self.cmd_exec, description="执行游戏指令（管理员）", op_only=True,
-                              argument_hint="<指令>")
-        self.register_command(".run", self.cmd_run, description="执行多条游戏指令，用 / 分隔", op_only=True,
-                              argument_hint="<指令1/指令2/...>")
+        self.register_command(
+            ".list", self.cmd_list, description="查看在线玩家列表"
+        )
+        self.register_command(
+            ".cmd", self.cmd_exec,
+            description="执行游戏指令（管理员）",
+            op_only=True, argument_hint="<指令>"
+        )
+        self.register_command(
+            ".run", self.cmd_run,
+            description="执行多条游戏指令，用 / 分隔（管理员）",
+            op_only=True, argument_hint="<指令1/指令2/...>"
+        )
 
     def _get_cfg(self):
         """获取游戏管理配置节。"""
         return self.config.get("游戏管理", {})
 
     def _validate_command(self, cmd: str) -> tuple[bool, str]:
-        """校验指令是否在允许列表且不含危险参数。
+        """验证指令是否在允许列表且不含危险参数。
 
         Args:
             cmd: 完整的指令字符串。
@@ -53,8 +63,12 @@ class GameAdmin(Module):
             (合法标志, 错误信息)
         """
         cfg = self._get_cfg()
-        allowed = [c.lower() for c in cfg.get("允许执行的命令列表", [])]
-        dangerous_args = [a.lower() for a in cfg.get("危险参数", DEFAULT_DANGEROUS_ARGS)]
+        allowed = [
+            c.lower() for c in cfg.get("允许执行的命令列表", [])
+        ]
+        dangerous_args = [
+            a.lower() for a in cfg.get("危险参数", DEFAULT_DANGEROUS_ARGS)
+        ]
         cmd_clean = cmd.strip().lstrip("/").lower()
         parts = cmd_clean.split()
         if not parts:
@@ -82,7 +96,7 @@ class GameAdmin(Module):
 
     @command(".cmd", op_only=True)
     async def cmd_exec(self, ctx):
-        """执行单条游戏指令（管理员）。执行结果会尝试反馈。"""
+        """执行单条游戏指令（管理员）。"""
         if not ctx.args:
             await ctx.reply("用法：.cmd <指令>")
             return
@@ -99,7 +113,7 @@ class GameAdmin(Module):
 
     @command(".run", op_only=True)
     async def cmd_run(self, ctx):
-        """执行多条游戏指令（用 / 分隔），管理员专用。"""
+        """执行多条游戏指令（用 / 分隔）。"""
         cfg = self._get_cfg()
         if not cfg.get("允许脚本串联", True):
             await ctx.reply("脚本功能已禁用")
@@ -107,12 +121,13 @@ class GameAdmin(Module):
         if not ctx.args:
             await ctx.reply("用法：.run <指令1/指令2/...>")
             return
-        # 将所有参数拼接后按 / 分割
         raw = " ".join(ctx.args)
         commands = [c.strip() for c in raw.split("/") if c.strip()]
         max_cmds = cfg.get("脚本最大指令数", 10)
         if len(commands) > max_cmds:
-            await ctx.reply(f"脚本包含 {len(commands)} 条指令，超过上限 {max_cmds}")
+            await ctx.reply(
+                f"脚本包含 {len(commands)} 条指令，超过上限 {max_cmds}"
+            )
             return
         results = []
         for cmd in commands:
@@ -126,3 +141,4 @@ class GameAdmin(Module):
             else:
                 results.append(f"❌ /{cmd} ({err})")
         await ctx.reply("脚本执行结果：\n" + "\n".join(results))
+        

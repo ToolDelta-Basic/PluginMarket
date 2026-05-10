@@ -1,4 +1,3 @@
-# services/dedup/bloom_filter.py
 """基于 RedisBloom 的布隆过滤器封装。"""
 import logging
 import time
@@ -7,10 +6,16 @@ from .config import DedupConfig
 
 logger = logging.getLogger(__name__)
 
+
 class BloomFilter:
     """布隆过滤器，按天分 key，利用 RedisBloom 模块。"""
 
-    def __init__(self, config: DedupConfig, redis_client: RedisClient, prefix: str = "dedup:bf"):
+    def __init__(
+        self,
+        config: DedupConfig,
+        redis_client: RedisClient,
+        prefix: str = "dedup:bf",
+    ):
         """初始化布隆过滤器。
 
         Args:
@@ -57,3 +62,4 @@ class BloomFilter:
         except Exception as e:
             logger.error("布隆过滤器检查失败，降级为放行: %s", e)
             return True
+            

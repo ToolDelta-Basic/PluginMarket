@@ -22,9 +22,15 @@ from ..managers.tool_mgr import ToolManager
 from ..adapters.base import IFrameworkAdapter
 from ..services.ws_client import WsClient, HAS_WEBSOCKET
 from ..services.dedup import LayeredDedup, DedupConfig
-from .events import GroupMessageEvent, GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent
+from .events import (
+    GroupMessageEvent,
+    GameChatEvent,
+    PlayerJoinEvent,
+    PlayerLeaveEvent,
+)
 
 access_log = logging.getLogger("access")
+
 
 class FrameworkHost:
     """框架核心调度器，负责初始化所有服务、管理器、模块并控制生命周期。
@@ -56,8 +62,12 @@ class FrameworkHost:
         self.data_path = data_path or "."
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
 
-        config_file = f"{self.data_path}/config.json" if data_path else "config.json"
-        self.config_mgr = ConfigManager(file_path=config_file, data_dir=self.data_path)
+        config_file = (
+            f"{self.data_path}/config.json" if data_path else "config.json"
+        )
+        self.config_mgr = ConfigManager(
+            file_path=config_file, data_dir=self.data_path
+        )
         self.package_mgr = PackageManager()
         self.command_mgr = CommandManager()
         self.tool_mgr = ToolManager()
@@ -86,11 +96,13 @@ class FrameworkHost:
         """
         self.module_mgr.register(module_cls)
 
-    def register_modules_from_package(self, package_name: str = "qqlinker_framework.modules"):
+    def register_modules_from_package(
+        self, package_name: str = "qqlinker_framework.modules"
+    ):
         """从指定 Python 包自动发现并注册所有模块。
-    
+
         Args:
-            package_name: 完整包名，默认 'qqlinker_framework.modules'。
+            package_name: 包名，默认 'modules'。
         """
         classes = discover_modules(package_name)
         if not classes:
@@ -99,7 +111,11 @@ class FrameworkHost:
         sorted_classes = sort_by_dependencies(classes)
         for cls in sorted_classes:
             self.module_mgr.register(cls)
-        logging.getLogger(__name__).info("从 '%s' 自动发现并注册了 %d 个模块", package_name, len(sorted_classes))
+        logging.getLogger(__name__).info(
+            "从 '%s' 自动发现并注册了 %d 个模块",
+            package_name,
+            len(sorted_classes),
+        )
 
     async def start(self):
         """启动框架：初始化配置、WS连接、模块、事件桥接等。"""
@@ -110,8 +126,10 @@ class FrameworkHost:
         self.package_mgr.set_target_dir(site_pkgs)
 
         self.adapter.register_console_command(
-            ["qqdeps"], "[check|install]", "管理框架 Python 依赖",
-            self._console_cmd_qqdeps
+            ["qqdeps"],
+            "[check|install]",
+            "管理框架 Python 依赖",
+            self._console_cmd_qqdeps,
         )
 
         self.config_mgr.register_section("管理员", {"管理员QQ": [0]})
@@ -120,11 +138,13 @@ class FrameworkHost:
             "本地内容有效期秒": 120,
             "本地最大条目数": 10000,
             "启用Redis": False,
-            "Redis地址": "redis://localhost:6379/0"
+            "Redis地址": "redis://localhost:6379/0",
         })
         self.config_mgr.load()
 
-        ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
+        ws_address = self.config_mgr.get(
+            "网络连接.地址", "ws://127.0.0.1:8080"
+        )
         ws_token = self.config_mgr.get("网络连接.令牌", "")
         logging.getLogger(__name__).info("WebSocket 地址: %s", ws_address)
 
@@ -136,7 +156,7 @@ class FrameworkHost:
             local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120),
             local_max_size=self.config_mgr.get("去重.本地最大条目数", 10000),
             redis_enabled=self.config_mgr.get("去重.启用Redis", False),
-            redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0")
+            redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0"),
         )
         self.dedup = LayeredDedup(dedup_cfg)
         self.services.register("dedup", self.dedup)
@@ -145,7 +165,9 @@ class FrameworkHost:
         await self.message_mgr.start()
 
         if HAS_WEBSOCKET:
-            self.ws_client = WsClient({"ws_address": ws_address, "ws_token": ws_token})
+            self.ws_client = WsClient(
+                {"ws_address": ws_address, "ws_token": ws_token}
+            )
             if hasattr(self.adapter, 'set_ws_client'):
                 self.adapter.set_ws_client(self.ws_client)
             if hasattr(self.adapter, 'event_bus'):
@@ -154,7 +176,9 @@ class FrameworkHost:
             self.ws_client.connect()
             logging.getLogger(__name__).info("WebSocket 连接已发起")
         else:
-            logging.getLogger(__name__).warning("websocket-client 未安装，跳过 WS 连接")
+            logging.getLogger(__name__).warning(
+                "websocket-client 未安装，跳过 WS 连接"
+            )
 
         if not self._game_events_bridged:
             if hasattr(self.adapter, 'main_loop'):
@@ -167,16 +191,26 @@ class FrameworkHost:
         self._modules = await self.module_mgr.initialize_all()
 
         if HAS_WEBSOCKET:
-            router = CommandRouter(self.command_mgr, self.adapter, self.config_mgr, self.message_mgr)
-            self.event_bus.subscribe("GroupMessageEvent", router.handle_message)
+            router = CommandRouter(
+                self.command_mgr,
+                self.adapter,
+                self.config_mgr,
+                self.message_mgr,
+            )
+            self.event_bus.subscribe(
+                "GroupMessageEvent", router.handle_message
+            )
 
-        from .events import SystemStartEvent, SystemStopEvent
+        from .events import SystemStartEvent
+
         await self.event_bus.publish(SystemStartEvent())
 
         if self.ws_client and self.ws_client.available:
             logging.getLogger(__name__).info("WebSocket 已就绪")
         elif self.ws_client:
-            logging.getLogger(__name__).warning("WebSocket 连接未建立，请检查地址或网络")
+            logging.getLogger(__name__).warning(
+                "WebSocket 连接未建立，请检查地址或网络"
+            )
         else:
             logging.getLogger(__name__).info("未启用 WebSocket")
 
@@ -185,33 +219,44 @@ class FrameworkHost:
     def _ensure_log_handlers(self):
         """确保控制台和文件日志处理器已挂载。"""
         root = logging.getLogger()
-        if not any(isinstance(h, logging.StreamHandler) for h in root.handlers):
+        if not any(
+            isinstance(h, logging.StreamHandler) for h in root.handlers
+        ):
             console = logging.StreamHandler(sys.stderr)
             console.setLevel(logging.INFO)
             console.setFormatter(logging.Formatter(
                 "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             ))
             root.addHandler(console)
+
         file_path = f"{self.data_path}/framework.log"
-        if not any(isinstance(h, logging.FileHandler) and h.baseFilename == os.path.abspath(file_path) for h in root.handlers):
+        if not any(
+            isinstance(h, logging.FileHandler)
+            and h.baseFilename == os.path.abspath(file_path)
+            for h in root.handlers
+        ):
             file_handler = logging.FileHandler(file_path, encoding="utf-8")
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(logging.Formatter(
                 "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             ))
             root.addHandler(file_handler)
         root.setLevel(logging.DEBUG)
 
         logging.getLogger("websocket").setLevel(logging.WARNING)
 
-        if not any(isinstance(h, logging.FileHandler) and h.baseFilename == os.path.abspath(file_path) for h in access_log.handlers):
+        if not any(
+            isinstance(h, logging.FileHandler)
+            and h.baseFilename == os.path.abspath(file_path)
+            for h in access_log.handlers
+        ):
             file_handler = logging.FileHandler(file_path, encoding="utf-8")
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(logging.Formatter(
                 "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             ))
             access_log.addHandler(file_handler)
         access_log.setLevel(logging.INFO)
@@ -220,7 +265,8 @@ class FrameworkHost:
     async def stop(self):
         """优雅停止框架：发布停止事件、停止模块、关闭消息管理器和WS连接。"""
         logger = logging.getLogger(__name__)
-        from ..events import SystemStopEvent
+        from .events import SystemStopEvent
+
         await self.event_bus.publish(SystemStopEvent())
         for mod in self._modules:
             await mod.on_stop()
@@ -254,7 +300,7 @@ class FrameworkHost:
             threading.Thread(
                 target=self._install_deps_thread,
                 args=(list(missing.keys()),),
-                daemon=True
+                daemon=True,
             ).start()
         else:
             print("未知子命令，请使用 check 或 install")
@@ -275,8 +321,12 @@ class FrameworkHost:
         """将游戏聊天事件桥接到事件总线（线程安全）。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(GameChatEvent(player_name=player_name, message=message)),
-                self._main_loop
+                self.event_bus.publish(
+                    GameChatEvent(
+                        player_name=player_name, message=message
+                    )
+                ),
+                self._main_loop,
             )
 
     def _on_player_join_bridge(self, player_name: str):
@@ -284,15 +334,17 @@ class FrameworkHost:
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
-                self._main_loop
+                self._main_loop,
             )
 
     def _on_player_leave_bridge(self, player_name: str):
         """玩家离开事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(PlayerLeaveEvent(player_name=player_name)),
-                self._main_loop
+                self.event_bus.publish(
+                    PlayerLeaveEvent(player_name=player_name)
+                ),
+                self._main_loop,
             )
 
     def _on_ws_group_message(self, raw: dict):
@@ -318,14 +370,19 @@ class FrameworkHost:
                     text_parts.append(seg["data"].get("text", ""))
                 elif seg.get("type") == "at":
                     qq = seg["data"].get("qq")
-                    text_parts.append(f"[@{qq}]" if qq != "all" else "[@全体成员]")
+                    text_parts.append(
+                        f"[@{qq}]" if qq != "all" else "[@全体成员]"
+                    )
                 else:
                     text_parts.append(f"[{seg.get('type')}]")
             text = "".join(text_parts)
         else:
             text = str(raw_msg) if raw_msg else ""
 
-        nickname = raw.get("sender", {}).get("card") or raw.get("sender", {}).get("nickname", "未知")
+        nickname = (
+            raw.get("sender", {}).get("card")
+            or raw.get("sender", {}).get("nickname", "未知")
+        )
         access_log.info("[QQ] %s: %s", nickname, text.strip())
 
         try:
@@ -339,11 +396,13 @@ class FrameworkHost:
             group_id=group_id,
             nickname=nickname,
             message=text.strip(),
-            raw_data=raw
+            raw_data=raw,
         )
 
         if self._main_loop and self._main_loop.is_running():
-            asyncio.run_coroutine_threadsafe(self.event_bus.publish(event), self._main_loop)
+            asyncio.run_coroutine_threadsafe(
+                self.event_bus.publish(event), self._main_loop
+            )
 
     async def unload_module(self, module_name: str) -> bool:
         """卸载指定名称的模块。
@@ -356,7 +415,9 @@ class FrameworkHost:
         """
         return await self.module_mgr.unload_module(module_name)
 
-    async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+    async def load_module(
+        self, module_cls: Type[Module]
+    ) -> Optional[Module]:
         """加载一个新的模块类实例。
 
         Args:
@@ -377,3 +438,4 @@ class FrameworkHost:
             是否成功。
         """
         return await self.module_mgr.reload_module(module_name)
+        

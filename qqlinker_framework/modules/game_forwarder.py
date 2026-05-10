@@ -1,11 +1,17 @@
-# modules/game_forwarder.py
 """双向消息转发模块：游戏↔QQ群。"""
 from ..core.module import Module
-from ..core.events import GameChatEvent, GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent
+from ..core.events import (
+    GameChatEvent,
+    GroupMessageEvent,
+    PlayerJoinEvent,
+    PlayerLeaveEvent,
+)
 from ..services.dedup import LayeredDedup
+
 
 class GameForwarder(Module):
     """负责游戏聊天与QQ群消息的双向转发，以及加入/离开提示。"""
+
     name = "game_forwarder"
     version = (1, 0, 0)
     required_services = ["message", "config", "adapter"]
@@ -21,19 +27,21 @@ class GameForwarder(Module):
                 "是否启用": True,
                 "转发格式": "<{player}> {message}",
                 "屏蔽以下字符串开头的消息": [".", "。"],
-                "仅转发以下字符串开头的消息": []
+                "仅转发以下字符串开头的消息": [],
             },
             "群到游戏": {
                 "是否启用": True,
                 "转发格式": "§7[QQ] {nickname}§7: {message}",
-                "屏蔽以下字符串开头的消息": []
+                "屏蔽以下字符串开头的消息": [],
             },
             "链接的群聊": [963953936],
-            "转发玩家进退提示": True
+            "转发玩家进退提示": True,
         })
 
         self.listen("GameChatEvent", self.on_game_chat)
-        self.listen("GroupMessageEvent", self.on_group_message, priority=-10)
+        self.listen(
+            "GroupMessageEvent", self.on_group_message, priority=-10
+        )
         self.listen("PlayerJoinEvent", self.on_player_join)
         self.listen("PlayerLeaveEvent", self.on_player_leave)
 
@@ -41,7 +49,9 @@ class GameForwarder(Module):
         """获取配置中链接的群号列表。"""
         groups = self.config.get("消息转发.链接的群聊", [])
         try:
-            return [int(g) for g in groups if isinstance(g, (int, str))]
+            return [
+                int(g) for g in groups if isinstance(g, (int, str))
+            ]
         except (ValueError, TypeError):
             return []
 
@@ -60,11 +70,15 @@ class GameForwarder(Module):
             if any(msg.startswith(p) for p in block_prefixes):
                 return
 
-        if not self.dedup.check_and_add_content(msg, hash(event.player_name)):
+        if not self.dedup.check_and_add_content(
+            msg, hash(event.player_name)
+        ):
             return
 
         template = cfg.get("转发格式", "<{player}> {message}")
-        text = template.replace("{player}", event.player_name).replace("{message}", msg)
+        text = template.replace("{player}", event.player_name).replace(
+            "{message}", msg
+        )
         for gid in self._get_linked_groups():
             await self.message.send_group(gid, text)
 
@@ -88,7 +102,9 @@ class GameForwarder(Module):
             return
 
         template = cfg.get("转发格式", "§7[QQ] {nickname}§7: {message}")
-        text = template.replace("{nickname}", event.nickname).replace("{message}", msg)
+        text = template.replace("{nickname}", event.nickname).replace(
+            "{message}", msg
+        )
         self.adapter.send_game_message("@a", text)
 
     async def on_player_join(self, event: PlayerJoinEvent):
@@ -96,11 +112,16 @@ class GameForwarder(Module):
         if not self.config.get("消息转发.转发玩家进退提示", True):
             return
         for gid in self._get_linked_groups():
-            await self.message.send_group(gid, f"{event.player_name} 加入了游戏")
+            await self.message.send_group(
+                gid, f"{event.player_name} 加入了游戏"
+            )
 
     async def on_player_leave(self, event: PlayerLeaveEvent):
         """转发玩家离开游戏提示。"""
         if not self.config.get("消息转发.转发玩家进退提示", True):
             return
         for gid in self._get_linked_groups():
-            await self.message.send_group(gid, f"{event.player_name} 离开了游戏")
+            await self.message.send_group(
+                gid, f"{event.player_name} 离开了游戏"
+            )
+            

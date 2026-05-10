@@ -14,3 +14,4 @@ class DummyModule(Module):
     @command(".ping")
     async def cmd_ping(self, ctx):
         await ctx.reply("pong!")
+        

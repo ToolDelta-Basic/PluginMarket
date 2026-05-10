@@ -67,3 +67,4 @@ def register_tools(tool_manager):
         "category": "network",
         "required_config_keys": ["百度千帆"]
     })
+    
