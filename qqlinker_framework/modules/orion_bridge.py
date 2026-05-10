@@ -92,6 +92,10 @@ class OrionBridge(Module):
     version = (1, 0, 0)
     required_services = ["config", "adapter", "message"]
 
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self.orion_svc = None  # 初始化属性
+
     async def on_init(self):
         """尝试获取猎户座 API 并注册命令。"""
         orion_api = None
@@ -204,4 +208,3 @@ class OrionBridge(Module):
             await ctx.reply(
                 f"查询失败：{result.get('message', '未知错误')}"
             )
-            

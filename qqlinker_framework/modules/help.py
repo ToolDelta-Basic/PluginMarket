@@ -24,7 +24,7 @@ class HelpModule(Module):
             is_admin = (
                 ctx.user_id in self.config.get("管理员.管理员QQ", [])
             )
-        except:
+        except (TypeError, ValueError):
             pass
 
         lines = ["📋 可用命令列表："]
@@ -52,4 +52,3 @@ class HelpModule(Module):
             lines.append("(空)")
 
         await ctx.reply("\n".join(lines))
-        

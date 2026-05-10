@@ -87,7 +87,7 @@ class RedisClient:
             if self._client:
                 try:
                     self._client.close()
-                except:
+                except Exception:
                     pass
             self._client = None
 
@@ -111,4 +111,3 @@ class RedisClient:
         except Exception:
             self.reset()
             return None
-            

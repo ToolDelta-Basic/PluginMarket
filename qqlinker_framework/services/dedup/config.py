@@ -1,7 +1,8 @@
 # services/dedup/config.py
 """去重配置数据类。"""
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
+
 
 @dataclass
 class DedupConfig:
@@ -47,4 +48,3 @@ class DedupConfig:
     lock_retry_delay: float = 0.1
 
     fallback_to_local_on_redis_failure: bool = True
-    

@@ -141,4 +141,3 @@ class GameAdmin(Module):
             else:
                 results.append(f"❌ /{cmd} ({err})")
         await ctx.reply("脚本执行结果：\n" + "\n".join(results))
-        

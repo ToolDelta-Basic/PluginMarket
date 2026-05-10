@@ -41,9 +41,8 @@ class _SimpleTTLCache:
             value, timestamp = self._cache[key]
             if now - timestamp <= self.ttl:
                 return value
-            else:
-                del self._cache[key]
-                raise KeyError(key)
+            del self._cache[key]
+            raise KeyError(key)
 
     def __setitem__(self, key, value):
         """设置值，超过最大容量时淘汰最旧条目。"""
@@ -158,18 +157,16 @@ class LayeredDedup:
                 )
                 if result is True:
                     return True
-                else:
-                    with self._local_lock:
-                        self._local_id_cache.pop(msg_id, None)
-                    self.stats["redis_hits"] += 1
-                    return False
+                with self._local_lock:
+                    self._local_id_cache.pop(msg_id, None)
+                self.stats["redis_hits"] += 1
+                return False
             except Exception:
                 if self.config.fallback_to_local_on_redis_failure:
                     return True
-                else:
-                    with self._local_lock:
-                        self._local_id_cache.pop(msg_id, None)
-                    return False
+                with self._local_lock:
+                    self._local_id_cache.pop(msg_id, None)
+                return False
         return True
 
     def check_and_add_content(self, content: str, user_id: int) -> bool:
@@ -180,11 +177,10 @@ class LayeredDedup:
                 self.stats["local_hits"] += 1
                 return False
 
-        if self.bloom:
-            if not self.bloom.check_and_add(fingerprint):
-                with self._local_lock:
-                    self._local_content_cache[fingerprint] = time.time()
-                return True
+        if self.bloom and not self.bloom.check_and_add(fingerprint):
+            with self._local_lock:
+                self._local_content_cache[fingerprint] = time.time()
+            return True
 
         if self.redis:
             try:
@@ -200,9 +196,8 @@ class LayeredDedup:
                     with self._local_lock:
                         self._local_content_cache[fingerprint] = time.time()
                     return True
-                else:
-                    self.stats["redis_hits"] += 1
-                    return False
+                self.stats["redis_hits"] += 1
+                return False
             except Exception:
                 if self.config.fallback_to_local_on_redis_failure:
                     with self._local_lock:
@@ -210,12 +205,10 @@ class LayeredDedup:
                             return False
                         self._local_content_cache[fingerprint] = time.time()
                     return True
-                else:
-                    return False
-        else:
-            with self._local_lock:
-                self._local_content_cache[fingerprint] = time.time()
-            return True
+                return False
+        with self._local_lock:
+            self._local_content_cache[fingerprint] = time.time()
+        return True
 
     def acquire_lock(
         self, resource: str, ttl: Optional[int] = None
@@ -277,11 +270,12 @@ class ProcessingGuardV2:
             ):
                 return False
             self._local_processing[key] = now
-        if self.dedup.config.lock_enabled:
-            if not self.dedup.acquire_lock(f"proc:{key}"):
-                with self._local_lock:
-                    self._local_processing.pop(key, None)
-                return False
+        if self.dedup.config.lock_enabled and not self.dedup.acquire_lock(
+            f"proc:{key}"
+        ):
+            with self._local_lock:
+                self._local_processing.pop(key, None)
+            return False
         return True
 
     def release(self, key: str):

@@ -108,7 +108,7 @@ class WsClient:
         """消息接收回调，只处理群消息并调用内部回调。"""
         try:
             data = json.loads(message)
-        except:
+        except Exception:
             return
         if (
             data.get("post_type") != "message"
@@ -118,7 +118,8 @@ class WsClient:
         if self._on_message_callback:
             self._on_message_callback(data)
 
-    def _on_error(self, ws, error):
+    @staticmethod
+    def _on_error(ws, error):
         """错误回调。"""
         logging.getLogger(__name__).error("WS 错误: %s", error)
 
@@ -174,4 +175,3 @@ class WsClient:
         except Exception as e:
             logger.error("发送私聊消息失败: %s", e)
             return False
-            

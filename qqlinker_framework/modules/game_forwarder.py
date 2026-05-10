@@ -124,4 +124,3 @@ class GameForwarder(Module):
             await self.message.send_group(
                 gid, f"{event.player_name} 离开了游戏"
             )
-            
