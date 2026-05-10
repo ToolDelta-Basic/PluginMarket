@@ -8,7 +8,18 @@ except ImportError:
     aiohttp = None
 
 def register_tools(tool_manager):
+    """注册 generate_image 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """调用硅基流动生成图片，返回 IMAGE 标签。
+
+        Args:
+            params: {"prompt": "描述"}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "硅基流动"。
+
+        Returns:
+            包含 [IMAGE:url] 的结果字符串。
+        """
         if aiohttp is None:
             return "aiohttp 未安装"
         prompt = params.get("prompt", "")

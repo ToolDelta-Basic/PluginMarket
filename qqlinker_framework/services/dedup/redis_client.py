@@ -1,4 +1,5 @@
 # services/dedup/redis_client.py
+"""Redis 客户端封装，支持自动重连与冷却。"""
 import threading
 import time
 from typing import Optional
@@ -13,7 +14,14 @@ from .config import DedupConfig
 from .exceptions import RedisUnavailableError
 
 class RedisClient:
+    """Redis 客户端封装，提供自动重连和故障冷却机制。"""
+
     def __init__(self, config: DedupConfig):
+        """初始化 Redis 客户端。
+
+        Args:
+            config: 去重配置对象。
+        """
         self.config = config
         self._client: Optional["redis.Redis"] = None
         self._lock = threading.RLock()
@@ -21,6 +29,14 @@ class RedisClient:
         self._failure_cooldown = 30
 
     def _connect(self) -> Optional["redis.Redis"]:
+        """建立 Redis 连接并测试 ping。
+
+        Returns:
+            Redis 客户端实例。
+
+        Raises:
+            RedisUnavailableError: 连接失败。
+        """
         if not self.config.redis_enabled or not REDIS_AVAILABLE:
             return None
         try:
@@ -39,6 +55,11 @@ class RedisClient:
 
     @property
     def client(self) -> Optional["redis.Redis"]:
+        """获取当前 Redis 客户端，如已失效则尝试重连。
+
+        Returns:
+            Redis 客户端或 None。
+        """
         if not self.config.redis_enabled or not REDIS_AVAILABLE:
             return None
         with self._lock:
@@ -58,6 +79,7 @@ class RedisClient:
             return self._client
 
     def reset(self):
+        """主动断开并重置 Redis 客户端。"""
         with self._lock:
             if self._client:
                 try:
@@ -67,6 +89,16 @@ class RedisClient:
             self._client = None
 
     def execute(self, func_name: str, *args, **kwargs):
+        """执行 Redis 命令，自动处理异常和重连。
+
+        Args:
+            func_name: Redis 客户端方法名。
+            *args: 位置参数。
+            **kwargs: 关键字参数。
+
+        Returns:
+            命令执行结果，失败返回 None。
+        """
         client = self.client
         if client is None:
             return None

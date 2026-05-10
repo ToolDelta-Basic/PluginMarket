@@ -3,10 +3,16 @@
 import inspect
 import logging
 from typing import Type, List, Optional
-from core.module import Module
+from ..core.module import Module          
 
 class ModuleManager:
+    """负责模块的注册、依赖排序、生命周期调度及热插拔。"""
     def __init__(self, host):
+        """初始化模块管理器。
+
+        Args:
+            host: FrameworkHost 实例。
+        """
         self.host = host
         self.services = host.services
         self.event_bus = host.event_bus
@@ -14,11 +20,20 @@ class ModuleManager:
         self._loaded_modules: dict[str, Module] = {}
 
     def register(self, module_cls: Type[Module]):
-        """注册模块类（自动去重）"""
+        """注册模块类（去重）。
+
+        Args:
+            module_cls: Module 子类。
+        """
         if module_cls not in self._module_classes:
             self._module_classes.append(module_cls)
 
     async def initialize_all(self) -> List[Module]:
+        """实例化、扫描装饰器、依次执行 on_init 和 on_start。
+
+        Returns:
+            成功启动的模块实例列表。
+        """
         logger = logging.getLogger(__name__)
         modules: List[Module] = []
         for cls in self._module_classes:
@@ -67,6 +82,14 @@ class ModuleManager:
         return started_modules
 
     async def unload_module(self, module_name: str) -> bool:
+        """卸载模块，清理事件订阅、命令和工具。
+
+        Args:
+            module_name: 模块名。
+
+        Returns:
+            是否成功卸载。
+        """
         logger = logging.getLogger(__name__)
         mod = self._loaded_modules.pop(module_name, None)
         if not mod:
@@ -88,6 +111,14 @@ class ModuleManager:
         return True
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+        """动态加载一个新模块实例。
+
+        Args:
+            module_cls: 模块类。
+
+        Returns:
+            模块实例，失败返回 None。
+        """
         logger = logging.getLogger(__name__)
         try:
             temp_mod = module_cls(self.services, self.event_bus)
@@ -117,6 +148,14 @@ class ModuleManager:
         return temp_mod
 
     async def reload_module(self, module_name: str) -> bool:
+        """重载模块（先卸载再加载）。
+
+        Args:
+            module_name: 模块名。
+
+        Returns:
+            是否成功。
+        """
         mod = self._loaded_modules.get(module_name)
         if not mod:
             return False
@@ -128,6 +167,11 @@ class ModuleManager:
         return new_mod is not None
 
     def _scan_decorators(self, mod: Module):
+        """扫描模块方法上的装饰器信息并注册命令/事件。
+
+        Args:
+            mod: 模块实例。
+        """
         for _, method in inspect.getmembers(mod, predicate=inspect.ismethod):
             if hasattr(method, '_command_info'):
                 info = method._command_info
@@ -143,4 +187,5 @@ class ModuleManager:
                 mod.listen(info['event_type'], method, info.get('priority', 0))
 
     def get_loaded_modules(self) -> List[str]:
+        """获取已加载的模块名称列表。"""
         return list(self._loaded_modules.keys())

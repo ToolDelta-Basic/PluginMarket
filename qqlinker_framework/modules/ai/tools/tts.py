@@ -11,7 +11,18 @@ except ImportError:
     HAS_AIOHTTP = False
 
 def register_tools(tool_manager):
+    """注册 siliconflow_tts 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """调用硅基流动 TTS API，返回 base64 音频。
+
+        Args:
+            params: {"text": "文本内容"}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "硅基流动"。
+
+        Returns:
+            base64编码的音频数据，前缀 base64://。
+        """
         if not HAS_AIOHTTP:
             return "aiohttp 依赖未安装，请执行 'qqdeps install' 安装，或手动 pip install aiohttp"
         text = params.get("text", "")

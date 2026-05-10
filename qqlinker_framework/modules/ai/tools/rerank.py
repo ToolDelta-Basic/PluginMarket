@@ -1,5 +1,5 @@
 # modules/ai/tools/rerank.py
-"""文档重排序工具（硅基流动）—— 增加空指针防御"""
+"""文档重排序工具（硅基流动"""
 import logging
 
 try:
@@ -8,7 +8,18 @@ except ImportError:
     aiohttp = None
 
 def register_tools(tool_manager):
+    """注册 rerank_documents 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """调用硅基流动 Rerank API，对文档进行相关性排序。
+
+        Args:
+            params: {"query": "查询文本", "documents": "文档1 || 文档2 || ..."}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "硅基流动"。
+
+        Returns:
+            排序后的文档摘要。
+        """
         if aiohttp is None:
             return "aiohttp 未安装"
         query = params.get("query", "")

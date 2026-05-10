@@ -9,7 +9,17 @@ except ImportError:
     aiohttp = None
 
 async def _fetch_via_scrapling(url: str, address: str, token: str, timeout: int) -> str:
-    """通过 Scrapling API 抓取网页"""
+    """通过 Scrapling API 抓取网页内容。
+
+    Args:
+        url: 目标网页地址。
+        address: API 地址。
+        token: API 令牌。
+        timeout: 超时秒数。
+
+    Returns:
+        抓取结果文本。
+    """
     if aiohttp is None:
         return "错误：aiohttp 未安装，无法抓取网页"
 
@@ -41,7 +51,6 @@ async def _fetch_via_scrapling(url: str, address: str, token: str, timeout: int)
                 if not content:
                     return f"抓取成功但内容为空（标题：{title}）"
                 
-                # 截断过长内容
                 if len(content) > 5000:
                     content = content[:5000] + "…（内容已截断）"
                 
@@ -58,13 +67,23 @@ async def _fetch_via_scrapling(url: str, address: str, token: str, timeout: int)
         return f"抓取异常：{str(e)}"
 
 def register_tools(tool_manager):
+    """注册 web_scraper 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """执行网页抓取。
+
+        Args:
+            params: {"url": "...", "timeout": 15}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "Scrapling服务"。
+
+        Returns:
+            抓取结果文本。
+        """
         url = params.get("url", "")
         if not url:
             return "请提供要抓取的网页 URL"
         timeout = params.get("timeout", 15)
         
-        # 获取 Scrapling 服务配置
         provider = config.get("Scrapling服务", {})
         address = provider.get("地址", "")
         token = provider.get("令牌", "")

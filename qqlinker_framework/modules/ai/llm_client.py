@@ -1,4 +1,5 @@
 # modules/ai/llm_client.py
+"""LLM 客户端工厂，处理 OpenAI 兼容 API 调用及工具循环。"""
 import json
 import asyncio
 import logging
@@ -10,7 +11,14 @@ except ImportError:
     aiohttp = None
 
 class LLMClientFactory:
+    """封装 LLM API 请求，支持同步/异步工具调用和多轮对话。"""
+
     def __init__(self, config):
+        """初始化 LLM 客户端配置。
+
+        Args:
+            config: ConfigManager 实例。
+        """
         self.config = config
         self.api_base = config.get("AI助手.API地址", "https://api.siliconflow.cn/v1")
         self.api_key = config.get("AI助手.API密钥", "")
@@ -18,6 +26,17 @@ class LLMClientFactory:
 
     async def chat(self, messages: List[Dict], tools: Optional[List[Dict]] = None,
                    max_rounds: int = 5, tool_executor: Optional[Callable] = None) -> str:
+        """执行 LLM 对话，自动处理工具调用循环。
+
+        Args:
+            messages: 对话消息列表。
+            tools: OpenAI 工具 schema 列表。
+            max_rounds: 最大工具调用轮次。
+            tool_executor: 工具执行回调，可返回字符串或协程。
+
+        Returns:
+            LLM 最终回复文本。
+        """
         if not self.api_key:
             return "AI API 密钥未配置"
         if not aiohttp:
@@ -68,7 +87,6 @@ class LLMClientFactory:
                             args = {}
                         if tool_executor:
                             try:
-                                # 关键修复：确保 tool_executor 返回协程时正确 await
                                 result = tool_executor(name, args)
                                 if asyncio.iscoroutine(result):
                                     tool_result = await result

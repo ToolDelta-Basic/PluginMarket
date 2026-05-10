@@ -9,7 +9,18 @@ except ImportError:
     aiohttp = None
 
 def register_tools(tool_manager):
+    """注册 web_search 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """执行网络搜索。
+
+        Args:
+            params: {"query": "搜索关键词"}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "百度千帆"。
+
+        Returns:
+            搜索结果文本。
+        """
         if aiohttp is None:
             return "aiohttp 未安装"
         query = params.get("query", "")

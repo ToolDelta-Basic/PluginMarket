@@ -4,7 +4,15 @@ import pkgutil
 from typing import List, Type
 from .module import Module
 
-def discover_modules(package_name: str = "modules") -> List[Type[Module]]:
+def discover_modules(package_name: str = "qqlinker_framework.modules") -> List[Type[Module]]:
+    """递归扫描包，返回所有 Module 子类。
+
+    Args:
+        package_name: 完整包名，例如 'qqlinker_framework.modules'。
+
+    Returns:
+        发现的模块类列表。
+    """
     module_classes: List[Type[Module]] = []
     try:
         package = importlib.import_module(package_name)
@@ -15,6 +23,12 @@ def discover_modules(package_name: str = "modules") -> List[Type[Module]]:
     return module_classes
 
 def _walk_package(package, result: List[Type[Module]]):
+    """递归遍历包，收集 Module 子类。
+
+    Args:
+        package: Python 包对象。
+        result: 结果列表，原地修改。
+    """
     for _, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix=package.__name__ + "."):
         if ispkg:
             try:
@@ -37,6 +51,14 @@ def _walk_package(package, result: List[Type[Module]]):
                     result.append(attr)
 
 def sort_by_dependencies(classes: List[Type[Module]]) -> List[Type[Module]]:
+    """根据模块依赖进行拓扑排序，若存在循环依赖则返回原始顺序。
+
+    Args:
+        classes: 未排序的模块类列表。
+
+    Returns:
+        排序后的列表。
+    """
     if not classes:
         return classes
     name_to_cls = {}

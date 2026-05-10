@@ -8,7 +8,18 @@ except ImportError:
     aiohttp = None
 
 def register_tools(tool_manager):
+    """注册 speech_to_text 工具。"""
     async def handler(params: dict, context: dict, config: dict) -> str:
+        """调用硅基流动 ASR API，识别音频文件。
+
+        Args:
+            params: {"url": "音频文件 URL"}
+            context: 执行上下文。
+            config: 提供者配置，需包含 "硅基流动"。
+
+        Returns:
+            识别出的文本。
+        """
         if aiohttp is None:
             return "aiohttp 未安装"
         audio_url = params.get("url", "")

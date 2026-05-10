@@ -27,7 +27,29 @@ from .events import GroupMessageEvent, GameChatEvent, PlayerJoinEvent, PlayerLea
 access_log = logging.getLogger("access")
 
 class FrameworkHost:
+    """框架核心调度器，负责初始化所有服务、管理器、模块并控制生命周期。
+
+    Attributes:
+        adapter: 平台适配器实现。
+        services: 服务容器。
+        event_bus: 事件总线。
+        config_mgr: 配置管理器。
+        package_mgr: 依赖包管理器。
+        command_mgr: 命令注册管理器。
+        tool_mgr: 工具管理器。
+        module_mgr: 模块生命周期管理器。
+        message_mgr: 削峰填谷消息管理器。
+        dedup: 多层去重引擎。
+        ws_client: WebSocket 客户端实例。
+    """
+
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
+        """初始化框架主机，创建各管理器和服务。
+
+        Args:
+            adapter: 平台适配器实例。
+            data_path: 数据目录路径，用于配置文件、日志等。
+        """
         self.adapter = adapter
         self.services = ServiceContainer()
         self.event_bus = EventBus()
@@ -57,9 +79,19 @@ class FrameworkHost:
         self._game_events_bridged = False
 
     def register_module(self, module_cls: Type[Module]):
+        """向模块管理器注册一个模块类。
+
+        Args:
+            module_cls: 继承自 Module 的类。
+        """
         self.module_mgr.register(module_cls)
 
-    def register_modules_from_package(self, package_name: str = "modules"):
+    def register_modules_from_package(self, package_name: str = "qqlinker_framework.modules"):
+        """从指定 Python 包自动发现并注册所有模块。
+    
+        Args:
+            package_name: 完整包名，默认 'qqlinker_framework.modules'。
+        """
         classes = discover_modules(package_name)
         if not classes:
             logging.getLogger(__name__).warning("未发现任何模块")
@@ -70,6 +102,7 @@ class FrameworkHost:
         logging.getLogger(__name__).info("从 '%s' 自动发现并注册了 %d 个模块", package_name, len(sorted_classes))
 
     async def start(self):
+        """启动框架：初始化配置、WS连接、模块、事件桥接等。"""
         self._main_loop = asyncio.get_running_loop()
         self._ensure_log_handlers()
 
@@ -150,6 +183,7 @@ class FrameworkHost:
         logging.getLogger(__name__).info("框架启动完成")
 
     def _ensure_log_handlers(self):
+        """确保控制台和文件日志处理器已挂载。"""
         root = logging.getLogger()
         if not any(isinstance(h, logging.StreamHandler) for h in root.handlers):
             console = logging.StreamHandler(sys.stderr)
@@ -184,6 +218,7 @@ class FrameworkHost:
         access_log.propagate = False
 
     async def stop(self):
+        """优雅停止框架：发布停止事件、停止模块、关闭消息管理器和WS连接。"""
         logger = logging.getLogger(__name__)
         from ..events import SystemStopEvent
         await self.event_bus.publish(SystemStopEvent())
@@ -195,6 +230,11 @@ class FrameworkHost:
         logger.info("框架已停止")
 
     def _console_cmd_qqdeps(self, args: list):
+        """控制台命令 qqdeps 处理，用于检查或安装依赖。
+
+        Args:
+            args: 命令行参数列表，首个元素为 check 或 install。
+        """
         if not args:
             print("用法: qqdeps check | install")
             return
@@ -220,6 +260,11 @@ class FrameworkHost:
             print("未知子命令，请使用 check 或 install")
 
     def _install_deps_thread(self, packages: list):
+        """后台线程执行 pip 安装。
+
+        Args:
+            packages: 待安装的包名列表。
+        """
         success = self.package_mgr.install_packages(packages)
         if success:
             print("[qqdeps] 依赖安装成功，请重载插件以使新模块生效")
@@ -227,6 +272,7 @@ class FrameworkHost:
             print("[qqdeps] 部分或全部依赖安装失败，请检查日志")
 
     def _on_game_chat_bridge(self, player_name: str, message: str):
+        """将游戏聊天事件桥接到事件总线（线程安全）。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 self.event_bus.publish(GameChatEvent(player_name=player_name, message=message)),
@@ -234,6 +280,7 @@ class FrameworkHost:
             )
 
     def _on_player_join_bridge(self, player_name: str):
+        """玩家加入事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
@@ -241,6 +288,7 @@ class FrameworkHost:
             )
 
     def _on_player_leave_bridge(self, player_name: str):
+        """玩家离开事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 self.event_bus.publish(PlayerLeaveEvent(player_name=player_name)),
@@ -248,6 +296,11 @@ class FrameworkHost:
             )
 
     def _on_ws_group_message(self, raw: dict):
+        """处理来自 WebSocket 的群消息，经过去重和链接验证后发布事件。
+
+        Args:
+            raw: OneBot 格式的原始消息字典。
+        """
         linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
         group_id = raw.get("group_id")
         if group_id not in linked_groups:
@@ -275,7 +328,6 @@ class FrameworkHost:
         nickname = raw.get("sender", {}).get("card") or raw.get("sender", {}).get("nickname", "未知")
         access_log.info("[QQ] %s: %s", nickname, text.strip())
 
-        # 安全执行原始消息处理器
         try:
             if hasattr(self.adapter, 'trigger_raw_group_handlers'):
                 self.adapter.trigger_raw_group_handlers(raw)
@@ -294,10 +346,34 @@ class FrameworkHost:
             asyncio.run_coroutine_threadsafe(self.event_bus.publish(event), self._main_loop)
 
     async def unload_module(self, module_name: str) -> bool:
+        """卸载指定名称的模块。
+
+        Args:
+            module_name: 模块名称。
+
+        Returns:
+            卸载是否成功。
+        """
         return await self.module_mgr.unload_module(module_name)
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+        """加载一个新的模块类实例。
+
+        Args:
+            module_cls: 模块类。
+
+        Returns:
+            加载后的模块实例，失败返回 None。
+        """
         return await self.module_mgr.load_module(module_cls)
 
     async def reload_module(self, module_name: str) -> bool:
+        """重载指定模块（先卸载再加载）。
+
+        Args:
+            module_name: 模块名称。
+
+        Returns:
+            是否成功。
+        """
         return await self.module_mgr.reload_module(module_name)

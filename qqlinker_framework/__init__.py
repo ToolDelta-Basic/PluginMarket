@@ -9,12 +9,18 @@ from .core.host import FrameworkHost
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
 class QQLinkerFrameworkPlugin(Plugin):
+    """ToolDelta 插件主类，负责启动框架主机及依赖检查。"""
     name = "群服互通框架"
     version = (1, 0, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架"
 
     def __init__(self, frame: ToolDelta):
+        """初始化插件，注册预加载事件。
+
+        Args:
+            frame: ToolDelta 框架实例。
+        """
         super().__init__(frame)
         self.ListenPreload(self.on_preload)
         self._framework_thread = None
@@ -22,6 +28,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         self._loop = None
 
     def on_preload(self):
+        """预加载事件处理：创建配置、适配器、启动后台异步线程。"""
         data_dir = str(self.data_path)
         config_path = os.path.join(data_dir, "config.json")
         if not os.path.exists(config_path):
@@ -45,7 +52,7 @@ class QQLinkerFrameworkPlugin(Plugin):
             "redis": "redis"
         })
 
-        self._host.register_modules_from_package("modules")
+        self._host.register_modules_from_package("qqlinker_framework.modules")
 
         self._framework_thread = threading.Thread(
             target=self._run_framework,
@@ -54,6 +61,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         self._framework_thread.start()
 
     def _run_framework(self):
+        """在独立线程中创建事件循环并运行框架主机。"""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         try:

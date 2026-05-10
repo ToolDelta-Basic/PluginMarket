@@ -4,13 +4,31 @@ from ..managers.command_mgr import CommandManager
 from .context import CommandContext
 
 class CommandRouter:
+    """将 GroupMessageEvent 分发给匹配的命令，并进行权限校验。"""
+
     def __init__(self, command_mgr: CommandManager, adapter, config_mgr, message_mgr):
+        """初始化路由器。
+
+        Args:
+            command_mgr: 命令管理器。
+            adapter: 平台适配器。
+            config_mgr: 配置管理器。
+            message_mgr: 消息管理器。
+        """
         self.command_mgr = command_mgr
         self.adapter = adapter
         self.config_mgr = config_mgr
         self.message_mgr = message_mgr
 
     async def handle_message(self, event):
+        """处理群消息事件，查找匹配命令并执行。
+
+        Args:
+            event: GroupMessageEvent 实例。
+
+        Returns:
+            是否匹配并尝试执行了命令。
+        """
         msg = event.message.strip()
         for cmd_info in self.command_mgr.get_group_commands():
             trigger = cmd_info["trigger"]

@@ -9,11 +9,18 @@ import os
 from typing import Dict, List, Optional
 
 class PackageManager:
+    """管理 Python 依赖包的检查、安装与回滚。"""
     def __init__(self):
+        """初始化包管理器，内部记录依赖映射和目标安装目录。"""
         self._requirements: Dict[str, str] = {}
         self._installed_target_dir: Optional[str] = None
 
     def set_target_dir(self, path: str):
+        """设置 pip install --target 目录，并添加到 sys.path。
+
+        Args:
+            path: 目标目录路径。
+        """
         self._installed_target_dir = path
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
@@ -21,13 +28,24 @@ class PackageManager:
             sys.path.insert(0, path)
 
     def register_requirement(self, pkg_name: str, import_name: str = None):
+        """注册一个依赖：包名 -> 导入名。
+
+        Args:
+            pkg_name: pip 包名。
+            import_name: import 时使用的模块名，默认等于包名。
+        """
         self._requirements[pkg_name] = import_name or pkg_name
 
     def register_requirements(self, reqs: dict[str, str]):
+        """批量注册依赖。
+
+        Args:
+            reqs: {包名: 导入名} 字典。
+        """
         self._requirements.update(reqs)
 
     def check_missing(self) -> dict[str, str]:
-        """检查缺失依赖，并记录导入状态"""
+        """检查缺失的依赖，返回 {包名: 导入名}。"""
         missing = {}
         for pkg, imp in self._requirements.items():
             try:
@@ -40,6 +58,16 @@ class PackageManager:
 
     def install_packages(self, packages: list[str], upgrade: bool = False,
                          mirror_sources: list[str] = None) -> bool:
+        """安装包列表，支持多镜像尝试和失败回滚。
+
+        Args:
+            packages: 包名列表。
+            upgrade: 是否 --upgrade。
+            mirror_sources: 镜像源列表。
+
+        Returns:
+            是否全部安装成功。
+        """
         if not packages:
             return True
 
@@ -103,6 +131,12 @@ class PackageManager:
         return total_success
 
     def _cleanup_partial(self, target: str, before_set: set):
+        """清理部分安装的残留文件。
+
+        Args:
+            target: 目标目录。
+            before_set: 安装前的文件集合。
+        """
         try:
             after = set(os.listdir(target))
             new_items = after - before_set
@@ -120,6 +154,7 @@ class PackageManager:
             logging.getLogger(__name__).error("清理残留失败: %s", e)
 
     def install_missing(self) -> bool:
+        """安装所有缺失的依赖。"""
         missing = self.check_missing()
         if not missing:
             return True
