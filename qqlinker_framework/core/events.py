@@ -80,12 +80,7 @@ class AIResponseEvent(BaseEvent):
 class SystemStartEvent(BaseEvent):
     """框架启动事件。"""
 
-    pass
-
 
 @dataclass
 class SystemStopEvent(BaseEvent):
     """框架停止事件。"""
-
-    pass
-    

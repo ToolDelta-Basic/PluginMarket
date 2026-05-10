@@ -18,4 +18,3 @@ class DummyModule(Module):
     async def cmd_ping(self, ctx):
         """回复 pong!"""
         await ctx.reply("pong!")
-        

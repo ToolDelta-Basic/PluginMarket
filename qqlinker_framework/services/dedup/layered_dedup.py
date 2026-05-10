@@ -20,14 +20,9 @@ class _SimpleTTLCache:
     """基于堆的 TTL 缓存实现，提供 O(log n) 的过期淘汰。"""
 
     def __init__(self, maxsize: int = 10000, ttl: int = 300):
-        """初始化缓存。
-
-        Args:
-            maxsize: 最大条目数。
-            ttl: 存活时间（秒）。
-        """
-        self._cache = {}                      # key -> (value, timestamp)
-        self._heap = []                       # 最小堆 (timestamp, key)
+        """初始化缓存。"""
+        self._cache = {}
+        self._heap = []
         self.maxsize = maxsize
         self.ttl = ttl
         self.lock = threading.RLock()
@@ -97,11 +92,7 @@ class LayeredDedup:
     """多层去重管理器：本地缓存 + Redis + 布隆过滤器，支持降级。"""
 
     def __init__(self, config: DedupConfig):
-        """初始化去重引擎。
-
-        Args:
-            config: 去重配置。
-        """
+        """初始化去重引擎。"""
         self.config = config
         if CACHETOOLS_AVAILABLE:
             self._local_id_cache = TTLCache(
@@ -132,28 +123,23 @@ class LayeredDedup:
 
         self.stats = {"local_hits": 0, "redis_hits": 0}
 
-    def _make_fingerprint(self, content: str, user_id: int) -> str:
-        """生成内容指纹（MD5(user_id:content)）。
+    @staticmethod
+    def _make_fingerprint(content: str, user_id: int) -> str:
+        """生成内容指纹（SHA-256）。
 
         Args:
             content: 文本内容。
             user_id: 用户标识。
 
         Returns:
-            指纹字符串。
+            十六进制指纹字符串。
         """
         normalized = content.strip()[:200]
-        return hashlib.md5(f"{user_id}:{normalized}".encode()).hexdigest()
+        raw = f"{user_id}:{normalized}".encode()
+        return hashlib.sha256(raw).hexdigest()
 
     def check_and_add_id(self, msg_id: str) -> bool:
-        """基于消息 ID 的去重检查。
-
-        Args:
-            msg_id: 消息唯一标识。
-
-        Returns:
-            True 表示新消息，False 表示重复。
-        """
+        """基于消息 ID 的去重检查。"""
         with self._local_lock:
             if msg_id in self._local_id_cache:
                 self.stats["local_hits"] += 1
@@ -187,15 +173,7 @@ class LayeredDedup:
         return True
 
     def check_and_add_content(self, content: str, user_id: int) -> bool:
-        """基于内容指纹的去重检查。
-
-        Args:
-            content: 文本内容。
-            user_id: 用户标识。
-
-        Returns:
-            True 表示新内容，False 表示重复。
-        """
+        """基于内容指纹的去重检查。"""
         fingerprint = self._make_fingerprint(content, user_id)
         with self._local_lock:
             if fingerprint in self._local_content_cache:
@@ -242,15 +220,7 @@ class LayeredDedup:
     def acquire_lock(
         self, resource: str, ttl: Optional[int] = None
     ) -> bool:
-        """获取分布式锁（如果启用）。
-
-        Args:
-            resource: 资源标识。
-            ttl: 锁超时。
-
-        Returns:
-            是否获取成功。
-        """
+        """获取分布式锁（如果启用）。"""
         if not self.config.lock_enabled or not self.redis:
             return True
         ttl = ttl or self.config.lock_timeout
@@ -266,11 +236,7 @@ class LayeredDedup:
         return False
 
     def release_lock(self, resource: str):
-        """释放分布式锁。
-
-        Args:
-            resource: 资源标识。
-        """
+        """释放分布式锁。"""
         if self.config.lock_enabled and self.redis:
             self.redis.execute("del", f"dedup:lock:{resource}")
 
@@ -281,11 +247,7 @@ class LayeredDedup:
             self._local_content_cache.clear()
 
     def get_stats(self) -> dict:
-        """获取去重统计信息。
-
-        Returns:
-            包含命中数和缓存大小的字典。
-        """
+        """获取去重统计信息。"""
         stats = self.stats.copy()
         with self._local_lock:
             stats["local_id_cache_size"] = len(self._local_id_cache)
@@ -299,25 +261,14 @@ class ProcessingGuardV2:
     """并发处理守卫，防止同一任务被重复处理。"""
 
     def __init__(self, dedup: LayeredDedup):
-        """初始化守卫。
-
-        Args:
-            dedup: 去重管理器实例。
-        """
+        """初始化守卫。"""
         self.dedup = dedup
         self._local_processing = {}
         self._local_lock = threading.RLock()
         self._lock_ttl = 120
 
     def acquire(self, key: str) -> bool:
-        """尝试获取处理权。
-
-        Args:
-            key: 任务唯一标识。
-
-        Returns:
-            True 表示成功获取，False 表示已被处理。
-        """
+        """尝试获取处理权。"""
         now = time.time()
         with self._local_lock:
             if (
@@ -334,13 +285,8 @@ class ProcessingGuardV2:
         return True
 
     def release(self, key: str):
-        """释放处理权。
-
-        Args:
-            key: 任务标识。
-        """
+        """释放处理权。"""
         with self._local_lock:
             self._local_processing.pop(key, None)
         if self.dedup.config.lock_enabled:
             self.dedup.release_lock(f"proc:{key}")
-            

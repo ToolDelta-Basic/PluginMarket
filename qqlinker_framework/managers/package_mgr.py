@@ -1,4 +1,3 @@
-# managers/package_mgr.py
 """包管理器 —— 依赖检查、安装（支持多镜像、失败回滚、多线程）"""
 import importlib
 import subprocess
@@ -8,8 +7,10 @@ import shutil
 import os
 from typing import Dict, List, Optional
 
+
 class PackageManager:
     """管理 Python 依赖包的检查、安装与回滚。"""
+
     def __init__(self):
         """初始化包管理器，内部记录依赖映射和目标安装目录。"""
         self._requirements: Dict[str, str] = {}
@@ -50,14 +51,22 @@ class PackageManager:
         for pkg, imp in self._requirements.items():
             try:
                 importlib.import_module(imp)
-                logging.getLogger(__name__).debug("依赖已就绪: %s (导入 %s)", pkg, imp)
+                logging.getLogger(__name__).debug(
+                    "依赖已就绪: %s (导入 %s)", pkg, imp
+                )
             except ImportError:
-                logging.getLogger(__name__).info("缺失依赖: %s (导入 %s)", pkg, imp)
+                logging.getLogger(__name__).info(
+                    "缺失依赖: %s (导入 %s)", pkg, imp
+                )
                 missing[pkg] = imp
         return missing
 
-    def install_packages(self, packages: list[str], upgrade: bool = False,
-                         mirror_sources: list[str] = None) -> bool:
+    def install_packages(
+        self,
+        packages: list[str],
+        upgrade: bool = False,
+        mirror_sources: list[str] = None,
+    ) -> bool:
         """安装包列表，支持多镜像尝试和失败回滚。
 
         Args:
@@ -86,8 +95,11 @@ class PackageManager:
 
         pyexec = sys.executable
         if "py" not in pyexec.lower():
-            import shutil
-            pyexec = shutil.which("python3") or shutil.which("python") or sys.executable
+            pyexec = (
+                shutil.which("python3")
+                or shutil.which("python")
+                or sys.executable
+            )
 
         installed_before = set(os.listdir(target))
 
@@ -96,28 +108,44 @@ class PackageManager:
             pkg_ok = False
             for mirror in mirror_sources:
                 cmd = [
-                    pyexec, "-m", "pip", "install",
-                    "--target", target,
-                    "-i", mirror,
+                    pyexec,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--target",
+                    target,
+                    "-i",
+                    mirror,
                     "--no-deps",
-                    pkg
+                    pkg,
                 ]
                 if upgrade:
                     cmd.append("--upgrade")
                 try:
-                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                    stdout, stderr = proc.communicate(timeout=60)
+                    proc = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                    _, stderr = proc.communicate(timeout=60)
                     if proc.returncode == 0:
                         logger.info("成功安装 %s (源: %s)", pkg, mirror)
                         pkg_ok = True
                         break
-                    else:
-                        logger.warning("安装 %s 失败 (源 %s): %s", pkg, mirror, stderr.strip())
+                    logger.warning(
+                        "安装 %s 失败 (源 %s): %s",
+                        pkg,
+                        mirror,
+                        stderr.strip(),
+                    )
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     logger.error("安装 %s 超时 (源 %s)", pkg, mirror)
                 except Exception as e:
-                    logger.error("安装 %s 异常 (源 %s): %s", pkg, mirror, e)
+                    logger.error(
+                        "安装 %s 异常 (源 %s): %s", pkg, mirror, e
+                    )
 
             if not pkg_ok:
                 total_success = False
@@ -130,7 +158,8 @@ class PackageManager:
             logger.info("依赖安装成功，请重载插件以使新模块生效")
         return total_success
 
-    def _cleanup_partial(self, target: str, before_set: set):
+    @staticmethod
+    def _cleanup_partial(target: str, before_set: set):
         """清理部分安装的残留文件。
 
         Args:
@@ -159,4 +188,3 @@ class PackageManager:
         if not missing:
             return True
         return self.install_packages(list(missing.keys()))
-        

@@ -8,8 +8,10 @@ from tooldelta import Plugin, plugin_entry, ToolDelta
 from .core.host import FrameworkHost
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
+
 class QQLinkerFrameworkPlugin(Plugin):
     """ToolDelta 插件主类，负责启动框架主机及依赖检查。"""
+
     name = "群服互通框架"
     version = (1, 0, 0)
     author = "小石潭记qwq"
@@ -35,7 +37,7 @@ class QQLinkerFrameworkPlugin(Plugin):
             minimal_cfg = {
                 "网络连接": {
                     "地址": "ws://127.0.0.1:8080",
-                    "令牌": ""
+                    "令牌": "",
                 }
             }
             with open(config_path, "w", encoding="utf-8") as f:
@@ -49,14 +51,13 @@ class QQLinkerFrameworkPlugin(Plugin):
             "websocket-client": "websocket",
             "aiohttp": "aiohttp",
             "cachetools": "cachetools",
-            "redis": "redis"
+            "redis": "redis",
         })
 
         self._host.register_modules_from_package("qqlinker_framework.modules")
 
         self._framework_thread = threading.Thread(
-            target=self._run_framework,
-            daemon=True
+            target=self._run_framework, daemon=True
         )
         self._framework_thread.start()
 
@@ -71,5 +72,6 @@ class QQLinkerFrameworkPlugin(Plugin):
             print(f"[Framework] 运行异常: {e}")
         finally:
             self._loop.close()
+
 
 entry = plugin_entry(QQLinkerFrameworkPlugin)
