@@ -8,6 +8,7 @@ from typing import Optional
 
 class SendPriority(IntEnum):
     """消息发送优先级枚举。"""
+
     HIGH = 0
     NORMAL = 1
     LOW = 2

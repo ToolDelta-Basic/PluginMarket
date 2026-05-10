@@ -27,6 +27,7 @@ class DedupConfig:
         lock_retry_delay: 重试间隔秒数。
         fallback_to_local_on_redis_failure: Redis 失败时是否降级到本地。
     """
+
     local_id_ttl: int = 300
     local_content_ttl: int = 120
     local_max_size: int = 10000
