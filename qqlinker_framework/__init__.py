@@ -13,7 +13,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """ToolDelta 插件主类，负责启动框架主机及依赖检查。"""
 
     name = "群服互通框架"
-    version = (1, 0, 0)
+    version = (1, 0, 1)
     author = "小石潭记qwq"
     description = "模块化群服互通框架"
 
