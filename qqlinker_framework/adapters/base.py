@@ -74,3 +74,9 @@ class IFrameworkAdapter(ABC):
         self, cmd: str, timeout: float = 5.0
     ) -> Optional[str]:
         """发送游戏指令并等待响应文本，超时返回 None。"""
+
+    @abstractmethod
+    def listen_internal_broadcast(
+        self, name: str, handler: Callable[[Dict[str, Any]], None]
+    ) -> None:
+        """监听 ToolDelta 内部广播。handler 接收广播数据字典。"""

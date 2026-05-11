@@ -185,3 +185,9 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         except Exception as e:
             logging.getLogger(__name__).error("同步指令执行失败: %s", e)
             return None
+
+    def listen_internal_broadcast(
+        self, name: str, handler: Callable[[Dict[str, Any]], None]
+    ) -> None:
+        """将 ToolDelta 内部广播转发为回调。"""
+        self.plugin.ListenInternalBroadcast(name, handler)
