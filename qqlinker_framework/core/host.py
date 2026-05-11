@@ -122,7 +122,20 @@ class FrameworkHost:
         self._main_loop = asyncio.get_running_loop()
         self._ensure_log_handlers()
 
-        site_pkgs = os.path.join(self.data_path, "site-packages")
+        # ------ 创建中文目录结构 ------
+        data_dir = self.data_path
+        dirs = [
+            os.path.join(data_dir, "模块"),
+            os.path.join(data_dir, "工具"),
+            os.path.join(data_dir, "工具", "工具数据"),
+            os.path.join(data_dir, "第三方库"),
+        ]
+        for d in dirs:
+            os.makedirs(d, exist_ok=True)
+        # -----------------------------
+
+        # 包管理器安装目标设为 第三方库/ 目录
+        site_pkgs = os.path.join(self.data_path, "第三方库")
         self.package_mgr.set_target_dir(site_pkgs)
 
         self.adapter.register_console_command(
@@ -132,6 +145,11 @@ class FrameworkHost:
             self._console_cmd_qqdeps,
         )
 
+        # 注册所有核心配置节及其默认值
+        self.config_mgr.register_section("网络连接", {
+            "地址": "ws://127.0.0.1:8080",
+            "令牌": "",
+        })
         self.config_mgr.register_section("管理员", {"管理员QQ": [0]})
         self.config_mgr.register_section("去重", {
             "本地ID有效期秒": 300,
@@ -140,8 +158,11 @@ class FrameworkHost:
             "启用Redis": False,
             "Redis地址": "redis://localhost:6379/0",
         })
+
+        # 加载配置文件（缺失的节或字段会自动补全）
         self.config_mgr.load()
 
+        # 读取网络连接配置
         ws_address = self.config_mgr.get(
             "网络连接.地址", "ws://127.0.0.1:8080"
         )
@@ -151,6 +172,7 @@ class FrameworkHost:
         if hasattr(self.adapter, 'set_config_mgr'):
             self.adapter.set_config_mgr(self.config_mgr)
 
+        # 去重服务初始化
         dedup_cfg = DedupConfig(
             local_id_ttl=self.config_mgr.get("去重.本地ID有效期秒", 300),
             local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120),
@@ -164,6 +186,7 @@ class FrameworkHost:
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
 
+        # WebSocket 连接初始化
         if HAS_WEBSOCKET:
             self.ws_client = WsClient(
                 {"ws_address": ws_address, "ws_token": ws_token}
@@ -180,6 +203,7 @@ class FrameworkHost:
                 "websocket-client 未安装，跳过 WS 连接"
             )
 
+        # 桥接游戏原生事件
         if not self._game_events_bridged:
             if hasattr(self.adapter, 'main_loop'):
                 self.adapter.main_loop = self._main_loop
@@ -188,8 +212,10 @@ class FrameworkHost:
             self.adapter.listen_player_leave(self._on_player_leave_bridge)
             self._game_events_bridged = True
 
+        # 初始化所有模块
         self._modules = await self.module_mgr.initialize_all()
 
+        # 注册命令路由（仅在有 WS 时）
         if HAS_WEBSOCKET:
             router = CommandRouter(
                 self.command_mgr,
@@ -202,9 +228,9 @@ class FrameworkHost:
             )
 
         from .events import SystemStartEvent
-
         await self.event_bus.publish(SystemStartEvent())
 
+        # 日志输出连接状态
         if self.ws_client and self.ws_client.available:
             logging.getLogger(__name__).info("WebSocket 已就绪")
         elif self.ws_client:
@@ -247,6 +273,7 @@ class FrameworkHost:
 
         logging.getLogger("websocket").setLevel(logging.WARNING)
 
+        # 访问日志单独处理
         if not any(
             isinstance(h, logging.FileHandler)
             and h.baseFilename == os.path.abspath(file_path)

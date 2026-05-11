@@ -50,8 +50,9 @@ class UserPersonaModule(Module):
 
     async def on_init(self):
         """实例化服务，注册到容器，绑定命令。"""
-        data_dir = self.config.get_data_dir()
-        persona_service = UserPersonaService(data_dir)
+        # 使用模块专属数据目录
+        module_data_dir = self.get_data_dir()
+        persona_service = UserPersonaService(module_data_dir)
         self.services.register("persona", persona_service)
 
         self.register_command(

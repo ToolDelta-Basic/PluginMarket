@@ -26,7 +26,6 @@ class ToolDefinition:
         required_config_keys: Optional[List[str]] = None,
         **extra,
     ):
-        """初始化工具定义。"""
         self.name = name
         self.description = description
         self.parameters = parameters
@@ -61,7 +60,6 @@ class ToolManager:
     """工具管理器：注册、配置注入、执行调度。"""
 
     def __init__(self):
-        """初始化空管理器，需调用 init_with_services 完成配置。"""
         self.tools: Dict[str, ToolDefinition] = {}
         self._config = None
         self._tool_folder: Optional[str] = None
@@ -71,18 +69,16 @@ class ToolManager:
     def init_with_services(self, services):
         """从服务容器获取配置管理器，加载工具目录和配置文件。"""
         self._config = services.get("config")
-        self._config.register_section("工具系统", {"数据目录": ""})
-        data_dir = (
-            self._config.get_data_dir()
-            if hasattr(self._config, 'get_data_dir')
-            else "."
-        )
-        custom_dir = self._config.get("工具系统.数据目录", "")
-        self._tool_folder = (
-            custom_dir if custom_dir else os.path.join(data_dir, "tools")
-        )
+        data_dir = self._config.get_data_dir()
+        # 工具相关文件放在 工具/ 目录下
+        self._tool_folder = os.path.join(data_dir, "工具")
         if not os.path.exists(self._tool_folder):
             os.makedirs(self._tool_folder, exist_ok=True)
+        # 工具数据目录（工具产生的数据）
+        self._tool_data_folder = os.path.join(self._tool_folder, "工具数据")
+        if not os.path.exists(self._tool_data_folder):
+            os.makedirs(self._tool_data_folder, exist_ok=True)
+
         self._load_from_folder()
 
         config_path = os.path.join(self._tool_folder, "tool_config.json")
@@ -115,12 +111,8 @@ class ToolManager:
                     "令牌": "请填写你的百度千帆API密钥",
                 },
                 "Scrapling服务": {
-                    "地址": "http://127.0.0.0:8090",
+                    "地址": "http://183.66.27.45:8090",
                     "令牌": "你的API密钥",
-                },
-                "网页抓取代理": {
-                    "地址": "http://proxy:8080",
-                    "令牌": None,
                 },
             }
         }
@@ -147,6 +139,8 @@ class ToolManager:
 
     def _save_tool_config(self):
         """保存工具配置文件。"""
+        if not self._tool_folder:
+            return
         config_path = os.path.join(self._tool_folder, "tool_config.json")
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(self._tool_config, f, ensure_ascii=False, indent=2)
@@ -171,6 +165,7 @@ class ToolManager:
                     "加载工具文件 %s 失败: %s", fname, e
                 )
 
+    # 以下方法保持不变，仅省略展示...
     def _register_from_dict(self, data: dict):
         """从字典注册工具实例。"""
         name = data["name"]
@@ -209,7 +204,6 @@ class ToolManager:
         )
 
     def register_tool(self, tool_def: dict) -> bool:
-        """注册一个工具（外部接口）。"""
         name = tool_def.get("name")
         if not name:
             logging.getLogger(__name__).warning("工具定义缺少 name")
@@ -223,23 +217,18 @@ class ToolManager:
         return True
 
     def unregister_tool(self, name: str):
-        """注销指定名称的工具。"""
         self.tools.pop(name, None)
 
     def get_tool(self, name: str) -> Optional[ToolDefinition]:
-        """获取工具定义。"""
         return self.tools.get(name)
 
     def get_tools_by_category(self, category: str) -> List[ToolDefinition]:
-        """根据分类获取工具列表。"""
         return [t for t in self.tools.values() if t.category == category]
 
     def get_all_tools(self) -> List[ToolDefinition]:
-        """返回所有已注册的工具定义。"""
         return list(self.tools.values())
 
     def get_tools_schema(self, only_enabled: bool = True) -> list[dict]:
-        """获取所有工具的 OpenAI schema 列表。"""
         return [
             t.to_openai_schema()
             for t in self.tools.values()
@@ -247,7 +236,6 @@ class ToolManager:
         ]
 
     def set_enabled(self, name: str, enabled: bool):
-        """设置工具的启用状态。"""
         tool = self.tools.get(name)
         if tool:
             tool.enabled = enabled
@@ -255,7 +243,6 @@ class ToolManager:
     def is_tool_available(
         self, name: str, context: dict = None
     ) -> bool:
-        """检查工具是否可用（考虑启用状态和管理员限制）。"""
         tool = self.tools.get(name)
         if not tool or not tool.enabled:
             return False
@@ -266,14 +253,12 @@ class ToolManager:
         return True
 
     def _get_provider_config(self, provider_name: str) -> dict:
-        """获取指定 API 提供者的配置（地址、令牌）。"""
         providers = self._tool_config.get("api_providers", {})
         return providers.get(provider_name, {})
 
     async def execute(
         self, name: str, arguments: dict, context: dict = None
     ) -> str:
-        """执行一个工具，并返回结果字符串。"""
         tool = self.tools.get(name)
         if not tool:
             return f"工具 '{name}' 不存在"
@@ -319,5 +304,4 @@ class ToolManager:
     async def _execute_default(
         tool: ToolDefinition, args: dict
     ) -> str:
-        """默认工具执行器（当没有回调时）。"""
         return "该工具未提供回调函数，无法执行"
