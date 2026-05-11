@@ -63,6 +63,7 @@ class ToolManager:
         self.tools: Dict[str, ToolDefinition] = {}
         self._config = None
         self._tool_folder: Optional[str] = None
+        self._tool_data_folder: Optional[str] = None
         self._tool_config: Dict[str, Any] = {"api_providers": {}}
         self._initialized = False
 
@@ -165,7 +166,6 @@ class ToolManager:
                     "加载工具文件 %s 失败: %s", fname, e
                 )
 
-    # 以下方法保持不变，仅省略展示...
     def _register_from_dict(self, data: dict):
         """从字典注册工具实例。"""
         name = data["name"]
@@ -204,6 +204,7 @@ class ToolManager:
         )
 
     def register_tool(self, tool_def: dict) -> bool:
+        """注册一个工具（外部接口）。"""
         name = tool_def.get("name")
         if not name:
             logging.getLogger(__name__).warning("工具定义缺少 name")
@@ -217,18 +218,23 @@ class ToolManager:
         return True
 
     def unregister_tool(self, name: str):
+        """注销指定名称的工具。"""
         self.tools.pop(name, None)
 
     def get_tool(self, name: str) -> Optional[ToolDefinition]:
+        """获取工具定义。"""
         return self.tools.get(name)
 
     def get_tools_by_category(self, category: str) -> List[ToolDefinition]:
+        """根据分类获取工具列表。"""
         return [t for t in self.tools.values() if t.category == category]
 
     def get_all_tools(self) -> List[ToolDefinition]:
+        """返回所有已注册的工具定义。"""
         return list(self.tools.values())
 
     def get_tools_schema(self, only_enabled: bool = True) -> list[dict]:
+        """获取所有工具的 OpenAI schema 列表。"""
         return [
             t.to_openai_schema()
             for t in self.tools.values()
@@ -236,6 +242,7 @@ class ToolManager:
         ]
 
     def set_enabled(self, name: str, enabled: bool):
+        """设置工具的启用状态。"""
         tool = self.tools.get(name)
         if tool:
             tool.enabled = enabled
@@ -243,6 +250,7 @@ class ToolManager:
     def is_tool_available(
         self, name: str, context: dict = None
     ) -> bool:
+        """检查工具是否可用（考虑启用状态和管理员限制）。"""
         tool = self.tools.get(name)
         if not tool or not tool.enabled:
             return False
@@ -253,12 +261,14 @@ class ToolManager:
         return True
 
     def _get_provider_config(self, provider_name: str) -> dict:
+        """获取指定 API 提供者的配置（地址、令牌）。"""
         providers = self._tool_config.get("api_providers", {})
         return providers.get(provider_name, {})
 
     async def execute(
         self, name: str, arguments: dict, context: dict = None
     ) -> str:
+        """执行一个工具，并返回结果字符串。"""
         tool = self.tools.get(name)
         if not tool:
             return f"工具 '{name}' 不存在"
@@ -304,4 +314,5 @@ class ToolManager:
     async def _execute_default(
         tool: ToolDefinition, args: dict
     ) -> str:
+        """默认工具执行器（当没有回调时）。"""
         return "该工具未提供回调函数，无法执行"

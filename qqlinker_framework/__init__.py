@@ -1,7 +1,6 @@
 # __init__.py
 """云链群服互通框架 - ToolDelta 插件入口"""
 import asyncio
-import os
 import threading
 from tooldelta import Plugin, plugin_entry, ToolDelta
 from .core.host import FrameworkHost
@@ -27,6 +26,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     def on_preload(self):
         """预加载事件处理：创建适配器、启动后台异步线程。"""
         data_dir = str(self.data_path)
+
         adapter = ToolDeltaAdapter(self)
         self._host = FrameworkHost(adapter, data_path=data_dir)
 
