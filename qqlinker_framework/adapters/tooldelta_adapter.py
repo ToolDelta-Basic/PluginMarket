@@ -55,10 +55,23 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             )
 
     def get_online_players(self) -> List[str]:
-        """获取在线玩家列表。"""
+        """获取在线玩家列表，自动兼容 ToolDelta 返回的 list 或 dict。"""
         try:
-            return list(self.game_ctrl.allplayers.keys())
-        except Exception:
+            raw = self.game_ctrl.allplayers
+            # 旧版本返回 dict，新版本返回 list
+            if isinstance(raw, dict):
+                return list(raw.keys())
+            if isinstance(raw, (list, tuple)):
+                return list(raw)
+            # 未知类型，返回空列表
+            logging.getLogger(__name__).warning(
+                "allplayers 返回了未知类型: %s", type(raw).__name__
+            )
+            return []
+        except Exception as e:
+            logging.getLogger(__name__).error(
+                "获取在线玩家列表异常: %s", e
+            )
             return []
 
     def send_group_msg(self, group_id: int, message: str) -> bool:
@@ -149,3 +162,21 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return user_id in [int(q) for q in admin_list]
         except (TypeError, ValueError):
             return False
+
+    def send_game_command_with_resp(self, cmd: str, timeout: float = 5.0) -> Optional[str]:
+        """发送游戏指令并返回响应文本。"""
+        try:
+            resp = self.game_ctrl.sendwscmd_with_resp(cmd, timeout)
+            if resp and resp.OutputMessages:
+                # 合并输出消息为纯文本
+                lines = []
+                for msg in resp.OutputMessages:
+                    if hasattr(msg, 'Message'):
+                        lines.append(msg.Message)
+                    else:
+                        lines.append(str(msg))
+                return "\n".join(lines)
+            return ""
+        except Exception as e:
+            logging.getLogger(__name__).error("同步指令执行失败: %s", e)
+            return None

@@ -87,6 +87,7 @@ class GameAdmin(Module):
         if not self._get_cfg().get("允许查看玩家列表", True):
             await ctx.reply("此功能已禁用")
             return
+    
         players = self.adapter.get_online_players()
         if not players:
             await ctx.reply("当前无人在线")

@@ -17,7 +17,7 @@ class IFrameworkAdapter(ABC):
 
     @abstractmethod
     def get_online_players(self) -> List[str]:
-        """获取当前在线玩家列表。"""
+        """获取当前在线玩家列表（纯名字列表）。"""
 
     @abstractmethod
     def send_group_msg(self, group_id: int, message: str) -> bool:
@@ -56,3 +56,7 @@ class IFrameworkAdapter(ABC):
     @abstractmethod
     def is_user_admin(self, user_id: int, config_mgr) -> bool:
         """检查用户是否为平台管理员。"""
+
+    @abstractmethod
+    def send_game_command_with_resp(self, cmd: str, timeout: float = 5.0) -> Optional[str]:
+        """发送游戏指令并等待响应文本，超时返回 None。"""
