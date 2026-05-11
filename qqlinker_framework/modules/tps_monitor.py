@@ -14,7 +14,7 @@ class TPSService:
     def __init__(self, base_response: float = 0.05):
         self._tps = 20.0
         self._base = base_response
-        self._history = deque(maxlen=20)  # 保留最近 20 次测量值
+        self._history = deque(maxlen=20)
         self._lock = asyncio.Lock()
 
     def update(self, elapsed: float):
@@ -27,6 +27,7 @@ class TPSService:
 
     @property
     def tps(self) -> float:
+        """返回当前滑动平均 TPS（保留一位小数）。"""
         return round(self._tps, 1)
 
 
@@ -37,7 +38,15 @@ class TPSMonitorModule(Module):
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self._interval = None
+        self._cmd_timeout = None
+        self._service = None
+        self._task = None
+
     async def on_init(self):
+        """注册配置节、初始化服务、启动后台测量。"""
         self.config.register_section("TPS监控", {
             "测量间隔秒": 30,
             "基础响应时间": 0.05,
@@ -56,10 +65,10 @@ class TPSMonitorModule(Module):
             description="查看服务器 TPS 估算值",
         )
 
-        # 启动后台测量任务
         self._task = asyncio.ensure_future(self._measure_loop())
 
     async def on_stop(self):
+        """模块停止时取消后台测量任务。"""
         if self._task:
             self._task.cancel()
 
@@ -82,5 +91,6 @@ class TPSMonitorModule(Module):
 
     @command(".tps")
     async def _cmd_tps(self, ctx):
+        """回复当前 TPS 估算值。"""
         tps = self._service.tps
         await ctx.reply(f"当前服务器 TPS 估算：{tps} (参考值)")

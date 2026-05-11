@@ -16,37 +16,50 @@ class BindingService:
 
     def __init__(self, data_dir: str):
         self._file = os.path.join(data_dir, "bindings.json")
-        self._bindings: Dict[int, str] = {}        # qq -> 游戏名
-        self._pending_codes: Dict[str, tuple] = {} # 游戏名 -> (验证码, 过期时间戳)
+        self._bindings: Dict[int, str] = {}          # qq -> 游戏名
+        self._pending_codes: Dict[str, tuple] = {}   # 游戏名 -> (验证码, 过期时间戳)
         self._load()
 
     # ---------- 文件持久化 ----------
     def _load(self):
+        """从文件加载绑定数据。"""
         if os.path.exists(self._file):
             try:
                 with open(self._file, "r", encoding="utf-8") as f:
-                    self._bindings = {int(k): v for k, v in json.load(f).items()}
+                    self._bindings = {
+                        int(k): v for k, v in json.load(f).items()
+                    }
             except Exception:
                 self._bindings = {}
 
     def _save(self):
+        """保存绑定数据到文件。"""
         with open(self._file, "w", encoding="utf-8") as f:
-            json.dump({str(k): v for k, v in self._bindings.items()}, f, ensure_ascii=False, indent=2)
+            json.dump(
+                {str(k): v for k, v in self._bindings.items()},
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
 
     # ---------- 业务接口 ----------
     def get_player_by_qq(self, qq_id: int) -> Optional[str]:
+        """根据 QQ 号查询绑定的玩家名。"""
         return self._bindings.get(qq_id)
 
     def get_qq_by_player(self, player_name: str) -> Optional[int]:
+        """根据玩家名查询绑定的 QQ 号。"""
         for qq, name in self._bindings.items():
             if name == player_name:
                 return qq
         return None
 
     def is_bound(self, qq_id: int) -> bool:
+        """检查 QQ 号是否已绑定。"""
         return qq_id in self._bindings
 
     def unbind(self, qq_id: int) -> bool:
+        """解除 QQ 号的绑定关系，返回是否成功。"""
         if qq_id in self._bindings:
             del self._bindings[qq_id]
             self._save()
@@ -54,11 +67,13 @@ class BindingService:
         return False
 
     def generate_code(self, player_name: str) -> str:
+        """为玩家生成 6 位数字验证码（5 分钟有效）。"""
         code = "".join(random.choices(string.digits, k=6))
-        self._pending_codes[player_name] = (code, time.time() + 300)  # 5分钟过期
+        self._pending_codes[player_name] = (code, time.time() + 300)
         return code
 
     def verify(self, player_name: str, code: str) -> bool:
+        """校验验证码，成功返回 True 并移除待验证记录。"""
         entry = self._pending_codes.get(player_name)
         if not entry:
             return False
@@ -72,10 +87,12 @@ class BindingService:
         return False
 
     def bind(self, qq_id: int, player_name: str):
+        """建立 QQ 号与游戏名的绑定关系。"""
         self._bindings[qq_id] = player_name
         self._save()
 
     def get_bindings(self) -> Dict[int, str]:
+        """返回所有绑定关系的副本。"""
         return dict(self._bindings)
 
 
@@ -86,13 +103,16 @@ class PlayerBindingModule(Module):
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self.binding_service = None
+
     async def on_init(self):
-        # 数据目录
+        """初始化数据目录、服务注册、命令和事件监听。"""
         module_dir = self.get_data_dir()
         self.binding_service = BindingService(module_dir)
         self.services.register("binding", self.binding_service)
 
-        # 注册命令
         self.register_command(
             ".绑定", self._cmd_qq_bind,
             description="绑定游戏账号：.绑定 <游戏名> <验证码>",
@@ -107,25 +127,27 @@ class PlayerBindingModule(Module):
             description="查看当前绑定的游戏账号",
         )
 
-        # 监听游戏聊天事件，用于捕获 #绑定 请求
         self.listen("GameChatEvent", self.on_game_chat)
 
     # ---------- 游戏内监听 ----------
     async def on_game_chat(self, event: GameChatEvent):
+        """监听游戏内 #绑定 请求，生成验证码并发送 tellraw。"""
         msg = event.message.strip()
         if msg == "#绑定":
             player = event.player_name
-            # 检查是否已绑定
             existing_qq = self.binding_service.get_qq_by_player(player)
             if existing_qq:
-                self.adapter.send_game_message(player, "§c你已经绑定了QQ号，不能重复绑定。")
+                self.adapter.send_game_message(
+                    player, "§c你已经绑定了QQ号，不能重复绑定。"
+                )
                 return
-            # 生成验证码
             code = self.binding_service.generate_code(player)
-            # 通过适配器发送 tellraw
-            self.adapter.send_game_command(
-                f'/tellraw {player} {{"rawtext":[{{"text":"§a你的绑定验证码是：§e{code}§a，请在QQ群发送：.绑定 {player} {code}"}}]}}'
-            )
+            tellraw = (
+                '/tellraw {player} {{"rawtext":[{{"text":"§a你的绑定验证码是：'
+                "§e{code}§a，请在QQ群发送：.绑定 {player} {code}"
+                '"}}]}}'
+            ).format(player=player, code=code)
+            self.adapter.send_game_command(tellraw)
             self.adapter.send_game_command(
                 f'/tellraw {player} {{"rawtext":[{{"text":"§7验证码有效期为 5 分钟"}}]}}'
             )
@@ -133,6 +155,7 @@ class PlayerBindingModule(Module):
     # ---------- QQ 命令 ----------
     @command(".绑定")
     async def _cmd_qq_bind(self, ctx):
+        """处理 .绑定 命令，校验验证码并完成绑定。"""
         if self.binding_service.is_bound(ctx.user_id):
             await ctx.reply("你已经绑定了游戏账号，不能重复绑定。")
             return
@@ -144,14 +167,15 @@ class PlayerBindingModule(Module):
         if not self.binding_service.verify(player_name, code):
             await ctx.reply("验证码错误或已过期，请在游戏内重新发送 #绑定 获取。")
             return
-        # 绑定
         self.binding_service.bind(ctx.user_id, player_name)
         await ctx.reply(f"绑定成功！你的游戏账号：{player_name}")
-        # 通知游戏内
-        self.adapter.send_game_message(player_name, f"§a你的QQ号 {ctx.user_id} 已成功绑定！")
+        self.adapter.send_game_message(
+            player_name, f"§a你的QQ号 {ctx.user_id} 已成功绑定！"
+        )
 
     @command(".解绑")
     async def _cmd_unbind(self, ctx):
+        """处理 .解绑 命令，解除绑定关系。"""
         if not self.binding_service.is_bound(ctx.user_id):
             await ctx.reply("你还没有绑定游戏账号。")
             return
@@ -160,8 +184,11 @@ class PlayerBindingModule(Module):
 
     @command(".绑定信息")
     async def _cmd_info(self, ctx):
+        """处理 .绑定信息 命令，查询当前绑定账号。"""
         player = self.binding_service.get_player_by_qq(ctx.user_id)
         if not player:
-            await ctx.reply("你尚未绑定游戏账号。请在游戏内发送 #绑定 获取验证码。")
+            await ctx.reply(
+                "你尚未绑定游戏账号。请在游戏内发送 #绑定 获取验证码。"
+            )
         else:
             await ctx.reply(f"你的游戏账号：{player}")

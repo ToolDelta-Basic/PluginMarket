@@ -28,24 +28,36 @@ class IFrameworkAdapter(ABC):
         """发送私聊消息。"""
 
     @abstractmethod
-    def listen_game_chat(self, handler: Callable[[str, str], None]) -> None:
+    def listen_game_chat(
+        self, handler: Callable[[str, str], None]
+    ) -> None:
         """注册游戏聊天监听。"""
 
     @abstractmethod
-    def listen_group_message(self, handler: Callable[[Dict[str, Any]], None]) -> None:
+    def listen_group_message(
+        self, handler: Callable[[Dict[str, Any]], None]
+    ) -> None:
         """注册群消息监听。"""
 
     @abstractmethod
-    def listen_player_join(self, handler: Callable[[str], None]) -> None:
+    def listen_player_join(
+        self, handler: Callable[[str], None]
+    ) -> None:
         """注册玩家加入事件监听。"""
 
     @abstractmethod
-    def listen_player_leave(self, handler: Callable[[str], None]) -> None:
+    def listen_player_leave(
+        self, handler: Callable[[str], None]
+    ) -> None:
         """注册玩家离开事件监听。"""
 
     @abstractmethod
     def register_console_command(
-        self, triggers: List[str], hint: str, usage: str, func: Callable
+        self,
+        triggers: List[str],
+        hint: str,
+        usage: str,
+        func: Callable,
     ) -> None:
         """注册控制台命令。"""
 
@@ -58,5 +70,7 @@ class IFrameworkAdapter(ABC):
         """检查用户是否为平台管理员。"""
 
     @abstractmethod
-    def send_game_command_with_resp(self, cmd: str, timeout: float = 5.0) -> Optional[str]:
+    def send_game_command_with_resp(
+        self, cmd: str, timeout: float = 5.0
+    ) -> Optional[str]:
         """发送游戏指令并等待响应文本，超时返回 None。"""
