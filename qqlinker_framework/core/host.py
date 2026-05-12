@@ -127,13 +127,18 @@ class FrameworkHost:
             "地址": "ws://127.0.0.1:8080",
             "令牌": "",
         })
-        self.config_mgr.register_section("管理员", {"管理员QQ": [0]})
         self.config_mgr.register_section("去重", {
             "本地ID有效期秒": 300,
             "本地内容有效期秒": 120,
             "本地最大条目数": 10000,
             "启用Redis": False,
             "Redis地址": "redis://localhost:6379/0",
+            "启用布隆过滤器": False,
+            "布隆错误率": 0.001,
+            "布隆容量": 1000000,
+            "启用分布式锁": False,
+            "锁超时秒": 10,
+            "Redis失败降级到本地": True,
         })
         self.config_mgr.register_section("调试引擎", {
             "启用": True,

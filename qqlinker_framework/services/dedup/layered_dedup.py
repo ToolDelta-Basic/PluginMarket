@@ -28,27 +28,31 @@ class _SimpleTTLCache:
         self.lock = threading.RLock()
 
     def __contains__(self, key):
-        """检查 key 是否存在且未过期。"""
+        """检查 key 是否存在且未过期。修复：显式检查时间戳。"""
         with self.lock:
-            self._cleanup(time.time())
-            return key in self._cache
+            if key in self._cache:
+                _, timestamp = self._cache[key]
+                if time.time() - timestamp <= self.ttl:
+                    return True
+                # 过期，删除并返回 False
+                del self._cache[key]
+            return False
 
     def __getitem__(self, key):
         """获取值，过期则抛出 KeyError。"""
         with self.lock:
             now = time.time()
-            self._cleanup(now)
-            value, timestamp = self._cache[key]
-            if now - timestamp <= self.ttl:
-                return value
-            del self._cache[key]
+            if key in self._cache:
+                value, timestamp = self._cache[key]
+                if now - timestamp <= self.ttl:
+                    return value
+                del self._cache[key]
             raise KeyError(key)
 
     def __setitem__(self, key, value):
         """设置值，超过最大容量时淘汰最旧条目。"""
         with self.lock:
             now = time.time()
-            self._cleanup(now)
             if key in self._cache:
                 del self._cache[key]
             self._cache[key] = (value, now)
@@ -76,15 +80,15 @@ class _SimpleTTLCache:
     def __len__(self):
         """返回当前有效条目数。"""
         with self.lock:
-            self._cleanup(time.time())
-            return len(self._cache)
-
-    def _cleanup(self, now):
-        """清理过期条目。"""
-        while self._heap and now - self._heap[0][0] > self.ttl:
-            t, k = heapq.heappop(self._heap)
-            if k in self._cache and self._cache[k][1] == t:
+            now = time.time()
+            # 手动清理所有过期条目以准确计数
+            expired_keys = [
+                k for k, (_, ts) in self._cache.items()
+                if now - ts > self.ttl
+            ]
+            for k in expired_keys:
                 del self._cache[k]
+            return len(self._cache)
 
 
 class LayeredDedup:
@@ -124,21 +128,13 @@ class LayeredDedup:
 
     @staticmethod
     def _make_fingerprint(content: str, user_id: int) -> str:
-        """生成内容指纹（SHA-256）。
-
-        Args:
-            content: 文本内容。
-            user_id: 用户标识。
-
-        Returns:
-            十六进制指纹字符串。
-        """
+        """生成内容指纹（SHA-256）。"""
         normalized = content.strip()[:200]
         raw = f"{user_id}:{normalized}".encode()
         return hashlib.sha256(raw).hexdigest()
 
     def check_and_add_id(self, msg_id: str) -> bool:
-        """基于消息 ID 的去重检查。"""
+        """基于消息 ID 的去重检查，修复 Redis 降级失效。"""
         with self._local_lock:
             if msg_id in self._local_id_cache:
                 self.stats["local_hits"] += 1
@@ -146,59 +142,59 @@ class LayeredDedup:
             self._local_id_cache[msg_id] = time.time()
 
         if self.redis:
-            try:
-                result = self.redis.execute(
-                    "set",
-                    f"dedup:msgid:{msg_id}",
-                    "1",
-                    "nx",
-                    "ex",
-                    self.config.redis_id_ttl,
-                )
-                if result is True:
-                    return True
-                with self._local_lock:
-                    self._local_id_cache.pop(msg_id, None)
-                self.stats["redis_hits"] += 1
-                return False
-            except Exception:
-                if self.config.fallback_to_local_on_redis_failure:
-                    return True
-                with self._local_lock:
-                    self._local_id_cache.pop(msg_id, None)
-                return False
+            result = self.redis.execute(
+                "set",
+                f"dedup:msgid:{msg_id}",
+                "1",
+                "nx",
+                "ex",
+                self.config.redis_id_ttl,
+            )
+            if result is None:
+                # Redis 不可用，执行降级策略
+                if not self.config.fallback_to_local_on_redis_failure:
+                    with self._local_lock:
+                        self._local_id_cache.pop(msg_id, None)
+                    return False
+                # 降级放行（本地缓存已记录）
+                return True
+            if result is True:
+                return True
+            # Redis 返回 False，表示重复
+            with self._local_lock:
+                self._local_id_cache.pop(msg_id, None)
+            self.stats["redis_hits"] += 1
+            return False
         return True
 
     def check_and_add_content(self, content: str, user_id: int) -> bool:
-        """基于内容指纹的去重检查。"""
+        """基于内容指纹的去重检查，修复布隆逻辑矛盾与 Redis 降级。"""
         fingerprint = self._make_fingerprint(content, user_id)
         with self._local_lock:
             if fingerprint in self._local_content_cache:
                 self.stats["local_hits"] += 1
                 return False
 
-        if self.bloom and not self.bloom.check_and_add(fingerprint):
-            with self._local_lock:
-                self._local_content_cache[fingerprint] = time.time()
-            return True
+        # 布隆过滤器：True 表示绝对不存在，False 表示可能存在
+        if self.bloom:
+            is_new = self.bloom.check_and_add(fingerprint)
+            if is_new:
+                with self._local_lock:
+                    self._local_content_cache[fingerprint] = time.time()
+                return True
+            # 布隆认为可能存在，继续精确检查
 
         if self.redis:
-            try:
-                result = self.redis.execute(
-                    "set",
-                    f"dedup:content:{fingerprint}",
-                    "1",
-                    "nx",
-                    "ex",
-                    self.config.redis_content_ttl,
-                )
-                if result is True:
-                    with self._local_lock:
-                        self._local_content_cache[fingerprint] = time.time()
-                    return True
-                self.stats["redis_hits"] += 1
-                return False
-            except Exception:
+            result = self.redis.execute(
+                "set",
+                f"dedup:content:{fingerprint}",
+                "1",
+                "nx",
+                "ex",
+                self.config.redis_content_ttl,
+            )
+            if result is None:
+                # Redis 不可用，降级策略
                 if self.config.fallback_to_local_on_redis_failure:
                     with self._local_lock:
                         if fingerprint in self._local_content_cache:
@@ -206,6 +202,12 @@ class LayeredDedup:
                         self._local_content_cache[fingerprint] = time.time()
                     return True
                 return False
+            if result is True:
+                with self._local_lock:
+                    self._local_content_cache[fingerprint] = time.time()
+                return True
+            self.stats["redis_hits"] += 1
+            return False
         with self._local_lock:
             self._local_content_cache[fingerprint] = time.time()
         return True

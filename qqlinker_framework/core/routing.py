@@ -30,6 +30,17 @@ class CommandRouter:
             if cmd_info.get("op_only", False) and not self.adapter.is_user_admin(
                 event.user_id, self.config_mgr
             ):
+                # 构建上下文并回复权限错误
+                ctx = CommandContext(
+                    user_id=event.user_id,
+                    group_id=event.group_id,
+                    nickname=event.nickname,
+                    message=event.message,
+                    args=[],
+                    adapter=self.adapter,
+                    message_mgr=self.message_mgr,
+                )
+                await ctx.reply("权限不足，该命令仅管理员可用。")
                 logging.getLogger(__name__).warning(
                     "用户 %d 尝试越权执行命令 %s",
                     event.user_id,
