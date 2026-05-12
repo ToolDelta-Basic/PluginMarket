@@ -148,6 +148,7 @@ class DebugEngine:
     def _make_async_wrapper(self, original, svc_name, m_name):
         """为异步方法创建记录包装器。"""
         async def wrapper(*args, **kwargs):
+            """自动记录异步API调用的耗时、参数与异常。"""
             start = time.time()
             try:
                 result = await original(*args, **kwargs)
@@ -171,6 +172,7 @@ class DebugEngine:
     def _make_sync_wrapper(self, original, svc_name, m_name):
         """为同步方法创建记录包装器。"""
         def wrapper(*args, **kwargs):
+            """自动记录同步API调用的耗时、参数与异常。"""
             start = time.time()
             try:
                 result = original(*args, **kwargs)
