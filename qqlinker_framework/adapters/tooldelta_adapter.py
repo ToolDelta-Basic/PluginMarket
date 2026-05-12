@@ -191,6 +191,7 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     ) -> None:
         """监听 ToolDelta 内部广播，自动提取 event.data 再回调。"""
         def wrapper(event):
+            """从 InternalBroadcast 对象中提取 data 字典并回调。"""
             data = getattr(event, "data", {})
             handler(data)
         self.plugin.ListenInternalBroadcast(name, wrapper)
