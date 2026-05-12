@@ -22,6 +22,7 @@ from ..managers.tool_mgr import ToolManager
 from ..adapters.base import IFrameworkAdapter
 from ..services.ws_client import WsClient, HAS_WEBSOCKET
 from ..services.dedup import LayeredDedup, DedupConfig
+from ..services.debug_engine import DebugEngine
 from .events import (
     GroupMessageEvent,
     GameChatEvent,
@@ -183,6 +184,9 @@ class FrameworkHost:
         self.dedup = LayeredDedup(dedup_cfg)
         self.services.register("dedup", self.dedup)
 
+        debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
+        self.services.register("debug", debug_engine)
+
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
 
@@ -214,6 +218,7 @@ class FrameworkHost:
 
         # 初始化所有模块
         self._modules = await self.module_mgr.initialize_all()
+        debug_engine.install_hooks()
 
         # 注册命令路由（仅在有 WS 时）
         if HAS_WEBSOCKET:

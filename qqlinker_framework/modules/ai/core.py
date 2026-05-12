@@ -85,6 +85,13 @@ class AICore(Module):
         register_all(self.tool)
         self.services.register("llm_client", self.llm_factory)
 
+        # 通知调试引擎包装 LLM 客户端监控
+        try:
+            debug_engine = self.services.get("debug")
+            debug_engine.wrap_now("llm_client", ["chat"])
+        except KeyError:
+            pass
+
         triggers = self.config.get("AI助手.触发词", ["/ai"])
         for trigger in triggers:
             self.register_command(
