@@ -52,10 +52,9 @@ class QQLinkerFrameworkPlugin(Plugin):
         try:
             self._loop.run_until_complete(self._host.start())
             self._loop.run_forever()
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"[Framework] 运行异常: {e}")
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("框架运行异常")
         finally:
             self._loop.close()
 

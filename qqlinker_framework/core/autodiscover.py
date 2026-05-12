@@ -1,8 +1,11 @@
 """模块自动发现引擎"""
 import importlib
+import logging
 import pkgutil
 from typing import List, Type
 from .module import Module
+
+logger = logging.getLogger(__name__)
 
 
 def discover_modules(
@@ -13,7 +16,7 @@ def discover_modules(
     try:
         package = importlib.import_module(package_name)
     except ImportError:
-        print(f"[AutoDiscover] 包 '{package_name}' 不存在")
+        logger.warning("包 '%s' 不存在", package_name)
         return module_classes
     _walk_package(package, module_classes)
     return module_classes
@@ -30,12 +33,12 @@ def _walk_package(package, result: List[Type[Module]]):
                 sub_pkg = importlib.import_module(modname)
                 _walk_package(sub_pkg, result)
             except Exception as e:
-                print(f"[AutoDiscover] 导入子包 {modname} 失败: {e}")
+                logger.exception("导入子包 %s 失败: %s", modname, e)
         else:
             try:
                 mod = importlib.import_module(modname)
             except Exception as e:
-                print(f"[AutoDiscover] 导入模块 {modname} 失败: {e}")
+                logger.exception("导入模块 %s 失败: %s", modname, e)
                 continue
             for attr_name in dir(mod):
                 attr = getattr(mod, attr_name)
@@ -43,7 +46,7 @@ def _walk_package(package, result: List[Type[Module]]):
                     isinstance(attr, type)
                     and issubclass(attr, Module)
                     and attr is not Module
-                    and getattr(attr, 'name', None)
+                    and getattr(attr, "name", None)
                 ):
                     result.append(attr)
 
@@ -67,8 +70,8 @@ def _build_dependency_graph(classes: List[Type[Module]]):
                 graph[dep].append(cls.name)
                 in_degree[cls.name] += 1
             else:
-                print(
-                    f"[AutoDiscover] 模块 {cls.name} 依赖的 {dep} 未找到"
+                logger.warning(
+                    "模块 %s 依赖的 %s 未找到", cls.name, dep
                 )
     return name_to_cls, in_degree, graph
 
@@ -98,7 +101,7 @@ def sort_by_dependencies(
     name_to_cls, in_degree, graph = _build_dependency_graph(classes)
     sorted_classes = _topological_sort(name_to_cls, in_degree, graph)
     if sorted_classes is None:
-        print("[AutoDiscover] 检测到循环依赖，将使用原始顺序")
+        logger.warning("检测到循环依赖，将使用原始顺序")
         return classes
     result = list(sorted_classes)
     for cls in classes:

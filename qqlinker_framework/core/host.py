@@ -1,5 +1,6 @@
 """FrameworkHost - 框架核心调度器"""
 import asyncio
+import json
 import logging
 import os
 import sys
@@ -145,6 +146,12 @@ class FrameworkHost:
             "管理框架 Python 依赖",
             self._console_cmd_qqdeps,
         )
+        self.adapter.register_console_command(
+            ["qqhealth"],
+            "",
+            "查看框架健康状态",
+            self._console_cmd_health,
+        )
 
         # 注册所有核心配置节及其默认值
         self.config_mgr.register_section("网络连接", {
@@ -158,6 +165,12 @@ class FrameworkHost:
             "本地最大条目数": 10000,
             "启用Redis": False,
             "Redis地址": "redis://localhost:6379/0",
+        })
+        self.config_mgr.register_section("调试引擎", {
+            "启用": True,
+            "消息记录上限": 200,
+            "API记录上限": 100,
+            "启用WebSocket原始帧": False,
         })
 
         # 加载配置文件（缺失的节或字段会自动补全）
@@ -184,6 +197,7 @@ class FrameworkHost:
         self.dedup = LayeredDedup(dedup_cfg)
         self.services.register("dedup", self.dedup)
 
+        # 初始化调试引擎并注册为服务
         debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
         self.services.register("debug", debug_engine)
 
@@ -218,6 +232,8 @@ class FrameworkHost:
 
         # 初始化所有模块
         self._modules = await self.module_mgr.initialize_all()
+
+        # 安装调试引擎监控钩子
         debug_engine.install_hooks()
 
         # 注册命令路由（仅在有 WS 时）
@@ -349,6 +365,27 @@ class FrameworkHost:
         else:
             print("[qqdeps] 部分或全部依赖安装失败，请检查日志")
 
+    def _console_cmd_health(self, args: list):
+        """控制台命令：输出框架健康状态。"""
+        status = {
+            "ws_connected": (
+                self.ws_client.available if self.ws_client else False
+            ),
+            "loaded_modules": self.module_mgr.get_loaded_modules(),
+            "counters": {},
+            "redis_connected": False,
+        }
+        if self.dedup and self.dedup.redis and self.dedup.redis.client:
+            try:
+                self.dedup.redis.client.ping()
+                status["redis_connected"] = True
+            except Exception:
+                pass
+        debug = self.services.get("debug")
+        if debug:
+            status["counters"] = debug.get_counters()
+        print(json.dumps(status, ensure_ascii=False, indent=2))
+
     def _on_game_chat_bridge(self, player_name: str, message: str):
         """将游戏聊天事件桥接到事件总线（线程安全）。"""
         if self._main_loop and self._main_loop.is_running():
@@ -365,7 +402,9 @@ class FrameworkHost:
         """玩家加入事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
+                self.event_bus.publish(
+                    PlayerJoinEvent(player_name=player_name)
+                ),
                 self._main_loop,
             )
 

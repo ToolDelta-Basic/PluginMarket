@@ -24,11 +24,21 @@ class DebugEngine:
             "group": deque(maxlen=200),
             "game": deque(maxlen=200),
             "internal": deque(maxlen=200),
-            "ws_raw": deque(maxlen=50),    # 较小，因可能很频繁
+            "ws_raw": deque(maxlen=50),
         }
         # API 调用日志缓冲区
         self._api_logs: deque = deque(maxlen=200)
         self._hooks_installed = False
+
+        # 指标计数器
+        self._counters = {
+            "group_msgs": 0,
+            "game_msgs": 0,
+            "api_calls": 0,
+            "api_errors": 0,
+            "slow_api_calls": 0,
+        }
+        self._slow_threshold = 1.0   # 秒，超过则告警
 
     # ---------- 模块操作注册 ----------
     async def register_module(self, name: str, ops: Dict[str, Callable]):
@@ -89,6 +99,7 @@ class DebugEngine:
         self._hooks_installed = True
 
     def _on_group_msg(self, event):
+        """记录群消息到缓冲区。"""
         self._msg_buffers["group"].append({
             "timestamp": time.time(),
             "user_id": event.user_id,
@@ -96,15 +107,19 @@ class DebugEngine:
             "nickname": event.nickname,
             "message": event.message[:500],
         })
+        self._counters["group_msgs"] += 1
 
     def _on_game_chat(self, event):
+        """记录游戏聊天消息到缓冲区。"""
         self._msg_buffers["game"].append({
             "timestamp": time.time(),
             "player": event.player_name,
             "message": event.message[:500],
         })
+        self._counters["game_msgs"] += 1
 
     def _on_pos(self, event):
+        """记录玩家坐标事件简况。"""
         self._msg_buffers["internal"].append({
             "timestamp": time.time(),
             "type": "PlayerPositionEvent",
@@ -112,9 +127,9 @@ class DebugEngine:
             "sample": str(event.positions)[:200],
         })
 
-    # ---------- API 包装辅助 ----------
+    # ---------- API 包装（真正安装到服务对象） ----------
     def _wrap_service(self, service_name: str, methods: List[str]):
-        """包装指定服务的方法以记录调用。"""
+        """包装指定服务的方法，用于记录调用日志和指标。"""
         try:
             svc = self._services.get(service_name)
         except KeyError:
@@ -126,65 +141,55 @@ class DebugEngine:
             original = getattr(svc, method_name)
             if getattr(original, "_debug_wrapped", False):
                 continue
-            def make_wrapper(orig, svc_name, m_name):
-                if asyncio.iscoroutinefunction(orig):
-                    async def async_wrapper(*args, **kwargs):
-                        start = time.time()
-                        try:
-                            result = await orig(*args, **kwargs)
-                        except Exception as e:
-                            self._api_logs.append({
-                                "timestamp": time.time(),
-                                "service": svc_name,
-                                "method": m_name,
-                                "args": str(args)[:200],
-                                "kwargs": str(kwargs)[:200],
-                                "error": str(e),
-                                "elapsed": time.time() - start,
-                            })
-                            raise
-                        self._api_logs.append({
-                            "timestamp": time.time(),
-                            "service": svc_name,
-                            "method": m_name,
-                            "args": str(args)[:200],
-                            "kwargs": str(kwargs)[:200],
-                            "result": str(result)[:500],
-                            "elapsed": time.time() - start,
-                        })
-                        return result
-                    async_wrapper._debug_wrapped = True
-                    async_wrapper.__doc__ = orig.__doc__
-                    return async_wrapper
-                else:
-                    def sync_wrapper(*args, **kwargs):
-                        start = time.time()
-                        try:
-                            result = orig(*args, **kwargs)
-                        except Exception as e:
-                            self._api_logs.append({
-                                "timestamp": time.time(),
-                                "service": svc_name,
-                                "method": m_name,
-                                "args": str(args)[:200],
-                                "kwargs": str(kwargs)[:200],
-                                "error": str(e),
-                                "elapsed": time.time() - start,
-                            })
-                            raise
-                        self._api_logs.append({
-                            "timestamp": time.time(),
-                            "service": svc_name,
-                            "method": m_name,
-                            "args": str(args)[:200],
-                            "kwargs": str(kwargs)[:200],
-                            "result": str(result)[:500],
-                            "elapsed": time.time() - start,
-                        })
-                        return result
-                    sync_wrapper._debug_wrapped = True
-                    sync_wrapper.__doc__ = orig.__doc__
-                    return sync_wrapper
+
+            # 根据原函数类型创建包装函数并立即安装到服务对象上
+            if asyncio.iscoroutinefunction(original):
+                async def async_wrapper(*args, _orig=original, _svc=service_name, _m=method_name, **kwargs):
+                    """异步方法包装器，记录调用信息。"""
+                    start = time.time()
+                    try:
+                        result = await _orig(*args, **kwargs)
+                    except Exception as e:
+                        self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], None, e, time.time() - start)
+                        raise
+                    self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], result, None, time.time() - start)
+                    return result
+                async_wrapper._debug_wrapped = True
+                async_wrapper.__doc__ = original.__doc__
+                setattr(svc, method_name, async_wrapper)
+            else:
+                def sync_wrapper(*args, _orig=original, _svc=service_name, _m=method_name, **kwargs):
+                    """同步方法包装器，记录调用信息。"""
+                    start = time.time()
+                    try:
+                        result = _orig(*args, **kwargs)
+                    except Exception as e:
+                        self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], None, e, time.time() - start)
+                        raise
+                    self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], result, None, time.time() - start)
+                    return result
+                sync_wrapper._debug_wrapped = True
+                sync_wrapper.__doc__ = original.__doc__
+                setattr(svc, method_name, sync_wrapper)
+
+    def _record_api_call(self, service, method, args, kwargs, result, error, elapsed):
+        """记录一次 API 调用并更新计数器。"""
+        self._api_logs.append({
+            "timestamp": time.time(),
+            "service": service,
+            "method": method,
+            "args": args,
+            "kwargs": kwargs,
+            "result": str(result)[:500] if error is None else None,
+            "error": str(error) if error else None,
+            "elapsed": elapsed,
+        })
+        self._counters["api_calls"] += 1
+        if error:
+            self._counters["api_errors"] += 1
+        if elapsed > self._slow_threshold:
+            self._counters["slow_api_calls"] += 1
+            _logger.warning("慢API调用: %s.%s 耗时 %.2fs", service, method, elapsed)
 
     # ---------- 查询接口 ----------
     def get_message_log(self, channel: str, limit: int = 20) -> List[Dict]:
@@ -209,6 +214,10 @@ class DebugEngine:
             for buf in self._msg_buffers.values():
                 buf.clear()
             self._api_logs.clear()
+
+    def get_counters(self) -> Dict[str, int]:
+        """返回消息量和 API 调用指标。"""
+        return self._counters.copy()
 
     # ---------- 动态包装接口 ----------
     def wrap_now(self, service_name: str, methods: List[str]):
