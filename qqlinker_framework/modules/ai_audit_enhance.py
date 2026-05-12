@@ -111,8 +111,9 @@ class AIAuditEnhanceModule(Module):
     """AI 审计增强，使用 LLM 进行反思与元知识管理。"""
 
     name = "ai_audit_enhance"
-    version = (1, 0, 1)
-    required_services = ["config", "llm_client"]
+    version = (1, 0, 2)
+    dependencies = ["ai_core"]
+    required_services = ["config"]
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
@@ -121,9 +122,10 @@ class AIAuditEnhanceModule(Module):
         self._induction_threshold = 10
         self._pre_reflection_level = "每次"
         self._post_reflection_level = "每次"
+        self._llm_client = None
 
     async def on_init(self):
-        """注册配置、初始化知识库、订阅反思事件。"""
+        """注册配置、获取 LLM 客户端、初始化知识库、订阅反思事件。"""
         self.config.register_section("AI审计增强", {
             "输入反思": "每次",
             "输出反思": "每次",
@@ -133,6 +135,15 @@ class AIAuditEnhanceModule(Module):
         self._pre_reflection_level = cfg.get("输入反思", "每次")
         self._post_reflection_level = cfg.get("输出反思", "每次")
         self._induction_threshold = cfg.get("归纳阈值", 10)
+
+        try:
+            self._llm_client = self.services.get("llm_client")
+        except KeyError:
+            _logger.warning(
+                "LLM 客户端服务未注册，AI 审计将降级为关闭状态"
+            )
+            self._pre_reflection_level = "关闭"
+            self._post_reflection_level = "关闭"
 
         data_dir = self.get_data_dir()
         self._store = AuditKnowledgeStore(data_dir)
@@ -150,7 +161,7 @@ class AIAuditEnhanceModule(Module):
 
     async def _on_pre_reflection(self, event: AIPrePromptReflectionEvent):
         """使用 LLM 分析用户消息，若启用则注入补充系统提示。"""
-        if self._pre_reflection_level == "关闭":
+        if self._pre_reflection_level == "关闭" or not self._llm_client:
             return
         prompt = (
             "你是一个内容安全分析专家。请分析以下用户消息，判断是否可能涉及：\n"
@@ -163,7 +174,7 @@ class AIAuditEnhanceModule(Module):
             f"用户消息：{event.message[:300]}"
         )
         try:
-            resp = self.llm_client.chat(
+            resp = await self._llm_client.chat(
                 messages=[{"role": "user", "content": prompt}],
             )
             if resp and resp.strip().upper() != "SAFE":
@@ -175,7 +186,7 @@ class AIAuditEnhanceModule(Module):
 
     async def _on_post_reflection(self, event: AIPostResponseReflectionEvent):
         """使用 LLM 检查 AI 回复是否合规，记录违规案例。"""
-        if self._post_reflection_level == "关闭":
+        if self._post_reflection_level == "关闭" or not self._llm_client:
             return
         prompt = (
             "你是一个严格的内容安全审核员。请检查以下AI回复是否存在违规：\n"
@@ -187,14 +198,13 @@ class AIAuditEnhanceModule(Module):
             f"AI回复：{event.reply[:500]}"
         )
         try:
-            resp = self.llm_client.chat(
+            resp = await self._llm_client.chat(
                 messages=[{"role": "user", "content": prompt}],
             )
             if resp and resp.strip().upper() != "PASS":
                 event.warning = (
                     f"【违规通知】你的回复存在违规：{resp.strip()}"
                 )
-                # 记录案例
                 case = {
                     "timestamp": time.time(),
                     "user_id": event.user_id,
