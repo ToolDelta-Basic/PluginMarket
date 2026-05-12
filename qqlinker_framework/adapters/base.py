@@ -76,11 +76,11 @@ class IFrameworkAdapter(ABC):
         """发送游戏指令并等待响应文本，超时返回 None。"""
 
     @abstractmethod
-    def send_game_command_full(
+    def send_game_command_with_resp(
         self, cmd: str, timeout: float = 5.0
     ) -> Optional[Dict[str, Any]]:
         """发送游戏指令并返回完整响应。
-        
+    
         Returns:
             None 表示异常或超时，否则返回字典：
             {

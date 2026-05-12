@@ -1,7 +1,6 @@
 # adapters/tooldelta_adapter.py
 """ToolDelta 平台适配器实现"""
 import logging
-import json
 from typing import Callable, Dict, Any, List, Optional
 from tooldelta import Plugin, Player, Chat
 from .base import IFrameworkAdapter
