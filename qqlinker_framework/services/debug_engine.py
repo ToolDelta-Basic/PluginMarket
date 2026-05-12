@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 """调试引擎 —— 框架级可观测性服务，提供模块调试操作注册、消息/API监控。"""
 import asyncio
 import logging
@@ -19,18 +20,15 @@ class DebugEngine:
         self._ops: Dict[str, Dict[str, Callable]] = {}
         self._lock = asyncio.Lock()
 
-        # 消息通道缓冲区
         self._msg_buffers: Dict[str, deque] = {
             "group": deque(maxlen=200),
             "game": deque(maxlen=200),
             "internal": deque(maxlen=200),
             "ws_raw": deque(maxlen=50),
         }
-        # API 调用日志缓冲区
         self._api_logs: deque = deque(maxlen=200)
         self._hooks_installed = False
 
-        # 指标计数器
         self._counters = {
             "group_msgs": 0,
             "game_msgs": 0,
@@ -38,14 +36,13 @@ class DebugEngine:
             "api_errors": 0,
             "slow_api_calls": 0,
         }
-        self._slow_threshold = 1.0   # 秒，超过则告警
+        self._slow_threshold = 1.0
 
     # ---------- 模块操作注册 ----------
     async def register_module(self, name: str, ops: Dict[str, Callable]):
         """注册一个模块的调试操作。"""
         async with self._lock:
             self._ops[name] = ops
-            _logger.debug("注册调试模块: %s, 操作: %s", name, list(ops.keys()))
 
     async def unregister_module(self, name: str):
         """注销模块的所有调试操作。"""
@@ -83,18 +80,15 @@ class DebugEngine:
         """安装事件监听和 API 方法包装。"""
         if self._hooks_installed:
             return
-        # 监听 EventBus 事件
         self._event_bus.subscribe("GroupMessageEvent", self._on_group_msg, 0)
         self._event_bus.subscribe("GameChatEvent", self._on_game_chat, 0)
         self._event_bus.subscribe("PlayerPositionEvent", self._on_pos, 0)
-        # 包装适配器方法
         self._wrap_service("adapter", [
             "send_game_command_with_resp",
             "send_game_command_full",
             "get_online_players",
             "get_player_positions",
         ])
-        # 尝试包装工具管理器（若尚未就绪，后续可再次尝试）
         self._wrap_service("tool", ["execute"])
         self._hooks_installed = True
 
@@ -127,13 +121,12 @@ class DebugEngine:
             "sample": str(event.positions)[:200],
         })
 
-    # ---------- API 包装（真正安装到服务对象） ----------
+    # ---------- API 包装 ----------
     def _wrap_service(self, service_name: str, methods: List[str]):
         """包装指定服务的方法，用于记录调用日志和指标。"""
         try:
             svc = self._services.get(service_name)
         except KeyError:
-            _logger.debug("服务 %s 尚未注册，跳过包装", service_name)
             return
         for method_name in methods:
             if not hasattr(svc, method_name):
@@ -142,37 +135,65 @@ class DebugEngine:
             if getattr(original, "_debug_wrapped", False):
                 continue
 
-            # 根据原函数类型创建包装函数并立即安装到服务对象上
             if asyncio.iscoroutinefunction(original):
-                async def async_wrapper(*args, _orig=original, _svc=service_name, _m=method_name, **kwargs):
-                    """异步方法包装器，记录调用信息。"""
-                    start = time.time()
-                    try:
-                        result = await _orig(*args, **kwargs)
-                    except Exception as e:
-                        self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], None, e, time.time() - start)
-                        raise
-                    self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], result, None, time.time() - start)
-                    return result
-                async_wrapper._debug_wrapped = True
-                async_wrapper.__doc__ = original.__doc__
-                setattr(svc, method_name, async_wrapper)
+                wrapper = self._make_async_wrapper(
+                    original, service_name, method_name,
+                )
             else:
-                def sync_wrapper(*args, _orig=original, _svc=service_name, _m=method_name, **kwargs):
-                    """同步方法包装器，记录调用信息。"""
-                    start = time.time()
-                    try:
-                        result = _orig(*args, **kwargs)
-                    except Exception as e:
-                        self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], None, e, time.time() - start)
-                        raise
-                    self._record_api_call(_svc, _m, str(args)[:200], str(kwargs)[:200], result, None, time.time() - start)
-                    return result
-                sync_wrapper._debug_wrapped = True
-                sync_wrapper.__doc__ = original.__doc__
-                setattr(svc, method_name, sync_wrapper)
+                wrapper = self._make_sync_wrapper(
+                    original, service_name, method_name,
+                )
+            setattr(svc, method_name, wrapper)
 
-    def _record_api_call(self, service, method, args, kwargs, result, error, elapsed):
+    def _make_async_wrapper(self, original, svc_name, m_name):
+        """为异步方法创建记录包装器。"""
+        async def wrapper(*args, **kwargs):
+            start = time.time()
+            try:
+                result = await original(*args, **kwargs)
+            except Exception as exc:
+                self._record_api_call(
+                    svc_name, m_name,
+                    str(args)[:200], str(kwargs)[:200],
+                    None, exc, time.time() - start,
+                )
+                raise
+            self._record_api_call(
+                svc_name, m_name,
+                str(args)[:200], str(kwargs)[:200],
+                result, None, time.time() - start,
+            )
+            return result
+        wrapper._debug_wrapped = True
+        wrapper.__doc__ = original.__doc__
+        return wrapper
+
+    def _make_sync_wrapper(self, original, svc_name, m_name):
+        """为同步方法创建记录包装器。"""
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            try:
+                result = original(*args, **kwargs)
+            except Exception as exc:
+                self._record_api_call(
+                    svc_name, m_name,
+                    str(args)[:200], str(kwargs)[:200],
+                    None, exc, time.time() - start,
+                )
+                raise
+            self._record_api_call(
+                svc_name, m_name,
+                str(args)[:200], str(kwargs)[:200],
+                result, None, time.time() - start,
+            )
+            return result
+        wrapper._debug_wrapped = True
+        wrapper.__doc__ = original.__doc__
+        return wrapper
+
+    def _record_api_call(
+        self, service, method, args, kwargs, result, error, elapsed,
+    ):
         """记录一次 API 调用并更新计数器。"""
         self._api_logs.append({
             "timestamp": time.time(),
@@ -189,7 +210,9 @@ class DebugEngine:
             self._counters["api_errors"] += 1
         if elapsed > self._slow_threshold:
             self._counters["slow_api_calls"] += 1
-            _logger.warning("慢API调用: %s.%s 耗时 %.2fs", service, method, elapsed)
+            _logger.warning(
+                "慢API调用: %s.%s 耗时 %.2fs", service, method, elapsed,
+            )
 
     # ---------- 查询接口 ----------
     def get_message_log(self, channel: str, limit: int = 20) -> List[Dict]:
@@ -219,7 +242,6 @@ class DebugEngine:
         """返回消息量和 API 调用指标。"""
         return self._counters.copy()
 
-    # ---------- 动态包装接口 ----------
     def wrap_now(self, service_name: str, methods: List[str]):
-        """立即包装指定的已注册服务（供模块在服务就绪后调用）。"""
+        """立即包装指定的已注册服务。"""
         self._wrap_service(service_name, methods)

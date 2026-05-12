@@ -35,29 +35,10 @@ access_log = logging.getLogger("access")
 
 
 class FrameworkHost:
-    """框架核心调度器，负责初始化所有服务、管理器、模块并控制生命周期。
-
-    Attributes:
-        adapter: 平台适配器实现。
-        services: 服务容器。
-        event_bus: 事件总线。
-        config_mgr: 配置管理器。
-        package_mgr: 依赖包管理器。
-        command_mgr: 命令注册管理器。
-        tool_mgr: 工具管理器。
-        module_mgr: 模块生命周期管理器。
-        message_mgr: 削峰填谷消息管理器。
-        dedup: 多层去重引擎。
-        ws_client: WebSocket 客户端实例。
-    """
+    """框架核心调度器，负责初始化所有服务、管理器、模块并控制生命周期。"""
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
-        """初始化框架主机，创建各管理器和服务。
-
-        Args:
-            adapter: 平台适配器实例。
-            data_path: 数据目录路径，用于配置文件、日志等。
-        """
+        """初始化框架主机，创建各管理器和服务。"""
         self.adapter = adapter
         self.services = ServiceContainer()
         self.event_bus = EventBus()
@@ -91,21 +72,13 @@ class FrameworkHost:
         self._game_events_bridged = False
 
     def register_module(self, module_cls: Type[Module]):
-        """向模块管理器注册一个模块类。
-
-        Args:
-            module_cls: 继承自 Module 的类。
-        """
+        """向模块管理器注册一个模块类。"""
         self.module_mgr.register(module_cls)
 
     def register_modules_from_package(
         self, package_name: str = "qqlinker_framework.modules"
     ):
-        """从指定 Python 包自动发现并注册所有模块。
-
-        Args:
-            package_name: 包名，默认 'modules'。
-        """
+        """从指定 Python 包自动发现并注册所有模块。"""
         classes = discover_modules(package_name)
         if not classes:
             logging.getLogger(__name__).warning("未发现任何模块")
@@ -124,7 +97,6 @@ class FrameworkHost:
         self._main_loop = asyncio.get_running_loop()
         self._ensure_log_handlers()
 
-        # ------ 创建中文目录结构 ------
         data_dir = self.data_path
         dirs = [
             os.path.join(data_dir, "模块"),
@@ -134,9 +106,7 @@ class FrameworkHost:
         ]
         for d in dirs:
             os.makedirs(d, exist_ok=True)
-        # -----------------------------
 
-        # 包管理器安装目标设为 第三方库/ 目录
         site_pkgs = os.path.join(self.data_path, "第三方库")
         self.package_mgr.set_target_dir(site_pkgs)
 
@@ -153,7 +123,6 @@ class FrameworkHost:
             self._console_cmd_health,
         )
 
-        # 注册所有核心配置节及其默认值
         self.config_mgr.register_section("网络连接", {
             "地址": "ws://127.0.0.1:8080",
             "令牌": "",
@@ -173,10 +142,8 @@ class FrameworkHost:
             "启用WebSocket原始帧": False,
         })
 
-        # 加载配置文件（缺失的节或字段会自动补全）
         self.config_mgr.load()
 
-        # 读取网络连接配置
         ws_address = self.config_mgr.get(
             "网络连接.地址", "ws://127.0.0.1:8080"
         )
@@ -186,7 +153,6 @@ class FrameworkHost:
         if hasattr(self.adapter, 'set_config_mgr'):
             self.adapter.set_config_mgr(self.config_mgr)
 
-        # 去重服务初始化
         dedup_cfg = DedupConfig(
             local_id_ttl=self.config_mgr.get("去重.本地ID有效期秒", 300),
             local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120),
@@ -197,14 +163,12 @@ class FrameworkHost:
         self.dedup = LayeredDedup(dedup_cfg)
         self.services.register("dedup", self.dedup)
 
-        # 初始化调试引擎并注册为服务
         debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
         self.services.register("debug", debug_engine)
 
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
 
-        # WebSocket 连接初始化
         if HAS_WEBSOCKET:
             self.ws_client = WsClient(
                 {"ws_address": ws_address, "ws_token": ws_token}
@@ -221,7 +185,6 @@ class FrameworkHost:
                 "websocket-client 未安装，跳过 WS 连接"
             )
 
-        # 桥接游戏原生事件
         if not self._game_events_bridged:
             if hasattr(self.adapter, 'main_loop'):
                 self.adapter.main_loop = self._main_loop
@@ -230,13 +193,10 @@ class FrameworkHost:
             self.adapter.listen_player_leave(self._on_player_leave_bridge)
             self._game_events_bridged = True
 
-        # 初始化所有模块
         self._modules = await self.module_mgr.initialize_all()
 
-        # 安装调试引擎监控钩子
         debug_engine.install_hooks()
 
-        # 注册命令路由（仅在有 WS 时）
         if HAS_WEBSOCKET:
             router = CommandRouter(
                 self.command_mgr,
@@ -251,7 +211,6 @@ class FrameworkHost:
         from .events import SystemStartEvent
         await self.event_bus.publish(SystemStartEvent())
 
-        # 日志输出连接状态
         if self.ws_client and self.ws_client.available:
             logging.getLogger(__name__).info("WebSocket 已就绪")
         elif self.ws_client:
@@ -294,7 +253,6 @@ class FrameworkHost:
 
         logging.getLogger("websocket").setLevel(logging.WARNING)
 
-        # 访问日志单独处理
         if not any(
             isinstance(h, logging.FileHandler)
             and h.baseFilename == os.path.abspath(file_path)
@@ -311,10 +269,9 @@ class FrameworkHost:
         access_log.propagate = False
 
     async def stop(self):
-        """优雅停止框架：发布停止事件、停止模块、关闭消息管理器和WS连接。"""
+        """优雅停止框架。"""
         logger = logging.getLogger(__name__)
         from .events import SystemStopEvent
-
         await self.event_bus.publish(SystemStopEvent())
         for mod in self._modules:
             await mod.on_stop()
@@ -324,11 +281,7 @@ class FrameworkHost:
         logger.info("框架已停止")
 
     def _console_cmd_qqdeps(self, args: list):
-        """控制台命令 qqdeps 处理，用于检查或安装依赖。
-
-        Args:
-            args: 命令行参数列表，首个元素为 check 或 install。
-        """
+        """控制台命令 qqdeps。"""
         if not args:
             print("用法: qqdeps check | install")
             return
@@ -354,11 +307,7 @@ class FrameworkHost:
             print("未知子命令，请使用 check 或 install")
 
     def _install_deps_thread(self, packages: list):
-        """后台线程执行 pip 安装。
-
-        Args:
-            packages: 待安装的包名列表。
-        """
+        """后台线程执行 pip 安装。"""
         success = self.package_mgr.install_packages(packages)
         if success:
             print("[qqdeps] 依赖安装成功，请重载插件以使新模块生效")
@@ -387,13 +336,11 @@ class FrameworkHost:
         print(json.dumps(status, ensure_ascii=False, indent=2))
 
     def _on_game_chat_bridge(self, player_name: str, message: str):
-        """将游戏聊天事件桥接到事件总线（线程安全）。"""
+        """将游戏聊天事件桥接到事件总线。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 self.event_bus.publish(
-                    GameChatEvent(
-                        player_name=player_name, message=message
-                    )
+                    GameChatEvent(player_name=player_name, message=message)
                 ),
                 self._main_loop,
             )
@@ -402,9 +349,7 @@ class FrameworkHost:
         """玩家加入事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(
-                    PlayerJoinEvent(player_name=player_name)
-                ),
+                self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
                 self._main_loop,
             )
 
@@ -412,18 +357,12 @@ class FrameworkHost:
         """玩家离开事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(
-                    PlayerLeaveEvent(player_name=player_name)
-                ),
+                self.event_bus.publish(PlayerLeaveEvent(player_name=player_name)),
                 self._main_loop,
             )
 
     def _on_ws_group_message(self, raw: dict):
-        """处理来自 WebSocket 的群消息，经过去重和链接验证后发布事件。
-
-        Args:
-            raw: OneBot 格式的原始消息字典。
-        """
+        """处理 WebSocket 群消息。"""
         linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
         group_id = raw.get("group_id")
         if group_id not in linked_groups:
@@ -476,36 +415,15 @@ class FrameworkHost:
             )
 
     async def unload_module(self, module_name: str) -> bool:
-        """卸载指定名称的模块。
-
-        Args:
-            module_name: 模块名称。
-
-        Returns:
-            卸载是否成功。
-        """
+        """卸载指定名称的模块。"""
         return await self.module_mgr.unload_module(module_name)
 
     async def load_module(
         self, module_cls: Type[Module]
     ) -> Optional[Module]:
-        """加载一个新的模块类实例。
-
-        Args:
-            module_cls: 模块类。
-
-        Returns:
-            加载后的模块实例，失败返回 None。
-        """
+        """加载一个新的模块类实例。"""
         return await self.module_mgr.load_module(module_cls)
 
     async def reload_module(self, module_name: str) -> bool:
-        """重载指定模块（先卸载再加载）。
-
-        Args:
-            module_name: 模块名称。
-
-        Returns:
-            是否成功。
-        """
+        """重载指定模块（先卸载再加载）。"""
         return await self.module_mgr.reload_module(module_name)
