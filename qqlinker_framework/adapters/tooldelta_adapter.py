@@ -189,5 +189,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def listen_internal_broadcast(
         self, name: str, handler: Callable[[Dict[str, Any]], None]
     ) -> None:
-        """将 ToolDelta 内部广播转发为回调。"""
-        self.plugin.ListenInternalBroadcast(name, handler)
+        """监听 ToolDelta 内部广播，自动提取 event.data 再回调。"""
+        def wrapper(event):
+            data = getattr(event, "data", {})
+            handler(data)
+        self.plugin.ListenInternalBroadcast(name, wrapper)
