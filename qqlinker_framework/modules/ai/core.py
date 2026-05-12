@@ -184,6 +184,7 @@ class AICore(Module):
         )
 
         async def tool_executor(name: str, args: dict) -> str:
+            """执行工具调用并返回结果，会透传群号以支持媒体发送。"""
             return await self._execute_tool(name, args, ctx.group_id)
 
         response = await self.llm_factory.chat(

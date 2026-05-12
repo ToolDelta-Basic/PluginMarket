@@ -83,6 +83,7 @@ class PlayerPositionEvent(BaseEvent):
 
     positions: Dict[str, Dict[str, float]]
 
+
 @dataclass
 class AIPrePromptReflectionEvent(BaseEvent):
     """AI 输入前的前提性反思事件。"""
@@ -90,7 +91,6 @@ class AIPrePromptReflectionEvent(BaseEvent):
     user_id: int
     group_id: int
     message: str
-    # 监听器可返回补充提示文本（str），框架将注入至 system 消息前
     supplement: Optional[str] = field(default=None, init=False)
 
 
@@ -102,5 +102,4 @@ class AIPostResponseReflectionEvent(BaseEvent):
     group_id: int
     reply: str
     original_message: str
-    # 监听器可返回一段违规通知文本，框架将追加到会话历史中
     warning: Optional[str] = field(default=None, init=False)
