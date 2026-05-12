@@ -83,6 +83,7 @@ class AICore(Module):
         os.makedirs(self._memory_dir, exist_ok=True)
 
         register_all(self.tool)
+        self.services.register("llm_client", self.llm_factory)
 
         triggers = self.config.get("AI助手.触发词", ["/ai"])
         for trigger in triggers:

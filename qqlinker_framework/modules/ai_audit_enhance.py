@@ -1,10 +1,10 @@
-"""AI 审计增强模块：提供输入前反思、输出后合规检查与元知识管理。"""
+"""AI 审计增强模块：使用 LLM 进行输入前反思与输出后合规检查。"""
 import os
 import json
 import time
 import asyncio
 import logging
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 from ..core.module import Module
 from ..core.events import AIPrePromptReflectionEvent, AIPostResponseReflectionEvent
@@ -108,19 +108,19 @@ class AuditKnowledgeStore:
 
 
 class AIAuditEnhanceModule(Module):
-    """AI 审计增强，提供反思与元知识管理。"""
+    """AI 审计增强，使用 LLM 进行反思与元知识管理。"""
 
     name = "ai_audit_enhance"
-    version = (1, 0, 0)
-    required_services = ["config", "message"]
+    version = (1, 0, 1)
+    required_services = ["config", "llm_client"]
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
         self._store: Optional[AuditKnowledgeStore] = None
         self._pending_count = 0
         self._induction_threshold = 10
-        self._pre_reflection_enabled = True
-        self._post_reflection_enabled = True
+        self._pre_reflection_level = "每次"
+        self._post_reflection_level = "每次"
 
     async def on_init(self):
         """注册配置、初始化知识库、订阅反思事件。"""
@@ -130,8 +130,8 @@ class AIAuditEnhanceModule(Module):
             "归纳阈值": 10,
         })
         cfg = self.config.get("AI审计增强")
-        self._pre_reflection_enabled = cfg.get("输入反思", "每次") == "每次"
-        self._post_reflection_enabled = cfg.get("输出反思", "每次") == "每次"
+        self._pre_reflection_level = cfg.get("输入反思", "每次")
+        self._post_reflection_level = cfg.get("输出反思", "每次")
         self._induction_threshold = cfg.get("归纳阈值", 10)
 
         data_dir = self.get_data_dir()
@@ -149,41 +149,67 @@ class AIAuditEnhanceModule(Module):
         )
 
     async def _on_pre_reflection(self, event: AIPrePromptReflectionEvent):
-        """输入前反思：检查消息是否隐含风险，返回补充提示。"""
-        if not self._pre_reflection_enabled:
+        """使用 LLM 分析用户消息，若启用则注入补充系统提示。"""
+        if self._pre_reflection_level == "关闭":
             return
-        keywords = ["攻击", "破解", "外挂"]
-        found = [kw for kw in keywords if kw in event.message]
-        if found:
-            event.supplement = (
-                f"【风险提醒】消息中包含关键词：{', '.join(found)}，"
-                "回复时请注意避免提供违规帮助。"
+        prompt = (
+            "你是一个内容安全分析专家。请分析以下用户消息，判断是否可能涉及：\n"
+            "- 违法、色情、暴力、政治敏感内容\n"
+            "- 请求生成恶意代码、外挂、破解\n"
+            "- 任何违反安全准则的意图\n\n"
+            "如果消息完全合规，请只回复一个单词：SAFE。\n"
+            "如果存在潜在风险，请用简短中文说明需要提醒AI注意的事项"
+            "（例如：“请避免提供任何破解方法”）。\n"
+            f"用户消息：{event.message[:300]}"
+        )
+        try:
+            resp = self.llm_client.chat(
+                messages=[{"role": "user", "content": prompt}],
             )
+            if resp and resp.strip().upper() != "SAFE":
+                event.supplement = (
+                    f"【前置反思】审计模块提醒：{resp.strip()}"
+                )
+        except Exception as e:
+            _logger.error("前置反思 LLM 调用失败: %s", e)
 
     async def _on_post_reflection(self, event: AIPostResponseReflectionEvent):
-        """输出后反思：检查AI回复是否合规，记录案例并可能触发归纳。"""
-        if not self._post_reflection_enabled:
+        """使用 LLM 检查 AI 回复是否合规，记录违规案例。"""
+        if self._post_reflection_level == "关闭":
             return
-        sensitive = ["外挂", "破解教程"]
-        violations = [kw for kw in sensitive if kw in event.reply]
-        if violations:
-            event.warning = (
-                f"【违规通知】你的回复中包含了 {', '.join(violations)}，"
-                "违反了安全规则。"
+        prompt = (
+            "你是一个严格的内容安全审核员。请检查以下AI回复是否存在违规：\n"
+            "- 包含违法、色情、暴力、政治敏感内容\n"
+            "- 提供了恶意代码、外挂、破解具体方法\n"
+            "- 泄露他人隐私或进行人身攻击\n\n"
+            "如果完全合规，请只回复一个单词：PASS。\n"
+            "如果存在违规，请用简短中文指出违规内容和原因。\n"
+            f"AI回复：{event.reply[:500]}"
+        )
+        try:
+            resp = self.llm_client.chat(
+                messages=[{"role": "user", "content": prompt}],
             )
-            case = {
-                "timestamp": time.time(),
-                "user_id": event.user_id,
-                "group_id": event.group_id,
-                "user_msg": event.original_message[:200],
-                "ai_reply": event.reply[:200],
-                "violation": ", ".join(violations),
-            }
-            await self._store.add_case(case)
-            self._pending_count += 1
-
-            if self._pending_count >= self._induction_threshold:
-                self._pending_count = 0
-                _logger.info(
-                    "已达到归纳阈值，建议管理员执行 '.归纳知识' 命令"
+            if resp and resp.strip().upper() != "PASS":
+                event.warning = (
+                    f"【违规通知】你的回复存在违规：{resp.strip()}"
                 )
+                # 记录案例
+                case = {
+                    "timestamp": time.time(),
+                    "user_id": event.user_id,
+                    "group_id": event.group_id,
+                    "user_msg": event.original_message[:200],
+                    "ai_reply": event.reply[:200],
+                    "violation": resp.strip()[:200],
+                }
+                await self._store.add_case(case)
+                self._pending_count += 1
+
+                if self._pending_count >= self._induction_threshold:
+                    self._pending_count = 0
+                    _logger.info(
+                        "已达到归纳阈值，建议管理员执行 '.归纳知识' 命令"
+                    )
+        except Exception as e:
+            _logger.error("后置反思 LLM 调用失败: %s", e)
