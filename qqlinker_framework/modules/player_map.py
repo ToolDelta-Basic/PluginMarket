@@ -214,8 +214,9 @@ class PlayerMapModule(Module):
             f"{target} 坐标：({x:.1f}, {y:.1f}, {z:.1f}) {dim_str}"
         )
 
+    @staticmethod
     async def _render_map(
-        self, positions: Dict[str, Dict[str, float]]
+        positions: Dict[str, Dict[str, float]]
     ) -> Optional[str]:
         """将坐标数据渲染为 base64 图片。"""
         try:
@@ -241,6 +242,7 @@ class PlayerMapModule(Module):
             map_h = img_height - 2 * padding
 
             def to_screen(x, z):
+                """将游戏坐标映射到画布像素坐标。"""
                 screen_x = padding + (x - min_x) / range_x * map_w
                 screen_y = padding + (z - min_z) / range_z * map_h
                 return int(screen_x), int(screen_y)
@@ -277,5 +279,5 @@ class PlayerMapModule(Module):
             img.save(buf, format="PNG")
             return base64.b64encode(buf.getvalue()).decode("utf-8")
         except Exception as e:
-            logging.getLogger(__name__).error(f"渲染地图失败: {e}")
+            logging.getLogger(__name__).error("渲染地图失败: %s", e)
             return None
