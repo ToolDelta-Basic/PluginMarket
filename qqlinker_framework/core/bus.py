@@ -80,3 +80,14 @@ class EventBus:
                     )
         finally:
             _recursion_depth.set(depth)
+
+    def publish_sync(self, event: BaseEvent):
+        """同步发布事件，用于非异步上下文（如广播回调）。"""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(self.publish(event))
+            loop.close()
+        else:
+            asyncio.run_coroutine_threadsafe(self.publish(event), loop)

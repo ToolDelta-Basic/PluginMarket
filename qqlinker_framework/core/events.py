@@ -14,16 +14,7 @@ class BaseEvent:
 
 @dataclass
 class GroupMessageEvent(BaseEvent):
-    """QQ 群消息事件。
-
-    Attributes:
-        user_id: 发送者 QQ 号。
-        group_id: 群号。
-        nickname: 发送者昵称。
-        message: 消息文本。
-        raw_data: 原始消息数据。
-        handled: 是否已被命令路由处理。
-    """
+    """QQ 群消息事件。"""
 
     user_id: int
     group_id: int
@@ -84,3 +75,10 @@ class SystemStartEvent(BaseEvent):
 @dataclass
 class SystemStopEvent(BaseEvent):
     """框架停止事件。"""
+
+
+@dataclass
+class PlayerPositionEvent(BaseEvent):
+    """玩家坐标更新事件，data 为 {玩家名: {x, y, z, yRot, dimension}}"""
+
+    positions: Dict[str, Dict[str, float]]

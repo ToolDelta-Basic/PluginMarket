@@ -1,6 +1,7 @@
 # adapters/tooldelta_adapter.py
 """ToolDelta 平台适配器实现"""
 import logging
+import json
 from typing import Callable, Dict, Any, List, Optional
 from tooldelta import Plugin, Player, Chat
 from .base import IFrameworkAdapter
@@ -186,12 +187,24 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             logging.getLogger(__name__).error("同步指令执行失败: %s", e)
             return None
 
-    def listen_internal_broadcast(
-        self, name: str, handler: Callable[[Dict[str, Any]], None]
-    ) -> None:
-        """监听 ToolDelta 内部广播，自动提取 event.data 再回调。"""
-        def wrapper(event):
-            """从 InternalBroadcast 对象中提取 data 字典并回调。"""
-            data = getattr(event, "data", {})
-            handler(data)
-        self.plugin.ListenInternalBroadcast(name, wrapper)
+    def send_game_command_full(
+        self, cmd: str, timeout: float = 5.0
+    ) -> Optional[Dict[str, Any]]:
+        """发送游戏指令并返回完整响应（包括 Parameters）。"""
+        try:
+            resp = self.game_ctrl.sendwscmd_with_resp(cmd, timeout)
+            if resp is None:
+                return None
+            output = []
+            for msg in resp.OutputMessages:
+                output.append({
+                    "message": getattr(msg, "Message", ""),
+                    "parameters": getattr(msg, "Parameters", []),
+                })
+            return {
+                "success_count": resp.SuccessCount,
+                "output": output,
+            }
+        except Exception as e:
+            logging.getLogger(__name__).error("完整指令执行失败: %s", e)
+            return None

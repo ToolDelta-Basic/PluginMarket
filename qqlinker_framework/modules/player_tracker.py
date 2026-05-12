@@ -1,4 +1,4 @@
-"""玩家坐标分布图模块，持久化坐标数据并生成地图图片，提供安全模块接口。"""
+"""玩家坐标追踪与分布图模块，通过适配器通用接口获取坐标。"""
 import asyncio
 import base64
 import io
@@ -17,12 +17,15 @@ try:
 except ImportError:
     HAS_PIL = False
 
-# 时间粒度映射
 _TIME_UNITS = {
     "毫秒": 1,
     "秒": 1000,
     "分钟": 60000,
 }
+
+# 模块专用日志记录器，级别设为 INFO 以屏蔽 DEBUG 消息
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
 
 
 class PlayerPositionService:
@@ -60,9 +63,8 @@ class PlayerPositionService:
 
     def _truncate_time(self, ts: float) -> int:
         """根据粒度截断时间戳。"""
-        # 毫秒保持原样（浮点数转 int 毫秒），秒/分钟则截断为整数单位
         if self._unit_ms == 1:
-            return int(ts * 1000)  # 转为毫秒整数
+            return int(ts * 1000)
         return int(ts * 1000 / self._unit_ms) * self._unit_ms
 
     async def update_positions(self, positions: Dict[str, dict]):
@@ -70,12 +72,10 @@ class PlayerPositionService:
         async with self._lock:
             now = time.time()
             truncated = self._truncate_time(now)
-            # 避免同一粒度内的重复快照
             if (
                 self._snapshots
                 and self._snapshots[-1].get("timestamp") == truncated
             ):
-                # 更新最后一个快照的位置数据
                 self._snapshots[-1]["players"] = positions
             else:
                 snapshot = {
@@ -100,28 +100,33 @@ class PlayerPositionService:
             return self._snapshots[-count:]
 
 
-class PlayerMapModule(Module):
-    """玩家位置地图模块，持久化坐标数据并生成地图图片。"""
+class PlayerTrackerModule(Module):
+    """玩家坐标追踪模块，定时查询坐标，持久化并生成分布图。"""
 
-    name = "player_map"
-    version = (1, 0, 1)
+    name = "player_tracker"
+    version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
-        self._lock = asyncio.Lock()
         self._service: Optional[PlayerPositionService] = None
+        self._lock = asyncio.Lock()
         self._positions: Dict[str, Dict[str, float]] = {}
+        self._task: Optional[asyncio.Task] = None
+        self._interval = 2.0
+        self._query_timeout = 3.0
 
     async def on_init(self):
-        """初始化数据目录、服务注册、命令和广播监听。"""
+        """初始化配置、服务、命令，并启动后台轮询。"""
         self.config.register_section("玩家分布图", {
             "最大快照数": 100,
             "存储粒度": "秒",
+            "查询间隔秒": 2.0,
         })
         cfg = self.config.get("玩家分布图")
         max_snapshots = cfg.get("最大快照数", 100)
         time_unit = cfg.get("存储粒度", "秒")
+        self._interval = cfg.get("查询间隔秒", 2.0)
 
         module_dir = self.get_data_dir()
         self._service = PlayerPositionService(
@@ -141,27 +146,77 @@ class PlayerMapModule(Module):
             argument_hint="<玩家名>",
         )
 
-        self.adapter.listen_internal_broadcast(
-            "ggpp:publish_player_position",
-            self._on_position_broadcast,
-        )
+        self._task = asyncio.ensure_future(self._polling_loop())
 
-    def _on_position_broadcast(self, data: Dict[str, Any]):
-        """接收坐标广播，异步更新内存和持久化。"""
-        try:
-            asyncio.run_coroutine_threadsafe(
-                self._handle_position_update(data),
-                asyncio.get_running_loop(),
-            )
-        except RuntimeError:
-            self._positions = data
+    async def on_stop(self):
+        """停止后台轮询。"""
+        if self._task:
+            self._task.cancel()
 
-    async def _handle_position_update(self, data: Dict[str, Any]):
-        """异步安全更新内存缓存和持久化存储。"""
-        async with self._lock:
-            self._positions = data
-        if self._service:
-            await self._service.update_positions(data)
+    async def _polling_loop(self):
+        """后台循环：通过适配器通用接口获取原始数据，自行解析坐标。"""
+        while True:
+            try:
+                await asyncio.sleep(self._interval)
+                resp = self.adapter.send_game_command_full(
+                    "/querytarget @a", timeout=self._query_timeout
+                )
+                if resp is None or resp.get("success_count", 0) == 0:
+                    continue
+
+                positions = self._parse_positions_from_resp(resp)
+                if positions:
+                    # 仅 debug 级别记录，但模块日志级别为 INFO，因此不输出
+                    _logger.debug("[Tracker] 获取到 %d 个坐标", len(positions))
+                    async with self._lock:
+                        self._positions = positions
+                    await self._service.update_positions(positions)
+            except asyncio.CancelledError:
+                break
+            except ValueError:
+                _logger.warning("[Tracker] 游戏连接未就绪，等待重试")
+                await asyncio.sleep(5)
+            except Exception as e:
+                _logger.error("[Tracker] 轮询异常: %s", e)
+
+    def _parse_positions_from_resp(self, resp: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+        """从 send_game_command_full 的返回值中解析玩家坐标。"""
+        uuid2player = {}
+        if hasattr(self.adapter, "game_ctrl"):
+            players_uuid = getattr(self.adapter.game_ctrl, "players_uuid", {})
+            if players_uuid:
+                uuid2player = {uid: name for name, uid in players_uuid.items()}
+
+        positions = {}
+        for out in resp.get("output", []):
+            for param in out.get("parameters", []):
+                if not isinstance(param, str) or "{" not in param:
+                    continue
+                try:
+                    data = json.loads(param)
+                except json.JSONDecodeError:
+                    try:
+                        data = json.loads(param.replace("\n", "").replace(" ", ""))
+                    except json.JSONDecodeError:
+                        continue
+                if not isinstance(data, list):
+                    continue
+                for entry in data:
+                    if not isinstance(entry, dict):
+                        continue
+                    unique_id = entry.get("uniqueId", "")
+                    name = uuid2player.get(unique_id)
+                    if not name:
+                        continue
+                    pos = entry.get("position", {})
+                    positions[name] = {
+                        "x": float(pos.get("x", 0)),
+                        "y": float(pos.get("y", 0)),
+                        "z": float(pos.get("z", 0)),
+                        "yRot": float(entry.get("yRot", 0)),
+                        "dimension": int(entry.get("dimension", 0)),
+                    }
+        return positions
 
     @command(".map")
     async def _cmd_map(self, ctx):
@@ -170,11 +225,9 @@ class PlayerMapModule(Module):
             await ctx.reply("Pillow 库未安装，无法生成地图。")
             return
 
-        positions = (
-            await self._service.get_current_positions()
-            if self._service
-            else self._positions
-        )
+        async with self._lock:
+            positions = dict(self._positions)
+
         if not positions:
             await ctx.reply("当前没有玩家坐标数据，请稍后再试。")
             return
@@ -192,14 +245,12 @@ class PlayerMapModule(Module):
     @command(".pos")
     async def _cmd_pos(self, ctx):
         """查询指定玩家当前坐标。"""
-        if not self._service:
-            await ctx.reply("坐标服务未就绪。")
-            return
         if not ctx.args:
             await ctx.reply("用法：.pos <玩家名>")
             return
         target = ctx.args[0]
-        positions = await self._service.get_current_positions()
+        async with self._lock:
+            positions = dict(self._positions)
         if target not in positions:
             await ctx.reply(f"玩家 {target} 当前不在线或暂无坐标数据。")
             return
