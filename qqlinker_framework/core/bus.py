@@ -15,18 +15,22 @@ class EventBus:
     """线程安全的发布-订阅事件总线，支持协程处理器。"""
 
     def __init__(self):
-        """初始化事件总线。"""
+        """初始化事件总线，创建专用后台事件循环。"""
         self._subscribers: dict[str, list[tuple[int, Callable]]] = {}
         self._lock = threading.Lock()
+        self._sync_loop = asyncio.new_event_loop()
+        self._sync_thread = threading.Thread(
+            target=self._run_sync_loop, daemon=True
+        )
+        self._sync_thread.start()
+
+    def _run_sync_loop(self):
+        """后台线程的事件循环。"""
+        asyncio.set_event_loop(self._sync_loop)
+        self._sync_loop.run_forever()
 
     def subscribe(self, event_type: str, handler: Callable, priority: int = 0):
-        """订阅事件。
-
-        Args:
-            event_type: 事件类名。
-            handler: 处理函数，支持同步或异步。
-            priority: 优先级，数值越大越先执行。
-        """
+        """订阅事件。"""
         with self._lock:
             if event_type not in self._subscribers:
                 self._subscribers[event_type] = []
@@ -34,12 +38,7 @@ class EventBus:
             self._subscribers[event_type].sort(key=lambda x: x[0], reverse=True)
 
     def unsubscribe(self, event_type: str, handler: Callable):
-        """取消订阅。
-
-        Args:
-            event_type: 事件类名。
-            handler: 要取消的处理函数。
-        """
+        """取消订阅。"""
         with self._lock:
             if event_type in self._subscribers:
                 self._subscribers[event_type] = [
@@ -47,11 +46,7 @@ class EventBus:
                 ]
 
     async def publish(self, event: BaseEvent):
-        """发布事件，依次调用所有订阅的处理函数。
-
-        Args:
-            event: 事件实例。
-        """
+        """发布事件，依次调用所有订阅的处理函数。"""
         depth = _recursion_depth.get()
         if depth >= MAX_EVENT_DEPTH:
             logging.getLogger(__name__).error(
@@ -82,12 +77,5 @@ class EventBus:
             _recursion_depth.set(depth)
 
     def publish_sync(self, event: BaseEvent):
-        """同步发布事件，用于非异步上下文（如广播回调）。"""
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(self.publish(event))
-            loop.close()
-        else:
-            asyncio.run_coroutine_threadsafe(self.publish(event), loop)
+        """同步发布事件，使用后台专用事件循环。"""
+        asyncio.run_coroutine_threadsafe(self.publish(event), self._sync_loop)

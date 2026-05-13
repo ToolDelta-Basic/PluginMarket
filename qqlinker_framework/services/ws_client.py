@@ -16,18 +16,9 @@ class WsClient:
     """WebSocket 客户端，负责连接 OneBot 实现端。"""
 
     def __init__(self, config: dict):
-        """初始化 WebSocket 客户端。
-
-        Args:
-            config: {"ws_address": "...", "ws_token": "..."}
-
-        Raises:
-            ImportError: 如果未安装 websocket-client。
-        """
+        """初始化 WebSocket 客户端。"""
         if not HAS_WEBSOCKET:
-            raise ImportError(
-                "websocket-client 未安装，无法使用 WsClient"
-            )
+            raise ImportError("websocket-client 未安装，无法使用 WsClient")
         self.address = config.get("ws_address", "ws://127.0.0.1:8080")
         self.token = config.get("ws_token", "")
         self.ws: Optional[websocket.WebSocketApp] = None
@@ -43,11 +34,7 @@ class WsClient:
         logging.getLogger("websocket").setLevel(logging.WARNING)
 
     def set_message_callback(self, callback: Callable[[dict], None]):
-        """设置收到群消息时的回调函数。
-
-        Args:
-            callback: 接收解析后的消息字典。
-        """
+        """设置收到群消息时的回调函数。"""
         self._on_message_callback = callback
 
     def connect(self):
@@ -60,10 +47,8 @@ class WsClient:
         self._thread.start()
 
     def disconnect(self):
-        """关闭连接并停止重连。"""
+        """关闭连接并停止重连（线程安全）。"""
         self._reconnect = False
-        if self.ws:
-            self.ws.close()
 
     def _run_forever(self):
         """后台线程：管理 WebSocket 连接与重连。"""
@@ -126,18 +111,11 @@ class WsClient:
     def _on_close(self, ws, code, msg):
         """连接关闭回调。"""
         self.available = False
+        self.ws = None
         logging.getLogger(__name__).info("WS 连接关闭")
 
     def send_group_msg(self, group_id: int, message: str) -> bool:
-        """发送群消息。
-
-        Args:
-            group_id: 群号。
-            message: 消息内容。
-
-        Returns:
-            是否成功发送。
-        """
+        """发送群消息。"""
         logger = logging.getLogger(__name__)
         if not self.ws or not self.available:
             return False
@@ -153,15 +131,7 @@ class WsClient:
             return False
 
     def send_private_msg(self, user_id: int, message: str) -> bool:
-        """发送私聊消息。
-
-        Args:
-            user_id: QQ 号。
-            message: 消息内容。
-
-        Returns:
-            是否成功发送。
-        """
+        """发送私聊消息。"""
         logger = logging.getLogger(__name__)
         if not self.ws or not self.available:
             return False

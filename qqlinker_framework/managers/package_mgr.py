@@ -1,4 +1,4 @@
-"""包管理器 —— 依赖检查、安装（支持多镜像、失败回滚、多线程）"""
+"""包管理器 —— 依赖检查、安装（支持多镜像、失败回滚）"""
 import importlib
 import subprocess
 import sys
@@ -17,11 +17,7 @@ class PackageManager:
         self._installed_target_dir: Optional[str] = None
 
     def set_target_dir(self, path: str):
-        """设置 pip install --target 目录，并添加到 sys.path。
-
-        Args:
-            path: 目标目录路径。
-        """
+        """设置 pip install --target 目录，并添加到 sys.path。"""
         self._installed_target_dir = path
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
@@ -29,20 +25,11 @@ class PackageManager:
             sys.path.insert(0, path)
 
     def register_requirement(self, pkg_name: str, import_name: str = None):
-        """注册一个依赖：包名 -> 导入名。
-
-        Args:
-            pkg_name: pip 包名。
-            import_name: import 时使用的模块名，默认等于包名。
-        """
+        """注册一个依赖：包名 -> 导入名。"""
         self._requirements[pkg_name] = import_name or pkg_name
 
     def register_requirements(self, reqs: dict[str, str]):
-        """批量注册依赖。
-
-        Args:
-            reqs: {包名: 导入名} 字典。
-        """
+        """批量注册依赖。"""
         self._requirements.update(reqs)
 
     def check_missing(self) -> dict[str, str]:
@@ -67,16 +54,7 @@ class PackageManager:
         upgrade: bool = False,
         mirror_sources: list[str] = None,
     ) -> bool:
-        """安装包列表，支持多镜像尝试和失败回滚。
-
-        Args:
-            packages: 包名列表。
-            upgrade: 是否 --upgrade。
-            mirror_sources: 镜像源列表。
-
-        Returns:
-            是否全部安装成功。
-        """
+        """安装包列表，支持多镜像尝试和失败回滚。"""
         if not packages:
             return True
 
@@ -116,8 +94,7 @@ class PackageManager:
                     target,
                     "-i",
                     mirror,
-                    "--no-deps",
-                    pkg,
+                    pkg,                    # 移除 --no-deps
                 ]
                 if upgrade:
                     cmd.append("--upgrade")
@@ -160,12 +137,7 @@ class PackageManager:
 
     @staticmethod
     def _cleanup_partial(target: str, before_set: set):
-        """清理部分安装的残留文件。
-
-        Args:
-            target: 目标目录。
-            before_set: 安装前的文件集合。
-        """
+        """清理部分安装的残留文件。"""
         try:
             after = set(os.listdir(target))
             new_items = after - before_set

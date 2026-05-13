@@ -24,7 +24,8 @@ class MessageManager:
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
         self._rate_limit = 20
-        self._tokens = self._rate_limit
+        self._max_burst = self._rate_limit * 3   # 新增
+        self._tokens = self._max_burst
         self._last_refill = time.monotonic()
         self._lock = asyncio.Lock()
 
@@ -95,7 +96,7 @@ class MessageManager:
             now = time.monotonic()
             elapsed = now - self._last_refill
             self._tokens = min(
-                self._rate_limit,
+                self._max_burst,                    # 限制突发
                 self._tokens + elapsed * self._rate_limit,
             )
             self._last_refill = now

@@ -30,7 +30,6 @@ class CommandRouter:
             if cmd_info.get("op_only", False) and not self.adapter.is_user_admin(
                 event.user_id, self.config_mgr
             ):
-                # 构建上下文并回复权限错误
                 ctx = CommandContext(
                     user_id=event.user_id,
                     group_id=event.group_id,

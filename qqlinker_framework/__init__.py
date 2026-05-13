@@ -58,5 +58,13 @@ class QQLinkerFrameworkPlugin(Plugin):
         finally:
             self._loop.close()
 
+    def on_def(self):
+        """插件卸载时执行，优雅停止框架。"""
+        if self._loop and self._host:
+            asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
+            self._loop.call_soon_threadsafe(self._loop.stop)
+        if self._framework_thread and self._framework_thread.is_alive():
+            self._framework_thread.join(timeout=5)
+
 
 entry = plugin_entry(QQLinkerFrameworkPlugin)
