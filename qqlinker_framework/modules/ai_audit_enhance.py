@@ -1,4 +1,4 @@
-"""AI 审计增强模块：使用 LLM 进行输入前反思与输出后合规检查，并带基线复位。"""
+"""AI 审计增强模块：使用 LLM 进行输入前反思与输出后合规检查。"""
 import os
 import json
 import time
@@ -7,7 +7,10 @@ import logging
 from typing import List, Dict, Optional
 
 from ..core.module import Module
-from ..core.events import AIPrePromptReflectionEvent, AIPostResponseReflectionEvent
+from ..core.events import (
+    AIPrePromptReflectionEvent,
+    AIPostResponseReflectionEvent,
+)
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -125,12 +128,12 @@ class AIAuditEnhanceModule(Module):
         self._llm_client = None
 
         # 基线复位相关
-        self._baseline_interval: int = 10      # 每 10 轮对话复位一次
-        self._last_baseline: Dict[int, int] = {}  # user_id -> 上次复位时的对话轮次
-        self._conversation_rounds: Dict[int, int] = {}  # user_id -> 当前对话轮次计数
+        self._baseline_interval: int = 10
+        self._last_baseline: Dict[int, int] = {}
+        self._conversation_rounds: Dict[int, int] = {}
 
     async def on_init(self):
-        """注册配置、获取 LLM 客户端、初始化知识库、订阅反思事件，并注册 audit 服务。"""
+        """注册配置、获取 LLM 客户端、初始化知识库、订阅事件，注册 audit 服务。"""
         self.config.register_section("AI审计增强", {
             "输入反思": "每次",
             "输出反思": "每次",
@@ -143,7 +146,6 @@ class AIAuditEnhanceModule(Module):
         self._induction_threshold = cfg.get("归纳阈值", 10)
         self._baseline_interval = cfg.get("基线复位间隔轮次", 10)
 
-        # 手动获取 LLM 客户端服务（非强制）
         try:
             self._llm_client = self.services.get("llm_client")
         except KeyError:
@@ -156,7 +158,6 @@ class AIAuditEnhanceModule(Module):
         data_dir = self.get_data_dir()
         self._store = AuditKnowledgeStore(data_dir)
 
-        # 注册为 audit 服务，供其他模块调用
         self.services.register("audit", self)
 
         self.listen(
@@ -171,7 +172,9 @@ class AIAuditEnhanceModule(Module):
         )
 
     # ---------- 外部可调用的审核接口 ----------
-    async def check_message(self, user_id: int, group_id: int, message: str) -> Optional[str]:
+    async def check_message(
+        self, user_id: int, group_id: int, message: str
+    ) -> Optional[str]:
         """外部模块可调用此方法进行内容审核。
 
         Returns:
@@ -206,21 +209,22 @@ class AIAuditEnhanceModule(Module):
             return
 
         user_id = event.user_id
-        # 更新对话轮次计数
-        self._conversation_rounds[user_id] = self._conversation_rounds.get(user_id, 0) + 1
+        self._conversation_rounds[user_id] = (
+            self._conversation_rounds.get(user_id, 0) + 1
+        )
         current_round = self._conversation_rounds[user_id]
         last_baseline_round = self._last_baseline.get(user_id, 0)
+        need_baseline = (
+            (current_round - last_baseline_round)
+            >= self._baseline_interval
+        )
 
-        # 检查是否需要基线复位
-        need_baseline = (current_round - last_baseline_round) >= self._baseline_interval
-
-        # 构建补充提示
         supplement_parts = []
 
         if need_baseline:
-            # 规则重申文本
             baseline_text = (
-                "【规则重申】你是一个严格遵守安全准则的AI助手。请重新确认以下核心规则：\n"
+                "【规则重申】你是一个严格遵守安全准则的AI助手。"
+                "请重新确认以下核心规则：\n"
                 "1. 禁止生成任何违法、色情、暴力内容。\n"
                 "2. 禁止协助恶意代码、外挂、破解等行为。\n"
                 "3. 保护用户隐私，不得泄露或索要敏感信息。\n"
@@ -229,9 +233,10 @@ class AIAuditEnhanceModule(Module):
             )
             supplement_parts.append(baseline_text)
             self._last_baseline[user_id] = current_round
-            _logger.debug("用户 %d 基线复位，当前轮次 %d", user_id, current_round)
+            _logger.debug(
+                "用户 %d 基线复位，当前轮次 %d", user_id, current_round
+            )
 
-        # 正常前置反思
         reason = await self.check_message(
             event.user_id, event.group_id, event.message
         )
@@ -241,12 +246,15 @@ class AIAuditEnhanceModule(Module):
         if supplement_parts:
             event.supplement = "\n".join(supplement_parts)
 
-    async def _on_post_reflection(self, event: AIPostResponseReflectionEvent):
+    async def _on_post_reflection(
+        self, event: AIPostResponseReflectionEvent
+    ):
         """使用 LLM 检查 AI 回复是否合规，记录违规案例。"""
         if self._post_reflection_level == "关闭" or not self._llm_client:
             return
         prompt = (
-            "你是一个严格的内容安全审核员。请检查以下AI回复是否存在违规：\n"
+            "你是一个严格的内容安全审核员。"
+            "请检查以下AI回复是否存在违规：\n"
             "- 包含违法、色情、暴力、政治敏感内容\n"
             "- 提供了恶意代码、外挂、破解具体方法\n"
             "- 泄露他人隐私或进行人身攻击\n\n"

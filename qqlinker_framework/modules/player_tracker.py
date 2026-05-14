@@ -177,13 +177,19 @@ class PlayerTrackerModule(Module):
             except Exception as e:
                 _logger.error("轮询异常: %s", e)
 
-    def _parse_positions_from_resp(self, resp: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+    def _parse_positions_from_resp(
+        self, resp: Dict[str, Any]
+    ) -> Dict[str, Dict[str, float]]:
         """从 send_game_command_full 的返回值中解析玩家坐标。"""
         uuid2player = {}
         if hasattr(self.adapter, "game_ctrl"):
-            players_uuid = getattr(self.adapter.game_ctrl, "players_uuid", {})
+            players_uuid = getattr(
+                self.adapter.game_ctrl, "players_uuid", {}
+            )
             if players_uuid:
-                uuid2player = {uid: name for name, uid in players_uuid.items()}
+                uuid2player = {
+                    uid: name for name, uid in players_uuid.items()
+                }
 
         positions = {}
         for out in resp.get("output", []):
@@ -194,7 +200,9 @@ class PlayerTrackerModule(Module):
                     data = json.loads(param)
                 except json.JSONDecodeError:
                     try:
-                        data = json.loads(param.replace("\n", "").replace(" ", ""))
+                        data = json.loads(
+                            param.replace("\n", "").replace(" ", "")
+                        )
                     except json.JSONDecodeError:
                         continue
                 if not isinstance(data, list):

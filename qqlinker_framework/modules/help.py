@@ -8,8 +8,8 @@ from ..core.decorators import command, listen
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 
-PAGE_SIZE = 8           # 每页显示的命令条数
-SESSION_TIMEOUT = 120   # 翻页会话超时秒数
+PAGE_SIZE = 8
+SESSION_TIMEOUT = 120
 
 
 class HelpModule(Module):
@@ -21,13 +21,17 @@ class HelpModule(Module):
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
-        # 翻页会话：user_id -> {"lines": list, "current": int, "total": int, "last_active": float}
+        # 翻页会话：user_id -> {
+        #     "lines": list, "current": int,
+        #     "total": int, "last_active": float
+        # }
         self._sessions: Dict[int, dict] = {}
 
     async def on_init(self):
         """注册 .help 命令。"""
         self.register_command(
-            ".help", self._cmd_help, description="显示命令帮助（支持翻页）"
+            ".help", self._cmd_help,
+            description="显示命令帮助（支持翻页）",
         )
 
     @command(".help")
@@ -60,7 +64,6 @@ class HelpModule(Module):
         if not session:
             return
 
-        # 检查超时
         if time.time() - session["last_active"] > SESSION_TIMEOUT:
             del self._sessions[user_id]
             await self.message.send_group(
@@ -72,7 +75,6 @@ class HelpModule(Module):
         if text not in ("+", "-", "q"):
             return
 
-        # 标记事件已处理，避免命令路由执行
         event.handled = True
         session["last_active"] = time.time()
 
@@ -81,10 +83,9 @@ class HelpModule(Module):
             await self.message.send_group(event.group_id, "帮助菜单已关闭。")
             return
 
-        # 翻页
         if text == "+":
             new_page = min(session["current"] + 1, session["total"])
-        else:  # "-"
+        else:
             new_page = max(session["current"] - 1, 1)
 
         if new_page != session["current"]:
@@ -115,7 +116,9 @@ class HelpModule(Module):
         return lines
 
     @staticmethod
-    def _format_page(page_lines: List[str], current: int, total: int) -> str:
+    def _format_page(
+        page_lines: List[str], current: int, total: int
+    ) -> str:
         """格式化单页帮助文本。"""
         header = f"📋 可用命令列表 ({current}/{total})"
         body = "\n".join(page_lines) if page_lines else "(空)"

@@ -1,12 +1,10 @@
 """AI 核心模块：提供 LLM 对话、工具调用、审核拦截、基础记忆"""
-import asyncio
 import logging
 import os
 import time
 import traceback
 import re
 import json
-import secrets
 from typing import Dict, List
 
 from ...core.module import Module
@@ -37,7 +35,7 @@ class AICore(Module):
         self.conversations: Dict[int, List[Dict]] = {}
         self.conversation_last_active: Dict[int, float] = {}
         self.conversation_max_age = 1800
-        # max_memory 将在 on_init 中从配置读取
+        self.max_memory = 5           # 默认值，将在 on_init 中被覆盖
         self.llm_factory = None
         self.auditor = None
         self._safety_rules: list[str] = []
@@ -53,7 +51,7 @@ class AICore(Module):
             "API密钥": "",
             "API地址": "https://api.siliconflow.cn/v1",
             "最大工具轮次": 5,
-            "记忆条数": 5,              # 默认值，可在 config.json 中覆盖
+            "记忆条数": 5,
             "审核": {
                 "是否启用": True,
                 "违规词模式": ["傻逼", "操你", "fuck"],
@@ -119,6 +117,7 @@ class AICore(Module):
 
     # ---------- 公共方法 ----------
     def _get_persona_service(self):
+        """动态获取 persona 服务实例。"""
         try:
             return self.services.get("persona")
         except KeyError:
@@ -140,19 +139,25 @@ class AICore(Module):
 
     def set_pending_persona_token(self, user_id: int, token: str):
         """设置角色确认令牌，AI 需要在回复中引用该令牌。"""
-        _logger.debug("[AI_CORE] 设置令牌, user_id=%d, token=%s", user_id, token)
+        _logger.debug(
+            "[AI_CORE] 设置令牌, user_id=%d, token=%s", user_id, token
+        )
         self._pending_persona_tokens[user_id] = token
 
     async def _cmd_ai_handler(self, ctx):
         """命令处理入口，统一异常捕获，并拦截伪装 .设定 的消息。"""
         raw_msg = ctx.message.strip()
         if raw_msg.startswith(".设定") or ".设定" in raw_msg:
-            await ctx.reply("请直接使用 .设定 命令来设置你的角色，而不要通过 /ai 发送。")
+            await ctx.reply(
+                "请直接使用 .设定 命令来设置你的角色，而不要通过 /ai 发送。"
+            )
             return
         try:
             await self._handle_ai(ctx)
         except Exception as e:
-            _logger.error("AI 命令异常: %s\n%s", e, traceback.format_exc())
+            _logger.error(
+                "AI 命令异常: %s\n%s", e, traceback.format_exc()
+            )
             await ctx.reply(f"AI 服务内部错误: {str(e)}")
 
     def _build_system_prompt(self, user_id: int) -> str:
@@ -185,7 +190,8 @@ class AICore(Module):
         if token:
             base_prompt += (
                 f"用户刚刚通过 .设定 命令将你的角色设定为：{persona_text}。"
-                f"请在你的回复开头包含以下确认令牌：`{token}`，然后开始以该角色对话。"
+                f"请在你的回复开头包含以下确认令牌：`{token}`，"
+                "然后开始以该角色对话。"
             )
         elif persona_text:
             base_prompt += (
@@ -214,7 +220,10 @@ class AICore(Module):
             return
 
         user_id = ctx.user_id
-        _logger.debug("[AI_CORE] 处理 AI 请求, user_id=%d, question='%s'", user_id, question[:50])
+        _logger.debug(
+            "[AI_CORE] 处理 AI 请求, user_id=%d, question='%s'",
+            user_id, question[:50],
+        )
         self._cleanup_expired(user_id)
         history = await self._get_history(user_id)
         _logger.debug("[AI_CORE] 历史消息数: %d", len(history))
@@ -227,15 +236,20 @@ class AICore(Module):
         )
         await self.event_bus.publish(pre_event)
         if pre_event.supplement:
-            messages.insert(0, {"role": "system", "content": pre_event.supplement})
+            messages.insert(
+                0, {"role": "system", "content": pre_event.supplement}
+            )
 
         system_content = self._build_system_prompt(user_id)
         if system_content:
-            messages.insert(0, {"role": "system", "content": system_content})
+            messages.insert(
+                0, {"role": "system", "content": system_content}
+            )
 
         tools_schema = self.tool.get_tools_schema(only_enabled=True)
 
         async def tool_executor(name: str, args: dict) -> str:
+            """执行工具调用并返回结果。"""
             return await self._execute_tool(name, args, ctx.group_id)
 
         response = await self.llm_factory.chat(
@@ -245,13 +259,19 @@ class AICore(Module):
             tool_executor=tool_executor,
         )
 
-        self._add_to_history(user_id, {"role": "user", "content": question})
+        self._add_to_history(
+            user_id, {"role": "user", "content": question}
+        )
         if response:
-            self._add_to_history(user_id, {"role": "assistant", "content": response})
+            self._add_to_history(
+                user_id, {"role": "assistant", "content": response}
+            )
             if user_id in self._pending_persona_tokens:
                 token = self._pending_persona_tokens[user_id]
                 if token in response:
-                    _logger.debug("[AI_CORE] 令牌 %s 被 AI 引用，移除令牌", token)
+                    _logger.debug(
+                        "[AI_CORE] 令牌 %s 被 AI 引用，移除令牌", token
+                    )
                     del self._pending_persona_tokens[user_id]
 
         post_event = AIPostResponseReflectionEvent(
@@ -262,13 +282,18 @@ class AICore(Module):
         )
         await self.event_bus.publish(post_event)
         if post_event.warning:
-            self._add_to_history(user_id, {"role": "system", "content": post_event.warning})
+            self._add_to_history(
+                user_id,
+                {"role": "system", "content": post_event.warning},
+            )
 
         await self._save_memory_file(user_id)
 
         image_urls = re.findall(r'\[IMAGE:(.*?)\]', response)
         for url in image_urls:
-            await self.message.send_group(ctx.group_id, f"[CQ:image,file={url}]")
+            await self.message.send_group(
+                ctx.group_id, f"[CQ:image,file={url}]"
+            )
             response = response.replace(f"[IMAGE:{url}]", "").strip()
 
         if response:
@@ -276,7 +301,10 @@ class AICore(Module):
         elif not image_urls:
             await ctx.reply("AI 未返回内容")
 
-    async def _execute_tool(self, tool_name: str, arguments: dict, group_id: int) -> str:
+    async def _execute_tool(
+        self, tool_name: str, arguments: dict, group_id: int
+    ) -> str:
+        """执行工具并返回结果字符串，处理图像生成的媒体发送。"""
         try:
             result = await self.tool.execute(
                 tool_name, arguments,
@@ -290,7 +318,9 @@ class AICore(Module):
             urls = re.findall(r'\[IMAGE:(.*?)\]', result)
             for url in urls:
                 try:
-                    await self.message.send_group(group_id, f"[CQ:image,file={url}]")
+                    await self.message.send_group(
+                        group_id, f"[CQ:image,file={url}]"
+                    )
                 except Exception as e:
                     _logger.error("发送图片失败: %s", e)
                 result = result.replace(f"[IMAGE:{url}]", "").strip()
@@ -298,13 +328,18 @@ class AICore(Module):
         return result
 
     async def on_group_message(self, event: GroupMessageEvent):
-        self.auditor.process_message(event.user_id, event.group_id, event.message)
+        """处理群消息事件，执行内容审核。"""
+        self.auditor.process_message(
+            event.user_id, event.group_id, event.message
+        )
 
     # ---------- 记忆管理 ----------
     def _memory_file_path(self, user_id: int) -> str:
+        """返回指定用户的记忆文件路径。"""
         return os.path.join(self._memory_dir, f"{user_id}.json")
 
     async def _load_memory_from_disk(self, user_id: int) -> List[Dict]:
+        """从磁盘加载用户记忆。"""
         path = self._memory_file_path(user_id)
         if not os.path.exists(path):
             return []
@@ -318,6 +353,7 @@ class AICore(Module):
         return []
 
     async def _save_memory_file(self, user_id: int):
+        """将用户记忆保存到磁盘。"""
         path = self._memory_file_path(user_id)
         history = self.conversations.get(user_id, [])
         if not history:
@@ -333,6 +369,7 @@ class AICore(Module):
             _logger.error("保存记忆文件失败: %s", e)
 
     def _cleanup_expired(self, user_id: int):
+        """清除长时间未活动的会话历史。"""
         now = time.time()
         last = self.conversation_last_active.get(user_id, 0)
         if last and (now - last) > self.conversation_max_age:
@@ -340,6 +377,7 @@ class AICore(Module):
             self.conversation_last_active.pop(user_id, None)
 
     async def _get_history(self, user_id: int) -> List[Dict]:
+        """获取用户最近的对话历史。"""
         now = time.time()
         self.conversation_last_active[user_id] = now
         if user_id not in self.conversations:
@@ -352,16 +390,20 @@ class AICore(Module):
         return hist[-self.max_memory:]
 
     def _add_to_history(self, user_id: int, msg: Dict):
+        """向用户会话历史添加一条消息，并限制总条数。"""
         self.conversation_last_active[user_id] = time.time()
         if user_id not in self.conversations:
             self.conversations[user_id] = []
         self.conversations[user_id].append(msg)
         max_total = self.max_memory * 2
         if len(self.conversations[user_id]) > max_total:
-            self.conversations[user_id] = self.conversations[user_id][-max_total:]
+            self.conversations[user_id] = self.conversations[user_id][
+                -max_total:
+            ]
 
     # ---------- 命令实现 ----------
     async def _cmd_del_memory(self, ctx):
+        """删除指定用户的长期记忆（管理员）。"""
         if not ctx.args:
             await ctx.reply("用法：.delmemory <QQ号>")
             return
@@ -380,6 +422,7 @@ class AICore(Module):
         await ctx.reply(f"已清除用户 {target_qq} 的长时记忆。")
 
     async def _cmd_clear_memory(self, ctx):
+        """清除所有用户的长时记忆（管理员）。"""
         self.conversations.clear()
         self.conversation_last_active.clear()
         try:
@@ -392,6 +435,7 @@ class AICore(Module):
         await ctx.reply("已清除所有用户的长期记忆。")
 
     async def _cmd_clear_my_memory(self, ctx):
+        """清除当前用户自己的长时记忆。"""
         self.conversations.pop(ctx.user_id, None)
         self.conversation_last_active.pop(ctx.user_id, None)
         path = self._memory_file_path(ctx.user_id)
