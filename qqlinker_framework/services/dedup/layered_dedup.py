@@ -2,6 +2,7 @@
 import time
 import hashlib
 import threading
+import heapq
 from typing import Optional
 
 try:
@@ -15,22 +16,100 @@ from .redis_client import RedisClient
 from .bloom_filter import BloomFilter
 
 
+class _SimpleTTLCache:
+    """基于堆的 TTL 缓存实现，修复了过期清理缺陷，作为 cachetools 的降级备用。"""
+
+    def __init__(self, maxsize: int = 10000, ttl: int = 300):
+        """初始化缓存。"""
+        self._cache = {}
+        self._heap = []
+        self.maxsize = maxsize
+        self.ttl = ttl
+        self.lock = threading.RLock()
+
+    def __contains__(self, key):
+        """检查 key 是否存在且未过期。修复：显式检查时间戳。"""
+        with self.lock:
+            if key in self._cache:
+                _, timestamp = self._cache[key]
+                if time.time() - timestamp <= self.ttl:
+                    return True
+                # 过期，清理
+                del self._cache[key]
+            return False
+
+    def __getitem__(self, key):
+        """获取值，过期则抛出 KeyError。"""
+        with self.lock:
+            now = time.time()
+            if key in self._cache:
+                value, timestamp = self._cache[key]
+                if now - timestamp <= self.ttl:
+                    return value
+                del self._cache[key]
+            raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        """设置值，超过最大容量时淘汰最旧条目。"""
+        with self.lock:
+            now = time.time()
+            if key in self._cache:
+                del self._cache[key]
+            self._cache[key] = (value, now)
+            heapq.heappush(self._heap, (now, key))
+            # 淘汰最旧条目
+            while len(self._cache) > self.maxsize:
+                if not self._heap:
+                    break
+                t, k = heapq.heappop(self._heap)
+                if k in self._cache and self._cache[k][1] == t:
+                    del self._cache[k]
+
+    def pop(self, key, default=None):
+        """弹出值。"""
+        with self.lock:
+            if key in self._cache:
+                return self._cache.pop(key)[0]
+            return default
+
+    def clear(self):
+        """清空缓存。"""
+        with self.lock:
+            self._cache.clear()
+            self._heap.clear()
+
+    def __len__(self):
+        """返回当前有效条目数。"""
+        with self.lock:
+            now = time.time()
+            expired = [k for k, (_, ts) in self._cache.items() if now - ts > self.ttl]
+            for k in expired:
+                del self._cache[k]
+            return len(self._cache)
+
+
 class LayeredDedup:
     """多层去重管理器：本地缓存 + Redis + 布隆过滤器，支持降级。"""
 
     def __init__(self, config: DedupConfig):
         """初始化去重引擎。"""
-        if not CACHETOOLS_AVAILABLE:
-            raise ImportError(
-                "cachetools 未安装，请执行 'pip install cachetools' 或 'qqdeps install'"
-            )
         self.config = config
-        self._local_id_cache = TTLCache(
-            maxsize=config.local_max_size, ttl=config.local_id_ttl
-        )
-        self._local_content_cache = TTLCache(
-            maxsize=config.local_max_size, ttl=config.local_content_ttl
-        )
+        if CACHETOOLS_AVAILABLE:
+            self._local_id_cache = TTLCache(
+                maxsize=config.local_max_size, ttl=config.local_id_ttl
+            )
+            self._local_content_cache = TTLCache(
+                maxsize=config.local_max_size, ttl=config.local_content_ttl
+            )
+        else:
+            # 降级到修复后的自实现缓存
+            self._local_id_cache = _SimpleTTLCache(
+                maxsize=config.local_max_size, ttl=config.local_id_ttl
+            )
+            self._local_content_cache = _SimpleTTLCache(
+                maxsize=config.local_max_size, ttl=config.local_content_ttl
+            )
+
         self._local_lock = threading.RLock()
         self.redis = (
             RedisClient(config) if config.redis_enabled else None
@@ -40,6 +119,7 @@ class LayeredDedup:
             if self.redis and config.bloom_enabled
             else None
         )
+
         self.stats = {"local_hits": 0, "redis_hits": 0}
 
     @staticmethod

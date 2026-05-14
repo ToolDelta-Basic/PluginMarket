@@ -23,7 +23,6 @@ _TIME_UNITS = {
     "分钟": 60000,
 }
 
-# 模块专用日志记录器，级别设为 INFO 以屏蔽 DEBUG 消息
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 
@@ -144,6 +143,7 @@ class PlayerTrackerModule(Module):
             ".pos", self._cmd_pos,
             description="查看指定玩家的当前坐标",
             argument_hint="<玩家名>",
+            op_only=True,
         )
 
         self._task = asyncio.ensure_future(self._polling_loop())
@@ -166,22 +166,18 @@ class PlayerTrackerModule(Module):
 
                 positions = self._parse_positions_from_resp(resp)
                 if positions:
-                    # 仅 debug 级别记录，但模块日志级别为 INFO，因此不输出
-                    _logger.debug("[Tracker] 获取到 %d 个坐标", len(positions))
                     async with self._lock:
                         self._positions = positions
                     await self._service.update_positions(positions)
             except asyncio.CancelledError:
                 break
             except ValueError:
-                _logger.warning("[Tracker] 游戏连接未就绪，等待重试")
+                _logger.warning("游戏连接未就绪，等待重试")
                 await asyncio.sleep(5)
             except Exception as e:
-                _logger.error("[Tracker] 轮询异常: %s", e)
+                _logger.error("轮询异常: %s", e)
 
-    def _parse_positions_from_resp(
-        self, resp: Dict[str, Any]
-    ) -> Dict[str, Dict[str, float]]:
+    def _parse_positions_from_resp(self, resp: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
         """从 send_game_command_full 的返回值中解析玩家坐标。"""
         uuid2player = {}
         if hasattr(self.adapter, "game_ctrl"):
@@ -244,9 +240,9 @@ class PlayerTrackerModule(Module):
             f"[CQ:image,file=base64://{img}]",
         )
 
-    @command(".pos")
+    @command(".pos", op_only=True)
     async def _cmd_pos(self, ctx):
-        """查询指定玩家当前坐标。"""
+        """查询指定玩家当前坐标（仅管理员）。"""
         if not ctx.args:
             await ctx.reply("用法：.pos <玩家名>")
             return
@@ -332,5 +328,5 @@ class PlayerTrackerModule(Module):
             img.save(buf, format="PNG")
             return base64.b64encode(buf.getvalue()).decode("utf-8")
         except Exception as e:
-            logging.getLogger(__name__).error("渲染地图失败: %s", e)
+            _logger.error("渲染地图失败: %s", e)
             return None
