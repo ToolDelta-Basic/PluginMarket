@@ -1,5 +1,6 @@
-from tooldelta import Plugin, plugin_entry ,game_utils
+from tooldelta import Plugin, plugin_entry, game_utils
 import sys
+
 
 def getItem(target: str, itemName: str, itemSpecialID: int = -1) -> int:
     """
@@ -9,7 +10,7 @@ def getItem(target: str, itemName: str, itemSpecialID: int = -1) -> int:
         itemName (str): 物品 ID
         itemSpecialID (int): 物品特殊值，默认值 -1
     """
-    game_ctrl = game_utils._get_game_ctrl()
+    game_ctrl = game_utils._get_game_ctrl()  # noqa: SLF001
     if (
         (target not in game_ctrl.allplayers)
         and (target != game_ctrl.bot_name)
@@ -27,15 +28,19 @@ def getItem(target: str, itemName: str, itemSpecialID: int = -1) -> int:
     # TODO!!! 租赁服的/clear指令返回会乘以2 再除2(抵消)
     return int(result.OutputMessages[0].Parameters[1])
 
+
 game_utils.getItem = getItem
 sys.modules["tooldelta.game_utils"] = game_utils
+
+
 class FixGetItemPlugin(Plugin):
+    """修复 getItem 函数的插件"""
     name = "fix_getItem"
     author = "Mono"
     version = (0, 0, 1)
 
     def __init__(self, frame):
         super().__init__(frame)
-    
+
 
 entry = plugin_entry(FixGetItemPlugin)
