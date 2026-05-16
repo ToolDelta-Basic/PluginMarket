@@ -1,7 +1,5 @@
 from tooldelta import Plugin, plugin_entry ,game_utils
-import time
 import sys
-import types
 
 def getItem(target: str, itemName: str, itemSpecialID: int = -1) -> int:
     """
@@ -38,22 +36,6 @@ class FixGetItemPlugin(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        # self.frame.add_console_cmd_trigger(
-        #     ["fix_getItem"],
-        #     "",
-        #     "测试修复 getItem 函数",
-        #     self.test,
-        # )
-    
-    # def test(self, args: list[str] = []):
-    #     self.game_ctrl.sendwscmd("/clear @s stick")
-    #     time.sleep(1)
-    #     self.game_ctrl.sendwscmd("/give @s stick 1")
-    #     time.sleep(1)
-    #     result = game_utils.getItem(self.game_ctrl.bot_name, "stick")
-    #     print(f"测试修复 getItem 函数，结果为 {result}")
-        
-
     
 
 entry = plugin_entry(FixGetItemPlugin)
