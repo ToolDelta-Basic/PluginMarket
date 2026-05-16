@@ -1,0 +1,9 @@
+{
+  "author": "Mono",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "修复getItem函数",
+  "pre-plugins": {},
+  "plugin-id": "fix_getItem",
+  "enabled": true
+}
