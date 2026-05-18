@@ -380,6 +380,7 @@ class AICore(Module):
         tools_schema = self.tool.get_tools_schema(only_enabled=True)
 
         async def _exec_tool(name: str, args: dict) -> str:
+            """执行单个工具调用。"""
             return await self._execute_tool(name, args, ctx.group_id)
 
         response = await self.llm_factory.chat(
