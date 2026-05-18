@@ -110,7 +110,7 @@ class OrionBridge(Module):
             return str({
                 "total_bans": len(bans),
                 "sample": [
-                    f'{b["player"]}({b.get("reason","")})'
+                    f'{b["player"]}({b.get("reason", "")})'
                     for b in bans[:5]
                 ],
             })

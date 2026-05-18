@@ -264,7 +264,6 @@ class AICore(Module):
             )
         except KeyError:
             pass
-            pass
 
     # ---------- 公共方法 ----------
     def _get_persona_service(self):

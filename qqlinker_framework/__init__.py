@@ -9,8 +9,10 @@ try:
     HAS_TOOLDELTA = True
 except ImportError:
     HAS_TOOLDELTA = False
+
     # 测试环境降级：提供虚拟基类
     class Plugin:
+        """ToolDelta 插件虚拟基类（测试环境降级）。"""
         name = ""
         version = (0, 0, 0)
         author = ""
@@ -20,10 +22,13 @@ except ImportError:
             self.frame = frame
             self.data_path = "."
 
-        def ListenPreload(self, func):
-            pass
+        @staticmethod
+        def ListenPreload(func):
+            """注册预加载回调（测试降级为空操作）。"""
+            func()
 
     def plugin_entry(cls):
+        """插件入口装饰器（测试降级为直通）。"""
         return cls
 
     ToolDelta = None
@@ -78,7 +83,6 @@ class QQLinkerFrameworkPlugin(Plugin):
             self._loop.run_until_complete(self._host.start())
             self._loop.run_forever()
         except Exception:
-            import logging
             logging.getLogger(__name__).exception("框架运行异常")
         finally:
             self._loop.close()

@@ -85,8 +85,11 @@ class GameForwarder(Module):
             if any(msg.startswith(p) for p in block_prefixes):
                 return
 
-        # 使用稳定哈希避免 PYTHONHASHSEED 随机化导致的去重失效
-        player_hash = int(hashlib.sha256(event.player_name.encode()).hexdigest()[:8], 16)
+        # 稳定哈希避免 PYTHONHASHSEED 随机化导致去重失效
+        name_bytes = event.player_name.encode()
+        player_hash = int(
+            hashlib.sha256(name_bytes).hexdigest()[:8], 16
+        )
         if not self.dedup.check_and_add_content(
             msg, player_hash
         ):
