@@ -17,6 +17,7 @@ class CommandManager:
         description: str = "",
         op_only: bool = False,
         argument_hint: str = "",
+        cooldown: float = 0.0,
         plugin_name: str = "core",
     ):
         """注册一条命令。"""
@@ -27,6 +28,7 @@ class CommandManager:
             "description": description,
             "op_only": op_only,
             "argument_hint": argument_hint,
+            "cooldown": cooldown,
             "plugin": plugin_name,
         }
         self._commands[trigger] = info

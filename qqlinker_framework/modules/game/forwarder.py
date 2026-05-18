@@ -31,7 +31,7 @@ class GameForwarder(Module):
 
         try:
             debug = self.services.get("debug")
-            debug.register_module(
+            await debug.register_module(
                 self.name, {"stats": _dbg_stats}
             )
         except KeyError:

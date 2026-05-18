@@ -2,9 +2,18 @@
 """ToolDelta 平台适配器实现"""
 import logging
 from typing import Callable, Dict, Any, List, Optional
-from tooldelta import Plugin, Player, Chat
+
+try:
+    from tooldelta import Plugin, Player, Chat
+    HAS_TOOLDELTA = True
+except ImportError:
+    HAS_TOOLDELTA = False
+    Plugin = object
+    Player = object
+    Chat = object
+
 from .base import IFrameworkAdapter
-from services.ws_client import WsClient
+from ..services.ws_client import WsClient
 
 
 class ToolDeltaAdapter(IFrameworkAdapter):

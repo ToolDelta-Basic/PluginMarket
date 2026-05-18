@@ -1,8 +1,33 @@
 # __init__.py
 """云链群服互通框架 - ToolDelta 插件入口"""
 import asyncio
+import logging
 import threading
-from tooldelta import Plugin, plugin_entry, ToolDelta
+
+try:
+    from tooldelta import Plugin, plugin_entry, ToolDelta
+    HAS_TOOLDELTA = True
+except ImportError:
+    HAS_TOOLDELTA = False
+    # 测试环境降级：提供虚拟基类
+    class Plugin:
+        name = ""
+        version = (0, 0, 0)
+        author = ""
+        description = ""
+
+        def __init__(self, frame=None):
+            self.frame = frame
+            self.data_path = "."
+
+        def ListenPreload(self, func):
+            pass
+
+    def plugin_entry(cls):
+        return cls
+
+    ToolDelta = None
+
 from .core.host import FrameworkHost
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 

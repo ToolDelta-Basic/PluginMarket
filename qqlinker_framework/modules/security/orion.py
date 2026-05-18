@@ -117,7 +117,7 @@ class OrionBridge(Module):
 
         try:
             debug = self.services.get("debug")
-            debug.register_module(self.name, {"status": _dbg_status})
+            await debug.register_module(self.name, {"status": _dbg_status})
         except KeyError:
             pass
 
