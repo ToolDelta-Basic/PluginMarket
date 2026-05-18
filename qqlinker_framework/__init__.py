@@ -13,6 +13,7 @@ except ImportError:
     # 测试环境降级：提供虚拟基类
     class Plugin:
         """ToolDelta 插件虚拟基类（测试环境降级）。"""
+
         name = ""
         version = (0, 0, 0)
         author = ""
