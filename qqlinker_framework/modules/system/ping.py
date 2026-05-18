@@ -11,13 +11,20 @@ class DummyModule(Module):
     required_services = ["message"]
 
     async def on_init(self):
-        async def _dbg_ping(**kw):
+        """初始化时打印日志。"""
+
+        async def _dbg_ping():
+            """调试端点。"""
             return "pong from debug"
+
         try:
-            self.services.get("debug").register_module(self.name, {"ping": _dbg_ping})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name, {"ping": _dbg_ping}
+            )
         except KeyError:
             pass
-        """初始化时打印日志。"""
+
         print("[DummyModule] 初始化完成")
 
     @command(".ping")

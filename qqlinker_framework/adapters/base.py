@@ -89,7 +89,8 @@ class IFrameworkAdapter(ABC):
             }
         """
 
-    def resolve_player_names(self, entries: list) -> Dict[str, str]:
+    @staticmethod
+    def resolve_player_names(entries: list) -> dict:
         """将查询条目中的 UUID 映射为玩家名。
 
         默认实现为空映射，子类可覆盖以提供平台特定的 UUID→名字解析。

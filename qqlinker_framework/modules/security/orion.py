@@ -1,242 +1,274 @@
-"""猎户座反制系统桥接模块。"""
-from typing import Optional, Dict, Any
+"""自主封禁系统：基于游戏指令 + 本地记录实现封禁/解封/踢出。
+
+原猎户座插件不提供 API 入口，本模块使用游戏原生命令驱动封禁逻辑，
+配合 PlayerJoinEvent 监听实现进服自动拦截。
+
+命令:
+  .封禁 <玩家名> [原因] [时长分钟]  — 封禁玩家（管理员）
+  .解封 <玩家名>                      — 解除封禁（管理员）
+  .封禁列表                           — 查看封禁列表（管理员）
+  .踢出 <玩家名> [原因]              — 踢出玩家（管理员）
+"""
+
+import json
+import logging
+import os
+import time
+from typing import Any, Dict, List, Optional
+
 from ...core.module import Module
 from ...core.decorators import command
+from ...core.events import PlayerJoinEvent
+
+_log = logging.getLogger(__name__)
 
 
-class OrionService:
-    """封装猎户座反制系统 API 调用。"""
+class BanStore:
+    """封禁记录持久化存储，每玩家一个 JSON 文件。"""
 
-    def __init__(self, orion_api):
-        """初始化服务。
+    def __init__(self, data_dir: str) -> None:
+        self._dir = os.path.join(data_dir, "bans")
+        os.makedirs(self._dir, exist_ok=True)
 
-        Args:
-            orion_api: 猎户座插件 API 对象。
-        """
-        self.api = orion_api
+    def _path(self, player: str) -> str:
+        """返回指定玩家的封禁记录文件路径。"""
+        # 文件名以玩家名命名，转小写统一防大小写绕过
+        return os.path.join(self._dir, f"{player.lower()}.json")
 
-    def ban_player(
-        self,
-        player_name: str,
-        reason: str = "管理员操作",
-        duration: int = -1,
-    ) -> Dict[str, Any]:
-        """封禁玩家。
-
-        Args:
-            player_name: 玩家名。
-            reason: 原因。
-            duration: 秒，-1 为永久。
-
-        Returns:
-            结果字典。
-        """
-        if not self.api:
-            return {"success": False, "message": "猎户座反制系统未接入"}
+    def get(self, player: str) -> Optional[Dict[str, Any]]:
+        """获取玩家封禁记录，不存在或已过期返回 None。"""
+        path = self._path(player)
+        if not os.path.exists(path):
+            return None
         try:
-            return self.api.ban_player(player_name, reason, duration)
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+            with open(path, "r", encoding="utf-8") as f:
+                record = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return None
+        duration = record.get("duration", -1)
+        if duration > 0:
+            end_time = record.get("timestamp", 0) + duration
+            if time.time() >= end_time:
+                os.remove(path)
+                return None
+        return record
 
-    def unban_player(self, player_name: str) -> Dict[str, Any]:
-        """解除玩家封禁。
+    def set(self, player: str, record: Dict[str, Any]) -> None:
+        """写入封禁记录。"""
+        record.setdefault("timestamp", time.time())
+        record["player"] = player
+        with open(self._path(player), "w", encoding="utf-8") as f:
+            json.dump(record, f, ensure_ascii=False, indent=2)
 
-        Args:
-            player_name: 玩家名。
+    def remove(self, player: str) -> bool:
+        """删除封禁记录，返回是否成功。"""
+        path = self._path(player)
+        if os.path.exists(path):
+            os.remove(path)
+            return True
+        return False
 
-        Returns:
-            结果字典。
-        """
-        if not self.api:
-            return {"success": False, "message": "猎户座反制系统未接入"}
-        try:
-            return self.api.unban_player(player_name)
-        except Exception as e:
-            return {"success": False, "message": str(e)}
-
-    def get_ban_list(self) -> Dict[str, Any]:
-        """获取封禁列表。"""
-        if not self.api:
-            return {"success": False, "message": "猎户座反制系统未接入"}
-        try:
-            return self.api.get_ban_list()
-        except Exception as e:
-            return {"success": False, "message": str(e)}
-
-    def get_player_devices(self, player_name: str) -> Dict[str, Any]:
-        """查询玩家关联的设备号。
-
-        Args:
-            player_name: 玩家名。
-
-        Returns:
-            结果字典。
-        """
-        if not self.api:
-            return {"success": False, "message": "猎户座反制系统未接入"}
-        if not hasattr(self.api, 'get_player_devices'):
-            return {
-                "success": False,
-                "message": "当前猎户座版本不支持设备查询"
-            }
-        try:
-            return self.api.get_player_devices(player_name)
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+    def list_all(self) -> List[Dict[str, Any]]:
+        """列出所有有效封禁记录。"""
+        result: List[Dict[str, Any]] = []
+        for fname in os.listdir(self._dir):
+            if not fname.endswith(".json"):
+                continue
+            player = fname[:-5]
+            record = self.get(player)
+            if record:
+                result.append(record)
+            else:
+                # 过期记录清理
+                full = os.path.join(self._dir, fname)
+                try:
+                    os.remove(full)
+                except OSError:
+                    pass
+        return result
 
 
 class OrionBridge(Module):
-    """提供 .封禁 / .解封 / .设备 命令，对接猎户座反制系统。"""
+    """自主封禁模块：使用原生游戏指令 + 本地 JSON 记录。"""
 
     name = "orion_bridge"
-    version = (1, 0, 0)
+    version = (2, 0, 0)
     required_services = ["config", "adapter", "message"]
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
-        self.orion_svc = None  # 初始化属性
+        self._store: Optional[BanStore] = None
 
-    async def on_init(self):
-        async def _dbg_status(**kw):
-            return str({"connected": self.orion_svc is not None})
+    # ── 生命周期 ────────────────────────────────────────────
+
+    async def on_init(self) -> None:
+        """初始化封禁存储、注册命令和事件监听。"""
+
+        async def _dbg_status() -> str:
+            """调试端点。"""
+            bans = self._store.list_all() if self._store else []
+            return str({
+                "total_bans": len(bans),
+                "sample": [
+                    f'{b["player"]}({b.get("reason","")})'
+                    for b in bans[:5]
+                ],
+            })
+
         try:
-            self.services.get("debug").register_module(self.name, {"status": _dbg_status})
+            debug = self.services.get("debug")
+            debug.register_module(self.name, {"status": _dbg_status})
         except KeyError:
             pass
-        """尝试获取猎户座 API 并注册命令。"""
-        orion_api = None
-        try:
-            orion_api = self.adapter.get_plugin_api("Orion_System")
-        except Exception:
-            pass
 
-        if orion_api is None:
-            self.orion_svc = None
-        else:
-            self.orion_svc = OrionService(orion_api)
-            self.services.register("orion", self.orion_svc)
+        self._store = BanStore(self.get_data_dir())
 
         self.register_command(
-            ".封禁", self.cmd_ban,
-            description="封禁玩家 <玩家名> [原因] [时长(分钟,-1永久)]",
-            op_only=True
+            ".封禁", self._cmd_ban,
+            description="封禁玩家 <玩家名> [原因] [时长(分钟)]",
+            op_only=True,
         )
         self.register_command(
-            ".解封", self.cmd_unban,
+            ".解封", self._cmd_unban,
             description="解除玩家封禁 <玩家名>",
-            op_only=True
+            op_only=True,
         )
         self.register_command(
-            ".设备", self.cmd_device,
-            description="查询玩家设备 <玩家名>",
-            op_only=True
-        )
-        self.register_command(
-            ".封禁列表", self.cmd_banlist,
+            ".封禁列表", self._cmd_banlist,
             description="查看当前封禁列表",
-            op_only=True
+            op_only=True,
+        )
+        self.register_command(
+            ".踢出", self._cmd_kick,
+            description="踢出玩家 <玩家名> [原因]",
+            op_only=True,
         )
 
-    async def _check_available(self, ctx) -> bool:
-        """检查猎户座服务是否可用，不可用时自动回复。
+        self.listen("PlayerJoinEvent", self._on_player_join, priority=10)
 
-        Args:
-            ctx: 命令上下文。
+    # ── 进服拦截 ────────────────────────────────────────────
 
-        Returns:
-            是否可用。
-        """
-        if self.orion_svc is None:
-            await ctx.reply("猎户座反制系统未接入")
-            return False
-        return True
+    async def _on_player_join(self, event: PlayerJoinEvent) -> None:
+        """玩家进服时检查封禁状态，被封则自动踢出。"""
+        player = event.player_name
+        record = self._store.get(player)
+        if not record:
+            return
+
+        reason = record.get("reason", "已被封禁")
+        duration = record.get("duration", -1)
+        if duration > 0:
+            end_time = record.get("timestamp", 0) + duration
+            remain = int(end_time - time.time())
+            time_str = self._fmt_duration(remain)
+            msg = f"§c你已被封禁至 {time_str}：{reason}"
+        else:
+            msg = f"§c你已被永久封禁：{reason}"
+
+        self.adapter.send_game_command(f'kick "{player}" {msg}')
+        _log.info("进服拦截 %s: %s", player, reason)
+
+    # ── 命令处理 ────────────────────────────────────────────
 
     @command(".封禁", op_only=True)
-    async def cmd_ban(self, ctx):
-        """封禁玩家命令处理。"""
-        if not await self._check_available(ctx):
-            return
+    async def _cmd_ban(self, ctx) -> None:
+        """封禁玩家：记录 + 踢出。"""
         args = ctx.args
         if len(args) < 1:
-            await ctx.reply("用法：.封禁 <玩家名> [原因] [时长(分钟)]")
+            await ctx.reply("用法：.封禁 <玩家名> [原因] [时长(分钟), -1=永久]")
             return
+
         player = args[0]
         reason = args[1] if len(args) > 1 else "管理员操作"
-        duration = -1
+        duration = -1  # 默认永久
         if len(args) > 2:
             try:
-                duration = int(args[2]) * 60
-                if duration == 0:
+                duration = int(args[2])
+                if duration > 0:
+                    duration *= 60  # 分钟 → 秒
+                else:
                     duration = -1
             except ValueError:
-                duration = -1
+                await ctx.reply("时长格式错误，请输入整数分钟数或 -1")
+                return
 
-        result = self.orion_svc.ban_player(player, reason, duration)
-        if result.get("success"):
-            await ctx.reply(f"封禁成功：{player}")
-        else:
-            await ctx.reply(
-                f"封禁失败：{result.get('message', '未知错误')}"
-            )
+        self._store.set(player, {
+            "player": player,
+            "reason": reason,
+            "duration": duration,
+            "operator": ctx.nickname,
+        })
+
+        # 踢出在线玩家
+        time_str = "永久" if duration == -1 else self._fmt_duration(duration)
+        self.adapter.send_game_command(
+            f'kick "{player}" §c你已被封禁至 {time_str}：{reason}'
+        )
+        await ctx.reply(f"✅ 已封禁 {player}（{time_str}）：{reason}")
+        _log.info(
+            "封禁 %s by %s (时长=%d): %s",
+            player, ctx.nickname, duration, reason,
+        )
 
     @command(".解封", op_only=True)
-    async def cmd_unban(self, ctx):
-        """解除封禁命令处理。"""
-        if not await self._check_available(ctx):
-            return
+    async def _cmd_unban(self, ctx) -> None:
+        """解除玩家封禁。"""
         if len(ctx.args) < 1:
-            await ctx.reply("用法：.unban <玩家名>")
+            await ctx.reply("用法：.解封 <玩家名>")
             return
-        player = ctx.args[0]
-        result = self.orion_svc.unban_player(player)
-        if result.get("success"):
-            await ctx.reply(f"解封成功：{player}")
-        else:
-            await ctx.reply(
-                f"解封失败：{result.get('message', '未知错误')}"
-            )
 
-    @command(".设备", op_only=True)
-    async def cmd_device(self, ctx):
-        """查询玩家设备命令处理。"""
-        if not await self._check_available(ctx):
-            return
-        if len(ctx.args) < 1:
-            await ctx.reply("用法：.设备 <玩家名>")
-            return
         player = ctx.args[0]
-        result = self.orion_svc.get_player_devices(player)
-        if result.get("success"):
-            devices = result.get("data", {}).get("devices", [])
-            if devices:
-                await ctx.reply(
-                    f"玩家 {player} 关联的设备号：\n"
-                    + "\n".join(devices)
-                )
-            else:
-                await ctx.reply(f"{player} 无关联设备记录")
+        if self._store.remove(player):
+            await ctx.reply(f"✅ 已解封 {player}")
+            _log.info("解封 %s by %s", player, ctx.nickname)
         else:
-            await ctx.reply(
-                f"查询失败：{result.get('message', '未知错误')}"
-            )
+            await ctx.reply(f"{player} 没有被封禁记录")
 
     @command(".封禁列表", op_only=True)
-    async def cmd_banlist(self, ctx):
-        """查看封禁列表命令处理。"""
-        if not await self._check_available(ctx):
+    async def _cmd_banlist(self, ctx) -> None:
+        """查看当前封禁列表。"""
+        bans = self._store.list_all()
+        if not bans:
+            await ctx.reply("封禁列表为空")
             return
-        data = self.orion_svc.get_ban_list()
-        bans = data.get("data", data) if isinstance(data, dict) else {}
-        if isinstance(bans, list):
-            if bans:
-                lines = [f"封禁列表（共 {len(bans)} 条）："]
-                for b in bans[:20]:
-                    lines.append(
-                        f"  · {b.get('name', b)} "
-                        f"[{b.get('reason', '无原因')}]"
-                    )
-                await ctx.reply("\n".join(lines))
-            else:
-                await ctx.reply("封禁列表为空")
-        else:
-            await ctx.reply(f"查询失败：{bans.get('message', str(bans))}")
+
+        lines = [f"封禁列表（共 {len(bans)} 条）："]
+        for b in bans[:15]:
+            player = b.get("player", "?")
+            reason = b.get("reason", "无")
+            duration = b.get("duration", -1)
+            time_str = "永久" if duration == -1 else self._fmt_duration(duration)
+            lines.append(f"  · {player} [{time_str}] {reason}")
+
+        if len(bans) > 15:
+            lines.append(f"  ... 及其他 {len(bans) - 15} 条")
+        await ctx.reply("\n".join(lines))
+
+    @command(".踢出", op_only=True)
+    async def _cmd_kick(self, ctx) -> None:
+        """踢出在线玩家（不封禁）。"""
+        args = ctx.args
+        if len(args) < 1:
+            await ctx.reply("用法：.踢出 <玩家名> [原因]")
+            return
+
+        player = args[0]
+        reason = args[1] if len(args) > 1 else "管理员操作"
+        self.adapter.send_game_command(f'kick "{player}" {reason}')
+        await ctx.reply(f"✅ 已踢出 {player}")
+
+    # ── 工具 ────────────────────────────────────────────────
+
+    @staticmethod
+    def _fmt_duration(seconds: int) -> str:
+        """将秒数格式化为可读的时间字符串。"""
+        if seconds <= 0:
+            return "永久"
+        parts = []
+        for unit, secs in [("天", 86400), ("时", 3600), ("分", 60)]:
+            val, seconds = divmod(seconds, secs)
+            if val:
+                parts.append(f"{val}{unit}")
+        if seconds:
+            parts.append(f"{seconds}秒")
+        return "".join(parts) if parts else "0秒"

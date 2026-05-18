@@ -24,6 +24,7 @@ def command(
     """
 
     def decorator(func: Callable):
+        """将命令元数据注入函数，供模块扫描时收集。"""
         func._command_info = {
             "trigger": trigger,
             "type": cmd_type,

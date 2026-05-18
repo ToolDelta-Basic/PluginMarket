@@ -116,13 +116,20 @@ class PlayerTrackerModule(Module):
         self._query_timeout = 3.0
 
     async def on_init(self):
-        async def _dbg_positions(**kw):
+        """初始化配置、服务、命令，并启动后台轮询。"""
+
+        async def _dbg_positions():
+            """调试端点。"""
             return str({"tracked": len(self._positions)})
+
         try:
-            self.services.get("debug").register_module(self.name, {"positions": _dbg_positions})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name, {"positions": _dbg_positions}
+            )
         except KeyError:
             pass
-        """初始化配置、服务、命令，并启动后台轮询。"""
+
         self.config.register_section("玩家分布图", {
             "最大快照数": 100,
             "存储粒度": "秒",

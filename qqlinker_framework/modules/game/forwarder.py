@@ -23,13 +23,20 @@ class GameForwarder(Module):
         self.dedup: LayeredDedup = services.get("dedup")
 
     async def on_init(self):
-        async def _dbg_stats(**kw):
+        """注册配置节并订阅事件。"""
+
+        async def _dbg_stats():
+            """调试端点。"""
             return str(self.dedup.get_stats())
+
         try:
-            self.services.get("debug").register_module(self.name, {"stats": _dbg_stats})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name, {"stats": _dbg_stats}
+            )
         except KeyError:
             pass
-        """注册配置节并订阅事件。"""
+
         self.config.register_section("消息转发", {
             "游戏到群": {
                 "是否启用": True,

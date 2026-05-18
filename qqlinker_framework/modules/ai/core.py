@@ -9,6 +9,7 @@
 import logging
 import os
 import time
+import traceback
 import re
 import json
 from typing import Dict, List, Optional, Tuple
@@ -241,20 +242,28 @@ class AICore(Module):
         self.listen("GroupMessageEvent", self.on_group_message, priority=10)
 
         # ── 调试引擎 ──
-        async def _dbg_stats(**kw):
+
+        async def _dbg_stats():
+            """调试端点。"""
             return str(self._rate_limiter.get_stats())
-        async def _dbg_convos(**kw):
+
+        async def _dbg_convos():
+            """调试端点。"""
             return str({
                 "active_convos": len(self.conversations),
                 "auditor_patterns": (
                     len(self.auditor.patterns) if self.auditor else 0
                 ),
             })
+
         try:
-            self.services.get("debug").register_module(
-                self.name, {"stats": _dbg_stats, "convos": _dbg_convos}
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name,
+                {"stats": _dbg_stats, "convos": _dbg_convos},
             )
         except KeyError:
+            pass
             pass
 
     # ---------- 公共方法 ----------

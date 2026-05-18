@@ -117,7 +117,6 @@ class ConfigManager:
         只填充目标字典中不存在的键，不覆盖已有值。
         支持嵌套 dict 递归合并。
         """
-        """递归将 defaults 中缺失的键添加到 target 中，不覆盖已有值。"""
         changed = False
         for key, default_value in defaults.items():
             if key not in target:

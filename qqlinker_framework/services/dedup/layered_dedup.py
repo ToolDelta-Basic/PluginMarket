@@ -55,7 +55,7 @@ class _SimpleTTLCache:
             now = time.time()
             # 删除旧条目的缓存和堆幽灵（修复内存泄漏）
             if key in self._cache:
-                old_val, old_ts = self._cache[key]
+                _, _ = self._cache[key]
                 del self._cache[key]
                 # 从堆中移除对应的旧条目（重建堆清理幽灵）
                 self._heap = [(t, k) for t, k in self._heap if k != key]

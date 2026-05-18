@@ -26,15 +26,27 @@ class GameAdmin(Module):
     required_services = ["config", "adapter"]
 
     async def on_init(self):
-        async def _dbg_stats(**kw):
-            return str({"online_players": len(self.adapter.get_online_players())})
-        async def _dbg_config(**kw):
+        """注册配置节和命令。"""
+
+        async def _dbg_stats():
+            """调试端点。"""
+            return str({
+                "online_players": len(self.adapter.get_online_players())
+            })
+
+        async def _dbg_config():
+            """调试端点。"""
             return str(self._get_cfg())
+
         try:
-            self.services.get("debug").register_module(self.name, {"stats": _dbg_stats, "config": _dbg_config})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name,
+                {"stats": _dbg_stats, "config": _dbg_config},
+            )
         except KeyError:
             pass
-        """注册配置节和命令。"""
+
         self.config.register_section("游戏管理", {
             "是否启用": True,
             "允许查看玩家列表": True,

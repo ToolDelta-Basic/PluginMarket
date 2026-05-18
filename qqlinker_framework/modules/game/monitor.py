@@ -46,14 +46,21 @@ class TPSMonitorModule(Module):
         self._task = None
 
     async def on_init(self):
-        async def _dbg_tps(**kw):
+        """注册配置节、初始化服务、启动后台测量。"""
+
+        async def _dbg_tps():
+            """调试端点。"""
             svc = self.services.get("tps")
             return str({"tps": getattr(svc, "tps", "N/A")})
+
         try:
-            self.services.get("debug").register_module(self.name, {"tps": _dbg_tps})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name, {"tps": _dbg_tps}
+            )
         except KeyError:
             pass
-        """注册配置节、初始化服务、启动后台测量。"""
+
         self.config.register_section("TPS监控", {
             "测量间隔秒": 30,
             "基础响应时间": 0.05,

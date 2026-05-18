@@ -108,14 +108,21 @@ class PlayerBindingModule(Module):
         self.binding_service = None
 
     async def on_init(self):
-        async def _dbg_bindings(**kw):
+        """初始化数据目录、服务注册、命令和事件监听。"""
+
+        async def _dbg_bindings():
+            """调试端点。"""
             all_b = self.binding_service.get_all_bindings()
             return str({"total": len(all_b)})
+
         try:
-            self.services.get("debug").register_module(self.name, {"bindings": _dbg_bindings})
+            debug = self.services.get("debug")
+            debug.register_module(
+                self.name, {"bindings": _dbg_bindings}
+            )
         except KeyError:
             pass
-        """初始化数据目录、服务注册、命令和事件监听。"""
+
         module_dir = self.get_data_dir()
         self.binding_service = BindingService(module_dir)
         self.services.register("binding", self.binding_service)
