@@ -1,23 +1,39 @@
-"""游戏管理指令模块：玩家列表、指令执行、脚本串联、白名单校验"""
-from ..core.module import Module
-from ..core.decorators import command
+"""游戏管理指令模块：玩家列表、指令执行、脚本串联、白名单校验。
 
-DEFAULT_DANGEROUS_ARGS = [
+提供命令:
+  .在线 — 查看在线玩家列表
+  .指令   — 执行单条游戏指令（管理员）
+  .执行   — 批量执行多条指令（管理员）
+
+所有指令通过白名单+危险参数过滤实现安全控制。
+"""
+from ...core.module import Module
+from ...core.decorators import command
+
+DEFAULT_DANGEROUS_ARGS = (
     "op", "deop", "stop", "restart", "reload",
     "whitelist", "ban", "pardon", "kick", "banlist",
     "save", "save-all", "save-off", "save-on",
     "debug", "seed", "defaultgamemode", "difficulty"
-]
+)
 
 
 class GameAdmin(Module):
-    """游戏管理模块：.list 查看在线玩家，.cmd/.run 执行游戏指令。"""
+    """游戏管理模块：.在线 查看在线玩家，.指令/.执行 执行游戏指令。"""
 
     name = "game_admin"
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 
     async def on_init(self):
+        async def _dbg_stats(**kw):
+            return str({"online_players": len(self.adapter.get_online_players())})
+        async def _dbg_config(**kw):
+            return str(self._get_cfg())
+        try:
+            self.services.get("debug").register_module(self.name, {"stats": _dbg_stats, "config": _dbg_config})
+        except KeyError:
+            pass
         """注册配置节和命令。"""
         self.config.register_section("游戏管理", {
             "是否启用": True,
@@ -36,15 +52,15 @@ class GameAdmin(Module):
             "脚本最大指令数": 10
         })
         self.register_command(
-            ".list", self.cmd_list, description="查看在线玩家列表"
+            ".在线", self.cmd_list, description="查看在线玩家列表"
         )
         self.register_command(
-            ".cmd", self.cmd_exec,
+            ".指令", self.cmd_exec,
             description="执行游戏指令（管理员）",
             op_only=True, argument_hint="<指令>"
         )
         self.register_command(
-            ".run", self.cmd_run,
+            ".执行", self.cmd_run,
             description="执行多条游戏指令，用 / 分隔（管理员）",
             op_only=True, argument_hint="<指令1/指令2/...>"
         )
@@ -66,6 +82,8 @@ class GameAdmin(Module):
         allowed = [
             c.lower() for c in cfg.get("允许执行的命令列表", [])
         ]
+        if not allowed:
+            return False, "管理员未配置允许执行的命令列表"
         dangerous_args = [
             a.lower() for a in cfg.get("危险参数", DEFAULT_DANGEROUS_ARGS)
         ]
@@ -81,7 +99,7 @@ class GameAdmin(Module):
                 return False, f"参数包含敏感项: {arg}"
         return True, ""
 
-    @command(".list")
+    @command(".在线")
     async def cmd_list(self, ctx):
         """查看在线玩家列表。"""
         if not self._get_cfg().get("允许查看玩家列表", True):
@@ -94,11 +112,11 @@ class GameAdmin(Module):
             msg = f"在线玩家 ({len(players)}人)：" + "、".join(players)
             await ctx.reply(msg)
 
-    @command(".cmd", op_only=True)
+    @command(".指令", op_only=True)
     async def cmd_exec(self, ctx):
         """执行单条游戏指令（管理员）。"""
         if not ctx.args:
-            await ctx.reply("用法：.cmd <指令>")
+            await ctx.reply("用法：.指令 <指令>")
             return
         cmd = " ".join(ctx.args)
         valid, err = self._validate_command(cmd)
@@ -111,7 +129,7 @@ class GameAdmin(Module):
         except Exception as e:
             await ctx.reply(f"❌ 执行失败: {str(e)}")
 
-    @command(".run", op_only=True)
+    @command(".执行", op_only=True)
     async def cmd_run(self, ctx):
         """执行多条游戏指令（用 / 分隔）。"""
         cfg = self._get_cfg()
@@ -119,7 +137,7 @@ class GameAdmin(Module):
             await ctx.reply("脚本功能已禁用")
             return
         if not ctx.args:
-            await ctx.reply("用法：.run <指令1/指令2/...>")
+            await ctx.reply("用法：.执行 <指令1/指令2/...>")
             return
         raw = " ".join(ctx.args)
         commands = [c.strip() for c in raw.split("/") if c.strip()]

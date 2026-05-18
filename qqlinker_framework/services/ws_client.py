@@ -48,12 +48,21 @@ class WsClient:
 
     def disconnect(self):
         """关闭连接并停止重连（线程安全）。"""
-        self._reconnect = False
+        with self._lock:
+            self._reconnect = False
+        if self.ws:
+            try:
+                self.ws.close()
+            except Exception:
+                pass
 
     def _run_forever(self):
         """后台线程：管理 WebSocket 连接与重连。"""
         logger = logging.getLogger(__name__)
-        while self._reconnect:
+        while True:
+            with self._lock:
+                if not self._reconnect:
+                    break
             try:
                 header = (
                     {"Authorization": f"Bearer {self.token}"}
@@ -72,9 +81,9 @@ class WsClient:
             except Exception as e:
                 logger.error("连接异常: %s", e)
             self.available = False
-            if not self._reconnect:
-                break
             with self._lock:
+                if not self._reconnect:
+                    break
                 delay = self._current_delay
                 self._current_delay = min(
                     self._current_delay * 2, self._max_delay
@@ -115,33 +124,39 @@ class WsClient:
         logging.getLogger(__name__).info("WS 连接关闭")
 
     def send_group_msg(self, group_id: int, message: str) -> bool:
-        """发送群消息。"""
-        logger = logging.getLogger(__name__)
-        if not self.ws or not self.available:
+        """发送群消息（线程安全，防御 TOCTOU）。
+
+        通过本地引用 + try/except 消除检查与发送之间的时间窗口。
+        """
+        ws = self.ws
+        if ws is None or not self.available:
             return False
-        data = {
+        payload = json.dumps({
             "action": "send_group_msg",
             "params": {"group_id": group_id, "message": message},
-        }
+        }).encode("utf-8")
         try:
-            self.ws.send(json.dumps(data).encode('utf-8'))
+            ws.send(payload)
             return True
         except Exception as e:
-            logger.error("发送群消息失败: %s", e)
+            logging.getLogger(__name__).error("发送群消息失败: %s", e)
             return False
 
     def send_private_msg(self, user_id: int, message: str) -> bool:
-        """发送私聊消息。"""
-        logger = logging.getLogger(__name__)
-        if not self.ws or not self.available:
+        """发送私聊消息（线程安全，防御 TOCTOU）。
+
+        通过本地引用 + try/except 消除检查与发送之间的时间窗口。
+        """
+        ws = self.ws
+        if ws is None or not self.available:
             return False
-        data = {
+        payload = json.dumps({
             "action": "send_private_msg",
             "params": {"user_id": user_id, "message": message},
-        }
+        }).encode("utf-8")
         try:
-            self.ws.send(json.dumps(data).encode('utf-8'))
+            ws.send(payload)
             return True
         except Exception as e:
-            logger.error("发送私聊消息失败: %s", e)
+            logging.getLogger(__name__).error("发送私聊消息失败: %s", e)
             return False

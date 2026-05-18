@@ -36,9 +36,18 @@ class MessageManager:
             self._worker_task = asyncio.create_task(self._worker())
 
     async def stop(self):
-        """停止后台协程。"""
+        """停止后台协程，排空队列中的高优先级消息。"""
         self._running = False
         if self._worker_task:
+            # 排空队列中已有的高优先级消息（最多排空 50 条）
+            drained = 0
+            while drained < 50 and not self._queue.empty():
+                try:
+                    task = self._queue.get_nowait()
+                    await self._dispatch(task)
+                    drained += 1
+                except Exception:
+                    break
             self._worker_task.cancel()
             try:
                 await self._worker_task

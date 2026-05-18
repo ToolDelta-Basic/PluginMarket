@@ -3,7 +3,6 @@ import asyncio
 import os
 import json
 import logging
-import inspect
 from typing import Callable, Dict, List, Optional, Any
 
 
@@ -287,11 +286,10 @@ class ToolManager:
 
         try:
             if tool.callback:
-                sig = inspect.signature(tool.callback)
-                params = list(sig.parameters.keys())
-                if len(params) >= 3:
+                try:
                     result = tool.callback(arguments, context, tool_config)
-                else:
+                except TypeError:
+                    # 回退：如果回调不接受 tool_config 参数
                     result = tool.callback(arguments, context)
                 if (
                     asyncio.iscoroutinefunction(tool.callback)

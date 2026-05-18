@@ -50,14 +50,19 @@ class _SimpleTTLCache:
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        """设置值，超过最大容量时淘汰最旧条目。"""
+        """设置值，超过最大容量时淘汰最旧条目，同时清理堆中过期/幽灵条目。"""
         with self.lock:
             now = time.time()
+            # 删除旧条目的缓存和堆幽灵（修复内存泄漏）
             if key in self._cache:
+                old_val, old_ts = self._cache[key]
                 del self._cache[key]
+                # 从堆中移除对应的旧条目（重建堆清理幽灵）
+                self._heap = [(t, k) for t, k in self._heap if k != key]
+                heapq.heapify(self._heap)
             self._cache[key] = (value, now)
             heapq.heappush(self._heap, (now, key))
-            # 淘汰最旧条目
+            # 淘汰最旧有效条目
             while len(self._cache) > self.maxsize:
                 if not self._heap:
                     break
@@ -136,9 +141,8 @@ class LayeredDedup:
                 "set",
                 f"dedup:msgid:{msg_id}",
                 "1",
-                "nx",
-                "ex",
-                self.config.redis_id_ttl,
+                ex=self.config.redis_id_ttl,
+                nx=True,
             )
             if result is True:
                 with self._local_lock:
@@ -183,9 +187,8 @@ class LayeredDedup:
                 "set",
                 f"dedup:content:{fingerprint}",
                 "1",
-                "nx",
-                "ex",
-                self.config.redis_content_ttl,
+                ex=self.config.redis_content_ttl,
+                nx=True,
             )
             if result is None:
                 if self.config.fallback_to_local_on_redis_failure:
@@ -217,7 +220,7 @@ class LayeredDedup:
         lock_value = f"{time.time()}:{threading.get_ident()}"
         for _ in range(self.config.lock_retry_times):
             result = self.redis.execute(
-                "set", lock_key, lock_value, "nx", "ex", ttl
+                "set", lock_key, lock_value, ex=ttl, nx=True
             )
             if result:
                 return True

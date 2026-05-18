@@ -279,10 +279,14 @@ class FrameworkHost:
         from .events import SystemStopEvent
         await self.event_bus.publish(SystemStopEvent())
         for mod in self._modules:
-            await mod.on_stop()
+            try:
+                await mod.on_stop()
+            except Exception as e:
+                logger.error("模块 %s 停止异常: %s", mod.name, e)
         await self.message_mgr.stop()
         if self.ws_client:
             self.ws_client.disconnect()
+        self.event_bus.shutdown()
         logger.info("框架已停止")
 
     def _console_cmd_qqdeps(self, args: list):
@@ -343,28 +347,43 @@ class FrameworkHost:
     def _on_game_chat_bridge(self, player_name: str, message: str):
         """将游戏聊天事件桥接到事件总线。"""
         if self._main_loop and self._main_loop.is_running():
-            asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(
-                    GameChatEvent(player_name=player_name, message=message)
-                ),
-                self._main_loop,
-            )
+            try:
+                asyncio.run_coroutine_threadsafe(
+                    self.event_bus.publish(
+                        GameChatEvent(player_name=player_name, message=message)
+                    ),
+                    self._main_loop,
+                )
+            except Exception as e:
+                logging.getLogger(__name__).error(
+                    "游戏聊天事件桥接失败: %s", e
+                )
 
     def _on_player_join_bridge(self, player_name: str):
         """玩家加入事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
-            asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
-                self._main_loop,
-            )
+            try:
+                asyncio.run_coroutine_threadsafe(
+                    self.event_bus.publish(PlayerJoinEvent(player_name=player_name)),
+                    self._main_loop,
+                )
+            except Exception as e:
+                logging.getLogger(__name__).error(
+                    "玩家加入事件桥接失败: %s", e
+                )
 
     def _on_player_leave_bridge(self, player_name: str):
         """玩家离开事件桥接。"""
         if self._main_loop and self._main_loop.is_running():
-            asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(PlayerLeaveEvent(player_name=player_name)),
-                self._main_loop,
-            )
+            try:
+                asyncio.run_coroutine_threadsafe(
+                    self.event_bus.publish(PlayerLeaveEvent(player_name=player_name)),
+                    self._main_loop,
+                )
+            except Exception as e:
+                logging.getLogger(__name__).error(
+                    "玩家离开事件桥接失败: %s", e
+                )
 
     def _on_ws_group_message(self, raw: dict):
         """处理 WebSocket 群消息。"""
@@ -407,7 +426,7 @@ class FrameworkHost:
             logging.getLogger(__name__).error("原始消息处理器异常: %s", e)
 
         event = GroupMessageEvent(
-            user_id=raw.get("user_id"),
+            user_id=raw.get("user_id") or 0,
             group_id=group_id,
             nickname=nickname,
             message=text.strip(),

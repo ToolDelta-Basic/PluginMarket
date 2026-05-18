@@ -207,3 +207,20 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         except Exception as e:
             logging.getLogger(__name__).error("完整指令执行失败: %s", e)
             return None
+
+    def resolve_player_names(self, entries: list) -> dict:
+        """通过 ToolDelta 的 players_uuid 映射 UUID 到玩家名。
+
+        Args:
+            entries: 包含 uniqueId 键的条目列表。
+
+        Returns:
+            {uniqueId: player_name} 映射字典。
+        """
+        uuid_to_player = {}
+        players_uuid = getattr(self.game_ctrl, "players_uuid", {})
+        if players_uuid:
+            uuid_to_player = {
+                uid: name for name, uid in players_uuid.items()
+            }
+        return uuid_to_player

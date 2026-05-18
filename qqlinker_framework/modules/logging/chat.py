@@ -1,4 +1,5 @@
 """全局聊天日志服务，记录、查询所有群消息和游戏消息。"""
+import asyncio
 import os
 import json
 import time
@@ -7,8 +8,8 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 
-from ..core.module import Module
-from ..core.events import GroupMessageEvent, GameChatEvent
+from ...core.module import Module
+from ...core.events import GroupMessageEvent, GameChatEvent
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -26,6 +27,7 @@ class ChatLogService:
         self._base = base_dir
         self._max = max_records
         self._images_enabled = enable_images
+        self._write_lock = asyncio.Lock()
 
     def _msgs_dir(self) -> str:
         """返回当天消息日志目录路径。"""
@@ -73,8 +75,9 @@ class ChatLogService:
                 record["images"] = cq_images
 
         try:
-            with open(self._current_file(), "a", encoding="utf-8") as f:
-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            async with self._write_lock:
+                with open(self._current_file(), "a", encoding="utf-8") as f:
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
         except Exception as e:
             _logger.error("写入聊天日志失败: %s", e)
 

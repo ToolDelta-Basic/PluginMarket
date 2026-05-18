@@ -2,8 +2,8 @@
 import time
 import logging
 from typing import Dict, List
-from ..core.module import Module
-from ..core.decorators import command, listen
+from ...core.module import Module
+from ...core.decorators import command, listen
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -13,7 +13,7 @@ SESSION_TIMEOUT = 120
 
 
 class HelpModule(Module):
-    """提供 .help 命令，分页列出所有可用命令及其描述。"""
+    """提供 .帮助 命令，分页列出所有可用命令及其描述。"""
 
     name = "help"
     version = (1, 0, 2)
@@ -28,13 +28,13 @@ class HelpModule(Module):
         self._sessions: Dict[int, dict] = {}
 
     async def on_init(self):
-        """注册 .help 命令。"""
+        """注册 .帮助 命令。"""
         self.register_command(
-            ".help", self._cmd_help,
+            ".帮助", self._cmd_help,
             description="显示命令帮助（支持翻页）",
         )
 
-    @command(".help")
+    @command(".帮助")
     async def _cmd_help(self, ctx):
         """生成帮助页面并发送第一页，若多页则启动翻页会话。"""
         is_admin = self._is_admin(ctx.user_id)

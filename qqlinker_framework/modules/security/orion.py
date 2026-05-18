@@ -1,7 +1,7 @@
 """猎户座反制系统桥接模块。"""
 from typing import Optional, Dict, Any
-from ..core.module import Module
-from ..core.decorators import command
+from ...core.module import Module
+from ...core.decorators import command
 
 
 class OrionService:
@@ -86,7 +86,7 @@ class OrionService:
 
 
 class OrionBridge(Module):
-    """提供 .ban / .unban / .device 命令，对接猎户座反制系统。"""
+    """提供 .封禁 / .解封 / .设备 命令，对接猎户座反制系统。"""
 
     name = "orion_bridge"
     version = (1, 0, 0)
@@ -97,6 +97,12 @@ class OrionBridge(Module):
         self.orion_svc = None  # 初始化属性
 
     async def on_init(self):
+        async def _dbg_status(**kw):
+            return str({"connected": self.orion_svc is not None})
+        try:
+            self.services.get("debug").register_module(self.name, {"status": _dbg_status})
+        except KeyError:
+            pass
         """尝试获取猎户座 API 并注册命令。"""
         orion_api = None
         try:
@@ -111,22 +117,27 @@ class OrionBridge(Module):
             self.services.register("orion", self.orion_svc)
 
         self.register_command(
-            ".ban", self.cmd_ban,
+            ".封禁", self.cmd_ban,
             description="封禁玩家 <玩家名> [原因] [时长(分钟,-1永久)]",
             op_only=True
         )
         self.register_command(
-            ".unban", self.cmd_unban,
+            ".解封", self.cmd_unban,
             description="解除玩家封禁 <玩家名>",
             op_only=True
         )
         self.register_command(
-            ".device", self.cmd_device,
+            ".设备", self.cmd_device,
             description="查询玩家设备 <玩家名>",
             op_only=True
         )
+        self.register_command(
+            ".封禁列表", self.cmd_banlist,
+            description="查看当前封禁列表",
+            op_only=True
+        )
 
-    def _check_available(self, ctx) -> bool:
+    async def _check_available(self, ctx) -> bool:
         """检查猎户座服务是否可用，不可用时自动回复。
 
         Args:
@@ -136,18 +147,18 @@ class OrionBridge(Module):
             是否可用。
         """
         if self.orion_svc is None:
-            ctx.reply("猎户座反制系统未接入")
+            await ctx.reply("猎户座反制系统未接入")
             return False
         return True
 
-    @command(".ban", op_only=True)
+    @command(".封禁", op_only=True)
     async def cmd_ban(self, ctx):
         """封禁玩家命令处理。"""
-        if not self._check_available(ctx):
+        if not await self._check_available(ctx):
             return
         args = ctx.args
         if len(args) < 1:
-            await ctx.reply("用法：.ban <玩家名> [原因] [时长(分钟)]")
+            await ctx.reply("用法：.封禁 <玩家名> [原因] [时长(分钟)]")
             return
         player = args[0]
         reason = args[1] if len(args) > 1 else "管理员操作"
@@ -168,10 +179,10 @@ class OrionBridge(Module):
                 f"封禁失败：{result.get('message', '未知错误')}"
             )
 
-    @command(".unban", op_only=True)
+    @command(".解封", op_only=True)
     async def cmd_unban(self, ctx):
         """解除封禁命令处理。"""
-        if not self._check_available(ctx):
+        if not await self._check_available(ctx):
             return
         if len(ctx.args) < 1:
             await ctx.reply("用法：.unban <玩家名>")
@@ -185,18 +196,18 @@ class OrionBridge(Module):
                 f"解封失败：{result.get('message', '未知错误')}"
             )
 
-    @command(".device", op_only=True)
+    @command(".设备", op_only=True)
     async def cmd_device(self, ctx):
         """查询玩家设备命令处理。"""
-        if not self._check_available(ctx):
+        if not await self._check_available(ctx):
             return
         if len(ctx.args) < 1:
-            await ctx.reply("用法：.device <玩家名>")
+            await ctx.reply("用法：.设备 <玩家名>")
             return
         player = ctx.args[0]
         result = self.orion_svc.get_player_devices(player)
         if result.get("success"):
-            devices = result["data"].get("devices", [])
+            devices = result.get("data", {}).get("devices", [])
             if devices:
                 await ctx.reply(
                     f"玩家 {player} 关联的设备号：\n"
@@ -208,3 +219,24 @@ class OrionBridge(Module):
             await ctx.reply(
                 f"查询失败：{result.get('message', '未知错误')}"
             )
+
+    @command(".封禁列表", op_only=True)
+    async def cmd_banlist(self, ctx):
+        """查看封禁列表命令处理。"""
+        if not await self._check_available(ctx):
+            return
+        data = self.orion_svc.get_ban_list()
+        bans = data.get("data", data) if isinstance(data, dict) else {}
+        if isinstance(bans, list):
+            if bans:
+                lines = [f"封禁列表（共 {len(bans)} 条）："]
+                for b in bans[:20]:
+                    lines.append(
+                        f"  · {b.get('name', b)} "
+                        f"[{b.get('reason', '无原因')}]"
+                    )
+                await ctx.reply("\n".join(lines))
+            else:
+                await ctx.reply("封禁列表为空")
+        else:
+            await ctx.reply(f"查询失败：{bans.get('message', str(bans))}")

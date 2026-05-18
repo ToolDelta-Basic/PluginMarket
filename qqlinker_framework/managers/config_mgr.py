@@ -1,7 +1,10 @@
-"""配置管理器（支持动态注册节，仅在必要时自动持久化）"""
+"""配置管理器（支持动态注册节，仅在必要时自动持久化 + 类型校验）"""
 import json
+import logging
 import os
 from typing import Any
+
+_log = logging.getLogger(__name__)
 
 
 class ConfigManager:
@@ -43,15 +46,38 @@ class ConfigManager:
             with open(self._file_path, 'r', encoding='utf-8') as f:
                 loaded = json.load(f)
             self._data = self._deep_merge(self._defaults, loaded)
+            # 类型校验：警告但不阻止加载
+            for section, defaults in self._defaults.items():
+                section_data = self._data.get(section, {})
+                self._validate_types(section, section_data, defaults)
         else:
             self._data = dict(self._defaults)
-            # 首次创建才保存
             self.save()
         self._loaded = True
-        # 补全所有已注册节的缺失字段（仅内存，不写磁盘）
         for section, defaults in self._defaults.items():
             section_data = self._data.setdefault(section, {})
             self._apply_defaults(section_data, defaults)
+
+    @staticmethod
+    def _validate_types(section: str, data: dict, defaults: dict):
+        """递归校验配置值与默认值的类型一致性，类型不匹配时发警告。"""
+        for key, default_value in defaults.items():
+            if key not in data:
+                continue
+            actual = data[key]
+            expected_type = type(default_value)
+            if not isinstance(actual, expected_type):
+                _log.warning(
+                    "配置类型不匹配 [%s].%s: 期望 %s, 实际 %s (%s)",
+                    section, key,
+                    expected_type.__name__,
+                    type(actual).__name__,
+                    repr(actual)[:80],
+                )
+            elif isinstance(default_value, dict) and isinstance(actual, dict):
+                ConfigManager._validate_types(
+                    f"{section}.{key}", actual, default_value
+                )
 
     def save(self):
         """强制保存当前内存配置到文件。"""
@@ -86,6 +112,11 @@ class ConfigManager:
     # ----------------------------------------------------------------
     @staticmethod
     def _apply_defaults(target: dict, defaults: dict) -> bool:
+        """递归将 defaults 中缺失的键合并到 target，返回是否有变更。
+
+        只填充目标字典中不存在的键，不覆盖已有值。
+        支持嵌套 dict 递归合并。
+        """
         """递归将 defaults 中缺失的键添加到 target 中，不覆盖已有值。"""
         changed = False
         for key, default_value in defaults.items():

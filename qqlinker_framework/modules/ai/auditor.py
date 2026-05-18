@@ -50,12 +50,12 @@ class Auditor:
                 "用户 %d 违规次数达到上限，请求踢出", user_id
             )
 
-    def process_message(
+    async def process_message(
         self, user_id: int, group_id: int, message: str
     ):
-        """处理群消息，违规时发送警告并记录。"""
+        """处理群消息，违规时异步发送警告并记录。"""
         if self.check_violation(user_id, message):
-            self.ai.message.send_group(
+            await self.ai.message.send_group(
                 group_id,
                 f"[CQ:at,qq={user_id}] 请注意文明用语"
             )

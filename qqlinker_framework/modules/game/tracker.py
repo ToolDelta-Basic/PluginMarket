@@ -8,8 +8,8 @@ import os
 import time
 from typing import Dict, Any, Optional, List
 
-from ..core.module import Module
-from ..core.decorators import command
+from ...core.module import Module
+from ...core.decorators import command
 
 try:
     from PIL import Image, ImageDraw
@@ -116,6 +116,12 @@ class PlayerTrackerModule(Module):
         self._query_timeout = 3.0
 
     async def on_init(self):
+        async def _dbg_positions(**kw):
+            return str({"tracked": len(self._positions)})
+        try:
+            self.services.get("debug").register_module(self.name, {"positions": _dbg_positions})
+        except KeyError:
+            pass
         """初始化配置、服务、命令，并启动后台轮询。"""
         self.config.register_section("玩家分布图", {
             "最大快照数": 100,
@@ -136,11 +142,11 @@ class PlayerTrackerModule(Module):
         self.services.register("player_positions", self._service)
 
         self.register_command(
-            ".map", self._cmd_map,
+            ".分布图", self._cmd_map,
             description="查看玩家坐标分布图",
         )
         self.register_command(
-            ".pos", self._cmd_pos,
+            ".位置", self._cmd_pos,
             description="查看指定玩家的当前坐标",
             argument_hint="<玩家名>",
             op_only=True,
@@ -180,18 +186,13 @@ class PlayerTrackerModule(Module):
     def _parse_positions_from_resp(
         self, resp: Dict[str, Any]
     ) -> Dict[str, Dict[str, float]]:
-        """从 send_game_command_full 的返回值中解析玩家坐标。"""
-        uuid2player = {}
-        if hasattr(self.adapter, "game_ctrl"):
-            players_uuid = getattr(
-                self.adapter.game_ctrl, "players_uuid", {}
-            )
-            if players_uuid:
-                uuid2player = {
-                    uid: name for name, uid in players_uuid.items()
-                }
+        """从 send_game_command_full 的返回值中解析玩家坐标。
 
-        positions = {}
+        通过适配器的 resolve_player_names 方法获取 UUID→名字映射，
+        避免直接依赖平台内部对象，保持适配器抽象层清洁。
+        """
+        # 收集所有需要解析的条目
+        all_entries = []
         for out in resp.get("output", []):
             for param in out.get("parameters", []):
                 if not isinstance(param, str) or "{" not in param:
@@ -205,26 +206,33 @@ class PlayerTrackerModule(Module):
                         )
                     except json.JSONDecodeError:
                         continue
-                if not isinstance(data, list):
-                    continue
-                for entry in data:
-                    if not isinstance(entry, dict):
-                        continue
-                    unique_id = entry.get("uniqueId", "")
-                    name = uuid2player.get(unique_id)
-                    if not name:
-                        continue
-                    pos = entry.get("position", {})
-                    positions[name] = {
-                        "x": float(pos.get("x", 0)),
-                        "y": float(pos.get("y", 0)),
-                        "z": float(pos.get("z", 0)),
-                        "yRot": float(entry.get("yRot", 0)),
-                        "dimension": int(entry.get("dimension", 0)),
-                    }
+                if isinstance(data, list):
+                    all_entries.extend(data)
+                elif isinstance(data, dict):
+                    all_entries.append(data)
+
+        # 通过适配器解析 UUID→名字（Pythonic：适配器自己知道怎么查）
+        uuid_to_player = self.adapter.resolve_player_names(all_entries)
+
+        positions = {}
+        for entry in all_entries:
+            if not isinstance(entry, dict):
+                continue
+            unique_id = entry.get("uniqueId", "")
+            name = uuid_to_player.get(unique_id)
+            if not name:
+                continue
+            pos = entry.get("position", {})
+            positions[name] = {
+                "x": float(pos.get("x", 0)),
+                "y": float(pos.get("y", 0)),
+                "z": float(pos.get("z", 0)),
+                "yRot": float(entry.get("yRot", 0)),
+                "dimension": int(entry.get("dimension", 0)),
+            }
         return positions
 
-    @command(".map")
+    @command(".分布图")
     async def _cmd_map(self, ctx):
         """生成玩家分布图并发送到当前群。"""
         if not HAS_PIL:
@@ -248,11 +256,11 @@ class PlayerTrackerModule(Module):
             f"[CQ:image,file=base64://{img}]",
         )
 
-    @command(".pos", op_only=True)
+    @command(".位置", op_only=True)
     async def _cmd_pos(self, ctx):
         """查询指定玩家当前坐标（仅管理员）。"""
         if not ctx.args:
-            await ctx.reply("用法：.pos <玩家名>")
+            await ctx.reply("用法：.位置 <玩家名>")
             return
         target = ctx.args[0]
         async with self._lock:

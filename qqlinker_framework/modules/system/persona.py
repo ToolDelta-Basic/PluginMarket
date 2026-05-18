@@ -3,8 +3,8 @@ import json
 import os
 import secrets
 import logging
-from ..core.module import Module
-from ..core.decorators import command
+from ...core.module import Module
+from ...core.decorators import command
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)

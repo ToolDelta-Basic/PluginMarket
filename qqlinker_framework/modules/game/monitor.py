@@ -4,8 +4,8 @@ import time
 from collections import deque
 from typing import Optional
 
-from ..core.module import Module
-from ..core.decorators import command
+from ...core.module import Module
+from ...core.decorators import command
 
 
 class TPSService:
@@ -32,7 +32,7 @@ class TPSService:
 
 
 class TPSMonitorModule(Module):
-    """TPS 监控模块，提供 .tps 命令和 'tps' 服务。"""
+    """TPS 监控模块，提供 .性能 命令和 'tps' 服务。"""
 
     name = "tps_monitor"
     version = (1, 0, 0)
@@ -46,6 +46,13 @@ class TPSMonitorModule(Module):
         self._task = None
 
     async def on_init(self):
+        async def _dbg_tps(**kw):
+            svc = self.services.get("tps")
+            return str({"tps": getattr(svc, "tps", "N/A")})
+        try:
+            self.services.get("debug").register_module(self.name, {"tps": _dbg_tps})
+        except KeyError:
+            pass
         """注册配置节、初始化服务、启动后台测量。"""
         self.config.register_section("TPS监控", {
             "测量间隔秒": 30,
@@ -61,7 +68,7 @@ class TPSMonitorModule(Module):
         self.services.register("tps", self._service)
 
         self.register_command(
-            ".tps", self._cmd_tps,
+            ".性能", self._cmd_tps,
             description="查看服务器 TPS 估算值",
         )
 
@@ -89,7 +96,7 @@ class TPSMonitorModule(Module):
             except Exception:
                 pass
 
-    @command(".tps")
+    @command(".性能")
     async def _cmd_tps(self, ctx):
         """回复当前 TPS 估算值。"""
         tps = self._service.tps

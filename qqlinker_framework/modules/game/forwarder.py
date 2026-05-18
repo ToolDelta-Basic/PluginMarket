@@ -1,12 +1,14 @@
 """双向消息转发模块：游戏↔QQ群。"""
-from ..core.module import Module
-from ..core.events import (
+import asyncio
+import hashlib
+from ...core.module import Module
+from ...core.events import (
     GameChatEvent,
     GroupMessageEvent,
     PlayerJoinEvent,
     PlayerLeaveEvent,
 )
-from ..services.dedup import LayeredDedup
+from ...services.dedup import LayeredDedup
 
 
 class GameForwarder(Module):
@@ -21,6 +23,12 @@ class GameForwarder(Module):
         self.dedup: LayeredDedup = services.get("dedup")
 
     async def on_init(self):
+        async def _dbg_stats(**kw):
+            return str(self.dedup.get_stats())
+        try:
+            self.services.get("debug").register_module(self.name, {"stats": _dbg_stats})
+        except KeyError:
+            pass
         """注册配置节并订阅事件。"""
         self.config.register_section("消息转发", {
             "游戏到群": {
@@ -70,8 +78,10 @@ class GameForwarder(Module):
             if any(msg.startswith(p) for p in block_prefixes):
                 return
 
+        # 使用稳定哈希避免 PYTHONHASHSEED 随机化导致的去重失效
+        player_hash = int(hashlib.sha256(event.player_name.encode()).hexdigest()[:8], 16)
         if not self.dedup.check_and_add_content(
-            msg, hash(event.player_name)
+            msg, player_hash
         ):
             return
 
@@ -105,7 +115,10 @@ class GameForwarder(Module):
         text = template.replace("{nickname}", event.nickname).replace(
             "{message}", msg
         )
-        self.adapter.send_game_message("@a", text)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            None, self.adapter.send_game_message, "@a", text
+        )
 
     async def on_player_join(self, event: PlayerJoinEvent):
         """转发玩家加入游戏提示。"""

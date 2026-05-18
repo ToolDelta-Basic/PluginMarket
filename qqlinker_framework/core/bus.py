@@ -79,3 +79,10 @@ class EventBus:
     def publish_sync(self, event: BaseEvent):
         """同步发布事件，使用后台专用事件循环。"""
         asyncio.run_coroutine_threadsafe(self.publish(event), self._sync_loop)
+
+    def shutdown(self):
+        """停止后台事件循环并等待线程退出。"""
+        if self._sync_loop and self._sync_loop.is_running():
+            self._sync_loop.call_soon_threadsafe(self._sync_loop.stop)
+        if self._sync_thread and self._sync_thread.is_alive():
+            self._sync_thread.join(timeout=5)

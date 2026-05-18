@@ -6,8 +6,8 @@ import asyncio
 import logging
 from typing import List, Dict, Optional
 
-from ..core.module import Module
-from ..core.events import (
+from ...core.module import Module
+from ...core.events import (
     AIPrePromptReflectionEvent,
     AIPostResponseReflectionEvent,
 )
@@ -78,13 +78,14 @@ class AuditKnowledgeStore:
             prompt = self._build_induction_prompt(cases)
             new_meta = await llm_caller(prompt)
             if new_meta:
-                with open(self._case_file, "w", encoding="utf-8") as f:
-                    pass
                 for m in new_meta:
                     m["status"] = "pending_review"
                     m["created_at"] = time.time()
                     self._meta.append(m)
                 await self._save_meta()
+                # 元知识保存成功后才清空案例文件（防止数据丢失）
+                with open(self._case_file, "w", encoding="utf-8") as f:
+                    pass
                 _logger.info("归纳完成，生成 %d 条新元知识", len(new_meta))
             return new_meta
 
@@ -122,6 +123,7 @@ class AIAuditEnhanceModule(Module):
         super().__init__(services, event_bus)
         self._store: Optional[AuditKnowledgeStore] = None
         self._pending_count = 0
+        self._pending_lock = asyncio.Lock()
         self._induction_threshold = 10
         self._pre_reflection_level = "每次"
         self._post_reflection_level = "每次"
@@ -279,12 +281,12 @@ class AIAuditEnhanceModule(Module):
                     "violation": resp.strip()[:200],
                 }
                 await self._store.add_case(case)
-                self._pending_count += 1
-
-                if self._pending_count >= self._induction_threshold:
-                    self._pending_count = 0
-                    _logger.info(
-                        "已达到归纳阈值，建议管理员执行 '.归纳知识' 命令"
-                    )
+                async with self._pending_lock:
+                    self._pending_count += 1
+                    if self._pending_count >= self._induction_threshold:
+                        self._pending_count = 0
+                        _logger.info(
+                            "已达到归纳阈值，建议管理员执行 '.归纳知识' 命令"
+                        )
         except Exception as e:
             _logger.error("后置反思 LLM 调用失败: %s", e)

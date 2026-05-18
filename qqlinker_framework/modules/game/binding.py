@@ -6,9 +6,9 @@ import random
 import string
 from typing import Optional, Dict
 
-from ..core.module import Module
-from ..core.decorators import command
-from ..core.events import GameChatEvent
+from ...core.module import Module
+from ...core.decorators import command
+from ...core.events import GameChatEvent
 
 
 class BindingService:
@@ -108,6 +108,13 @@ class PlayerBindingModule(Module):
         self.binding_service = None
 
     async def on_init(self):
+        async def _dbg_bindings(**kw):
+            all_b = self.binding_service.get_all_bindings()
+            return str({"total": len(all_b)})
+        try:
+            self.services.get("debug").register_module(self.name, {"bindings": _dbg_bindings})
+        except KeyError:
+            pass
         """初始化数据目录、服务注册、命令和事件监听。"""
         module_dir = self.get_data_dir()
         self.binding_service = BindingService(module_dir)
@@ -142,14 +149,16 @@ class PlayerBindingModule(Module):
                 )
                 return
             code = self.binding_service.generate_code(player)
+            # 使用 json.dumps 安全转义玩家名中的特殊字符
+            safe_player = json.dumps(player, ensure_ascii=False)
+            safe_code = json.dumps(str(code), ensure_ascii=False)
             tellraw = (
-                '/tellraw {player} {{"rawtext":[{{"text":"§a你的绑定验证码是：'
-                "§e{code}§a，请在QQ群发送：.绑定 {player} {code}"
-                '"}}]}}'
-            ).format(player=player, code=code)
+                f'/tellraw {safe_player} {{"rawtext":[{{"text":"§a你的绑定验证码是：'
+                f'§e{safe_code}§a，请在QQ群发送：.绑定 {safe_player} {safe_code}"}}]}}'
+            )
             self.adapter.send_game_command(tellraw)
             self.adapter.send_game_command(
-                f'/tellraw {player} {{"rawtext":[{{"text":"§7验证码有效期为 5 分钟"}}]}}'
+                f'/tellraw {safe_player} {{"rawtext":[{{"text":"§7验证码有效期为 5 分钟"}}]}}'
             )
 
     # ---------- QQ 命令 ----------

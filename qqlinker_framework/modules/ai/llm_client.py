@@ -20,6 +20,8 @@ class LLMClientFactory:
         )
         self.api_key = config.get("AI助手.API密钥", "")
         self.model = config.get("AI助手.模型", "deepseek-chat")
+        self.temperature = config.get("AI助手.温度", 0.7)
+        self.max_tokens = config.get("AI助手.最大输出令牌", 1024)
 
     async def chat(
         self,
@@ -39,8 +41,8 @@ class LLMClientFactory:
             payload = {
                 "model": self.model,
                 "messages": current_messages,
-                "temperature": 0.7,
-                "max_tokens": 1024,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
             }
             if tools:
                 payload["tools"] = tools

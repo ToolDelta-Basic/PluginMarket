@@ -62,8 +62,15 @@ class Module(ABC):
         description: str = "",
         op_only: bool = False,
         argument_hint: str = "",
+        cooldown: float = 0.0,
     ):
-        """注册一条命令。"""
+        """注册一条命令。
+
+        Args:
+            trigger: 命令触发词。
+            callback: 异步回调函数。
+            cooldown: 每用户冷却时间（秒），0 表示无限制。
+        """
         self._commands[trigger] = {
             "trigger": trigger,
             "cmd_type": cmd_type,
@@ -71,6 +78,7 @@ class Module(ABC):
             "description": description,
             "op_only": op_only,
             "argument_hint": argument_hint,
+            "cooldown": cooldown,
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0):

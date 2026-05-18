@@ -87,7 +87,6 @@ class DebugEngine:
             "send_game_command_with_resp",
             "send_game_command_full",
             "get_online_players",
-            "get_player_positions",
         ])
         self._wrap_service("tool", ["execute"])
         self._hooks_installed = True

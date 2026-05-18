@@ -1,11 +1,12 @@
-"""命令路由中间件（带权限检查）"""
+"""命令路由中间件（带权限检查 + 冷却控制）。"""
+import time
 import logging
 from ..managers.command_mgr import CommandManager
 from .context import CommandContext
 
 
 class CommandRouter:
-    """将 GroupMessageEvent 分发给匹配的命令，并进行权限校验。"""
+    """将 GroupMessageEvent 分发给匹配的命令，进行权限校验和冷却控制。"""
 
     def __init__(
         self,
@@ -14,11 +15,11 @@ class CommandRouter:
         config_mgr,
         message_mgr,
     ):
-        """初始化路由器。"""
         self.command_mgr = command_mgr
         self.adapter = adapter
         self.config_mgr = config_mgr
         self.message_mgr = message_mgr
+        self._cooldowns: dict[str, dict[int, float]] = {}
 
     async def handle_message(self, event):
         """处理群消息事件，查找匹配命令并执行。"""
@@ -27,6 +28,29 @@ class CommandRouter:
             trigger = cmd_info["trigger"]
             if not msg.startswith(trigger):
                 continue
+
+            # ── 冷却检查 ──
+            cooldown = cmd_info.get("cooldown", 0)
+            if cooldown > 0:
+                now = time.time()
+                user_cd = self._cooldowns.setdefault(trigger, {})
+                last = user_cd.get(event.user_id, 0)
+                if now - last < cooldown:
+                    remain = cooldown - (now - last)
+                    ctx = CommandContext(
+                        user_id=event.user_id,
+                        group_id=event.group_id,
+                        nickname=event.nickname,
+                        message=event.message,
+                        args=[],
+                        adapter=self.adapter,
+                        message_mgr=self.message_mgr,
+                    )
+                    await ctx.reply(f"命令冷却中，请 {remain:.0f} 秒后再试")
+                    return True
+                user_cd[event.user_id] = now
+
+            # ── 权限检查 ──
             if cmd_info.get("op_only", False) and not self.adapter.is_user_admin(
                 event.user_id, self.config_mgr
             ):

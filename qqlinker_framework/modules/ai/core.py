@@ -1,11 +1,17 @@
-"""AI 核心模块：提供 LLM 对话、工具调用、审核拦截、基础记忆"""
+"""AI 核心模块：提供 LLM 对话、工具调用、审核拦截、基础记忆。
+
+安全特性:
+  - 双层速率限制（全局 + 每用户）
+  - 提示注入检测与拦截
+  - 输入长度上限 (2000 字符)
+  - 完整的审计日志记录
+"""
 import logging
 import os
 import time
-import traceback
 import re
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from ...core.module import Module
 from ...core.events import (
@@ -19,6 +25,111 @@ from .tools import register_all
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
+
+# ── 提示注入检测模式 ────────────────────────────────────────────
+_INJECTION_PATTERNS = [
+    re.compile(r"(?:忽略|无视|忘记|跳过).*?(?:指令|规则|限制|安全)", re.I),
+    re.compile(r"(?:你(?:现在|必须|应该).*?是|扮演|假装|模拟)", re.I),
+    re.compile(r"(?:system\s*:|<\|im_start\|>|<\|im_end\|>)", re.I),
+    re.compile(r"(?:DAN\s*模式|越狱|jailbreak|角色扮演.*?突破)", re.I),
+    re.compile(r"(?:你的.*?(?:系统提示|开发者|prompt|元指令))", re.I),
+]
+
+_INPUT_MAX_LENGTH = 2000       # 单次输入最大字符数
+_RATE_WINDOW = 60              # 速率统计窗口（秒）
+_RATE_MAX_GLOBAL = 30          # 全局每分钟最大请求
+_RATE_MAX_PER_USER = 8         # 每用户每分钟最大请求
+
+
+class RateLimiter:
+    """双层速率限制器：全局 + 每用户滑动窗口。
+
+    Attributes:
+        _window: 统计窗口长度（秒）。
+        _global_limit: 窗口内全局最大请求数。
+        _user_limit: 窗口内每用户最大请求数。
+    """
+
+    def __init__(
+        self,
+        window: float = 60.0,
+        global_limit: int = 30,
+        user_limit: int = 8,
+    ) -> None:
+        self._window = window
+        self._global_limit = global_limit
+        self._user_limit = user_limit
+        self._global_hits: List[float] = []
+        self._user_hits: Dict[int, List[float]] = {}
+
+    def _prune(self, timestamps: List[float], now: float) -> List[float]:
+        """剔除窗口外的旧时间戳。"""
+        cutoff = now - self._window
+        while timestamps and timestamps[0] < cutoff:
+            timestamps.pop(0)
+        return timestamps
+
+    def check(self, user_id: int) -> Tuple[bool, str]:
+        """检查请求是否在速率限制内。
+
+        Args:
+            user_id: 用户 QQ 号。
+
+        Returns:
+            (allowed, reason) — allowed 为 False 时 reason 说明原因。
+        """
+        now = time.time()
+        self._global_hits = self._prune(self._global_hits, now)
+        if len(self._global_hits) >= self._global_limit:
+            return False, "AI 服务当前繁忙，请稍后再试"
+
+        user_ts = self._user_hits.setdefault(user_id, [])
+        user_ts = self._prune(user_ts, now)
+        self._user_hits[user_id] = user_ts
+        if len(user_ts) >= self._user_limit:
+            return False, f"你的请求过于频繁，请 {int(self._window)} 秒后再试"
+
+        self._global_hits.append(now)
+        user_ts.append(now)
+        self._user_hits[user_id] = user_ts
+        return True, ""
+
+    def get_stats(self) -> dict:
+        """返回速率统计信息。"""
+        now = time.time()
+        self._global_hits = self._prune(self._global_hits, now)
+        return {
+            "global_current": len(self._global_hits),
+            "global_limit": self._global_limit,
+            "active_users": sum(
+                1 for ts in self._user_hits.values()
+                if self._prune(ts[:], now)
+            ),
+        }
+
+
+class InputGuard:
+    """输入安全守卫：检测提示注入、长度限制。"""
+
+    @staticmethod
+    def validate(text: str) -> Tuple[bool, Optional[str]]:
+        """校验用户输入。
+
+        Args:
+            text: 用户原始输入。
+
+        Returns:
+            (valid, error_message) — 通过则 error 为 None。
+        """
+        if len(text) > _INPUT_MAX_LENGTH:
+            return False, f"输入过长（最大 {_INPUT_MAX_LENGTH} 字符）"
+        for pat in _INJECTION_PATTERNS:
+            if pat.search(text):
+                _logger.warning(
+                    "检测到疑似提示注入，用户输入: %s", text[:100]
+                )
+                return False, "输入包含不安全内容，已被拦截"
+        return True, None
 
 
 class AICore(Module):
@@ -34,23 +145,33 @@ class AICore(Module):
         super().__init__(services, event_bus)
         self.conversations: Dict[int, List[Dict]] = {}
         self.conversation_last_active: Dict[int, float] = {}
-        self.conversation_max_age = 1800
-        self.max_memory = 5           # 默认值，将在 on_init 中被覆盖
-        self.llm_factory = None
-        self.auditor = None
-        self._safety_rules: list[str] = []
-        self._memory_dir = ""
+        self.conversation_max_age: float = 1800.0
+        self.max_memory: int = 5
+        self.llm_factory: Optional[LLMClientFactory] = None
+        self.auditor: Optional[Auditor] = None
+        self._safety_rules: List[str] = []
+        self._memory_dir: str = ""
         self._pending_persona_tokens: Dict[int, str] = {}
+        # ── 安全组件 ──
+        self._rate_limiter = RateLimiter(
+            window=_RATE_WINDOW,
+            global_limit=_RATE_MAX_GLOBAL,
+            user_limit=_RATE_MAX_PER_USER,
+        )
+        self._input_guard = InputGuard()
 
     async def on_init(self):
         """注册配置节、LLM 工厂、审核器、命令和事件监听。"""
         self.config.register_section("AI助手", {
             "是否启用": True,
-            "触发词": ["/ai", ".ai", "ai "],
+            "触发词": [".问", "/ai"],
             "模型": "deepseek-chat",
             "API密钥": "",
             "API地址": "https://api.siliconflow.cn/v1",
+            "温度": 0.7,
+            "最大输出令牌": 1024,
             "最大工具轮次": 5,
+            "会话过期秒": 1800,
             "记忆条数": 5,
             "审核": {
                 "是否启用": True,
@@ -69,7 +190,11 @@ class AICore(Module):
 
         # 从配置读取记忆条数，否则使用默认 5
         self.max_memory = self.config.get("AI助手.记忆条数", 5)
-        _logger.info("记忆条数设置为: %d", self.max_memory)
+        self.conversation_max_age = self.config.get("AI助手.会话过期秒", 1800)
+        _logger.info(
+            "记忆条数: %d, 会话过期: %ds",
+            self.max_memory, self.conversation_max_age,
+        )
 
         self.llm_factory = LLMClientFactory(self.config)
         self.auditor = Auditor(self)
@@ -98,22 +223,39 @@ class AICore(Module):
 
         # 管理员记忆管理命令
         self.register_command(
-            ".delmemory", self._cmd_del_memory,
+            ".删除记忆", self._cmd_del_memory,
             description="删除指定用户的长期记忆（管理员）",
             op_only=True, argument_hint="<QQ号>",
         )
         self.register_command(
-            ".clearmemory", self._cmd_clear_memory,
+            ".清除记忆", self._cmd_clear_memory,
             description="清除所有用户的长时记忆（管理员）",
             op_only=True,
         )
         # 普通用户清除自己的记忆
         self.register_command(
-            ".clearmymemory", self._cmd_clear_my_memory,
+            ".清除我的记忆", self._cmd_clear_my_memory,
             description="清除你自己的长时记忆",
         )
 
         self.listen("GroupMessageEvent", self.on_group_message, priority=10)
+
+        # ── 调试引擎 ──
+        async def _dbg_stats(**kw):
+            return str(self._rate_limiter.get_stats())
+        async def _dbg_convos(**kw):
+            return str({
+                "active_convos": len(self.conversations),
+                "auditor_patterns": (
+                    len(self.auditor.patterns) if self.auditor else 0
+                ),
+            })
+        try:
+            self.services.get("debug").register_module(
+                self.name, {"stats": _dbg_stats, "convos": _dbg_convos}
+            )
+        except KeyError:
+            pass
 
     # ---------- 公共方法 ----------
     def _get_persona_service(self):
@@ -205,7 +347,16 @@ class AICore(Module):
         return base_prompt.strip()
 
     async def _handle_ai(self, ctx):
-        """核心 AI 对话处理：违规检查、构建消息、调用 LLM、保存记忆。"""
+        """核心 AI 对话处理：安全校验 → 违规检查 → 构建消息 → 调用 LLM → 保存记忆。
+
+        处理流程:
+          1. 输入安全守卫（长度 + 注入检测）
+          2. 速率限制检查（全局 + 每用户）
+          3. 违规词审核
+          4. 清理过期会话、构建提示词
+          5. LLM 调用 + 工具执行
+          6. 后置反思 → 记忆持久化
+        """
         if not self.config.get("AI助手.是否启用", True):
             await ctx.reply("AI 功能未启用")
             return
@@ -213,6 +364,22 @@ class AICore(Module):
         question = " ".join(ctx.args) if ctx.args else ""
         if not question:
             await ctx.reply("请输入问题")
+            return
+
+        # ── 输入安全守卫 ──
+        valid, err_msg = self._input_guard.validate(question)
+        if not valid:
+            await ctx.reply(err_msg)
+            _logger.info(
+                "[AI 安全] user=%d 输入被拦截: %s",
+                ctx.user_id, err_msg,
+            )
+            return
+
+        # ── 速率限制 ──
+        allowed, reason = self._rate_limiter.check(ctx.user_id)
+        if not allowed:
+            await ctx.reply(reason)
             return
 
         if self.auditor.check_violation(ctx.user_id, question):
@@ -329,7 +496,7 @@ class AICore(Module):
 
     async def on_group_message(self, event: GroupMessageEvent):
         """处理群消息事件，执行内容审核。"""
-        self.auditor.process_message(
+        await self.auditor.process_message(
             event.user_id, event.group_id, event.message
         )
 
@@ -405,7 +572,7 @@ class AICore(Module):
     async def _cmd_del_memory(self, ctx):
         """删除指定用户的长期记忆（管理员）。"""
         if not ctx.args:
-            await ctx.reply("用法：.delmemory <QQ号>")
+            await ctx.reply("用法：.删除记忆 <QQ号>")
             return
         try:
             target_qq = int(ctx.args[0])
