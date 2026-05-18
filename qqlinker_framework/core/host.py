@@ -385,18 +385,9 @@ class FrameworkHost:
                     "玩家离开事件桥接失败: %s", e
                 )
 
-    def _on_ws_group_message(self, raw: dict):
-        """处理 WebSocket 群消息。"""
-        linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
-        group_id = raw.get("group_id")
-        if group_id not in linked_groups:
-            return
-
-        msg_id = raw.get("message_id")
-        if msg_id and not self.dedup.check_and_add_id(f"raw_{msg_id}"):
-            return
-
-        raw_msg = raw.get("message")
+    @staticmethod
+    def _parse_onebot_message(raw_msg) -> str:
+        """解析 OneBot 消息段为纯文本。"""
         if isinstance(raw_msg, list):
             text_parts = []
             for seg in raw_msg:
@@ -409,10 +400,21 @@ class FrameworkHost:
                     )
                 else:
                     text_parts.append(f"[{seg.get('type')}]")
-            text = "".join(text_parts)
-        else:
-            text = str(raw_msg) if raw_msg else ""
+            return "".join(text_parts)
+        return str(raw_msg) if raw_msg else ""
 
+    def _on_ws_group_message(self, raw: dict):
+        """处理 WebSocket 群消息。"""
+        linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
+        group_id = raw.get("group_id")
+        if group_id not in linked_groups:
+            return
+
+        msg_id = raw.get("message_id")
+        if msg_id and not self.dedup.check_and_add_id(f"raw_{msg_id}"):
+            return
+
+        text = self._parse_onebot_message(raw.get("message"))
         nickname = (
             raw.get("sender", {}).get("card")
             or raw.get("sender", {}).get("nickname", "未知")
@@ -420,8 +422,9 @@ class FrameworkHost:
         access_log.info("[QQ] %s: %s", nickname, text.strip())
 
         try:
-            if hasattr(self.adapter, 'trigger_raw_group_handlers'):
-                self.adapter.trigger_raw_group_handlers(raw)
+            trigger = getattr(self.adapter, "trigger_raw_group_handlers", None)
+            if trigger:
+                trigger(raw)
         except Exception as e:
             logging.getLogger(__name__).error("原始消息处理器异常: %s", e)
 

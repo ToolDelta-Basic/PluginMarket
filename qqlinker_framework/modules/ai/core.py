@@ -355,16 +355,7 @@ class AICore(Module):
         return base_prompt.strip()
 
     async def _handle_ai(self, ctx):
-        """核心 AI 对话处理：安全校验 → 违规检查 → 构建消息 → 调用 LLM → 保存记忆。
-
-        处理流程:
-          1. 输入安全守卫（长度 + 注入检测）
-          2. 速率限制检查（全局 + 每用户）
-          3. 违规词审核
-          4. 清理过期会话、构建提示词
-          5. LLM 调用 + 工具执行
-          6. 后置反思 → 记忆持久化
-        """
+        """AI 对话编排器：安全校验 → 构建消息 → LLM 调用 → 后处理。"""
         if not self.config.get("AI助手.是否启用", True):
             await ctx.reply("AI 功能未启用")
             return
@@ -374,86 +365,102 @@ class AICore(Module):
             await ctx.reply("请输入问题")
             return
 
-        # ── 输入安全守卫 ──
-        valid, err_msg = self._input_guard.validate(question)
-        if not valid:
-            await ctx.reply(err_msg)
-            _logger.info(
-                "[AI 安全] user=%d 输入被拦截: %s",
-                ctx.user_id, err_msg,
-            )
+        # 1. 安全校验
+        error_msg = await self._validate_ai_request(ctx, question)
+        if error_msg:
+            await ctx.reply(error_msg)
             return
 
-        # ── 速率限制 ──
-        allowed, reason = self._rate_limiter.check(ctx.user_id)
-        if not allowed:
-            await ctx.reply(reason)
-            return
-
-        if self.auditor.check_violation(ctx.user_id, question):
-            await ctx.reply("你的消息包含违规内容，已被记录")
-            return
-
-        user_id = ctx.user_id
-        _logger.debug(
-            "[AI_CORE] 处理 AI 请求, user_id=%d, question='%s'",
-            user_id, question[:50],
+        # 2. 构建消息
+        messages = await self._build_ai_messages(
+            ctx.user_id, question, ctx.group_id,
         )
-        self._cleanup_expired(user_id)
-        history = await self._get_history(user_id)
-        _logger.debug("[AI_CORE] 历史消息数: %d", len(history))
-        messages = history + [{"role": "user", "content": question}]
 
-        pre_event = AIPrePromptReflectionEvent(
-            user_id=user_id,
-            group_id=ctx.group_id,
-            message=question,
-        )
-        await self.event_bus.publish(pre_event)
-        if pre_event.supplement:
-            messages.insert(
-                0, {"role": "system", "content": pre_event.supplement}
-            )
-
-        system_content = self._build_system_prompt(user_id)
-        if system_content:
-            messages.insert(
-                0, {"role": "system", "content": system_content}
-            )
-
+        # 3. LLM 调用
         tools_schema = self.tool.get_tools_schema(only_enabled=True)
 
-        async def tool_executor(name: str, args: dict) -> str:
-            """执行工具调用并返回结果。"""
+        async def _exec_tool(name: str, args: dict) -> str:
             return await self._execute_tool(name, args, ctx.group_id)
 
         response = await self.llm_factory.chat(
             messages=messages,
             tools=tools_schema if tools_schema else None,
             max_rounds=self.config.get("AI助手.最大工具轮次", 5),
-            tool_executor=tool_executor,
+            tool_executor=_exec_tool,
         )
 
-        self._add_to_history(
-            user_id, {"role": "user", "content": question}
+        # 4. 后处理
+        await self._finalize_ai_response(
+            ctx.user_id, ctx.group_id, question, response,
         )
+
+        if response:
+            await ctx.reply(response)
+        elif not re.findall(r'\[IMAGE:(.*?)\]', response or ""):
+            await ctx.reply("AI 未返回内容")
+
+    # ── _handle_ai 子步骤 ───────────────────────────────────
+
+    async def _validate_ai_request(self, ctx, question: str) -> Optional[str]:
+        """校验 AI 请求的安全性，通过返回 None，失败返回错误消息。"""
+        valid, err_msg = self._input_guard.validate(question)
+        if not valid:
+            _logger.info("[AI 安全] user=%d 输入被拦截: %s", ctx.user_id, err_msg)
+            return err_msg
+
+        allowed, reason = self._rate_limiter.check(ctx.user_id)
+        if not allowed:
+            return reason
+
+        if self.auditor.check_violation(ctx.user_id, question):
+            return "你的消息包含违规内容，已被记录"
+
+        return None
+
+    async def _build_ai_messages(
+        self, user_id: int, question: str, group_id: int,
+    ) -> List[Dict]:
+        """构建发送给 LLM 的完整消息列表。"""
+        _logger.debug("[AI_CORE] 处理请求 user=%d q='%s'", user_id, question[:50])
+        self._cleanup_expired(user_id)
+        history = await self._get_history(user_id)
+        messages = history + [{"role": "user", "content": question}]
+
+        pre_event = AIPrePromptReflectionEvent(
+            user_id=user_id, group_id=group_id, message=question,
+        )
+        await self.event_bus.publish(pre_event)
+        if pre_event.supplement:
+            messages.insert(0, {"role": "system", "content": pre_event.supplement})
+
+        system_content = self._build_system_prompt(user_id)
+        if system_content:
+            messages.insert(0, {"role": "system", "content": system_content})
+
+        return messages
+
+    async def _finalize_ai_response(
+        self,
+        user_id: int,
+        group_id: int,
+        question: str,
+        response: str,
+    ) -> None:
+        """保存记忆、发布反思事件、发送图片。"""
+        self._add_to_history(user_id, {"role": "user", "content": question})
         if response:
             self._add_to_history(
-                user_id, {"role": "assistant", "content": response}
+                user_id, {"role": "assistant", "content": response},
             )
             if user_id in self._pending_persona_tokens:
                 token = self._pending_persona_tokens[user_id]
                 if token in response:
-                    _logger.debug(
-                        "[AI_CORE] 令牌 %s 被 AI 引用，移除令牌", token
-                    )
                     del self._pending_persona_tokens[user_id]
+                    _logger.debug("[AI_CORE] 令牌 %s 已确认，移除", token)
 
         post_event = AIPostResponseReflectionEvent(
-            user_id=user_id,
-            group_id=ctx.group_id,
-            reply=response,
-            original_message=question,
+            user_id=user_id, group_id=group_id,
+            reply=response, original_message=question,
         )
         await self.event_bus.publish(post_event)
         if post_event.warning:
@@ -463,18 +470,9 @@ class AICore(Module):
             )
 
         await self._save_memory_file(user_id)
-
-        image_urls = re.findall(r'\[IMAGE:(.*?)\]', response)
+        image_urls = re.findall(r'\[IMAGE:(.*?)\]', response or "")
         for url in image_urls:
-            await self.message.send_group(
-                ctx.group_id, f"[CQ:image,file={url}]"
-            )
-            response = response.replace(f"[IMAGE:{url}]", "").strip()
-
-        if response:
-            await ctx.reply(response)
-        elif not image_urls:
-            await ctx.reply("AI 未返回内容")
+            await self.message.send_group(group_id, f"[CQ:image,file={url}]")
 
     async def _execute_tool(
         self, tool_name: str, arguments: dict, group_id: int
