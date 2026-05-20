@@ -1,5 +1,5 @@
 # __init__.py
-"""云链群服互通框架 - ToolDelta 插件入口 (v1.1)
+"""云链群服互通框架 - ToolDelta 插件入口 (v1.2)
 
 启动方式:
   1. ToolDelta 环境 → 自动作为插件加载
@@ -82,7 +82,7 @@ def _load_pre_plugin_deps(data_dir: str) -> dict:
 
 class QQLinkerFrameworkPlugin(Plugin):
     name = "群服互通框架"
-    version = (1, 1, 1)
+    version = (1, 2, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 

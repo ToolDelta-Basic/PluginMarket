@@ -26,7 +26,7 @@ class ACGImageModule(Module):
 
     default_config = {
         "acg_image": {
-            "ACG图片API地址": "http://183.66.27.45:8092/acg/api?format=original",
+            "ACG图片API地址": "http://127.0.0.1:8092/acg/api?format=original",
             "冷却秒": 5,
             "冷却提示": "[CQ:at,qq={qqid}] 太快了！请等待 {remain} 秒后再试。",
             "发送中提示": "[CQ:at,qq={qqid}] 正在为你寻找图片...",
