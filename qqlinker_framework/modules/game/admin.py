@@ -25,8 +25,27 @@ class GameAdmin(Module):
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 
+    default_config = {
+        "游戏管理": {
+            "是否启用": True,
+            "允许查看玩家列表": True,
+            "管理员QQ": [0],
+            "允许执行的命令列表": [
+                "list", "say", "tell", "msg", "w", "tellraw",
+                "scoreboard", "title", "playsound", "particle",
+                "gamemode", "time", "weather", "tp", "kill",
+                "give", "clear", "effect", "enchant", "xp",
+                "spawnpoint", "setworldspawn", "gamerule",
+                "difficulty", "defaultgamemode", "seed"
+            ],
+            "危险参数": DEFAULT_DANGEROUS_ARGS,
+            "允许脚本串联": True,
+            "脚本最大指令数": 10
+        }
+    }
+
     async def on_init(self):
-        """注册配置节和命令。"""
+        """框架已自动注册 default_config 配置节，模块只注册命令。"""
 
         async def _dbg_stats():
             """调试端点。"""
@@ -47,22 +66,6 @@ class GameAdmin(Module):
         except KeyError:
             pass
 
-        self.config.register_section("游戏管理", {
-            "是否启用": True,
-            "允许查看玩家列表": True,
-            "管理员QQ": [0],
-            "允许执行的命令列表": [
-                "list", "say", "tell", "msg", "w", "tellraw",
-                "scoreboard", "title", "playsound", "particle",
-                "gamemode", "time", "weather", "tp", "kill",
-                "give", "clear", "effect", "enchant", "xp",
-                "spawnpoint", "setworldspawn", "gamerule",
-                "difficulty", "defaultgamemode", "seed"
-            ],
-            "危险参数": DEFAULT_DANGEROUS_ARGS,
-            "允许脚本串联": True,
-            "脚本最大指令数": 10
-        })
         self.register_command(
             ".在线", self.cmd_list, description="查看在线玩家列表"
         )

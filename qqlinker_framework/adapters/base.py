@@ -101,3 +101,47 @@ class IFrameworkAdapter(ABC):
             {uniqueId: player_name} 映射字典。
         """
         return {}
+
+    # ── 可选扩展: 生命周期事件 ──────────────────────────────
+
+    def listen_active(self, handler: Callable[[], None]) -> None:
+        """注册框架就绪处理器（可选实现）。"""
+
+    def listen_frame_exit(self, handler: Callable[[Any], None]) -> None:
+        """注册框架退出处理器（可选实现）。"""
+
+    def listen_player_pre_join(self, handler: Callable[[str], None]) -> None:
+        """注册玩家预加入处理器（可选实现）。"""
+
+    # ── 可选扩展: 数据包监听 ────────────────────────────────
+
+    def listen_dict_packet(self, packet_id: int, handler: Callable[[dict], bool]) -> None:
+        """注册字典数据包监听（可选实现），返回 True 拦截数据包。"""
+
+    def listen_bytes_packet(self, packet_id: int, handler: Callable[[bytes], bool]) -> None:
+        """注册二进制数据包监听（可选实现），返回 True 拦截数据包。"""
+
+    # ── 可选扩展: 标题栏消息 ────────────────────────────────
+
+    def send_game_title(self, target: str, text: str) -> None:
+        """向玩家显示标题栏消息（可选实现）。"""
+
+    def send_game_subtitle(self, target: str, text: str) -> None:
+        """向玩家显示小标题栏消息（可选实现）。"""
+
+    def send_game_actionbar(self, target: str, text: str) -> None:
+        """向玩家显示行动栏消息（可选实现）。"""
+
+    # ── 可选扩展: 跨插件 API 代理 ───────────────────────────
+
+    def register_pre_plugin_api(self, api_name: str, min_version: tuple = (0, 0, 0)) -> bool:
+        """注册 datas.json 声明的依赖插件 API（可选实现）。
+
+        Returns:
+            是否成功注册。
+        """
+        return False
+
+    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:
+        """获取已注册的前置插件 API 实例（可选实现）。"""
+        return None

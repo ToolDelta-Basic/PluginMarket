@@ -121,7 +121,7 @@ class OrionBridge(Module):
         except KeyError:
             pass
 
-        self._store = BanStore(self.get_data_dir())
+        self._store = BanStore(self.data_dir)
 
         self.register_command(
             ".封禁", self._cmd_ban,

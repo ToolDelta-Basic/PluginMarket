@@ -106,6 +106,14 @@ class PlayerTrackerModule(Module):
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
+    default_config = {
+        "玩家分布图": {
+            "最大快照数": 100,
+            "存储粒度": "秒",
+            "查询间隔秒": 2.0,
+        }
+    }
+
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
         self._service: Optional[PlayerPositionService] = None
@@ -116,7 +124,7 @@ class PlayerTrackerModule(Module):
         self._query_timeout = 3.0
 
     async def on_init(self):
-        """初始化配置、服务、命令，并启动后台轮询。"""
+        """框架已自动注册 default_config 配置节，模块只初始化服务、命令和后台轮询。"""
 
         async def _dbg_positions():
             """调试端点。"""
@@ -130,17 +138,12 @@ class PlayerTrackerModule(Module):
         except KeyError:
             pass
 
-        self.config.register_section("玩家分布图", {
-            "最大快照数": 100,
-            "存储粒度": "秒",
-            "查询间隔秒": 2.0,
-        })
         cfg = self.config.get("玩家分布图")
         max_snapshots = cfg.get("最大快照数", 100)
         time_unit = cfg.get("存储粒度", "秒")
         self._interval = cfg.get("查询间隔秒", 2.0)
 
-        module_dir = self.get_data_dir()
+        module_dir = self.data_dir
         self._service = PlayerPositionService(
             module_dir,
             max_snapshots=max_snapshots,

@@ -54,30 +54,21 @@ class UserPersonaService:
 
 
 class UserPersonaModule(Module):
-    """人设管理模块，暴露 persona 服务。"""
+    """人设管理模块，通过 create_exports 约定动态注册 persona 服务。"""
 
     name = "user_persona"
     version = (1, 0, 0)
-    dependencies = ["ai_core"]        # 确保 AI 核心先加载
+    dependencies = ["ai_core"]
     required_services = ["config", "message"]
 
-    async def on_init(self):
-        """实例化服务，注册到容器，绑定命令。"""
-        data_dir = self.get_data_dir()
+    def create_exports(self) -> dict:
+        """约定: 返回的服务 dict 由框架自动注册到容器。"""
+        data_dir = self.data_dir
         persona_service = UserPersonaService(data_dir)
-        self.services.register("persona", persona_service)
+        return {"persona": persona_service}
 
-        self.register_command(
-            ".设定",
-            self._cmd_set,
-            description="设置你的AI人设，例如：.设定 我是程序员",
-            argument_hint="<描述>",
-        )
-        self.register_command(
-            ".清除人设",
-            self._cmd_clear,
-            description="清除你的AI人设，恢复默认",
-        )
+    async def on_init(self):
+        """框架已处理服务导出，模块只注册命令。"""
 
     @command(".设定")
     async def _cmd_set(self, ctx):

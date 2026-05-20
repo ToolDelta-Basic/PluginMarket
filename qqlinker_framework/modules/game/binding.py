@@ -97,22 +97,26 @@ class BindingService:
 
 
 class PlayerBindingModule(Module):
-    """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
+    """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。
+
+    通过 create_exports 约定动态导出 binding 服务。
+    """
 
     name = "player_binding"
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
-    def __init__(self, services, event_bus):
-        super().__init__(services, event_bus)
-        self.binding_service = None
+    def create_exports(self) -> dict:
+        """约定: 动态构造绑定服务并返回，框架自动注册到容器。"""
+        self.binding_service = BindingService(self.data_dir)
+        return {"binding": self.binding_service}
 
     async def on_init(self):
-        """初始化数据目录、服务注册、命令和事件监听。"""
+        """框架已导出 binding 服务，模块只注册命令和事件。"""
 
         async def _dbg_bindings():
             """调试端点。"""
-            all_b = self.binding_service.get_all_bindings()
+            all_b = self.binding_service.get_bindings()
             return str({"total": len(all_b)})
 
         try:
@@ -122,10 +126,6 @@ class PlayerBindingModule(Module):
             )
         except KeyError:
             pass
-
-        module_dir = self.get_data_dir()
-        self.binding_service = BindingService(module_dir)
-        self.services.register("binding", self.binding_service)
 
         self.register_command(
             ".绑定", self._cmd_qq_bind,

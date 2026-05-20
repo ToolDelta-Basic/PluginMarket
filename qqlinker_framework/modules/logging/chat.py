@@ -191,16 +191,11 @@ class GlobalChatLogModule(Module):
 
     async def on_init(self):
         """注册配置节、初始化日志服务、订阅事件。"""
-        self.config.register_section("全局聊天日志", {
-            "启用": True,
-            "最大记录数": 100,
-            "启用图片存储": False,
-        })
-        cfg = self.config.get("全局聊天日志")
+        cfg = self.config.get("全局聊天日志") or {}
         if not cfg.get("启用", True):
             return
 
-        base = os.path.join(self.get_data_dir())
+        base = os.path.join(self.data_dir)
         self._service = ChatLogService(
             base,
             max_records=cfg.get("最大记录数", 100),

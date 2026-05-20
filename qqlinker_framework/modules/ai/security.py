@@ -136,13 +136,7 @@ class AIAuditEnhanceModule(Module):
 
     async def on_init(self):
         """注册配置、获取 LLM 客户端、初始化知识库、订阅事件，注册 audit 服务。"""
-        self.config.register_section("AI审计增强", {
-            "输入反思": "每次",
-            "输出反思": "每次",
-            "归纳阈值": 10,
-            "基线复位间隔轮次": 10,
-        })
-        cfg = self.config.get("AI审计增强")
+        cfg = self.config.get("AI审计增强") or {}
         self._pre_reflection_level = cfg.get("输入反思", "每次")
         self._post_reflection_level = cfg.get("输出反思", "每次")
         self._induction_threshold = cfg.get("归纳阈值", 10)
@@ -157,7 +151,7 @@ class AIAuditEnhanceModule(Module):
             self._pre_reflection_level = "关闭"
             self._post_reflection_level = "关闭"
 
-        data_dir = self.get_data_dir()
+        data_dir = self.data_dir
         self._store = AuditKnowledgeStore(data_dir)
 
         self.services.register("audit", self)

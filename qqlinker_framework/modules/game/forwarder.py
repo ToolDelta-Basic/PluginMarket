@@ -18,26 +18,8 @@ class GameForwarder(Module):
     version = (1, 0, 0)
     required_services = ["message", "config", "adapter"]
 
-    def __init__(self, services, event_bus):
-        super().__init__(services, event_bus)
-        self.dedup: LayeredDedup = services.get("dedup")
-
-    async def on_init(self):
-        """注册配置节并订阅事件。"""
-
-        async def _dbg_stats():
-            """调试端点。"""
-            return str(self.dedup.get_stats())
-
-        try:
-            debug = self.services.get("debug")
-            await debug.register_module(
-                self.name, {"stats": _dbg_stats}
-            )
-        except KeyError:
-            pass
-
-        self.config.register_section("消息转发", {
+    default_config = {
+        "消息转发": {
             "游戏到群": {
                 "是否启用": True,
                 "转发格式": "<{player}> {message}",
@@ -51,7 +33,27 @@ class GameForwarder(Module):
             },
             "链接的群聊": [963953936],
             "转发玩家进退提示": True,
-        })
+        }
+    }
+
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self.dedup: LayeredDedup = services.get("dedup")
+
+    async def on_init(self):
+        """框架已自动注册 default_config 配置节，模块只订阅事件。"""
+
+        async def _dbg_stats():
+            """调试端点。"""
+            return str(self.dedup.get_stats())
+
+        try:
+            debug = self.services.get("debug")
+            await debug.register_module(
+                self.name, {"stats": _dbg_stats}
+            )
+        except KeyError:
+            pass
 
         self.listen("GameChatEvent", self.on_game_chat)
         self.listen(

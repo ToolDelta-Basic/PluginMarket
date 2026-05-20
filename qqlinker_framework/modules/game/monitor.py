@@ -35,6 +35,14 @@ class TPSMonitorModule(Module):
     """TPS 监控模块，提供 .性能 命令和 'tps' 服务。"""
 
     name = "tps_monitor"
+
+    default_config = {
+        "TPS监控": {
+            "测量间隔秒": 30,
+            "基础响应时间": 0.05,
+            "命令超时": 3.0,
+        }
+    }
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 
@@ -61,11 +69,6 @@ class TPSMonitorModule(Module):
         except KeyError:
             pass
 
-        self.config.register_section("TPS监控", {
-            "测量间隔秒": 30,
-            "基础响应时间": 0.05,
-            "命令超时": 3.0,
-        })
         cfg = self.config.get("TPS监控")
         self._interval = cfg.get("测量间隔秒", 30)
         base_resp = cfg.get("基础响应时间", 0.05)

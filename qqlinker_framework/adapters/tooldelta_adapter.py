@@ -1,16 +1,26 @@
 # adapters/tooldelta_adapter.py
-"""ToolDelta 平台适配器实现"""
+"""ToolDelta 平台适配器实现
+
+v1.1.0 — 新增:
+  - 生命周期感知: ListenActive, ListenFrameExit, ListenPreJoin
+  - 标题栏 API: player_title / player_subtitle / player_actionbar
+  - 数据包监听: ListenPacket, ListenBytesPacket
+  - UUID 解析增强: 自动回退 querytarget
+  - pre_plugin_apis: 自动注册 datas.json 声明的依赖插件 API
+"""
 import logging
 from typing import Callable, Dict, Any, List, Optional
 
 try:
     from tooldelta import Plugin, Player, Chat
+    from tooldelta.constants import PacketIDS
     HAS_TOOLDELTA = True
 except ImportError:
     HAS_TOOLDELTA = False
     Plugin = object
     Player = object
     Chat = object
+    PacketIDS = object
 
 from .base import IFrameworkAdapter
 from ..services.ws_client import WsClient
@@ -23,19 +33,32 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self.plugin = plugin_instance
         self.game_ctrl = plugin_instance.game_ctrl
         self._config_mgr = None
+        self._active = False
+        self._pre_plugin_apis: Dict[str, Any] = {}
 
+        # ── 核心事件 ──
         self.plugin.ListenChat(self._on_game_chat)
         self.plugin.ListenPlayerJoin(self._on_player_join)
         self.plugin.ListenPlayerLeave(self._on_player_leave)
+        self.plugin.ListenActive(self._on_active)
+        self.plugin.ListenFrameExit(self._on_frame_exit)
+        self.plugin.ListenPreJoin(self._on_player_pre_join)
 
         self._chat_handlers: list[Callable] = []
         self._player_join_handlers: list[Callable] = []
         self._player_leave_handlers: list[Callable] = []
+        self._player_pre_join_handlers: list[Callable] = []
+        self._active_handlers: list[Callable] = []
+        self._frame_exit_handlers: list[Callable] = []
         self._group_message_handlers: list[Callable] = []
+        self._packet_handlers: Dict[int, list[Callable]] = {}
+        self._bytes_packet_handlers: Dict[int, list[Callable]] = {}
 
         self._ws_client: Optional[WsClient] = None
         self.event_bus = None
         self.main_loop = None
+
+    # ── 依赖注入 ────────────────────────────────────────────
 
     def set_ws_client(self, ws_client: WsClient):
         """设置 WebSocket 客户端实例。"""
@@ -44,6 +67,13 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def set_config_mgr(self, config_mgr):
         """设置配置管理器。"""
         self._config_mgr = config_mgr
+
+    @property
+    def is_active(self) -> bool:
+        """是否已与游戏服务器建立连接。"""
+        return self._active
+
+    # ── 游戏指令 ────────────────────────────────────────────
 
     def send_game_command(self, cmd: str):
         """发送游戏指令。"""
@@ -63,6 +93,33 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 "游戏消息发送失败, 目标: %s, 错误: %s", target, e
             )
 
+    def send_game_title(self, target: str, text: str):
+        """向玩家显示标题栏消息。"""
+        try:
+            self.game_ctrl.player_title(target, text)
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                "标题栏消息发送失败: %s", e
+            )
+
+    def send_game_subtitle(self, target: str, text: str):
+        """向玩家显示小标题栏消息。"""
+        try:
+            self.game_ctrl.player_subtitle(target, text)
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                "副标题消息发送失败: %s", e
+            )
+
+    def send_game_actionbar(self, target: str, text: str):
+        """向玩家显示行动栏消息。"""
+        try:
+            self.game_ctrl.player_actionbar(target, text)
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                "行动栏消息发送失败: %s", e
+            )
+
     def get_online_players(self) -> List[str]:
         """获取在线玩家列表，自动兼容 ToolDelta 返回的 list 或 dict。"""
         try:
@@ -70,7 +127,14 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             if isinstance(raw, dict):
                 return list(raw.keys())
             if isinstance(raw, (list, tuple)):
-                return list(raw)
+                # 若列表元素为 Player 对象，提取 .name
+                result = []
+                for item in raw:
+                    if hasattr(item, "name"):
+                        result.append(item.name)
+                    elif isinstance(item, str):
+                        result.append(item)
+                return result if result else list(raw)
             logging.getLogger(__name__).warning(
                 "allplayers 返回了未知类型: %s", type(raw).__name__
             )
@@ -80,6 +144,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 "获取在线玩家列表异常: %s", e
             )
             return []
+
+    # ── 群聊消息 ────────────────────────────────────────────
 
     def send_group_msg(self, group_id: int, message: str) -> bool:
         """发送群消息。"""
@@ -100,6 +166,33 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             logging.getLogger(__name__).warning("WebSocket 未连接")
             return False
         return self._ws_client.send_private_msg(user_id, message)
+
+    # ── 生命周期事件 ────────────────────────────────────────
+
+    def _on_active(self):
+        """框架与游戏建立连接后触发。"""
+        self._active = True
+        logging.getLogger(__name__).info("ToolDelta 已与游戏建立连接")
+        for h in self._active_handlers:
+            try:
+                h()
+            except Exception as e:
+                logging.getLogger(__name__).error("on_active 处理器异常: %s", e)
+
+    def _on_frame_exit(self, evt):
+        """框架退出或重载时触发。"""
+        logging.getLogger(__name__).info(
+            "ToolDelta 框架退出 状态码=%s 原因=%s",
+            getattr(evt, "signal", "?"),
+            getattr(evt, "reason", "?"),
+        )
+        for h in self._frame_exit_handlers:
+            try:
+                h(evt)
+            except Exception as e:
+                logging.getLogger(__name__).error("on_frame_exit 处理器异常: %s", e)
+
+    # ── 游戏事件分发 ────────────────────────────────────────
 
     def _on_game_chat(self, chat: Chat):
         """分发游戏聊天事件给所有处理器。"""
@@ -125,6 +218,48 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             except Exception as e:
                 logging.getLogger(__name__).error("玩家离开处理器异常: %s", e)
 
+    def _on_player_pre_join(self, player: Player):
+        """分发玩家预加入事件。"""
+        for h in self._player_pre_join_handlers:
+            try:
+                h(player.name)
+            except Exception as e:
+                logging.getLogger(__name__).error("预加入处理器异常: %s", e)
+
+    def _on_dict_packet(self, packet_id: int):
+        """返回指定数据包 ID 的分发函数。"""
+        def _dispatch(packet: dict):
+            handlers = self._packet_handlers.get(packet_id, [])
+            intercepted = False
+            for h in handlers:
+                try:
+                    if h(packet):
+                        intercepted = True
+                except Exception as e:
+                    logging.getLogger(__name__).error(
+                        "数据包 %d 处理器异常: %s", packet_id, e
+                    )
+            return intercepted
+        return _dispatch
+
+    def _on_bytes_packet(self, packet_id: int):
+        """返回指定字节数据包 ID 的分发函数。"""
+        def _dispatch(packet: bytes):
+            handlers = self._bytes_packet_handlers.get(packet_id, [])
+            intercepted = False
+            for h in handlers:
+                try:
+                    if h(packet):
+                        intercepted = True
+                except Exception as e:
+                    logging.getLogger(__name__).error(
+                        "字节包 %d 处理器异常: %s", packet_id, e
+                    )
+            return intercepted
+        return _dispatch
+
+    # ── 公共监听注册 ────────────────────────────────────────
+
     def listen_game_chat(self, handler: Callable[[str, str], None]):
         """注册游戏聊天处理器。"""
         self._chat_handlers.append(handler)
@@ -136,6 +271,29 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def listen_player_leave(self, handler: Callable[[str], None]):
         """注册玩家离开处理器。"""
         self._player_leave_handlers.append(handler)
+
+    def listen_player_pre_join(self, handler: Callable[[str], None]):
+        """注册玩家预加入处理器。"""
+        self._player_pre_join_handlers.append(handler)
+
+    def listen_active(self, handler: Callable[[], None]):
+        """注册框架就绪处理器。"""
+        self._active_handlers.append(handler)
+
+    def listen_frame_exit(self, handler: Callable[[Any], None]):
+        """注册框架退出处理器。"""
+        self._frame_exit_handlers.append(handler)
+
+    def listen_dict_packet(self, packet_id: int, handler: Callable[[dict], bool]):
+        """注册字典数据包监听（可返回 True 拦截）。"""
+        self._packet_handlers.setdefault(packet_id, []).append(handler)
+        # 首次注册时绑定到 ToolDelta
+        self.plugin.ListenPacket(packet_id, self._on_dict_packet(packet_id))
+
+    def listen_bytes_packet(self, packet_id: int, handler: Callable[[bytes], bool]):
+        """注册二进制数据包监听（可返回 True 拦截）。"""
+        self._bytes_packet_handlers.setdefault(packet_id, []).append(handler)
+        self.plugin.ListenBytesPacket(packet_id, self._on_bytes_packet(packet_id))
 
     def listen_group_message(
         self, handler: Callable[[Dict[str, Any]], None]
@@ -151,6 +309,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             except Exception as e:
                 logging.getLogger(__name__).error("原始消息处理器异常: %s", e)
 
+    # ── 控制台 ──────────────────────────────────────────────
+
     def register_console_command(
         self,
         triggers: List[str],
@@ -161,9 +321,44 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         """注册控制台命令。"""
         self.plugin.frame.add_console_cmd_trigger(triggers, hint, usage, func)
 
+    # ── 跨插件 API ──────────────────────────────────────────
+
     def get_plugin_api(self, name: str) -> Optional[Any]:
         """获取其他插件的 API 实例。"""
         return self.plugin.GetPluginAPI(name)
+
+    def register_pre_plugin_api(self, api_name: str, min_version: tuple = (0, 0, 0)):
+        """注册 datas.json 声明的依赖插件 API 到服务容器。
+
+        在 on_preload 阶段调用，自动调用 GetPluginAPI 并注册到适配器内部存储。
+        模块可通过 self.adapter._pre_plugin_apis['XUID获取'] 访问。
+        """
+        try:
+            api_inst = self.plugin.GetPluginAPI(api_name, min_version=min_version)
+            if api_inst is not None:
+                self._pre_plugin_apis[api_name] = api_inst
+                logging.getLogger(__name__).info(
+                    "已注册前置插件 API: %s v%s",
+                    api_name,
+                    ".".join(str(x) for x in min_version),
+                )
+                return True
+            else:
+                logging.getLogger(__name__).warning(
+                    "前置插件 API '%s' 不可用（可能未加载或版本不符）", api_name
+                )
+                return False
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                "注册前置插件 API '%s' 失败: %s", api_name, e
+            )
+            return False
+
+    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:
+        """获取已注册的前置插件 API 实例。"""
+        return self._pre_plugin_apis.get(api_name)
+
+    # ── 管理员检查 ──────────────────────────────────────────
 
     def is_user_admin(self, user_id: int, config_mgr=None) -> bool:
         """检查用户是否为管理员。"""
@@ -175,6 +370,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return user_id in [int(q) for q in admin_list]
         except (TypeError, ValueError):
             return False
+
+    # ── 指令执行 ────────────────────────────────────────────
 
     def send_game_command_with_resp(
         self, cmd: str, timeout: float = 5.0
@@ -217,8 +414,13 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             logging.getLogger(__name__).error("完整指令执行失败: %s", e)
             return None
 
+    # ── UUID 解析 ───────────────────────────────────────────
+
     def resolve_player_names(self, entries: list) -> dict:
         """通过 ToolDelta 的 players_uuid 映射 UUID 到玩家名。
+
+        优先使用 players_uuid 字典，若为空则尝试遍历 allplayers 列表
+        中的 Player 对象提取 UUID。
 
         Args:
             entries: 包含 uniqueId 键的条目列表。
@@ -226,10 +428,26 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         Returns:
             {uniqueId: player_name} 映射字典。
         """
-        uuid_to_player = {}
+        uuid_to_player: Dict[str, str] = {}
+
+        # 方式 1: players_uuid 字典（最快）
         players_uuid = getattr(self.game_ctrl, "players_uuid", {})
         if players_uuid:
             uuid_to_player = {
                 uid: name for name, uid in players_uuid.items()
             }
+
+        # 方式 2: 从 allplayers 的 Player 对象中提取
+        if not uuid_to_player:
+            raw = self.game_ctrl.allplayers
+            if isinstance(raw, dict):
+                uuid_to_player = {
+                    uid: name for name, uid in raw.items()
+                    if isinstance(uid, str) and len(uid) > 20
+                }
+            elif isinstance(raw, (list, tuple)):
+                for player in raw:
+                    if hasattr(player, "name") and hasattr(player, "uuid"):
+                        uuid_to_player[player.uuid] = player.name
+
         return uuid_to_player

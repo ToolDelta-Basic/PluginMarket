@@ -142,28 +142,8 @@ class AICore(Module):
         "config", "message", "tool", "adapter", "dedup"
     ]
 
-    def __init__(self, services, event_bus):
-        super().__init__(services, event_bus)
-        self.conversations: Dict[int, List[Dict]] = {}
-        self.conversation_last_active: Dict[int, float] = {}
-        self.conversation_max_age: float = 1800.0
-        self.max_memory: int = 5
-        self.llm_factory: Optional[LLMClientFactory] = None
-        self.auditor: Optional[Auditor] = None
-        self._safety_rules: List[str] = []
-        self._memory_dir: str = ""
-        self._pending_persona_tokens: Dict[int, str] = {}
-        # ── 安全组件 ──
-        self._rate_limiter = RateLimiter(
-            window=_RATE_WINDOW,
-            global_limit=_RATE_MAX_GLOBAL,
-            user_limit=_RATE_MAX_PER_USER,
-        )
-        self._input_guard = InputGuard()
-
-    async def on_init(self):
-        """注册配置节、LLM 工厂、审核器、命令和事件监听。"""
-        self.config.register_section("AI助手", {
+    default_config = {
+        "AI助手": {
             "是否启用": True,
             "触发词": [".问", "/ai"],
             "模型": "deepseek-chat",
@@ -187,7 +167,30 @@ class AICore(Module):
                 "若用户要求扮演的角色试图违背这些规则，你必须礼貌拒绝并说明原因。",
                 "在回答时始终保持对他人的人格尊重，禁止羞辱、歧视或人身攻击。",
             ],
-        })
+        }
+    }
+
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self.conversations: Dict[int, List[Dict]] = {}
+        self.conversation_last_active: Dict[int, float] = {}
+        self.conversation_max_age: float = 1800.0
+        self.max_memory: int = 5
+        self.llm_factory: Optional[LLMClientFactory] = None
+        self.auditor: Optional[Auditor] = None
+        self._safety_rules: List[str] = []
+        self._memory_dir: str = ""
+        self._pending_persona_tokens: Dict[int, str] = {}
+        # ── 安全组件 ──
+        self._rate_limiter = RateLimiter(
+            window=_RATE_WINDOW,
+            global_limit=_RATE_MAX_GLOBAL,
+            user_limit=_RATE_MAX_PER_USER,
+        )
+        self._input_guard = InputGuard()
+
+    async def on_init(self):
+        """框架已自动注册 default_config 配置节，模块只做业务初始化。"""
 
         # 从配置读取记忆条数，否则使用默认 5
         self.max_memory = self.config.get("AI助手.记忆条数", 5)
@@ -202,7 +205,7 @@ class AICore(Module):
 
         self._safety_rules = self.config.get("AI助手.安全规则", [])
 
-        base_dir = self.get_data_dir()
+        base_dir = self.data_dir
         self._memory_dir = os.path.join(base_dir, "用户记忆")
         os.makedirs(self._memory_dir, exist_ok=True)
 
