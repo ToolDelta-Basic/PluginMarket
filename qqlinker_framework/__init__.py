@@ -25,6 +25,7 @@ except ImportError:
 
         完整实现了 ToolDelta Plugin 的生命周期监听接口桩。
         """
+
         name: str = ""
         version: tuple = (0, 0, 0)
         author: str = ""
@@ -69,11 +70,13 @@ except ImportError:
 
         # ── 跨插件 API ──
 
-        def GetPluginAPI(self, api_name, min_version=(0, 0, 0), force=True):
+        @staticmethod
+        def GetPluginAPI(api_name, min_version=(0, 0, 0), force=True):
             """获取前置插件 API 实例。"""
             return None
 
-        def BroadcastEvent(self, evt):
+        @staticmethod
+        def BroadcastEvent(evt):
             """广播内部事件。"""
             return []
 
@@ -189,6 +192,8 @@ class QQLinkerFrameworkPlugin(Plugin):
         })
 
         self._host.register_modules_from_package("qqlinker_framework.modules")
+        # 同时扫描 插件数据文件/模块源件/ 中的外部模块
+        self._host.register_external_modules()
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 
     def on_active(self):

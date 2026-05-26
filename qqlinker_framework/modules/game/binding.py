@@ -106,6 +106,10 @@ class PlayerBindingModule(Module):
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self.binding_service: Optional[BindingService] = None
+
     def create_exports(self) -> dict:
         """约定: 动态构造绑定服务并返回，框架自动注册到容器。"""
         self.binding_service = BindingService(self.data_dir)

@@ -11,7 +11,14 @@ from .services import ServiceContainer
 from .bus import EventBus
 from .module import Module
 from .routing import CommandRouter
-from .autodiscover import discover_modules, sort_by_dependencies
+from .autodiscover import (
+    discover_modules as discover_from_package,
+    discover_from_files,
+    download_module,
+    list_external_modules,
+    remove_external_module,
+    sort_by_dependencies,
+)
 
 from ..managers.config_mgr import ConfigManager
 from ..managers.package_mgr import PackageManager
@@ -24,6 +31,10 @@ from ..adapters.base import IFrameworkAdapter
 from ..services.ws_client import WsClient, HAS_WEBSOCKET
 from ..services.dedup import LayeredDedup, DedupConfig
 from ..services.debug_engine import DebugEngine
+from ..services.market_server import (
+    ModuleMarketServer,
+    MarketSourceAggregator,
+)
 from .events import (
     GroupMessageEvent,
     GameChatEvent,
@@ -68,6 +79,8 @@ class FrameworkHost:
 
         self.dedup = None
         self.ws_client = None
+        self.market_server = None
+        self.market_aggregator = None
         self._modules: List[Module] = []
         self._game_events_bridged = False
 
@@ -79,7 +92,7 @@ class FrameworkHost:
         self, package_name: str = "qqlinker_framework.modules"
     ):
         """从指定 Python 包自动发现并注册所有模块。"""
-        classes = discover_modules(package_name)
+        classes = discover_from_package(package_name)
         if not classes:
             logging.getLogger(__name__).warning("未发现任何模块")
             return
@@ -89,6 +102,21 @@ class FrameworkHost:
         logging.getLogger(__name__).info(
             "从 '%s' 自动发现并注册了 %d 个模块",
             package_name,
+            len(sorted_classes),
+        )
+
+    def register_external_modules(self):
+        """从 插件数据文件/模块源件/ 扫描并注册外部模块。"""
+        classes = discover_from_files(self.data_path)
+        if not classes:
+            logging.getLogger(__name__).debug("未发现外部模块")
+            # 这是正常情况，不报 warning
+            return
+        sorted_classes = sort_by_dependencies(classes)
+        for cls in sorted_classes:
+            self.module_mgr.register(cls)
+        logging.getLogger(__name__).info(
+            "从 插件数据文件/模块源件/ 发现并注册了 %d 个模块",
             len(sorted_classes),
         )
 
@@ -113,8 +141,8 @@ class FrameworkHost:
 
         self.adapter.register_console_command(
             ["qqdeps"],
-            "[check|install]",
-            "管理框架 Python 依赖",
+            "[check|install|module] <list|add|remove> [url/名称]",
+            "管理框架 Python 依赖与外部模块",
             self._console_cmd_qqdeps,
         )
         self.adapter.register_console_command(
@@ -147,6 +175,15 @@ class FrameworkHost:
             "API记录上限": 100,
             "启用WebSocket原始帧": False,
         })
+        self.config_mgr.register_section("模块市场", {
+            "启用": False,
+            "地址": "127.0.0.1",
+            "端口": 8380,
+            "上传密钥": "",
+            "签名密钥": "",
+            "白名单模块": [],
+            "源列表": ["http://127.0.0.1:8380"],
+        })
 
         self.config_mgr.load()
 
@@ -174,6 +211,28 @@ class FrameworkHost:
 
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
+
+        # ── 模块市场 HTTP 服务（可选）──
+        self.market_server = None
+        market_cfg = self.config_mgr.get("模块市场", {})
+        if market_cfg.get("启用", False):
+            self.market_server = ModuleMarketServer(
+                data_path=self.data_path,
+                host=market_cfg.get("地址", "127.0.0.1"),
+                port=market_cfg.get("端口", 8380),
+                upload_token=market_cfg.get("上传密钥", ""),
+                whitelist=market_cfg.get("白名单模块", []),
+                sign_secret=market_cfg.get("签名密钥", ""),
+            )
+            self.market_server.start()
+            logging.getLogger(__name__).info(
+                "模块市场已启动: %s", self.market_server.url
+            )
+
+        # ── 市场多源聚合器 ──
+        source_urls = market_cfg.get("源列表", ["http://127.0.0.1:8380"])
+        self.market_aggregator = MarketSourceAggregator(source_urls)
+        self.services.register("market", self.market_aggregator)
 
         if HAS_WEBSOCKET:
             self.ws_client = WsClient(
@@ -287,15 +346,141 @@ class FrameworkHost:
         await self.message_mgr.stop()
         if self.ws_client:
             self.ws_client.disconnect()
+        if self.market_server:
+            self.market_server.stop()
         self.event_bus.shutdown()
         logger.info("框架已停止")
 
     def _console_cmd_qqdeps(self, args: list):
-        """控制台命令 qqdeps。"""
+        """控制台命令 qqdeps — 管理 Python 依赖 + 外部模块 + 市场。
+
+        用法:
+          qqdeps check                  检查 Python 依赖
+          qqdeps install                安装缺失的 Python 依赖
+          qqdeps module list            列出已安装的外部模块
+          qqdeps module add <url|名称>  从 URL 或市场下载模块
+          qqdeps module remove <名>     删除外部模块
+          qqdeps module search <关键词> 在市场源中搜索模块
+          qqdeps market sources         查看已配置的市场源
+          qqdeps market refresh         从市场源刷新模块列表
+        """
         if not args:
-            print("用法: qqdeps check | install")
+            print("用法: qqdeps check|install|module <list|add|remove|search> [参数]")
             return
         sub = args[0].lower()
+
+        # ── 外部模块管理 ──
+        if sub == "module":
+            if len(args) < 2:
+                print("用法: qqdeps module <list|add|remove|search> [参数]")
+                return
+            action = args[1].lower()
+
+            if action == "list":
+                mods = list_external_modules(self.data_path)
+                if not mods:
+                    print("暂无已安装的外部模块")
+                    print(f"放置路径: {self.data_path}/插件数据文件/模块源件/")
+                else:
+                    print(f"已安装 {len(mods)} 个外部模块:")
+                    for m in mods:
+                        print(f"  · {m['name']} ({m['type']}) v{m.get('version','?')} — {m.get('description','')}")
+
+            elif action == "add":
+                if len(args) < 3:
+                    print("用法: qqdeps module add <URL | 模块名>")
+                    print("  URL:  http://example.com/modules/download/my_mod")
+                    print("  名称: 从已配置的市场源中搜索下载")
+                    return
+                target = args[2]
+                # 判断是 URL 还是模块名
+                if target.startswith("http://") or target.startswith("https://"):
+                    print(f"正在从 {target} 下载模块...")
+                    name = download_module(target, self.data_path)
+                else:
+                    # 从聚合市场下载
+                    if not self.market_aggregator:
+                        print("❌ 市场聚合器未配置，请先启用模块市场")
+                        return
+                    print(f"正在从市场源搜索 '{target}'...")
+                    name = self.market_aggregator.fetch_module(
+                        target, self.data_path
+                    )
+                if name:
+                    print(f"✅ 模块 '{name}' 安装成功，请重载插件使其生效")
+                else:
+                    print("❌ 安装失败，请检查名称或网络连接")
+
+            elif action == "remove":
+                if len(args) < 3:
+                    print("用法: qqdeps module remove <模块名>")
+                    return
+                name = args[2]
+                if remove_external_module(name, self.data_path):
+                    print(f"✅ 模块 '{name}' 已删除")
+                else:
+                    print(f"❌ 未找到模块 '{name}'")
+
+            elif action == "search":
+                if len(args) < 3:
+                    print("用法: qqdeps module search <关键词>")
+                    return
+                if not self.market_aggregator:
+                    print("❌ 市场聚合器未配置")
+                    return
+                keyword = " ".join(args[2:])
+                result = self.market_aggregator.search(keyword)
+                mods = result.get("modules", [])
+                if not mods:
+                    print(f"未找到匹配 '{keyword}' 的模块")
+                    print(f"已查询 {len(result.get('sources',[]))} 个源")
+                else:
+                    print(f"搜索 '{keyword}' — {len(mods)} 个结果 (来自 {len(result.get('sources',[]))} 个源):")
+                    for m in mods:
+                        src = m.get("_source", "?")
+                        print(f"  · {m['name']} v{m.get('version','?')} — {m.get('description','')[:40]}")
+                        print(f"    来源: {src}")
+            else:
+                print("未知操作，可用: list / add / remove / search")
+            return
+
+        # ── 市场源管理 ──
+        if sub == "market":
+            if len(args) < 2:
+                print("用法: qqdeps market <sources|refresh>")
+                return
+            action = args[1].lower()
+            if action == "sources":
+                if not self.market_aggregator:
+                    print("市场聚合器未配置")
+                else:
+                    print(f"已配置 {len(self.market_aggregator._sources)} 个市场源:")
+                    for i, s in enumerate(self.market_aggregator._sources, 1):
+                        print(f"  {i}. {s}")
+            elif action == "refresh":
+                if not self.market_aggregator:
+                    print("❌ 市场聚合器未配置")
+                    return
+                print("正在从市场源刷新...")
+                result = self.market_aggregator.list_all()
+                mods = result.get("modules", [])
+                conflicts = result.get("conflicts", [])
+                print(
+                    f"发现 {len(mods)} 个模块"
+                    f" (来自 {len(result.get('sources',[]))} 个源)"
+                )
+                if conflicts:
+                    print(f"⚠ {len(conflicts)} 个模块存在冲突（已按优先级保留）:")
+                    for c in conflicts:
+                        print(
+                            f"  · {c['name']} 保留来自 {c['kept_source']}"
+                            f"，跳过 {c['skipped_source']}"
+                        )
+            else:
+                print("未知操作，可用: sources / refresh")
+            return
+
+        # ── Python 依赖管理 ──
         if sub == "check":
             missing = self.package_mgr.check_missing()
             if missing:
@@ -314,7 +499,7 @@ class FrameworkHost:
                 daemon=True,
             ).start()
         else:
-            print("未知子命令，请使用 check 或 install")
+            print("未知子命令，可用: check / install / module")
 
     def _install_deps_thread(self, packages: list):
         """后台线程执行 pip 安装。"""

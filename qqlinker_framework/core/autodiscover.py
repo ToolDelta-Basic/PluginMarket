@@ -1,8 +1,27 @@
-"""模块自动发现引擎"""
+"""模块自动发现引擎 — 支持 Python 包扫描 + 文件目录扫描 + 远程下载。
+
+模块存放路径（按优先级）:
+  1. 内置模块: qqlinker_framework/modules/ 包（安装时自带）
+  2. 外部模块: {data_path}/插件数据文件/模块源件/*.py（用户自行放置）
+  3. 远程模块: 通过 qqdeps module add <url> 下载安装
+
+约定了两种模块格式:
+  A) 独立 .py 文件:   模块源件/my_mod.py（含一个 Module 子类）
+  B) 目录包:          模块源件/<模块名>/ 目录下含 module.json 和模块代码
+
+  module.json 示例:
+  {
+    "name": "my_module",
+    "version": "1.0.0",
+    "author": "...",
+    "description": "...",
+    "entry": "__init__.py"
+  }
+"""
 import importlib
 import logging
 import pkgutil
-from typing import List, Type
+from typing import Dict, List, Optional, Type
 from .module import Module
 
 logger = logging.getLogger(__name__)
@@ -108,3 +127,207 @@ def sort_by_dependencies(
         if cls not in result:
             result.append(cls)
     return result
+
+
+# ═══════════════════════════════════════════════════════════════
+# 文件系统发现 — 从 插件数据文件/模块源件/ 扫描外部模块
+# ═══════════════════════════════════════════════════════════════
+
+import importlib.util as _importlib_util
+import json as _json
+import os as _os
+import shutil as _shutil
+import tempfile as _tempfile
+import zipfile as _zipfile
+from io import BytesIO as _BytesIO
+
+try:
+    from urllib.request import urlopen as _urlopen
+    HAS_URLLIB = True
+except ImportError:
+    HAS_URLLIB = False
+
+
+# 约定路径常量
+_MODULES_DIR_NAME = "插件数据文件/模块源件"
+
+
+def _get_modules_dir(data_path: str) -> str:
+    """获取外部模块目录的绝对路径（自动创建）。"""
+    path = _os.path.join(data_path, _MODULES_DIR_NAME)
+    _os.makedirs(path, exist_ok=True)
+    return path
+
+
+def discover_from_files(data_path: str) -> List[Type[Module]]:
+    """从文件系统扫描外部模块源件。
+
+    支持两种格式:
+      A) 独立 .py 文件:  模块源件/xxx.py
+      B) 目录包:  模块源件/<name>/ 含 module.json
+
+    返回发现的所有 Module 子类列表。
+    """
+    mod_dir = _get_modules_dir(data_path)
+    classes: List[Type[Module]] = []
+
+    for entry in _os.listdir(mod_dir):
+        full = _os.path.join(mod_dir, entry)
+        if entry.startswith("__"):  # 跳过 __pycache__ 等
+            continue
+
+        if entry.endswith(".py"):
+            # 格式 A: 独立 .py
+            cls = _load_py_file(full)
+            if cls:
+                classes.append(cls)
+
+        elif _os.path.isdir(full):
+            # 格式 B: 目录包
+            manifest = _os.path.join(full, "module.json")
+            if _os.path.exists(manifest):
+                try:
+                    with open(manifest, "r", encoding="utf-8") as f:
+                        _json.load(f)
+                except Exception:
+                    pass
+            # 扫描目录下所有 .py 文件
+            for root, _, files in _os.walk(full):
+                for f in files:
+                    if f.endswith(".py"):
+                        cls = _load_py_file(_os.path.join(root, f))
+                        if cls:
+                            classes.append(cls)
+
+    return classes
+
+
+def _load_py_file(filepath: str) -> Optional[Type[Module]]:
+    """从单个 .py 文件加载 Module 子类。"""
+    mod_name = _os.path.splitext(_os.path.basename(filepath))[0]
+    # 加唯一后缀防止重名
+    unique_name = f"_extmod.{mod_name}.{_os.path.getmtime(filepath):.0f}"
+    try:
+        spec = _importlib_util.spec_from_file_location(unique_name, filepath)
+        if spec is None or spec.loader is None:
+            return None
+        mod = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    except Exception as e:
+        logger.exception("加载外部模块 %s 失败: %s", filepath, e)
+        return None
+
+    # 扫描 Module 子类
+    for attr_name in dir(mod):
+        attr = getattr(mod, attr_name)
+        if (
+            isinstance(attr, type)
+            and issubclass(attr, Module)
+            and attr is not Module
+            and getattr(attr, "name", None)
+        ):
+            return attr
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════
+# 远程模块下载
+# ═══════════════════════════════════════════════════════════════
+
+def download_module(url: str, data_path: str) -> Optional[str]:
+    """从 URL 下载外部模块到 模块源件/ 目录。
+
+    支持:
+      - .py 文件: 直接存入
+      - .zip 文件: 解压到子目录
+
+    Returns:
+        模块名（成功）或 None（失败）。
+    """
+    if not HAS_URLLIB:
+        logger.error("urllib 不可用，无法下载")
+        return None
+
+    mod_dir = _get_modules_dir(data_path)
+
+    try:
+        resp = _urlopen(url, timeout=30)
+        data = resp.read()
+    except Exception as e:
+        logger.error("下载模块失败: %s → %s", url, e)
+        return None
+
+    fname = url.split("/")[-1].split("?")[0]
+
+    if fname.endswith(".zip"):
+        # ZIP: 解压到子目录
+        base = fname[:-4]
+        target = _os.path.join(mod_dir, base)
+        try:
+            with _zipfile.ZipFile(_BytesIO(data)) as zf:
+                zf.extractall(target)
+            logger.info("模块 %s 已安装到 %s", base, target)
+            return base
+        except Exception as e:
+            logger.error("解压模块失败: %s", e)
+            return None
+
+    elif fname.endswith(".py"):
+        target = _os.path.join(mod_dir, fname)
+        with open(target, "wb") as f:
+            f.write(data)
+        logger.info("模块 %s 已安装到 %s", fname, target)
+        return fname[:-3]
+
+    else:
+        logger.error("不支持的文件格式: %s", fname)
+        return None
+
+
+def list_external_modules(data_path: str) -> List[Dict[str, str]]:
+    """列出已安装的外部模块。"""
+    mod_dir = _get_modules_dir(data_path)
+    result = []
+    for entry in sorted(_os.listdir(mod_dir)):
+        full = _os.path.join(mod_dir, entry)
+        if entry.startswith("__"):  # 跳过 __pycache__ 等
+            continue
+        if entry.endswith(".py"):
+            result.append({"name": entry[:-3], "type": "file", "path": full})
+        elif _os.path.isdir(full):
+            manifest = _os.path.join(full, "module.json")
+            info = {}
+            if _os.path.exists(manifest):
+                try:
+                    with open(manifest, "r", encoding="utf-8") as f:
+                        info = _json.load(f)
+                except Exception:
+                    pass
+            result.append({
+                "name": entry,
+                "type": "package",
+                "path": full,
+                "version": info.get("version", "?"),
+                "author": info.get("author", "?"),
+                "description": info.get("description", ""),
+            })
+    return result
+
+
+def remove_external_module(name: str, data_path: str) -> bool:
+    """删除已安装的外部模块。"""
+    mod_dir = _get_modules_dir(data_path)
+
+    # 尝试 .py 文件
+    py_path = _os.path.join(mod_dir, f"{name}.py")
+    if _os.path.exists(py_path):
+        _os.remove(py_path)
+        return True
+
+    # 尝试目录包
+    pkg_path = _os.path.join(mod_dir, name)
+    if _os.path.isdir(pkg_path):
+        _shutil.rmtree(pkg_path)
+        return True
+
+    return False

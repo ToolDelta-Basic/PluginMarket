@@ -130,3 +130,35 @@ def schedule(
         }
         return func
     return decorator
+
+
+# ═══════════════════════════════════════════════════════════════
+# 简化装饰器 — 模块顶层函数可直接使用的 @every / @cron
+# ═══════════════════════════════════════════════════════════════
+
+def every(seconds: float, *, run_on_start: bool = False, name: str = None):
+    """模块内使用 @every(seconds=N) 标记定时任务。
+
+    用法:
+        class MyMod(Module):
+            @every(30)
+            async def heartbeat(self):
+                self.game.cmd("/say tick")
+
+    等价于手写 ScheduledTask。
+    """
+    return schedule(name=name, interval=seconds, run_on_start=run_on_start)
+
+
+def cron(expr: str, *, run_on_start: bool = False, name: str = None):
+    """模块内使用 @cron("0 * * * *") 标记 cron 定时任务。
+
+    用法:
+        class MyMod(Module):
+            @cron("0 * * * *")
+            async def hourly(self):
+                self.qq.send_group(12345, "整点报时")
+
+    等价于手写 ScheduledTask with cron。
+    """
+    return schedule(name=name, cron=expr, run_on_start=run_on_start)

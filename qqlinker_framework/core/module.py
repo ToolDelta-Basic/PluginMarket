@@ -303,6 +303,39 @@ class Module(ABC):
         self._data_dir: str | None = None
         self.db: JsonDatabase | None = None
 
+        # ── 魔法属性（简化开发）──
+        self._inject_magic_attrs(services)
+
+    def _inject_magic_attrs(self, services: ServiceContainer) -> None:
+        """注入便捷属性: self.game / self.qq / self.cfg / self.adapter。
+
+        模块可以直接 self.game.say(target, text) 代替
+        self.services.get('adapter').send_game_message(target, text)
+        """
+        # self.adapter
+        try:
+            self.adapter = services.get("adapter")
+        except KeyError:
+            self.adapter = None
+
+        # self.config 代理 — self.config["键"] 自动调用 config.get("键")
+        try:
+            raw_cfg = services.get("config")
+            self.config = _ConfigProxy(raw_cfg)
+        except KeyError:
+            self.config = None
+
+        # self.game — 游戏操作快捷方式
+        self.game = _GameProxy(self.adapter)
+
+        # self.qq — QQ 操作快捷方式
+        self.message = None
+        try:
+            self.message = services.get("message")
+        except KeyError:
+            pass
+        self.qq = _QQProxy(self.adapter, self.message)
+
     # ── 属性 ──
 
     @property
@@ -448,3 +481,91 @@ class Module(ABC):
     def register_tool(self, tool_definition: dict):
         """编程式注册工具定义。"""
         self._tool_defs.append(tool_definition)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 魔法属性代理 — 让模块开发者用 self.game.say(...) 等直觉 API
+# ═══════════════════════════════════════════════════════════════
+
+class _ConfigProxy:
+    """配置代理: self.config.键 自动调用 config.get("键")。"""
+
+    __slots__ = ("_cfg",)
+
+    def __init__(self, config_svc):
+        self._cfg = config_svc
+
+    def __getattr__(self, key: str):
+        if key.startswith("_"):
+            raise AttributeError(key)
+        return self._cfg.get(key)
+
+    def get(self, key: str, default=None):
+        return self._cfg.get(key, default)
+
+
+class _GameProxy:
+    """游戏操作代理: self.game.say(target, text) / self.game.cmd(...) / self.game.players 等。"""
+
+    __slots__ = ("_adapter",)
+
+    def __init__(self, adapter):
+        self._adapter = adapter
+
+    def say(self, target: str, text: str):
+        """向游戏内目标发送消息。"""
+        if self._adapter:
+            self._adapter.send_game_message(target, text)
+
+    def cmd(self, command: str):
+        """发送游戏指令。"""
+        if self._adapter:
+            self._adapter.send_game_command(command)
+
+    def title(self, target: str, text: str):
+        """显示标题栏消息。"""
+        if self._adapter:
+            self._adapter.send_game_title(target, text)
+
+    def subtitle(self, target: str, text: str):
+        """显示副标题消息。"""
+        if self._adapter:
+            self._adapter.send_game_subtitle(target, text)
+
+    def actionbar(self, target: str, text: str):
+        """显示行动栏消息。"""
+        if self._adapter:
+            self._adapter.send_game_actionbar(target, text)
+
+    @property
+    def players(self) -> list:
+        """在线玩家列表。"""
+        return self._adapter.get_online_players() if self._adapter else []
+
+    def cmd_with_resp(self, cmd: str, timeout: float = 5.0):
+        """发送指令并等响应。"""
+        if self._adapter:
+            return self._adapter.send_game_command_with_resp(cmd, timeout)
+        return None
+
+
+class _QQProxy:
+    """QQ 操作代理: self.qq.send_group(gid, text) / self.qq.send_private(uid, text)。"""
+
+    __slots__ = ("_adapter", "_msg")
+
+    def __init__(self, adapter, message_svc=None):
+        self._adapter = adapter
+        self._msg = message_svc
+
+    async def send_group(self, group_id: int, text: str):
+        """发送群消息。"""
+        if self._msg:
+            await self._msg.send_group(group_id, text)
+        elif self._adapter:
+            self._adapter.send_group_msg(group_id, text)
+
+    async def send_private(self, user_id: int, text: str):
+        """发送私聊消息。"""
+        if self._adapter:
+            self._adapter.send_private_msg(user_id, text)

@@ -18,18 +18,12 @@
 """
 import asyncio
 import cmd
-import json
 import logging
-import sys
 import threading
 from typing import Optional
 
 from .mock_adapter import MockAdapter
 from ..core.host import FrameworkHost
-from ..core.events import (
-    GroupMessageEvent, GameChatEvent,
-    PlayerJoinEvent, PlayerLeaveEvent,
-)
 
 
 class MockFrameworkCLI(cmd.Cmd):
@@ -77,6 +71,7 @@ class MockFrameworkCLI(cmd.Cmd):
         self._running = True
 
     def _run_loop(self):
+        """后台事件循环线程。"""
         asyncio.set_event_loop(self._loop)
         try:
             self._loop.run_until_complete(self.host.start())
@@ -85,6 +80,7 @@ class MockFrameworkCLI(cmd.Cmd):
             logging.getLogger(__name__).exception("Mock 框架异常")
 
     def _stop(self):
+        """优雅停止 mock 框架。"""
         if self.host and self._loop:
             asyncio.run_coroutine_threadsafe(self.host.stop(), self._loop)
             self._loop.call_soon_threadsafe(self._loop.stop)
@@ -94,7 +90,8 @@ class MockFrameworkCLI(cmd.Cmd):
 
     # ── 命令 ──
 
-    def do_test(self, arg: str):
+    @staticmethod
+    def do_test(arg: str):
         """运行所有测试。"""
         from .runner import run_all_tests
         run_all_tests()
@@ -164,7 +161,6 @@ class MockFrameworkCLI(cmd.Cmd):
             return
         msg = parts[2]
 
-        # 模拟原始群消息（框架会自动解析为 GroupMessageEvent 并路由命令）
         raw = {
             "post_type": "message",
             "message_type": "group",
@@ -188,13 +184,14 @@ class MockFrameworkCLI(cmd.Cmd):
 
     def do_status(self, arg: str):
         """查看 mock 状态。"""
+        stats = self.adapter.get_stats()
         print(f"\n{'='*40}")
         print(f"  框架运行: {'✅ 是' if self._running else '❌ 否'}")
-        print(f"  游戏就绪: {'✅ 是' if self.adapter._active else '❌ 否'}")
+        print(f"  游戏就绪: {'✅ 是' if self.adapter.is_active else '❌ 否'}")
         print(f"  在线玩家: {', '.join(self.adapter.get_online_players()) or '(无)'}")
-        print(f"  管理员QQ: {self.adapter._admins}")
-        print(f"  发送指令数: {len(self.adapter._commands)}")
-        print(f"  游戏消息数: {len(self.adapter._game_messages)}")
+        print(f"  管理员QQ: {stats['admins']}")
+        print(f"  发送指令数: {stats['command_count']}")
+        print(f"  游戏消息数: {stats['game_msg_count']}")
         if self.host:
             loaded = self.host.module_mgr.get_loaded_modules()
             print(f"  已加载模块: {', '.join(loaded) if loaded else '(无)'}")

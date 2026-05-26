@@ -110,6 +110,7 @@ def test_mock_adapter_core():
     assert a.is_user_admin(100)
     assert not a.is_user_admin(999)
 
+
 def test_mock_lifecycle():
     """内建: MockAdapter 生命周期事件"""
     from .mock_adapter import MockAdapter
@@ -150,6 +151,7 @@ def test_config_schema():
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
+
 
 def test_json_db():
     """内建: JsonDatabase CRUD"""
