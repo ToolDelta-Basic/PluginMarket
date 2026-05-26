@@ -220,9 +220,9 @@
       "plugin-type": "classic"
     },
     "群服互通": {
-      "name": "群服互通云链版Ultra版",
-      "author": "大庆油田&SuperScript&小六神",
-      "version": "1.0.0",
+      "name": "群服互通云链版",
+      "author": "大庆油田/SuperScript",
+      "version": "0.1.2",
       "plugin-type": "classic"
     },
     "入服欢迎": {
@@ -301,6 +301,12 @@
       "name": "点歌台",
       "author": "SuperScript & Zhonger-Yuansi",
       "version": "1.0.1",
+      "plugin-type": "classic"
+    },
+    "群服互通Ultra": {
+      "name": "群服互通云链版Ultra版",
+      "author": "大庆油田&SuperScript&小六神",
+      "version": "1.0.0",
       "plugin-type": "classic"
     },
     "超频刷屏反制": {
