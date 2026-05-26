@@ -31,18 +31,19 @@ class ToolDeltaAdapter(IFrameworkAdapter):
 
     def __init__(self, plugin_instance: Plugin):
         self.plugin = plugin_instance
-        self.game_ctrl = plugin_instance.game_ctrl
+        self.game_ctrl = getattr(plugin_instance, 'game_ctrl', None)
         self._config_mgr = None
         self._active = False
         self._pre_plugin_apis: Dict[str, Any] = {}
 
-        # ── 核心事件 ──
+        # ── 核心事件（通过 Plugin 基类的实例方法注册）──
         self.plugin.ListenChat(self._on_game_chat)
         self.plugin.ListenPlayerJoin(self._on_player_join)
         self.plugin.ListenPlayerLeave(self._on_player_leave)
-        self.plugin.ListenActive(self._on_active)
         self.plugin.ListenFrameExit(self._on_frame_exit)
-        self.plugin.ListenPreJoin(self._on_player_pre_join)
+        self.plugin.ListenPlayerPreJoin(self._on_player_pre_join)
+        # 注意: ListenActive 由 QQLinkerFrameworkPlugin 统一注册，
+        # 避免在此重复注册导致双重回调。
 
         self._chat_handlers: list[Callable] = []
         self._player_join_handlers: list[Callable] = []
@@ -169,8 +170,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
 
     # ── 生命周期事件 ────────────────────────────────────────
 
-    def _on_active(self):
-        """框架与游戏建立连接后触发。"""
+    def handle_active(self):
+        """由插件入口 on_active 调用，通知适配器已激活并触发所有处理器。"""
         self._active = True
         logging.getLogger(__name__).info("ToolDelta 已与游戏建立连接")
         for h in self._active_handlers:
@@ -229,6 +230,7 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def _on_dict_packet(self, packet_id: int):
         """返回指定数据包 ID 的分发函数。"""
         def _dispatch(packet: dict):
+            """内部分发: 遍历处理器列表，任意返回 True 则拦截。"""
             handlers = self._packet_handlers.get(packet_id, [])
             intercepted = False
             for h in handlers:
@@ -245,6 +247,7 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def _on_bytes_packet(self, packet_id: int):
         """返回指定字节数据包 ID 的分发函数。"""
         def _dispatch(packet: bytes):
+            """内部分发: 遍历处理器列表，任意返回 True 则拦截。"""
             handlers = self._bytes_packet_handlers.get(packet_id, [])
             intercepted = False
             for h in handlers:
@@ -327,7 +330,9 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         """获取其他插件的 API 实例。"""
         return self.plugin.GetPluginAPI(name)
 
-    def register_pre_plugin_api(self, api_name: str, min_version: tuple = (0, 0, 0)):
+    def register_pre_plugin_api(
+        self, api_name: str, min_version: tuple = (0, 0, 0)
+    ):
         """注册 datas.json 声明的依赖插件 API 到服务容器。
 
         在 on_preload 阶段调用，自动调用 GetPluginAPI 并注册到适配器内部存储。
@@ -343,11 +348,10 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                     ".".join(str(x) for x in min_version),
                 )
                 return True
-            else:
-                logging.getLogger(__name__).warning(
-                    "前置插件 API '%s' 不可用（可能未加载或版本不符）", api_name
-                )
-                return False
+            logging.getLogger(__name__).warning(
+                "前置插件 API '%s' 不可用（可能未加载或版本不符）", api_name
+            )
+            return False
         except Exception as e:
             logging.getLogger(__name__).warning(
                 "注册前置插件 API '%s' 失败: %s", api_name, e
@@ -357,6 +361,10 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:
         """获取已注册的前置插件 API 实例。"""
         return self._pre_plugin_apis.get(api_name)
+
+    def get_pre_plugin_apis(self) -> Dict[str, Any]:
+        """返回所有已注册的前置插件 API 字典。"""
+        return dict(self._pre_plugin_apis)
 
     # ── 管理员检查 ──────────────────────────────────────────
 

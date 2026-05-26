@@ -27,7 +27,6 @@ import json
 import logging
 import os
 import threading
-import time
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -47,6 +46,7 @@ class JsonCollection:
         self._load()
 
     def _load(self):
+        """从磁盘加载 JSON 数据。"""
         if os.path.exists(self._file):
             try:
                 with open(self._file, "r", encoding="utf-8") as f:
@@ -55,21 +55,25 @@ class JsonCollection:
                 self._data = {}
 
     def _save(self):
+        """持久化当前数据到磁盘。"""
         with open(self._file, "w", encoding="utf-8") as f:
             json.dump(self._data, f, ensure_ascii=False, indent=2)
 
     # ── CRUD ──
 
     def get(self, key: str, default: Any = None) -> Any:
+        """读取指定键的值。"""
         with self._lock:
             return self._data.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
+        """写入键值对并持久化。"""
         with self._lock:
             self._data[key] = value
             self._save()
 
     def delete(self, key: str) -> bool:
+        """删除指定键，返回是否成功。"""
         with self._lock:
             if key in self._data:
                 del self._data[key]
@@ -78,31 +82,38 @@ class JsonCollection:
             return False
 
     def all(self) -> Dict[str, Any]:
+        """返回所有键值对的浅拷贝。"""
         with self._lock:
             return dict(self._data)
 
     def exists(self, key: str) -> bool:
+        """检查键是否存在。"""
         with self._lock:
             return key in self._data
 
     def count(self) -> int:
+        """返回存储条目数量。"""
         with self._lock:
             return len(self._data)
 
     def clear(self) -> None:
+        """清空所有数据。"""
         with self._lock:
             self._data.clear()
             self._save()
 
     def keys(self) -> List[str]:
+        """返回所有键的列表。"""
         with self._lock:
             return list(self._data.keys())
 
     def values(self) -> List[Any]:
+        """返回所有值的列表。"""
         with self._lock:
             return list(self._data.values())
 
     def update(self, items: Dict[str, Any]) -> None:
+        """批量更新键值对。"""
         with self._lock:
             self._data.update(items)
             self._save()
@@ -151,6 +162,7 @@ class ScheduledTask:
             return self._task
 
         async def _runner():
+            """定时任务主循环: 间隔等待并执行回调。"""
             if self.run_on_start:
                 await _safe_call(self.handler)
             while not self._stop_event.is_set():
@@ -175,12 +187,14 @@ class ScheduledTask:
         return self._task
 
     def stop(self):
+        """停止定时任务并取消异步任务。"""
         self._stop_event.set()
         if self._task:
             self._task.cancel()
 
 
 async def _safe_call(handler: Callable):
+    """安全调用处理器，捕获异常并记录日志。"""
     try:
         if asyncio.iscoroutinefunction(handler):
             await handler()
@@ -202,6 +216,7 @@ class HotReloadState:
         self.load()
 
     def load(self):
+        """从磁盘加载状态，合并默认值。"""
         if os.path.exists(self._file):
             try:
                 with open(self._file, "r", encoding="utf-8") as f:
@@ -213,18 +228,22 @@ class HotReloadState:
             self._data = dict(self._defaults)
 
     def save(self):
+        """持久化当前状态到磁盘。"""
         os.makedirs(os.path.dirname(self._file), exist_ok=True)
         with open(self._file, "w", encoding="utf-8") as f:
             json.dump(self._data, f, ensure_ascii=False, indent=2)
 
     def get(self, key: str, default: Any = None) -> Any:
+        """读取指定键的值。"""
         return self._data.get(key, default)
 
     def set(self, key: str, value: Any):
+        """写入键值对并持久化。"""
         self._data[key] = value
         self.save()
 
     def all(self) -> Dict[str, Any]:
+        """返回所有键值对的浅拷贝。"""
         return dict(self._data)
 
 
@@ -325,7 +344,9 @@ class Module(ABC):
                 )
 
         # ── C: exports + create_exports → services.register ──
-        if hasattr(self, "create_exports") and callable(getattr(self, "create_exports")):
+        if hasattr(self, "create_exports") and callable(
+            getattr(self, "create_exports", None)
+        ):
             dynamic = self.create_exports()
             if isinstance(dynamic, dict):
                 for name, inst in dynamic.items():
@@ -354,7 +375,6 @@ class Module(ABC):
 
     async def _post_init_conventions(self) -> None:
         """on_init 之后执行的约定（依赖 on_init 中创建的资源）。"""
-
         # ── G: tools → ToolManager ──
         tool_mgr = None
         try:
@@ -407,6 +427,7 @@ class Module(ABC):
         argument_hint: str = "",
         cooldown: float | None = None,
     ):
+        """注册一个命令处理器。"""
         if cooldown is None:
             cooldown = self.default_cooldown
         self._commands[trigger] = {
@@ -420,8 +441,10 @@ class Module(ABC):
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0):
+        """订阅事件并记录到事件处理器列表。"""
         self.event_bus.subscribe(event_type, handler, priority)
         self._event_handlers.append((event_type, handler, priority))
 
     def register_tool(self, tool_definition: dict):
+        """编程式注册工具定义。"""
         self._tool_defs.append(tool_definition)

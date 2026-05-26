@@ -89,7 +89,8 @@ class IFrameworkAdapter(ABC):
             }
         """
 
-    def resolve_player_names(self, entries: list) -> dict:  # noqa: PYL-R0201
+    @staticmethod
+    def resolve_player_names(entries: list) -> dict:
         """将查询条目中的 UUID 映射为玩家名。
 
         默认实现为空映射，子类可覆盖以提供平台特定的 UUID→名字解析。
@@ -113,13 +114,17 @@ class IFrameworkAdapter(ABC):
     def listen_player_pre_join(self, handler: Callable[[str], None]) -> None:
         """注册玩家预加入处理器（可选实现）。"""
 
-    # ── 可选扩展: 数据包监听 ────────────────────────────────
+    # ── 可选扩展: 数据包监听 ──────────────────────────────────
 
-    def listen_dict_packet(self, packet_id: int, handler: Callable[[dict], bool]) -> None:
-        """注册字典数据包监听（可选实现），返回 True 拦截数据包。"""
+    def listen_dict_packet(
+        self, packet_id: int, handler: Callable[[dict], bool]
+    ) -> None:
+        """注册字典数据包监听，返回 True 拦截数据包。"""
 
-    def listen_bytes_packet(self, packet_id: int, handler: Callable[[bytes], bool]) -> None:
-        """注册二进制数据包监听（可选实现），返回 True 拦截数据包。"""
+    def listen_bytes_packet(
+        self, packet_id: int, handler: Callable[[bytes], bool]
+    ) -> None:
+        """注册二进制数据包监听，返回 True 拦截数据包。"""
 
     # ── 可选扩展: 标题栏消息 ────────────────────────────────
 
@@ -132,16 +137,31 @@ class IFrameworkAdapter(ABC):
     def send_game_actionbar(self, target: str, text: str) -> None:
         """向玩家显示行动栏消息（可选实现）。"""
 
-    # ── 可选扩展: 跨插件 API 代理 ───────────────────────────
+    # ── 可选扩展: 跨插件 API 代理 ─────────────────────────────
 
-    def register_pre_plugin_api(self, api_name: str, min_version: tuple = (0, 0, 0)) -> bool:
-        """注册 datas.json 声明的依赖插件 API（可选实现）。
+    @staticmethod
+    def register_pre_plugin_api(
+        api_name: str, min_version: tuple = (0, 0, 0)
+    ) -> bool:
+        """注册 datas.json 声明的依赖插件 API。
+
+        Args:
+            api_name: API 名称。
+            min_version: 最低版本要求。
 
         Returns:
             是否成功注册。
         """
         return False
 
-    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:
-        """获取已注册的前置插件 API 实例（可选实现）。"""
+    @staticmethod
+    def get_pre_plugin_api(api_name: str) -> Optional[Any]:
+        """获取已注册的前置插件 API 实例。
+
+        Args:
+            api_name: API 名称。
+
+        Returns:
+            API 实例或 None。
+        """
         return None

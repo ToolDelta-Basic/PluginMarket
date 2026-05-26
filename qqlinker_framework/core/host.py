@@ -95,7 +95,6 @@ class FrameworkHost:
     async def start(self):
         """启动框架：初始化配置、WS连接、模块、事件桥接等。"""
         self._main_loop = asyncio.get_running_loop()
-        self._ensure_log_handlers()
 
         data_dir = self.data_path
         dirs = [
@@ -106,6 +105,8 @@ class FrameworkHost:
         ]
         for d in dirs:
             os.makedirs(d, exist_ok=True)
+
+        self._ensure_log_handlers()
 
         site_pkgs = os.path.join(self.data_path, "第三方库")
         self.package_mgr.set_target_dir(site_pkgs)

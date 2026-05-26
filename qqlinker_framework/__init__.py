@@ -21,24 +21,74 @@ except ImportError:
     HAS_TOOLDELTA = False
 
     class Plugin:
-        name = ""
-        version = (0, 0, 0)
-        author = ""
-        description = ""
+        """ToolDelta 插件基类桩，用于非 ToolDelta 环境。
+
+        完整实现了 ToolDelta Plugin 的生命周期监听接口桩。
+        """
+        name: str = ""
+        version: tuple = (0, 0, 0)
+        author: str = ""
+        description: str = ""
 
         def __init__(self, frame=None):
             self.frame = frame
+            self.game_ctrl = None
             self.data_path = "."
 
-        @staticmethod
-        def ListenPreload(func):
-            func()
+        # ── 生命周期监听 ──
 
-        @staticmethod
-        def ListenActive(func):
-            func()
+        def ListenPreload(self, func, priority=0):
+            """注册预加载回调（桩）。"""
 
-    def plugin_entry(cls):
+        def ListenActive(self, func, priority=0):
+            """注册激活回调。"""
+
+        def ListenPlayerJoin(self, func, priority=0):
+            """注册玩家加入回调。"""
+
+        def ListenPlayerPreJoin(self, func, priority=0):
+            """注册玩家预加入回调。"""
+
+        def ListenPlayerLeave(self, func, priority=0):
+            """注册玩家离开回调。"""
+
+        def ListenChat(self, func, priority=0):
+            """注册聊天回调。"""
+
+        def ListenFrameExit(self, func, priority=0):
+            """注册框架退出回调。"""
+
+        def ListenPacket(self, pk_id, func, priority=0):
+            """注册字典数据包监听。"""
+
+        def ListenBytesPacket(self, pk_id, func, priority=0):
+            """注册二进制数据包监听。"""
+
+        def ListenInternalBroadcast(self, name, func, priority=0):
+            """注册内部广播监听。"""
+
+        # ── 跨插件 API ──
+
+        def GetPluginAPI(self, api_name, min_version=(0, 0, 0), force=True):
+            """获取前置插件 API 实例。"""
+            return None
+
+        def BroadcastEvent(self, evt):
+            """广播内部事件。"""
+            return []
+
+        def get_typecheck_plugin_api(self, api_cls):
+            """TYPE_CHECKING 辅助（桩）。"""
+            raise NotImplementedError
+
+    def plugin_entry(cls, *args, **kwargs):
+        """ToolDelta 插件入口标记。
+
+        支持三种形式:
+          plugin_entry(PluginClass)
+          plugin_entry(PluginClass, "api-name", (0, 0, 1))
+          plugin_entry(PluginClass, ["api-a", "api-b"], (0, 0, 1))
+        """
         return cls
 
     ToolDelta = None
@@ -50,6 +100,7 @@ from .adapters.tooldelta_adapter import ToolDeltaAdapter
 # ── 依赖解析 ────────────────────────────────────────────────
 
 def _load_pre_plugin_deps(data_dir: str) -> dict:
+    """从 datas.json 加载前置插件依赖声明。"""
     datas_path = os.path.join(data_dir, "..", "datas.json")
     if not os.path.exists(datas_path):
         alt = os.path.join(os.path.dirname(__file__), "datas.json")
@@ -81,6 +132,8 @@ def _load_pre_plugin_deps(data_dir: str) -> dict:
 # ── 插件主类 ────────────────────────────────────────────────
 
 class QQLinkerFrameworkPlugin(Plugin):
+    """群服互通框架插件入口，负责生命周期管理。"""
+
     name = "群服互通框架"
     version = (1, 2, 0)
     author = "小石潭记qwq"
@@ -96,6 +149,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         self._adapter = None
 
     def on_preload(self):
+        """预加载: 初始化适配器、注册前置插件、发现模块。"""
         data_dir = str(self.data_path)
         self._adapter = ToolDeltaAdapter(self)
 
@@ -105,7 +159,9 @@ class QQLinkerFrameworkPlugin(Plugin):
                 "检测到 %d 个前置插件依赖，正在注册...", len(pre_deps)
             )
             for api_name, min_ver in pre_deps.items():
-                registered = self._adapter.register_pre_plugin_api(api_name, min_ver)
+                registered = self._adapter.register_pre_plugin_api(
+                    api_name, min_ver
+                )
                 if not registered:
                     logging.getLogger(__name__).warning(
                         "⚠ 前置插件 '%s' (>= v%s) 不可用", api_name,
@@ -114,8 +170,10 @@ class QQLinkerFrameworkPlugin(Plugin):
 
         self._host = FrameworkHost(self._adapter, data_path=data_dir)
 
-        if self._adapter._pre_plugin_apis:
-            for api_name, api_inst in self._adapter._pre_plugin_apis.items():
+        # 通过公共方法访问前置插件 API，避免直接访问受保护成员
+        pre_apis = self._adapter.get_pre_plugin_apis()
+        if pre_apis:
+            for api_name, api_inst in pre_apis.items():
                 svc_name = f"pre_api.{api_name}"
                 self._host.services.register(svc_name, api_inst)
                 logging.getLogger(__name__).info(
@@ -134,16 +192,21 @@ class QQLinkerFrameworkPlugin(Plugin):
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 
     def on_active(self):
+        """游戏连接就绪后启动框架线程。"""
         logging.getLogger(__name__).info("游戏连接已就绪，启动框架...")
         if not self._host:
             logging.getLogger(__name__).error("框架主机未初始化")
             return
+        # 通知适配器游戏已激活
+        if self._adapter:
+            self._adapter.handle_active()
         self._framework_thread = threading.Thread(
             target=self._run_framework, daemon=True
         )
         self._framework_thread.start()
 
     def _run_framework(self):
+        """在独立线程中创建事件循环并运行框架。"""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         try:
@@ -155,6 +218,7 @@ class QQLinkerFrameworkPlugin(Plugin):
             self._loop.close()
 
     def on_def(self):
+        """插件卸载时停止框架和事件循环。"""
         if self._loop and self._host:
             asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
             self._loop.call_soon_threadsafe(self._loop.stop)

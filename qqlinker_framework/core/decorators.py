@@ -20,6 +20,7 @@ def command(
     """
 
     def decorator(func: Callable):
+        """内部装饰器: 将命令元信息附加到函数 _command_info 属性。"""
         func._command_info = {
             "trigger": trigger,
             "type": cmd_type,
@@ -41,6 +42,7 @@ def listen(event_type: str, priority: int = 0):
     """
 
     def decorator(func: Callable):
+        """内部装饰器: 将事件元信息附加到函数 _event_info 属性。"""
         func._event_info = {
             "event_type": event_type,
             "priority": priority,
@@ -78,6 +80,7 @@ def tool(
     """
 
     def decorator(func: Callable):
+        """内部装饰器: 将工具元信息附加到函数 _tool_info 属性。"""
         func._tool_info = {
             "name": name,
             "description": description,
@@ -117,6 +120,7 @@ def schedule(
     """
 
     def decorator(func: Callable):
+        """内部装饰器: 将定时任务元信息附加到函数 _schedule_info 属性。"""
         func._schedule_info = {
             "name": name or func.__name__,
             "interval": interval,

@@ -19,6 +19,7 @@ class ModuleManager:
         self._lock = asyncio.Lock()
 
     def register(self, module_cls: Type[Module]):
+        """注册模块类，若已存在则跳过。"""
         if module_cls not in self._module_classes:
             self._module_classes.append(module_cls)
 
@@ -27,6 +28,7 @@ class ModuleManager:
     # ═══════════════════════════════════════════════════════════
 
     async def initialize_all(self) -> List[Module]:
+        """批量初始化所有已注册模块，执行三阶段加载。"""
         logger = logging.getLogger(__name__)
         modules: List[Module] = []
 
@@ -36,7 +38,8 @@ class ModuleManager:
                 try:
                     mod = cls(self.services, self.event_bus)
                 except Exception as e:
-                    logger.error("模块 '%s' 实例化失败: %s",
+                    logger.error(
+                        "模块 '%s' 实例化失败: %s",
                         getattr(cls, 'name', cls.__name__), e)
                     continue
                 self._scan_all_decorators(mod)
@@ -94,6 +97,7 @@ class ModuleManager:
     # ═══════════════════════════════════════════════════════════
 
     async def unload_module(self, module_name: str) -> bool:
+        """热卸载指定名称的模块。"""
         logger = logging.getLogger(__name__)
         async with self._lock:
             mod = self._loaded_modules.pop(module_name, None)
@@ -107,12 +111,15 @@ class ModuleManager:
         return True
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+        """热加载一个新的模块类。"""
         logger = logging.getLogger(__name__)
         try:
             temp_mod = module_cls(self.services, self.event_bus)
         except Exception as e:
-            logger.error("模块 '%s' 实例化失败: %s",
-                getattr(module_cls, 'name', module_cls.__name__), e)
+            logger.error(
+                "模块 '%s' 实例化失败: %s",
+                getattr(module_cls, 'name', module_cls.__name__), e)  # noqa: FLK-E128
+
             return None
 
         async with self._lock:
@@ -163,6 +170,7 @@ class ModuleManager:
         return temp_mod
 
     async def reload_module(self, module_name: str) -> bool:
+        """重载指定模块（先卸载再加载）。"""
         mod = self._loaded_modules.get(module_name)
         if not mod:
             return False
@@ -176,6 +184,7 @@ class ModuleManager:
     # ═══════════════════════════════════════════════════════════
 
     async def _rollback_module(self, mod: Module):
+        """回滚模块: 清理事件订阅、命令、工具和定时任务。"""
         for event_type, handler, _ in mod._event_handlers:
             self.event_bus.unsubscribe(event_type, handler)
         mod._event_handlers.clear()
@@ -203,7 +212,6 @@ class ModuleManager:
     def _scan_all_decorators(mod: Module):
         """扫描 @command / @listen / @tool / @schedule 装饰器。"""
         for _, method in inspect.getmembers(mod, predicate=inspect.ismethod):
-            # @command
             if hasattr(method, '_command_info'):
                 info = method._command_info
                 mod.register_command(
@@ -214,14 +222,11 @@ class ModuleManager:
                     argument_hint=info.get('argument_hint', ''),
                     cooldown=info.get('cooldown'),
                 )
-            # @listen
             if hasattr(method, '_event_info'):
                 info = method._event_info
                 mod.listen(info['event_type'], method, info.get('priority', 0))
-            # @tool
             if hasattr(method, '_tool_info'):
                 mod.tools.append(method._tool_info)
-            # @schedule
             if hasattr(method, '_schedule_info'):
                 from ..core.module import ScheduledTask
                 info = method._schedule_info
@@ -236,4 +241,5 @@ class ModuleManager:
                 mod.logger.debug("扫描到定时任务: %s", info['name'])
 
     def get_loaded_modules(self) -> List[str]:
+        """返回所有已加载模块的名称列表。"""
         return list(self._loaded_modules.keys())
