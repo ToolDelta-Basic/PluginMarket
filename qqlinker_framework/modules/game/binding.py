@@ -150,7 +150,9 @@ class PlayerBindingModule(Module):
     # ---------- 游戏内监听 ----------
     async def on_game_chat(self, event: GameChatEvent):
         """监听游戏内 #绑定 请求，生成验证码并发送 tellraw。"""
-        msg = event.message.strip()
+        msg = (event.message or "").strip()
+        if not msg:
+            return
         if msg == "#绑定":
             player = event.player_name
             existing_qq = self.binding_service.get_qq_by_player(player)

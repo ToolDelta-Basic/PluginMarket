@@ -23,6 +23,7 @@ import logging
 import pkgutil
 from typing import Dict, List, Optional, Type
 from .module import Module
+from .error_hints import hint
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +53,12 @@ def _walk_package(package, result: List[Type[Module]]):
                 sub_pkg = importlib.import_module(modname)
                 _walk_package(sub_pkg, result)
             except Exception as e:
-                logger.exception("导入子包 %s 失败: %s", modname, e)
+                logger.exception("导入子包 %s 失败: %s。%s", modname, e, hint.MODULE_IMPORT_FAILED)
         else:
             try:
                 mod = importlib.import_module(modname)
             except Exception as e:
-                logger.exception("导入模块 %s 失败: %s", modname, e)
+                logger.exception("导入模块 %s 失败: %s。%s", modname, e, hint.MODULE_IMPORT_FAILED)
                 continue
             for attr_name in dir(mod):
                 attr = getattr(mod, attr_name)
@@ -90,7 +91,9 @@ def _build_dependency_graph(classes: List[Type[Module]]):
                 in_degree[cls.name] += 1
             else:
                 logger.warning(
-                    "模块 %s 依赖的 %s 未找到", cls.name, dep
+                    "模块 %s 依赖的 %s 未找到。可能原因：① 依赖模块未注册 ② 模块名拼写错误。"
+                    "请确保所有 dependencies 中列出的模块都已安装。",
+                    cls.name, dep,
                 )
     return name_to_cls, in_degree, graph
 
@@ -120,7 +123,7 @@ def sort_by_dependencies(
     name_to_cls, in_degree, graph = _build_dependency_graph(classes)
     sorted_classes = _topological_sort(name_to_cls, in_degree, graph)
     if sorted_classes is None:
-        logger.warning("检测到循环依赖，将使用原始顺序")
+        logger.warning("检测到循环依赖，将使用原始顺序。%s", hint.MODULE_INIT_FAILED)
         return classes
     result = list(sorted_classes)
     for cls in classes:
@@ -214,7 +217,7 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
         mod = _importlib_util.module_from_spec(spec)
         spec.loader.exec_module(mod)
     except Exception as e:
-        logger.exception("加载外部模块 %s 失败: %s", filepath, e)
+        logger.exception("加载外部模块 %s 失败: %s。%s", filepath, e, hint.MODULE_IMPORT_FAILED)
         return None
 
     # 扫描 Module 子类
@@ -245,7 +248,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         模块名（成功）或 None（失败）。
     """
     if not HAS_URLLIB:
-        logger.error("urllib 不可用，无法下载")
+        logger.error("urllib 不可用，无法下载。请确保 Python 环境包含 urllib 标准库。")
         return None
 
     mod_dir = _get_modules_dir(data_path)
@@ -254,7 +257,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         resp = _urlopen(url, timeout=30)
         data = resp.read()
     except Exception as e:
-        logger.error("下载模块失败: %s → %s", url, e)
+        logger.error("下载模块失败: %s → %s。%s", url, e, hint.MARKET_DOWNLOAD_FAILED)
         return None
 
     fname = url.split("/")[-1].split("?")[0]
@@ -269,7 +272,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
             logger.info("模块 %s 已安装到 %s", base, target)
             return base
         except Exception as e:
-            logger.error("解压模块失败: %s", e)
+            logger.error("解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s", e, hint.MARKET_DOWNLOAD_FAILED)
             return None
 
     elif fname.endswith(".py"):
@@ -280,7 +283,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         return fname[:-3]
 
     else:
-        logger.error("不支持的文件格式: %s", fname)
+        logger.error("不支持的文件格式: %s。仅支持 .py 和 .zip 格式的模块文件。", fname)
         return None
 
 

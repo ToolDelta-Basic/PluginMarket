@@ -1,23 +1,28 @@
-"""多层去重引擎：本地TTL缓存 + Redis + 布隆过滤器。"""
+"""多层去重引擎：本地TTL缓存 + Redis + 布隆过滤器。
+
+全部使用标准库实现，零第三方依赖。
+- 本地 TTL 缓存：纯 Python 堆实现
+- Redis：可选（redis 包未安装时自动禁用，不影响本地去重）
+"""
 import time
 import hashlib
 import threading
 import heapq
 from typing import Optional
 
-try:
-    from cachetools import TTLCache
-    CACHETOOLS_AVAILABLE = True
-except ImportError:
-    CACHETOOLS_AVAILABLE = False
-
 from .config import DedupConfig
 from .redis_client import RedisClient
 from .bloom_filter import BloomFilter
 
 
-class _SimpleTTLCache:
-    """基于堆的 TTL 缓存实现，修复了过期清理缺陷，作为 cachetools 的降级备用。"""
+class _TTLCache:
+    """基于堆的纯标准库 TTL 缓存（替代 cachetools.TTLCache）。
+
+    设计：
+    - 最小堆维护 (到期时间, key)，惰性过期清理
+    - 线程安全（RLock）
+    - 支持 __contains__ / __getitem__ / __setitem__ / pop / clear
+    """
 
     def __init__(self, maxsize: int = 10000, ttl: int = 300):
         """初始化缓存。"""
@@ -99,21 +104,12 @@ class LayeredDedup:
     def __init__(self, config: DedupConfig):
         """初始化去重引擎。"""
         self.config = config
-        if CACHETOOLS_AVAILABLE:
-            self._local_id_cache = TTLCache(
-                maxsize=config.local_max_size, ttl=config.local_id_ttl
-            )
-            self._local_content_cache = TTLCache(
-                maxsize=config.local_max_size, ttl=config.local_content_ttl
-            )
-        else:
-            # 降级到修复后的自实现缓存
-            self._local_id_cache = _SimpleTTLCache(
-                maxsize=config.local_max_size, ttl=config.local_id_ttl
-            )
-            self._local_content_cache = _SimpleTTLCache(
-                maxsize=config.local_max_size, ttl=config.local_content_ttl
-            )
+        self._local_id_cache = _TTLCache(
+            maxsize=config.local_max_size, ttl=config.local_id_ttl
+        )
+        self._local_content_cache = _TTLCache(
+            maxsize=config.local_max_size, ttl=config.local_content_ttl
+        )
 
         self._local_lock = threading.RLock()
         self.redis = (

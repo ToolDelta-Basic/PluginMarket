@@ -6,7 +6,7 @@
 本模块提供两个组件:
 
 1. ModuleMarketServer — 内建 HTTP 服务模块市场（本地）
-    支持模块的列表、搜索、下载、上传。
+    支持模块的列表、搜索、下载、上传、分类、分页、统计。
     可配置上传密钥和白名单（不在白名单的模块对未认证请求隐藏）。
 
 2. MarketSourceAggregator — 多源聚合器
@@ -14,7 +14,18 @@
     发现同名模块时以先返回的为准。
 
 ══════════════════════════════════════════════════════════════
-配置 (config.json)
+REST API
+══════════════════════════════════════════════════════════════
+  GET  /health                              → {"status":"ok"}
+  GET  /modules/list                        → 模块列表 (支持 ?page=&per_page=&category=)
+  GET  /modules/search?q=xxx                → 全文搜索 (支持 ?category=&page=&per_page=)
+  GET  /modules/info/<name>                 → 单个模块详情
+  GET  /modules/download/<name>             → 下载 .py 源文件
+  GET  /modules/stats                       → 市场统计
+  GET  /modules/categories                  → 模块分类列表
+  POST /modules/upload  (multipart)          → 上传模块
+
+配置 (config.json):
 ══════════════════════════════════════════════════════════════
 {
   "模块市场": {
@@ -22,21 +33,20 @@
     "地址": "127.0.0.1",
     "端口": 8380,
     "上传密钥": "",
+    "签名密钥": "",
+    "强制签名校验": false,
     "白名单模块": [],
-    "源列表": [
-      "http://127.0.0.1:8380"
-    ]
+    "每页数量": 20,
+    "源列表": ["http://127.0.0.1:8380"]
   }
 }
 
-- 源列表: 按优先级排列的市场 URL，作为客户端查询时按顺序扫描
-- 白名单模块: 内建市场中，仅这些模块对未认证请求可见
-- 上传密钥: 非空时上传需要 Bearer 或 ?token= 认证；空 = 无需认证
-
-通用性:
-  - 内建市场服务 (ModuleMarketServer): 提供完整 REST API
-  - 远程源只需实现 /modules/list 和 /modules/download/<name> 即可接入
-  - 用户可通过 qqdeps module add <URL> 从任意源下载
+新增:
+  - 强制签名校验: true 时上传必须带有效签名
+  - 每页数量: 分页的默认每页数量
+  - 模块分类: 从源文件 __category__ = "分类名" 提取
+  - 下载统计: 每次下载记录时间戳，/modules/stats 返回
+  - 分页: page / per_page 参数
 ══════════════════════════════════════════════════════════════
 """
 import hashlib
@@ -48,7 +58,7 @@ import os
 import re
 import threading
 import time
-import cgi
+from email.parser import BytesParser
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
@@ -62,11 +72,12 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 _MODULE_DIR_NAME = "插件数据文件/模块源件"
-
+_MAX_UPLOAD_SIZE = 16 * 1024 * 1024  # 16MB
 
 # ═══════════════════════════════════════════════════════════════
 # 签名工具
 # ═══════════════════════════════════════════════════════════════
+
 
 def sign_module(name: str, version: str, secret: str) -> str:
     """为模块生成 HMAC-SHA256 签名（用于上传到市场时携带）。
@@ -93,6 +104,7 @@ def verify_signature(
 # 内建市场 HTTP 服务
 # ═══════════════════════════════════════════════════════════════
 
+
 class _MarketHandler(http.server.BaseHTTPRequestHandler):
     """模块市场 REST API 处理器。
 
@@ -115,8 +127,7 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
         qs = parse_qs(urlparse(self.path).query)
         token = (
             qs.get("token", [""])[0]
-            or self.headers.get("Authorization", "")
-            .replace("Bearer ", "")
+            or self.headers.get("Authorization", "").replace("Bearer ", "")
         )
         return token == token_cfg
 
@@ -139,23 +150,58 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
             return self._ok()
         if path == "/modules/list":
             return self._handle_list(qs)
+        if path == "/modules/search":
+            return self._handle_search(qs)
+        if path == "/modules/stats":
+            return self._handle_stats()
+        if path == "/modules/categories":
+            return self._handle_categories()
         m = re.match(r"^/modules/info/([^/]+)$", path)
         if m:
             return self._handle_info(m.group(1))
         m = re.match(r"^/modules/download/([^/]+)$", path)
         if m:
             return self._handle_download(m.group(1))
-        if path == "/modules/search":
-            return self._handle_search(qs)
 
         self._json(404, {"error": "not found"})
 
     def do_POST(self):
-        path = self.path.rstrip("/")
+        path = urlparse(self.path).path.rstrip("/")
         if path == "/modules/upload":
             self._handle_upload()
         else:
             self._json(404, {"error": "not found"})
+
+    # ── 分页 & 辅助 ──
+
+    @staticmethod
+    def _paginate(items: list, qs: dict, default_per_page: int = 20):
+        """对列表做分页，返回分页信息。"""
+        try:
+            page = int(qs.get("page", ["1"])[0])
+            page = max(1, page)
+        except (ValueError, IndexError):
+            page = 1
+        try:
+            per_page = int(qs.get("per_page", [str(default_per_page)])[0])
+            per_page = min(max(1, per_page), 100)
+        except (ValueError, IndexError):
+            per_page = default_per_page
+
+        total = len(items)
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        if page > total_pages:
+            page = total_pages
+        start = (page - 1) * per_page
+        page_items = items[start : start + per_page]
+
+        return {
+            "items": page_items,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
+        }
 
     # ── 实现 ──
 
@@ -164,6 +210,8 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
 
     def _handle_list(self, qs):
         auth = self._is_authenticated()
+        category_filter = qs.get("category", [""])[0].strip().lower()
+
         mods = []
         for fname in sorted(os.listdir(self.market_conf["modules_dir"])):
             if fname.startswith("__") or not fname.endswith(".py"):
@@ -172,21 +220,36 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
             name = info.get("name", fname[:-3])
             if not self._allow_module(name):
                 continue
+
+            # 分类过滤
+            if category_filter:
+                cats = info.get("categories", [])
+                if category_filter not in [c.lower() for c in cats]:
+                    continue
+
             if auth:
                 mods.append(info)
             else:
-                # 公开列表只暴露基本信息
                 mods.append({
                     "name": name,
                     "description": info.get("description", ""),
                     "version": info.get("version", "?"),
+                    "categories": info.get("categories", []),
                 })
-        self._json(200, {"modules": mods, "authenticated": auth})
+
+        # 分页
+        default_per = self.market_conf.get("per_page", 20)
+        page_info = self._paginate(mods, qs, default_per_page=default_per)
+        self._json(200, {
+            **page_info,
+            "authenticated": auth,
+            "category": category_filter or None,
+        })
 
     def _handle_info(self, name: str):
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", name)
         if safe != name:
-            self._json(400, {"error": "invalid"})
+            self._json(400, {"error": "invalid name"})
             return
         fname = f"{safe}.py"
         path = os.path.join(self.market_conf["modules_dir"], fname)
@@ -200,9 +263,8 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
     def _handle_download(self, name: str):
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", name)
         if safe != name:
-            self._json(400, {"error": "invalid"})
+            self._json(400, {"error": "invalid name"})
             return
-        # 检查白名单
         if not self._allow_module(safe):
             self._json(403, {"error": "not in whitelist"})
             return
@@ -210,12 +272,15 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
         if not os.path.exists(fpath):
             self._json(404, {"error": "not found"})
             return
+
+        # 记录下载统计
+        self._record_download(safe)
+
         self.send_response(200)
         self.send_header("Content-Type", "text/x-python; charset=utf-8")
-        fname = f"{safe}.py"
         self.send_header(
             "Content-Disposition",
-            f'attachment; filename="{fname}"',
+            f'attachment; filename="{safe}.py"',
         )
         self.end_headers()
         with open(fpath, "rb") as f:
@@ -223,7 +288,13 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
 
     def _handle_search(self, qs):
         keyword = qs.get("q", [""])[0].lower()
+        category_filter = qs.get("category", [""])[0].strip().lower()
         auth = self._is_authenticated()
+
+        if not keyword and not category_filter:
+            # 无筛选条件 → 返回全部（同 /modules/list）
+            return self._handle_list(qs)
+
         mods = []
         for fname in sorted(os.listdir(self.market_conf["modules_dir"])):
             if fname.startswith("__") or not fname.endswith(".py"):
@@ -232,25 +303,139 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
             name = info.get("name", fname[:-3])
             if not self._allow_module(name):
                 continue
-            text = (
-                info.get("name", "")
-                + info.get("description", "")
-                + info.get("author", "")
-            ).lower()
-            if keyword in text:
-                if auth:
-                    mods.append(info)
-                else:
-                    mods.append({
-                        "name": name,
-                        "description": info.get("description", ""),
-                        "version": info.get("version", "?"),
-                    })
-        self._json(200, {"modules": mods, "query": keyword, "authenticated": auth})
+
+            # 分类过滤
+            if category_filter:
+                cats = info.get("categories", [])
+                if category_filter not in [c.lower() for c in cats]:
+                    continue
+
+            # 关键词搜索（匹配 name / description / author）
+            if keyword:
+                text = (
+                    info.get("name", "")
+                    + info.get("description", "")
+                    + info.get("author", "")
+                ).lower()
+                if keyword not in text:
+                    continue
+
+            if auth:
+                mods.append(info)
+            else:
+                mods.append({
+                    "name": name,
+                    "description": info.get("description", ""),
+                    "version": info.get("version", "?"),
+                    "categories": info.get("categories", []),
+                })
+
+        default_per = self.market_conf.get("per_page", 20)
+        page_info = self._paginate(mods, qs, default_per_page=default_per)
+        self._json(200, {
+            **page_info,
+            "query": keyword or None,
+            "category": category_filter or None,
+            "authenticated": auth,
+        })
+
+    def _handle_stats(self):
+        """返回市场统计信息（不经过白名单过滤，反映全部模块数据）。"""
+        mod_dir = self.market_conf["modules_dir"]
+        modules = []
+        total_size = 0
+        all_categories: Dict[str, int] = {}
+        downloads: Dict[str, list] = {}
+
+        for fname in sorted(os.listdir(mod_dir)):
+            if fname.startswith("__") or not fname.endswith(".py"):
+                continue
+            info = self._scan_file(fname)
+            name = info.get("name", fname[:-3])
+            modules.append(name)
+            total_size += info.get("size", 0)
+            for cat in info.get("categories", []):
+                all_categories[cat] = all_categories.get(cat, 0) + 1
+
+        # 读取下载统计
+        stats_path = os.path.join(mod_dir, "_download_stats.json")
+        if os.path.exists(stats_path):
+            try:
+                with open(stats_path, "r", encoding="utf-8") as f:
+                    downloads = json.load(f)
+            except Exception:
+                downloads = {}
+
+        # 热门模块（下载次数）
+        top_downloads = sorted(
+            [
+                {"name": k, "count": len(v)}
+                for k, v in downloads.items()
+            ],
+            key=lambda x: x["count"],
+            reverse=True,
+        )[:10]
+
+        self._json(200, {
+            "total_modules": len(modules),
+            "total_size_bytes": total_size,
+            "categories": dict(
+                sorted(all_categories.items(), key=lambda x: -x[1])
+            ),
+            "top_downloads": top_downloads,
+            "whitelist_enabled": bool(self.market_conf.get("whitelist")),
+        })
+
+    def _handle_categories(self):
+        """返回所有模块分类及计数（不经过白名单过滤）。"""
+        mod_dir = self.market_conf["modules_dir"]
+        cat_counts: Dict[str, int] = {}
+
+        for fname in sorted(os.listdir(mod_dir)):
+            if fname.startswith("__") or not fname.endswith(".py"):
+                continue
+            info = self._scan_file(fname)
+            name = info.get("name", fname[:-3])
+            for cat in info.get("categories", []):
+                cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+        self._json(200, {
+            "categories": dict(
+                sorted(cat_counts.items(), key=lambda x: -x[1])
+            ),
+        })
+
+    # ── multipart/form-data 解析（替代 cgi.FieldStorage，兼容 Python 3.13+）──
+
+    @staticmethod
+    def _parse_multipart(content_type: str, body: bytes) -> dict:
+        """解析 multipart/form-data，返回 {字段名: [(payload_bytes, filename_or_None), ...]}。
+
+        兼容 Python 3.13+（cgi 模块已被移除），使用标准库 email 模块。
+        """
+        result: Dict[str, List[Tuple[bytes, Optional[str]]]] = {}
+        msg = BytesParser().parsebytes(
+            b"Content-Type: " + content_type.encode() + b"\r\n\r\n" + body
+        )
+        if not msg.is_multipart():
+            return result
+        for part in msg.walk():
+            cdisp = part.get_content_disposition()
+            if cdisp != "form-data":
+                continue
+            field_name = part.get_param("name", header="Content-Disposition")
+            if field_name is None:
+                continue
+            filename = part.get_filename()
+            payload = part.get_payload(decode=True)
+            if payload is None:
+                payload = b""
+            result.setdefault(field_name, []).append((payload, filename))
+        return result
 
     def _handle_upload(self):
         # 鉴权
-        if self.market_conf["upload_token"] and not self._is_authenticated():
+        if self.market_conf.get("upload_token") and not self._is_authenticated():
             self._json(401, {"error": "unauthorized"})
             return
 
@@ -259,82 +444,112 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
             self._json(400, {"error": "use multipart/form-data"})
             return
 
+        content_len = int(self.headers.get("Content-Length", "0"))
+        if content_len == 0:
+            self._json(400, {"error": "empty body"})
+            return
+        if content_len > _MAX_UPLOAD_SIZE:
+            self._json(413, {"error": f"too large (max {_MAX_UPLOAD_SIZE // 1024 // 1024}MB)"})
+            return
+
+        body = self.rfile.read(content_len)
+
         try:
-            form = cgi.FieldStorage(
-                fp=self.rfile,
-                headers=self.headers,
-                environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": ct},
-            )
+            form = self._parse_multipart(ct, body)
         except Exception as e:
-            self._json(400, {"error": f"parse: {e}"})
+            self._json(400, {"error": f"parse error: {e}"})
             return
 
-        file_item = (
-            form.getfirst("file")
-            if hasattr(form, "getfirst")
-            else form.getvalue("file")
-        )
-        if file_item is None:
-            self._json(400, {"error": "missing file"})
+        file_entries = form.get("file", [])
+        if not file_entries:
+            self._json(400, {"error": "missing 'file' field"})
             return
 
-        if hasattr(file_item, "file"):
-            data = file_item.file.read()
-            upload_name = getattr(file_item, "filename", "unknown.py")
-        elif isinstance(file_item, bytes):
-            data = file_item
-            upload_name = "unknown.py"
-        else:
-            data = str(file_item).encode("utf-8")
-            upload_name = "unknown.py"
+        data, upload_name_raw = file_entries[0]
+        upload_name = upload_name_raw or "unknown.py"
+        if not isinstance(data, bytes):
+            data = str(data).encode("utf-8")
 
         safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "", upload_name)
         if not safe_name.endswith(".py"):
-            self._json(400, {"error": "only .py allowed"})
+            self._json(400, {"error": "only .py files allowed"})
+            return
+        if not safe_name or safe_name == ".py":
+            self._json(400, {"error": "invalid filename"})
             return
 
-        # 签名校验（可选）
+        module_name = safe_name[:-3]
+
+        # 签名校验
+        sig_entries = form.get("signature", [])
         sig = (
-            form.getfirst("signature")
-            if hasattr(form, "getfirst")
-            else form.getvalue("signature")
+            sig_entries[0][0].decode("utf-8", errors="replace")
+            if sig_entries else None
         )
-        if self.market_conf["sign_secret"]:
-            expected = sign_module(
-                safe_name[:-3], "0.0.0", self.market_conf["sign_secret"]
-            )
-            # 只做软校验——签名不匹配时记录警告但仍允许上传
+        sign_secret = self.market_conf.get("sign_secret", "")
+        strict_sign = self.market_conf.get("strict_sign", False)
+
+        if sign_secret:
+            # 从上传文件中尝试提取版本
+            version = "0.0.0"
+            mod_body = data.decode("utf-8", errors="replace")
+            ver_match = re.search(r"version\s*=\s*\((\d+),\s*(\d+),\s*(\d+)\)", mod_body)
+            if ver_match:
+                version = f"{ver_match[1]}.{ver_match[2]}.{ver_match[3]}"
+
+            expected = sign_module(module_name, version, sign_secret)
+
             if sig and not hmac.compare_digest(sig, expected):
-                _logger.warning(
-                    "上传签名不匹配: %s (期望 %s)", sig, expected
-                )
-                # 可选: 如果要求强校验则拒绝
-                # self._json(403, {"error":"bad signature"}); return
+                msg = f"签名不匹配: got={sig} expected={expected}"
+                _logger.warning("上传 %s: %s", safe_name, msg)
+                if strict_sign:
+                    self._json(403, {"error": "bad signature", "detail": msg})
+                    return
+            elif not sig and strict_sign:
+                self._json(403, {"error": "signature required (strict mode)"})
+                return
 
         dest = os.path.join(self.market_conf["modules_dir"], safe_name)
         with open(dest, "wb") as f:
             f.write(data)
 
         _logger.info("上传模块: %s (%d bytes)", safe_name, len(data))
-        self._json(200, {"ok": True, "name": safe_name[:-3], "size": len(data)})
+        self._json(200, {"ok": True, "name": module_name, "size": len(data)})
 
     # ── 文件解析 ──
 
+    _SCAN_CACHE: Dict[str, Tuple[float, dict]] = {}
+    _SCAN_CACHE_TTL = 5.0  # 5秒缓存
+
     def _scan_file(self, fname: str) -> dict:
+        """解析 .py 模块文件的元信息，带短缓存。
+
+        提取: name, author, version, description, categories, size, mtime。
+        """
         filepath = os.path.join(self.market_conf["modules_dir"], fname)
+        mtime = os.path.getmtime(filepath)
+        cached = self._SCAN_CACHE.get(fname)
+        if cached and cached[0] == mtime:
+            return dict(cached[1])
+
+        fsize = os.path.getsize(filepath)
         info: Dict[str, Any] = {
             "name": fname[:-3],
             "author": "?",
             "version": "?",
             "description": "",
-            "size": os.path.getsize(filepath),
+            "categories": [],
+            "size": fsize,
+            "mtime": int(mtime),
         }
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read(4096)
+                content = f.read(8192)
         except Exception:
+            self._SCAN_CACHE[fname] = (mtime, info)
             return info
 
+        # name / author / version
         for pat, key in [
             (r'name\s*=\s*["\']([^"\']{1,64})["\']', "name"),
             (r'author\s*=\s*["\']([^"\']{1,64})["\']', "author"),
@@ -347,13 +562,60 @@ class _MarketHandler(http.server.BaseHTTPRequestHandler):
                 else:
                     info[key] = m.group(1)
 
+        # 分类: __category__ 或 __categories__
+        cat_match = re.search(
+            r'__categories?__\s*=\s*\[(.*?)\]',
+            content, re.DOTALL,
+        )
+        if cat_match:
+            cats_str = cat_match.group(1)
+            info["categories"] = [
+                c.strip().strip("\"'")
+                for c in cats_str.split(",")
+                if c.strip()
+            ]
+        else:
+            # 单分类
+            single = re.search(
+                r'__category__\s*=\s*["\']([^"\']{1,32})["\']',
+                content,
+            )
+            if single:
+                info["categories"] = [single.group(1)]
+
+        # description
         m = re.search(r'"""(.*?)"""', content, re.DOTALL)
         if m:
             desc = m.group(1).strip().split("\n")[0].strip()
             if desc and len(desc) < 200:
                 info["description"] = desc
 
-        return info
+        self._SCAN_CACHE[fname] = (mtime, info)
+        return dict(info)
+
+    # ── 下载统计 ──
+
+    def _record_download(self, module_name: str):
+        """记录一次下载（持久化到 _download_stats.json）。"""
+        stats_path = os.path.join(
+            self.market_conf["modules_dir"], "_download_stats.json"
+        )
+        downloads: Dict[str, list] = {}
+        if os.path.exists(stats_path):
+            try:
+                with open(stats_path, "r", encoding="utf-8") as f:
+                    downloads = json.load(f)
+            except Exception:
+                downloads = {}
+        downloads.setdefault(module_name, []).append(int(time.time()))
+        # 最多保留 1000 条记录
+        for k in downloads:
+            downloads[k] = downloads[k][-1000:]
+        try:
+            with open(stats_path, "w", encoding="utf-8") as f:
+                json.dump(downloads, f, ensure_ascii=False)
+        except Exception as e:
+            _logger.debug("写入下载统计失败: %s", e)
 
     def _json(self, status: int, data: dict):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
@@ -375,6 +637,8 @@ class ModuleMarketServer:
         upload_token: str = "",
         whitelist: Optional[List[str]] = None,
         sign_secret: str = "",
+        strict_sign: bool = False,
+        per_page: int = 20,
     ):
         self._host = host
         self._port = port
@@ -382,6 +646,8 @@ class ModuleMarketServer:
         self._data_path = data_path
         self._whitelist = set(whitelist or [])
         self._sign_secret = sign_secret
+        self._strict_sign = strict_sign
+        self._per_page = per_page
         self._httpd: Optional[http.server.HTTPServer] = None
         self._thread: Optional[threading.Thread] = None
 
@@ -401,6 +667,8 @@ class ModuleMarketServer:
             "upload_token": self._token,
             "whitelist": self._whitelist,
             "sign_secret": self._sign_secret,
+            "strict_sign": self._strict_sign,
+            "per_page": self._per_page,
         }
         _c = conf
 
@@ -452,25 +720,34 @@ class MarketSourceAggregator:
         self._sources = source_urls
         self._timeout = timeout
 
-    def list_all(self) -> Dict[str, Any]:
-        """合并所有源的模块列表。
+    def list_all(
+        self, page: int = 1, per_page: int = 20, category: str = ""
+    ) -> Dict[str, Any]:
+        """合并所有源的模块列表（支持分页和分类过滤）。
 
         Returns:
-            {"modules": [...], "sources": [...], "conflicts": [...]}
+            {"modules": [...], "sources": [...], "conflicts": [...], ...}
         """
         if not HAS_URLLIB:
-            return {"modules": [], "sources": [], "conflicts": [], "error": "urllib unavailable"}
+            return {
+                "modules": [], "sources": [], "conflicts": [],
+                "error": "urllib unavailable",
+            }
 
         seen: Dict[str, dict] = {}
         conflicts: List[dict] = []
         sources_ok: List[str] = []
 
         for url in self._sources:
+            list_url = f"{url}/modules/list"
+            if category:
+                list_url += f"?category={category}"
             try:
-                resp = _urlopen(f"{url}/modules/list", timeout=self._timeout)
+                resp = _urlopen(list_url, timeout=self._timeout)
                 data = json.loads(resp.read().decode("utf-8"))
                 sources_ok.append(url)
-                for mod in data.get("modules", []):
+                items = data.get("items", data.get("modules", []))
+                for mod in items:
                     name = mod.get("name", "")
                     if not name:
                         continue
@@ -487,19 +764,29 @@ class MarketSourceAggregator:
                 _logger.debug("市场源 %s 不可达: %s", url, e)
 
         result = sorted(seen.values(), key=lambda m: m.get("name", ""))
+        # 分页
+        total = len(result)
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        start = (page - 1) * per_page
+        paged = result[start : start + per_page]
+
         return {
-            "modules": result,
+            "items": paged,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
             "sources": sources_ok,
             "conflicts": conflicts,
         }
 
     def search(self, keyword: str) -> Dict[str, Any]:
         """按关键词在多源中搜索。"""
-        all_mods = self.list_all()
+        all_mods = self.list_all(per_page=200)
         kw = keyword.lower()
         filtered = [
             m
-            for m in all_mods["modules"]
+            for m in all_mods["items"]
             if kw in (
                 m.get("name", "")
                 + m.get("description", "")
@@ -513,11 +800,7 @@ class MarketSourceAggregator:
         }
 
     def download_url(self, module_name: str) -> Optional[str]:
-        """查找模块的下载 URL（从第一个可用的源）。
-
-        Returns:
-            下载 URL 或 None。
-        """
+        """查找模块的下载 URL（从第一个可用的源）。"""
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", module_name)
         for url in self._sources:
             try:
@@ -534,11 +817,7 @@ class MarketSourceAggregator:
     def fetch_module(
         self, module_name: str, data_path: str
     ) -> Optional[str]:
-        """从多源中下载模块到本地 模块源件/。
-
-        Returns:
-            模块名（成功）或 None。
-        """
+        """从多源中下载模块到本地 模块源件/。"""
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", module_name)
         for url in self._sources:
             try:

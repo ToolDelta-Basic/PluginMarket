@@ -191,7 +191,9 @@ class GlobalChatLogModule(Module):
 
     async def on_init(self):
         """注册配置节、初始化日志服务、订阅事件。"""
-        cfg = self.config.get("全局聊天日志") or {}
+        cfg = self.config.get("全局聊天日志")
+        if cfg is None:
+            cfg = {}
         if not cfg.get("启用", True):
             return
 

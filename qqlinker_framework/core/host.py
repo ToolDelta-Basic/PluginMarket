@@ -35,6 +35,8 @@ from ..services.market_server import (
     ModuleMarketServer,
     MarketSourceAggregator,
 )
+from .defguard import validate_onebot_event, safe_str
+from .error_hints import hint
 from .events import (
     GroupMessageEvent,
     GameChatEvent,
@@ -155,6 +157,10 @@ class FrameworkHost:
         self.config_mgr.register_section("网络连接", {
             "地址": "ws://127.0.0.1:8080",
             "令牌": "",
+            "错误显示模式": "友好",  # "友好" | "调试"
+        })
+        self.config_mgr.register_section("启动检查", {
+            "跳过完整性校验": False,
         })
         self.config_mgr.register_section("去重", {
             "本地ID有效期秒": 300,
@@ -181,11 +187,19 @@ class FrameworkHost:
             "端口": 8380,
             "上传密钥": "",
             "签名密钥": "",
+            "强制签名校验": False,
             "白名单模块": [],
+            "每页数量": 20,
             "源列表": ["http://127.0.0.1:8380"],
         })
 
         self.config_mgr.load()
+
+        # 初始化错误显示模式（从配置读取）
+        from .error_hints import ErrorMode
+        ErrorMode.set_config_source(self.config_mgr)
+        mode = ErrorMode.current()
+        logging.getLogger(__name__).info("错误显示模式: %s", "友好" if ErrorMode.is_friendly() else "调试")
 
         ws_address = self.config_mgr.get(
             "网络连接.地址", "ws://127.0.0.1:8080"
@@ -223,6 +237,8 @@ class FrameworkHost:
                 upload_token=market_cfg.get("上传密钥", ""),
                 whitelist=market_cfg.get("白名单模块", []),
                 sign_secret=market_cfg.get("签名密钥", ""),
+                strict_sign=market_cfg.get("强制签名校验", False),
+                per_page=market_cfg.get("每页数量", 20),
             )
             self.market_server.start()
             logging.getLogger(__name__).info(
@@ -304,7 +320,7 @@ class FrameworkHost:
         file_path = f"{self.data_path}/framework.log"
         if not any(
             isinstance(h, logging.FileHandler)
-            and h.baseFilename == os.path.abspath(file_path)
+            and getattr(h, 'baseFilename', '') == os.path.abspath(file_path)
             for h in root.handlers
         ):
             file_handler = logging.FileHandler(file_path, encoding="utf-8")
@@ -320,7 +336,7 @@ class FrameworkHost:
 
         if not any(
             isinstance(h, logging.FileHandler)
-            and h.baseFilename == os.path.abspath(file_path)
+            and getattr(h, 'baseFilename', '') == os.path.abspath(file_path)
             for h in access_log.handlers
         ):
             file_handler = logging.FileHandler(file_path, encoding="utf-8")
@@ -334,21 +350,43 @@ class FrameworkHost:
         access_log.propagate = False
 
     async def stop(self):
-        """优雅停止框架。"""
+        """优雅停止框架。幂等——可被多次调用。"""
         logger = logging.getLogger(__name__)
         from .events import SystemStopEvent
-        await self.event_bus.publish(SystemStopEvent())
+        try:
+            await self.event_bus.publish(SystemStopEvent())
+        except Exception as e:
+            logger.debug("发布停止事件时异常: %s", e)
+
         for mod in self._modules:
             try:
                 await mod.on_stop()
             except Exception as e:
-                logger.error("模块 %s 停止异常: %s", mod.name, e)
-        await self.message_mgr.stop()
+                logger.error("模块 %s 停止异常: %s。%s", mod.name, e, hint.MODULE_STOP_FAILED)
+        self._modules.clear()
+
+        try:
+            await self.message_mgr.stop()
+        except Exception as e:
+            logger.debug("停止消息管理器时异常: %s", e)
+
         if self.ws_client:
-            self.ws_client.disconnect()
+            try:
+                self.ws_client.disconnect()
+            except Exception as e:
+                logger.debug("断开 WS 时异常: %s", e)
+
         if self.market_server:
-            self.market_server.stop()
-        self.event_bus.shutdown()
+            try:
+                self.market_server.stop()
+            except Exception as e:
+                logger.debug("停止模块市场时异常: %s", e)
+
+        try:
+            self.event_bus.shutdown()
+        except Exception as e:
+            logger.debug("关闭事件总线时异常: %s", e)
+
         logger.info("框架已停止")
 
     def _console_cmd_qqdeps(self, args: list):
@@ -542,7 +580,7 @@ class FrameworkHost:
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
-                    "游戏聊天事件桥接失败: %s", e
+                    "游戏聊天事件桥接失败: %s。%s", e, hint.EVENT_HANDLER_FAILED,
                 )
 
     def _on_player_join_bridge(self, player_name: str):
@@ -555,7 +593,7 @@ class FrameworkHost:
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
-                    "玩家加入事件桥接失败: %s", e
+                    "玩家加入事件桥接失败: %s。%s", e, hint.EVENT_HANDLER_FAILED,
                 )
 
     def _on_player_leave_bridge(self, player_name: str):
@@ -568,7 +606,7 @@ class FrameworkHost:
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
-                    "玩家离开事件桥接失败: %s", e
+                    "玩家离开事件桥接失败: %s。%s", e, hint.EVENT_HANDLER_FAILED,
                 )
 
     @staticmethod
@@ -590,36 +628,38 @@ class FrameworkHost:
         return str(raw_msg) if raw_msg else ""
 
     def _on_ws_group_message(self, raw: dict):
-        """处理 WebSocket 群消息。"""
+        """处理 WebSocket 群消息（入口防御：验证并标准化 OneBot 事件）。"""
+        ok, data, reason = validate_onebot_event(raw)
+        if not ok:
+            logging.getLogger(__name__).debug("丢弃无效 WS 消息: %s", reason)
+            return
+
         linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
-        group_id = raw.get("group_id")
+        group_id = data["group_id"]
         if group_id not in linked_groups:
             return
 
-        msg_id = raw.get("message_id")
+        msg_id = data.get("message_id")
         if msg_id and not self.dedup.check_and_add_id(f"raw_{msg_id}"):
             return
 
-        text = self._parse_onebot_message(raw.get("message"))
-        nickname = (
-            raw.get("sender", {}).get("card")
-            or raw.get("sender", {}).get("nickname", "未知")
-        )
+        text = data["message"]
+        nickname = data["nickname"]
         access_log.info("[QQ] %s: %s", nickname, text.strip())
 
         try:
             trigger = getattr(self.adapter, "trigger_raw_group_handlers", None)
             if trigger:
-                trigger(raw)
+                trigger(data["_raw"])
         except Exception as e:
-            logging.getLogger(__name__).error("原始消息处理器异常: %s", e)
+            logging.getLogger(__name__).error("原始消息处理器异常: %s。%s", e, hint.EVENT_HANDLER_FAILED)
 
         event = GroupMessageEvent(
-            user_id=raw.get("user_id") or 0,
+            user_id=data["user_id"],
             group_id=group_id,
             nickname=nickname,
             message=text.strip(),
-            raw_data=raw,
+            raw_data=data["_raw"],
         )
 
         if self._main_loop and self._main_loop.is_running():

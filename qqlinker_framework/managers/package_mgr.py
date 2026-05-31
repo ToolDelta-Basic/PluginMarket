@@ -7,6 +7,8 @@ import shutil
 import os
 from typing import Dict, List, Optional
 
+from ..core.error_hints import hint
+
 
 class PackageManager:
     """管理 Python 依赖包的检查、安装与回滚。"""
@@ -68,7 +70,7 @@ class PackageManager:
         logger = logging.getLogger(__name__)
         target = self._installed_target_dir
         if not target:
-            logger.error("未设置 pip 安装目标目录，安装中止")
+            logger.error("未设置 pip 安装目标目录，安装中止。%s", hint.DEPENDENCY_TARGET_MISSING)
             return False
 
         pyexec = sys.executable
@@ -111,22 +113,21 @@ class PackageManager:
                         pkg_ok = True
                         break
                     logger.warning(
-                        "安装 %s 失败 (源 %s): %s",
-                        pkg,
-                        mirror,
-                        stderr.strip(),
+                        "安装 %s 失败 (源 %s): %s。可能是 pip 源暂时不可用。",
+                        pkg, mirror, stderr.strip(),
                     )
                 except subprocess.TimeoutExpired:
                     proc.kill()
-                    logger.error("安装 %s 超时 (源 %s)", pkg, mirror)
+                    logger.error("安装 %s 超时 (源 %s)。可能原因：① 网络连接慢 ② pip 源响应延迟。", pkg, mirror)
                 except Exception as e:
                     logger.error(
-                        "安装 %s 异常 (源 %s): %s", pkg, mirror, e
+                        "安装 %s 异常 (源 %s): %s。%s",
+                        pkg, mirror, e, hint.DEPENDENCY_INSTALL_FAILED,
                     )
 
             if not pkg_ok:
                 total_success = False
-                logger.error("所有源均无法安装包: %s，尝试回滚", pkg)
+                logger.error("所有源均无法安装包: %s，尝试回滚。%s", pkg, hint.DEPENDENCY_INSTALL_FAILED)
                 self._cleanup_partial(target, installed_before)
                 break
 

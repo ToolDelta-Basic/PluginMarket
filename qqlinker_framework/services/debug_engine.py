@@ -106,8 +106,8 @@ class DebugEngine:
         """记录游戏聊天消息到缓冲区。"""
         self._msg_buffers["game"].append({
             "timestamp": time.time(),
-            "player": event.player_name,
-            "message": event.message[:500],
+            "player": event.player_name or "",
+            "message": (event.message or "")[:500],
         })
         self._counters["game_msgs"] += 1
 

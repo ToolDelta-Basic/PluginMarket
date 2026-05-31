@@ -4,6 +4,8 @@ import logging
 import os
 from typing import Any
 
+from ..core.error_hints import hint
+
 _log = logging.getLogger(__name__)
 
 
@@ -68,11 +70,12 @@ class ConfigManager:
             expected_type = type(default_value)
             if not isinstance(actual, expected_type):
                 _log.warning(
-                    "配置类型不匹配 [%s].%s: 期望 %s, 实际 %s (%s)",
+                    "配置类型不匹配 [%s].%s: 期望 %s, 实际 %s (%s)。%s",
                     section, key,
                     expected_type.__name__,
                     type(actual).__name__,
                     repr(actual)[:80],
+                    hint.CONFIG_TYPE_MISMATCH,
                 )
             elif isinstance(default_value, dict) and isinstance(actual, dict):
                 ConfigManager._validate_types(

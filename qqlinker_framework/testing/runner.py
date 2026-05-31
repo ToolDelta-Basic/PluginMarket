@@ -164,5 +164,685 @@ def test_json_db():
         assert db.users.get("u1")["name"] == "Alice"
 
 
+def test_market_service():
+    """内建: 模块市场 REST API（纯标准库，兼容 Python 3.13+）"""
+    import json, socket, tempfile, time, shutil, http.client
+    from urllib.request import urlopen
+    from ..services.market_server import ModuleMarketServer, sign_module
+
+    tmpdir = tempfile.mkdtemp()
+    # 随机端口避免冲突
+    with socket.socket() as s:
+        s.bind(('', 0))
+        port = s.getsockname()[1]
+    base = f'http://127.0.0.1:{port}'
+    try:
+        ms = ModuleMarketServer(
+            data_path=tmpdir, host='127.0.0.1', port=port,
+            upload_token='tok', whitelist=['open_mod'],
+            sign_secret='sec', strict_sign=True, per_page=5,
+        )
+        ms.start()
+        time.sleep(0.3)
+        B = '--B'; C = '\r\n'
+
+        def upload(name, sign=True, categories=None):
+            s = sign_module(name, '1.0.0', 'sec') if sign else ''
+            cat = f'\n__category__ = "{categories}"' if categories else ''
+            parts = ['--'+B,
+                f'Content-Disposition: form-data; name="file"; filename="{name}.py"',
+                'Content-Type: text/x-python', '',
+                f'name = "{name}"\nversion = (1,0,0){cat}']
+            if sign:
+                parts += ['--'+B, 'Content-Disposition: form-data; name="signature"', '', s]
+            parts += ['--'+B+'--', '']
+            b = (C.join(parts)).encode()
+            c = http.client.HTTPConnection('127.0.0.1', port)
+            c.request('POST', '/modules/upload?token=tok', body=b,
+                      headers={'Content-Type': 'multipart/form-data; boundary='+B,
+                               'Content-Length': str(len(b))})
+            r = c.getresponse(); d = json.loads(r.read()); c.close()
+            return r.status, d
+
+        # 1. health
+        d = json.loads(urlopen(f'{base}/health').read())
+        assert d['status'] == 'ok'
+
+        # 2. upload without auth → 401 (no token at all)
+        b_naked = (C.join(['--'+B,
+            'Content-Disposition: form-data; name="file"; filename="x.py"',
+            'Content-Type: text/x-python', '',
+            'name = "x"\nversion = (1,0,0)',
+            '--'+B+'--', ''])).encode()
+        c = http.client.HTTPConnection('127.0.0.1', port)
+        c.request('POST', '/modules/upload', body=b_naked,
+                  headers={'Content-Type': 'multipart/form-data; boundary='+B,
+                           'Content-Length': str(len(b_naked))})
+        assert c.getresponse().status == 401; c.close()
+
+        # 3. upload with token + valid sig
+        st, d = upload('mymod', categories='game')
+        assert d.get('ok')
+        st, d = upload('open_mod')
+        assert d.get('ok')
+
+        # 4. public list = only whitelisted
+        d = json.loads(urlopen(f'{base}/modules/list').read())
+        assert [m['name'] for m in d['items']] == ['open_mod']
+
+        # 5. download whitelisted works
+        r = urlopen(f'{base}/modules/download/open_mod')
+        assert 'open_mod' in r.read().decode()
+
+        # 6. non-whitelisted download blocked
+        c = http.client.HTTPConnection('127.0.0.1', port)
+        c.request('GET', '/modules/download/mymod')
+        assert c.getresponse().status == 403; c.close()
+
+        # 7. stats = all modules
+        d = json.loads(urlopen(f'{base}/modules/stats').read())
+        assert d['total_modules'] == 2
+
+        # 8. categories
+        d = json.loads(urlopen(f'{base}/modules/categories').read())
+        assert d['categories'] == {'game': 1}
+
+        # 9. paging
+        for i in range(8):
+            upload(f'p{i}', categories='util')
+        d = json.loads(urlopen(f'{base}/modules/list?token=tok&page=2&per_page=3').read())
+        assert d['page'] == 2 and d['total'] == 10
+
+        # 10. reject non-py
+        b = (C.join(['--'+B,
+            'Content-Disposition: form-data; name="file"; filename="hack.txt"',
+            'Content-Type: text/plain', '', 'x',
+            '--'+B+'--', ''])).encode()
+        c = http.client.HTTPConnection('127.0.0.1', port)
+        c.request('POST', '/modules/upload?token=tok', body=b,
+                  headers={'Content-Type': 'multipart/form-data; boundary='+B,
+                           'Content-Length': str(len(b))})
+        r = c.getresponse()
+        assert r.status == 400 and '.py' in str(r.read()); c.close()
+
+        ms.stop()
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 防御层测试 — 验证 defguard.py 的可靠性
+# ═══════════════════════════════════════════════════════════════
+
+def test_defguard_safe_str():
+    """防御层: safe_str 对各类异常输入"""
+    from ..core.defguard import safe_str
+    assert safe_str(None) == ""
+    assert safe_str("hello") == "hello"
+    assert safe_str(123) == "123"
+    assert safe_str(b"bytes") == "bytes"
+    assert safe_str("x" * 10000, max_len=5) == "xxxxx"
+    assert safe_str([1, 2, 3]) == "[1, 2, 3]"
+    assert safe_str({"a": 1}) == "{'a': 1}"
+    # 异常对象
+    class Bad:
+        def __str__(self):
+            raise RuntimeError("boom")
+    result = safe_str(Bad())
+    assert "Bad" in result  # 应 fallback 到类型名
+
+
+def test_defguard_safe_int():
+    """防御层: safe_int 对异常数值"""
+    from ..core.defguard import safe_int
+    assert safe_int(None) == 0
+    assert safe_int("123") == 123
+    assert safe_int("abc") == 0
+    assert safe_int("abc", default=-1) == -1
+    assert safe_int(5.0) == 5
+    assert safe_int(3.14) == 0  # float 非整数 → 默认
+    assert safe_int(100, max_val=50) == 50
+    assert safe_int(-10, min_val=0) == 0
+    assert safe_int([1, 2]) == 0
+    assert safe_int(True) == 0  # bool 被视为非 int
+
+
+def test_defguard_safe_list():
+    """防御层: safe_list 对异常列表"""
+    from ..core.defguard import safe_list
+    assert safe_list(None) == []
+    assert safe_list([1, 2, 3]) == [1, 2, 3]
+    assert safe_list("not_list") == ["not_list"]
+    assert safe_list((1, 2)) == [1, 2]
+    # 超长截断
+    long_list = list(range(1000))
+    assert len(safe_list(long_list, max_len=5)) == 5
+
+
+def test_defguard_safe_dict():
+    """防御层: safe_dict 对异常字典"""
+    from ..core.defguard import safe_dict
+    assert safe_dict(None) == {}
+    assert safe_dict({"a": 1, "b": 2}) == {"a": 1, "b": 2}
+    assert safe_dict("not_dict") == {"_raw": "not_dict"}
+    # 嵌套截断
+    deep = {"a": {"b": {"c": {"d": {"e": 1}}}}}
+    result = safe_dict(deep, max_depth=2)
+    assert "a" in result
+
+
+def test_defguard_validate_onebot_event():
+    """防御层: validate_onebot_event 处理正常/异常 OneBot 数据"""
+    from ..core.defguard import validate_onebot_event
+
+    # 正常群消息
+    ok, data, reason = validate_onebot_event({
+        "post_type": "message",
+        "message_type": "group",
+        "user_id": 12345,
+        "group_id": 67890,
+        "message": "hello world",
+        "sender": {"nickname": "Test", "card": "CardName"},
+    })
+    assert ok
+    assert data["user_id"] == 12345
+    assert data["group_id"] == 67890
+    assert data["message"] == "hello world"
+    assert data["nickname"] == "CardName"  # card 优先
+
+    # 无效输入
+    ok, data, reason = validate_onebot_event(None)
+    assert not ok
+    ok, data, reason = validate_onebot_event("not_dict")
+    assert not ok
+
+    # 群消息缺少 group_id
+    ok, data, reason = validate_onebot_event({
+        "post_type": "message",
+        "message_type": "group",
+        "user_id": 123,
+        "group_id": 0,
+        "message": "x",
+    })
+    assert not ok
+    assert "group_id" in reason
+
+    # 私聊消息（通过但不做群校验）
+    ok, data, reason = validate_onebot_event({
+        "post_type": "message",
+        "message_type": "private",
+        "user_id": 123,
+        "message": "私聊",
+    })
+    assert ok
+
+    # 非消息事件（透传）
+    ok, data, reason = validate_onebot_event({
+        "post_type": "notice",
+        "notice_type": "group_increase",
+    })
+    assert ok
+
+    # 消息段列表（OneBot array message）
+    ok, data, reason = validate_onebot_event({
+        "post_type": "message",
+        "message_type": "group",
+        "user_id": 123,
+        "group_id": 456,
+        "message": [
+            {"type": "text", "data": {"text": "Hi "}},
+            {"type": "at", "data": {"qq": "789"}},
+            {"type": "image", "data": {"url": "http://x"}},
+        ],
+    })
+    assert ok
+    assert "Hi [@789][图片]" in data["message"]
+
+
+def test_defguard_event_sanitize_in_bus():
+    """防御层: EventBus.publish 自动标准化事件数据"""
+    import asyncio
+    from ..core.bus import EventBus
+    from ..core.events import GameChatEvent, GroupMessageEvent
+
+    bus = EventBus()
+    captured = []
+
+    async def handler(evt):
+        captured.append((type(evt).__name__, evt.message if hasattr(evt, 'message') else None))
+
+    bus.subscribe("GameChatEvent", handler)
+    bus.subscribe("GroupMessageEvent", handler)
+
+    async def _run():
+        # None message → EventBus 标准化为 ""
+        await bus.publish(GameChatEvent(player_name="P1", message=None))
+        assert captured[-1] == ("GameChatEvent", "")
+
+        # None message → ""
+        await bus.publish(GroupMessageEvent(user_id=1, group_id=1, nickname="X", message=None, raw_data={}))
+        assert captured[-1] == ("GroupMessageEvent", "")
+
+        bus.shutdown()
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(_run())
+    loop.close()
+
+
+def test_defguard_safe_command_args():
+    """防御层: safe_command_args 解析"""
+    from ..core.defguard import safe_command_args
+
+    assert safe_command_args(None) == []
+    assert safe_command_args("") == []
+    assert safe_command_args("arg1 arg2  arg3") == ["arg1", "arg2", "arg3"]
+    # 超长截断
+    long_args = " ".join(["a"] * 50)
+    result = safe_command_args(long_args, max_args=5)
+    assert len(result) == 5
+    # 超长单个参数截断
+    long_arg = "x" * 500
+    result = safe_command_args(long_arg)
+    assert len(result[0]) == 256
+
+
+# ═══════════════════════════════════════════════════════════════
+# 稳定性回归测试 — 防止已修复 bug 再次出现
+# ═══════════════════════════════════════════════════════════════
+
+def test_none_message_safety():
+    """回归: None 消息不引发 AttributeError（在 binding/forwarder/debug_engine/routing 中）"""
+    import asyncio
+    from ..core.events import GameChatEvent, GroupMessageEvent
+
+    async def _run():
+        from ..core.bus import EventBus
+        bus = EventBus()
+        hit = []
+
+        async def handler(evt):
+            msg = (evt.message or "").strip()
+            hit.append(msg)
+
+        bus.subscribe("GameChatEvent", handler)
+        bus.subscribe("GroupMessageEvent", handler)
+
+        await bus.publish(GameChatEvent(player_name="Test", message=None))
+        assert len(hit) == 1 and hit[0] == ""
+
+        await bus.publish(GroupMessageEvent(
+            user_id=1, group_id=1, nickname="T", message=None, raw_data={}
+        ))
+        assert len(hit) == 2 and hit[1] == ""
+
+        bus.shutdown()
+        return True
+
+    loop = asyncio.new_event_loop()
+    try:
+        ok = loop.run_until_complete(_run())
+        assert ok
+    finally:
+        loop.close()
+
+
+def test_framework_full_lifecycle():
+    """回归: 框架完整启动→事件→停止 不崩溃"""
+    import asyncio, tempfile, os, shutil
+    from .mock_adapter import MockAdapter
+    from ..core.host import FrameworkHost
+    from ..core.events import GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent
+
+    tmp = tempfile.mkdtemp()
+    try:
+        adapter = MockAdapter()
+        adapter.set_online(["P1", "P2", "P3"])
+        adapter.set_admins([10000])
+
+        host = FrameworkHost(adapter, data_path=tmp)
+        host.register_modules_from_package("qqlinker_framework.modules")
+
+        async def _run():
+            await host.start()
+            modules = host.module_mgr.get_loaded_modules()
+            assert len(modules) >= 5, f"期望 >=5 个模块，实际 {len(modules)}"
+
+            await host.event_bus.publish(GameChatEvent(player_name="P1", message="hello"))
+            await host.event_bus.publish(PlayerJoinEvent(player_name="NewGuy"))
+            await host.event_bus.publish(PlayerLeaveEvent(player_name="NewGuy"))
+            await host.stop()
+            return True
+
+        loop = asyncio.new_event_loop()
+        ok = loop.run_until_complete(_run())
+        loop.close()
+        assert ok
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_command_routing_none_safety():
+    """回归: CommandRouter 对 None 消息不崩溃"""
+    import asyncio
+    from .mock_adapter import MockAdapter
+    from ..core.events import GroupMessageEvent
+    from ..managers.command_mgr import CommandManager
+    from ..managers.config_mgr import ConfigManager
+    from ..managers.message_mgr import MessageManager
+    from ..core.routing import CommandRouter
+    import tempfile, os
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cm = ConfigManager(os.path.join(tmp, "cfg.json"), data_dir=tmp)
+        cm.load()
+        adapter = MockAdapter()
+        msg_mgr = MessageManager(adapter)
+
+        cmd_mgr = CommandManager()
+        called = []
+        async def mock_cmd(ctx):
+            called.append(True)
+        cmd_mgr.register(".test", mock_cmd)
+
+        router = CommandRouter(cmd_mgr, adapter, cm, msg_mgr)
+
+        async def _run():
+            result = await router.handle_message(GroupMessageEvent(
+                user_id=1, group_id=1, nickname="T", message=None, raw_data={}
+            ))
+            assert result is False
+            assert len(called) == 0
+
+            await router.handle_message(GroupMessageEvent(
+                user_id=1, group_id=1, nickname="T", message=".test hello", raw_data={}
+            ))
+            assert len(called) == 1
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_run())
+        loop.close()
+
+
+def test_module_hot_reload():
+    """回归: 热重载不崩溃，命令保持可用"""
+    import asyncio, tempfile, shutil
+    from .mock_adapter import MockAdapter
+    from ..core.host import FrameworkHost
+
+    tmp = tempfile.mkdtemp()
+    try:
+        adapter = MockAdapter()
+        adapter.set_online(["P1"])
+        adapter.set_admins([10000])
+
+        host = FrameworkHost(adapter, data_path=tmp)
+        host.register_modules_from_package("qqlinker_framework.modules")
+
+        async def _run():
+            await host.start()
+            ok = await host.unload_module("dummy")
+            assert ok, "卸载 dummy 失败"
+            from ..modules.system.ping import DummyModule
+            mod = await host.load_module(DummyModule)
+            assert mod is not None, "重新加载 dummy 失败"
+            ok = await host.unload_module("dummy")
+            assert ok, "二次卸载 dummy 失败"
+            await host.stop()
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_run())
+        loop.close()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_event_bus_recursion_limit():
+    """回归: EventBus 递归深度保护生效"""
+    import asyncio
+    from ..core.bus import EventBus, MAX_EVENT_DEPTH
+    from ..core.events import GameChatEvent
+
+    bus = EventBus()
+    depth_count = [0]
+
+    async def recursive_handler(event):
+        depth_count[0] += 1
+        if depth_count[0] <= MAX_EVENT_DEPTH + 2:
+            await bus.publish(GameChatEvent(player_name="X", message="recurse"))
+
+    bus.subscribe("GameChatEvent", recursive_handler)
+
+    async def _run():
+        await bus.publish(GameChatEvent(player_name="A", message="start"))
+        assert depth_count[0] == MAX_EVENT_DEPTH, f"期望 {MAX_EVENT_DEPTH} 次，实际 {depth_count[0]}"
+        bus.shutdown()
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(_run())
+    loop.close()
+
+
+def test_config_type_validation():
+    """回归: ConfigManager 类型校验不崩溃（警告级别）"""
+    import tempfile, json, os
+    from ..managers.config_mgr import ConfigManager
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "cfg.json")
+        with open(path, "w") as f:
+            json.dump({"测试": {"数量": "不是数字"}}, f)
+
+        cm = ConfigManager(path, data_dir=tmp)
+        cm.register_section("测试", {"数量": 10})
+        cm.load()
+        assert cm.get("测试.数量") == "不是数字"
+
+
+def test_ban_store_persistence():
+    """回归: BanStore CRUD 正确"""
+    import tempfile, shutil
+    from ..modules.security.orion import BanStore
+
+    tmp = tempfile.mkdtemp()
+    try:
+        bs = BanStore(tmp)
+        bs.set("BadPlayer", {"reason": "cheating", "duration": 3600})
+        rec = bs.get("BadPlayer")
+        assert rec is not None
+        assert rec["reason"] == "cheating"
+        assert rec["duration"] == 3600
+
+        all_bans = bs.list_all()
+        assert len(all_bans) == 1
+
+        assert bs.remove("BadPlayer")
+        assert bs.get("BadPlayer") is None
+        assert bs.list_all() == []
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_chatlog_service_null_safety():
+    """回归: ChatLogService 对空/异常消息的处理"""
+    import asyncio, tempfile, shutil
+    from ..modules.logging.chat import ChatLogService
+
+    tmp = tempfile.mkdtemp()
+    try:
+        svc = ChatLogService(tmp)
+
+        async def _run():
+            mid = await svc.record_message("group", 1, 1, "Test", "hello", {})
+            assert mid and mid.startswith("msg_")
+            mid2 = await svc.record_message("group", 2, 1, "Test2", "", {})
+            assert mid2 and mid2.startswith("msg_")
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_run())
+        loop.close()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_error_mode_switch():
+    """错误模式: FRIENDLY/DEBUG 切换正常"""
+    import os
+    from ..core.error_hints import ErrorMode
+
+    ErrorMode.reset()
+    # 默认是 FRIENDLY
+    assert ErrorMode.current() == ErrorMode.FRIENDLY
+    assert ErrorMode.is_friendly()
+    assert not ErrorMode.is_debug()
+
+    # 环境变量设置为 debug
+    os.environ["QQLINKER_ERROR_MODE"] = "debug"
+    ErrorMode.reset()
+    assert ErrorMode.current() == ErrorMode.DEBUG
+    assert ErrorMode.is_debug()
+
+    # 恢复
+    os.environ.pop("QQLINKER_ERROR_MODE", None)
+    ErrorMode.reset()
+    assert ErrorMode.current() == ErrorMode.FRIENDLY
+
+
+def test_error_mode_friendly_error():
+    """错误模式: friendly_error() 根据模式生成不同信息"""
+    import os
+    from ..core.error_hints import ErrorMode, friendly_error
+
+    ErrorMode.reset()
+    assert ErrorMode.is_friendly()
+
+    msg = friendly_error(friendly_msg="连接失败。请检查地址。")
+    assert "traceback" not in msg.lower()
+    assert "连接失败" in msg
+
+
+def test_bootstrap_guard_check():
+    """启动守卫: check_fatal_files 和 check_all_files"""
+    import tempfile
+    from ..core.bootstrap_guard import (
+        check_fatal_files, check_all_files,
+        bootstrap_integrity_check,
+    )
+
+    # 对真实框架目录检查
+    import qqlinker_framework
+    base = os.path.dirname(qqlinker_framework.__file__)
+    ok, missing = check_fatal_files(base)
+    assert ok, f"关键文件缺失: {missing}"
+
+    result = check_all_files(base)
+    assert result["fatal_missing"] == [], f"fatal: {result['fatal_missing']}"
+
+    # 验证跳过检查
+    assert bootstrap_integrity_check(base, skip=True)
+
+
+def test_containment_safe_call():
+    """隔离层: safe_call 捕获异常不抛"""
+    from ..core.containment import safe_call, reset_failure_count
+
+    reset_failure_count()
+
+    def broken():
+        raise ValueError("test error")
+
+    safe = safe_call(broken, context="test")
+    result = safe()  # 不应抛异常
+    assert result is None
+
+
+def test_containment_safe_async_call():
+    """隔离层: safe_call 对异步函数同样捕获"""
+    import asyncio
+    from ..core.containment import safe_call, reset_failure_count
+
+    reset_failure_count()
+
+    async def broken_async():
+        raise RuntimeError("async test error")
+
+    safe = safe_call(broken_async, context="async_test")
+
+    async def _run():
+        result = await safe()
+        assert result is None
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(_run())
+    loop.close()
+
+
+def test_containment_critical_threshold():
+    """隔离层: 关键路径连续失败触发卸载"""
+    import asyncio
+    from ..core.containment import (
+        safe_call, reset_failure_count, is_shutting_down,
+        trigger_safe_shutdown,
+    )
+    import qqlinker_framework.core.containment as cont_mod
+
+    reset_failure_count()
+    # 重置全局关闭标记
+    cont_mod._shutdown_initiated = False
+
+    def broken():
+        raise RuntimeError("critical failure")
+
+    safe = safe_call(broken, context="test", raise_on_critical=True)
+
+    for _ in range(5):
+        safe()
+
+    # 应该触发了安全卸载
+    assert is_shutting_down(), "关键路径连续失败应触发安全卸载"
+
+
+def test_containment_plugin_wrapper():
+    """隔离层: plugin_wrapper 兜底不传播异常"""
+    from ..core.containment import plugin_wrapper, reset_failure_count
+
+    reset_failure_count()
+
+    @plugin_wrapper
+    def will_crash():
+        raise RuntimeError("fatal plugin error")
+
+    # 不应抛异常
+    result = will_crash()
+    assert result is None
+
+
+def test_host_stop_idempotent():
+    """隔离层: FrameworkHost.stop() 幂等——多次调用不崩溃"""
+    import asyncio, tempfile, shutil
+    from ..testing.mock_adapter import MockAdapter
+    from ..core.host import FrameworkHost
+
+    tmp = tempfile.mkdtemp()
+    try:
+        adapter = MockAdapter()
+        adapter.set_online(["P1"])
+        adapter.set_admins([10000])
+        host = FrameworkHost(adapter, data_path=tmp)
+        host.register_modules_from_package("qqlinker_framework.modules")
+
+        async def _run():
+            await host.start()
+            await host.stop()
+            await host.stop()  # 第二次调用（幂等）
+            await host.stop()  # 第三次调用
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_run())
+        loop.close()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     run_all_tests()

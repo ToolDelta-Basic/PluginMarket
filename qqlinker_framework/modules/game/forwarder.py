@@ -77,7 +77,9 @@ class GameForwarder(Module):
         cfg = self.config.get("消息转发.游戏到群", {})
         if not cfg.get("是否启用", True):
             return
-        msg = event.message.strip()
+        msg = (event.message or "").strip()
+        if not msg:
+            return
         allow_prefixes = cfg.get("仅转发以下字符串开头的消息", [])
         block_prefixes = cfg.get("屏蔽以下字符串开头的消息", [])
         if allow_prefixes:
@@ -114,7 +116,9 @@ class GameForwarder(Module):
         cfg = self.config.get("消息转发.群到游戏", {})
         if not cfg.get("是否启用", True):
             return
-        msg = event.message.strip()
+        msg = (event.message or "").strip()
+        if not msg:
+            return
         block_prefixes = cfg.get("屏蔽以下字符串开头的消息", [])
         if any(msg.startswith(p) for p in block_prefixes):
             return

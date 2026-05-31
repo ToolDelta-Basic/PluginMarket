@@ -32,6 +32,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from .services import ServiceContainer
 from .bus import EventBus
+from .error_hints import hint
 
 
 # ── JSON 数据库代理 ──────────────────────────────────────────
@@ -201,7 +202,7 @@ async def _safe_call(handler: Callable):
         else:
             await asyncio.get_running_loop().run_in_executor(None, handler)
     except Exception:
-        logging.getLogger(__name__).exception("定时任务异常")
+        logging.getLogger(__name__).exception("定时任务异常。%s", hint.UNEXPECTED_ERROR)
 
 
 # ── 热重载状态 ──────────────────────────────────────────────
@@ -292,7 +293,8 @@ class Module(ABC):
         for srv_name in self.required_services:
             if not services.has(srv_name):
                 raise RuntimeError(
-                    f"模块 '{self.name}' 需要服务 '{srv_name}'，但未注册"
+                    f"模块 '{self.name}' 需要服务 '{srv_name}'，但未注册。"
+                    f"{hint.SERVICE_NOT_FOUND}"
                 )
             setattr(self, srv_name, services.get(srv_name))
 
@@ -562,10 +564,14 @@ class _QQProxy:
         """发送群消息。"""
         if self._msg:
             await self._msg.send_group(group_id, text)
-        elif self._adapter:
+        elif self._adapter and hasattr(self._adapter, 'send_group_msg'):
             self._adapter.send_group_msg(group_id, text)
+        else:
+            logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (group_id=%s)", group_id)
 
     async def send_private(self, user_id: int, text: str):
         """发送私聊消息。"""
-        if self._adapter:
+        if self._adapter and hasattr(self._adapter, 'send_private_msg'):
             self._adapter.send_private_msg(user_id, text)
+        else:
+            logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (user_id=%s)", user_id)

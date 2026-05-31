@@ -5,6 +5,8 @@ import logging
 from enum import IntEnum
 from typing import Optional
 
+from ..core.error_hints import hint
+
 
 class SendPriority(IntEnum):
     """消息发送优先级枚举。"""
@@ -84,7 +86,7 @@ class MessageManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error("消息发送异常: %s", e)
+                logger.error("消息发送异常: %s。%s", e, hint.WS_SEND_FAILED)
 
     async def _dispatch(self, task: tuple):
         """执行实际发送操作。"""

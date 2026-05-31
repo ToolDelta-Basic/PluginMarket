@@ -5,6 +5,8 @@ import inspect
 import logging
 from typing import Type, List, Optional
 from ..core.module import Module
+from ..core.error_hints import hint
+from ..core.containment import safe_handler
 
 
 class ModuleManager:
@@ -39,8 +41,10 @@ class ModuleManager:
                     mod = cls(self.services, self.event_bus)
                 except Exception as e:
                     logger.error(
-                        "模块 '%s' 实例化失败: %s",
-                        getattr(cls, 'name', cls.__name__), e)
+                        "模块 '%s' 实例化失败: %s。%s",
+                        getattr(cls, 'name', cls.__name__), e,
+                        hint.MODULE_INSTANTIATE_FAILED,
+                    )
                     continue
                 self._scan_all_decorators(mod)
                 modules.append(mod)
@@ -55,24 +59,20 @@ class ModuleManager:
                     continue
                 await mod.on_init()
 
-                # 注册声明式工具 (Module.tools 类属性)
                 if mod.tools:
                     for tool_def in mod.tools:
                         self.host.tool_mgr.register_tool(tool_def)
-
-                # 注册通过 register_tool() 编程式注册的工具
                 for tool_def in mod._tool_defs:
                     self.host.tool_mgr.register_tool(tool_def)
-
-                # 注册命令
                 for cmd_info in mod._commands.values():
                     self.host.command_mgr.register(**cmd_info)
-
-                # ★ on_init 之后的约定：工具扫描 + 定时任务启动
                 await mod._post_init_conventions()
 
             except Exception as e:
-                logger.error("模块 '%s' 初始化失败: %s", mod.name, e)
+                logger.error(
+                    "模块 '%s' 初始化失败: %s。%s",
+                    mod.name, e, hint.MODULE_INIT_FAILED,
+                )
                 await self._rollback_module(mod)
                 continue
 
@@ -86,7 +86,10 @@ class ModuleManager:
                     await mod.on_start()
                     started_modules.append(mod)
                 except Exception as e:
-                    logger.error("模块 '%s' 启动失败: %s", mod.name, e)
+                    logger.error(
+                        "模块 '%s' 启动失败: %s。%s",
+                        mod.name, e, hint.MODULE_START_FAILED,
+                    )
                     self._loaded_modules.pop(mod.name, None)
 
         logger.info("成功加载 %d 个模块", len(started_modules))
@@ -117,9 +120,10 @@ class ModuleManager:
             temp_mod = module_cls(self.services, self.event_bus)
         except Exception as e:
             logger.error(
-                "模块 '%s' 实例化失败: %s",
-                getattr(module_cls, 'name', module_cls.__name__), e)  # noqa: FLK-E128
-
+                "模块 '%s' 实例化失败: %s。%s",
+                getattr(module_cls, 'name', module_cls.__name__), e,
+                hint.MODULE_INSTANTIATE_FAILED,
+            )
             return None
 
         async with self._lock:
@@ -151,7 +155,10 @@ class ModuleManager:
             await temp_mod._post_init_conventions()
 
         except Exception as e:
-            logger.error("模块 '%s' 初始化失败: %s", temp_mod.name, e)
+            logger.error(
+                "模块 '%s' 初始化失败: %s。%s",
+                temp_mod.name, e, hint.MODULE_INIT_FAILED,
+            )
             await self._rollback_module(temp_mod)
             async with self._lock:
                 self._loaded_modules.pop(temp_mod.name, None)
@@ -160,7 +167,10 @@ class ModuleManager:
         try:
             await temp_mod.on_start()
         except Exception as e:
-            logger.error("模块 '%s' 启动失败: %s", temp_mod.name, e)
+            logger.error(
+                "模块 '%s' 启动失败: %s。%s",
+                temp_mod.name, e, hint.MODULE_START_FAILED,
+            )
             await self._rollback_module(temp_mod)
             async with self._lock:
                 self._loaded_modules.pop(temp_mod.name, None)

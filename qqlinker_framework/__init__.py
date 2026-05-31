@@ -13,6 +13,85 @@ import logging
 import os
 import sys
 import threading
+import traceback
+
+# ═══════════════════════════════════════════════════════════════
+# 第一道防线：文件完整性检查
+# 在任何 import 框架模块之前执行，防止因文件缺失导致宿主崩溃
+# ═══════════════════════════════════════════════════════════════
+
+_skip_integrity = os.environ.get("QQLINKER_SKIP_INTEGRITY", "0") == "1"
+
+# 内联完整性检查（避免循环导入）
+def _bootstrap_integrity_check():
+    """启动前检查关键文件是否存在。"""
+    if _skip_integrity:
+        return
+
+    _framework_base = os.path.dirname(os.path.abspath(__file__))
+
+    # 关键文件清单 (相对路径 → 描述)
+    _fatal_files = {
+        "core/host.py":            "框架核心调度器",
+        "core/module.py":          "模块基类",
+        "core/bus.py":             "事件总线",
+        "core/services.py":        "服务容器",
+        "core/events.py":          "事件定义",
+        "core/routing.py":         "命令路由",
+        "core/defguard.py":        "防御层",
+        "core/error_hints.py":     "错误提示库",
+        "managers/config_mgr.py":  "配置管理器",
+        "managers/module_mgr.py":  "模块管理器",
+        "managers/command_mgr.py": "命令管理器",
+        "managers/message_mgr.py": "消息管理器",
+        "adapters/base.py":        "适配器基类",
+    }
+
+    missing = []
+    for rel, desc in _fatal_files.items():
+        if not os.path.isfile(os.path.join(_framework_base, rel)):
+            missing.append((rel, desc))
+
+    if not missing:
+        return
+
+    msg_lines = [
+        "",
+        "╔══════════════════════════════════════════════════════════╗",
+        "║  ❌ 群服互通框架 启动失败                                ║",
+        "╠══════════════════════════════════════════════════════════╣",
+        "║  关键文件缺失，框架无法继续运行。                       ║",
+        "╠══════════════════════════════════════════════════════════╣",
+    ]
+    for i, (rel, desc) in enumerate(missing[:10], 1):
+        msg_lines.append(f"║  {i}. {rel}")
+        msg_lines.append(f"║     ── {desc}")
+    if len(missing) > 10:
+        msg_lines.append(f"║  ... 及其他 {len(missing) - 10} 个文件")
+    msg_lines.extend([
+        "╠══════════════════════════════════════════════════════════╣",
+        "║  可能的原因：                                          ║",
+        "║  ① 安装包不完整或被损坏                                ║",
+        "║  ② 文件被手动删除或移动                                ║",
+        "║  ③ 解压/部署时出错                                     ║",
+        "╠══════════════════════════════════════════════════════════╣",
+        "║  建议重新下载并安装完整的框架包。                      ║",
+        f"║  框架位置: {_framework_base[:48]}",
+        "╚══════════════════════════════════════════════════════════╝",
+        "",
+        "💡 如需跳过此检查（不推荐），设置环境变量:",
+        "   export QQLINKER_SKIP_INTEGRITY=1",
+        "",
+    ])
+    print("\n".join(msg_lines), file=sys.stderr)
+    sys.exit(1)
+
+# 立即执行检查
+_bootstrap_integrity_check()
+
+# ═══════════════════════════════════════════════════════════════
+# 现在安全加载框架
+# ═══════════════════════════════════════════════════════════════
 
 try:
     from tooldelta import Plugin, plugin_entry, ToolDelta
@@ -59,6 +138,18 @@ except ImportError:
         def ListenFrameExit(self, func, priority=0):
             """注册框架退出回调。"""
 
+        def ListenDeath(self, func, priority=0):
+            """注册玩家死亡回调（桩）。"""
+
+        def ListenAttack(self, func, priority=0):
+            """注册玩家击杀回调（桩）。"""
+
+        def ListenSleep(self, func, priority=0):
+            """注册玩家睡觉回调（桩）。"""
+
+        def ListenWeather(self, func, priority=0):
+            """注册天气变化回调（桩）。"""
+
         def ListenPacket(self, pk_id, func, priority=0):
             """注册字典数据包监听。"""
 
@@ -97,6 +188,11 @@ except ImportError:
     ToolDelta = None
 
 from .core.host import FrameworkHost
+from .core.containment import (
+    plugin_wrapper, safe_handler, safe_call,
+    register_shutdown_callback, trigger_safe_shutdown,
+    reset_failure_count, is_shutting_down,
+)
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
 
@@ -146,11 +242,13 @@ class QQLinkerFrameworkPlugin(Plugin):
         super().__init__(frame)
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
+        self.ListenFrameExit(self.on_frame_exit)
         self._framework_thread = None
         self._host = None
         self._loop = None
         self._adapter = None
 
+    @plugin_wrapper
     def on_preload(self):
         """预加载: 初始化适配器、注册前置插件、发现模块。"""
         data_dir = str(self.data_path)
@@ -186,9 +284,6 @@ class QQLinkerFrameworkPlugin(Plugin):
         pkg_mgr = self._host.package_mgr
         pkg_mgr.register_requirements({
             "websocket-client": "websocket",
-            "aiohttp": "aiohttp",
-            "cachetools": "cachetools",
-            "redis": "redis",
         })
 
         self._host.register_modules_from_package("qqlinker_framework.modules")
@@ -196,6 +291,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         self._host.register_external_modules()
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 
+    @plugin_wrapper
     def on_active(self):
         """游戏连接就绪后启动框架线程。"""
         logging.getLogger(__name__).info("游戏连接已就绪，启动框架...")
@@ -210,18 +306,51 @@ class QQLinkerFrameworkPlugin(Plugin):
         )
         self._framework_thread.start()
 
+    @plugin_wrapper
     def _run_framework(self):
-        """在独立线程中创建事件循环并运行框架。"""
+        """在独立线程中创建事件循环并运行框架。
+
+        此方法是框架运行的最后防线——任何未捕获异常都不会传播到 ToolDelta。
+        """
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
+        reset_failure_count()
         try:
             self._loop.run_until_complete(self._host.start())
+            # 注册安全卸载回调
+            register_shutdown_callback(lambda: self._safe_shutdown())
             self._loop.run_forever()
-        except Exception:
-            logging.getLogger(__name__).exception("框架运行异常")
+        except asyncio.CancelledError:
+            logging.getLogger(__name__).info("框架事件循环收到取消信号")
+        except Exception as e:
+            logging.getLogger(__name__).critical(
+                "⚠ 框架运行异常，正在安全退出。ToolDelta 不受影响。错误: %s\n%s",
+                e, traceback.format_exc(),
+            )
+            trigger_safe_shutdown()
         finally:
-            self._loop.close()
+            self._safe_shutdown()
 
+    def _safe_shutdown(self):
+        """安全关闭框架，确保资源释放。此方法本身也受保护。"""
+        try:
+            if self._loop and self._host and not self._loop.is_closed():
+                asyncio.run_coroutine_threadsafe(
+                    self._host.stop(), self._loop
+                )
+                self._loop.call_soon_threadsafe(self._loop.stop)
+        except Exception as e:
+            logging.getLogger(__name__).error(
+                "框架关闭异常（不影响 ToolDelta）: %s", e
+            )
+        finally:
+            try:
+                if self._loop and not self._loop.is_closed():
+                    self._loop.close()
+            except Exception:
+                pass
+
+    @plugin_wrapper
     def on_def(self):
         """插件卸载时停止框架和事件循环。"""
         if self._loop and self._host:

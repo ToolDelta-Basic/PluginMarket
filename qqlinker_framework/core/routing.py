@@ -1,7 +1,8 @@
-"""命令路由中间件（带权限检查 + 冷却控制）。"""
+"""命令路由中间件（带权限检查 + 冷却控制 + 用户友好错误提示）。"""
 import time
 import logging
 from ..managers.command_mgr import CommandManager
+from ..core.error_hints import hint
 from .context import CommandContext
 
 
@@ -23,7 +24,9 @@ class CommandRouter:
 
     async def handle_message(self, event):
         """处理群消息事件，查找匹配命令并执行。"""
-        msg = event.message.strip()
+        msg = (event.message or "").strip()
+        if not msg:
+            return False
         for cmd_info in self.command_mgr.get_group_commands():
             trigger = cmd_info["trigger"]
             if not msg.startswith(trigger):
@@ -46,7 +49,9 @@ class CommandRouter:
                         adapter=self.adapter,
                         message_mgr=self.message_mgr,
                     )
-                    await ctx.reply(f"命令冷却中，请 {remain:.0f} 秒后再试")
+                    await ctx.reply(
+                        f"⏳ 命令冷却中，请 {remain:.0f} 秒后再试。{hint.COMMAND_COOLDOWN}"
+                    )
                     return True
                 user_cd[event.user_id] = now
 
@@ -63,13 +68,14 @@ class CommandRouter:
                     adapter=self.adapter,
                     message_mgr=self.message_mgr,
                 )
-                await ctx.reply("权限不足，该命令仅管理员可用。")
+                await ctx.reply(
+                    f"🔒 权限不足，该命令仅管理员可用。{hint.COMMAND_PERMISSION_DENIED}"
+                )
                 logging.getLogger(__name__).warning(
-                    "用户 %d 尝试越权执行命令 %s",
-                    event.user_id,
-                    trigger,
+                    "用户 %d 尝试越权执行命令 %s", event.user_id, trigger,
                 )
                 return True
+
             args_str = msg[len(trigger):].strip()
             args = args_str.split() if args_str else []
             ctx = CommandContext(
@@ -86,7 +92,14 @@ class CommandRouter:
                 event.handled = True
             except Exception as e:
                 logging.getLogger(__name__).error(
-                    "命令 %s 执行异常: %s", trigger, e
+                    "命令 %s 执行异常: %s。%s",
+                    trigger, e, hint.COMMAND_EXEC_FAILED,
                 )
+                try:
+                    await ctx.reply(
+                        f"❌ 命令执行出错。{hint.COMMAND_EXEC_FAILED}"
+                    )
+                except Exception:
+                    pass
             return True
         return False

@@ -19,6 +19,12 @@ class HelpModule(Module):
     version = (1, 0, 2)
     required_services = ["command", "message", "config"]
 
+    default_config = {
+        "管理员": {
+            "管理员QQ": [0]
+        }
+    }
+
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
         # 翻页会话：user_id -> {
