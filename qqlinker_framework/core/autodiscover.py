@@ -53,12 +53,12 @@ def _walk_package(package, result: List[Type[Module]]):
                 sub_pkg = importlib.import_module(modname)
                 _walk_package(sub_pkg, result)
             except Exception as e:
-                logger.exception("导入子包 %s 失败: %s。%s", modname, e, hint.MODULE_IMPORT_FAILED)
+                logger.exception("导入子包 %s 失败: %s。%s", modname, e, hint["MODULE_IMPORT_FAILED"])
         else:
             try:
                 mod = importlib.import_module(modname)
             except Exception as e:
-                logger.exception("导入模块 %s 失败: %s。%s", modname, e, hint.MODULE_IMPORT_FAILED)
+                logger.exception("导入模块 %s 失败: %s。%s", modname, e, hint["MODULE_IMPORT_FAILED"])
                 continue
             for attr_name in dir(mod):
                 attr = getattr(mod, attr_name)
@@ -123,7 +123,7 @@ def sort_by_dependencies(
     name_to_cls, in_degree, graph = _build_dependency_graph(classes)
     sorted_classes = _topological_sort(name_to_cls, in_degree, graph)
     if sorted_classes is None:
-        logger.warning("检测到循环依赖，将使用原始顺序。%s", hint.MODULE_INIT_FAILED)
+        logger.warning("检测到循环依赖，将使用原始顺序。%s", hint["MODULE_INIT_FAILED"])
         return classes
     result = list(sorted_classes)
     for cls in classes:
@@ -217,7 +217,7 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
         mod = _importlib_util.module_from_spec(spec)
         spec.loader.exec_module(mod)
     except Exception as e:
-        logger.exception("加载外部模块 %s 失败: %s。%s", filepath, e, hint.MODULE_IMPORT_FAILED)
+        logger.exception("加载外部模块 %s 失败: %s。%s", filepath, e, hint["MODULE_IMPORT_FAILED"])
         return None
 
     # 扫描 Module 子类
@@ -257,7 +257,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         resp = _urlopen(url, timeout=30)
         data = resp.read()
     except Exception as e:
-        logger.error("下载模块失败: %s → %s。%s", url, e, hint.MARKET_DOWNLOAD_FAILED)
+        logger.error("下载模块失败: %s → %s。%s", url, e, hint["MARKET_DOWNLOAD_FAILED"])
         return None
 
     fname = url.split("/")[-1].split("?")[0]
@@ -272,7 +272,7 @@ def download_module(url: str, data_path: str) -> Optional[str]:
             logger.info("模块 %s 已安装到 %s", base, target)
             return base
         except Exception as e:
-            logger.error("解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s", e, hint.MARKET_DOWNLOAD_FAILED)
+            logger.error("解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s", e, hint["MARKET_DOWNLOAD_FAILED"])
             return None
 
     elif fname.endswith(".py"):

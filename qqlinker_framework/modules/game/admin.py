@@ -22,6 +22,7 @@ class GameAdmin(Module):
     """游戏管理模块：.在线 查看在线玩家，.指令/.执行 执行游戏指令。"""
 
     name = "game_admin"
+    uid = 100  # daemon: 系统守护
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 

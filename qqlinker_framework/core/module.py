@@ -30,7 +30,7 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from .services import ServiceContainer
+from .services import ServiceContainer, uid_label, validate_module_uid, uid_layer
 from .bus import EventBus
 from .error_hints import hint
 
@@ -202,7 +202,7 @@ async def _safe_call(handler: Callable):
         else:
             await asyncio.get_running_loop().run_in_executor(None, handler)
     except Exception:
-        logging.getLogger(__name__).exception("定时任务异常。%s", hint.UNEXPECTED_ERROR)
+        logging.getLogger(__name__).exception("定时任务异常。%s", hint["UNEXPECTED_ERROR"])
 
 
 # ── 热重载状态 ──────────────────────────────────────────────
@@ -262,6 +262,7 @@ class Module(ABC):
 
     # ── 必须声明 ──
     name: str = ""
+    uid: int = 2000  # 模块等级: 0=root, 1~999=daemon, 1000~1999=service, 2000~2999=app, 3000+=nobody
 
     # ── 可选覆写 ──
     version: tuple = (0, 0, 1)
@@ -289,14 +290,31 @@ class Module(ABC):
         self._event_handlers: list = []
         self._tool_defs: list = []
 
-        # ── 服务注入 ──
+        # ── 防提权: 根据声明的 uid 自动判断层级并校验 ──
+        if self.uid <= 999:
+            layer = "daemon"
+        elif self.uid <= 1999:
+            layer = "service"
+        elif self.uid <= 2999:
+            layer = "app"
+        else:
+            layer = "nobody"
+        self.uid = validate_module_uid(self.uid, self.name, layer=layer)
+
+        # ── 服务注入（含 UID 权限校验）──
         for srv_name in self.required_services:
             if not services.has(srv_name):
                 raise RuntimeError(
                     f"模块 '{self.name}' 需要服务 '{srv_name}'，但未注册。"
-                    f"{hint.SERVICE_NOT_FOUND}"
+                    f"{hint['SERVICE_NOT_FOUND']}"
                 )
-            setattr(self, srv_name, services.get(srv_name))
+            try:
+                setattr(self, srv_name, services.get(srv_name))
+            except PermissionError as e:
+                raise PermissionError(
+                    f"模块 '{self.name}' (uid={self.uid}/{uid_label(self.uid)}) "
+                    f"无权访问服务 '{srv_name}': {e}"
+                )
 
         # ── 便利属性 ──
         self.logger = logging.getLogger(
@@ -459,6 +477,7 @@ class Module(ABC):
         cmd_type: str = "group",
         description: str = "",
         op_only: bool = False,
+        required_role: str = "",
         argument_hint: str = "",
         cooldown: float | None = None,
     ):
@@ -471,6 +490,7 @@ class Module(ABC):
             "callback": callback,
             "description": description,
             "op_only": op_only,
+            "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown,
         }

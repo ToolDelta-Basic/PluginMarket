@@ -124,7 +124,7 @@ def _handle_caught(e: Exception, context: str, critical: bool):
     else:
         _log.error(
             "%s%s异常: %s。%s",
-            prefix, context, e, hint.UNEXPECTED_ERROR,
+            prefix, context, e, hint["UNEXPECTED_ERROR"],
         )
 
     if _critical_failure_count >= CRITICAL_FAILURE_THRESHOLD:

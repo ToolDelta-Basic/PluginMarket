@@ -86,7 +86,7 @@ class MessageManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error("消息发送异常: %s。%s", e, hint.WS_SEND_FAILED)
+                logger.error("消息发送异常: %s。%s", e, hint["WS_SEND_FAILED"])
 
     async def _dispatch(self, task: tuple):
         """执行实际发送操作。"""

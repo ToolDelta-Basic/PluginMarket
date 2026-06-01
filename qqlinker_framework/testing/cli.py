@@ -231,3 +231,62 @@ def start_mock_cli(data_dir: str = ".", start_framework: bool = True):
         cli.cmdloop()
     except KeyboardInterrupt:
         cli.do_quit("")
+
+
+def backup_data(data_dir: str, output: str = None):
+    """打包 data_dir 为 tar.gz 备份文件。
+
+    Args:
+        data_dir: 数据目录路径。
+        output: 输出文件路径（默认 data_dir/../backup_<时间戳>.tar.gz）。
+    """
+    import tarfile
+    import os as _os
+    from datetime import datetime
+
+    if not _os.path.isdir(data_dir):
+        print(f"❌ 数据目录不存在: {data_dir}")
+        return False
+    if output is None:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output = _os.path.join(_os.path.dirname(data_dir), f"backup_{ts}.tar.gz")
+    try:
+        with tarfile.open(output, "w:gz") as tar:
+            tar.add(data_dir, arcname=_os.path.basename(data_dir))
+        size_mb = _os.path.getsize(output) / 1024 / 1024
+        print(f"✅ 备份完成: {output} ({size_mb:.1f} MB)")
+        return True
+    except Exception as e:
+        print(f"❌ 备份失败: {e}")
+        return False
+
+
+def restore_data(backup_file: str, data_dir: str):
+    """从 tar.gz 备份恢复数据目录。
+
+    Args:
+        backup_file: 备份文件路径。
+        data_dir: 目标数据目录。
+    """
+    import tarfile
+    import os as _os
+    import shutil
+
+    if not _os.path.isfile(backup_file):
+        print(f"❌ 备份文件不存在: {backup_file}")
+        return False
+    try:
+        # 先备份当前数据（安全起见）
+        if _os.path.isdir(data_dir):
+            old = data_dir + ".old"
+            if _os.path.exists(old):
+                shutil.rmtree(old)
+            shutil.move(data_dir, old)
+            print(f"📦 旧数据已移动到: {old}")
+        with tarfile.open(backup_file, "r:gz") as tar:
+            tar.extractall(path=_os.path.dirname(data_dir))
+        print(f"✅ 恢复完成: {backup_file} → {data_dir}")
+        return True
+    except Exception as e:
+        print(f"❌ 恢复失败: {e}")
+        return False

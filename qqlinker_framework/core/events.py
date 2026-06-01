@@ -103,3 +103,8 @@ class AIPostResponseReflectionEvent(BaseEvent):
     reply: str
     original_message: str
     warning: Optional[str] = field(default=None, init=False)
+
+
+@dataclass
+class ConfigReloadEvent(BaseEvent):
+    """配置热重载事件。"""

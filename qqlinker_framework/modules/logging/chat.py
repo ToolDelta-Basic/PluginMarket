@@ -182,6 +182,7 @@ class GlobalChatLogModule(Module):
     """全局聊天日志模块，记录聊天消息并提供查询服务。"""
 
     name = "global_chat_log"
+    uid = 100  # daemon: 系统守护
     version = (1, 0, 0)
     required_services = ["config", "message"]
 

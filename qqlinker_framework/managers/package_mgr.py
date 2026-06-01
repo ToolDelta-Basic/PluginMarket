@@ -70,7 +70,7 @@ class PackageManager:
         logger = logging.getLogger(__name__)
         target = self._installed_target_dir
         if not target:
-            logger.error("未设置 pip 安装目标目录，安装中止。%s", hint.DEPENDENCY_TARGET_MISSING)
+            logger.error("未设置 pip 安装目标目录，安装中止。%s", hint["DEPENDENCY_TARGET_MISSING"])
             return False
 
         pyexec = sys.executable
@@ -122,12 +122,12 @@ class PackageManager:
                 except Exception as e:
                     logger.error(
                         "安装 %s 异常 (源 %s): %s。%s",
-                        pkg, mirror, e, hint.DEPENDENCY_INSTALL_FAILED,
+                        pkg, mirror, e, hint["DEPENDENCY_INSTALL_FAILED"],
                     )
 
             if not pkg_ok:
                 total_success = False
-                logger.error("所有源均无法安装包: %s，尝试回滚。%s", pkg, hint.DEPENDENCY_INSTALL_FAILED)
+                logger.error("所有源均无法安装包: %s，尝试回滚。%s", pkg, hint["DEPENDENCY_INSTALL_FAILED"])
                 self._cleanup_partial(target, installed_before)
                 break
 

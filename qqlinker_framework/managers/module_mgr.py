@@ -43,7 +43,7 @@ class ModuleManager:
                     logger.error(
                         "模块 '%s' 实例化失败: %s。%s",
                         getattr(cls, 'name', cls.__name__), e,
-                        hint.MODULE_INSTANTIATE_FAILED,
+                        hint["MODULE_INSTANTIATE_FAILED"],
                     )
                     continue
                 self._scan_all_decorators(mod)
@@ -71,7 +71,7 @@ class ModuleManager:
             except Exception as e:
                 logger.error(
                     "模块 '%s' 初始化失败: %s。%s",
-                    mod.name, e, hint.MODULE_INIT_FAILED,
+                    mod.name, e, hint["MODULE_INIT_FAILED"],
                 )
                 await self._rollback_module(mod)
                 continue
@@ -88,7 +88,7 @@ class ModuleManager:
                 except Exception as e:
                     logger.error(
                         "模块 '%s' 启动失败: %s。%s",
-                        mod.name, e, hint.MODULE_START_FAILED,
+                        mod.name, e, hint["MODULE_START_FAILED"],
                     )
                     self._loaded_modules.pop(mod.name, None)
 
@@ -122,7 +122,7 @@ class ModuleManager:
             logger.error(
                 "模块 '%s' 实例化失败: %s。%s",
                 getattr(module_cls, 'name', module_cls.__name__), e,
-                hint.MODULE_INSTANTIATE_FAILED,
+                hint["MODULE_INSTANTIATE_FAILED"],
             )
             return None
 
@@ -157,7 +157,7 @@ class ModuleManager:
         except Exception as e:
             logger.error(
                 "模块 '%s' 初始化失败: %s。%s",
-                temp_mod.name, e, hint.MODULE_INIT_FAILED,
+                temp_mod.name, e, hint["MODULE_INIT_FAILED"],
             )
             await self._rollback_module(temp_mod)
             async with self._lock:
@@ -169,7 +169,7 @@ class ModuleManager:
         except Exception as e:
             logger.error(
                 "模块 '%s' 启动失败: %s。%s",
-                temp_mod.name, e, hint.MODULE_START_FAILED,
+                temp_mod.name, e, hint["MODULE_START_FAILED"],
             )
             await self._rollback_module(temp_mod)
             async with self._lock:
@@ -229,6 +229,7 @@ class ModuleManager:
                     cmd_type=info.get('type', 'group'),
                     description=info.get('description', ''),
                     op_only=info.get('op_only', False),
+                    required_role=info.get('required_role', ''),
                     argument_hint=info.get('argument_hint', ''),
                     cooldown=info.get('cooldown'),
                 )

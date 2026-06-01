@@ -7,6 +7,7 @@ class DummyModule(Module):
     """测试模块，提供 .ping 命令。"""
 
     name = "dummy"
+    uid = 2000  # 用户应用层
     version = (0, 0, 1)
     required_services = ["message"]
 

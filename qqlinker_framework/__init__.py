@@ -1,5 +1,5 @@
 # __init__.py
-"""云链群服互通框架 - ToolDelta 插件入口 (v1.2)
+"""云链群服互通框架 - ToolDelta 插件入口 (v1.3.0)
 
 启动方式:
   1. ToolDelta 环境 → 自动作为插件加载
@@ -234,7 +234,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
 
     name = "群服互通框架"
-    version = (1, 2, 0)
+    version = (1, 3, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 
@@ -276,7 +276,8 @@ class QQLinkerFrameworkPlugin(Plugin):
         if pre_apis:
             for api_name, api_inst in pre_apis.items():
                 svc_name = f"pre_api.{api_name}"
-                self._host.services.register(svc_name, api_inst)
+                self._host.services.register(svc_name, api_inst, uid=3000,
+                                              _caller="qqlinker_framework.__init__")
                 logging.getLogger(__name__).info(
                     "前置插件 API '%s' 已暴露为服务 '%s'", api_name, svc_name
                 )
@@ -377,6 +378,22 @@ def _main():
     elif "--mock" in args or "-m" in args:
         from .testing.cli import start_mock_cli
         start_mock_cli(start_framework=True)
+    elif "--backup" in args:
+        from .testing.cli import backup_data
+        # 支持 --backup [output_path]
+        idx = args.index("--backup")
+        output = args[idx + 1] if idx + 1 < len(args) and not args[idx + 1].startswith("--") else None
+        backup_data(data_dir=".", output=output)
+    elif "--restore" in args:
+        from .testing.cli import restore_data
+        # --restore <backup_file> [data_dir]
+        idx = args.index("--restore")
+        if idx + 1 >= len(args) or args[idx + 1].startswith("--"):
+            print("用法: python -m qqlinker_framework --restore <备份文件> [数据目录]")
+            sys.exit(1)
+        backup_file = args[idx + 1]
+        data_dir = args[idx + 2] if idx + 2 < len(args) and not args[idx + 2].startswith("--") else "."
+        restore_data(backup_file=backup_file, data_dir=data_dir)
     elif "--help" in args or "-h" in args:
         print(__doc__)
     else:

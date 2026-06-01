@@ -9,6 +9,7 @@ def command(
     cmd_type: str = "group",
     description: str = "",
     op_only: bool = False,
+    required_role: str = "",
     argument_hint: str = "",
     cooldown: float | None = None,
 ):
@@ -17,15 +18,16 @@ def command(
     Args:
         trigger: 命令触发词（如 ".帮助"）。
         cooldown: 冷却秒。None 取模块 default_cooldown。
+        required_role: 需要的角色名（如 "moderator"），空串表示不限制。
     """
 
     def decorator(func: Callable):
-        """内部装饰器: 将命令元信息附加到函数 _command_info 属性。"""
         func._command_info = {
             "trigger": trigger,
             "type": cmd_type,
             "description": description,
             "op_only": op_only,
+            "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown,
         }

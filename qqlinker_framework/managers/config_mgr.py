@@ -1,8 +1,10 @@
-"""配置管理器（支持动态注册节，仅在必要时自动持久化 + 类型校验）"""
+"""配置管理器（动态注册节、自动持久化、类型校验、热重载 + 文件轮询）"""
 import json
 import logging
 import os
-from typing import Any
+import threading
+import time
+from typing import Any, Optional
 
 from ..core.error_hints import hint
 
@@ -26,6 +28,11 @@ class ConfigManager:
         self.data_dir = data_dir or os.path.dirname(
             os.path.abspath(file_path)
         )
+        # 热重载状态
+        self._last_mtime: float = 0.0
+        self._watcher_thread: Optional[threading.Thread] = None
+        self._watcher_stop: threading.Event | None = None
+        self._on_reload_callback: Optional[callable] = None
 
     def register_section(self, section: str, defaults: dict[str, Any]):
         """注册一个配置节及其默认值。若配置已加载且文件缺少该节或字段，则自动补全并保存。"""
@@ -75,7 +82,7 @@ class ConfigManager:
                     expected_type.__name__,
                     type(actual).__name__,
                     repr(actual)[:80],
-                    hint.CONFIG_TYPE_MISMATCH,
+                    hint["CONFIG_TYPE_MISMATCH"],
                 )
             elif isinstance(default_value, dict) and isinstance(actual, dict):
                 ConfigManager._validate_types(
@@ -109,6 +116,79 @@ class ConfigManager:
     def get_data_dir(self) -> str:
         """返回数据目录路径。"""
         return self.data_dir
+
+    # ----------------------------------------------------------------
+    # 热重载
+    # ----------------------------------------------------------------
+    def reload(self) -> bool:
+        """从磁盘重新加载配置文件，保留注册节的默认值补全。
+
+        Returns:
+            True 表示文件有变更并已重新加载。
+        """
+        if not self._loaded:
+            return False
+        try:
+            mtime = os.path.getmtime(self._file_path)
+        except OSError:
+            return False
+        if mtime <= self._last_mtime:
+            return False
+        try:
+            with open(self._file_path, 'r', encoding='utf-8') as f:
+                loaded = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            _log.warning("配置重载失败（文件可能正在写入中）: %s", e)
+            return False
+
+        self._data = self._deep_merge(self._defaults, loaded)
+        for section, defaults in self._defaults.items():
+            section_data = self._data.setdefault(section, {})
+            self._apply_defaults(section_data, defaults)
+        self._last_mtime = mtime
+        _log.info("配置已热重载: %s", self._file_path)
+        if self._on_reload_callback:
+            try:
+                self._on_reload_callback()
+            except Exception as e:
+                _log.error("配置重载回调异常: %s", e)
+        return True
+
+    def start_watching(self, interval: float = 2.0, on_reload: callable = None):
+        """启动文件轮询线程，定期检查配置变更并自动热重载。
+
+        Args:
+            interval: 轮询间隔（秒），默认 2 秒。
+            on_reload: 重载成功后的回调。
+        """
+        if self._watcher_thread and self._watcher_thread.is_alive():
+            return
+        self._on_reload_callback = on_reload
+        try:
+            self._last_mtime = os.path.getmtime(self._file_path)
+        except OSError:
+            self._last_mtime = 0.0
+        self._watcher_stop = threading.Event()
+        self._watcher_thread = threading.Thread(
+            target=self._watch_loop, args=(interval,), daemon=True,
+        )
+        self._watcher_thread.start()
+        _log.info("配置热重载监控已启动 (间隔 %.1fs)", interval)
+
+    def stop_watching(self):
+        """停止文件轮询线程。"""
+        if self._watcher_stop:
+            self._watcher_stop.set()
+        if self._watcher_thread and self._watcher_thread.is_alive():
+            self._watcher_thread.join(timeout=5)
+
+    def _watch_loop(self, interval: float):
+        """文件轮询循环。"""
+        while not self._watcher_stop.is_set():
+            self._watcher_stop.wait(interval)
+            if self._watcher_stop.is_set():
+                break
+            self.reload()
 
     # ----------------------------------------------------------------
     # 内部工具

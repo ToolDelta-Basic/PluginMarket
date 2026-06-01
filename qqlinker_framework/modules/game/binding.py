@@ -97,12 +97,10 @@ class BindingService:
 
 
 class PlayerBindingModule(Module):
-    """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。
-
-    通过 create_exports 约定动态导出 binding 服务。
-    """
+    """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
 
     name = "player_binding"
+    uid = 2000  # 用户应用层
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
