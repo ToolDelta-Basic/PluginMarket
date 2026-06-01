@@ -71,7 +71,7 @@ class ConsoleCommands:
             else:
                 print(f"已安装 {len(mods)} 个外部模块:")
                 for m in mods:
-                    print(f"  · {m['name']} ({m['type']}) v{m.get('version','?')} — {m.get('description','')}")
+                    print(f"  · {m['name']} ({m['type']}) v{m.get('version', '?')} — {m.get('description', '')}")
 
         elif action == "add":
             if len(args) < 3:
@@ -113,12 +113,12 @@ class ConsoleCommands:
             result = host.market_aggregator.search(" ".join(args[2:]))
             mods = result.get("modules", [])
             if not mods:
-                print(f"未找到匹配的结果")
+                print("未找到匹配的结果")
             else:
                 print(f"搜索 — {len(mods)} 个结果:")
                 for m in mods:
                     src = m.get("_source", "?")
-                    print(f"  · {m['name']} v{m.get('version','?')} — {m.get('description','')[:40]}")
+                    print(f"  · {m['name']} v{m.get('version', '?')} — {m.get('description', '')[:40]}")
                     print(f"    来源: {src}")
         else:
             print("未知操作，可用: list / add / remove / search")
@@ -144,7 +144,7 @@ class ConsoleCommands:
             result = host.market_aggregator.list_all()
             mods = result.get("modules", [])
             conflicts = result.get("conflicts", [])
-            print(f"发现 {len(mods)} 个模块 (来自 {len(result.get('sources',[]))} 个源)")
+            print(f"发现 {len(mods)} 个模块 (来自 {len(result.get('sources', []))} 个源)")
             if conflicts:
                 print(f"⚠ {len(conflicts)} 个模块存在冲突（已按优先级保留）")
         else:

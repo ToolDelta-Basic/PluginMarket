@@ -177,9 +177,9 @@ except ImportError:
 
 from .core.host import FrameworkHost
 from .core.containment import (
-    plugin_wrapper, safe_handler, safe_call,
+    plugin_wrapper,
     register_shutdown_callback, trigger_safe_shutdown,
-    reset_failure_count, is_shutting_down,
+    reset_failure_count,
 )
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
@@ -318,7 +318,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         try:
             self._loop.run_until_complete(self._host.start())
             # 注册安全卸载回调
-            register_shutdown_callback(lambda: self._safe_shutdown())
+            register_shutdown_callback(self._safe_shutdown)
             self._loop.run_forever()
         except asyncio.CancelledError:
             logging.getLogger(__name__).info("框架事件循环收到取消信号")

@@ -34,6 +34,7 @@ MAX_MESSAGE_SEGMENTS = 100     # OneBot 消息段上限
 
 # ── 安全类型转换 — 绝不抛异常 ──────────────────────────────────
 
+
 def safe_str(value: Any, max_len: int = MAX_STRING_LENGTH) -> str:
     """安全地将任意值转为字符串，None → ""，超长截断。
 

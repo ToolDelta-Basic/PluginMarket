@@ -89,8 +89,7 @@ class IFrameworkAdapter(ABC):
             }
         """
 
-    @staticmethod
-    def resolve_player_names(entries: list) -> dict:
+    def resolve_player_names(self, entries: list) -> dict:
         """将查询条目中的 UUID 映射为玩家名。
 
         默认实现为空映射，子类可覆盖以提供平台特定的 UUID→名字解析。
@@ -139,9 +138,8 @@ class IFrameworkAdapter(ABC):
 
     # ── 可选扩展: 跨插件 API 代理 ─────────────────────────────
 
-    @staticmethod
     def register_pre_plugin_api(
-        api_name: str, min_version: tuple = (0, 0, 0)
+        self, api_name: str, min_version: tuple = (0, 0, 0)
     ) -> bool:
         """注册 datas.json 声明的依赖插件 API。
 
@@ -154,8 +152,7 @@ class IFrameworkAdapter(ABC):
         """
         return False
 
-    @staticmethod
-    def get_pre_plugin_api(api_name: str) -> Optional[Any]:
+    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:
         """获取已注册的前置插件 API 实例。
 
         Args:
@@ -166,7 +163,6 @@ class IFrameworkAdapter(ABC):
         """
         return None
 
-    @staticmethod
-    def get_pre_plugin_apis() -> Dict[str, Any]:
+    def get_pre_plugin_apis(self) -> Dict[str, Any]:
         """返回所有已注册的前置插件 API 字典。"""
         return {}

@@ -6,7 +6,6 @@ import logging
 from typing import Type, List, Optional
 from ..core.module import Module
 from ..core.error_hints import hint
-from ..core.containment import safe_handler
 
 
 class ModuleManager:

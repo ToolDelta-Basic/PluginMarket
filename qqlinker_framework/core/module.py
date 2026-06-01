@@ -30,7 +30,7 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from .services import ServiceContainer, uid_label, validate_module_uid, uid_layer
+from .services import ServiceContainer, uid_label, validate_module_uid
 from .bus import EventBus
 from .error_hints import hint
 
