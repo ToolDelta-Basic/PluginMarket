@@ -4,21 +4,22 @@ import threading
 import time
 import logging
 import enum
+import importlib
 from typing import Callable, Optional
-
-try:
-    import websocket
-    HAS_WEBSOCKET = True
-except ImportError:
-    HAS_WEBSOCKET = False
 
 from ..core.error_hints import hint
 
 
+def _get_websocket():
+    """延迟导入 websocket 模块（确保 sys.path 已设置）。"""
+    import websocket as _ws
+    return _ws
+
+
 class CircuitState(enum.Enum):
-    CLOSED = "closed"          # 正常，允许连接
-    OPEN = "open"              # 熔断，快速失败
-    HALF_OPEN = "half_open"    # 探测，尝试一次恢复
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
 
 
 class WsClient:
@@ -33,7 +34,9 @@ class WsClient:
     CIRCUIT_PROBE_COUNT = 2            # 探测阶段允许的尝试次数
 
     def __init__(self, config: dict):
-        if not HAS_WEBSOCKET:
+        try:
+            _get_websocket()
+        except ImportError:
             raise ImportError(
                 "websocket-client 未安装，无法使用 WsClient。"
                 "请在控制台输入 qqdeps install 自动安装，"
@@ -41,7 +44,7 @@ class WsClient:
             )
         self.address = config.get("ws_address", "ws://127.0.0.1:8080")
         self.token = config.get("ws_token", "")
-        self.ws: Optional[websocket.WebSocketApp] = None
+        self.ws = None  # type: "websocket.WebSocketApp"
         self.available = False
         self._on_message_callback: Optional[Callable[[dict], None]] = None
         self._reconnect = True
@@ -150,7 +153,8 @@ class WsClient:
                     {"Authorization": f"Bearer {self.token}"}
                     if self.token else None
                 )
-                self.ws = websocket.WebSocketApp(
+                ws_mod = _get_websocket()
+                self.ws = ws_mod.WebSocketApp(
                     self.address,
                     header=header,
                     on_open=self._on_open,

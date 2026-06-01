@@ -1,6 +1,8 @@
 """FrameworkHost - 框架核心调度器 (v10)
 
 职责: 组装服务/管理器/模块、控制生命周期、提供模块热插拔 API。
+非职责: 事件桥接 → core/event_bridge.py
+        控制台命令 → managers/console.py
 """
 import asyncio
 import logging
@@ -27,7 +29,7 @@ from ..managers.tool_mgr import ToolManager
 from ..managers.console import ConsoleCommands
 
 from ..adapters.base import IFrameworkAdapter
-from ..services.ws_client import WsClient, HAS_WEBSOCKET
+from ..services.ws_client import WsClient, _get_websocket
 from ..services.dedup import LayeredDedup, DedupConfig
 from ..services.debug_engine import DebugEngine
 from ..services.market_server import (
@@ -163,12 +165,10 @@ class FrameworkHost:
         ErrorMode.set_config_source(self.config_mgr)
         logger.info("错误显示模式: %s", "友好" if ErrorMode.is_friendly() else "调试")
 
-        # 配置热重载
+        # 配置热重载（watcher 线程感知 → 通过 run_coroutine_threadsafe 安全投递）
         self.config_mgr.start_watching(
             interval=2.0,
-            on_reload=lambda: asyncio.ensure_future(
-                self.event_bus.publish(ConfigReloadEvent())
-            ) if self.event_bus else None,
+            on_reload=lambda: self._on_config_reloaded(),
         )
 
         ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
@@ -220,7 +220,13 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
 
         # WebSocket
-        if HAS_WEBSOCKET:
+        try:
+            _get_websocket()
+            ws_available = True
+        except ImportError:
+            ws_available = False
+
+        if ws_available:
             self.ws_client = WsClient({"ws_address": ws_address, "ws_token": ws_token})
             if hasattr(self.adapter, 'set_ws_client'):
                 self.adapter.set_ws_client(self.ws_client)
@@ -316,6 +322,19 @@ class FrameworkHost:
             except Exception as e:
                 logger.debug("停止市场服务时异常: %s", e)
         logger.info("框架已停止")
+
+    # ── 配置热重载回调（watcher 线程安全）──
+
+    def _on_config_reloaded(self):
+        """配置热重载后，安全广播 ConfigReloadEvent。
+
+        从 watcher 线程调用，通过 run_coroutine_threadsafe 投递到主循环。
+        """
+        if self._main_loop and self._main_loop.is_running() and self.event_bus:
+            asyncio.run_coroutine_threadsafe(
+                self.event_bus.publish(ConfigReloadEvent()),
+                self._main_loop,
+            )
 
     # ── 热插拔 API ──
 

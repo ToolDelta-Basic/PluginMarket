@@ -41,9 +41,9 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self.plugin.ListenPlayerJoin(self._on_player_join)
         self.plugin.ListenPlayerLeave(self._on_player_leave)
         self.plugin.ListenFrameExit(self._on_frame_exit)
-        self.plugin.ListenPlayerPreJoin(self._on_player_pre_join)
-        # 注意: ListenActive 由 QQLinkerFrameworkPlugin 统一注册，
-        # 避免在此重复注册导致双重回调。
+        # ListenPlayerPreJoin 在某些 ToolDelta 版本中不存在
+        if hasattr(self.plugin, "ListenPlayerPreJoin"):
+            self.plugin.ListenPlayerPreJoin(self._on_player_pre_join)
 
         self._chat_handlers: list[Callable] = []
         self._player_join_handlers: list[Callable] = []

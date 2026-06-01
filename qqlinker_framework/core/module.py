@@ -504,6 +504,23 @@ class Module(ABC):
         """编程式注册工具定义。"""
         self._tool_defs.append(tool_definition)
 
+    def listen_packet(self, packet_id: int, handler: Callable[[dict], bool]):
+        """监听游戏数据包（通过 ToolDelta ListenPacket 桥接）。
+
+        Args:
+            packet_id: Bedrock 数据包 ID（如 PlayerAuthInput=144）。
+            handler: 回调函数，签名 def handler(packet: dict) -> bool。
+                     返回 True 拦截该包，False 继续传递。
+        """
+        if self.adapter and hasattr(self.adapter, 'listen_dict_packet'):
+            self.adapter.listen_dict_packet(packet_id, handler)
+            self._event_handlers.append(('_packet', packet_id, handler))
+        else:
+            self.logger.warning(
+                "模块 '%s' 尝试监听数据包 %d，但适配器不支持",
+                self.name, packet_id,
+            )
+
 
 # ═══════════════════════════════════════════════════════════════
 # 魔法属性代理 — 让模块开发者用 self.game.say(...) 等直觉 API

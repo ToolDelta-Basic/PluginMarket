@@ -138,18 +138,6 @@ except ImportError:
         def ListenFrameExit(self, func, priority=0):
             """注册框架退出回调。"""
 
-        def ListenDeath(self, func, priority=0):
-            """注册玩家死亡回调（桩）。"""
-
-        def ListenAttack(self, func, priority=0):
-            """注册玩家击杀回调（桩）。"""
-
-        def ListenSleep(self, func, priority=0):
-            """注册玩家睡觉回调（桩）。"""
-
-        def ListenWeather(self, func, priority=0):
-            """注册天气变化回调（桩）。"""
-
         def ListenPacket(self, pk_id, func, priority=0):
             """注册字典数据包监听。"""
 
@@ -242,7 +230,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         super().__init__(frame)
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
-        self.ListenFrameExit(self.on_frame_exit)
+        self.ListenFrameExit(self.on_def)
         self._framework_thread = None
         self._host = None
         self._loop = None
@@ -299,7 +287,18 @@ class QQLinkerFrameworkPlugin(Plugin):
         if not self._host:
             logging.getLogger(__name__).error("框架主机未初始化")
             return
-        # 通知适配器游戏已激活
+
+        # 检查依赖，缺失时提醒用户手动安装
+        pkg_mgr = self._host.package_mgr
+        missing = pkg_mgr.check_missing()
+        if missing:
+            logging.getLogger(__name__).warning(
+                "⚠ 缺失依赖: %s。请在控制台执行 qqdeps install 自动安装，"
+                "或手动执行: pip install %s",
+                ", ".join(missing.keys()),
+                " ".join(missing.keys()),
+            )
+
         if self._adapter:
             self._adapter.handle_active()
         self._framework_thread = threading.Thread(
@@ -352,8 +351,8 @@ class QQLinkerFrameworkPlugin(Plugin):
                 pass
 
     @plugin_wrapper
-    def on_def(self):
-        """插件卸载时停止框架和事件循环。"""
+    def on_def(self, _frame_exit=None):
+        """插件卸载时停止框架和事件循环（ToolDelta 传入 FrameExit 对象，忽略）。"""
         if self._loop and self._host:
             asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
             self._loop.call_soon_threadsafe(self._loop.stop)
