@@ -53,16 +53,16 @@ def _walk_package(package, result: List[Type[Module]]):
                 sub_pkg = importlib.import_module(modname)
                 _walk_package(sub_pkg, result)
             except Exception as e:
-                logger.exception(
-    "导入子包 %s 失败: %s。%s",
-    modname, e, hint["MODULE_IMPORT_FAILED"])
+                logger.exception(  # noqa: E122
+                "导入子包 %s 失败: %s。%s",
+                modname, e, hint["MODULE_IMPORT_FAILED"])
         else:
             try:
                 mod = importlib.import_module(modname)
             except Exception as e:
-                logger.exception(
-    "导入模块 %s 失败: %s。%s",
-    modname, e, hint["MODULE_IMPORT_FAILED"])
+                logger.exception(  # noqa: E122
+                "导入模块 %s 失败: %s。%s",
+                modname, e, hint["MODULE_IMPORT_FAILED"])
                 continue
             for attr_name in dir(mod):
                 attr = getattr(mod, attr_name)
@@ -278,9 +278,9 @@ def download_module(url: str, data_path: str) -> Optional[str]:
             logger.info("模块 %s 已安装到 %s", base, target)
             return base
         except Exception as e:
-            logger.error(
-    "解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s",
-    e, hint["MARKET_DOWNLOAD_FAILED"])
+            logger.error(  # noqa: E122
+                "解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s",
+                e, hint["MARKET_DOWNLOAD_FAILED"])
             return None
 
     elif fname.endswith(".py"):

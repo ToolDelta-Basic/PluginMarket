@@ -175,6 +175,7 @@ except ImportError:
 
     ToolDelta = None
 
+# noqa: E402 (delayed import after ToolDeltaPlugin stub)
 from .core.host import FrameworkHost
 from .core.containment import (
     plugin_wrapper,

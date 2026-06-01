@@ -63,31 +63,32 @@ def uid_label(uid: int) -> str:
     """返回 UID 的可读标签（Linux 风格）。"""
     if uid == UID_ROOT:
         return "root"
-    elif uid < UID_SERVICE_MIN:
+    if uid < UID_SERVICE_MIN:
         return "daemon"
-    elif uid < UID_APP_MIN:
+    if uid < UID_APP_MIN:
         return "service"
-    elif uid < UID_NOBODY:
-        return "app"
-    else:
-        return "nobody"
-
-
-def uid_layer(uid: int) -> str:
-    """返回 UID 所属层级名。"""
-    if uid == UID_ROOT:
-        return "root"
-    elif uid <= UID_DAEMON_MAX:
-        return "daemon"
-    elif uid <= UID_SERVICE_MAX:
-        return "service"
-    elif uid <= UID_APP_MAX:
+    if uid < UID_NOBODY:
         return "app"
     return "nobody"
 
 
-def validate_module_uid(declared_uid: int, module_name: str = "",
-                         layer: str = "app") -> int:
+def uid_layer(uid: int) -> str:
+    """返回 UID 所属层级名。"""  # noqa: PYL-R1705
+    if uid == UID_ROOT:
+        return "root"
+    if uid <= UID_DAEMON_MAX:
+        return "daemon"
+    if uid <= UID_SERVICE_MAX:
+        return "service"
+    if uid <= UID_APP_MAX:
+        return "app"
+    return "nobody"
+
+
+def validate_module_uid(
+    declared_uid: int, module_name: str = "",
+    layer: str = "app"
+) -> int:
     """校验模块声明的 uid 是否合法，返回有效 uid。
 
     Args:
@@ -125,12 +126,9 @@ _DAEMON_TRUSTED_PATHS: Set[str] = {
 }
 
 
-def is_daemon_trusted(caller_module: str) -> bool:
+def is_daemon_trusted(caller_module: str) -> bool:  # noqa: PY-W0074
     """检查调用方是否来自可信的内核/守护路径。"""
-    for prefix in _DAEMON_TRUSTED_PATHS:
-        if caller_module.startswith(prefix):
-            return True
-    return False
+    return any(caller_module.startswith(p) for p in _DAEMON_TRUSTED_PATHS)
 
 
 class ServiceContainer:

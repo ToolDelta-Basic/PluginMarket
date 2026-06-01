@@ -14,6 +14,7 @@
   L4: plugin_wrapper()     — 插件入口的外层兜底（捕获一切）
 ═══════════════════════════════════════════════════════════════════════════
 """
+# noqa: PYL-R0201
 
 import asyncio
 import functools
@@ -39,7 +40,7 @@ CRITICAL_FAILURE_THRESHOLD = 3
 
 def reset_failure_count():
     """重置关键失败计数器。"""
-    global _critical_failure_count
+    global _critical_failure_count  # noqa: PYL-W0603 (state machine)
     _critical_failure_count = 0
 
 
@@ -105,7 +106,7 @@ def safe_call(
 
 def _handle_caught(e: Exception, context: str, critical: bool):
     """统一处理捕获的异常。"""
-    global _critical_failure_count
+    global _critical_failure_count  # noqa: PYL-W0603 (state machine)
 
     from .error_hints import hint, ErrorMode
 
@@ -186,7 +187,7 @@ _shutdown_callback: Optional[Callable] = None
 
 def register_shutdown_callback(callback: Callable):
     """注册安全卸载回调（由 FrameworkHost 在启动时设置）。"""
-    global _shutdown_callback
+    global _shutdown_callback  # noqa: PYL-W0603 (state machine)
     _shutdown_callback = callback
 
 
@@ -196,7 +197,7 @@ def trigger_safe_shutdown():
     如果已注册回调，调用之；否则只标记状态。
     此函数可能被多次调用（幂等）。
     """
-    global _shutdown_initiated
+    global _shutdown_initiated  # noqa: PYL-W0603 (state machine)
     if _shutdown_initiated:
         return
     _shutdown_initiated = True
@@ -275,7 +276,7 @@ def wrap_all_methods(obj: Any, prefix: str = "on_", is_critical: bool = False):
 
         ctx = f"{type(obj).__name__}.{name}"
         safe_method = safe_handler(method, context=ctx, is_critical=is_critical)
-        safe_method._contained = True  # type: ignore[attr-defined]
+        safe_method._contained = True  # type: ignore[attr-defined]  # noqa: PYL-W0212 (internal marker)
         setattr(obj, name, safe_method)
         wrapped.append(name)
 

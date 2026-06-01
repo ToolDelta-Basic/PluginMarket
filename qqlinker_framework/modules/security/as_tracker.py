@@ -404,10 +404,10 @@ class AttackSpeedTracker(Module):
 
     def _print_ranking(self):
         print("=== 攻速排行榜 ===")
-        for fname in sorted(os.listdir(self._store._dir)):
+        for fname in sorted(os.listdir(self._store._dir)):  # noqa: PYL-W0212 (internal)
             if fname == "_blacklist.json":
                 continue
-            path = os.path.join(self._store._dir, fname)
+            path = os.path.join(self._store._dir, fname)  # noqa: PYL-W0212
             try:
                 with open(path) as f:
                     d = json.load(f)

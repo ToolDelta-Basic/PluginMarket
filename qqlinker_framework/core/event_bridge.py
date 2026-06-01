@@ -48,7 +48,7 @@ class EventBridge:
     def _publish(self, event, label: str):
         """线程安全地发布事件到主循环。"""
         host = self.host
-        if host._main_loop and host._main_loop.is_running():
+        if host._main_loop and host._main_loop.is_running():  # noqa: PYL-W0212
             try:
                 asyncio.run_coroutine_threadsafe(
                     host.event_bus.publish(event), host._main_loop,
@@ -96,7 +96,7 @@ class EventBridge:
             message=text.strip(),
             raw_data=data["_raw"],
         )
-        if host._main_loop and host._main_loop.is_running():
+        if host._main_loop and host._main_loop.is_running():  # noqa: PYL-W0212
             asyncio.run_coroutine_threadsafe(
                 host.event_bus.publish(event), host._main_loop,
             )
