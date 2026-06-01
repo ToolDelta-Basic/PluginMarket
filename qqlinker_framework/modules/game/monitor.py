@@ -45,7 +45,6 @@ class TPSMonitorModule(Module):
             "命令超时": 3.0,
         }
     }
-    version = (1, 0, 0)
     required_services = ["config", "adapter"]
 
     def __init__(self, services, event_bus):

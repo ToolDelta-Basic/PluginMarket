@@ -175,7 +175,7 @@ except ImportError:
 
     ToolDelta = None
 
-# noqa: E402 (delayed import after ToolDeltaPlugin stub)
+# noqa: E402 (delayed import required — ToolDeltaPlugin stub must precede FrameworkHost import)
 from .core.host import FrameworkHost
 from .core.containment import (
     plugin_wrapper,
@@ -189,9 +189,11 @@ from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
 def _load_pre_plugin_deps(data_dir: str) -> dict:
     """从 datas.json 加载前置插件依赖声明。"""
-    datas_path = os.path.join(data_dir, "..", "datas.json")
+    # 优先用框架根目录下的 datas.json（__file__ 定位）
+    datas_path = os.path.join(os.path.dirname(__file__), "datas.json")
     if not os.path.exists(datas_path):
-        alt = os.path.join(os.path.dirname(__file__), "datas.json")
+        # 兼容旧路径
+        alt = os.path.join(data_dir, "..", "datas.json")
         if os.path.exists(alt):
             datas_path = alt
         else:

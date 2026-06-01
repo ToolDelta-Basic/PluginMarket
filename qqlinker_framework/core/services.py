@@ -28,6 +28,7 @@ UID 分级（参考 Linux 用户模型）：
 ═══════════════════════════════════════════════════════════════════════════
 """
 import logging
+import threading
 from typing import Any, Callable, Dict, Optional, Set
 
 _log = logging.getLogger(__name__)
@@ -73,16 +74,8 @@ def uid_label(uid: int) -> str:
 
 
 def uid_layer(uid: int) -> str:
-    """返回 UID 所属层级名。"""  # noqa: PYL-R1705
-    if uid == UID_ROOT:
-        return "root"
-    if uid <= UID_DAEMON_MAX:
-        return "daemon"
-    if uid <= UID_SERVICE_MAX:
-        return "service"
-    if uid <= UID_APP_MAX:
-        return "app"
-    return "nobody"
+    """返回 UID 所属层级名（复用 uid_label）。"""
+    return uid_label(uid)
 
 
 def validate_module_uid(
@@ -118,15 +111,23 @@ def validate_module_uid(
     return default
 
 
-# ── 白名单：可信的框架内核文件路径前缀 ──────────────────────
+# ── 白名单：可信的 daemon 级路径前缀 ──────────────────────
 # 只有这些路径下的代码可以在启动时注册 daemon 级服务
 _DAEMON_TRUSTED_PATHS: Set[str] = {
     "qqlinker_framework.core.",
     "qqlinker_framework.managers.",
+    # 框架内置 daemon 模块（uid≤999）
+    "qqlinker_framework.modules.security.orion",
+    "qqlinker_framework.modules.ai.",
+    "qqlinker_framework.modules.game.admin",
+    "qqlinker_framework.modules.game.forwarder",
+    "qqlinker_framework.modules.game.tracker",
+    "qqlinker_framework.modules.logging.",
+    "qqlinker_framework.modules.system.auth",
 }
 
 
-def is_daemon_trusted(caller_module: str) -> bool:  # noqa: PY-W0074
+def is_daemon_trusted(caller_module: str) -> bool:  # noqa: PYL-W0074 (utility function, not a method — correct placement at module level for security checks)
     """检查调用方是否来自可信的内核/守护路径。"""
     return any(caller_module.startswith(p) for p in _DAEMON_TRUSTED_PATHS)
 
@@ -143,6 +144,7 @@ class ServiceContainer:
         self._services: Dict[str, Any] = {}
         self._service_uids: Dict[str, int] = {}
         self._factories: Dict[str, Callable[[], Any]] = {}
+        self._lock = threading.Lock()
 
     @property
     def uid(self) -> int:
@@ -179,11 +181,12 @@ class ServiceContainer:
                 f"非可信路径 '{_caller}' 不能注册 daemon 级服务 '{name}'"
             )
 
-        if callable(instance_or_factory):
-            self._factories[name] = instance_or_factory
-        else:
-            self._services[name] = instance_or_factory
-        self._service_uids[name] = uid
+        with self._lock:
+            if callable(instance_or_factory):
+                self._factories[name] = instance_or_factory
+            else:
+                self._services[name] = instance_or_factory
+            self._service_uids[name] = uid
 
     def get(self, name: str) -> Any:
         """获取服务实例，校验 UID 访问权限。
@@ -206,9 +209,14 @@ class ServiceContainer:
 
         if name in self._services:
             return self._services[name]
-        instance = self._factories[name]()
-        self._services[name] = instance
-        return instance
+        # 工厂延迟创建（加锁防并发重复实例化）
+        with self._lock:
+            # Double-check: 可能另一个线程已创建
+            if name in self._services:
+                return self._services[name]
+            instance = self._factories[name]()
+            self._services[name] = instance
+            return instance
 
     def try_get(self, name: str) -> Optional[Any]:
         """尝试获取服务，权限不足时返回 None 而非抛异常。"""

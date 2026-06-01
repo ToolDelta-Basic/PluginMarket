@@ -25,6 +25,7 @@ class ConfigManager:
         self._data: dict = {}
         self._defaults: dict = {}
         self._loaded = False
+        self._lock = threading.RLock()
         self.data_dir = data_dir or os.path.dirname(
             os.path.abspath(file_path)
         )
@@ -43,29 +44,31 @@ class ConfigManager:
             return
 
         # 确保内存中有该节
-        section_data = self._data.setdefault(section, {})
-        # 补全缺失的字段，返回是否有新增
-        changed = self._apply_defaults(section_data, defaults)
+        with self._lock:
+            section_data = self._data.setdefault(section, {})
+            # 补全缺失的字段，返回是否有新增
+            changed = self._apply_defaults(section_data, defaults)
         if changed:
             self.save()
 
     def load(self):
         """加载配置文件并与默认值深度合并。文件不存在时创建默认配置。"""
-        if os.path.exists(self._file_path):
-            with open(self._file_path, 'r', encoding='utf-8') as f:
-                loaded = json.load(f)
-            self._data = self._deep_merge(self._defaults, loaded)
-            # 类型校验：警告但不阻止加载
+        with self._lock:
+            if os.path.exists(self._file_path):
+                with open(self._file_path, 'r', encoding='utf-8') as f:
+                    loaded = json.load(f)
+                self._data = self._deep_merge(self._defaults, loaded)
+                # 类型校验：警告但不阻止加载
+                for section, defaults in self._defaults.items():
+                    section_data = self._data.get(section, {})
+                    self._validate_types(section, section_data, defaults)
+            else:
+                self._data = dict(self._defaults)
+                self.save()
+            self._loaded = True
             for section, defaults in self._defaults.items():
-                section_data = self._data.get(section, {})
-                self._validate_types(section, section_data, defaults)
-        else:
-            self._data = dict(self._defaults)
-            self.save()
-        self._loaded = True
-        for section, defaults in self._defaults.items():
-            section_data = self._data.setdefault(section, {})
-            self._apply_defaults(section_data, defaults)
+                section_data = self._data.setdefault(section, {})
+                self._apply_defaults(section_data, defaults)
 
     @staticmethod
     def _validate_types(section: str, data: dict, defaults: dict):
@@ -91,27 +94,30 @@ class ConfigManager:
 
     def save(self):
         """强制保存当前内存配置到文件。"""
-        with open(self._file_path, 'w', encoding='utf-8') as f:
-            json.dump(self._data, f, ensure_ascii=False, indent=2)
+        with self._lock:
+            with open(self._file_path, 'w', encoding='utf-8') as f:
+                json.dump(self._data, f, ensure_ascii=False, indent=2)
 
     def get(self, key: str, default=None):
         """通过点号分隔的键获取配置值。"""
         keys = key.split('.')
-        value = self._data
-        try:
-            for k in keys:
-                value = value[k]
-            return value
-        except (KeyError, TypeError):
-            return default
+        with self._lock:
+            value = self._data
+            try:
+                for k in keys:
+                    value = value[k]
+                return value
+            except (KeyError, TypeError):
+                return default
 
     def set(self, key: str, value: Any):
         """通过点号分隔的键设置配置值，并自动创建中间字典。"""
         keys = key.split('.')
-        data = self._data
-        for k in keys[:-1]:
-            data = data.setdefault(k, {})
-        data[keys[-1]] = value
+        with self._lock:
+            data = self._data
+            for k in keys[:-1]:
+                data = data.setdefault(k, {})
+            data[keys[-1]] = value
 
     def get_data_dir(self) -> str:
         """返回数据目录路径。"""
@@ -141,11 +147,12 @@ class ConfigManager:
             _log.warning("配置重载失败（文件可能正在写入中）: %s", e)
             return False
 
-        self._data = self._deep_merge(self._defaults, loaded)
-        for section, defaults in self._defaults.items():
-            section_data = self._data.setdefault(section, {})
-            self._apply_defaults(section_data, defaults)
-        self._last_mtime = mtime
+        with self._lock:
+            self._data = self._deep_merge(self._defaults, loaded)
+            for section, defaults in self._defaults.items():
+                section_data = self._data.setdefault(section, {})
+                self._apply_defaults(section_data, defaults)
+            self._last_mtime = mtime
         _log.info("配置已热重载: %s", self._file_path)
         if self._on_reload_callback:
             try:

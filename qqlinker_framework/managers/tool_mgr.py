@@ -1,5 +1,6 @@
 """通用工具管理器 —— 管理工具注册、配置注入与执行"""
 import asyncio
+import inspect
 import os
 import json
 import logging
@@ -287,9 +288,13 @@ class ToolManager:
         try:
             if tool.callback:
                 try:
+                    sig = inspect.signature(tool.callback)
+                    params = list(sig.parameters.keys())
+                except (ValueError, TypeError):
+                    params = []
+                if len(params) >= 3:
                     result = tool.callback(arguments, context, tool_config)
-                except TypeError:
-                    # 回退：如果回调不接受 tool_config 参数
+                else:
                     result = tool.callback(arguments, context)
                 if (
                     asyncio.iscoroutinefunction(tool.callback)

@@ -210,8 +210,6 @@ class ModuleManager:
         mod._tool_defs.clear()
 
         await getattr(mod, '_cleanup_conventions', lambda: None)()
-        async with self._lock:
-            self._loaded_modules.pop(mod.name, None)
 
     # ═══════════════════════════════════════════════════════════
     # 装饰器扫描
@@ -220,7 +218,7 @@ class ModuleManager:
     @staticmethod
     def _scan_all_decorators(mod: Module):
         """扫描 @command / @listen / @tool / @schedule 装饰器。"""
-        for _, method in inspect.getmembers(mod, predicate=inspect.ismethod):
+        for _, method in inspect.getmembers(mod, predicate=lambda m: inspect.ismethod(m) or inspect.isfunction(m)):
             if hasattr(method, '_command_info'):
                 info = method._command_info
                 mod.register_command(

@@ -89,7 +89,7 @@ class IFrameworkAdapter(ABC):
             }
         """
 
-    def resolve_player_names(self, entries: list) -> dict:  # noqa: PYL-R0201
+    def resolve_player_names(self, entries: list) -> dict:  # noqa: PYL-R0201 (abstract interface — subclasses may need self for platform-specific mappings)
         """将查询条目中的 UUID 映射为玩家名。
 
         默认实现为空映射，子类可覆盖以提供平台特定的 UUID→名字解析。
@@ -138,7 +138,7 @@ class IFrameworkAdapter(ABC):
 
     # ── 可选扩展: 跨插件 API 代理 ─────────────────────────────
 
-    def register_pre_plugin_api(  # noqa: PYL-R0201
+    def register_pre_plugin_api(  # noqa: PYL-R0201 (abstract interface — subclasses may need self for adapter-specific API registration)
         self, api_name: str, min_version: tuple = (0, 0, 0)
     ) -> bool:
         """注册 datas.json 声明的依赖插件 API。
@@ -152,7 +152,7 @@ class IFrameworkAdapter(ABC):
         """
         return False
 
-    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:  # noqa: PYL-R0201
+    def get_pre_plugin_api(self, api_name: str) -> Optional[Any]:  # noqa: PYL-R0201 (abstract interface — subclasses may need self for adapter-specific API resolution)
         """获取已注册的前置插件 API 实例。
 
         Args:
@@ -163,6 +163,6 @@ class IFrameworkAdapter(ABC):
         """
         return None
 
-    def get_pre_plugin_apis(self) -> Dict[str, Any]:  # noqa: PYL-R0201
+    def get_pre_plugin_apis(self) -> Dict[str, Any]:  # noqa: PYL-R0201 (abstract interface — subclasses may need self for adapter-specific API collection)
         """返回所有已注册的前置插件 API 字典。"""
         return {}

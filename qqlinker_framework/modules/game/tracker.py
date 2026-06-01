@@ -105,7 +105,6 @@ class PlayerTrackerModule(Module):
     name = "player_tracker"
     uid = 100  # daemon: 系统守护
     version = (1, 0, 0)
-    version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
     default_config = {

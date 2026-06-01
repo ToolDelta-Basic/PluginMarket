@@ -308,8 +308,9 @@ class AttackSpeedTracker(Module):
 
         warn = self.config.get("攻速检测.违规警告文案",
                                "§c[攻速检测] 攻击速度异常！")
+        warn_text = json.dumps(warn.format(player=player), ensure_ascii=False)
         self.adapter.send_game_command(
-            f'tellraw "{player}" {{"rawtext":[{{"text":"{warn.format(player=player)}"}}]}}'
+            f'tellraw "{player}" {{"rawtext":[{{"text":{warn_text}}}]}}'
         )
         self.adapter.send_game_command(
             f'damage "{player}" {self.config.get("攻速检测.首次惩罚扣血点数", 15)}'
@@ -404,10 +405,10 @@ class AttackSpeedTracker(Module):
 
     def _print_ranking(self):
         print("=== 攻速排行榜 ===")
-        for fname in sorted(os.listdir(self._store._dir)):  # noqa: PYL-W0212 (internal)
+        for fname in sorted(os.listdir(self._store._dir)):  # noqa: PYL-W0212 (same-package internal access — _store is a framework-internal datastore)
             if fname == "_blacklist.json":
                 continue
-            path = os.path.join(self._store._dir, fname)  # noqa: PYL-W0212
+            path = os.path.join(self._store._dir, fname)  # noqa: PYL-W0212 (same-package internal access — _store is a framework-internal datastore)
             try:
                 with open(path) as f:
                     d = json.load(f)

@@ -100,7 +100,10 @@ class RedisClient:
             **kwargs: 关键字参数。
 
         Returns:
-            命令执行结果，失败返回 None。
+            命令执行结果，连接不可用时返回 None。
+
+        Raises:
+            RedisUnavailableError: 命令执行异常（连接中断等）。
         """
         client = self.client
         if client is None:
@@ -108,6 +111,8 @@ class RedisClient:
         try:
             func = getattr(client, func_name)
             return func(*args, **kwargs)
-        except Exception:
+        except Exception as e:
             self.reset()
-            return None
+            raise RedisUnavailableError(
+                f"Redis 命令 '{func_name}' 执行失败: {e}"
+            ) from e

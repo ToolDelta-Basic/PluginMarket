@@ -124,28 +124,38 @@ class OrionBridge(Module):
 
         self._store = BanStore(self.data_dir)
 
-        self.register_command(
-            ".封禁", self._cmd_ban,
-            description="封禁玩家 <玩家名> [原因] [时长(分钟)]",
-            op_only=True,
-        )
-        self.register_command(
-            ".解封", self._cmd_unban,
-            description="解除玩家封禁 <玩家名>",
-            op_only=True,
-        )
-        self.register_command(
-            ".封禁列表", self._cmd_banlist,
-            description="查看当前封禁列表",
-            op_only=True,
-        )
-        self.register_command(
-            ".踢出", self._cmd_kick,
-            description="踢出玩家 <玩家名> [原因]",
-            op_only=True,
-        )
+        # 注册为全局服务，供其他模块调用
+        self.services.register("orion_bridge", self, uid=100,
+                               _caller="qqlinker_framework.modules.security.orion")
 
         self.listen("PlayerJoinEvent", self._on_player_join, priority=10)
+
+    # ── 机器可调用接口（其他模块绑定用）────────────────────
+
+    def add_ban_with_reason(
+        self, player: str, reason: str = "", duration: int = -1,
+    ) -> None:
+        """提供给其他模块调用的编程式封禁接口。
+
+        Args:
+            player: 玩家名。
+            reason: 封禁原因。
+            duration: 时长（分钟），-1 表示永久。
+        """
+        duration_seconds = -1 if duration <= 0 else duration * 60
+        self._store.set(player, {
+            "player": player,
+            "reason": reason or "系统封禁",
+            "duration": duration_seconds,
+            "operator": "AI_Auditor",
+        })
+        # 同时踢出在线玩家
+        self.adapter.send_game_command(
+            f'kick "{player}" §c你已被封禁：{reason or "系统封禁"}'
+        )
+        _log.info(
+            "编程式封禁 %s (时长=%d分钟): %s", player, duration, reason,
+        )
 
     # ── 进服拦截 ────────────────────────────────────────────
 

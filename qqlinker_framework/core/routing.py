@@ -21,6 +21,7 @@ class CommandRouter:
         self.config_mgr = config_mgr
         self.message_mgr = message_mgr
         self._cooldowns: dict[str, dict[int, float]] = {}
+        self._cooldown_check_count = 0
 
     async def handle_message(self, event):
         """处理群消息事件，查找匹配命令并执行。"""
@@ -36,6 +37,11 @@ class CommandRouter:
             cooldown = cmd_info.get("cooldown", 0)
             if cooldown > 0:
                 now = time.time()
+                # 定期清理过期条目（每 100 次检查触发一次）
+                if self._cooldown_check_count >= 100:
+                    self._cleanup_cooldowns(now)
+                    self._cooldown_check_count = 0
+                self._cooldown_check_count += 1
                 user_cd = self._cooldowns.setdefault(trigger, {})
                 last = user_cd.get(event.user_id, 0)
                 if now - last < cooldown:
@@ -53,7 +59,6 @@ class CommandRouter:
                         f"⏳ 命令冷却中，请 {remain:.0f} 秒后再试。{hint['COMMAND_COOLDOWN']}"
                     )
                     return True
-                user_cd[event.user_id] = now
 
             # ── 权限检查 ──
             authorized = True
@@ -94,6 +99,9 @@ class CommandRouter:
             try:
                 await cmd_info["callback"](ctx)
                 event.handled = True
+                # 执行成功后才记录冷却
+                if cooldown > 0:
+                    user_cd[event.user_id] = now
             except Exception as e:
                 logging.getLogger(__name__).error(
                     "命令 %s 执行异常: %s。%s",
@@ -107,6 +115,16 @@ class CommandRouter:
                     pass
             return True
         return False
+
+    def _cleanup_cooldowns(self, now: float):
+        """清理过期的冷却条目。"""
+        for trigger in list(self._cooldowns):
+            user_cd = self._cooldowns[trigger]
+            expired = [uid for uid, t in user_cd.items() if now - t > 120]
+            for uid in expired:
+                del user_cd[uid]
+            if not user_cd:
+                del self._cooldowns[trigger]
 
     def _check_role(self, role: str, user_id: int) -> bool:
         """检查用户是否属于指定角色。

@@ -21,7 +21,6 @@ class ACGImageModule(Module):
 
     name = "acg_image"
     uid = 2000  # app: 业务模块
-    version = (1, 0, 0)
     version = (1, 0, 1)
     dependencies: list[str] = []
     required_services = ["message", "config"]

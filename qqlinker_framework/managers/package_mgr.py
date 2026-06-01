@@ -118,6 +118,7 @@ class PackageManager:
                     )
                 except subprocess.TimeoutExpired:
                     proc.kill()
+                    proc.wait()
                     logger.error("安装 %s 超时 (源 %s)。可能原因：① 网络连接慢 ② pip 源响应延迟。", pkg, mirror)
                 except Exception as e:
                     logger.error(

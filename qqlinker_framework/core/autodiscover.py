@@ -21,6 +21,7 @@
 import importlib
 import logging
 import pkgutil
+import re
 from typing import Dict, List, Optional, Type
 from .module import Module
 from .error_hints import hint
@@ -53,14 +54,14 @@ def _walk_package(package, result: List[Type[Module]]):
                 sub_pkg = importlib.import_module(modname)
                 _walk_package(sub_pkg, result)
             except Exception as e:
-                logger.exception(  # noqa: E122
+                logger.exception(  # noqa: E122 (multi-line continuation alignment — indented to match nested with/try structure)
                 "导入子包 %s 失败: %s。%s",
                 modname, e, hint["MODULE_IMPORT_FAILED"])
         else:
             try:
                 mod = importlib.import_module(modname)
             except Exception as e:
-                logger.exception(  # noqa: E122
+                logger.exception(  # noqa: E122 (multi-line continuation alignment — indented to match nested with/try structure)
                 "导入模块 %s 失败: %s。%s",
                 modname, e, hint["MODULE_IMPORT_FAILED"])
                 continue
@@ -267,18 +268,32 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         return None
 
     fname = url.split("/")[-1].split("?")[0]
+    # 文件名路径穿越防护：仅保留安全字符
+    fname = re.sub(r'[^a-zA-Z0-9_.\-]', '', _os.path.basename(fname))
+    if not fname:
+        logger.error("模块文件名无效")
+        return None
 
     if fname.endswith(".zip"):
         # ZIP: 解压到子目录
         base = fname[:-4]
-        target = _os.path.join(mod_dir, base)
+        target = _os.path.abspath(_os.path.join(mod_dir, base))
         try:
             with _zipfile.ZipFile(_BytesIO(data)) as zf:
+                # Zip Slip 防护：校验每个条目路径在 target 内
+                for info in zf.infolist():
+                    member_path = _os.path.abspath(_os.path.join(target, info.filename))
+                    if not member_path.startswith(target + _os.sep) and member_path != target:
+                        logger.error(
+                            "Zip Slip 攻击拦截: 条目 %s 试图逃逸到 %s",
+                            info.filename, member_path,
+                        )
+                        return None
                 zf.extractall(target)
             logger.info("模块 %s 已安装到 %s", base, target)
             return base
         except Exception as e:
-            logger.error(  # noqa: E122
+            logger.error(  # noqa: E122 (multi-line continuation alignment — indented to match nested try/except structure)
                 "解压模块失败: %s。可能原因：① ZIP 文件损坏 ② 磁盘空间不足。%s",
                 e, hint["MARKET_DOWNLOAD_FAILED"])
             return None

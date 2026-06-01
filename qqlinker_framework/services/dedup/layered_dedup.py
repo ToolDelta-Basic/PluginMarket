@@ -13,6 +13,7 @@ from typing import Optional
 from .config import DedupConfig
 from .redis_client import RedisClient
 from .bloom_filter import BloomFilter
+from .exceptions import RedisUnavailableError
 
 
 class _TTLCache:
@@ -133,25 +134,35 @@ class LayeredDedup:
     def check_and_add_id(self, msg_id: str) -> bool:
         """基于消息 ID 的去重检查。修复竞态：先 Redis 后本地，正确处理降级。"""
         if self.redis:
-            result = self.redis.execute(
-                "set",
-                f"dedup:msgid:{msg_id}",
-                "1",
-                ex=self.config.redis_id_ttl,
-                nx=True,
-            )
+            try:
+                result = self.redis.execute(
+                    "set",
+                    f"dedup:msgid:{msg_id}",
+                    "1",
+                    ex=self.config.redis_id_ttl,
+                    nx=True,
+                )
+            except RedisUnavailableError:
+                # Redis 命令执行异常，降级到本地缓存
+                result = None
             if result is True:
                 with self._local_lock:
                     self._local_id_cache[msg_id] = time.time()
                 return True
             if result is None:
-                if self.config.fallback_to_local_on_redis_failure:
-                    with self._local_lock:
-                        if msg_id in self._local_id_cache:
-                            self.stats["local_hits"] += 1
-                            return False
-                        self._local_id_cache[msg_id] = time.time()
-                    return True
+                # 区分：Redis 不可用 (client is None) vs 键已存在 (SET NX 拒绝)
+                if self.redis.client is None:
+                    # Redis 连接失败，降级到本地
+                    if self.config.fallback_to_local_on_redis_failure:
+                        with self._local_lock:
+                            if msg_id in self._local_id_cache:
+                                self.stats["local_hits"] += 1
+                                return False
+                            self._local_id_cache[msg_id] = time.time()
+                        return True
+                    return False
+                # 键已存在（SET NX 拒绝），视为重复
+                self.stats["redis_hits"] += 1
                 return False
             self.stats["redis_hits"] += 1
             return False
@@ -179,20 +190,30 @@ class LayeredDedup:
                 return True
 
         if self.redis:
-            result = self.redis.execute(
-                "set",
-                f"dedup:content:{fingerprint}",
-                "1",
-                ex=self.config.redis_content_ttl,
-                nx=True,
-            )
+            try:
+                result = self.redis.execute(
+                    "set",
+                    f"dedup:content:{fingerprint}",
+                    "1",
+                    ex=self.config.redis_content_ttl,
+                    nx=True,
+                )
+            except RedisUnavailableError:
+                # Redis 命令执行异常，降级到本地缓存
+                result = None
             if result is None:
-                if self.config.fallback_to_local_on_redis_failure:
-                    with self._local_lock:
-                        if fingerprint in self._local_content_cache:
-                            return False
-                        self._local_content_cache[fingerprint] = time.time()
-                    return True
+                # 区分：Redis 不可用 vs 键已存在 (SET NX 拒绝)
+                if self.redis.client is None:
+                    # Redis 连接失败，降级到本地
+                    if self.config.fallback_to_local_on_redis_failure:
+                        with self._local_lock:
+                            if fingerprint in self._local_content_cache:
+                                return False
+                            self._local_content_cache[fingerprint] = time.time()
+                        return True
+                    return False
+                # 键已存在，视为重复
+                self.stats["redis_hits"] += 1
                 return False
             if result is True:
                 with self._local_lock:

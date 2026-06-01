@@ -9,7 +9,12 @@ import logging
 import os
 from typing import Type, Optional, List
 
-from .services import ServiceContainer
+from .services import (
+    ServiceContainer,
+    UID_ROOT,
+    UID_DAEMON_MIN,
+    UID_SERVICE_MIN,
+)
 from .bus import EventBus
 from .module import Module
 from .routing import CommandRouter
@@ -45,7 +50,7 @@ class FrameworkHost:
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
         self.adapter = adapter
-        self.services = ServiceContainer(uid=0)
+        self.services = ServiceContainer(uid=UID_ROOT)
         self.event_bus = EventBus()
         self.data_path = data_path or "."
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -57,23 +62,23 @@ class FrameworkHost:
         self.tool_mgr = ToolManager()
 
         # root 级 (uid=0): 终端持有者/内核开发者
-        self.services.register("event_bus", self.event_bus, uid=0,
+        self.services.register("event_bus", self.event_bus, uid=UID_ROOT,
                                _caller="qqlinker_framework.core.host")
         # daemon 级 (uid=1): 框架内部守护 — 管理器
-        self.services.register("config", self.config_mgr, uid=1,
+        self.services.register("config", self.config_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("package", self.package_mgr, uid=1,
+        self.services.register("package", self.package_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("command", self.command_mgr, uid=1,
+        self.services.register("command", self.command_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("tool", self.tool_mgr, uid=1,
+        self.services.register("tool", self.tool_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("adapter", adapter, uid=1,
+        self.services.register("adapter", adapter, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
 
         self.module_mgr = ModuleManager(self)
         self.message_mgr = MessageManager(adapter)
-        self.services.register("message", self.message_mgr, uid=1,
+        self.services.register("message", self.message_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
 
         # 事件桥接 + 控制台命令
@@ -196,11 +201,11 @@ class FrameworkHost:
             redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0"),
         )
         self.dedup = LayeredDedup(dedup_cfg)
-        self.services.register("dedup", self.dedup, uid=1000,
+        self.services.register("dedup", self.dedup, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
         debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
-        self.services.register("debug", debug_engine, uid=1000,
+        self.services.register("debug", debug_engine, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
         self.tool_mgr.init_with_services(self.services)
@@ -225,7 +230,7 @@ class FrameworkHost:
 
         source_urls = market_cfg.get("源列表", ["http://127.0.0.1:8380"])
         self.market_aggregator = MarketSourceAggregator(source_urls)
-        self.services.register("market", self.market_aggregator, uid=1000,
+        self.services.register("market", self.market_aggregator, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
         # WebSocket
@@ -285,9 +290,14 @@ class FrameworkHost:
         log_dir = os.path.join(self.data_path, "日志")
         os.makedirs(log_dir, exist_ok=True)
         file_path = os.path.join(log_dir, "聊天记录.log")
-        if not any(isinstance(h, logging.FileHandler)
-                   and getattr(h, 'baseFilename', '') == os.path.abspath(file_path)
-                   for h in access_log.handlers):
+        abs_target = os.path.abspath(file_path)
+        if not any(
+            isinstance(h, logging.FileHandler)
+            and hasattr(h, 'baseFilename')
+            and os.path.exists(getattr(h, 'baseFilename', ''))
+            and os.path.samefile(getattr(h, 'baseFilename', ''), abs_target)
+            for h in access_log.handlers
+        ):
             fh = logging.FileHandler(file_path, encoding="utf-8")
             fh.setLevel(logging.INFO)
             fh.setFormatter(logging.Formatter(
@@ -358,3 +368,8 @@ class FrameworkHost:
     async def reload_module(self, module_name: str) -> bool:
         """重载指定模块。"""
         return await self.module_mgr.reload_module(module_name)
+
+    @property
+    def main_loop(self):
+        """公开主事件循环引用（供 event_bridge 等内部组件使用）。"""
+        return self._main_loop

@@ -26,6 +26,7 @@ import asyncio
 import json
 import logging
 import os
+import tempfile
 import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -56,9 +57,25 @@ class JsonCollection:
                 self._data = {}
 
     def _save(self):
-        """持久化当前数据到磁盘。"""
-        with open(self._file, "w", encoding="utf-8") as f:
-            json.dump(self._data, f, ensure_ascii=False, indent=2)
+        """持久化当前数据到磁盘（原子写入：临时文件 + os.replace）。"""
+        dirname = os.path.dirname(self._file) or "."
+        os.makedirs(dirname, exist_ok=True)
+        tmpfd, tmppath = tempfile.mkstemp(
+            dir=dirname,
+            prefix=os.path.basename(self._file) + ".",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(tmpfd, "w", encoding="utf-8") as f:
+                json.dump(self._data, f, ensure_ascii=False, indent=2)
+            os.replace(tmppath, self._file)
+        except Exception:
+            # 清理临时文件，避免泄漏
+            try:
+                os.unlink(tmppath)
+            except OSError:
+                pass
+            raise
 
     # ── CRUD ──
 
@@ -354,7 +371,7 @@ class Module(ABC):
             self.message = services.get("message")
         except KeyError:
             pass
-        self.qq = _QQProxy(self.adapter, self.message)
+        self.qq = _QQProxy(self.adapter, self.services)
 
     # ── 属性 ──
 
@@ -591,24 +608,40 @@ class _GameProxy:
 class _QQProxy:
     """QQ 操作代理: self.qq.send_group(gid, text) / self.qq.send_private(uid, text)。"""
 
-    __slots__ = ("_adapter", "_msg")
+    __slots__ = ("_adapter", "_services")
 
-    def __init__(self, adapter, message_svc=None):
+    def __init__(self, adapter, services=None):
         self._adapter = adapter
-        self._msg = message_svc
+        self._services = services
+
+    @property
+    def _msg(self):
+        """动态获取 message 服务（避免构造时捕获 None）。"""
+        if self._services:
+            try:
+                return self._services.get("message")
+            except (KeyError, PermissionError):
+                return None
+        return None
 
     async def send_group(self, group_id: int, text: str):
         """发送群消息。"""
         if self._msg:
             await self._msg.send_group(group_id, text)
         elif self._adapter and hasattr(self._adapter, 'send_group_msg'):
-            self._adapter.send_group_msg(group_id, text)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None, self._adapter.send_group_msg, group_id, text
+            )
         else:
             logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (group_id=%s)", group_id)
 
     async def send_private(self, user_id: int, text: str):
         """发送私聊消息。"""
         if self._adapter and hasattr(self._adapter, 'send_private_msg'):
-            self._adapter.send_private_msg(user_id, text)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None, self._adapter.send_private_msg, user_id, text
+            )
         else:
             logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (user_id=%s)", user_id)

@@ -149,14 +149,14 @@ class WsClient:
                     continue
 
             try:
-                header = (
-                    {"Authorization": f"Bearer {self.token}"}
-                    if self.token else None
-                )
+                # NapCat/OneBot 使用 access_token URL 参数
+                addr = self.address
+                if self.token:
+                    sep = "&" if "?" in addr else "?"
+                    addr = f"{addr}{sep}access_token={self.token}"
                 ws_mod = _get_websocket()
                 self.ws = ws_mod.WebSocketApp(
-                    self.address,
-                    header=header,
+                    addr,
                     on_open=self._on_open,
                     on_message=self._on_message,
                     on_error=self._on_error,
@@ -231,7 +231,7 @@ class WsClient:
         )
 
     def send_group_msg(self, group_id: int, message: str) -> bool:
-        """发送群消息（线程安全）。断路器 OPEN 时快速失败。"""
+        """发送群消息。TOCTOU 已防御: ws 引用捕获 + try/except。"""
         if self._circuit_state == CircuitState.OPEN:
             logging.getLogger(__name__).warning(
                 "断路器已熔断，消息发送被跳过 (group_id=%s)", group_id
@@ -255,7 +255,7 @@ class WsClient:
             return False
 
     def send_private_msg(self, user_id: int, message: str) -> bool:
-        """发送私聊消息（线程安全）。断路器 OPEN 时快速失败。"""
+        """发送私聊消息。TOCTOU 已防御: ws 引用捕获 + try/except。"""
         if self._circuit_state == CircuitState.OPEN:
             logging.getLogger(__name__).warning(
                 "断路器已熔断，消息发送被跳过 (user_id=%s)", user_id

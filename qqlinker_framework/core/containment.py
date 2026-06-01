@@ -14,11 +14,12 @@
   L4: plugin_wrapper()     — 插件入口的外层兜底（捕获一切）
 ═══════════════════════════════════════════════════════════════════════════
 """
-# noqa: PYL-R0201
+# noqa: PYL-R0201 (containment pattern — sync wrappers extract async detection, not a method usability issue)
 
 import asyncio
 import functools
 import logging
+import threading
 import traceback
 from typing import Any, Callable, Optional, TypeVar
 
@@ -27,6 +28,8 @@ F = TypeVar("F", bound=Callable)
 _log = logging.getLogger(__name__)
 
 # ── 全局状态 ─────────────────────────────────────────────────
+
+_containment_lock = threading.Lock()
 
 _shutdown_initiated = False
 """是否已发起安全卸载流程。防止多次触发。"""
@@ -40,13 +43,15 @@ CRITICAL_FAILURE_THRESHOLD = 3
 
 def reset_failure_count():
     """重置关键失败计数器。"""
-    global _critical_failure_count  # noqa: PYL-W0603 (state machine)
-    _critical_failure_count = 0
+    global _critical_failure_count  # noqa: PYL-W0603 (containment state machine, intentional)
+    with _containment_lock:
+        _critical_failure_count = 0
 
 
 def is_shutting_down() -> bool:
     """是否正在安全卸载中。"""
-    return _shutdown_initiated
+    with _containment_lock:
+        return _shutdown_initiated
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -106,13 +111,19 @@ def safe_call(
 
 def _handle_caught(e: Exception, context: str, critical: bool):
     """统一处理捕获的异常。"""
-    global _critical_failure_count  # noqa: PYL-W0603 (state machine)
+    global _critical_failure_count  # noqa: PYL-W0603 (containment state machine, intentional)
 
     from .error_hints import hint, ErrorMode
 
+    with _containment_lock:
+        if critical:
+            _critical_failure_count += 1
+            count = _critical_failure_count
+        else:
+            count = 0
+
     if critical:
-        _critical_failure_count += 1
-        prefix = f"[关键 #{_critical_failure_count}] "
+        prefix = f"[关键 #{count}] "
     else:
         prefix = "[非关键] "
 
@@ -127,11 +138,11 @@ def _handle_caught(e: Exception, context: str, critical: bool):
             prefix, context, e, hint["UNEXPECTED_ERROR"],
         )
 
-    if _critical_failure_count >= CRITICAL_FAILURE_THRESHOLD:
+    if critical and count >= CRITICAL_FAILURE_THRESHOLD:
         _log.critical(
             "关键路径连续失败 %d 次，触发自动卸载。"
             "框架将尝试安全退出，ToolDelta 不受影响。",
-            _critical_failure_count,
+            count,
         )
         trigger_safe_shutdown()
 
@@ -187,7 +198,7 @@ _shutdown_callback: Optional[Callable] = None
 
 def register_shutdown_callback(callback: Callable):
     """注册安全卸载回调（由 FrameworkHost 在启动时设置）。"""
-    global _shutdown_callback  # noqa: PYL-W0603 (state machine)
+    global _shutdown_callback  # noqa: PYL-W0603 (containment state machine, intentional)
     _shutdown_callback = callback
 
 
@@ -197,10 +208,11 @@ def trigger_safe_shutdown():
     如果已注册回调，调用之；否则只标记状态。
     此函数可能被多次调用（幂等）。
     """
-    global _shutdown_initiated  # noqa: PYL-W0603 (state machine)
-    if _shutdown_initiated:
-        return
-    _shutdown_initiated = True
+    global _shutdown_initiated  # noqa: PYL-W0603 (containment state machine, intentional)
+    with _containment_lock:
+        if _shutdown_initiated:
+            return
+        _shutdown_initiated = True
 
     _log.warning(
         "⚡ 框架安全卸载已触发。ToolDelta 将继续正常运行，本插件将退出。"
@@ -276,7 +288,7 @@ def wrap_all_methods(obj: Any, prefix: str = "on_", is_critical: bool = False):
 
         ctx = f"{type(obj).__name__}.{name}"
         safe_method = safe_handler(method, context=ctx, is_critical=is_critical)
-        safe_method._contained = True  # type: ignore[attr-defined]  # noqa: PYL-W0212 (internal marker)
+        safe_method._contained = True  # type: ignore[attr-defined]  # noqa: PYL-W0212 (same-package internal access, marker flag)
         setattr(obj, name, safe_method)
         wrapped.append(name)
 

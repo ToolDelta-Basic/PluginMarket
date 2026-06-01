@@ -48,10 +48,10 @@ class EventBridge:
     def _publish(self, event, label: str):
         """线程安全地发布事件到主循环。"""
         host = self.host
-        if host._main_loop and host._main_loop.is_running():  # noqa: PYL-W0212
+        if host.main_loop and host.main_loop.is_running():
             try:
                 asyncio.run_coroutine_threadsafe(
-                    host.event_bus.publish(event), host._main_loop,
+                    host.event_bus.publish(event), host.main_loop,
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
@@ -65,6 +65,8 @@ class EventBridge:
         ok, data, reason = validate_onebot_event(raw)
         if not ok:
             _log.debug("丢弃无效 WS 消息: %s", reason)
+            return
+        if data.get("post_type") != "message":
             return
 
         host = self.host
@@ -96,9 +98,9 @@ class EventBridge:
             message=text.strip(),
             raw_data=data["_raw"],
         )
-        if host._main_loop and host._main_loop.is_running():  # noqa: PYL-W0212
+        if host.main_loop and host.main_loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                host.event_bus.publish(event), host._main_loop,
+                host.event_bus.publish(event), host.main_loop,
             )
 
     @staticmethod

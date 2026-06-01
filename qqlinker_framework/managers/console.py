@@ -133,8 +133,8 @@ class ConsoleCommands:
             if not host.market_aggregator:
                 print("市场聚合器未配置")
             else:
-                print(f"已配置 {len(host.market_aggregator._sources)} 个市场源:")  # noqa: PYL-W0212
-                for i, s in enumerate(host.market_aggregator._sources, 1):  # noqa: PYL-W0212
+                print(f"已配置 {len(host.market_aggregator._sources)} 个市场源:")  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
+                for i, s in enumerate(host.market_aggregator._sources, 1):  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
                     print(f"  {i}. {s}")
         elif action == "refresh":
             if not host.market_aggregator:
