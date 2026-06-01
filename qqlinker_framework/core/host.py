@@ -85,15 +85,19 @@ class FrameworkHost:
         self.market_server = None
         self.market_aggregator = None
         self._modules: List[Module] = []
+        self._router = None
         self._game_events_bridged = False
 
     # ── 模块发现与注册 ──
 
     def register_module(self, module_cls: Type[Module]):
+        """注册单个模块类。"""
         self.module_mgr.register(module_cls)
 
-    def register_modules_from_package(self,
-                                       package_name: str = "qqlinker_framework.modules"):
+    def register_modules_from_package(
+        self, package_name: str = "qqlinker_framework.modules"
+    ):
+        """从 Python 包自动发现并注册模块。"""
         classes = discover_from_package(package_name)
         if not classes:
             logging.getLogger(__name__).warning("未发现任何模块")
@@ -104,6 +108,7 @@ class FrameworkHost:
             "从 '%s' 自动发现并注册了 %d 个模块", package_name, len(classes))
 
     def register_external_modules(self):
+        """从外部目录扫描并注册模块。"""
         classes = discover_from_files(self.data_path)
         if not classes:
             logging.getLogger(__name__).debug("未发现外部模块")
@@ -121,9 +126,13 @@ class FrameworkHost:
         logger = logging.getLogger(__name__)
 
         data_dir = self.data_path
-        for d in [os.path.join(data_dir, "模块"), os.path.join(data_dir, "工具"),
-                   os.path.join(data_dir, "工具", "工具数据"),
-                   os.path.join(data_dir, "第三方库")]:
+        dirs = [
+            os.path.join(data_dir, "模块"),
+            os.path.join(data_dir, "工具"),
+            os.path.join(data_dir, "工具", "工具数据"),
+            os.path.join(data_dir, "第三方库"),
+        ]
+        for d in dirs:
             os.makedirs(d, exist_ok=True)
 
         self._ensure_log_handlers()
@@ -168,7 +177,7 @@ class FrameworkHost:
         # 配置热重载（watcher 线程感知 → 通过 run_coroutine_threadsafe 安全投递）
         self.config_mgr.start_watching(
             interval=2.0,
-            on_reload=lambda: self._on_config_reloaded(),
+            on_reload=self._on_config_reloaded,
         )
 
         ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
@@ -264,11 +273,11 @@ class FrameworkHost:
         self._game_events_bridged = True
         adapter = self.adapter
         if hasattr(adapter, 'on_game_chat'):
-            adapter.on_game_chat(lambda p, m: self.bridge.on_game_chat(p, m))
+            adapter.on_game_chat(self.bridge.on_game_chat)
         if hasattr(adapter, 'on_player_join'):
-            adapter.on_player_join(lambda p: self.bridge.on_player_join(p))
+            adapter.on_player_join(self.bridge.on_player_join)
         if hasattr(adapter, 'on_player_leave'):
-            adapter.on_player_leave(lambda p: self.bridge.on_player_leave(p))
+            adapter.on_player_leave(self.bridge.on_player_leave)
 
     def _ensure_log_handlers(self):
         """确保 access 日志输出到文件。"""
@@ -339,10 +348,13 @@ class FrameworkHost:
     # ── 热插拔 API ──
 
     async def unload_module(self, module_name: str) -> bool:
+        """卸载指定模块。"""
         return await self.module_mgr.unload_module(module_name)
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
+        """热加载新模块类。"""
         return await self.module_mgr.load_module(module_cls)
 
     async def reload_module(self, module_name: str) -> bool:
+        """重载指定模块。"""
         return await self.module_mgr.reload_module(module_name)

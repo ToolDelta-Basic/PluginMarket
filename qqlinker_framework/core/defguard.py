@@ -297,16 +297,15 @@ def safe_config_get(
     except Exception:
         return default
 
-    if expected_type is not None and value is not None:
-        if not isinstance(value, expected_type):
-            _log.warning(
-                "配置类型不匹配 [%s]: 期望 %s, 实际 %s (%s)，使用默认值",
-                key,
-                expected_type.__name__,
-                type(value).__name__,
-                repr(value)[:80],
+    if expected_type is not None and value is not None and not isinstance(value, expected_type):
+        _log.warning(
+            "配置类型不匹配 [%s]: 期望 %s, 实际 %s (%s)，使用默认值",
+            key,
+            expected_type.__name__,
+            type(value).__name__,
+            repr(value)[:80],
             )
-            return default
+        return default
 
     return value
 
@@ -344,7 +343,9 @@ def safe_command_args(raw_text: str, max_args: int = 20) -> list:
 
 # ── 批量验证工具 ──────────────────────────────────────────────
 
-def validate_game_command(cmd: str, allowed: List[str], dangerous: List[str]) -> Tuple[bool, str]:
+def validate_game_command(
+    cmd: str, allowed: List[str], dangerous: List[str]
+) -> Tuple[bool, str]:
     """验证游戏指令是否在允许列表且不含危险参数。
 
     Args:

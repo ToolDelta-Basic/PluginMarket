@@ -160,7 +160,8 @@ class ErrorMode:
         # 命令行 > 环境变量 > config.json > 默认
         for arg in sys.argv:
             if arg.startswith("--error-mode="):
-                cls._mode = cls.DEBUG if arg.split("=", 1)[1].lower() in ("debug", "d") else cls.FRIENDLY
+                val = arg.split("=", 1)[1].lower()
+                cls._mode = cls.DEBUG if val in ("debug", "d") else cls.FRIENDLY
                 return cls._mode
         env = os.environ.get("QQLINKER_ERROR_MODE", "").lower()
         if env in ("debug", "d"):

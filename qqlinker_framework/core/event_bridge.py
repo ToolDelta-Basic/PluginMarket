@@ -29,18 +29,21 @@ class EventBridge:
 
     def on_game_chat(self, player_name: str, message: str):
         """游戏聊天 → GameChatEvent。"""
-        self._publish(GameChatEvent(player_name=player_name, message=message),
-                       "游戏聊天事件桥接")
+        self._publish(
+            GameChatEvent(player_name=player_name, message=message),
+            "游戏聊天事件桥接")
 
     def on_player_join(self, player_name: str):
         """玩家加入 → PlayerJoinEvent。"""
-        self._publish(PlayerJoinEvent(player_name=player_name),
-                       "玩家加入事件桥接")
+        self._publish(
+            PlayerJoinEvent(player_name=player_name),
+            "玩家加入事件桥接")
 
     def on_player_leave(self, player_name: str):
         """玩家离开 → PlayerLeaveEvent。"""
-        self._publish(PlayerLeaveEvent(player_name=player_name),
-                       "玩家离开事件桥接")
+        self._publish(
+            PlayerLeaveEvent(player_name=player_name),
+            "玩家离开事件桥接")
 
     def _publish(self, event, label: str):
         """线程安全地发布事件到主循环。"""

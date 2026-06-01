@@ -18,7 +18,6 @@
 import asyncio
 import functools
 import logging
-import sys
 import traceback
 from typing import Any, Callable, Optional, TypeVar
 
@@ -89,7 +88,7 @@ def safe_call(
         try:
             return await func(*args, **kwargs)
         except asyncio.CancelledError:
-            raise
+            return None
         except Exception as e:
             _handle_caught(e, context, raise_on_critical)
             if on_error:

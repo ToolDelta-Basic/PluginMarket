@@ -544,7 +544,7 @@ class _ConfigProxy:
 
 
 class _GameProxy:
-    """游戏操作代理: self.game.say(target, text) / self.game.cmd(...) / self.game.players 等。"""
+    """游戏操作代理: self.game.say/send/cmd/players。"""
 
     __slots__ = ("_adapter",)
 

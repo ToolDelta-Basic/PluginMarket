@@ -43,6 +43,7 @@ class EventBus:
         self._sync_thread.start()
 
     def _run_sync_loop(self):
+        """后台线程的事件循环。"""
         asyncio.set_event_loop(self._sync_loop)
         self._sync_loop.run_forever()
 
