@@ -1,0 +1,85 @@
+qqlinker_framework/                          v1.3.0
+├── __init__.py                               插件入口 + Plugin桩类 + CLI
+├── __main__.py                               测试模式启动器
+├── datas.json                                前置插件依赖声明
+│
+├── core/                                     微内核（零第三方依赖）
+│   ├── host.py                               FrameworkHost 核心调度器
+│   ├── bus.py                                EventBus 事件总线 (CoW)
+│   ├── module.py                             Module 基类 约定优于配置
+│   ├── services.py                           ServiceContainer UID 分层权限
+│   ├── containment.py                        异常隔离层 (L1~L4)
+│   ├── defguard.py                           防御性输入验证层
+│   ├── error_hints.py                        用户友好错误提示库
+│   ├── event_bridge.py                       游戏↔QQ 事件桥接
+│   ├── decorators.py                         声明式装饰器 (@command/@listen/@tool)
+│   ├── events.py                             标准事件定义
+│   ├── context.py                            CommandContext
+│   ├── routing.py                            CommandRouter 权限+角色+冷却
+│   └── autodiscover.py                       模块自动发现+依赖排序
+│
+├── managers/                                 管理器层（零第三方依赖）
+│   ├── config_mgr.py                         ConfigManager 配置+热重载
+│   ├── package_mgr.py                        PackageManager 依赖管理
+│   ├── module_mgr.py                         ModuleManager 模块生命周期
+│   ├── command_mgr.py                        CommandManager 命令注册
+│   ├── tool_mgr.py                           ToolManager AI工具
+│   ├── message_mgr.py                        MessageManager 消息队列
+│   └── console.py                            ConsoleCommands (qqdeps/qqhealth)
+│
+├── adapters/                                 平台适配器层
+│   ├── base.py                               IFrameworkAdapter 接口
+│   └── tooldelta_adapter.py                  ToolDelta 适配器
+│
+├── services/                                 服务引擎层（允许第三方依赖）
+│   ├── ws_client.py                          WebSocket 客户端 + 断路器
+│   ├── debug_engine.py                       调试监控引擎
+│   ├── market_server/                        模块市场
+│   │   ├── signer.py                         HMAC 签名
+│   │   ├── handler.py                        REST API 处理器
+│   │   └── server.py                         HTTP 服务 + 多源聚合
+│   └── dedup/                                去重引擎
+│       ├── layered_dedup.py                  分层去重
+│       ├── bloom_filter.py                   布隆过滤器
+│       ├── redis_client.py                   Redis 客户端
+│       ├── config.py                         配置
+│       └── exceptions.py                     异常定义
+│
+├── modules/                                  业务模块层
+│   ├── ai/         uid=100 (daemon)
+│   │   ├── core.py                           AI LLM 对话核心
+│   │   ├── security.py                       AI 审计增强
+│   │   ├── llm_client.py                     LLM 客户端工厂
+│   │   ├── auditor.py                        审核器
+│   │   └── tools/                            AI 工具集
+│   │       ├── search.py                     web_search
+│   │       ├── scraper.py                    web_scraper
+│   │       ├── image.py                      image_generation
+│   │       └── tts.py                        text_to_speech
+│   ├── game/                                 游戏功能
+│   │   ├── admin.py        uid=100           .在线 .指令 .封禁
+│   │   ├── forwarder.py    uid=100           消息双向转发
+│   │   ├── tracker.py      uid=100           玩家追踪
+│   │   ├── monitor.py      uid=1000          TPS 监控
+│   │   ├── binding.py      uid=2000          玩家-QQ绑定
+│   │   └── acg_image.py    uid=2000          随机二次元图片
+│   ├── security/                             安全
+│   │   ├── orion.py        uid=100           自主封禁系统
+│   │   └── as_tracker.py   uid=1000          攻速反作弊检测
+│   ├── logging/                              日志
+│   │   └── chat.py         uid=100           全局聊天日志
+│   └── system/                               系统工具
+│       ├── auth.py         uid=100           .uid/.grant/.sudo/.approve
+│       ├── help.py         uid=2000          .帮助 命令
+│       ├── persona.py      uid=2000          用户人设记忆
+│       └── ping.py         uid=2000          .ping 测试
+│
+├── testing/                                  测试工具（不打包到生产）
+│   ├── cli.py                                测试模式命令行
+│   ├── mock_adapter.py                       Mock 适配器
+│   └── runner.py                             测试运行器 (32个测试)
+│
+└── docs/                                     文档
+    ├── API文档.md
+    ├── 模块开发指南.md
+    └── 平台迁移说明.md
