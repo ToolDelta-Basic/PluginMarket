@@ -309,7 +309,9 @@ class Module(ABC):
         self._tool_defs: list = []
 
         # ── 防提权: 根据声明的 uid 自动判断层级并校验 ──
-        if self.uid <= 999:
+        if self.uid <= 0:
+            layer = "kernel"
+        elif self.uid <= 999:
             layer = "daemon"
         elif self.uid <= 1999:
             layer = "service"
@@ -501,6 +503,30 @@ class Module(ABC):
         """模块停止时清理。框架自动停止定时任务。"""
         await self._cleanup_conventions()
 
+    # ── 崩溃恢复约定 ──
+
+    def checkpoint(self) -> dict | None:
+        """崩溃恢复检查点。
+
+        覆写此方法返回需要持久化的关键状态（如会话历史、计数器等）。
+        框架每 30 秒调用一次并原子写入磁盘。
+
+        Returns:
+            可 JSON 序列化的字典，None 表示无需检查点。
+        """
+        return None
+
+    async def restore_checkpoint(self, data: dict) -> None:
+        """从检查点恢复状态。
+
+        框架在崩溃后启动恢复模式时调用。
+        覆写此方法以从 data 中恢复关键状态。
+
+        Args:
+            data: checkpoint() 返回的数据字典。
+        """
+        pass
+
     # ── 声明式 API ──
 
     def register_command(
@@ -514,6 +540,7 @@ class Module(ABC):
         required_role: str = "",
         argument_hint: str = "",
         cooldown: float | None = None,
+        min_uid: int = 3000,
     ):
         """注册一个命令处理器。"""
         if cooldown is None:
@@ -527,6 +554,7 @@ class Module(ABC):
             "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown,
+            "min_uid": min_uid,
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0):
@@ -600,6 +628,12 @@ class _ConfigProxy:
 
     def get(self, key: str, default=None):
         return self._cfg.get(key, default)
+
+    def set(self, key: str, value):
+        return self._cfg.set(key, value)
+
+    def save(self):
+        return self._cfg.save()
 
 
 class _GroupConfigProxy:

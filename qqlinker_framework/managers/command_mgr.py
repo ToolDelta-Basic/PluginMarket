@@ -19,6 +19,7 @@ class CommandManager:
         required_role: str = "",
         argument_hint: str = "",
         cooldown: float = 0.0,
+        min_uid: int = 3000,
         plugin_name: str = "core",
     ):
         """注册一条命令。"""
@@ -31,6 +32,7 @@ class CommandManager:
             "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown,
+            "min_uid": min_uid,
             "plugin": plugin_name,
         }
         self._commands[trigger] = info

@@ -53,6 +53,7 @@ UID_NOBODY = 3000        # 第三方/未知模块起始
 # nobody : 3000+
 
 LAYER_ALLOWED_UID_RANGE: Dict[str, range] = {
+    "kernel": range(UID_ROOT, UID_ROOT + 1),  # uid=0 仅内核可用
     "daemon": range(UID_DAEMON_MIN, UID_DAEMON_MAX + 1),
     "service": range(UID_SERVICE_MIN, UID_SERVICE_MAX + 1),
     "app": range(UID_APP_MIN, UID_APP_MAX + 1),

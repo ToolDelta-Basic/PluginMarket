@@ -749,6 +749,53 @@ class AICore(Module):
                     -max_total:
                 ]
 
+    # ── 崩溃恢复约定 ──
+
+    def checkpoint(self) -> dict | None:
+        """持久化活跃会话历史（崩溃恢复用）。
+
+        只保存最近活跃的会话（过去 max_age 内有过交互）。
+        """
+        now = time.time()
+        active = {}
+        for uid, last_active in self.conversation_last_active.items():
+            if now - last_active > self.conversation_max_age:
+                continue
+            hist = self.conversations.get(uid)
+            if not hist:
+                continue
+            # 只保留最近 max_memory 条
+            recent = hist[-self.max_memory:]
+            active[str(uid)] = {
+                "history": recent,
+                "last_active": last_active,
+            }
+        return {"active_conversations": active} if active else None
+
+    async def restore_checkpoint(self, data: dict) -> None:
+        """恢复崩溃前的会话历史。"""
+        active = data.get("active_conversations", {})
+        if not isinstance(active, dict):
+            return
+        restored = 0
+        async with self._conv_lock:
+            for uid_str, conv in active.items():
+                try:
+                    uid = int(uid_str)
+                except (ValueError, TypeError):
+                    continue
+                hist = conv.get("history", [])
+                last_active = conv.get("last_active", time.time())
+                if not isinstance(hist, list):
+                    continue
+                self.conversations[uid] = hist[-self.max_memory * 2:]
+                self.conversation_last_active[uid] = last_active
+                restored += 1
+        if restored:
+            _logger.info(
+                "[checkpoint] 从崩溃中恢复了 %d 个用户的会话历史", restored
+            )
+
     # ---------- 命令实现 ----------
     async def _cmd_del_memory(self, ctx):
         """删除指定用户的长期记忆（管理员）。"""

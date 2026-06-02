@@ -12,6 +12,7 @@ def command(
     required_role: str = "",
     argument_hint: str = "",
     cooldown: float | None = None,
+    min_uid: int = 3000,
 ):
     """标记方法为命令处理器。
 
@@ -19,6 +20,7 @@ def command(
         trigger: 命令触发词（如 ".帮助"）。
         cooldown: 冷却秒。None 取模块 default_cooldown。
         required_role: 需要的角色名（如 "moderator"），空串表示不限制。
+        min_uid: 最低 UID 等级要求。默认 3000 (nobody)，即所有人可用。
     """
 
     def decorator(func: Callable):
@@ -30,6 +32,7 @@ def command(
             "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown,
+            "min_uid": min_uid,
         }
         return func
     return decorator

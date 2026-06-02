@@ -28,6 +28,7 @@ from .autodiscover import (
 from ..managers.config_mgr import ConfigManager
 from ..managers.group_config_mgr import GroupConfigManager
 from ..managers.group_filter import GroupModuleFilter
+from ..core.recovery import RecoveryEngine
 from ..managers.package_mgr import PackageManager
 from ..managers.module_mgr import ModuleManager
 from ..managers.command_mgr import CommandManager
@@ -60,6 +61,7 @@ class FrameworkHost:
         config_file = f"{self.data_path}/config.json" if data_path else "config.json"
         self.config_mgr = ConfigManager(file_path=config_file, data_dir=self.data_path)
         self.group_config_mgr = GroupConfigManager(self.config_mgr, self.data_path)
+        self.recovery = RecoveryEngine(self.data_path)
         self.package_mgr = PackageManager()
         self.command_mgr = CommandManager()
         self.tool_mgr = ToolManager()
@@ -84,6 +86,11 @@ class FrameworkHost:
         self.module_mgr = ModuleManager(self)
         self.message_mgr = MessageManager(adapter)
         self.services.register("message", self.message_mgr, uid=UID_DAEMON_MIN,
+                               _caller="qqlinker_framework.core.host")
+        self.services.register("recovery", self.recovery, uid=UID_DAEMON_MIN,
+                               _caller="qqlinker_framework.core.host")
+        # UID 查询函数（供 CommandRouter 内核级使用）
+        self.services.register("uid_lookup", self._lookup_uid, uid=UID_ROOT,
                                _caller="qqlinker_framework.core.host")
 
         # 事件桥接 + 控制台命令
@@ -134,6 +141,15 @@ class FrameworkHost:
         """启动框架：初始化目录、配置、服务、模块、事件桥接。"""
         self._main_loop = asyncio.get_running_loop()
         logger = logging.getLogger(__name__)
+
+        # 递归重启防护检查（在目录创建前，避免写文件）
+        if not self.recovery.check_restart_guard():
+            logger.critical(
+                "递归重启防护已激活，框架拒绝启动。"
+                "请检查配置后删除 %s",
+                self.recovery.get_blocked_path(),
+            )
+            return
 
         data_dir = self.data_path
         dirs = [
@@ -286,6 +302,7 @@ class FrameworkHost:
             self.config_mgr, self.message_mgr,
             group_filter=self.group_filter,
             loaded_modules=self.module_mgr._loaded_modules,
+            uid_lookup=self._lookup_uid,
         )
         self.event_bus.subscribe("GroupMessageEvent", self._router.handle_message)
 
@@ -301,6 +318,33 @@ class FrameworkHost:
                 "新字段已传播到 %d 个群子配置: %s",
                 len(affected), ", ".join(affected),
             )
+
+        # ── 崩溃恢复 ──
+        was_crashed = self.recovery.was_crashed()
+        if was_crashed:
+            logger.warning("‼️ 检测到上次非正常退出，进入恢复模式")
+            restored = await self.recovery.restore_all_checkpoints()
+            if restored:
+                logger.info(
+                    "已加载 %d 个模块检查点: %s",
+                    len(restored), ", ".join(restored.keys()),
+                )
+                for mod in self._modules:
+                    if mod.name in restored:
+                        try:
+                            await mod.restore_checkpoint(restored[mod.name])
+                            logger.info("模块 '%s' 状态已恢复", mod.name)
+                        except Exception as e:
+                            logger.error(
+                                "模块 '%s' 恢复失败: %s", mod.name, e
+                            )
+        
+        # 注册 checkpoint 模块（recovery.register_module 自动过滤未覆写的）
+        for mod in self._modules:
+            self.recovery.register_module(mod)
+        
+        self.recovery.start_heartbeat(interval=5.0)
+        self.recovery.start_checkpoint_loop(interval=30.0)
 
         if not self.ws_client:
             logger.info("未启用 WebSocket")
@@ -374,6 +418,12 @@ class FrameworkHost:
             self.group_config_mgr.stop_watching()
         except Exception as e:
             logger.debug("停止群配置监控时异常: %s", e)
+        try:
+            await self.recovery.stop()
+        except Exception as e:
+            logger.debug("停止恢复引擎时异常: %s", e)
+        self.recovery.mark_clean_exit()
+        self.recovery.clean_shutdown()
         if self.market_server:
             try:
                 self.market_server.stop()
@@ -382,6 +432,41 @@ class FrameworkHost:
         logger.info("框架已停止")
 
     # ── 配置热重载回调（watcher 线程安全）──
+
+    def _lookup_uid(self, user_id: int) -> int:
+        """查询用户的 UID 等级（供 CommandRouter 使用）。
+
+        逻辑（与 auth 模块一致）:
+          1. 查 权限管理.UID授权 表
+          2. 查 管理员.管理员QQ 列表 → uid=100
+          3. 否则 nobody (3000)
+        """
+        uid_map = self.config_mgr.get("权限管理.UID授权", {})
+        if isinstance(uid_map, dict):
+            for uid_str, qq_list in uid_map.items():
+                try:
+                    uid_level = int(uid_str)
+                except ValueError:
+                    continue
+                if isinstance(qq_list, list) and user_id in qq_list:
+                    return uid_level
+        # 管理员列表
+        admin_list = self.config_mgr.get("管理员.管理员QQ", [])
+        if isinstance(admin_list, list):
+            try:
+                if user_id in [int(q) for q in admin_list if q]:
+                    return 100
+            except (TypeError, ValueError):
+                pass
+        # 兼容旧配置节
+        admin_list2 = self.config_mgr.get("游戏管理.管理员QQ", [])
+        if isinstance(admin_list2, list):
+            try:
+                if user_id in [int(q) for q in admin_list2 if q]:
+                    return 100
+            except (TypeError, ValueError):
+                pass
+        return 3000  # UID_NOBODY
 
     def _on_config_reloaded(self):
         """配置热重载后，安全广播 ConfigReloadEvent。

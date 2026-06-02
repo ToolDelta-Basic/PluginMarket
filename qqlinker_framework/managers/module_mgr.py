@@ -229,6 +229,7 @@ class ModuleManager:
                     required_role=info.get('required_role', ''),
                     argument_hint=info.get('argument_hint', ''),
                     cooldown=info.get('cooldown'),
+                    min_uid=info.get('min_uid', 3000),
                 )
             if hasattr(method, '_event_info'):
                 info = method._event_info
