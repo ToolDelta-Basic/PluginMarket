@@ -1,4 +1,4 @@
-"""命令路由中间件（权限检查 + 角色系统 + 冷却控制 + 友好错误提示）。"""
+"""命令路由中间件（权限检查 + 角色系统 + 冷却控制 + 群级模块过滤 + 友好错误提示）。"""
 import time
 import logging
 from ..managers.command_mgr import CommandManager
@@ -15,11 +15,15 @@ class CommandRouter:
         adapter,
         config_mgr,
         message_mgr,
+        group_filter=None,
+        loaded_modules: dict = None,
     ):
         self.command_mgr = command_mgr
         self.adapter = adapter
         self.config_mgr = config_mgr
         self.message_mgr = message_mgr
+        self.group_filter = group_filter
+        self.loaded_modules = loaded_modules or {}
         self._cooldowns: dict[str, dict[int, float]] = {}
         self._cooldown_check_count = 0
 
@@ -32,6 +36,14 @@ class CommandRouter:
             trigger = cmd_info["trigger"]
             if not msg.startswith(trigger):
                 continue
+
+            # ── 群级模块/命令过滤 ──
+            if self.group_filter:
+                module_name = cmd_info.get("plugin", "core")
+                if not self.group_filter.is_command_enabled(
+                    event.group_id, module_name, trigger
+                ):
+                    return False  # 静默忽略，不给提示
 
             # ── 冷却检查 ──
             cooldown = cmd_info.get("cooldown", 0)

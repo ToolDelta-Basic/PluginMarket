@@ -26,6 +26,8 @@ from .autodiscover import (
 )
 
 from ..managers.config_mgr import ConfigManager
+from ..managers.group_config_mgr import GroupConfigManager
+from ..managers.group_filter import GroupModuleFilter
 from ..managers.package_mgr import PackageManager
 from ..managers.module_mgr import ModuleManager
 from ..managers.command_mgr import CommandManager
@@ -57,6 +59,7 @@ class FrameworkHost:
 
         config_file = f"{self.data_path}/config.json" if data_path else "config.json"
         self.config_mgr = ConfigManager(file_path=config_file, data_dir=self.data_path)
+        self.group_config_mgr = GroupConfigManager(self.config_mgr, self.data_path)
         self.package_mgr = PackageManager()
         self.command_mgr = CommandManager()
         self.tool_mgr = ToolManager()
@@ -66,6 +69,8 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
         # daemon 级 (uid=1): 框架内部守护 — 管理器
         self.services.register("config", self.config_mgr, uid=UID_DAEMON_MIN,
+                               _caller="qqlinker_framework.core.host")
+        self.services.register("group_config", self.group_config_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
         self.services.register("package", self.package_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
@@ -166,6 +171,19 @@ class FrameworkHost:
             "消息记录上限": 200, "API记录上限": 100,
             "启用WebSocket原始帧": False,
         })
+        self.config_mgr.register_section("模块管理", {
+            "禁用模块": [],
+            "启用模块": [],
+            "禁用命令": [],
+            "启用命令": [],
+            "模式": "黑名单",
+        })
+        self.group_config_mgr.register_module_schema(
+            "模块管理",
+            {"禁用模块": [], "启用模块": [],
+             "禁用命令": [], "启用命令": [], "模式": "黑名单"},
+            scope="group",
+        )
         self.config_mgr.register_section("模块市场", {
             "启用": False, "地址": "127.0.0.1", "端口": 8380,
             "上传密钥": "", "签名密钥": "", "强制签名校验": False,
@@ -184,6 +202,8 @@ class FrameworkHost:
             interval=2.0,
             on_reload=self._on_config_reloaded,
         )
+        self.group_config_mgr.set_reload_callback(self._on_config_reloaded)
+        self.group_config_mgr.start_watching(interval=3.0)
 
         ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
         ws_token = self.config_mgr.get("网络连接.令牌", "")
@@ -255,10 +275,17 @@ class FrameworkHost:
         # 事件桥接：游戏侧 ↔ QQ 侧
         self._bridge_game_events()
 
+        # 群级模块过滤器
+        self.group_filter = GroupModuleFilter(self.group_config_mgr)
+        self.services.register("group_filter", self.group_filter, uid=UID_DAEMON_MIN,
+                               _caller="qqlinker_framework.core.host")
+
         # 命令路由
         self._router = CommandRouter(
             self.command_mgr, self.adapter,
             self.config_mgr, self.message_mgr,
+            group_filter=self.group_filter,
+            loaded_modules=self.module_mgr._loaded_modules,
         )
         self.event_bus.subscribe("GroupMessageEvent", self._router.handle_message)
 
@@ -266,6 +293,14 @@ class FrameworkHost:
         self._modules = await self.module_mgr.initialize_all()
         if not any(m.name == "help" for m in self._modules):
             logger.warning("help 模块未加载，用户将无法查看命令帮助")
+
+        # 模块加载完毕后，传播新增字段到所有群子配置
+        affected = self.group_config_mgr.propagate_new_fields()
+        if affected:
+            logger.info(
+                "新字段已传播到 %d 个群子配置: %s",
+                len(affected), ", ".join(affected),
+            )
 
         if not self.ws_client:
             logger.info("未启用 WebSocket")
@@ -335,6 +370,10 @@ class FrameworkHost:
             self.config_mgr.stop_watching()
         except Exception as e:
             logger.debug("停止配置监控时异常: %s", e)
+        try:
+            self.group_config_mgr.stop_watching()
+        except Exception as e:
+            logger.debug("停止群配置监控时异常: %s", e)
         if self.market_server:
             try:
                 self.market_server.stop()

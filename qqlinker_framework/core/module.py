@@ -287,6 +287,7 @@ class Module(ABC):
     required_services: list[str] = []
     default_config: Dict[str, Dict[str, Any]] = {}
     config_schema: Dict[str, Tuple[str, Any]] = {}
+    config_scope: Dict[str, str] = {}  # section → "global"|"group"，默认 "group"
     exports: Dict[str, Any] = {}
     tools: List[Dict[str, Any]] = []
     scheduled: List[ScheduledTask] = []
@@ -362,6 +363,13 @@ class Module(ABC):
         except KeyError:
             self.config = None
 
+        # self.group_config — 按群查询配置
+        try:
+            raw_gcfg = services.get("group_config")
+            self.group_config = _GroupConfigProxy(raw_gcfg)
+        except KeyError:
+            self.group_config = None
+
         # self.game — 游戏操作快捷方式
         self.game = _GameProxy(self.adapter)
 
@@ -394,15 +402,24 @@ class Module(ABC):
         self._conventions_applied = True
 
         cfg_svc = None
+        group_cfg_svc = None
         try:
             cfg_svc = self.services.get("config")
         except KeyError:
             pass
+        try:
+            group_cfg_svc = self.services.get("group_config")
+        except KeyError:
+            pass
 
-        # ── A: default_config → register_section ──
+        # ── A: default_config → register_section (with scope) ──
         if cfg_svc and self.default_config:
             for section, defaults in self.default_config.items():
                 cfg_svc.register_section(section, defaults)
+                # 同时向 GroupConfigManager 注册 scope
+                scope = self.config_scope.get(section, "group")
+                if group_cfg_svc:
+                    group_cfg_svc.register_module_schema(section, defaults, scope)
 
         # ── B: config_schema → self.cfg_<name> ──
         if cfg_svc and self.config_schema:
@@ -513,8 +530,33 @@ class Module(ABC):
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0):
-        """订阅事件并记录到事件处理器列表。"""
-        self.event_bus.subscribe(event_type, handler, priority)
+        """订阅事件并记录到事件处理器列表。
+
+        对于 GroupMessageEvent，自动包装群级模块过滤中间件。
+        """
+        wrapped = handler
+        if event_type == "GroupMessageEvent":
+            original = handler
+            module_name = self.name
+            # 通过 services 获取 GroupModuleFilter（避免循环导入）
+            group_filter = None
+            try:
+                group_filter = self.services.get("group_filter")
+            except (KeyError, PermissionError):
+                pass
+
+            async def _filtered_handler(event):
+                """群级模块过滤包装：检查该群是否禁用当前模块。"""
+                if group_filter is None:
+                    # 没有 filter 服务时不过滤（向后兼容）
+                    await original(event)
+                    return
+                if group_filter.is_module_enabled(event.group_id, module_name):
+                    await original(event)
+
+            wrapped = _filtered_handler
+
+        self.event_bus.subscribe(event_type, wrapped, priority)
         self._event_handlers.append((event_type, handler, priority))
 
     def register_tool(self, tool_definition: dict):
@@ -558,6 +600,46 @@ class _ConfigProxy:
 
     def get(self, key: str, default=None):
         return self._cfg.get(key, default)
+
+
+class _GroupConfigProxy:
+    """群配置代理: self.group_config.get(group_id, key) / .for_group(group_id)."""
+
+    __slots__ = ("_gcfg",)
+
+    def __init__(self, group_config_svc):
+        self._gcfg = group_config_svc
+
+    def __getattr__(self, key: str):
+        """代理底层 GroupConfigManager 的属性（如 repair_dir）。"""
+        if key.startswith("_"):
+            raise AttributeError(key)
+        return getattr(self._gcfg, key)
+
+    def get(self, group_id: int, key: str, default=None):
+        """获取指定群的配置值。"""
+        return self._gcfg.get(group_id, key, default)
+
+    def for_group(self, group_id: int) -> "_SingleGroupConfigProxy":
+        """返回单群配置代理，方便链式调用。"""
+        return _SingleGroupConfigProxy(self._gcfg, group_id)
+
+    def get_module_config(self, group_id: int, section: str) -> dict:
+        """获取指定群的模块节配置。"""
+        return self._gcfg.get_group_module_config(group_id, section)
+
+
+class _SingleGroupConfigProxy:
+    """单群配置代理。"""
+
+    __slots__ = ("_gcfg", "_group_id")
+
+    def __init__(self, gcfg, group_id: int):
+        self._gcfg = gcfg
+        self._group_id = group_id
+
+    def get(self, key: str, default=None):
+        return self._gcfg.get(self._group_id, key, default)
 
 
 class _GameProxy:
