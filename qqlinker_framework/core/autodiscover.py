@@ -18,15 +18,82 @@
     "entry": "__init__.py"
   }
 """
+import ast
 import importlib
 import logging
 import pkgutil
 import re
 from typing import Dict, List, Optional, Type
+
 from .module import Module
 from .error_hints import hint
+from .services import UID_NOBODY
 
 logger = logging.getLogger(__name__)
+
+# ── 模块源码安全扫描 ──────────────────────────────────────
+
+# 危险调用集合（AST 节点名）— 模块代码中不允许出现
+dangerous_call_names = frozenset({
+    # 任意代码执行
+    'eval', 'exec', 'compile', '__import__',
+    # 文件操作（读写关键路径）
+    'open',
+    # 系统调用
+    'os.system', 'os.popen', 'os.execv', 'os.execve', 'os.execl',
+    'os.execle', 'os.execlp', 'os.execlpe', 'os.execvp', 'os.execvpe',
+    'os.spawnl', 'os.spawnle', 'os.spawnlp', 'os.spawnlpe',
+    'os.spawnv', 'os.spawnve', 'os.spawnvp', 'os.spawnvpe',
+    # subprocess
+    'subprocess.call', 'subprocess.run', 'subprocess.Popen',
+    'subprocess.check_call', 'subprocess.check_output',
+    'subprocess.getoutput', 'subprocess.getstatusoutput',
+    # 动态代码加载
+    'importlib.import_module', 'importlib.util.spec_from_file_location',
+    'importlib.util.module_from_spec',
+})
+
+
+def _scan_module_source(source: str) -> List[str]:
+    """用 AST 扫描模块源码中的危险调用，返回检测到的调用名列表。
+
+    Args:
+        source: Python 源码字符串。
+
+    Returns:
+        检测到的危险调用名列表（去重），空列表表示安全。
+    """
+    found: list = []
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        logger.warning("模块源码语法错误，无法扫描: 跳过安全分析")
+        return found
+
+    class _DangerousVisitor(ast.NodeVisitor):
+        def visit_Call(self, node):
+            # 检查 func 是否为危险调用
+            name = _get_call_name(node.func)
+            if name and name in dangerous_call_names:
+                if name not in found:
+                    found.append(name)
+            self.generic_visit(node)
+
+    _DangerousVisitor().visit(tree)
+    return found
+
+
+def _get_call_name(node) -> Optional[str]:
+    """从 AST 节点提取调用名（如 'os.system' 或 'eval'）。"""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        value = node.attr
+        parent = _get_call_name(node.value)
+        if parent:
+            return f"{parent}.{value}"
+        return value
+    return None
 
 
 def discover_modules(
@@ -213,6 +280,27 @@ def discover_from_files(data_path: str) -> List[Type[Module]]:
 def _load_py_file(filepath: str) -> Optional[Type[Module]]:
     """从单个 .py 文件加载 Module 子类。"""
     mod_name = _os.path.splitext(_os.path.basename(filepath))[0]
+
+    # ── 安全扫描：exec_module 前先 AST 分析 ──
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            source = f.read()
+    except (OSError, UnicodeDecodeError) as e:
+        logger.warning(
+            "无法读取模块源码 %s: %s。跳过加载。",
+            filepath, e,
+        )
+        return None
+
+    dangerous = _scan_module_source(source)
+    if dangerous:
+        logger.warning(
+            "安全拦截: 模块 %s 包含危险调用 %s，跳过加载。"
+            "该模块已被禁止执行。如需使用请检查源码或联系作者。",
+            filepath, dangerous,
+        )
+        return None
+
     # 加唯一后缀防止重名
     unique_name = f"_extmod.{mod_name}.{_os.path.getmtime(filepath):.0f}"
     try:
@@ -236,6 +324,15 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
             and attr is not Module
             and getattr(attr, "name", None)
         ):
+            # ★ 安全：外部模块声明的 uid 不可信，强制降级
+            declared_uid = getattr(attr, 'uid', 3000)
+            if declared_uid < UID_NOBODY:
+                logger.warning(
+                    "外部模块 '%s' 声明了不可信的 uid=%d，"
+                    "已强制降级为 nobody (uid=%d)。",
+                    attr.name, declared_uid, UID_NOBODY,
+                )
+                attr.uid = UID_NOBODY
             return attr
     return None
 
@@ -299,6 +396,21 @@ def download_module(url: str, data_path: str) -> Optional[str]:
             return None
 
     elif fname.endswith(".py"):
+        # 安全扫描：下载的 .py 先 AST 分析
+        try:
+            source = data.decode("utf-8")
+        except UnicodeDecodeError as e:
+            logger.error("模块 %s 源码解码失败: %s", fname, e)
+            return None
+        dangerous = _scan_module_source(source)
+        if dangerous:
+            logger.warning(
+                "安全拦截: 下载的模块 %s 包含危险调用 %s，拒绝安装。"
+                "该模块已被禁止。如需使用请检查源码或联系作者。",
+                fname, dangerous,
+            )
+            return None
+
         target = _os.path.join(mod_dir, fname)
         with open(target, "wb") as f:
             f.write(data)
@@ -341,8 +453,15 @@ def list_external_modules(data_path: str) -> List[Dict[str, str]]:
 
 
 def remove_external_module(name: str, data_path: str) -> bool:
-    """删除已安装的外部模块。"""
+    """删除已安装的外部模块。
+
+    对 name 做路径穿越防护：仅保留安全字符，防止 ../ 遍历。
+    """
     mod_dir = _get_modules_dir(data_path)
+    # 路径穿越防护：basename 剥离目录，re.sub 过滤不安全字符
+    safe_name = re.sub(r'[^a-zA-Z0-9_.\-]', '', _os.path.basename(name))
+    if not safe_name:
+        return False
 
     # 尝试 .py 文件
     py_path = _os.path.join(mod_dir, f"{name}.py")

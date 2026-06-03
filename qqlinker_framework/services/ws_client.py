@@ -16,6 +16,22 @@ def _get_websocket():
     return _ws
 
 
+def _json_depth(obj, _current=0):
+    """递归计算 JSON 对象的最大嵌套深度。
+
+    数组和字典均计入深度，防止深度嵌套数组绕过 DoS 保护。
+    """
+    if isinstance(obj, dict):
+        if not obj:
+            return _current
+        return max(_json_depth(v, _current + 1) for v in obj.values())
+    if isinstance(obj, list):
+        if not obj:
+            return _current
+        return max(_json_depth(v, _current + 1) for v in obj)
+    return _current
+
+
 class CircuitState(enum.Enum):
     CLOSED = "closed"
     OPEN = "open"
@@ -32,6 +48,10 @@ class WsClient:
     CIRCUIT_FAILURE_THRESHOLD = 5      # 连续失败多少次后熔断
     CIRCUIT_RECOVERY_TIMEOUT = 30      # 熔断后多少秒尝试探测
     CIRCUIT_PROBE_COUNT = 2            # 探测阶段允许的尝试次数
+
+    # 消息安全限制
+    MAX_MESSAGE_BYTES = 1024 * 1024    # 单条消息最大 1MB
+    MAX_JSON_DEPTH = 10                # JSON 嵌套最大深度
 
     def __init__(self, config: dict):
         try:
@@ -194,10 +214,27 @@ class WsClient:
 
     def _on_message(self, ws, message: str):
         """消息接收回调。"""
+        # ── 大小限制：超过 1MB 丢弃 ──
+        if len(message.encode("utf-8")) > self.MAX_MESSAGE_BYTES:
+            logging.getLogger(__name__).warning(
+                "收到超大 WS 消息 (%d 字节)，已丢弃。%s",
+                len(message.encode("utf-8")), hint["WS_MESSAGE_INVALID"],
+            )
+            return
+
         try:
             data = json.loads(message)
         except Exception:
             return
+
+        # ── 深度检查：JSON 嵌套不超过 10 层 ──
+        if _json_depth(data) > self.MAX_JSON_DEPTH:
+            logging.getLogger(__name__).warning(
+                "WS 消息 JSON 嵌套过深 (max=%d)，已丢弃。%s",
+                self.MAX_JSON_DEPTH, hint["WS_MESSAGE_INVALID"],
+            )
+            return
+
         if (
             data.get("post_type") != "message"
             or data.get("message_type") != "group"
@@ -214,10 +251,12 @@ class WsClient:
 
     @staticmethod
     def _on_error(ws, error):
-        """错误回调。"""
+        """错误回调。只记录类型和简短描述，不泄露完整 traceback。"""
+        err_type = type(error).__name__
+        err_msg = str(error)[:200] if error else "(无详细信息)"
         logging.getLogger(__name__).error(
-            "WebSocket 传输错误: %s。可能是网络不稳定或 OneBot 服务异常。%s",
-            error, hint["WS_CONNECT_FAILED"],
+            "WebSocket 传输错误 (%s): %s。%s",
+            err_type, err_msg, hint["WS_CONNECT_FAILED"],
         )
 
     def _on_close(self, ws, code, msg):

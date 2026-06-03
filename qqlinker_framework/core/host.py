@@ -93,14 +93,10 @@ class FrameworkHost:
         self.services.register("uid_lookup", self._lookup_uid, uid=UID_ROOT,
                                _caller="qqlinker_framework.core.host")
 
-        # 事件桥接 + 控制台命令
-        self.bridge = EventBridge(self)
+        # 事件桥接 + 控制台命令（在 start() 中构造，依赖 services 就绪）
+        self.bridge = None
         self.console = ConsoleCommands(self)
 
-        self.dedup = None
-        self.ws_client = None
-        self.market_server = None
-        self.market_aggregator = None
         self._modules: List[Module] = []
         self._router = None
         self._game_events_bridged = False
@@ -228,7 +224,7 @@ class FrameworkHost:
         if hasattr(self.adapter, 'set_config_mgr'):
             self.adapter.set_config_mgr(self.config_mgr)
 
-        # 去重引擎
+        # 去重引擎（仅通过 services 访问，不存 self.dedup）
         dedup_cfg = DedupConfig(
             local_id_ttl=self.config_mgr.get("去重.本地ID有效期秒", 300),
             local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120),
@@ -236,8 +232,8 @@ class FrameworkHost:
             redis_enabled=self.config_mgr.get("去重.启用Redis", False),
             redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0"),
         )
-        self.dedup = LayeredDedup(dedup_cfg)
-        self.services.register("dedup", self.dedup, uid=UID_SERVICE_MIN,
+        dedup = LayeredDedup(dedup_cfg)
+        self.services.register("dedup", dedup, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
         debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
@@ -247,11 +243,19 @@ class FrameworkHost:
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
 
-        # 模块市场（可选）
-        self.market_server = None
+        # 事件桥接：使用独立参数构造，不持有 FrameworkHost 引用
+        self.bridge = EventBridge(
+            event_bus=self.event_bus,
+            config_mgr=self.config_mgr,
+            dedup=dedup,
+            main_loop_getter=lambda: self._main_loop,
+            adapter=self.adapter,
+        )
+
+        # 模块市场（可选，仅通过 services 访问，不存 self 引用）
         market_cfg = self.config_mgr.get("模块市场", {})
         if market_cfg.get("启用", False):
-            self.market_server = ModuleMarketServer(
+            market_server = ModuleMarketServer(
                 data_path=self.data_path,
                 host=market_cfg.get("地址", "127.0.0.1"),
                 port=market_cfg.get("端口", 8380),
@@ -261,15 +265,18 @@ class FrameworkHost:
                 strict_sign=market_cfg.get("强制签名校验", False),
                 per_page=market_cfg.get("每页数量", 20),
             )
-            self.market_server.start()
-            logger.info("模块市场已启动: %s", self.market_server.url)
+            market_server.start()
+            # 注册到 services，stop() 中通过 services 获取并停止
+            self.services.register("market_server", market_server, uid=UID_SERVICE_MIN,
+                                   _caller="qqlinker_framework.core.host")
+            logger.info("模块市场已启动: %s", market_server.url)
 
         source_urls = market_cfg.get("源列表", ["http://127.0.0.1:8380"])
-        self.market_aggregator = MarketSourceAggregator(source_urls)
-        self.services.register("market", self.market_aggregator, uid=UID_SERVICE_MIN,
+        market_aggregator = MarketSourceAggregator(source_urls)
+        self.services.register("market", market_aggregator, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
-        # WebSocket
+        # WebSocket（仅通过 services 访问，不存 self.ws_client）
         try:
             _get_websocket()
             ws_available = True
@@ -277,13 +284,15 @@ class FrameworkHost:
             ws_available = False
 
         if ws_available:
-            self.ws_client = WsClient({"ws_address": ws_address, "ws_token": ws_token})
+            ws_client = WsClient({"ws_address": ws_address, "ws_token": ws_token})
+            self.services.register("ws_client", ws_client, uid=UID_SERVICE_MIN,
+                                   _caller="qqlinker_framework.core.host")
             if hasattr(self.adapter, 'set_ws_client'):
-                self.adapter.set_ws_client(self.ws_client)
+                self.adapter.set_ws_client(ws_client)
             if hasattr(self.adapter, 'event_bus'):
                 self.adapter.event_bus = self.event_bus
-            self.ws_client.set_message_callback(self.bridge.on_ws_group_message)
-            self.ws_client.connect()
+            ws_client.set_message_callback(self.bridge.on_ws_group_message)
+            ws_client.connect()
             logger.info("WebSocket 连接已发起")
         else:
             logger.warning("websocket-client 未安装，跳过 WS 连接")
@@ -346,7 +355,7 @@ class FrameworkHost:
         self.recovery.start_heartbeat(interval=5.0)
         self.recovery.start_checkpoint_loop(interval=30.0)
 
-        if not self.ws_client:
+        if not self.services.has("ws_client"):
             logger.info("未启用 WebSocket")
         logger.info("框架启动完成")
 
@@ -405,9 +414,10 @@ class FrameworkHost:
             await self.message_mgr.stop()
         except Exception as e:
             logger.debug("停止消息管理器时异常: %s", e)
-        if self.ws_client:
+        ws_client = self.services.try_get("ws_client")
+        if ws_client:
             try:
-                self.ws_client.disconnect()
+                ws_client.disconnect()
             except Exception as e:
                 logger.debug("断开 WS 时异常: %s", e)
         try:
@@ -424,9 +434,10 @@ class FrameworkHost:
             logger.debug("停止恢复引擎时异常: %s", e)
         self.recovery.mark_clean_exit()
         self.recovery.clean_shutdown()
-        if self.market_server:
+        market_server = self.services.try_get("market_server")
+        if market_server:
             try:
-                self.market_server.stop()
+                market_server.stop()
             except Exception as e:
                 logger.debug("停止市场服务时异常: %s", e)
         logger.info("框架已停止")

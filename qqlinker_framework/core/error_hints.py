@@ -14,6 +14,7 @@
 import logging
 import os
 import sys
+import types
 from typing import Optional
 
 _log = logging.getLogger(__name__)
@@ -192,3 +193,10 @@ class ErrorMode:
     @classmethod
     def reset(cls):
         cls._mode = None
+
+
+# ── 只读保护：用 MappingProxyType 包装 hint 字典 ──────────────────
+# 任何模块尝试写入 hint 都会抛出 TypeError，确保错误提示的一致性。
+# 如需添加新错误提示，请在 _hint_data 字典中添加条目后重新构建。
+_hint_data = hint
+hint = types.MappingProxyType(hint)

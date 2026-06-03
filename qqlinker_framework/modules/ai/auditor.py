@@ -12,6 +12,8 @@ import os
 import time
 from typing import Dict, List, Optional, Tuple
 
+from ...core.defguard import escape_player_name
+
 _logger = logging.getLogger(__name__)
 
 
@@ -243,8 +245,9 @@ class Auditor:
         try:
             player_name = self._resolve_player_name(user_id)
             if player_name:
+                safe_name = escape_player_name(player_name)
                 self.ai.adapter.send_game_command(
-                    f'kick "{player_name}" AI审核：多次违规发言'
+                    f'kick "{safe_name}" AI审核：多次违规发言'
                 )
                 _logger.info("用户 %d (玩家 %s) 已被踢出", user_id, player_name)
             else:
@@ -292,8 +295,9 @@ class Auditor:
                             "timestamp": time.time(),
                         })
                         # 同时踢出在线玩家
+                        safe_name = escape_player_name(player_name)
                         self.ai.adapter.send_game_command(
-                            f'kick "{player_name}" AI审核：多次违规，已被封禁'
+                            f'kick "{safe_name}" AI审核：多次违规，已被封禁'
                         )
                         _logger.info(
                             "用户 %d (玩家 %s) 已通过 Orion store 封禁",

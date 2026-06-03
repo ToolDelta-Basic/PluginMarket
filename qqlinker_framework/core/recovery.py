@@ -78,8 +78,8 @@ class RecoveryEngine:
         # 模块注册 — 仅持有强引用避免阻碍 GC
         self._checkpoint_modules: list = []
 
-        # HMAC 签名密钥 — 每次框架启动随机生成，同一进程周期内一致
-        self._hmac_key = secrets.token_bytes(32)
+        # HMAC 签名密钥 — 持久化到磁盘，跨重启保持一致
+        self._hmac_key = self._load_or_create_hmac_key()
 
         # 崩溃标记 — 启动时写入，正常退出时由 clean_shutdown() 删除
         self._mark_crashed()
@@ -95,6 +95,32 @@ class RecoveryEngine:
         if sanitized != name:
             _log.warning("模块名已净化: '%s' → '%s'", name, sanitized)
         return sanitized or "unknown"
+
+    def _load_or_create_hmac_key(self) -> bytes:
+        """加载或生成 HMAC 签名密钥，持久化到磁盘跨重启保持一致。
+
+        密钥存储在 data/.checkpoint_key 中，仅在首次运行时生成。
+        """
+        key_path = os.path.join(self._data_dir, "data", ".checkpoint_key")
+        try:
+            if os.path.exists(key_path):
+                with open(key_path, "rb") as f:
+                    key = f.read()
+                if len(key) == 32:
+                    return key
+                _log.warning("检查点密钥长度异常，重新生成")
+        except OSError:
+            pass
+        # 生成新密钥
+        key = secrets.token_bytes(32)
+        try:
+            os.makedirs(os.path.dirname(key_path), exist_ok=True)
+            with open(key_path, "wb") as f:
+                f.write(key)
+            _log.info("已生成检查点签名密钥")
+        except OSError as e:
+            _log.warning("无法持久化检查点密钥: %s，本次启动期间检查点签名有效", e)
+        return key
 
     # ═══════════════════════════════════════════════════════════
     # 心跳

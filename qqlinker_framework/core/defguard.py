@@ -16,12 +16,29 @@
   3. 字符串默认截断到合理长度，防止 DoS
 
 ═══════════════════════════════════════════════════════════════════════════
+
+此外还提供 Minecraft 命令注入防护函数 escape_player_name。
+═══════════════════════════════════════════════════════════════════════
 """
 
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 _log = logging.getLogger(__name__)
+
+
+def escape_player_name(name: str) -> str:
+    """转义玩家名中的危险字符，防止 Minecraft 命令注入。
+
+    Minecraft 原生命令使用双引号包裹参数，玩家名中含 " 可逃逸
+    引号并执行任意命令。此处将 ", \, \n, \r 转义以消除注入风险。
+    """
+    name = name.replace('\\', '\\\\')  # 反斜杠 → 双反斜杠
+    name = name.replace('"', '\\"')        # 双引号 → 转义双引号
+    name = name.replace('\n', '')            # 移除换行，防止多行命令注入
+    name = name.replace('\r', '')            # 移除回车
+    return name
+
 
 # ── 常量和限制 ──────────────────────────────────────────────
 

@@ -29,7 +29,7 @@ UID 分级（参考 Linux 用户模型）：
 """
 import logging
 import threading
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 _log = logging.getLogger(__name__)
 
@@ -97,6 +97,16 @@ def validate_module_uid(
     """
     allowed = LAYER_ALLOWED_UID_RANGE.get(layer)
     if allowed and declared_uid in allowed:
+        # ★ 安全：uid=0 仅在 kernel 层且来自可信源路径时放行
+        # 可信源：core/ 和 modules/system/ 目录下的框架内置模块
+        if declared_uid == UID_ROOT and layer == "kernel":
+            # 外部模块在 _load_py_file 已强制降级（autodiscover.py）
+            # 此处放行仅是给 kernel_auth 等内置 root 模块
+            pass
+        return declared_uid
+
+    allowed = LAYER_ALLOWED_UID_RANGE.get(layer)
+    if allowed and declared_uid in allowed:
         return declared_uid
 
     # 非法声明 → 降级
@@ -112,25 +122,36 @@ def validate_module_uid(
     return default
 
 
-# ── 白名单：可信的 daemon 级路径前缀 ──────────────────────
-# 只有这些路径下的代码可以在启动时注册 daemon 级服务
+# ── 白名单：可信的 daemon 级路径 ──────────────────────────
+# 只有这些路径下的代码可以在启动时注册 daemon 级服务。
+# 每条路径都是终结路径：精确匹配或作为包前缀（后接 "."）。
 _DAEMON_TRUSTED_PATHS: Set[str] = {
-    "qqlinker_framework.core.",
-    "qqlinker_framework.managers.",
-    # 框架内置 daemon 模块（uid≤999）
+    "qqlinker_framework.core",      # core/ 下所有模块
+    "qqlinker_framework.managers",   # managers/ 下所有模块
+    # 框架内置 daemon 模块（uid≤999）— 精确匹配
     "qqlinker_framework.modules.security.orion",
-    "qqlinker_framework.modules.ai.",
+    "qqlinker_framework.modules.ai",          # ai 包前缀
     "qqlinker_framework.modules.game.admin",
     "qqlinker_framework.modules.game.forwarder",
     "qqlinker_framework.modules.game.tracker",
-    "qqlinker_framework.modules.logging.",
+    "qqlinker_framework.modules.logging",      # logging 包前缀
     "qqlinker_framework.modules.system.auth",
 }
 
 
 def is_daemon_trusted(caller_module: str) -> bool:  # noqa: PYL-W0074 (utility function, not a method — correct placement at module level for security checks)
-    """检查调用方是否来自可信的内核/守护路径。"""
-    return any(caller_module.startswith(p) for p in _DAEMON_TRUSTED_PATHS)
+    """检查调用方是否来自可信的内核/守护路径。
+
+    匹配规则：caller_module 等于白名单路径，或以白名单路径后接 "." 开头。
+    这防止了前缀伪造攻击，例如 "qqlinker_framework.modules.ai" 不会
+    匹配到 "qqlinker_framework.modules.ai_malicious"。
+    """
+    for p in _DAEMON_TRUSTED_PATHS:
+        if caller_module == p or (
+            caller_module.startswith(p) and caller_module[len(p)] == '.'
+        ):
+            return True
+    return False
 
 
 class ServiceContainer:
@@ -138,6 +159,11 @@ class ServiceContainer:
 
     每个服务和调用方都有 UID 等级。低级别调用方无法获取高级别服务。
     root(uid=0) 始终拥有一切权限。
+
+    ── 依赖拓扑（新增）──
+    支持 register_dependency() 声明服务间依赖关系，
+    resolve_order() 返回拓扑排序后的初始化顺序。
+    用于 ModuleManager.initialize_all() 确保服务按依赖顺序初始化。
     """
 
     def __init__(self, uid: int = UID_ROOT):
@@ -146,6 +172,9 @@ class ServiceContainer:
         self._service_uids: Dict[str, int] = {}
         self._factories: Dict[str, Callable[[], Any]] = {}
         self._lock = threading.Lock()
+        # ── 依赖拓扑 ──
+        # _deps[name] = set of service names that name depends on
+        self._deps: Dict[str, Set[str]] = {}
 
     @property
     def uid(self) -> int:
@@ -215,7 +244,13 @@ class ServiceContainer:
             # Double-check: 可能另一个线程已创建
             if name in self._services:
                 return self._services[name]
-            instance = self._factories[name]()
+            factory = self._factories[name]
+            try:
+                instance = factory()
+            except Exception:
+                # 工厂创建失败时移除条目，防止下次 get() 再次失败
+                del self._factories[name]
+                raise
             self._services[name] = instance
             return instance
 
@@ -233,6 +268,80 @@ class ServiceContainer:
     def get_service_uid(self, name: str) -> Optional[int]:
         """查询指定服务的 UID 等级。"""
         return self._service_uids.get(name)
+
+    # ── 依赖拓扑（供 ModuleManager 排序用）──
+
+    def register_dependency(
+        self, service_name: str, depends_on_name: str,
+    ) -> None:
+        """声明服务依赖：service_name 依赖于 depends_on_name。
+
+        Args:
+            service_name: 服务名（依赖方）。
+            depends_on_name: 被依赖的服务名。
+        """
+        with self._lock:
+            deps = self._deps.setdefault(service_name, set())
+            deps.add(depends_on_name)
+            # 确保被依赖方在图中也有节点
+            self._deps.setdefault(depends_on_name, set())
+
+    def resolve_order(self) -> List[str]:
+        """返回拓扑排序后的服务初始化顺序。
+
+        基于 register_dependency() 声明的依赖关系，
+        使用 Kahn 算法进行拓扑排序。
+
+        若存在循环依赖，静默降级：直接返回原注册顺序（不中断流程）。
+
+        Returns:
+            拓扑排序后的服务名列表。
+        """
+        with self._lock:
+            # 构建 in-degree 和 adjacency
+            all_nodes: Set[str] = set()
+            in_degree: Dict[str, int] = {}
+            adj: Dict[str, List[str]] = {}
+
+            for node in self._deps:
+                all_nodes.add(node)
+            for node, deps in self._deps.items():
+                all_nodes.update(deps)
+
+            for node in all_nodes:
+                in_degree[node] = 0
+                adj[node] = []
+
+            for node, deps in self._deps.items():
+                for dep in deps:
+                    if dep in all_nodes:
+                        in_degree[dep] += 1
+                        adj[node].append(dep)
+
+            # Kahn算法
+            queue = [n for n, d in in_degree.items() if d == 0]
+            result: List[str] = []
+            visited_count = 0
+
+            while queue:
+                node = queue.pop(0)
+                result.append(node)
+                visited_count += 1
+                for neighbor in adj.get(node, []):
+                    in_degree[neighbor] -= 1
+                    if in_degree[neighbor] == 0:
+                        queue.append(neighbor)
+
+            if visited_count != len(in_degree):
+                # 循环依赖 → 静默降级为原始注册顺序
+                _log.warning(
+                    "服务依赖拓扑排序检测到循环依赖，"
+                    "降级为原始注册顺序。已访问 %d/%d 节点",
+                    visited_count, len(in_degree),
+                )
+                return list(self._service_uids.keys())
+
+            return result
 
     def list_accessible(self) -> Dict[str, int]:
         """列出当前 UID 可访问的所有服务及等级。"""

@@ -218,21 +218,19 @@ class AIAuditEnhanceModule(Module):
         self._conversation_rounds: Dict[int, int] = {}
 
     async def on_init(self):
-        """注册配置、获取 LLM 客户端、初始化知识库、订阅事件，注册 audit 服务和命令。"""
+        """注册配置、初始化知识库、订阅事件，注册 audit 服务。
+
+        LLM 客户端通过 _ensure_llm_client() 延迟获取，
+        因为 ai_core 模块可能在 ai_security 之后才初始化。
+        """
         cfg = self.config.get("AI审计增强") or {}
         self._pre_reflection_level = cfg.get("输入反思", "每次")
         self._post_reflection_level = cfg.get("输出反思", "每次")
         self._induction_threshold = cfg.get("归纳阈值", 10)
         self._baseline_interval = cfg.get("基线复位间隔轮次", 10)
 
-        try:
-            self._llm_client = self.services.get("llm_client")
-        except KeyError:
-            _logger.warning(
-                "LLM 客户端服务未注册，AI 审计将降级为关闭状态"
-            )
-            self._pre_reflection_level = "关闭"
-            self._post_reflection_level = "关闭"
+        # LLM 客户端延迟获取（ai_core 可能尚未初始化）
+        self._llm_client_resolved = False
 
         data_dir = self.data_dir
         self._store = AuditKnowledgeStore(data_dir)
@@ -265,6 +263,26 @@ class AIAuditEnhanceModule(Module):
             priority=10,
         )
 
+    def _ensure_llm_client(self) -> bool:
+        """延迟获取 LLM 客户端，ai_core 可能在 ai_security 之后初始化。
+
+        Returns:
+            True 如果 LLM 客户端可用。
+        """
+        if self._llm_client is not None:
+            return True
+        if self._llm_client_resolved:
+            return False  # 已经尝试过，不再重试
+        self._llm_client_resolved = True
+        try:
+            self._llm_client = self.services.get("llm_client")
+            return True
+        except KeyError:
+            _logger.warning(
+                "LLM 客户端服务未注册，AI 审计将降级为关闭状态"
+            )
+            return False
+
     # ---------- 外部可调用的审核接口 ----------
     async def add_case(self, case: dict):
         """添加 L1 案例（委托给内部存储）。"""
@@ -282,7 +300,7 @@ class AIAuditEnhanceModule(Module):
             违规原因字符串;合规返回 None。
         """
         cfg = self.config.get("AI审计增强") or {}
-        if cfg.get("安全审核", self._pre_reflection_level) == "关闭" or not self._llm_client:
+        if cfg.get("安全审核", self._pre_reflection_level) == "关闭" or not self._ensure_llm_client():
             return None
 
         # 收集 L2 + L3 审查指引
@@ -356,7 +374,7 @@ class AIAuditEnhanceModule(Module):
     # ---------- 事件处理 ----------
     async def _on_pre_reflection(self, event: AIPrePromptReflectionEvent):
         """使用 LLM 分析用户消息,若启用则注入补充系统提示(含 L3 法则)。"""
-        if self._pre_reflection_level == "关闭" or not self._llm_client:
+        if self._pre_reflection_level == "关闭" or not self._ensure_llm_client():
             return
 
         user_id = event.user_id
@@ -418,7 +436,7 @@ class AIAuditEnhanceModule(Module):
         self, event: AIPostResponseReflectionEvent
     ):
         """使用 LLM 检查 AI 回复是否合规,记录违规案例。"""
-        if self._post_reflection_level == "关闭" or not self._llm_client:
+        if self._post_reflection_level == "关闭" or not self._ensure_llm_client():
             return
         prompt = (
             "你是一个严格的内容安全审核员。"
@@ -480,7 +498,7 @@ class AIAuditEnhanceModule(Module):
     # ---------- 命令处理 ----------
     async def _cmd_induce(self, ctx):
         """.归纳知识 — 手动触发 L1→L2 元知识归纳（管理员命令）。"""
-        if not self._llm_client:
+        if not self._ensure_llm_client():
             await ctx.reply("❌ LLM 客户端未就绪，无法归纳。")
             return
         if not self._store:

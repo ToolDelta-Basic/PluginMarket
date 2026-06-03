@@ -28,6 +28,8 @@ import os
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from ...core.defguard import escape_player_name
+
 from ...core.module import Module
 from ...core.decorators import command, listen
 
@@ -209,8 +211,9 @@ class AttackSpeedTracker(Module):
     async def _on_player_join(self, event):
         blacklist = self._store.load_blacklist()
         if event.player_name in blacklist:
+            safe_name = escape_player_name(event.player_name)
             self.adapter.send_game_command(
-                f'kick "{event.player_name}" §c你已被永久封禁：攻速检测严重违规'
+                f'kick "{safe_name}" §c你已被永久封禁：攻速检测严重违规'
             )
 
     @listen("GameChatEvent")
@@ -319,8 +322,9 @@ class AttackSpeedTracker(Module):
         threshold = self.config.get("攻速检测.历史违规阈值", 3)
         if data["violations"] >= threshold:
             kick_msg = self.config.get("攻速检测.踢出提示文案", "§c你因超速攻击被踢出")
+            safe_name = escape_player_name(player)
             self.adapter.send_game_command(
-                f'kick "{player}" {kick_msg}'
+                f'kick "{safe_name}" {kick_msg}'
             )
 
     def _handle_game_check(self, player: str):
@@ -346,7 +350,8 @@ class AttackSpeedTracker(Module):
 
     def _manual_punish(self, player: str, operator: str = "系统"):
         kick_msg = self.config.get("攻速检测.踢出提示文案", "§c你被管理员踢出")
-        self.adapter.send_game_command(f'kick "{player}" {kick_msg}')
+        safe_name = escape_player_name(player)
+        self.adapter.send_game_command(f'kick "{safe_name}" {kick_msg}')
         _log.info("[攻速检测] %s 手动踢出 %s", operator, player)
 
     def _blacklist_add(self, player: str, operator: str = "系统"):
@@ -354,7 +359,8 @@ class AttackSpeedTracker(Module):
         bl.add(player)
         self._store.save_blacklist(bl)
         ban_msg = self.config.get("攻速检测.永久封禁文案", "§c你已被永久封禁")
-        self.adapter.send_game_command(f'kick "{player}" {ban_msg}')
+        safe_name = escape_player_name(player)
+        self.adapter.send_game_command(f'kick "{safe_name}" {ban_msg}')
         _log.info("[攻速检测] %s 拉黑 %s", operator, player)
 
     def _blacklist_remove(self, player: str, operator: str = "系统"):
@@ -377,13 +383,18 @@ class AttackSpeedTracker(Module):
         self.adapter.send_game_message(player, msg)
 
     def _console_menu(self, args: list):
+        """控制台菜单 — 注册为 adapter console 命令。
+
+        向游戏控制台输出管理菜单信息。使用 _log.info() 代替 print()，
+        既满足控制台交互需求，也写入日志用于审计。
+        """
         if not args:
-            print("攻速管理 1=排行 2=配置 3=黑名单 4=开关 5=惩罚 6=拉黑 7=解封")
+            _log.info("攻速管理 1=排行 2=配置 3=黑名单 4=开关 5=惩罚 6=拉黑 7=解封")
             return
         try:
             opt = int(args[0])
         except ValueError:
-            print("无效选项")
+            _log.info("无效选项")
             return
         if opt == 1:
             self._print_ranking()
@@ -393,7 +404,7 @@ class AttackSpeedTracker(Module):
             self._print_blacklist()
         elif opt == 4:
             self._active = not self._active
-            print(f"攻速检测已{'启用' if self._active else '禁用'}")
+            _log.info("攻速检测已%s", "启用" if self._active else "禁用")
         elif opt == 5 and len(args) >= 2:
             self._manual_punish(args[1])
         elif opt == 6 and len(args) >= 2:
@@ -401,10 +412,11 @@ class AttackSpeedTracker(Module):
         elif opt == 7 and len(args) >= 2:
             self._blacklist_remove(args[1])
         else:
-            print("用法: 攻速管理 <数字> [参数]")
+            _log.info("用法: 攻速管理 <数字> [参数]")
 
     def _print_ranking(self):
-        print("=== 攻速排行榜 ===")
+        """输出攻速排行榜到日志。"""
+        _log.info("=== 攻速排行榜 ===")
         for fname in sorted(os.listdir(self._store._dir)):  # noqa: PYL-W0212 (same-package internal access — _store is a framework-internal datastore)
             if fname == "_blacklist.json":
                 continue
@@ -413,15 +425,17 @@ class AttackSpeedTracker(Module):
                 with open(path) as f:
                     d = json.load(f)
                 name = fname.replace(".json", "")
-                print(f"  {name}: 违规 {d.get('violations', 0)}, 攻击 {d.get('total_attacks', 0)}")
+                _log.info("  %s: 违规 %s, 攻击 %s", name, d.get('violations', 0), d.get('total_attacks', 0))
             except Exception:
                 pass
 
     def _print_config(self):
+        """输出攻速检测配置到日志。"""
         cfg = self.config.get("攻速检测", {})
         for k, v in cfg.items():
-            print(f"  {k}: {v}")
+            _log.info("  %s: %s", k, v)
 
     def _print_blacklist(self):
+        """输出黑名单到日志。"""
         bl = self._store.load_blacklist()
-        print(f"黑名单 ({len(bl)} 人): {', '.join(sorted(bl)) if bl else '(空)'}")
+        _log.info("黑名单 (%d 人): %s", len(bl), ', '.join(sorted(bl)) if bl else '(空)')

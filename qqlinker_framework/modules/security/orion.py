@@ -23,6 +23,9 @@ from ...core.events import PlayerJoinEvent
 _log = logging.getLogger(__name__)
 
 
+from ...core.defguard import escape_player_name
+
+
 class BanStore:
     """封禁记录持久化存储，每玩家一个 JSON 文件。"""
 
@@ -150,8 +153,9 @@ class OrionBridge(Module):
             "operator": "AI_Auditor",
         })
         # 同时踢出在线玩家
+        safe_player = escape_player_name(player)
         self.adapter.send_game_command(
-            f'kick "{player}" §c你已被封禁：{reason or "系统封禁"}'
+            f'kick "{safe_player}" §c你已被封禁：{reason or "系统封禁"}'
         )
         _log.info(
             "编程式封禁 %s (时长=%d分钟): %s", player, duration, reason,
@@ -176,7 +180,8 @@ class OrionBridge(Module):
         else:
             msg = f"§c你已被永久封禁：{reason}"
 
-        self.adapter.send_game_command(f'kick "{player}" {msg}')
+        safe_player = escape_player_name(player)
+        self.adapter.send_game_command(f'kick "{safe_player}" {msg}')
         _log.info("进服拦截 %s: %s", player, reason)
 
     # ── 命令处理 ────────────────────────────────────────────
@@ -211,9 +216,10 @@ class OrionBridge(Module):
         })
 
         # 踢出在线玩家
+        safe_player = escape_player_name(player)
         time_str = "永久" if duration == -1 else self._fmt_duration(duration)
         self.adapter.send_game_command(
-            f'kick "{player}" §c你已被封禁至 {time_str}：{reason}'
+            f'kick "{safe_player}" §c你已被封禁至 {time_str}：{reason}'
         )
         await ctx.reply(f"✅ 已封禁 {player}（{time_str}）：{reason}")
         _log.info(
@@ -265,7 +271,8 @@ class OrionBridge(Module):
 
         player = args[0]
         reason = args[1] if len(args) > 1 else "管理员操作"
-        self.adapter.send_game_command(f'kick "{player}" {reason}')
+        safe_player = escape_player_name(player)
+        self.adapter.send_game_command(f'kick "{safe_player}" {reason}')
         await ctx.reply(f"✅ 已踢出 {player}")
 
     # ── 工具 ────────────────────────────────────────────────

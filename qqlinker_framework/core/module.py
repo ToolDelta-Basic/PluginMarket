@@ -275,6 +275,24 @@ class Module(ABC):
         tools: List[dict] → 自动注册到 ToolManager
         scheduled: List[ScheduledTask] → 自动启动/停止
         hot_reload_state: Dict[str, Any] → 自动持久化
+
+    ── 配置读取指南 ──
+    推荐使用 **self.config.get("路径")** 作为主要配置读取方式：
+        # 推荐：按路径读取，支持 "节.键" 点号表示法
+        value = self.config.get("AI助手.温度", 0.7)
+        # 也支持忽略默认值
+        value = self.config.get("AI助手.温度")
+
+    self.cfg_<name> 是 config_schema 注入的便捷别名（声明式简写）：
+        # 在 config_schema 中声明后可用：
+        config_schema = {"temperature": ("AI助手.温度", 0.7)}
+        # 然后直接 self.cfg_temperature 即可（但此值在 on_init 时快照，
+        # 不反映运行时动态修改）。
+
+    因此：
+    - **self.config.get()** → 适用于需要动态读取最新配置的场景
+    - **self.cfg_<name>**  → 适用于启动时固定、后续不变的便捷值
+    - 新手建议统一使用 self.config.get()，避免混淆
     """
 
     # ── 必须声明 ──
@@ -345,6 +363,29 @@ class Module(ABC):
 
         # ── 魔法属性（简化开发）──
         self._inject_magic_attrs(services)
+
+        # ── 配置热重载：自动更新 self.cfg_* 属性 ──
+        if self.config_schema:
+            self.event_bus.subscribe("ConfigReloadEvent", self._on_config_reloaded)
+
+    def _on_config_reloaded(self, event):
+        """配置热重载时自动更新 self.cfg_<name> 属性。"""
+        config_svc = None
+        try:
+            config_svc = self.services.get("config")
+        except KeyError:
+            pass
+        if not config_svc or not self.config_schema:
+            return
+        for attr_name, (config_path, default) in self.config_schema.items():
+            try:
+                value = config_svc.get(config_path, default)
+                setattr(self, f"cfg_{attr_name}", value)
+            except Exception:
+                self.logger.debug(
+                    "配置热更新 '%s' (路径=%s) 失败，保留旧值", attr_name, config_path
+                )
+        self.logger.info("配置已热更新 (%d 个 cfg_* 属性)", len(self.config_schema))
 
     def _inject_magic_attrs(self, services: ServiceContainer) -> None:
         """注入便捷属性: self.game / self.qq / self.cfg / self.adapter。

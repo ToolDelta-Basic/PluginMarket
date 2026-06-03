@@ -83,11 +83,12 @@ class ConsoleCommands:
                 print(f"正在从 {target} 下载模块...")
                 name = download_module(target, host.data_path)
             else:
-                if not host.market_aggregator:
+                market_agg = host.services.try_get("market")
+                if not market_agg:
                     print("❌ 市场聚合器未配置，请先启用模块市场")
                     return
                 print(f"正在从市场源搜索 '{target}'...")
-                name = host.market_aggregator.fetch_module(target, host.data_path)
+                name = market_agg.fetch_module(target, host.data_path)
             if name:
                 print(f"✅ 模块 '{name}' 安装成功，请重载插件使其生效")
             else:
@@ -107,10 +108,11 @@ class ConsoleCommands:
             if len(args) < 3:
                 print("用法: qqdeps module search <关键词>")
                 return
-            if not host.market_aggregator:
+            market_agg = host.services.try_get("market")
+            if not market_agg:
                 print("❌ 市场聚合器未配置")
                 return
-            result = host.market_aggregator.search(" ".join(args[2:]))
+            result = market_agg.search(" ".join(args[2:]))
             mods = result.get("modules", [])
             if not mods:
                 print("未找到匹配的结果")
@@ -130,18 +132,20 @@ class ConsoleCommands:
         action = args[1].lower()
         host = self.host
         if action == "sources":
-            if not host.market_aggregator:
+            market_agg = host.services.try_get("market")
+            if not market_agg:
                 print("市场聚合器未配置")
             else:
-                print(f"已配置 {len(host.market_aggregator._sources)} 个市场源:")  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
-                for i, s in enumerate(host.market_aggregator._sources, 1):  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
+                print(f"已配置 {len(market_agg._sources)} 个市场源:")  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
+                for i, s in enumerate(market_agg._sources, 1):  # noqa: PYL-W0212 (same-package internal access — reading protected attribute from managing host)
                     print(f"  {i}. {s}")
         elif action == "refresh":
-            if not host.market_aggregator:
+            market_agg = host.services.try_get("market")
+            if not market_agg:
                 print("❌ 市场聚合器未配置")
                 return
             print("正在从市场源刷新...")
-            result = host.market_aggregator.list_all()
+            result = market_agg.list_all()
             mods = result.get("modules", [])
             conflicts = result.get("conflicts", [])
             print(f"发现 {len(mods)} 个模块 (来自 {len(result.get('sources', []))} 个源)")
@@ -180,15 +184,17 @@ class ConsoleCommands:
 
     def _qqhealth(self, args: list):
         host = self.host
+        ws_client = host.services.try_get("ws_client")
+        dedup = host.services.try_get("dedup")
         status = {
-            "ws_connected": host.ws_client.available if host.ws_client else False,
+            "ws_connected": ws_client.available if ws_client else False,
             "loaded_modules": host.module_mgr.get_loaded_modules(),
             "counters": {},
             "redis_connected": False,
         }
-        if host.dedup and host.dedup.redis and host.dedup.redis.client:
+        if dedup and dedup.redis and dedup.redis.client:
             try:
-                host.dedup.redis.client.ping()
+                dedup.redis.client.ping()
                 status["redis_connected"] = True
             except Exception:
                 pass

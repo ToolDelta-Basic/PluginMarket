@@ -33,7 +33,7 @@ class ModuleManager:
         logger = logging.getLogger(__name__)
         modules: List[Module] = []
 
-        # Phase 1: 实例化 + 装饰器扫描
+        # Phase 1: 实例化 + 装饰器扫描 + 依赖声明
         async with self._lock:
             for cls in self._module_classes:
                 try:
@@ -48,8 +48,28 @@ class ModuleManager:
                 self._scan_all_decorators(mod)
                 modules.append(mod)
                 self._loaded_modules[mod.name] = mod
+                # 注册模块间依赖关系（用于拓扑排序）
+                for dep_name in mod.required_services:
+                    self.services.register_dependency(mod.name, dep_name)
 
-        # Phase 2: on_init（约定已执行）
+        # Phase 2: 按依赖拓扑排序后执行 on_init
+        # 有依赖的模块会在其所依赖的模块之后初始化
+        sorted_names = self.services.resolve_order()
+        # 将模块按 resolve_order 重排（保留原 modules 中不在排序结果中的模块）
+        name_to_mod = {m.name: m for m in modules}
+        ordered_modules: List[Module] = []
+        seen: set = set()
+        for name in sorted_names:
+            if name in name_to_mod and name not in seen:
+                ordered_modules.append(name_to_mod[name])
+                seen.add(name)
+        # 追加任何不在依赖图中的模块（按原始注册顺序）
+        for mod in modules:
+            if mod.name not in seen:
+                ordered_modules.append(mod)
+                seen.add(mod.name)
+        modules = ordered_modules
+
         for mod in modules:
             try:
                 mod._apply_conventions()

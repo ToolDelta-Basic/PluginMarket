@@ -1,29 +1,47 @@
 """事件桥接模块 — 游戏→QQ 事件分发 + OneBot 消息解析。
 
 从 FrameworkHost 拆分出来，聚焦事件转换与分发。
+不持有 FrameworkHost 引用，通过独立参数解耦。
 """
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from typing import Callable, Optional
 
 from .events import (
     GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent, GroupMessageEvent,
 )
 from .defguard import validate_onebot_event
 from .error_hints import hint
-
-if TYPE_CHECKING:
-    from .host import FrameworkHost
+from .bus import EventBus
 
 access_log = logging.getLogger("access")
 _log = logging.getLogger(__name__)
 
 
 class EventBridge:
-    """将游戏侧和 QQ 侧事件桥接到 EventBus。"""
+    """将游戏侧和 QQ 侧事件桥接到 EventBus。
 
-    def __init__(self, host: "FrameworkHost"):
-        self.host = host
+    通过独立参数接收依赖，不持有 FrameworkHost 引用:
+        - event_bus: 事件总线
+        - config_mgr: 配置管理器（用于读取链接的群聊等）
+        - dedup: 消息去重引擎
+        - main_loop_getter: 返回当前主事件循环的可调用对象
+        - adapter: 框架适配器（用于触发原始消息处理器）
+    """
+
+    def __init__(
+        self,
+        event_bus: EventBus,
+        config_mgr,
+        dedup,
+        main_loop_getter: Callable[[], Optional[asyncio.AbstractEventLoop]],
+        adapter,
+    ):
+        self.event_bus = event_bus
+        self.config_mgr = config_mgr
+        self.dedup = dedup
+        self.main_loop_getter = main_loop_getter
+        self.adapter = adapter
 
     # ── 游戏侧 → 事件总线 ──
 
@@ -47,11 +65,11 @@ class EventBridge:
 
     def _publish(self, event, label: str):
         """线程安全地发布事件到主循环。"""
-        host = self.host
-        if host.main_loop and host.main_loop.is_running():
+        loop = self.main_loop_getter()
+        if loop and loop.is_running():
             try:
                 asyncio.run_coroutine_threadsafe(
-                    host.event_bus.publish(event), host.main_loop,
+                    self.event_bus.publish(event), loop,
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
@@ -69,14 +87,13 @@ class EventBridge:
         if data.get("post_type") != "message":
             return
 
-        host = self.host
-        linked_groups = host.config_mgr.get("消息转发.链接的群聊", [])
+        linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
         group_id = data["group_id"]
         if group_id not in linked_groups:
             return
 
         msg_id = data.get("message_id")
-        if msg_id and not host.dedup.check_and_add_id(f"raw_{msg_id}"):
+        if msg_id and self.dedup and not self.dedup.check_and_add_id(f"raw_{msg_id}"):
             return
 
         text = data["message"]
@@ -85,7 +102,7 @@ class EventBridge:
 
         # 触发原始消息处理器（给适配器用）
         try:
-            trigger = getattr(host.adapter, "trigger_raw_group_handlers", None)
+            trigger = getattr(self.adapter, "trigger_raw_group_handlers", None)
             if trigger:
                 trigger(data["_raw"])
         except Exception as e:
@@ -98,9 +115,10 @@ class EventBridge:
             message=text.strip(),
             raw_data=data["_raw"],
         )
-        if host.main_loop and host.main_loop.is_running():
+        loop = self.main_loop_getter()
+        if loop and loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                host.event_bus.publish(event), host.main_loop,
+                self.event_bus.publish(event), loop,
             )
 
     @staticmethod
