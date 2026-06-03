@@ -92,6 +92,9 @@ class FrameworkHost:
         # UID 查询函数（供 CommandRouter 内核级使用）
         self.services.register("uid_lookup", self._lookup_uid, uid=UID_ROOT,
                                _caller="qqlinker_framework.core.host")
+        # FrameworkHost 自身注册为 _host 服务（供 kernel_auth .exec 等使用）
+        self.services.register("_host", self, uid=UID_ROOT,
+                               _caller="qqlinker_framework.core.host")
 
         # 事件桥接 + 控制台命令（在 start() 中构造，依赖 services 就绪）
         self.bridge = None
