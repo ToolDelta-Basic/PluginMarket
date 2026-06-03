@@ -79,6 +79,27 @@ def uid_layer(uid: int) -> str:
     return uid_label(uid)
 
 
+def _same_layer(uid_a: int, uid_b: int) -> bool:
+    """检查两个 UID 是否属于同一权限层级。
+
+    同一层级内的模块可以互访彼此注册的服务
+    （例如 daemon 层 uid=100 访问 daemon 服务 uid=2）。
+    """
+    if uid_a == UID_ROOT or uid_b == UID_ROOT:
+        return uid_a == uid_b  # root 是独一层
+    # daemon: 1..999
+    if UID_DAEMON_MIN <= uid_a <= UID_DAEMON_MAX:
+        return UID_DAEMON_MIN <= uid_b <= UID_DAEMON_MAX
+    # service: 1000..1999
+    if UID_SERVICE_MIN <= uid_a <= UID_SERVICE_MAX:
+        return UID_SERVICE_MIN <= uid_b <= UID_SERVICE_MAX
+    # app: 2000..2999
+    if UID_APP_MIN <= uid_a <= UID_APP_MAX:
+        return UID_APP_MIN <= uid_b <= UID_APP_MAX
+    # nobody: 3000+
+    return uid_b >= UID_NOBODY
+
+
 def validate_module_uid(
     declared_uid: int, module_name: str = "",
     layer: str = "app"
@@ -221,21 +242,30 @@ class ServiceContainer:
     def get(self, name: str) -> Any:
         """获取服务实例，校验 UID 访问权限。
 
+        UID 体系：数值越小权限越高（0=root, 1..999=daemon, 1000+...）。
+        按层级校验：调用方层级必须 ≤ 服务层级（同层互访，高层可访问低层）。
+
         Raises:
             KeyError: 服务未注册。
-            PermissionError: 调用方 UID 不足（不是 root 且 uid < 所需等级）。
+            PermissionError: 调用方层级不足。
         """
         req_uid = self._service_uids.get(name)
         if req_uid is None:
             raise KeyError(f"服务 '{name}' 未注册")
 
         # root 拥有一切权限
-        if self._uid != UID_ROOT and self._uid < req_uid:
-            raise PermissionError(
-                f"{self.uid_name}(uid={self._uid}) "
-                f"无权访问 '{name}' "
-                f"(需要 {uid_label(req_uid)}/uid≥{req_uid})"
-            )
+        if self._uid == UID_ROOT:
+            pass
+        elif self._uid > req_uid:
+            # 调用方 uid 数值大于服务 uid = 调用方层级更低 → 拒绝
+            # 例外：同一层级内互访允许（daemon 100 可以访问 daemon 1）
+            if not _same_layer(self._uid, req_uid):
+                raise PermissionError(
+                    f"{self.uid_name}(uid={self._uid}) "
+                    f"无权访问 '{name}' "
+                    f"(需要 {uid_label(req_uid)}/uid≤{req_uid})"
+                )
+        # self._uid <= req_uid 或者同层 → 允许
 
         if name in self._services:
             return self._services[name]
