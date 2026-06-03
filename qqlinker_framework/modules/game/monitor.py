@@ -35,7 +35,7 @@ class TPSMonitorModule(Module):
     """TPS 监控模块，提供 .性能 命令和 'tps' 服务。"""
 
     name = "tps_monitor"
-    uid = 1000  # service: 服务引擎
+    tier = 200  # TIER_SERVICE  # service: 服务引擎
     version = (1, 0, 0)
 
     default_config = {
@@ -76,7 +76,7 @@ class TPSMonitorModule(Module):
         self._cmd_timeout = cfg.get("命令超时", 3.0)
 
         self._service = TPSService(base_response=base_resp)
-        self.services.register("tps", self._service)
+        self._root_services.register("tps", self._service)
 
         self.register_command(
             ".性能", self._cmd_tps,

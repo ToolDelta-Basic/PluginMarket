@@ -134,7 +134,7 @@ class AttackSpeedTracker(Module):
     """攻速检测 — 基于 PlayerAuthInput 数据包。"""
 
     name = "as_tracker"
-    uid = 1000  # service: 服务引擎
+    tier = 200  # TIER_SERVICE  # service: 服务引擎
     version = (1, 0, 0)
     default_config = DEFAULT_CONFIG
     required_services = ["config", "adapter", "message"]

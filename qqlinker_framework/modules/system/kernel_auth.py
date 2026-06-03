@@ -14,7 +14,7 @@ class KernelAuthModule(Module):
     """内核级授权模块。uid=0，仅 root 用户可触发。"""
 
     name = "kernel_auth"
-    uid = 0  # root: 框架内核
+    tier = 0  # TIER_KERNEL  # root: 框架内核
     version = (1, 0, 0)
     required_services = ["config", "message"]
 

@@ -576,7 +576,7 @@ class _H(http.server.BaseHTTPRequestHandler):
 # 模块入口
 # ═══════════════════════════════════════════════
 class PanelModule(Module):
-    name = "webpanel"; uid = 2000; version = (2, 0, 0)
+    name = "webpanel"; tier = 300  # TIER_APP; version = (2, 0, 0)
     default_config = {"管理面板": {"端口": 8381, "地址": "127.0.0.1"}}
 
     def __init__(self, services, event_bus):

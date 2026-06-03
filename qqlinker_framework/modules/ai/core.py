@@ -223,7 +223,7 @@ class AICore(Module):
     """AI 核心模块：集成 LLM 对话、工具调用、审核和会话记忆。"""
 
     name = "ai_core"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (0, 1, 0)
     required_services = [
         "config", "message", "tool", "adapter", "dedup"
@@ -336,9 +336,9 @@ class AICore(Module):
             )
 
         # LLM 客户端注册为全局服务
-        self.services.register("llm_client", self.llm_factory)
+        self._root_services.register("llm_client", self.llm_factory)
         # ★ 将自身注册为 ai_core 服务，供其他模块调用
-        self.services.register("ai_core", self)
+        self._root_services.register("ai_core", self)
 
         # 管理员记忆管理命令
         self.register_command(
@@ -481,7 +481,14 @@ class AICore(Module):
 
         question = " ".join(ctx.args) if ctx.args else ""
         if not question:
-            await ctx.reply("请输入问题")
+            await ctx.reply(
+                "🤖 AI 助手用法：\n"
+                f"  {' / '.join(self.config.get('AI助手.触发词', ['/ai']))} <问题>  → 向 AI 提问\n"
+                "  .设定 <描述>              → 设定你的 AI 角色\n"
+                "  .清除人设                  → 删除你的 AI 角色\n"
+                "  .设定 审批                → [管理] 查看待审人设\n"
+                "  .记忆                     → 查看 AI 对你的记忆"
+            )
             return
 
         # 1. 安全校验

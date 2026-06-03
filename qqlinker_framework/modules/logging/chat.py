@@ -182,7 +182,7 @@ class GlobalChatLogModule(Module):
     """全局聊天日志模块，记录聊天消息并提供查询服务。"""
 
     name = "global_chat_log"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 0)
     required_services = ["config", "message"]
 
@@ -204,7 +204,7 @@ class GlobalChatLogModule(Module):
             max_records=cfg.get("最大记录数", 100),
             enable_images=cfg.get("启用图片存储", False),
         )
-        self.services.register("global_chat_log", self._service)
+        self._root_services.register("global_chat_log", self._service)
 
         self.listen("GroupMessageEvent", self._on_group_msg, priority=0)
         self.listen("GameChatEvent", self._on_game_chat, priority=0)

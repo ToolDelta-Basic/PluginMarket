@@ -103,7 +103,7 @@ class PlayerTrackerModule(Module):
     """玩家坐标追踪模块，定时查询坐标，持久化并生成分布图。"""
 
     name = "player_tracker"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
@@ -150,7 +150,7 @@ class PlayerTrackerModule(Module):
             max_snapshots=max_snapshots,
             time_unit=time_unit,
         )
-        self.services.register("player_positions", self._service)
+        self._root_services.register("player_positions", self._service)
 
         self.register_command(
             ".分布图", self._cmd_map,

@@ -1,7 +1,7 @@
 {
     "plugin-id": "qqlinker-framework",
     "author": "小石潭记qwq",
-    "version": "1.0.0",
+    "version": "1.4.0",
     "description": "模块化群服互通框架",
     "plugin-type": "classic",
     "pre-plugins": {

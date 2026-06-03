@@ -119,7 +119,7 @@ class UserPersonaModule(Module):
     """人设管理模块，通过 create_exports 约定动态注册 persona 服务。"""
 
     name = "user_persona"
-    uid = 2000  # app: 业务模块
+    tier = 300  # TIER_APP  # app: 业务模块
     version = (1, 1, 0)
     dependencies = ["ai_core"]
     required_services = ["config", "message"]
@@ -141,6 +141,35 @@ class UserPersonaModule(Module):
             return self.services.get("audit")
         except KeyError:
             return None
+
+    def _check_admin(self, ctx) -> bool:
+        """校验当前用户是否具有管理员权限。
+
+        检查顺序：
+          1. 适配器原生的 is_user_admin（管理员 QQ 列表）
+          2. UID 授权映射（root=0 或 daemon ≤100）
+        """
+        try:
+            adapter = self.services.get("adapter")
+            config = self.services.get("config")
+            if adapter.is_user_admin(ctx.user_id, config):
+                return True
+        except Exception:
+            pass
+        try:
+            uid_map = self.config.get("权限管理.UID授权", {})
+            if isinstance(uid_map, dict):
+                for uid_str, qq_list in uid_map.items():
+                    try:
+                        uid_level = int(uid_str)
+                    except ValueError:
+                        continue
+                    if isinstance(qq_list, list) and ctx.user_id in qq_list:
+                        if uid_level <= 100:  # daemon 及以上
+                            return True
+        except Exception:
+            pass
+        return False
 
     @staticmethod
     def _extract_reject_reason(args: list[str]) -> str:
@@ -166,23 +195,40 @@ class UserPersonaModule(Module):
     async def _cmd_set(self, ctx):
         """处理 .设定 命令：
          - .设定 <描述>              → 用户申请/修改人设
-         - .设定 审批                → 管理员列出待审人设
-         - .设定 通过 <QQ>           → 管理员通过某人设
-         - .设定 驳回 <QQ> [原因]     → 管理员驳回某人设
+         - .设定 审批                → 【管理员】列出待审人设
+         - .设定 通过 <QQ>           → 【管理员】通过某人设
+         - .设定 驳回 <QQ> [原因]     → 【管理员】驳回某人设
+
+        不带参数时显示完整用法帮助。
         """
         args = ctx.args
+
+        # ── 无参数：显示完整帮助 ──
         if not args:
-            await ctx.reply("请提供人设描述，例如：.设定 我喜欢编程")
+            await ctx.reply(
+                "📝 .设定 命令用法：\n"
+                "  .设定 <描述>              → 申请/修改你的人设\n"
+                "  .设定 审批                → [管理员] 列出待审人设\n"
+                "  .设定 通过 <QQ>           → [管理员] 通过某人设\n"
+                "  .设定 驳回 <QQ> [原因]     → [管理员] 驳回某人设\n"
+                "  .清除人设                  → 删除你的人设"
+            )
             return
 
         # ── 待审审批子命令 ──
         first = args[0].strip()
 
         if first == "审批":
+            if not self._check_admin(ctx):
+                await ctx.reply("🔒 仅管理员可查看待审人设列表")
+                return
             await self._cmd_list_pending(ctx)
             return
 
         if first in ("通过", "驳回"):
+            if not self._check_admin(ctx):
+                await ctx.reply("🔒 仅管理员可审批人设")
+                return
             await self._cmd_approval_action(ctx, first, args)
             return
 

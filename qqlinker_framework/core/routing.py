@@ -100,8 +100,8 @@ class CommandRouter:
                 return True
 
             # ── UID 等级检查 ──
-            min_uid = cmd_info.get("min_uid", 3000)
-            if self.uid_lookup and min_uid < 3000:
+            min_uid = cmd_info.get("min_uid", 400)
+            if self.uid_lookup and min_uid < 400:
                 user_uid = self.uid_lookup(event.user_id)
                 if user_uid > min_uid:
                     logging.getLogger(__name__).warning(

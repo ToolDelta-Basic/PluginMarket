@@ -15,7 +15,7 @@ class GameForwarder(Module):
     """负责游戏聊天与QQ群消息的双向转发，以及加入/离开提示。"""
 
     name = "game_forwarder"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 0)
     required_services = ["message", "config", "adapter"]
 

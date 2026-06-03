@@ -19,7 +19,7 @@ class CommandManager:
         required_role: str = "",
         argument_hint: str = "",
         cooldown: float = 0.0,
-        min_uid: int = 3000,
+        min_uid: int = 400,
         plugin_name: str = "core",
     ):
         """注册一条命令。"""

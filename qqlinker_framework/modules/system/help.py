@@ -16,7 +16,7 @@ class HelpModule(Module):
     """提供 .帮助 命令，分页列出所有可用命令及其描述。"""
 
     name = "help"
-    uid = 2000  # 用户应用层
+    tier = 300  # TIER_APP  # 用户应用层
     version = (1, 0, 2)
     required_services = ["command", "message", "config"]
 

@@ -12,7 +12,7 @@ def command(
     required_role: str = "",
     argument_hint: str = "",
     cooldown: float | None = None,
-    min_uid: int = 3000,
+    min_uid: int = 400,
 ):
     """标记方法为命令处理器。
 

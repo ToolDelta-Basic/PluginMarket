@@ -325,14 +325,14 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
             and getattr(attr, "name", None)
         ):
             # ★ 安全：外部模块声明的 uid 不可信，强制降级
-            declared_uid = getattr(attr, 'uid', 3000)
-            if declared_uid < UID_NOBODY:
+            declared_uid = getattr(attr, "uid", 400)
+            if declared_uid < 400:
                 logger.warning(
                     "外部模块 '%s' 声明了不可信的 uid=%d，"
                     "已强制降级为 nobody (uid=%d)。",
                     attr.name, declared_uid, UID_NOBODY,
                 )
-                attr.uid = UID_NOBODY
+                attr.uid = 400
             return attr
     return None
 

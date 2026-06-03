@@ -24,7 +24,7 @@ class ConfigRepairModule(Module):
     """配置修复与诊断模块。"""
 
     name = "config_repair"
-    uid = 1000  # service: 内核服务级
+    tier = 200  # TIER_SERVICE  # service: 内核服务级
     version = (1, 0, 0)
     dependencies: list[str] = []
     required_services = ["config", "group_config", "message", "command"]

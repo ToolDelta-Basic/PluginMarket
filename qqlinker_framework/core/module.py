@@ -297,7 +297,7 @@ class Module(ABC):
 
     # ── 必须声明 ──
     name: str = ""
-    uid: int = 2000  # 模块等级: 0=root, 1~999=daemon, 1000~1999=service, 2000~2999=app, 3000+=nobody
+    uid: int = 300  # 兼容旧代码，等价于 tier=300 (app)。0=kernel, 100=daemon, 200=service, 300=app, 400=nobody
 
     # ── 可选覆写 ──
     version: tuple = (0, 0, 1)
@@ -320,26 +320,36 @@ class Module(ABC):
     _hot_state: HotReloadState | None = None
 
     def __init__(self, services: ServiceContainer, event_bus: EventBus):
-        self.services = services
+        # 保留 root 级引用用于 _data_dir fallback 等基础设施
+        self._root_services = services
         self.event_bus = event_bus
-        self._commands: dict = {}
-        self._event_handlers: list = []
-        self._tool_defs: list = []
-
-        # ── 防提权: 根据声明的 uid 自动判断层级并校验 ──
+        # ── 防提权: 根据声明的 uid/tier 自动判断层级并校验 ──
+        declared_tier = getattr(self.__class__, 'tier', None)
+        if declared_tier is not None:
+            self.uid = declared_tier
         if self.uid <= 0:
             layer = "kernel"
-        elif self.uid <= 999:
+        elif self.uid <= 100:
             layer = "daemon"
-        elif self.uid <= 1999:
+        elif self.uid <= 200:
             layer = "service"
-        elif self.uid <= 2999:
+        elif self.uid <= 300:
             layer = "app"
         else:
             layer = "nobody"
         self.uid = validate_module_uid(self.uid, self.name, layer=layer)
 
+        # ── UID 受限的服务容器视图 ──
+        self.services = services.view(self.uid)
+
+        # ── 命令/事件/工具注册表 ──
+        self._commands: dict = {}
+        self._event_handlers: list = []
+        self._tool_defs: list = []
+
         # ── 服务注入（含 UID 权限校验）──
+        # 初始化阶段通过 root 容器注入，框架信任注册了 required_services 的模块。
+        # 运行时通过 self.services（UID 视图）限制后续的 services.get() 调用。
         for srv_name in self.required_services:
             if not services.has(srv_name):
                 raise RuntimeError(
@@ -362,19 +372,33 @@ class Module(ABC):
         self.db: JsonDatabase | None = None
 
         # ── 魔法属性（简化开发）──
+        # 初始化阶段通过 root 容器注入（services 参数），运行时 protected by self.services view
         self._inject_magic_attrs(services)
+
+        # ── 能力安全桥梁（私有属性，不注册到服务容器）──
+        self._bridge = self._resolve_bridge(services)
 
         # ── 配置热重载：自动更新 self.cfg_* 属性 ──
         if self.config_schema:
             self.event_bus.subscribe("ConfigReloadEvent", self._on_config_reloaded)
 
+    @staticmethod
+    def _resolve_bridge(root_services):
+        """从 FrameworkHost 中解析 GatekeeperBridge 实例。
+
+        bridge 不注册在 ServiceContainer 中，只能通过 _host 服务
+        获取 FrameworkHost 再获取其 gatekeeper 属性。
+        使用 root_services（初始化阶段原始容器）绕过 UID 视图限制。
+        """
+        try:
+            host = root_services.get("_host")
+            return getattr(host, "gatekeeper", None)
+        except Exception:
+            return None
+
     def _on_config_reloaded(self, event):
         """配置热重载时自动更新 self.cfg_<name> 属性。"""
-        config_svc = None
-        try:
-            config_svc = self.services.get("config")
-        except KeyError:
-            pass
+        config_svc = getattr(self, 'config', None)
         if not config_svc or not self.config_schema:
             return
         for attr_name, (config_path, default) in self.config_schema.items():
@@ -429,8 +453,22 @@ class Module(ABC):
     @property
     def data_dir(self) -> str:
         if self._data_dir is None:
-            cfg_svc = self.services.get("config")
-            base = cfg_svc.get_data_dir()
+            # 优先使用初始化注入的 self.config（bypass UID 限制）
+            # fallback 到运行时 root 容器（仅初始化阶段可能发生）
+            base = None
+            cfg_proxy = getattr(self, 'config', None)
+            if cfg_proxy is not None:
+                try:
+                    base = cfg_proxy.get_data_dir()
+                except Exception:
+                    pass
+            if base is None and self._root_services is not None:
+                try:
+                    base = self._root_services.get("config").get_data_dir()
+                except Exception:
+                    base = "data"
+            if base is None:
+                base = "data"
             path = os.path.join(base, "模块", self.name)
             os.makedirs(path, exist_ok=True)
             self._data_dir = path
@@ -444,16 +482,9 @@ class Module(ABC):
             return
         self._conventions_applied = True
 
-        cfg_svc = None
-        group_cfg_svc = None
-        try:
-            cfg_svc = self.services.get("config")
-        except KeyError:
-            pass
-        try:
-            group_cfg_svc = self.services.get("group_config")
-        except KeyError:
-            pass
+        # 使用初始化注入的服务引用（bypass UID view 限制）
+        cfg_svc = getattr(self, 'config', None)
+        group_cfg_svc = getattr(self, 'group_config', None)
 
         # ── A: default_config → register_section (with scope) ──
         if cfg_svc and self.default_config:
@@ -480,10 +511,10 @@ class Module(ABC):
             dynamic = self.create_exports()
             if isinstance(dynamic, dict):
                 for name, inst in dynamic.items():
-                    self.services.register(name, inst)
+                    self._root_services.register(name, inst)
         if self.exports:
             for name, inst in self.exports.items():
-                self.services.register(name, inst)
+                self._root_services.register(name, inst)
 
         # ── D: db_collections → self.db ──
         if self.db_collections:
@@ -506,11 +537,7 @@ class Module(ABC):
     async def _post_init_conventions(self) -> None:
         """on_init 之后执行的约定（依赖 on_init 中创建的资源）。"""
         # ── G: tools → ToolManager ──
-        tool_mgr = None
-        try:
-            tool_mgr = self.services.get("tool")
-        except KeyError:
-            pass
+        tool_mgr = getattr(self, 'tool', None)
         if tool_mgr and self.tools:
             for tool_def in self.tools:
                 tool_mgr.register_tool(tool_def)
@@ -581,7 +608,7 @@ class Module(ABC):
         required_role: str = "",
         argument_hint: str = "",
         cooldown: float | None = None,
-        min_uid: int = 3000,
+        min_uid: int = 400,
     ):
         """注册一个命令处理器。"""
         if cooldown is None:
@@ -608,11 +635,7 @@ class Module(ABC):
             original = handler
             module_name = self.name
             # 通过 services 获取 GroupModuleFilter（避免循环导入）
-            group_filter = None
-            try:
-                group_filter = self.services.get("group_filter")
-            except (KeyError, PermissionError):
-                pass
+            group_filter = getattr(self, 'group_filter', None)
 
             async def _filtered_handler(event):
                 """群级模块过滤包装：检查该群是否禁用当前模块。"""
@@ -655,17 +678,15 @@ class Module(ABC):
 # ═══════════════════════════════════════════════════════════════
 
 class _ConfigProxy:
-    """配置代理: self.config.键 自动调用 config.get("键")。"""
+    """配置代理: self.config.键 自动调用 config.get("键")。
+
+    显式代理已知方法，其他方法透传到底层 ConfigManager。
+    """
 
     __slots__ = ("_cfg",)
 
     def __init__(self, config_svc):
         self._cfg = config_svc
-
-    def __getattr__(self, key: str):
-        if key.startswith("_"):
-            raise AttributeError(key)
-        return self._cfg.get(key)
 
     def get(self, key: str, default=None):
         return self._cfg.get(key, default)
@@ -675,6 +696,27 @@ class _ConfigProxy:
 
     def save(self):
         return self._cfg.save()
+
+    def register_section(self, section: str, defaults: dict):
+        return self._cfg.register_section(section, defaults)
+
+    def get_data_dir(self):
+        return self._cfg.get_data_dir()
+
+    def __getattr__(self, key: str):
+        """fallback: 尝试 config.get(key)，失败时透传到 _cfg。"""
+        if key.startswith("_"):
+            raise AttributeError(key)
+        # 优先尝试作为配置键读取
+        try:
+            return self._cfg.get(key)
+        except Exception:
+            pass
+        # fallback: 透传属性到底层 ConfigManager
+        try:
+            return getattr(self._cfg, key)
+        except AttributeError:
+            raise AttributeError(f"'_ConfigProxy' 没有属性 '{key}'")
 
 
 class _GroupConfigProxy:
@@ -702,6 +744,9 @@ class _GroupConfigProxy:
     def get_module_config(self, group_id: int, section: str) -> dict:
         """获取指定群的模块节配置。"""
         return self._gcfg.get_group_module_config(group_id, section)
+
+    def register_module_schema(self, section: str, defaults: dict, scope: str = "group"):
+        return self._gcfg.register_module_schema(section, defaults, scope)
 
 
 class _SingleGroupConfigProxy:

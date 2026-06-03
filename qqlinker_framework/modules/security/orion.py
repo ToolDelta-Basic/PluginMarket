@@ -95,7 +95,7 @@ class OrionBridge(Module):
     """自主封禁模块：使用原生游戏指令 + 本地 JSON 记录。"""
 
     name = "orion_bridge"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (2, 0, 0)
     required_services = ["config", "adapter", "message"]
 
@@ -128,7 +128,7 @@ class OrionBridge(Module):
         self._store = BanStore(self.data_dir)
 
         # 注册为全局服务，供其他模块调用
-        self.services.register("orion_bridge", self, uid=100,
+        self._root_services.register("orion_bridge", self, uid=100,
                                _caller="qqlinker_framework.modules.security.orion")
 
         self.listen("PlayerJoinEvent", self._on_player_join, priority=10)

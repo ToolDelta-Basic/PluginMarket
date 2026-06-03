@@ -225,7 +225,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
 
     name = "群服互通框架"
-    version = (1, 3, 0)
+    version = (1, 4, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 
@@ -267,7 +267,7 @@ class QQLinkerFrameworkPlugin(Plugin):
         if pre_apis:
             for api_name, api_inst in pre_apis.items():
                 svc_name = f"pre_api.{api_name}"
-                self._host.services.register(svc_name, api_inst, uid=3000,
+                self._host.services.register(svc_name, api_inst, uid=400,
                                               _caller="qqlinker_framework.__init__")
                 logging.getLogger(__name__).info(
                     "前置插件 API '%s' 已暴露为服务 '%s'", api_name, svc_name

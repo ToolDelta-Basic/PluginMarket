@@ -100,7 +100,7 @@ class PlayerBindingModule(Module):
     """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
 
     name = "player_binding"
-    uid = 2000  # 用户应用层
+    tier = 300  # TIER_APP  # 用户应用层
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 

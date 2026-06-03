@@ -14,6 +14,8 @@ from .services import (
     UID_ROOT,
     UID_DAEMON_MIN,
     UID_SERVICE_MIN,
+    UID_APP_MIN,
+    UID_NOBODY,
 )
 from .bus import EventBus
 from .module import Module
@@ -45,6 +47,7 @@ from ..services.market_server import (
     MarketSourceAggregator,
 )
 from .error_hints import hint
+from .gatekeeper import GatekeeperBridge, register_default_capabilities
 from .events import ConfigReloadEvent
 
 
@@ -53,7 +56,7 @@ class FrameworkHost:
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
         self.adapter = adapter
-        self.services = ServiceContainer(uid=UID_ROOT)
+        self.services = ServiceContainer(tier=UID_ROOT)
         self.event_bus = EventBus()
         self.data_path = data_path or "."
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -80,12 +83,12 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
         self.services.register("tool", self.tool_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("adapter", adapter, uid=UID_DAEMON_MIN,
+        self.services.register("adapter", adapter, uid=UID_APP_MIN,
                                _caller="qqlinker_framework.core.host")
 
         self.module_mgr = ModuleManager(self)
         self.message_mgr = MessageManager(adapter)
-        self.services.register("message", self.message_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("message", self.message_mgr, uid=UID_APP_MIN,
                                _caller="qqlinker_framework.core.host")
         self.services.register("recovery", self.recovery, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
@@ -99,6 +102,9 @@ class FrameworkHost:
         # 事件桥接 + 控制台命令（在 start() 中构造，依赖 services 就绪）
         self.bridge = None
         self.console = ConsoleCommands(self)
+
+        # 能力安全桥梁（uid=0 特权，但不注册为服务）
+        self.gatekeeper = GatekeeperBridge(self.services)
 
         self._modules: List[Module] = []
         self._router = None
@@ -240,7 +246,7 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
 
         debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
-        self.services.register("debug", debug_engine, uid=UID_SERVICE_MIN,
+        self.services.register("debug", debug_engine, uid=UID_NOBODY,
                                _caller="qqlinker_framework.core.host")
 
         self.tool_mgr.init_with_services(self.services)
@@ -322,6 +328,9 @@ class FrameworkHost:
         self._modules = await self.module_mgr.initialize_all()
         if not any(m.name == "help" for m in self._modules):
             logger.warning("help 模块未加载，用户将无法查看命令帮助")
+
+        # ── 能力安全桥梁 ──（在所有服务和模块就绪后注册白名单方法）
+        register_default_capabilities(self.gatekeeper)
 
         # 模块加载完毕后，传播新增字段到所有群子配置
         affected = self.group_config_mgr.propagate_new_fields()

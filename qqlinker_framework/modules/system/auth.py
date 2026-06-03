@@ -15,7 +15,7 @@ class AuthModule(Module):
     """UID 身份认证与提权申请模块。"""
 
     name = "auth"
-    uid = 100  # daemon: 系统守护（身份管理）
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护（身份管理）
     version = (1, 2, 0)
     required_services = ["config", "message"]
 

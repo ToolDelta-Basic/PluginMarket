@@ -197,7 +197,7 @@ class AIAuditEnhanceModule(Module):
     """AI 审计增强,使用 LLM 进行反思与元知识管理,并对外提供审核服务。"""
 
     name = "ai_audit_enhance"
-    uid = 100  # daemon: 系统守护
+    tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 4)
     dependencies = ["ai_core"]
     required_services = ["config"]
@@ -236,7 +236,7 @@ class AIAuditEnhanceModule(Module):
         self._store = AuditKnowledgeStore(data_dir)
 
         # 暴露 audit 服务，供外部模块调用 check_message()
-        self.services.register("audit", self)
+        self._root_services.register("audit", self)
 
         # 注册命令
         self.register_command(
