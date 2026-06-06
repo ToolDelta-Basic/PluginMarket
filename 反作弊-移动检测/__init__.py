@@ -14,7 +14,7 @@ class SimpleAntiCheat(Plugin):
 
     name = "反作弊-移动检测(MUNAN)"
     author = "Assistant"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame):
         super().__init__(frame)
