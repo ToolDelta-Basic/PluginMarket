@@ -1,3 +1,7 @@
+"""
+反作弊-移动检测 (MUNAN)
+包含飞行、平地飞、回弹飞、加速度、速度、上升速度等多维度检测。
+"""
 import time
 import math
 import json
@@ -6,6 +10,8 @@ from tooldelta import Plugin, InternalBroadcast, fmts, plugin_entry, cfg as conf
 
 
 class SimpleAntiCheat(Plugin):
+    """多维移动反作弊插件，支持自定义阈值与骑马检测。"""
+
     name = "反作弊-移动检测(MUNAN)"
     author = "Assistant"
     version = (0, 0, 1)
@@ -13,16 +19,17 @@ class SimpleAntiCheat(Plugin):
     def __init__(self, frame):
         super().__init__(frame)
         self.ListenInternalBroadcast("ggpp:publish_player_position", self.on_pos_data)
-        self.pos_history = {}
-        self.rollback_history = {}
-        self.last_pos = {}
-        self.air_pos_history = {}
+        self.pos_history = {}          # 玩家地面坐标历史
+        self.rollback_history = {}     # 拉回成功的目标坐标历史
+        self.last_pos = {}             # 最后一次地面坐标
+        self.air_pos_history = {}      # 空中坐标历史（用于加速度计算）
         self.last_print_time = 0
         self.last_admin_show_time = 0
-        self.rollback_count = {}
+        self.rollback_count = {}       # 连续拉回计数
 
+        # 配置项及默认值
         DEFAULT_CFG = {
-            #---- 所有检测开关 ----
+            # 开关
             "飞行检测开关": True,
             "平地飞检测开关": True,
             "回弹飞检测开关": True,
@@ -32,7 +39,7 @@ class SimpleAntiCheat(Plugin):
             "速度检测开关": True,
             "上升速度检测开关": True,
             "管理员显示加速度": True,
-            #---- 飞行检测 ----
+            # 飞行检测
             "飞行最小水平速度": 12.0,
             "飞行下落检测秒数": 3.0,
             "飞行最大可通过下落": -0.8,
@@ -41,37 +48,37 @@ class SimpleAntiCheat(Plugin):
             "飞行最小悬空秒数": 0.5,
             "飞行脚下检测距离": 1.0,
             "飞行连续拉回次数阈值": 3,
-            #---- 平地飞检测 ----
+            # 平地飞检测
             "平地飞水平速度阈值": 7.74545,
             "平地飞Y轴标准差阈值": 0.35,
             "平地飞水平加速度阈值": 6.54055,
-            #---- 回弹飞检测 ----
+            # 回弹飞检测
             "回弹飞最小持续秒数": 4.0,
             "回弹飞最小波动次数": 3,
             "回弹飞最小波幅": 0.4,
             "回弹飞最大波幅": 2.5,
             "回弹飞最低水平速度": 2.0,
-            #---- 预测检测 ----
+            # 预测检测
             "预测时间_秒": 0.5,
             "预测基础误差_米": 22.45173,
             "预测速度误差因子": 0.3,
             "预测速度不稳定放宽因子": 3.0,
             "预测速度稳定性阈值": 0.45,
-            #---- 通用 ----
+            # 通用
             "回拉秒数": 3.0,
             "位置打印间隔_秒": 5.0,
-            #---- 加速度检测 ----
+            # 加速度检测
             "加速度异常水平阈值": 12.42526,
             "加速度异常垂直阈值": 21.89734,
-            #---- 速度检测 ----
+            # 速度检测
             "速度异常水平阈值": 8.0,
             "骑马速度水平阈值": 18.0,
-            #---- 上升速度检测 ----
+            # 上升速度检测
             "上升速度阈值": 4.5,
-            #---- 管理员显示 ----
+            # 管理员显示
             "管理员显示间隔_秒": 0.5,
-            #---- 豁免 ----
-            "速度检测下落豁免": True
+            # 豁免
+            "速度检测下落豁免": True,
         }
 
         STD_CFG = {
@@ -113,7 +120,7 @@ class SimpleAntiCheat(Plugin):
             "骑马速度水平阈值": (int, float),
             "上升速度阈值": (int, float),
             "管理员显示间隔_秒": (int, float),
-            "速度检测下落豁免": bool
+            "速度检测下落豁免": bool,
         }
 
         self.cfg, _ = config.get_plugin_config_and_version(
@@ -122,23 +129,25 @@ class SimpleAntiCheat(Plugin):
         fmts.print_inf("[MUNAN ANTI CHEAT] 所有模块配置已加载")
 
     # ---------- 工具方法 ----------
-    def is_bypass(self, name):
+    def is_bypass(self, name: str) -> bool:
+        """检查玩家是否拥有 bypass 豁免标签。"""
         try:
             resp = self.game_ctrl.sendwscmd_with_resp(
                 f"/execute as {name} if entity @s[tag=bypass]"
             )
             return resp.SuccessCount > 0
-        except:
+        except Exception:
             return False
 
-    def _is_riding(self, name):
+    def _is_riding(self, name: str) -> bool:
+        """检查玩家是否骑乘实体（通过 RootVehicle 或 on vehicle 命令）。"""
         try:
             resp = self.game_ctrl.sendwscmd_with_resp(
                 f"/data get entity {name} RootVehicle"
             )
             if resp.SuccessCount > 0:
                 return True
-        except:
+        except Exception:
             pass
 
         try:
@@ -147,12 +156,13 @@ class SimpleAntiCheat(Plugin):
             )
             if resp.SuccessCount > 0:
                 return True
-        except:
+        except Exception:
             pass
 
         return False
 
-    def _is_unsupported(self, name):
+    def _is_unsupported(self, name: str) -> bool:
+        """检查脚下是否没有固体支撑（空气或可攀爬方块）。"""
         distance = self.cfg["飞行脚下检测距离"]
         try:
             resp = self.game_ctrl.sendwscmd_with_resp(
@@ -160,7 +170,7 @@ class SimpleAntiCheat(Plugin):
             )
             if resp.SuccessCount > 0:
                 return True
-        except:
+        except Exception:
             pass
         try:
             resp = self.game_ctrl.sendwscmd_with_resp(
@@ -168,11 +178,12 @@ class SimpleAntiCheat(Plugin):
             )
             if resp.SuccessCount > 0:
                 return True
-        except:
+        except Exception:
             pass
         return False
 
-    def _update_history(self, name, pos, now):
+    def _update_history(self, name: str, pos: dict, now: float) -> None:
+        """更新玩家坐标历史，空中与地面分开存储。"""
         if self._is_unsupported(name):
             if name not in self.air_pos_history:
                 self.air_pos_history[name] = deque(maxlen=5)
@@ -186,7 +197,9 @@ class SimpleAntiCheat(Plugin):
         if name in self.air_pos_history:
             del self.air_pos_history[name]
 
-    def _get_position_at(self, name, target_time, use_rollback=False):
+    def _get_position_at(self, name: str, target_time: float,
+                         use_rollback: bool = False):
+        """从历史中获取最接近 target_time 的坐标。"""
         history = self.rollback_history.get(name) if use_rollback else self.pos_history.get(name)
         if not history:
             return None
@@ -199,22 +212,27 @@ class SimpleAntiCheat(Plugin):
                 best = (x, y, z)
         return best
 
-    def _is_y_rising(self, name, count=3):
+    def _is_y_rising(self, name: str, count: int = 3) -> bool:
+        """检查最近几次地面历史中 Y 坐标是否严格递增。"""
         history = self.pos_history.get(name)
         if not history or len(history) < count:
             return False
         points = list(history)[-count:]
         for i in range(1, len(points)):
-            if points[i][1] <= points[i-1][1]:
+            if points[i][1] <= points[i - 1][1]:
                 return False
         return True
 
-    def _record_rollback_target(self, name, x, y, z, now):
+    def _record_rollback_target(self, name: str, x: float, y: float, z: float,
+                                now: float) -> None:
+        """记录一次成功的拉回目标坐标。"""
         if name not in self.rollback_history:
             self.rollback_history[name] = deque(maxlen=50)
         self.rollback_history[name].append((x, y, z, now))
 
-    def _rollback(self, name, smart=False, to_earliest=False):
+    def _rollback(self, name: str, smart: bool = False,
+                  to_earliest: bool = False) -> None:
+        """执行拉回操作，支持智能拉回和渐进回溯。"""
         now = time.time()
         if smart:
             current = self.last_pos.get(name)
@@ -225,24 +243,25 @@ class SimpleAntiCheat(Plugin):
             r_history = self.rollback_history.get(name)
 
             if to_earliest:
+                # 寻找最早的距离超过 1.0 的点
                 target = None
                 if history and len(history) > 0:
                     for x, y, z, t in history:
-                        if math.sqrt((x - cx)**2 + (y - cy)**2 + (z - cz)**2) >= 1.0:
+                        if math.sqrt((x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2) >= 1.0:
                             target = (x, y, z)
                             break
                 if not target and r_history and len(r_history) > 0:
-                    x0, y0, z0, _ = r_history[0]
-                    target = (x0, y0, z0)
+                    target = (r_history[0][0], r_history[0][1], r_history[0][2])
                 elif not target and history and len(history) > 0:
-                    x0, y0, z0, _ = history[0]
-                    target = (x0, y0, z0)
+                    target = (history[0][0], history[0][1], history[0][2])
                 if not target:
                     return
                 x, y, z = target
                 try:
                     self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
-                    fmts.print_war(f"[反作弊] {name} 拉回至最早变化点 ({x:.5f}, {y:.5f}, {z:.5f})")
+                    fmts.print_war(
+                        f"[反作弊] {name} 拉回至最早变化点 ({x:.5f}, {y:.5f}, {z:.5f})"
+                    )
                     self._record_rollback_target(name, x, y, z, now)
                 except Exception as e:
                     fmts.print_err(f"[反作弊] 最早变化点拉回失败: {e}")
@@ -257,7 +276,9 @@ class SimpleAntiCheat(Plugin):
                     x, y, z, _ = r_history[-1]
                     try:
                         self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
-                        fmts.print_war(f"[反作弊] {name} 拉回至最近安全位置 ({x:.5f}, {y:.5f}, {z:.5f})")
+                        fmts.print_war(
+                            f"[反作弊] {name} 拉回至最近安全位置 ({x:.5f}, {y:.5f}, {z:.5f})"
+                        )
                         self._record_rollback_target(name, x, y, z, now)
                     except Exception as e:
                         fmts.print_err(f"[反作弊] 拉回 {name} 失败: {e}")
@@ -267,19 +288,20 @@ class SimpleAntiCheat(Plugin):
                     fmts.print_war(f"[反作弊] {name} 无可用历史坐标，拉回失败")
                 return
 
+            # 普通智能拉回：从最近历史中找距离>=1.0 的点
             target = None
             for x, y, z, t in reversed(list(history)[:-1]):
-                if math.sqrt((x - cx)**2 + (y - cy)**2 + (z - cz)**2) >= 1.0:
+                if math.sqrt((x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2) >= 1.0:
                     target = (x, y, z)
                     break
             if not target:
-                x0, y0, z0, _ = history[0]
-                target = (x0, y0, z0)
-
+                target = (history[0][0], history[0][1], history[0][2])
             x, y, z = target
             try:
                 self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
-                fmts.print_war(f"[反作弊] {name} 拉回至明显变化前位置 ({x:.5f}, {y:.5f}, {z:.5f})")
+                fmts.print_war(
+                    f"[反作弊] {name} 拉回至明显变化前位置 ({x:.5f}, {y:.5f}, {z:.5f})"
+                )
                 self._record_rollback_target(name, x, y, z, now)
             except Exception as e:
                 fmts.print_err(f"[反作弊] 拉回 {name} 失败: {e}")
@@ -288,45 +310,57 @@ class SimpleAntiCheat(Plugin):
             if name in self.pos_history:
                 self.pos_history[name].clear()
 
+            # 连续拉回计数
             if name not in self.rollback_count:
                 self.rollback_count[name] = []
             self.rollback_count[name].append(now)
-            self.rollback_count[name] = [t for t in self.rollback_count[name] if now - t <= 10]
+            self.rollback_count[name] = [
+                t for t in self.rollback_count[name] if now - t <= 10
+            ]
             if len(self.rollback_count[name]) >= self.cfg["飞行连续拉回次数阈值"]:
                 if self._is_y_rising(name, count=3):
                     self._rollback(name, smart=True, to_earliest=True)
             return
-        else:
-            rollback_times = [3, 5, 10, 15, 30, 60]
-            for sec in rollback_times:
-                target_time = now - sec
-                pos = self._get_position_at(name, target_time)
-                if pos is not None:
-                    x, y, z = pos
-                    try:
-                        self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
-                        fmts.print_war(f"[反作弊] 已将 {name} 拉回至 {sec}秒前 ({x:.5f}, {y:.5f}, {z:.5f})")
-                        self._record_rollback_target(name, x, y, z, now)
-                    except Exception as e:
-                        fmts.print_err(f"[反作弊] 回拉 {name} 失败: {e}")
-                    if name in self.pos_history:
-                        self.pos_history[name].clear()
-                    return
-            r_history = self.rollback_history.get(name)
-            if r_history and len(r_history) > 0:
-                x, y, z, _ = r_history[-1]
+
+        # 普通拉回：渐进回溯
+        rollback_times = [3, 5, 10, 15, 30, 60]
+        for sec in rollback_times:
+            target_time = now - sec
+            pos = self._get_position_at(name, target_time)
+            if pos is not None:
+                x, y, z = pos
                 try:
                     self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
-                    fmts.print_war(f"[反作弊] {name} 使用备用历史拉回 ({x:.5f}, {y:.5f}, {z:.5f})")
+                    fmts.print_war(
+                        f"[反作弊] 已将 {name} 拉回至 {sec}秒前 ({x:.5f}, {y:.5f}, {z:.5f})"
+                    )
                     self._record_rollback_target(name, x, y, z, now)
                 except Exception as e:
-                    fmts.print_err(f"[反作弊] 备用拉回 {name} 失败: {e}")
+                    fmts.print_err(f"[反作弊] 回拉 {name} 失败: {e}")
                 if name in self.pos_history:
                     self.pos_history[name].clear()
                 return
-            fmts.print_war(f"[反作弊] 无法找到 {name} 任何有效历史坐标，回退失败")
+
+        # 所有回溯时间都找不到，尝试备用历史
+        r_history = self.rollback_history.get(name)
+        if r_history and len(r_history) > 0:
+            x, y, z, _ = r_history[-1]
+            try:
+                self.game_ctrl.sendwscmd(f"/tp {name} {x:.5f} {y:.5f} {z:.5f}")
+                fmts.print_war(
+                    f"[反作弊] {name} 使用备用历史拉回 ({x:.5f}, {y:.5f}, {z:.5f})"
+                )
+                self._record_rollback_target(name, x, y, z, now)
+            except Exception as e:
+                fmts.print_err(f"[反作弊] 备用拉回 {name} 失败: {e}")
+            if name in self.pos_history:
+                self.pos_history[name].clear()
+            return
+
+        fmts.print_war(f"[反作弊] 无法找到 {name} 任何有效历史坐标，回退失败")
 
     def _calc_acceleration_from_points(self, p0, p1, p2, check_interval=True):
+        """根据三个点计算水平和垂直加速度。"""
         dt1 = p1[3] - p0[3]
         dt2 = p2[3] - p1[3]
         if check_interval:
@@ -341,19 +375,20 @@ class SimpleAntiCheat(Plugin):
         vx2 = (p2[0] - p1[0]) / dt2
         vy2 = (p2[1] - p1[1]) / dt2
         vz2 = (p2[2] - p1[2]) / dt2
-        dv_h = math.sqrt((vx2 - vx1)**2 + (vz2 - vz1)**2)
+        dv_h = math.sqrt((vx2 - vx1) ** 2 + (vz2 - vz1) ** 2)
         if dv_h > 15.0:
             return None, None
         ax = (vx2 - vx1) / ((dt1 + dt2) / 2)
         ay = (vy2 - vy1) / ((dt1 + dt2) / 2)
         az = (vz2 - vz1) / ((dt1 + dt2) / 2)
-        h_acc = math.sqrt(ax**2 + az**2)
+        h_acc = math.sqrt(ax ** 2 + az ** 2)
         v_acc = abs(ay)
         if h_acc > 50 or v_acc > 50:
             return None, None
         return h_acc, v_acc
 
     def _get_acceleration(self, name):
+        """获取玩家当前精确加速度（优先地面历史，其次空中历史）。"""
         history = self.pos_history.get(name)
         if history and len(history) >= 3:
             p0, p1, p2 = list(history)[-3:]
@@ -364,7 +399,8 @@ class SimpleAntiCheat(Plugin):
             return self._calc_acceleration_from_points(p0, p1, p2, check_interval=False)
         return None, None
 
-    def _get_horizontal_speed(self, name, pos, now):
+    def _get_horizontal_speed(self, name: str, pos: dict, now: float):
+        """计算玩家水平速度，优先使用空中历史以保证实时性。"""
         air_hist = self.air_pos_history.get(name)
         if air_hist and len(air_hist) >= 2:
             p1 = air_hist[-2]
@@ -373,7 +409,7 @@ class SimpleAntiCheat(Plugin):
             if dt > 0:
                 dx = p2[0] - p1[0]
                 dz = p2[2] - p1[2]
-                return math.sqrt(dx**2 + dz**2) / dt
+                return math.sqrt(dx ** 2 + dz ** 2) / dt
         history = self.pos_history.get(name)
         if history and len(history) >= 2:
             p1 = history[-2]
@@ -382,7 +418,7 @@ class SimpleAntiCheat(Plugin):
             if dt > 0:
                 dx = p2[0] - p1[0]
                 dz = p2[2] - p1[2]
-                return math.sqrt(dx**2 + dz**2) / dt
+                return math.sqrt(dx ** 2 + dz ** 2) / dt
         last = self.last_pos.get(name)
         if last:
             lx, ly, lz, lt = last
@@ -390,10 +426,11 @@ class SimpleAntiCheat(Plugin):
             if dt > 0:
                 dx = pos["x"] - lx
                 dz = pos["z"] - lz
-                return math.sqrt(dx**2 + dz**2) / dt
+                return math.sqrt(dx ** 2 + dz ** 2) / dt
         return None
 
-    def _get_vertical_speed(self, name, pos, now):
+    def _get_vertical_speed(self, name: str, pos: dict, now: float) -> float:
+        """计算玩家垂直速度。"""
         air_hist = self.air_pos_history.get(name)
         if air_hist and len(air_hist) >= 2:
             p1 = air_hist[-2]
@@ -416,7 +453,8 @@ class SimpleAntiCheat(Plugin):
                 return (pos["y"] - ly) / dt
         return 0.0
 
-    def _show_accel_to_admins(self, all_data, now):
+    def _show_accel_to_admins(self, all_data: dict, now: float) -> None:
+        """向 tag=admin 的玩家在 actionbar 显示速度和加速度信息。"""
         info_parts = [f"§a==== {time.strftime('%H:%M:%S')} ==== "]
         for name, pos in all_data.items():
             if self.is_bypass(name):
@@ -437,25 +475,28 @@ class SimpleAntiCheat(Plugin):
         cmd = f"""/titleraw @a[tag=admin] actionbar {{"rawtext":{json.dumps(rawtext)}}}"""
         try:
             self.game_ctrl.sendwocmd(cmd)
-        except:
+        except Exception:
             pass
 
     # ---------- 主事件 ----------
-    def on_pos_data(self, event: InternalBroadcast):
+    def on_pos_data(self, event: InternalBroadcast) -> None:
+        """接收前置插件广播的坐标，执行所有检测模块。"""
         data = event.data
         now = time.time()
 
         should_print = (
-            self.cfg["控制台打印位置"] and
-            (now - self.last_print_time >= self.cfg["位置打印间隔_秒"])
+            self.cfg["控制台打印位置"]
+            and (now - self.last_print_time >= self.cfg["位置打印间隔_秒"])
         )
         if should_print:
             self.last_print_time = now
-            fmts.print_inf(f"========== 玩家位置 ({time.strftime('%H:%M:%S')}) ==========")
+            fmts.print_inf(
+                f"========== 玩家位置 ({time.strftime('%H:%M:%S')}) =========="
+            )
 
         should_show_admin = (
-            self.cfg["管理员显示加速度"] and
-            (now - self.last_admin_show_time >= self.cfg["管理员显示间隔_秒"])
+            self.cfg["管理员显示加速度"]
+            and (now - self.last_admin_show_time >= self.cfg["管理员显示间隔_秒"])
         )
         if should_show_admin:
             self.last_admin_show_time = now
@@ -468,7 +509,9 @@ class SimpleAntiCheat(Plugin):
             self._update_history(name, pos, now)
 
             if should_print:
-                fmts.print_inf(f"  {name}: ({pos['x']:.5f}, {pos['y']:.5f}, {pos['z']:.5f})")
+                fmts.print_inf(
+                    f"  {name}: ({pos['x']:.5f}, {pos['y']:.5f}, {pos['z']:.5f})"
+                )
 
             if self.cfg.get("上升速度检测开关", True):
                 self._check_rise(name, pos, now)
@@ -488,48 +531,68 @@ class SimpleAntiCheat(Plugin):
                 self._check_acceleration(name, pos, now)
 
     # ---------- 各检测模块 ----------
-    def _check_rise(self, name, pos, now):
+    def _check_rise(self, name: str, pos: dict, now: float) -> None:
+        """上升速度检测：无支撑且垂直速度超过阈值即拉回。"""
         vy = self._get_vertical_speed(name, pos, now)
         if vy <= self.cfg["上升速度阈值"]:
             return
         if self._is_unsupported(name):
-            fmts.print_war(f"[反作弊] {name} 上升速度异常！垂直速度={vy:.5f} m/s（阈值{self.cfg['上升速度阈值']}）")
+            fmts.print_war(
+                f"[反作弊] {name} 上升速度异常！垂直速度={vy:.5f} m/s"
+                f"（阈值{self.cfg['上升速度阈值']}）"
+            )
             self._rollback(name)
 
-    def _check_speed(self, name, pos, now):
+    def _check_speed(self, name: str, pos: dict, now: float) -> None:
+        """水平速度检测：区分骑马与普通移动，超阈值即拉回。"""
         h_speed = self._get_horizontal_speed(name, pos, now)
         if h_speed is None:
             return
         if self._is_riding(name):
             threshold = self.cfg.get("骑马速度水平阈值", 25.0)
             if h_speed > threshold:
-                fmts.print_war(f"[反作弊] {name} 骑马时速度异常！速度={h_speed:.5f} m/s（阈值{threshold}）")
+                fmts.print_war(
+                    f"[反作弊] {name} 骑马时速度异常！速度={h_speed:.5f} m/s"
+                    f"（阈值{threshold}）"
+                )
                 self._rollback(name)
         else:
             threshold = self.cfg["速度异常水平阈值"]
             if h_speed > threshold:
-                fmts.print_war(f"[反作弊] {name} 水平速度异常！速度={h_speed:.5f} m/s（阈值{threshold}）")
+                fmts.print_war(
+                    f"[反作弊] {name} 水平速度异常！速度={h_speed:.5f} m/s"
+                    f"（阈值{threshold}）"
+                )
                 self._rollback(name)
 
-    def _check_acceleration(self, name, pos, now):
+    def _check_acceleration(self, name: str, pos: dict, now: float) -> None:
+        """加速度检测：水平或垂直加速度超阈值（且非正常下落）即拉回。"""
         h_acc, v_acc = self._get_acceleration(name)
         h_threshold = self.cfg["加速度异常水平阈值"]
         v_threshold = self.cfg["加速度异常垂直阈值"]
 
         if h_acc is not None:
             if h_acc > h_threshold:
-                fmts.print_war(f"[反作弊] {name} 加速度异常！水平={h_acc:.5f} m/s²（阈值{h_threshold}）")
+                fmts.print_war(
+                    f"[反作弊] {name} 加速度异常！水平={h_acc:.5f} m/s²"
+                    f"（阈值{h_threshold}）"
+                )
                 self._rollback(name)
                 return
             if v_acc > v_threshold:
+                # 下落区间放行（18~22 m/s² 且垂直速度向下）
                 if 18 < v_acc < 22:
                     vy = self._get_vertical_speed(name, pos, now)
                     if vy < 0:
                         return
-                fmts.print_war(f"[反作弊] {name} 加速度异常！垂直={v_acc:.5f} m/s²（阈值{v_threshold}）")
+                fmts.print_war(
+                    f"[反作弊] {name} 加速度异常！垂直={v_acc:.5f} m/s²"
+                    f"（阈值{v_threshold}）"
+                )
                 self._rollback(name)
 
-    def _check_flight(self, name, pos, now):
+    def _check_flight(self, name: str, pos: dict, now: float) -> None:
+        """飞行检测：无支撑且无有效下落/跳跃趋势时判定为悬空飞行。"""
         history = self.pos_history.get(name)
         if not self._is_unsupported(name):
             return
@@ -549,17 +612,23 @@ class SimpleAntiCheat(Plugin):
         h_speed = self._get_horizontal_speed(name, pos, now) or 0.0
         vy = self._get_vertical_speed(name, pos, now)
 
+        # 静止悬停
         if h_speed < 0.1 and abs(vy) < 0.1:
-            fmts.print_war(f"[反作弊] {name} 疑似静止悬停，高度={pos['y']:.5f}")
+            fmts.print_war(
+                f"[反作弊] {name} 疑似静止悬停，高度={pos['y']:.5f}"
+            )
             self._rollback(name, smart=True)
             return
 
+        # 缓降豁免
         if h_speed < 0.5 and vy < 0:
             return
 
+        # 快速下落豁免
         if vy < self.cfg["飞行最小下落速度"]:
             return
 
+        # 下落/跳跃趋势检查
         lookback = self.cfg["飞行下落检测秒数"]
         target_time = now - lookback
         old_y = None
@@ -592,7 +661,8 @@ class SimpleAntiCheat(Plugin):
         )
         self._rollback(name, smart=True)
 
-    def _check_groundfly(self, name, pos, now):
+    def _check_groundfly(self, name: str, pos: dict, now: float) -> None:
+        """平地飞检测：地面高速移动或异常水平加速度。"""
         if self.cfg.get("速度检测下落豁免", True):
             vy = self._get_vertical_speed(name, pos, now)
             if vy < self.cfg["飞行最小下落速度"]:
@@ -606,7 +676,7 @@ class SimpleAntiCheat(Plugin):
             return
         ys = [p[1] for p in recent]
         mean_y = sum(ys) / len(ys)
-        std_y = (sum((y - mean_y)**2 for y in ys) / len(ys)) ** 0.5
+        std_y = (sum((y - mean_y) ** 2 for y in ys) / len(ys)) ** 0.5
         if std_y > self.cfg["平地飞Y轴标准差阈值"]:
             return
         last = self.last_pos.get(name)
@@ -618,24 +688,33 @@ class SimpleAntiCheat(Plugin):
             return
         dx = pos["x"] - last_x
         dz = pos["z"] - last_z
-        dist = (dx**2 + dz**2) ** 0.5
+        dist = (dx ** 2 + dz ** 2) ** 0.5
         h_speed = dist / dt
         h_acc = 0
         if len(recent) >= 4:
             mid = len(recent) // 2
             dt_half = (recent[-1][3] - recent[0][3]) / 2
             if dt_half > 0:
-                v1 = ((recent[mid][0] - recent[0][0])**2 + (recent[mid][2] - recent[0][2])**2) ** 0.5 / dt_half
-                v2 = ((recent[-1][0] - recent[mid][0])**2 + (recent[-1][2] - recent[mid][2])**2) ** 0.5 / dt_half
+                v1 = ((recent[mid][0] - recent[0][0]) ** 2 +
+                      (recent[mid][2] - recent[0][2]) ** 2) ** 0.5 / dt_half
+                v2 = ((recent[-1][0] - recent[mid][0]) ** 2 +
+                      (recent[-1][2] - recent[mid][2]) ** 2) ** 0.5 / dt_half
                 h_acc = (v2 - v1) / dt_half
         if h_speed > self.cfg["平地飞水平速度阈值"]:
-            fmts.print_war(f"[反作弊] {name} 疑似平地飞，水平速度={h_speed:.5f}，Y标准差={std_y:.5f}")
+            fmts.print_war(
+                f"[反作弊] {name} 疑似平地飞，水平速度={h_speed:.5f}，"
+                f"Y标准差={std_y:.5f}"
+            )
             self._rollback(name)
         elif h_acc > self.cfg["平地飞水平加速度阈值"] and h_speed > 5.0:
-            fmts.print_war(f"[反作弊] {name} 水平加速度异常={h_acc:.5f}，水平速度={h_speed:.5f}")
+            fmts.print_war(
+                f"[反作弊] {name} 水平加速度异常={h_acc:.5f}，"
+                f"水平速度={h_speed:.5f}"
+            )
             self._rollback(name)
 
-    def _check_bounce(self, name, pos, now):
+    def _check_bounce(self, name: str, pos: dict, now: float) -> None:
+        """回弹飞行检测：周期性上下波动且水平移动。"""
         history = self.pos_history.get(name)
         if not history or len(history) < 5:
             return
@@ -671,13 +750,17 @@ class SimpleAntiCheat(Plugin):
         dt = recent[-1][3] - recent[0][3]
         if dt <= 0:
             return
-        h_speed = ((dx**2 + dz**2) ** 0.5) / dt
+        h_speed = ((dx ** 2 + dz ** 2) ** 0.5) / dt
         if h_speed < self.cfg["回弹飞最低水平速度"]:
             return
-        fmts.print_war(f"[反作弊] {name} 疑似回弹飞行！波动次数={cycles}，平均振幅={avg_amplitude:.5f}，水平速度={h_speed:.5f}")
+        fmts.print_war(
+            f"[反作弊] {name} 疑似回弹飞行！波动次数={cycles}，"
+            f"平均振幅={avg_amplitude:.5f}，水平速度={h_speed:.5f}"
+        )
         self._rollback(name)
 
-    def _check_predict_move(self, name, pos, now):
+    def _check_predict_move(self, name: str, pos: dict, now: float) -> None:
+        """移动预测检测：基于历史轨迹预测位置，偏差过大即拉回。"""
         if self.cfg.get("速度检测下落豁免", True):
             vy_current = self._get_vertical_speed(name, pos, now)
             if vy_current < self.cfg["飞行最小下落速度"]:
@@ -686,10 +769,7 @@ class SimpleAntiCheat(Plugin):
         history = self.pos_history.get(name)
         if not history or len(history) < 4:
             return
-        p0 = history[-4]
-        p1 = history[-3]
-        p2 = history[-2]
-        p3 = history[-1]
+        p0, p1, p2, p3 = list(history)[-4:]
         dt1 = p1[3] - p0[3]
         dt2 = p2[3] - p1[3]
         if dt1 <= 0 or dt2 <= 0:
@@ -708,11 +788,15 @@ class SimpleAntiCheat(Plugin):
         predicted_y = p2[1] + avg_vy * predict_dt
         predicted_z = p2[2] + avg_vz * predict_dt
         actual_x, actual_y, actual_z = pos["x"], pos["y"], pos["z"]
-        dist = math.sqrt((actual_x - predicted_x)**2 + (actual_y - predicted_y)**2 + (actual_z - predicted_z)**2)
-        speed = math.sqrt(avg_vx**2 + avg_vy**2 + avg_vz**2)
+        dist = math.sqrt(
+            (actual_x - predicted_x) ** 2 +
+            (actual_y - predicted_y) ** 2 +
+            (actual_z - predicted_z) ** 2
+        )
+        speed = math.sqrt(avg_vx ** 2 + avg_vy ** 2 + avg_vz ** 2)
         threshold = self.cfg["预测基础误差_米"] + speed * self.cfg["预测速度误差因子"]
-        speed1 = math.sqrt(vx1**2 + vy1**2 + vz1**2)
-        speed2 = math.sqrt(vx2**2 + vy2**2 + vz2**2)
+        speed1 = math.sqrt(vx1 ** 2 + vy1 ** 2 + vz1 ** 2)
+        speed2 = math.sqrt(vx2 ** 2 + vy2 ** 2 + vz2 ** 2)
         max_speed = max(speed1, speed2)
         if max_speed > 0:
             speed_change_ratio = abs(speed2 - speed1) / max_speed
@@ -722,14 +806,17 @@ class SimpleAntiCheat(Plugin):
             threshold *= self.cfg["预测速度不稳定放宽因子"]
         if speed > 0:
             dot = vx1 * vx2 + vz1 * vz2
-            mag = math.sqrt(vx1**2 + vz1**2) * math.sqrt(vx2**2 + vz2**2)
+            mag = math.sqrt(vx1 ** 2 + vz1 ** 2) * math.sqrt(vx2 ** 2 + vz2 ** 2)
             if mag > 0:
                 cos_angle = max(-1, min(1, dot / mag))
                 angle = math.acos(cos_angle)
                 if angle > math.radians(90):
                     threshold *= 2.0
         if dist > threshold:
-            fmts.print_war(f"[反作弊] {name} 移动预测异常：偏差={dist:.5f} 米（阈值{threshold:.5f}），速度={speed:.5f} m/s")
+            fmts.print_war(
+                f"[反作弊] {name} 移动预测异常：偏差={dist:.5f} 米"
+                f"（阈值{threshold:.5f}），速度={speed:.5f} m/s"
+            )
             self._rollback(name)
 
 
