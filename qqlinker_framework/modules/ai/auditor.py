@@ -12,7 +12,7 @@ import os
 import time
 from typing import Dict, List, Optional, Tuple
 
-from ...core.defguard import escape_player_name
+from ...core.kernel.defguard import escape_player_name
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +39,12 @@ class Auditor:
 
         # ── 去抖：同一用户同一分钟内不重复发送群警告 ──
         self._last_warn: Dict[int, float] = {}
+
+        # ── 并发安全 ──
+        self._vio_lock = asyncio.Lock()
+        self._save_pending = False          # 脏标记：缓冲写
+        self._save_task: Optional[asyncio.Task] = None
+        self._save_cooldown = 2.0           # 缓冲窗口（秒）
 
     # ── 初始化辅助 ────────────────────────────────────────────
 
@@ -73,18 +79,39 @@ class Auditor:
         except (json.JSONDecodeError, OSError) as e:
             _logger.warning("加载违规记录失败: %s", e)
 
-    def _save_violations(self) -> None:
-        """持久化违规记录到磁盘。"""
+    async def _save_violations_async(self) -> None:
+        """异步持久化违规记录到磁盘（通过线程池避免阻塞事件循环）。"""
         if not self._violations_file:
             return
         try:
-            with open(self._violations_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    self.violation_counts, f,
-                    ensure_ascii=False, indent=2,
-                )
+            counts = dict(self.violation_counts)  # 快照副本
+            await asyncio.to_thread(self._do_save_violations, counts)
+        except Exception as e:
+            _logger.error("保存违规记录失败: %s", e)
+
+    def _do_save_violations(self, counts: dict) -> None:
+        """同步写入磁盘（在 to_thread 中执行）。"""
+        try:
+            tmp = self._violations_file + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(counts, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self._violations_file)  # 原子替换
         except OSError as e:
             _logger.error("保存违规记录失败: %s", e)
+
+    def _schedule_save(self) -> None:
+        """缓冲写：合并短时间内的多次写入为一次。"""
+        self._save_pending = True
+        if self._save_task is not None and not self._save_task.done():
+            return
+        self._save_task = asyncio.ensure_future(self._deferred_save())
+
+    async def _deferred_save(self) -> None:
+        """延迟写入：等待 cooldown 窗口后刷盘。"""
+        await asyncio.sleep(self._save_cooldown)
+        if self._save_pending:
+            self._save_pending = False
+            await self._save_violations_async()
 
     # ── 模式编译 ──────────────────────────────────────────────
 
@@ -102,6 +129,11 @@ class Auditor:
     def check_violation(self, user_id: int, text: str) -> bool:
         """分层检测：正则初筛 → LLM 复核（若可用）。
 
+        NOTE: 此方法为同步路径，_llm_confirm_violation 始终返回 True
+        以保证同步路径不绕过检测。异步 LLM 复核应在 process_message 中完成。
+        调用此方法的异步路径（如 _validate_ai_request）应改用
+        process_message 流的异步检测方式，避免 LLM 复核被绕过。
+
         Returns:
             True 表示确认违规。
         """
@@ -115,7 +147,7 @@ class Auditor:
                 _logger.debug("用户 %d: 正则命中但 LLM 复核未确认", user_id)
                 return False
 
-        self._record_violation(user_id)
+        self._record_violation_sync(user_id)
         return True
 
     def _regex_first_pass(self, text: str) -> bool:
@@ -179,25 +211,44 @@ class Auditor:
 
     # ── 违规记录 ──────────────────────────────────────────────
 
-    def _record_violation(self, user_id: int) -> None:
-        """记录一次违规并检查是否达到处理阈值。"""
+    def _record_violation_sync(self, user_id: int) -> None:
+        """同步记录违规（仅用于同步路径如 check_violation）。
+
+        同步路径无法 await，直接修改计数并调度异步写入。
+        """
         count = self.violation_counts.get(user_id, 0) + 1
         self.violation_counts[user_id] = count
-        self._save_violations()  # 每次变动都持久化
+        self._schedule_save()  # 缓冲写
         limit = self.config.get("AI助手.审核.违规次数上限", 3)
         if count >= limit:
             self._apply_action(user_id)
             self.violation_counts[user_id] = 0
-            self._save_violations()
+            self._schedule_save()
+
+    async def _record_violation(self, user_id: int) -> None:
+        """异步记录一次违规并检查是否达到处理阈值。
+
+        使用 asyncio.Lock 保护 violation_counts 防止竞态。
+        """
+        async with self._vio_lock:
+            count = self.violation_counts.get(user_id, 0) + 1
+            self.violation_counts[user_id] = count
+            self._schedule_save()  # 缓冲写
+            limit = self.config.get("AI助手.审核.违规次数上限", 3)
+            if count >= limit:
+                self._apply_action(user_id)
+                self.violation_counts[user_id] = 0
+                self._schedule_save()
 
     def get_violation_count(self, user_id: int) -> int:
         """获取用户当前违规次数。"""
         return self.violation_counts.get(user_id, 0)
 
-    def reset_violations(self, user_id: int) -> None:
+    async def reset_violations(self, user_id: int) -> None:
         """重置用户违规计数。"""
-        self.violation_counts.pop(user_id, None)
-        self._save_violations()
+        async with self._vio_lock:
+            self.violation_counts.pop(user_id, None)
+        self._schedule_save()
 
     # ── 处理动作 ──────────────────────────────────────────────
 
@@ -285,25 +336,22 @@ class Auditor:
                     )
                     return
                 except AttributeError:
-                    # add_ban_with_reason 不存在，尝试 store 直接写入
-                    if hasattr(orion, "_store") and orion._store:
-                        orion._store.set(player_name, {
-                            "player": player_name,
-                            "reason": "AI审核：多次违规发言",
-                            "duration": 86400,  # 24 小时（秒）
-                            "operator": "AI_Auditor",
-                            "timestamp": time.time(),
-                        })
-                        # 同时踢出在线玩家
-                        safe_name = escape_player_name(player_name)
-                        self.ai.adapter.send_game_command(
-                            f'kick "{safe_name}" AI审核：多次违规，已被封禁'
+                    # add_ban_with_reason 不存在 — 使用 ban_player fallback
+                    if hasattr(orion, "ban_player") and callable(orion.ban_player):
+                        orion.ban_player(
+                            player_name,
+                            reason="AI审核：多次违规发言",
+                            duration=1440,
                         )
                         _logger.info(
-                            "用户 %d (玩家 %s) 已通过 Orion store 封禁",
+                            "用户 %d (玩家 %s) 已通过 Orion ban_player 封禁",
                             user_id, player_name,
                         )
                         return
+                    # Fallback：使用游戏原生命令
+                    _logger.warning(
+                        "用户 %d: Orion 无可用封禁接口，回退到原生命令", user_id,
+                    )
                 except Exception as e:
                     _logger.error("Orion 封禁失败: %s，回退到原生指令", e)
 
@@ -383,7 +431,7 @@ class Auditor:
             return
 
         # 确认违规：记录并发送警告
-        self._record_violation(user_id)
+        await self._record_violation(user_id)
 
         # 去抖：同一用户 60 秒内不重复发警告
         now = time.time()

@@ -1,7 +1,14 @@
-"""全局聊天日志服务，记录、查询所有群消息和游戏消息。"""
+"""全局聊天日志服务，记录、查询所有群消息和游戏消息。
+
+安全特性:
+  - 敏感字段遮蔽（IP、token 等）
+  - 日志文件大小和保留天数可配置
+  - 防止磁盘耗尽
+"""
 import asyncio
 import os
 import json
+import re
 import time
 import logging
 import uuid
@@ -9,10 +16,80 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 
 from ...core.module import Module
-from ...core.events import GroupMessageEvent, GameChatEvent
+from ...core.kernel.events import GroupMessageEvent, GameChatEvent
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
+
+# ── 敏感信息遮蔽 ──
+# 需要遮蔽的字段名模式
+_SENSITIVE_FIELD_PATTERNS = re.compile(
+    r"(token|password|secret|key|authorization|api_key|access_key)",
+    re.IGNORECASE,
+)
+# IP 地址正则
+_IP_PATTERN = re.compile(
+    r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}"
+    r"(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+)
+# 默认保留天数和最大日志目录大小
+_DEFAULT_RETENTION_DAYS = 7
+_DEFAULT_MAX_LOG_DIR_SIZE_MB = 500  # 默认最大 500 MB
+
+
+def _mask_sensitive(data: dict) -> dict:
+    """递归遮蔽字典中的敏感字段。
+
+    遮蔽内容：
+      - 键名匹配 token/password/secret/key 等模式的字段值
+      - raw 数据中包含的 IP 地址
+
+    Args:
+        data: 原始数据字典。
+
+    Returns:
+        遮蔽后的数据字典（浅拷贝）。
+    """
+    if not isinstance(data, dict):
+        return data
+
+    masked = {}
+    for key, value in data.items():
+        # 检查字段名是否为敏感字段
+        if isinstance(key, str) and _SENSITIVE_FIELD_PATTERNS.search(key):
+            masked[key] = "[REDACTED]"
+            continue
+        # 递归处理嵌套字典
+        if isinstance(value, dict):
+            masked[key] = _mask_sensitive(value)
+        elif isinstance(value, str):
+            # 遮蔽 IP 地址
+            masked[key] = _IP_PATTERN.sub("[IP_REDACTED]", value)
+        else:
+            masked[key] = value
+    return masked
+
+
+def _get_dir_size_mb(dir_path: str) -> float:
+    """计算目录总大小（MB）。
+
+    Args:
+        dir_path: 目录路径。
+
+    Returns:
+        目录大小（MB）。
+    """
+    total = 0
+    try:
+        for root, _, files in os.walk(dir_path):
+            for f in files:
+                try:
+                    total += os.path.getsize(os.path.join(root, f))
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return total / (1024 * 1024)
 
 
 class ChatLogService:
@@ -23,10 +100,14 @@ class ChatLogService:
         base_dir: str,
         max_records: int = 100,
         enable_images: bool = True,
+        retention_days: int = _DEFAULT_RETENTION_DAYS,
+        max_log_size_mb: int = _DEFAULT_MAX_LOG_DIR_SIZE_MB,
     ):
         self._base = base_dir
         self._max = max_records
         self._images_enabled = enable_images
+        self._retention_days = retention_days
+        self._max_log_size_mb = max_log_size_mb
         self._write_lock = asyncio.Lock()
 
     def _msgs_dir(self) -> str:
@@ -56,8 +137,13 @@ class ChatLogService:
         content: str,
         raw: dict,
     ) -> str:
-        """记录一条消息，处理图片保存，返回生成的 message_id。"""
+        """记录一条消息，处理图片保存，返回生成的 message_id。
+
+        敏感字段（IP、token 等）在记录前遮蔽。
+        """
         msg_id = f"msg_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}"
+        # ── 遮蔽 raw 中的敏感字段 ──
+        safe_raw = _mask_sensitive(raw) if raw else {}
         record = {
             "id": msg_id,
             "timestamp": time.time(),
@@ -66,7 +152,7 @@ class ChatLogService:
             "group_id": group_id,
             "nickname": nickname,
             "content": content,
-            "raw": raw,
+            "raw": safe_raw,
         }
 
         if self._images_enabled and source == "group":
@@ -92,12 +178,19 @@ class ChatLogService:
         return [{"url": m} for m in matches]
 
     def _cleanup_old_logs(self):
-        """删除超过 7 天的旧日志目录。"""
+        """删除超过保留天数的旧日志目录 + 磁盘空间检查。
+
+        防止磁盘耗尽：
+          1. 按日期清理过期日志
+          2. 检查总大小，超限时清理最旧日志
+        """
         try:
             base = os.path.join(self._base, "msgs")
             if not os.path.exists(base):
                 return
-            cutoff = datetime.now() - timedelta(days=7)
+
+            # ── 清理 1: 按保留天数 ──
+            cutoff = datetime.now() - timedelta(days=self._retention_days)
             for dirname in os.listdir(base):
                 dirpath = os.path.join(base, dirname)
                 if not os.path.isdir(dirpath):
@@ -110,6 +203,33 @@ class ChatLogService:
                         _logger.info("已清理过期日志目录: %s", dirname)
                 except ValueError:
                     pass
+
+            # ── 清理 2: 磁盘空间检查 ──
+            total_size_mb = _get_dir_size_mb(base)
+            if total_size_mb > self._max_log_size_mb:
+                _logger.warning(
+                    "日志目录大小 %.1f MB 超过限制 %d MB, 开始清理最旧日志",
+                    total_size_mb, self._max_log_size_mb,
+                )
+                # 按日期升序排列，删除最旧的直到大小低于限制
+                dated_dirs = []
+                for dirname in os.listdir(base):
+                    dirpath = os.path.join(base, dirname)
+                    if not os.path.isdir(dirpath):
+                        continue
+                    try:
+                        dir_date = datetime.strptime(dirname, "%Y%m%d")
+                        dated_dirs.append((dir_date, dirpath))
+                    except ValueError:
+                        pass
+                dated_dirs.sort(key=lambda x: x[0])
+                # 保留最近几天的
+                while (len(dated_dirs) > max(2, self._retention_days) and
+                       _get_dir_size_mb(base) > self._max_log_size_mb * 0.8):
+                    _, oldest_path = dated_dirs.pop(0)
+                    import shutil
+                    shutil.rmtree(oldest_path)
+                    _logger.info("已清理最旧日志目录（空间不足）: %s", oldest_path)
         except Exception as e:
             _logger.error("清理过期日志失败: %s", e)
 
@@ -203,6 +323,10 @@ class GlobalChatLogModule(Module):
             base,
             max_records=cfg.get("最大记录数", 100),
             enable_images=cfg.get("启用图片存储", False),
+            retention_days=cfg.get("日志保留天数", _DEFAULT_RETENTION_DAYS),
+            max_log_size_mb=cfg.get(
+                "日志最大大小MB", _DEFAULT_MAX_LOG_DIR_SIZE_MB
+            ),
         )
         self._root_services.register("global_chat_log", self._service)
 

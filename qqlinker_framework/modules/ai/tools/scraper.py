@@ -1,12 +1,24 @@
 # modules/ai/tools/web_scraper.py
-"""网页抓取工具 —— 通过 Scrapling API 获取网页原文"""
+"""网页抓取工具 —— 通过 Scrapling API 获取网页原文
+
+安全特性:
+  - URL SSRF 防护（内网拒绝、协议检查、长度限制）
+  - 请求超时强制上限（10 秒）
+  - 响应体大小限制（2 MB）
+"""
 import asyncio
 import logging
+
+from .safety import validate_url
 
 try:
     import aiohttp
 except ImportError:
     aiohttp = None
+
+# ── 安全限制 ──
+_MAX_TIMEOUT = 10            # 请求超时上限（秒）
+_MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # 最大响应体大小（2 MB）
 
 
 async def _fetch_via_scrapling(url: str, address: str, token: str,
@@ -37,7 +49,16 @@ async def _fetch_via_scrapling(url: str, address: str, token: str,
                 data = await resp.text()
                 return f"抓取失败：HTTP {resp.status} - {data[:200]}"
 
-            data = await resp.json()
+            # 读取响应体，限制大小（2 MB）
+            raw_data = await resp.read()
+            if len(raw_data) > _MAX_RESPONSE_BYTES:
+                raw_data = raw_data[:_MAX_RESPONSE_BYTES]
+                logging.getLogger(__name__).warning(
+                    "响应体超过 2MB 限制，已截断"
+                )
+            data_decoded = raw_data.decode("utf-8", errors="replace")
+            import json
+            data = json.loads(data_decoded)
             content = data.get("content", "")
             title = data.get("title", "")
             if not content:
@@ -67,7 +88,18 @@ def register_tools(tool_manager):
         url = params.get("url", "")
         if not url:
             return "请提供要抓取的网页 URL"
-        timeout = params.get("timeout", 15)
+
+        # ── SSRF 防护：URL 验证 ──
+        valid, err = validate_url(url)
+        if not valid:
+            return f"URL 不安全：{err}"
+
+        # 超时限制：不允许超过安全上限
+        timeout = params.get("timeout", _MAX_TIMEOUT)
+        if not isinstance(timeout, (int, float)) or timeout <= 0:
+            timeout = _MAX_TIMEOUT
+        if timeout > _MAX_TIMEOUT:
+            timeout = _MAX_TIMEOUT
 
         provider = config.get("Scrapling服务", {})
         address = provider.get("地址", "")
@@ -86,10 +118,10 @@ def register_tools(tool_manager):
         "api_type": "generic",
         "parameters": {
             "url": {"type": "string", "description": "要抓取的网页完整URL"},
-            "timeout": {"type": "integer", "description": "超时秒数（默认15）"}
+            "timeout": {"type": "integer", "description": "超时秒数（默认10）"}
         },
         "callback": handler,
-        "timeout": 25,
+        "timeout": _MAX_TIMEOUT + 5,
         "enabled": True,
         "category": "network",
         "required_config_keys": ["Scrapling服务"],

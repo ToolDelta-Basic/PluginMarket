@@ -9,7 +9,7 @@ import time
 from typing import Dict, Any, Optional, List
 
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
 
 try:
     from PIL import Image, ImageDraw

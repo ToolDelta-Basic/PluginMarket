@@ -5,6 +5,7 @@
   1. 安全隔离: 模块永远拿不到内核对象引用，只能通过 bridge 调用
   2. API 稳定: 内核方法名可自由重构，bridge 映射保持对外不变
   3. UID 门控: 不同 UID 的模块看到不同的白名单方法集
+  4. 二次校验: 依赖 gatekeeper 的模块入口可追加独立权限校验
 
 设计:
   - bridge 自身 uid=0（root 权限访问内核服务），但不注册到 ServiceContainer
@@ -19,25 +20,27 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from ..kernel.audit import audit_log, AuditLevel
+from ..kernel.services import (
+    TIER_KERNEL as _TIER_KERNEL,
+    TIER_DAEMON as _TIER_DAEMON,
+    TIER_APP as _TIER_APP,
+    tier_label,
+    TIER_LABELS,
+)
+
 _log = logging.getLogger(__name__)
 
 
-# ── UID 等级常量（引用 services 模块，避免循环导入运行时获取）────────────────
-_TIER_KERNEL = 0
-_TIER_DAEMON = 100
-_TIER_APP = 300
-
-
+# ── UID 等级映射（从 services.py 导入统一常量）────────────────
 def _uid_tier(uid: int) -> str:
-    """将 uid/tier 映射到权限层名称。"""
+    """将 uid/tier 映射到权限层名称（委托 services.tier_label）。"""
     if uid <= 0:
         return "root"
-    if uid <= 100:
-        return "daemon"
-    if uid <= 200:
-        return "service"
-    if uid <= 300:
-        return "app"
+    # 按 tier 阈值从低到高匹配
+    for threshold in sorted(TIER_LABELS.keys()):
+        if uid <= threshold:
+            return TIER_LABELS[threshold]
     return "nobody"
 
 
@@ -72,7 +75,9 @@ class MethodSpec:
 # GatekeeperBridge
 # ═══════════════════════════════════════════════════════════════
 
-_TIER_RANK = {"root": 0, "daemon": 1, "service": 2, "app": 3, "nobody": 4}
+# 从 TIER_LABELS 派生 rank map，保证与 services.py 同步
+_TIER_RANK = {label: rank for rank, label in sorted(TIER_LABELS.items())}
+_TIER_RANK["root"] = _TIER_RANK.get("kernel", 0)  # "root" 别名
 
 
 class GatekeeperBridge:
@@ -151,7 +156,24 @@ class GatekeeperBridge:
             )
 
         try:
-            return spec.method(*args, **kwargs)
+            # 自动注入 caller_uid 供 bridge 方法使用
+            # 方法可声明 uid 参数来接收调用方 UID
+            # 不影响未声明该参数的方法
+            try:
+                result = spec.method(*args, **kwargs, uid=caller_uid)
+            except TypeError:
+                # 方法不接受 uid 关键字，不注入
+                result = spec.method(*args, **kwargs)
+            # 审计日志：记录关键 bridge 调用
+            if spec.min_tier in ("daemon", "root"):
+                audit_log(
+                    sender=f"uid:{caller_uid}",
+                    action=f"bridge.{path}",
+                    target=str(caller_tier),
+                    detail=f"min_tier={spec.min_tier} readonly={spec.readonly}",
+                    level=AuditLevel.INFO,
+                )
+            return result
         except Exception as e:
             _log.debug("bridge 调用 '%s' 失败: %s", path, e)
             raise
@@ -226,22 +248,22 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
 
     if cfg is not None:
         bridge.register(
-            "config.read",
-            lambda key, default=None: cfg.get(key, default),
+            "配置.读",
+            lambda key, default=None, uid=0: cfg.get(key, default, requester_uid=uid),
             min_tier="app", readonly=True,
-            description="读取配置项，传入点号分隔键和默认值",
+            description="按模块 UID 权限读取配置（KEY路径, 默认值）",
         )
         bridge.register(
-            "config.write",
-            lambda key, value: (cfg.set(key, value), cfg.save()),
+            "配置.写",
+            lambda key, value, uid=0: cfg.set(key, value, requester_uid=uid),
             min_tier="daemon", readonly=False,
-            description="写入配置项并持久化（需要 daemon 权限）",
+            description="按模块 UID 权限写入配置（KEY路径, 值）",
         )
         bridge.register(
-            "config.reload",
-            lambda: cfg.reload(),
-            min_tier="daemon", readonly=False,
-            description="从磁盘重新加载配置",
+            "配置.节权限",
+            lambda section: cfg.get_section_permissions(section),
+            min_tier="app", readonly=True,
+            description="查询某配置节的读/写权限 uid",
         )
 
     # ── adapter ───────────────────────────────────────────────

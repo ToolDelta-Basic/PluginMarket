@@ -6,7 +6,7 @@ import os
 import re
 import threading
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from .handler import MarketHandler
 
@@ -89,6 +89,11 @@ class MarketSourceAggregator:
         conflicts: List[dict] = []
         sources_ok: List[str] = []
         for url in self._sources:
+            # ── URL 安全验证 ──
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https"):
+                _log.warning("跳过非 HTTP 市场源: %s", url)
+                continue
             list_url = f"{url}/modules/list"
             if category:
                 list_url += f"?category={category}"

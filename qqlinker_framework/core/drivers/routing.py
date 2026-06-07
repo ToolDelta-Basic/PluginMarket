@@ -1,9 +1,9 @@
 """命令路由中间件（权限检查 + 角色系统 + 冷却控制 + 群级模块过滤 + 友好错误提示）。"""
 import time
 import logging
-from ..managers.command_mgr import CommandManager
-from ..core.error_hints import hint
-from .context import CommandContext
+from ...managers.command_mgr import CommandManager
+from ...core.kernel.error_hints import hint
+from ..kernel.context import CommandContext
 
 
 class CommandRouter:
@@ -72,6 +72,7 @@ class CommandRouter:
                     await ctx.reply(
                         f"⏳ 命令冷却中，请 {remain:.0f} 秒后再试。{hint['COMMAND_COOLDOWN']}"
                     )
+                    event.handled = True
                     return True
 
             # ── 权限检查 ──
@@ -97,11 +98,14 @@ class CommandRouter:
                 logging.getLogger(__name__).warning(
                     "用户 %d 尝试越权执行命令 %s", event.user_id, trigger,
                 )
+                event.handled = True
                 return True
 
             # ── UID 等级检查 ──
+            # min_uid > 0 时始终检查（0=root 不限制任何命令）。
+            # 当 user_uid > min_uid 时拒绝（数字越小权限越高）。
             min_uid = cmd_info.get("min_uid", 400)
-            if self.uid_lookup and min_uid < 400:
+            if self.uid_lookup and min_uid > 0:
                 user_uid = self.uid_lookup(event.user_id)
                 if user_uid > min_uid:
                     logging.getLogger(__name__).warning(
@@ -121,6 +125,7 @@ class CommandRouter:
                         f"\U0001f512 你的 UID ({user_uid}) 不足，"
                         f"该命令需要 UID <= {min_uid}"
                     )
+                    event.handled = True
                     return True
 
             args_str = msg[len(trigger):].strip()

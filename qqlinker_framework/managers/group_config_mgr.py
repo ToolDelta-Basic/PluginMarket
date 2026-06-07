@@ -23,7 +23,7 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, Callable, Optional
 
-from ..core.error_hints import hint
+from ..core.kernel.error_hints import hint
 
 _log = logging.getLogger(__name__)
 
@@ -150,15 +150,8 @@ class GroupConfigManager:
             self._repair_and_report(group_id, sub_path, "JSON解析失败")
             return deepcopy(main_data)
 
-        # 类型校验
-        type_errors = self._validate_types(sub_data)
-        if type_errors:
-            _log.warning(
-                "群 %d 子配置类型错误 %d 处: %s",
-                group_id, len(type_errors), "; ".join(type_errors[:3]),
-            )
-            self._repair_and_report(group_id, sub_path, "类型校验失败")
-            return deepcopy(main_data)
+        # 类型校验 + 自动修复
+        sub_data, repaired = self._validate_and_repair(sub_data, sub_path, group_id)
 
         # Deep merge: 主配置为基础，子配置覆盖
         merged = self._deep_merge(main_data, sub_data)
@@ -197,53 +190,69 @@ class GroupConfigManager:
     # 类型校验
     # ═══════════════════════════════════════════════════════════
 
-    def _validate_types(self, sub_data: dict) -> list[str]:
-        """校验子配置的值类型是否与主配置一致。
+    def _validate_and_repair(self, sub_data: dict, sub_path: str,
+                             group_id: int) -> tuple[dict, int]:
+        """校验并自动修复子配置中的类型错误。
 
         Returns:
-            错误描述列表，空列表表示通过。
+            (修复后的 sub_data, 修复次数)
         """
-        errors = []
-        main_data = self._main_cfg._data
+        repaired = self._auto_repair_section(sub_data, self._main_cfg._data)
+        if repaired > 0:
+            # 写回修复后的配置
+            try:
+                with open(sub_path, 'w', encoding='utf-8') as f:
+                    json.dump(sub_data, f, ensure_ascii=False, indent=2)
+                _log.info(
+                    "群 %d 子配置自动修复 %d 处类型错误，已写回",
+                    group_id, repaired
+                )
+            except OSError:
+                pass
+        return sub_data, repaired
 
-        for section in sub_data:
-            if section not in main_data:
+    def _auto_repair_section(self, sub_data: dict, main_data: dict,
+                             path: str = "") -> int:
+        """递归修复子配置中类型不匹配的字段。返回修复次数。"""
+        from .config_mgr import _config_smart_cast
+        fixed = 0
+        for section in list(sub_data):
+            if section not in main_data or not isinstance(main_data.get(section), dict):
                 continue
             main_section = main_data[section]
             sub_section = sub_data[section]
-            if not isinstance(main_section, dict) or not isinstance(sub_section, dict):
+            if not isinstance(sub_section, dict):
                 continue
-            errors.extend(
-                self._validate_section_types(
-                    section, sub_section, main_section
-                )
-            )
-        return errors
-
-    @staticmethod
-    def _validate_section_types(
-        section: str, sub: dict, main: dict, prefix: str = "",
-    ) -> list[str]:
-        """递归校验配置节内的类型。"""
-        errors = []
-        for key, main_val in main.items():
-            path = f"{prefix}{section}.{key}"
-            if key not in sub:
-                continue
-            sub_val = sub[key]
-            expected_type = type(main_val)
-            if not isinstance(sub_val, expected_type):
-                errors.append(
-                    f"{path}: 期望{expected_type.__name__}, "
-                    f"实际{type(sub_val).__name__}"
-                )
-            elif isinstance(main_val, dict) and isinstance(sub_val, dict):
-                errors.extend(
-                    GroupConfigManager._validate_section_types(
-                        "", sub_val, main_val, prefix=f"{path}."
+            for key, main_val in main_section.items():
+                if key not in sub_section:
+                    continue
+                sub_val = sub_section[key]
+                if not isinstance(sub_val, type(main_val)):
+                    repaired = _config_smart_cast(sub_val, type(main_val))
+                    p = f"{path}{section}.{key}" if path else f"{section}.{key}"
+                    if repaired is not None:
+                        sub_section[key] = repaired
+                        _log.info(
+                            "[配置修复] 群子配置 %s: %s → %s",
+                            p, type(sub_val).__name__, type(main_val).__name__
+                        )
+                        fixed += 1
+                    else:
+                        sub_section[key] = main_val
+                        _log.info(
+                            "[配置修复] 群子配置 %s: %s 无法转换→回退默认值",
+                            p, type(sub_val).__name__
+                        )
+                        fixed += 1
+                elif isinstance(main_val, dict) and isinstance(sub_val, dict):
+                    # 递归进入嵌套字典
+                    np = path or f"{section}.{key}."
+                    fixed += self._auto_repair_section(
+                        {key: sub_val},
+                        {key: main_val},
+                        np
                     )
-                )
-        return errors
+        return fixed
 
     # ═══════════════════════════════════════════════════════════
     # 修复与备份

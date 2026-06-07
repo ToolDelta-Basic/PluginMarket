@@ -8,6 +8,8 @@
  · .配置状态 查看所有群的子配置状态
  · .配置预览 <群号> <节名> 预览某群某节合并后的配置
  · 备份文件存放至 data/repair_backups/，路径模式下按模块约定
+
+ 安全：.修复配置 会校验操作人是否属于目标群
 ═══════════════════════════════════════════════════════════════════════════
 """
 import logging
@@ -15,7 +17,8 @@ import os
 from datetime import datetime
 
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
+from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
 
@@ -44,7 +47,10 @@ class ConfigRepairModule(Module):
 
     @command(".修复配置", op_only=True, argument_hint="<群号>", description="修复指定群的子配置（管理员）")
     async def _cmd_repair(self, ctx):
-        """手动修复指定群的子配置。"""
+        """手动修复指定群的子配置。
+
+        校验操作人是否属于目标群，防止越权操作。
+        """
         args = ctx.args
         if not args:
             await ctx.reply("用法: .修复配置 <群号>\n例: .修复配置 114514")
@@ -55,6 +61,30 @@ class ConfigRepairModule(Module):
         except ValueError:
             await ctx.reply(f"❌ 无效的群号: {args[0]}")
             return
+
+        # 校验操作人是否属于目标群
+        if ctx.group_id and ctx.group_id != group_id:
+            await ctx.reply(
+                f"❌ 操作拒绝：你当前在群 {ctx.group_id}，"
+                f"不能修复群 {group_id} 的配置。"
+                f"请切换到目标群后操作。"
+            )
+            _log.warning(
+                "[config_repair] 用户 %d 尝试跨群修复配置 "
+                "(当前群=%d, 目标群=%d)，已拒绝。",
+                ctx.user_id, ctx.group_id, group_id,
+            )
+            return
+
+        # 审计日志
+        audit_log(
+            sender=str(ctx.user_id),
+            action="config_repair",
+            target=f"group_{group_id}",
+            detail=f"by_{ctx.nickname}",
+            level=AuditLevel.WARNING,
+            group_id=group_id,
+        )
 
         try:
             self.group_config.repair_group_config(group_id, backup_first=True)

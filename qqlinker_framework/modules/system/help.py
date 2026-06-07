@@ -3,7 +3,7 @@ import time
 import logging
 from typing import Dict, List
 from ...core.module import Module
-from ...core.decorators import command, listen
+from ...core.kernel.decorators import command, listen
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)

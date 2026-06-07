@@ -1,10 +1,24 @@
 # modules/ai/tools/web_search.py
-"""网络搜索工具（百度千帆）"""
+"""网络搜索工具（百度千帆）
+
+安全特性:
+  - query 长度限制 500 字符
+  - query IP 地址模式过滤
+  - 搜索结果恶意链接清洗
+"""
 
 try:
     import aiohttp
 except ImportError:
     aiohttp = None
+
+from .safety import (
+    clean_search_results,
+    filter_ip_patterns,
+    sanitize_prompt,
+)
+
+_QUERY_MAX_LENGTH = 500
 
 
 def register_tools(tool_manager):
@@ -17,6 +31,18 @@ def register_tools(tool_manager):
         query = params.get("query", "")
         if not query:
             return "请提供搜索关键词"
+
+        # ── 安全校验：长度限制 ──
+        if len(query) > _QUERY_MAX_LENGTH:
+            return f"搜索关键词过长（最大 {_QUERY_MAX_LENGTH} 字符）"
+
+        # ── 安全校验：IP 地址模式过滤 ──
+        if filter_ip_patterns(query):
+            return "搜索关键词包含不支持的查询模式"
+
+        # ── 输入清洗 ──
+        query = sanitize_prompt(query, _QUERY_MAX_LENGTH)
+
         provider = config.get("百度千帆", {})
         address = provider.get("地址", "")
         token = provider.get("令牌", "")
@@ -47,8 +73,12 @@ def register_tools(tool_manager):
                 for ref in refs[:3]:
                     title = ref.get("title", "")
                     content = ref.get("content", "")[:200]
+                    # ── 内容清洗：移除恶意链接模式 ──
+                    content = clean_search_results(content)
                     lines.append(f"📄 {title}\n{content}")
-                return "\n\n".join(lines)
+                result = "\n\n".join(lines)
+                # 整体清洗一次
+                return clean_search_results(result)
         except Exception as e:
             return f"搜索异常: {str(e)}"
 

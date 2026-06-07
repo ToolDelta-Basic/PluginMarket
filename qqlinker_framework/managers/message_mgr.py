@@ -5,7 +5,7 @@ import logging
 from enum import IntEnum
 from typing import Optional
 
-from ..core.error_hints import hint
+from ..core.kernel.error_hints import hint
 
 
 class SendPriority(IntEnum):

@@ -31,9 +31,9 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from .services import ServiceContainer, uid_label, validate_module_uid
-from .bus import EventBus
-from .error_hints import hint
+from .kernel.services import ServiceContainer, uid_label, validate_module_tier as validate_module_uid
+from .kernel.bus import EventBus
+from .kernel.error_hints import hint
 
 
 # ── JSON 数据库代理 ──────────────────────────────────────────
@@ -174,7 +174,7 @@ class ScheduledTask:
         self._task: asyncio.Task | None = None
         self._stop_event = asyncio.Event()
 
-    def start(self) -> asyncio.Task:
+    def start(self) -> Optional[asyncio.Task]:
         """启动定时任务。"""
         if self._task and not self._task.done():
             return self._task
@@ -201,7 +201,12 @@ class ScheduledTask:
                         await _safe_call(self.handler)
                 except asyncio.CancelledError:
                     break
-        self._task = asyncio.create_task(_runner())
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # 无运行中事件循环（热插拔/非 async 上下文）→ 用 get_event_loop fallback
+            loop = asyncio.get_event_loop()
+        self._task = loop.create_task(_runner())
         return self._task
 
     def stop(self):
@@ -319,7 +324,7 @@ class Module(ABC):
     _scheduled_tasks: List[ScheduledTask] = []
     _hot_state: HotReloadState | None = None
 
-    def __init__(self, services: ServiceContainer, event_bus: EventBus):
+    def __init__(self, services: ServiceContainer, event_bus: EventBus | None = None):
         # 保留 root 级引用用于 _data_dir fallback 等基础设施
         self._root_services = services
         self.event_bus = event_bus
@@ -379,7 +384,7 @@ class Module(ABC):
         self._bridge = self._resolve_bridge(services)
 
         # ── 配置热重载：自动更新 self.cfg_* 属性 ──
-        if self.config_schema:
+        if self.config_schema and self.event_bus is not None:
             self.event_bus.subscribe("ConfigReloadEvent", self._on_config_reloaded)
 
     @staticmethod
@@ -473,6 +478,22 @@ class Module(ABC):
             os.makedirs(path, exist_ok=True)
             self._data_dir = path
         return self._data_dir
+
+    def resolve_secrets(self, text: str) -> str:
+        """解析文本中的 {配置:节.键} 占位符为实际配置值。
+
+        uid≤100 的模块（daemon+）可用此方法间接引用安全配置
+        （如 API 密钥），无需直接读取敏感值。
+
+        示例:
+            api_key = self.resolve_secrets("{配置:模块市场.上传密钥}")
+        """
+        if '{配置:' not in text:
+            return text
+        config_svc = getattr(self, 'config', None)
+        if config_svc is None:
+            return text
+        return config_svc._cfg.resolve_placeholders(text)
 
     # ── 约定执行 ──
 
@@ -678,15 +699,17 @@ class Module(ABC):
 # ═══════════════════════════════════════════════════════════════
 
 class _ConfigProxy:
-    """配置代理: self.config.键 自动调用 config.get("键")。
-
-    显式代理已知方法，其他方法透传到底层 ConfigManager。
-    """
+    """配置代理: self.config.键 自动调用 config.get("键")。"""
 
     __slots__ = ("_cfg",)
 
     def __init__(self, config_svc):
         self._cfg = config_svc
+
+    def __getattr__(self, key: str):
+        if key.startswith("_"):
+            raise AttributeError(key)
+        return self._cfg.get(key)
 
     def get(self, key: str, default=None):
         return self._cfg.get(key, default)
@@ -702,21 +725,6 @@ class _ConfigProxy:
 
     def get_data_dir(self):
         return self._cfg.get_data_dir()
-
-    def __getattr__(self, key: str):
-        """fallback: 尝试 config.get(key)，失败时透传到 _cfg。"""
-        if key.startswith("_"):
-            raise AttributeError(key)
-        # 优先尝试作为配置键读取
-        try:
-            return self._cfg.get(key)
-        except Exception:
-            pass
-        # fallback: 透传属性到底层 ConfigManager
-        try:
-            return getattr(self._cfg, key)
-        except AttributeError:
-            raise AttributeError(f"'_ConfigProxy' 没有属性 '{key}'")
 
 
 class _GroupConfigProxy:
@@ -744,9 +752,6 @@ class _GroupConfigProxy:
     def get_module_config(self, group_id: int, section: str) -> dict:
         """获取指定群的模块节配置。"""
         return self._gcfg.get_group_module_config(group_id, section)
-
-    def register_module_schema(self, section: str, defaults: dict, scope: str = "group"):
-        return self._gcfg.register_module_schema(section, defaults, scope)
 
 
 class _SingleGroupConfigProxy:
@@ -839,8 +844,10 @@ class _QQProxy:
             logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (group_id=%s)", group_id)
 
     async def send_private(self, user_id: int, text: str):
-        """发送私聊消息。"""
-        if self._adapter and hasattr(self._adapter, 'send_private_msg'):
+        """发送私聊消息（优先通过 MessageManager 削峰填谷）。"""
+        if self._msg:
+            await self._msg.send_private(user_id, text)
+        elif self._adapter and hasattr(self._adapter, 'send_private_msg'):
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(
                 None, self._adapter.send_private_msg, user_id, text

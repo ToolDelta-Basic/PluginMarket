@@ -1,5 +1,7 @@
 """WebSocket 客户端服务，支持自动重连、断路器保护和 OneBot 消息收发。"""
 import json
+import random
+import ssl
 import threading
 import time
 import logging
@@ -7,7 +9,7 @@ import enum
 import importlib
 from typing import Callable, Optional
 
-from ..core.error_hints import hint
+from ..core.kernel.error_hints import hint
 
 
 def _get_websocket():
@@ -74,12 +76,56 @@ class WsClient:
         self._current_delay = self._initial_delay
         self._lock = threading.Lock()
 
+        # TLS / 超时配置
+        self._tls_verify_mode: str = config.get(
+            "网络传输.TLS验证模式", "enabled"
+        )
+        self._connect_timeout: int = config.get(
+            "网络传输.连接超时秒", 10
+        )
+        self._read_timeout: int = config.get(
+            "网络传输.读超时秒", 30
+        )
+        self._ssl_context: Optional[ssl.SSLContext] = None
+        if self.address.startswith("wss://"):
+            self._ssl_context = self._build_ssl_context()
+
         # 断路器状态
         self._circuit_state = CircuitState.CLOSED
         self._circuit_failures = 0
         self._circuit_opened_at: float = 0.0
 
         logging.getLogger("websocket").setLevel(logging.WARNING)
+
+    # ── TLS ──
+
+    def _build_ssl_context(self) -> ssl.SSLContext:
+        """根据配置构建 SSL 上下文。
+
+        TLS验证模式:
+          - "enabled": 完全证书验证（生产推荐）
+          - "skip": 跳过证书验证（仅调试/内网）
+        """
+        if self._tls_verify_mode == "skip":
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            logging.getLogger(__name__).warning(
+                "⚠️ TLS 证书验证已跳过 (TLS验证模式=skip)。"
+                "这仅在调试或可信内网中安全。%s",
+                hint["WS_CONNECT_FAILED"],
+            )
+            return ctx
+        return ssl.create_default_context()
+
+    @staticmethod
+    def _mask_token(token: str) -> str:
+        """遮蔽 Token，日志中只显示前后各 4 字符。"""
+        if not token:
+            return "(无)"
+        if len(token) <= 8:
+            return "***"
+        return f"{token[:4]}***{token[-4:]}"
 
     def set_message_callback(self, callback: Callable[[dict], None]):
         """设置收到群消息时的回调函数。"""
@@ -153,6 +199,12 @@ class WsClient:
 
     # ── 连接管理 ──
 
+    @staticmethod
+    def _jitter(delay: float) -> float:
+        """给延迟加 ±25% 随机抖动，防止重连风暴。"""
+        jitter_range = delay * 0.25
+        return delay + random.uniform(-jitter_range, jitter_range)
+
     def _run_forever(self):
         """后台线程：管理 WebSocket 连接与重连，含断路器。"""
         logger = logging.getLogger(__name__)
@@ -169,20 +221,38 @@ class WsClient:
                     continue
 
             try:
-                # NapCat/OneBot 使用 access_token URL 参数
+                # OneBot 协议: 优先通过 Authorization 请求头传递 token，
+                # 避免 URL 参数被代理/负载均衡器/应用日志记录。
+                # 保留 URL 参数作为 fallback（部分旧版 OneBot 实现不支持 header 认证）。
                 addr = self.address
+                ws_mod = _get_websocket()
+                ws_kwargs = {
+                    "on_open": self._on_open,
+                    "on_message": self._on_message,
+                    "on_error": self._on_error,
+                    "on_close": self._on_close,
+                }
                 if self.token:
+                    ws_kwargs["header"] = {
+                        "Authorization": f"Bearer {self.token}"
+                    }
+                    # Fallback: 同时保留 URL 参数兼容不支持 header 认证的旧版实现
                     sep = "&" if "?" in addr else "?"
                     addr = f"{addr}{sep}access_token={self.token}"
-                ws_mod = _get_websocket()
-                self.ws = ws_mod.WebSocketApp(
-                    addr,
-                    on_open=self._on_open,
-                    on_message=self._on_message,
-                    on_error=self._on_error,
-                    on_close=self._on_close,
+                    logger.info(
+                        "正在连接 %s (Token=%s, TLS=%s)...",
+                        self.address,
+                        self._mask_token(self.token),
+                        self._tls_verify_mode,
+                    )
+                if self._ssl_context is not None:
+                    ws_kwargs["sslopt"] = {"context": self._ssl_context}
+                self.ws = ws_mod.WebSocketApp(addr, **ws_kwargs)
+                self.ws.run_forever(
+                    ping_interval=20,
+                    ping_timeout=10,
+                    ping_payload="keepalive",
                 )
-                self.ws.run_forever(ping_interval=20, ping_timeout=10)
             except Exception as e:
                 logger.error(
                     "WebSocket 连接异常: %s → %s。%s",
@@ -195,14 +265,19 @@ class WsClient:
                 if not self._reconnect:
                     break
                 delay = self._current_delay
-                self._current_delay = min(self._current_delay * 2, self._max_delay)
+                self._current_delay = min(
+                    self._current_delay * 2, self._max_delay
+                )
+            jittered = self._jitter(delay)
             if delay == self._initial_delay:
                 logger.warning(
                     "WebSocket 首次连接失败，将自动重试。%s",
                     hint["WS_CONNECT_FAILED"],
                 )
-            logger.info("将在 %d 秒后重连...", delay)
-            time.sleep(delay)
+            logger.info(
+                "将在 %.1f 秒后重连 (base=%ds)...", jittered, delay
+            )
+            time.sleep(jittered)
 
     def _on_open(self, ws):
         """连接建立回调。"""
@@ -210,7 +285,10 @@ class WsClient:
         with self._lock:
             self._current_delay = self._initial_delay
         self._on_connect_success()
-        logging.getLogger(__name__).info("已连接到 OneBot 服务器 (%s)", self.address)
+        logging.getLogger(__name__).info(
+            "已连接到 OneBot 服务器 (%s, Token=%s)",
+            self.address, self._mask_token(self.token),
+        )
 
     def _on_message(self, ws, message: str):
         """消息接收回调。"""
@@ -224,6 +302,12 @@ class WsClient:
 
         try:
             data = json.loads(message)
+        except json.JSONDecodeError:
+            logging.getLogger(__name__).warning(
+                "收到畸形 JSON 消息 (%d 字节)，已丢弃。%s",
+                len(message), hint["WS_MESSAGE_INVALID"],
+            )
+            return
         except Exception:
             return
 

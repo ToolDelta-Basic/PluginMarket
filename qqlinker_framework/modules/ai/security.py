@@ -1,4 +1,11 @@
-"""AI 审计增强模块:使用 LLM 进行输入前反思与输出后合规检查。"""
+"""AI 审计增强模块:使用 LLM 进行输入前反思与输出后合规检查。
+
+安全特性:
+  - Unicode 同形字检测（Cyrillic 字母冒充 Latin 字母）
+  - 输入香农熵 / 重复率检测（padding 绕过检测）
+  - 独立默认审核级别（不与 _pre_reflection_level 耦合）
+"""
+import math
 import os
 import json
 import time
@@ -7,13 +14,122 @@ import logging
 from typing import List, Dict, Optional
 
 from ...core.module import Module
-from ...core.events import (
+from ...core.kernel.events import (
     AIPrePromptReflectionEvent,
     AIPostResponseReflectionEvent,
 )
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
+
+# ── Unicode 同形字检测 ──
+# Cyrillic 字符范围（大写 + 小写）
+_CYRILLIC_CHARS = set(
+    chr(c) for c in range(0x0400, 0x0500)
+)
+# 常见 Cyrillic-Latin 同形字映射
+_HOMOGLYPH_MAP = {
+    ord("а"): "a", ord("е"): "e", ord("о"): "o", ord("р"): "p",
+    ord("с"): "c", ord("у"): "y", ord("х"): "x", ord("і"): "i",
+    ord("ѕ"): "s", ord("м"): "m", ord("н"): "h", ord("к"): "k",
+    ord("А"): "A", ord("В"): "B", ord("Е"): "E", ord("М"): "M",
+    ord("Н"): "H", ord("О"): "O", ord("Р"): "P", ord("С"): "C",
+    ord("Т"): "T", ord("Х"): "X", ord("У"): "Y",
+}
+
+# ── 独立的安全审核默认级别（不与 _pre_reflection_level 耦合）──
+_CHECK_MESSAGE_DEFAULT_LEVEL = "每次"
+
+
+def has_cyrillic_homoglyph_attack(text: str) -> bool:
+    """检测文本是否包含 Cyrillic-Latin 同形字混淆攻击。
+
+    策略：
+      1. 检查是否存在 Cyrillic 字符
+      2. 将这些字符替换为对应的 Latin 字母
+      3. 如果替换后的文本中包含敏感英文关键词，则判定为攻击
+
+    Args:
+        text: 待检测的文本。
+
+    Returns:
+        True 如果检测到同形字攻击。
+    """
+    if not text:
+        return False
+
+    # 检查是否包含 Cyrillic 字符
+    has_cyrillic = any(c in _CYRILLIC_CHARS for c in text)
+    if not has_cyrillic:
+        return False
+
+    # 将 Cyrillic 同形字转为 Latin
+    normalized = text.translate(_HOMOGLYPH_MAP)
+    normalized_lower = normalized.lower()
+
+    # 检查常见注入关键词
+    injection_keywords = [
+        "ignore", "forget", "skip", "pretend", "system", "assistant",
+        "prompt", "instruction", "rule", "restriction", "bypass",
+        "override", "jailbreak", "dan", "roleplay", "developer",
+    ]
+    for keyword in injection_keywords:
+        if keyword in normalized_lower:
+            _logger.warning(
+                "检测到 Unicode 同形字攻击: 原始文本含 Cyrillic，"
+                "归一化后匹配关键词 '%s'", keyword
+            )
+            return True
+
+    return False
+
+
+def detect_padding_attack(text: str, entropy_threshold: float = 1.5,
+                          repeat_threshold: float = 0.6) -> bool:
+    """检测输入中的 padding 绕过攻击（大量重复字符/低熵内容）。
+
+    正常人类输入通常有较高的熵（多样化的词汇），而攻击者可能
+    在被拦截内容前后填充大量重复字符来稀释检测信号。
+
+    Args:
+        text: 待检测的文本。
+        entropy_threshold: 香农熵下限，低于此值认为可疑。
+        repeat_threshold: 连续重复率上限，高于此值认为可疑。
+
+    Returns:
+        True 如果检测到可能的 padding 攻击。
+    """
+    if not text or len(text) < 20:
+        return False
+
+    # 计算香农熵
+    freq: dict[str, int] = {}
+    for ch in text:
+        freq[ch] = freq.get(ch, 0) + 1
+    length = len(text)
+    entropy = 0.0
+    for count in freq.values():
+        p = count / length
+        entropy -= p * math.log2(p)
+
+    # 计算重复率
+    if length > 1:
+        same_count = sum(
+            1 for i in range(1, length) if text[i] == text[i - 1]
+        )
+        repeat_ratio = same_count / (length - 1)
+    else:
+        repeat_ratio = 0.0
+
+    # 判定：低熵 且 高重复率
+    if entropy < entropy_threshold and repeat_ratio > repeat_threshold:
+        _logger.warning(
+            "检测到 padding 攻击: 熵=%.2f (阈值=%.2f), 重复率=%.2f (阈值=%.2f)",
+            entropy, entropy_threshold, repeat_ratio, repeat_threshold,
+        )
+        return True
+
+    return False
 
 
 class AuditKnowledgeStore:
@@ -296,12 +412,29 @@ class AIAuditEnhanceModule(Module):
 
         审核时注入有效的 L2 元知识 + L3 法则作为审查指引。
 
+        使用独立默认值 _CHECK_MESSAGE_DEFAULT_LEVEL，不与
+        _pre_reflection_level 耦合。
+
         Returns:
             违规原因字符串;合规返回 None。
         """
         cfg = self.config.get("AI审计增强") or {}
-        if cfg.get("安全审核", self._pre_reflection_level) == "关闭" or not self._ensure_llm_client():
+        if cfg.get("安全审核", _CHECK_MESSAGE_DEFAULT_LEVEL) == "关闭" or not self._ensure_llm_client():
             return None
+
+        # ── 同形字检测：本地快速筛查 ──
+        if has_cyrillic_homoglyph_attack(message):
+            _logger.info(
+                "check_message: user=%d 触发同形字检测拦截", user_id
+            )
+            return "检测到可疑字符混淆攻击"
+
+        # ── Padding 攻击检测 ──
+        if detect_padding_attack(message):
+            _logger.info(
+                "check_message: user=%d 触发 padding 攻击检测拦截", user_id
+            )
+            return "检测到异常输入模式"
 
         # 收集 L2 + L3 审查指引
         extra_lines = []

@@ -1,6 +1,6 @@
 """测试模块，提供 .ping 命令。"""
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
 
 
 class DummyModule(Module):

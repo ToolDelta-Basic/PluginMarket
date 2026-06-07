@@ -25,9 +25,9 @@ import pkgutil
 import re
 from typing import Dict, List, Optional, Type
 
-from .module import Module
-from .error_hints import hint
-from .services import UID_NOBODY
+from ..module import Module
+from ..kernel.error_hints import hint
+from ..kernel.services import UID_NOBODY
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,9 @@ logger = logging.getLogger(__name__)
 dangerous_call_names = frozenset({
     # 任意代码执行
     'eval', 'exec', 'compile', '__import__',
+    # 反序列化攻击
+    'pickle.load', 'pickle.loads', 'pickle.Unpickler',
+    'marshal.loads', 'marshal.load',
     # 文件操作（读写关键路径）
     'open',
     # 系统调用
@@ -51,7 +54,13 @@ dangerous_call_names = frozenset({
     # 动态代码加载
     'importlib.import_module', 'importlib.util.spec_from_file_location',
     'importlib.util.module_from_spec',
+    # 动态属性访问绕过（静态检测无法彻底防御，仅检查常见模式）
+    'getattr',
 })
+
+# 外部模块加载安全限制
+_MAX_MODULE_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+_MAX_ZIP_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB 解压后总大小上限
 
 
 def _scan_module_source(source: str) -> List[str]:
@@ -71,13 +80,33 @@ def _scan_module_source(source: str) -> List[str]:
         return found
 
     class _DangerousVisitor(ast.NodeVisitor):
+        # 可通过 getattr 动态访问的危险模块名
+        _DANGEROUS_GETATTR_MODULES = frozenset({'os', 'sys', 'subprocess'})
+
         def visit_Call(self, node):
             # 检查 func 是否为危险调用
             name = _get_call_name(node.func)
-            if name and name in dangerous_call_names:
+            if name == 'getattr':
+                # getattr 静态检测: 若第一个参数是 os/sys/subprocess
+                # 且第二个参数是字符串常量或拼接，标记为危险。
+                # 限制: 无法检测 getattr(os, some_var) 或间接拼接，
+                # 静态分析对动态绕过仅能提供尽力检测。
+                if len(node.args) >= 1 and self._is_name(node.args[0], self._DANGEROUS_GETATTR_MODULES):
+                    if len(node.args) >= 2 and (
+                        isinstance(node.args[1], ast.Constant)
+                        or isinstance(node.args[1], ast.BinOp)
+                    ):
+                        if 'getattr' not in found:
+                            found.append('getattr')
+            elif name and name in dangerous_call_names:
                 if name not in found:
                     found.append(name)
             self.generic_visit(node)
+
+    @staticmethod
+    def _is_name(node, names):
+        """检查节点是否为指定的 Name 节点。"""
+        return isinstance(node, ast.Name) and node.id in names
 
     _DangerousVisitor().visit(tree)
     return found
@@ -278,10 +307,37 @@ def discover_from_files(data_path: str) -> List[Type[Module]]:
 
 
 def _load_py_file(filepath: str) -> Optional[Type[Module]]:
-    """从单个 .py 文件加载 Module 子类。"""
+    """从单个 .py 文件加载 Module 子类。
+
+    安全措施（瑞士奶酪模型，多层独立加固）：
+      1. 仅允许 .py 后缀
+      2. 文件大小不超过 5 MB
+      3. AST 扫描危险调用
+      4. 加载失败不阻止框架启动
+    """
     mod_name = _os.path.splitext(_os.path.basename(filepath))[0]
 
-    # ── 安全扫描：exec_module 前先 AST 分析 ──
+    # ── 安全检查 1: 仅允许 .py 后缀 ──
+    if not filepath.endswith(".py"):
+        logger.warning(
+            "安全拦截: 模块文件 %s 不是 .py 后缀，跳过加载。",
+            filepath,
+        )
+        return None
+
+    # ── 安全检查 2: 文件大小限制（5 MB）──
+    try:
+        file_size = _os.path.getsize(filepath)
+        if file_size > _MAX_MODULE_FILE_SIZE:
+            logger.warning(
+                "安全拦截: 模块文件 %s 过大 (%d bytes, 限制 %d bytes)，跳过加载。",
+                filepath, file_size, _MAX_MODULE_FILE_SIZE,
+            )
+            return None
+    except OSError:
+        pass  # 无法获取大小不阻止加载
+
+    # ── 安全检查 3: AST 扫描危险调用 ──
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
@@ -377,6 +433,14 @@ def download_module(url: str, data_path: str) -> Optional[str]:
         target = _os.path.abspath(_os.path.join(mod_dir, base))
         try:
             with _zipfile.ZipFile(_BytesIO(data)) as zf:
+                # 解压大小上限（防护 zip bomb）
+                total_size = sum(info.file_size for info in zf.infolist())
+                if total_size > _MAX_ZIP_UNCOMPRESSED_SIZE:
+                    logger.error(
+                        "ZIP 解压后大小 %d 超过上限 %d，拒绝解压（疑似 zip bomb）",
+                        total_size, _MAX_ZIP_UNCOMPRESSED_SIZE,
+                    )
+                    return None
                 # Zip Slip 防护：校验每个条目路径在 target 内
                 for info in zf.infolist():
                     member_path = _os.path.abspath(_os.path.join(target, info.filename))

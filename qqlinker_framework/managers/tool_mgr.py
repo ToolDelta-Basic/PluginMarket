@@ -296,12 +296,14 @@ class ToolManager:
                     result = tool.callback(arguments, context, tool_config)
                 else:
                     result = tool.callback(arguments, context)
-                if (
-                    asyncio.iscoroutinefunction(tool.callback)
-                    or asyncio.iscoroutine(result)
-                ):
+                # 检测协程返回值：同步函数可能返回 coroutine 对象
+                if asyncio.iscoroutinefunction(tool.callback):
                     return await asyncio.wait_for(
                         result, timeout=tool.timeout
+                    )
+                if asyncio.iscoroutine(result):
+                    return await asyncio.wait_for(
+                        asyncio.ensure_future(result), timeout=tool.timeout
                     )
                 return result
             return await self._execute_default(tool, arguments)

@@ -5,10 +5,46 @@ sudo/approve 提供用户→管理员的提权通道。root 和 daemon 的授权
 import logging
 import time
 from ...core.module import Module
-from ...core.decorators import command
-from ...core.services import uid_label, UID_ROOT, UID_NOBODY
+from ...core.kernel.decorators import command
+from ...core.kernel.services import uid_label, UID_ROOT, UID_NOBODY
+from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
+
+# .sudo 冷却时间（秒）
+_SUDO_COOLDOWN = 30
+
+
+def persist_user_uid(config, services, user_id: int, new_uid: int):
+    """持久化用户的 UID 等级到 config.json（模块级共享函数）。
+
+    供 auth.AuthModule 和 kernel_auth.KernelAuthModule 共用，
+    避免两处重复实现导致修复不同步。
+    """
+    uid_map = config.get("权限管理.UID授权", {})
+    if not isinstance(uid_map, dict):
+        uid_map = {}
+
+    for uid_str in list(uid_map.keys()):
+        qq_list = uid_map.get(uid_str, [])
+        if isinstance(qq_list, list) and user_id in qq_list:
+            qq_list.remove(user_id)
+            if not qq_list:
+                del uid_map[uid_str]
+            else:
+                uid_map[uid_str] = qq_list
+
+    key = str(new_uid)
+    if key not in uid_map:
+        uid_map[key] = []
+    if user_id not in uid_map[key]:
+        uid_map[key].append(user_id)
+
+    config.set("权限管理.UID授权", uid_map)
+    try:
+        services.get("config").save()
+    except Exception:
+        pass
 
 
 class AuthModule(Module):
@@ -18,6 +54,10 @@ class AuthModule(Module):
     tier = 100  # TIER_DAEMON  # daemon: 系统守护（身份管理）
     version = (1, 2, 0)
     required_services = ["config", "message"]
+
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self._sudo_cooldowns: dict[int, float] = {}
 
     async def on_init(self):
         """初始化：注册命令（装饰器自动扫描）。"""
@@ -47,10 +87,26 @@ class AuthModule(Module):
     @command(".sudo", description="申请提权到 daemon（需管理员批准）",
              argument_hint="<原因>")
     async def cmd_sudo(self, ctx):
-        """用户申请提权到 daemon 级别，通知管理员。"""
+        """用户申请提权到 daemon 级别，通知管理员。
+
+        包含 30 秒冷却速率限制，防止滥用。
+        """
         if self._get_user_uid(ctx.user_id) <= 100:
             await ctx.reply("你已拥有 daemon 或更高级别权限，无需提权。")
             return
+
+        # 冷却检查
+        now = time.time()
+        last_sudo = self._sudo_cooldowns.get(ctx.user_id, 0.0)
+        if now - last_sudo < _SUDO_COOLDOWN:
+            remain = int(_SUDO_COOLDOWN - (now - last_sudo))
+            await ctx.reply(
+                f"\u23f3 请等待 {remain} 秒后再申请提权。"
+                f"(冷却 {_SUDO_COOLDOWN} 秒)"
+            )
+            return
+        self._sudo_cooldowns[ctx.user_id] = now
+
         reason = " ".join(ctx.args) if ctx.args else "未说明原因"
         pending = self.config.get("权限管理.提权待审", {})
         if not isinstance(pending, dict):
@@ -64,6 +120,16 @@ class AuthModule(Module):
             self.services.get("config").save()
         except Exception:
             pass
+
+        # 审计日志
+        audit_log(
+            sender=str(ctx.user_id),
+            action="sudo_request",
+            target="daemon",
+            detail=f"reason={reason[:200]}",
+            group_id=ctx.group_id,
+        )
+
         await ctx.reply("\u23f3 提权申请已提交，等待管理员批准。\n管理员可使用 .approve <QQ号> 批准。")
         for admin_qq in self._get_admin_list()[:3]:
             try:
@@ -76,17 +142,29 @@ class AuthModule(Module):
                 pass
 
     @command(".approve", description="批准提权申请（管理员）", op_only=True,
-             argument_hint="<QQ号>", min_uid=100)
+             argument_hint="<QQ号> [--confirm]", min_uid=100)
     async def cmd_approve(self, ctx):
-        """管理员批准 .sudo 提权请求，将用户提升到 daemon(100)。"""
+        """管理员批准 .sudo 提权请求，将用户提升到 daemon(100)。
+
+        需要追加 --confirm 进行二次确认。
+        """
         if len(ctx.args) < 1:
-            await ctx.reply("用法: .approve <QQ号>")
+            await ctx.reply("用法: .approve <QQ号> --confirm")
             return
         try:
             target_qq = int(ctx.args[0])
         except ValueError:
             await ctx.reply("\u274c QQ号格式错误")
             return
+
+        # 二次确认
+        if len(ctx.args) < 2 or ctx.args[1] != "--confirm":
+            await ctx.reply(
+                f"\u26a0\ufe0f 即将批准用户 {target_qq} 提权为 daemon (uid=100)。\n"
+                f"请追加 --confirm 确认操作。"
+            )
+            return
+
         pending = self.config.get("权限管理.提权待审", {})
         if not isinstance(pending, dict):
             pending = {}
@@ -94,6 +172,7 @@ class AuthModule(Module):
         if key not in pending:
             await ctx.reply(f"\u274c 用户 {target_qq} 没有待审的提权申请")
             return
+
         self._set_user_uid(target_qq, 100)
         self._ensure_admin(target_qq)
         del pending[key]
@@ -102,6 +181,17 @@ class AuthModule(Module):
             self.services.get("config").save()
         except Exception:
             pass
+
+        # 审计日志
+        audit_log(
+            sender=str(ctx.user_id),
+            action="approve_sudo",
+            target=str(target_qq),
+            detail=f"approved_by_{ctx.user_id}_to_daemon",
+            level=AuditLevel.WARNING,
+            group_id=ctx.group_id,
+        )
+
         await ctx.reply(f"\u2705 已批准用户 {target_qq} 提权为 daemon (uid=100) 并加入管理员列表")
         try:
             await self.message.send_private(target_qq,
@@ -109,10 +199,65 @@ class AuthModule(Module):
         except Exception:
             pass
 
+    @command(".revoke", description="降级用户权限（管理员）", op_only=True,
+             argument_hint="<QQ号> [--confirm]", min_uid=100)
+    async def cmd_revoke(self, ctx):
+        """管理员降级用户权限。将指定用户降回 nobody(400)。
+
+        需要追加 --confirm 进行二次确认。
+        """
+        if len(ctx.args) < 1:
+            await ctx.reply("用法: .revoke <QQ号> --confirm")
+            return
+        try:
+            target_qq = int(ctx.args[0])
+        except ValueError:
+            await ctx.reply("\u274c QQ号格式错误")
+            return
+
+        current_uid = self._get_user_uid(target_qq)
+        if current_uid <= UID_ROOT:
+            await ctx.reply("\u274c 无法降级 root 用户")
+            return
+        if current_uid >= UID_NOBODY:
+            await ctx.reply(f"用户 {target_qq} 已经是普通用户")
+            return
+
+        # 二次确认
+        if len(ctx.args) < 2 or ctx.args[1] != "--confirm":
+            await ctx.reply(
+                f"\u26a0\ufe0f 即将将用户 {target_qq} "
+                f"(当前 {uid_label(current_uid)}) 降级为 nobody。\n"
+                f"请追加 --confirm 确认操作。"
+            )
+            return
+
+        self._set_user_uid(target_qq, UID_NOBODY)
+        self._remove_admin(target_qq)
+
+        # 审计日志
+        audit_log(
+            sender=str(ctx.user_id),
+            action="revoke",
+            target=str(target_qq),
+            detail=f"from_{current_uid}_to_nobody",
+            level=AuditLevel.WARNING,
+            group_id=ctx.group_id,
+        )
+
+        await ctx.reply(f"\u2705 已降级用户 {target_qq} 为普通用户 (nobody)")
+
     # ── 内部（与 kernel_auth 共享逻辑，两者独立实现以保证 uid=100 不依赖 uid=0）──
 
     def _get_user_uid(self, user_id: int) -> int:
-        """获取用户的 UID 等级。先查授权表再查管理员列表。"""
+        """获取用户的 UID 等级。
+
+        逻辑与 host._lookup_uid() 一致（权威实现）:
+          1. 查 权限管理.UID授权 表
+          2. 查 管理员.管理员QQ 列表 → uid=100
+          3. 查 游戏管理.管理员QQ 列表（兼容旧配置）→ uid=100
+          4. 否则 nobody (3000)
+        """
         uid_map = self.config.get("权限管理.UID授权", {})
         if isinstance(uid_map, dict):
             for uid_str, qq_list in uid_map.items():
@@ -122,43 +267,40 @@ class AuthModule(Module):
                     continue
                 if isinstance(qq_list, list) and user_id in qq_list:
                     return uid_level
-        if user_id in self._get_admin_list():
-            return 100
+        # 管理员列表：先查 管理员.管理员QQ，再查 游戏管理.管理员QQ（兼容旧配置）
+        admin_list = self.config.get("管理员.管理员QQ", [])
+        if isinstance(admin_list, list):
+            try:
+                if user_id in [int(q) for q in admin_list if q]:
+                    return 100
+            except (TypeError, ValueError):
+                pass
+        admin_list2 = self.config.get("游戏管理.管理员QQ", [])
+        if isinstance(admin_list2, list):
+            try:
+                if user_id in [int(q) for q in admin_list2 if q]:
+                    return 100
+            except (TypeError, ValueError):
+                pass
         return UID_NOBODY
 
     def _set_user_uid(self, user_id: int, new_uid: int):
         """设置用户的 UID 等级（持久化到 config.json）。"""
-        uid_map = self.config.get("权限管理.UID授权", {})
-        if not isinstance(uid_map, dict):
-            uid_map = {}
-
-        for uid_str in list(uid_map.keys()):
-            qq_list = uid_map.get(uid_str, [])
-            if isinstance(qq_list, list) and user_id in qq_list:
-                qq_list.remove(user_id)
-                if not qq_list:
-                    del uid_map[uid_str]
-                else:
-                    uid_map[uid_str] = qq_list
-
-        key = str(new_uid)
-        if key not in uid_map:
-            uid_map[key] = []
-        if user_id not in uid_map[key]:
-            uid_map[key].append(user_id)
-
-        self.config.set("权限管理.UID授权", uid_map)
-        try:
-            self.services.get("config").save()
-        except Exception:
-            pass
+        persist_user_uid(self.config, self.services, user_id, new_uid)
 
     def _get_admin_list(self) -> list:
-        """获取管理员 QQ 列表。"""
+        """获取管理员 QQ 列表。
+
+        优先查 游戏管理.管理员QQ（旧配置兼容），
+        若为空或非 list 类型，回退到 管理员.管理员QQ。
+        """
         try:
             admin_list = self.config.get("游戏管理.管理员QQ", [])
+            if isinstance(admin_list, list) and admin_list:
+                return [int(q) for q in admin_list if q]
+            admin_list = self.config.get("管理员.管理员QQ", [])
             if not isinstance(admin_list, list):
-                admin_list = self.config.get("管理员.管理员QQ", [])
+                return []
             return [int(q) for q in admin_list if q]
         except (TypeError, ValueError):
             return []

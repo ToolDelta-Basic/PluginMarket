@@ -1,13 +1,19 @@
-"""双向消息转发模块：游戏↔QQ群。"""
+"""双向消息转发模块：游戏↔QQ群。
+
+安全加固:
+  - 游戏来源消息添加 [游戏] 来源标签前缀
+  - 消息转发添加 Unicode 同形字检测
+"""
 import asyncio
 import hashlib
 from ...core.module import Module
-from ...core.events import (
+from ...core.kernel.events import (
     GameChatEvent,
     GroupMessageEvent,
     PlayerJoinEvent,
     PlayerLeaveEvent,
 )
+from ...core.kernel.sanitize import contains_homoglyphs, unicode_safe_strip
 from ...services.dedup import LayeredDedup
 
 
@@ -74,13 +80,21 @@ class GameForwarder(Module):
             return []
 
     async def on_game_chat(self, event: GameChatEvent):
-        """将游戏聊天消息转发到所有链接的QQ群。"""
+        """将游戏聊天消息转发到所有链接的QQ群。
+
+        添加 [游戏] 来源标签前缀，防止来源混淆攻击。
+        """
         cfg = self.config.get("消息转发.游戏到群", {})
         if not cfg.get("是否启用", True):
             return
         msg = (event.message or "").strip()
         if not msg:
             return
+
+        # Unicode 同形字检测
+        if contains_homoglyphs(msg):
+            return
+
         allow_prefixes = cfg.get("仅转发以下字符串开头的消息", [])
         block_prefixes = cfg.get("屏蔽以下字符串开头的消息", [])
         if allow_prefixes:
@@ -104,11 +118,16 @@ class GameForwarder(Module):
         text = template.replace("{player}", event.player_name).replace(
             "{message}", msg
         )
+        # 添加 [游戏] 来源标签
+        text = f"[游戏] {text}"
         for gid in self._get_linked_groups():
             await self.message.send_group(gid, text)
 
     async def on_group_message(self, event: GroupMessageEvent):
-        """将QQ群消息转发到游戏公屏。"""
+        """将QQ群消息转发到游戏公屏。
+
+        包含 Unicode 同形字检测，防止绕过前缀黑名单。
+        """
         groups = self._get_linked_groups()
         if event.group_id not in groups:
             return
@@ -120,6 +139,11 @@ class GameForwarder(Module):
         msg = (event.message or "").strip()
         if not msg:
             return
+
+        # Unicode 同形字检测
+        if contains_homoglyphs(msg):
+            return
+
         block_prefixes = cfg.get("屏蔽以下字符串开头的消息", [])
         if any(msg.startswith(p) for p in block_prefixes):
             return

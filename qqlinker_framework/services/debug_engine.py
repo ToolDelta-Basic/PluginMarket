@@ -1,5 +1,9 @@
 # pylint: disable=protected-access
-"""调试引擎 —— 框架级可观测性服务，提供模块调试操作注册、消息/API监控。"""
+"""调试引擎 —— 框架级可观测性服务，提供模块调试操作注册、消息/API监控。
+
+⚠️ 安全限制：仅当 Python __debug__ 为 True 或配置明确启用时才激活。
+生产环境应禁用此模块。
+"""
 import asyncio
 import logging
 import time
@@ -19,6 +23,17 @@ class DebugEngine:
         self._event_bus = event_bus
         self._ops: Dict[str, Dict[str, Callable]] = {}
         self._lock = asyncio.Lock()
+
+        # 安全检查: 生产模式下禁用调试引擎
+        debug_enabled = config.get("调试.生产模式禁用", True)
+        if debug_enabled and not __debug__:
+            self._disabled = True
+            _logger.warning(
+                "⚠️ 调试引擎已在生产模式(__debug__=False)下禁用。"
+                "设置 调试.生产模式禁用=false 可强制启用。"
+            )
+        else:
+            self._disabled = False
 
         self._msg_buffers: Dict[str, deque] = {
             "group": deque(maxlen=200),
@@ -41,6 +56,11 @@ class DebugEngine:
     # ---------- 模块操作注册 ----------
     async def register_module(self, name: str, ops: Dict[str, Callable]):
         """注册一个模块的调试操作。"""
+        if self._disabled:
+            _logger.debug(
+                "调试引擎已禁用，忽略 register_module(%s)", name
+            )
+            return
         async with self._lock:
             self._ops[name] = ops
 
@@ -59,6 +79,8 @@ class DebugEngine:
 
     async def call(self, module: str, op: str, **kwargs) -> str:
         """执行指定模块的调试操作，返回字符串结果。"""
+        if self._disabled:
+            return "[调试引擎已禁用]"
         async with self._lock:
             ops = self._ops.get(module)
             if not ops:
@@ -78,6 +100,9 @@ class DebugEngine:
     # ---------- 消息通道监控 ----------
     def install_hooks(self):
         """安装事件监听和 API 方法包装。"""
+        if self._disabled:
+            _logger.debug("调试引擎已禁用，跳过 install_hooks")
+            return
         if self._hooks_installed:
             return
         self._event_bus.subscribe("GroupMessageEvent", self._on_group_msg, 0)
@@ -245,4 +270,6 @@ class DebugEngine:
 
     def wrap_now(self, service_name: str, methods: List[str]):
         """立即包装指定的已注册服务。"""
+        if self._disabled:
+            return
         self._wrap_service(service_name, methods)

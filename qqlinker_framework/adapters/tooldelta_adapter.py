@@ -40,6 +40,13 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self.plugin.ListenChat(self._on_game_chat)
         self.plugin.ListenPlayerJoin(self._on_player_join)
         self.plugin.ListenPlayerLeave(self._on_player_leave)
+        try:
+            self.plugin.ListenAttack(self._on_attack)
+        except AttributeError:
+            # 部分 ToolDelta 版本未暴露 ListenAttack
+            logging.getLogger(__name__).debug(
+                "ToolDelta 版本不支持 ListenAttack，跳过"
+            )
         self.plugin.ListenFrameExit(self._on_frame_exit)
         # ListenPlayerPreJoin 在某些 ToolDelta 版本中不存在
         if hasattr(self.plugin, "ListenPlayerPreJoin"):
@@ -53,6 +60,7 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self._frame_exit_handlers: list[Callable] = []
         self._group_message_handlers: list[Callable] = []
         self._packet_handlers: Dict[int, list[Callable]] = {}
+        self._attack_handlers: list[Callable] = []
         self._bytes_packet_handlers: Dict[int, list[Callable]] = {}
 
         self._ws_client: Optional[WsClient] = None
@@ -219,6 +227,19 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             except Exception as e:
                 logging.getLogger(__name__).error("玩家离开处理器异常: %s", e)
 
+    def _on_attack(self, attack):
+        """分发攻击事件（ToolDelta 内置事件，无需数据包监听）。"""
+        for h in self._attack_handlers:
+            try:
+                h(attack.origin_player.name, attack.target_player.name,
+                  attack.weapon_name)
+            except Exception as e:
+                logging.getLogger(__name__).error("攻击事件处理器异常: %s", e)
+
+    def listen_attack(self, handler: Callable[[str, str, str], None]):
+        """注册攻击事件处理器。（origin_player_name, target_player_name, weapon_name）"""
+        self._attack_handlers.append(handler)
+
     def _on_player_pre_join(self, player: Player):
         """分发玩家预加入事件。"""
         for h in self._player_pre_join_handlers:
@@ -226,40 +247,6 @@ class ToolDeltaAdapter(IFrameworkAdapter):
                 h(player.name)
             except Exception as e:
                 logging.getLogger(__name__).error("预加入处理器异常: %s", e)
-
-    def _on_dict_packet(self, packet_id: int):
-        """返回指定数据包 ID 的分发函数。"""
-        def _dispatch(packet: dict):
-            """内部分发: 遍历处理器列表，任意返回 True 则拦截。"""
-            handlers = self._packet_handlers.get(packet_id, [])
-            intercepted = False
-            for h in handlers:
-                try:
-                    if h(packet):
-                        intercepted = True
-                except Exception as e:
-                    logging.getLogger(__name__).error(
-                        "数据包 %d 处理器异常: %s", packet_id, e
-                    )
-            return intercepted
-        return _dispatch
-
-    def _on_bytes_packet(self, packet_id: int):
-        """返回指定字节数据包 ID 的分发函数。"""
-        def _dispatch(packet: bytes):
-            """内部分发: 遍历处理器列表，任意返回 True 则拦截。"""
-            handlers = self._bytes_packet_handlers.get(packet_id, [])
-            intercepted = False
-            for h in handlers:
-                try:
-                    if h(packet):
-                        intercepted = True
-                except Exception as e:
-                    logging.getLogger(__name__).error(
-                        "字节包 %d 处理器异常: %s", packet_id, e
-                    )
-            return intercepted
-        return _dispatch
 
     # ── 公共监听注册 ────────────────────────────────────────
 
@@ -288,15 +275,17 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self._frame_exit_handlers.append(handler)
 
     def listen_dict_packet(self, packet_id: int, handler: Callable[[dict], bool]):
-        """注册字典数据包监听（可返回 True 拦截）。"""
+        """注册字典数据包监听（可返回 True 拦截）。
+
+        ToolDelta 的类式插件在 on_active 之后才调用 hook_packet_handler，
+        之后 neOmega 订阅的包列表就被冻结了。为此，我们把数据包注册推迟
+        到 handle_active() 时统一执行（见 handle_active）。
+        """
         self._packet_handlers.setdefault(packet_id, []).append(handler)
-        # 首次注册时绑定到 ToolDelta
-        self.plugin.ListenPacket(packet_id, self._on_dict_packet(packet_id))
 
     def listen_bytes_packet(self, packet_id: int, handler: Callable[[bytes], bool]):
         """注册二进制数据包监听（可返回 True 拦截）。"""
         self._bytes_packet_handlers.setdefault(packet_id, []).append(handler)
-        self.plugin.ListenBytesPacket(packet_id, self._on_bytes_packet(packet_id))
 
     def listen_group_message(
         self, handler: Callable[[Dict[str, Any]], None]

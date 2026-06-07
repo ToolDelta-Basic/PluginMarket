@@ -7,12 +7,12 @@ import asyncio
 import logging
 from typing import Callable, Optional
 
-from .events import (
+from ..kernel.events import (
     GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent, GroupMessageEvent,
 )
-from .defguard import validate_onebot_event
-from .error_hints import hint
-from .bus import EventBus
+from ..kernel.defguard import validate_onebot_event
+from ..kernel.error_hints import hint
+from ..kernel.bus import EventBus
 
 access_log = logging.getLogger("access")
 _log = logging.getLogger(__name__)

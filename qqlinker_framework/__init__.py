@@ -34,12 +34,12 @@ def _bootstrap_integrity_check():
     _fatal_files = {
         "core/host.py":            "框架核心调度器",
         "core/module.py":          "模块基类",
-        "core/bus.py":             "事件总线",
-        "core/services.py":        "服务容器",
-        "core/events.py":          "事件定义",
-        "core/routing.py":         "命令路由",
-        "core/defguard.py":        "防御层",
-        "core/error_hints.py":     "错误提示库",
+        "core/kernel/bus.py":          "事件总线",
+        "core/kernel/services.py":     "服务容器",
+        "core/kernel/events.py":       "事件定义",
+        "core/kernel/defguard.py":     "防御层",
+        "core/kernel/error_hints.py":  "错误提示库",
+        "core/drivers/routing.py":     "命令路由",
         "managers/config_mgr.py":  "配置管理器",
         "managers/module_mgr.py":  "模块管理器",
         "managers/command_mgr.py": "命令管理器",
@@ -177,7 +177,7 @@ except ImportError:
 
 # noqa: E402 (delayed import required — ToolDeltaPlugin stub must precede FrameworkHost import)
 from .core.host import FrameworkHost
-from .core.containment import (
+from .core.kernel.containment import (
     plugin_wrapper,
     register_shutdown_callback, trigger_safe_shutdown,
     reset_failure_count,
@@ -225,7 +225,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
 
     name = "群服互通框架"
-    version = (1, 4, 0)
+    version = (1, 3, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 
@@ -279,7 +279,6 @@ class QQLinkerFrameworkPlugin(Plugin):
         })
 
         self._host.register_modules_from_package("qqlinker_framework.modules")
-        # 同时扫描 插件数据文件/模块源件/ 中的外部模块
         self._host.register_external_modules()
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 

@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Type, Optional, List
 
-from .services import (
+from .kernel.services import (
     ServiceContainer,
     UID_ROOT,
     UID_DAEMON_MIN,
@@ -17,11 +17,11 @@ from .services import (
     UID_APP_MIN,
     UID_NOBODY,
 )
-from .bus import EventBus
+from .kernel.bus import EventBus
 from .module import Module
-from .routing import CommandRouter
-from .event_bridge import EventBridge
-from .autodiscover import (
+from .drivers.routing import CommandRouter
+from .drivers.event_bridge import EventBridge
+from .drivers.autodiscover import (
     discover_modules as discover_from_package,
     discover_from_files,
     sort_by_dependencies,
@@ -30,7 +30,7 @@ from .autodiscover import (
 from ..managers.config_mgr import ConfigManager
 from ..managers.group_config_mgr import GroupConfigManager
 from ..managers.group_filter import GroupModuleFilter
-from ..core.recovery import RecoveryEngine
+from ..core.drivers.recovery import RecoveryEngine
 from ..managers.package_mgr import PackageManager
 from ..managers.module_mgr import ModuleManager
 from ..managers.command_mgr import CommandManager
@@ -46,13 +46,20 @@ from ..services.market_server import (
     ModuleMarketServer,
     MarketSourceAggregator,
 )
-from .error_hints import hint
-from .gatekeeper import GatekeeperBridge, register_default_capabilities
-from .events import ConfigReloadEvent
+from .kernel.error_hints import hint
+from .drivers.gatekeeper import GatekeeperBridge, register_default_capabilities
+from .kernel.events import ConfigReloadEvent
 
 
 class FrameworkHost:
-    """框架核心调度器 — 组装 + 生命周期 + 热插拔 API。"""
+    """框架核心调度器 — 组装 + 生命周期 + 热插拔 API。
+
+    驱动加载策略：
+      - 内核必须加载（services, bus, events 等基础模块）
+      - 驱动可选加载（recovery, event_bridge, gatekeeper）
+      - 驱动通过 getattr(self, 'xxx', NOOP) 方式调用
+      - 未加载时使用 drivers.py 中定义的空实现
+    """
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
         self.adapter = adapter
@@ -65,6 +72,13 @@ class FrameworkHost:
         self.config_mgr = ConfigManager(file_path=config_file, data_dir=self.data_path)
         self.group_config_mgr = GroupConfigManager(self.config_mgr, self.data_path)
         self.recovery = RecoveryEngine(self.data_path)
+
+        # 驱动列表 — 不在内核依赖树中的模块
+        self._drivers_enabled = {
+            "recovery": True,
+            "event_bridge": True,
+            "gatekeeper": True,
+        }
         self.package_mgr = PackageManager()
         self.command_mgr = CommandManager()
         self.tool_mgr = ToolManager()
@@ -83,12 +97,12 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
         self.services.register("tool", self.tool_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("adapter", adapter, uid=UID_APP_MIN,
+        self.services.register("adapter", adapter, uid=UID_SERVICE_MIN,
                                _caller="qqlinker_framework.core.host")
 
         self.module_mgr = ModuleManager(self)
         self.message_mgr = MessageManager(adapter)
-        self.services.register("message", self.message_mgr, uid=UID_APP_MIN,
+        self.services.register("message", self.message_mgr, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
         self.services.register("recovery", self.recovery, uid=UID_DAEMON_MIN,
                                _caller="qqlinker_framework.core.host")
@@ -211,10 +225,41 @@ class FrameworkHost:
             "白名单模块": [], "每页数量": 20,
             "源列表": ["http://127.0.0.1:8380"],
         })
+        # 安全配置
+        self.config_mgr.register_section("审计日志", {
+            "审计日志最大行数": 100000,
+            "审计日志清理间隔": 86400,
+        })
+        self.config_mgr.register_section("网络传输", {
+            "TLS验证模式": "enabled",
+            "连接超时秒": 10,
+            "读超时秒": 30,
+        })
+        self.config_mgr.register_section("SSRF防护", {
+            "黑名单域名": ["metadata.google.internal", "169.254.169.254"],
+            "禁止内网IP": True,
+        })
+        self.config_mgr.register_section("调试", {
+            "生产模式禁用": True,
+        })
         self.config_mgr.load()
 
+        # ── 初始化审计日志 ──
+        from .kernel.audit import configure_audit
+        audit_log_path = os.path.join(
+            self.data_path, "日志", "审计日志.log"
+        )
+        audit_max_lines = self.config_mgr.get(
+            "审计日志.审计日志最大行数", 100000
+        )
+        audit_cleanup = self.config_mgr.get(
+            "审计日志.审计日志清理间隔", 86400
+        )
+        configure_audit(audit_log_path, audit_max_lines, audit_cleanup)
+        logger.info("审计日志已配置: %s", audit_log_path)
+
         # 错误显示模式
-        from .error_hints import ErrorMode
+        from .kernel.error_hints import ErrorMode
         ErrorMode.set_config_source(self.config_mgr)
         logger.info("错误显示模式: %s", "友好" if ErrorMode.is_friendly() else "调试")
 
@@ -227,7 +272,9 @@ class FrameworkHost:
         self.group_config_mgr.start_watching(interval=3.0)
 
         ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
-        ws_token = self.config_mgr.get("网络连接.令牌", "")
+        # 安全: WebSocket 令牌优先从环境变量读取，避免明文存在配置文件中
+        ws_token = os.environ.get("QQLINKER_WS_TOKEN",
+                                  self.config_mgr.get("网络连接.令牌", ""))
         logger.info("WebSocket 地址: %s", ws_address)
 
         if hasattr(self.adapter, 'set_config_mgr'):
@@ -264,13 +311,18 @@ class FrameworkHost:
         # 模块市场（可选，仅通过 services 访问，不存 self 引用）
         market_cfg = self.config_mgr.get("模块市场", {})
         if market_cfg.get("启用", False):
+            # 安全: 敏感密钥优先从环境变量读取，避免明文存在配置文件中
+            upload_token = os.environ.get(
+                "QQLINKER_UPLOAD_TOKEN", market_cfg.get("上传密钥", ""))
+            sign_secret = os.environ.get(
+                "QQLINKER_SIGN_SECRET", market_cfg.get("签名密钥", ""))
             market_server = ModuleMarketServer(
                 data_path=self.data_path,
                 host=market_cfg.get("地址", "127.0.0.1"),
                 port=market_cfg.get("端口", 8380),
-                upload_token=market_cfg.get("上传密钥", ""),
+                upload_token=upload_token,
                 whitelist=market_cfg.get("白名单模块", []),
-                sign_secret=market_cfg.get("签名密钥", ""),
+                sign_secret=sign_secret,
                 strict_sign=market_cfg.get("强制签名校验", False),
                 per_page=market_cfg.get("每页数量", 20),
             )
@@ -293,7 +345,19 @@ class FrameworkHost:
             ws_available = False
 
         if ws_available:
-            ws_client = WsClient({"ws_address": ws_address, "ws_token": ws_token})
+            ws_client = WsClient({
+                "ws_address": ws_address,
+                "ws_token": ws_token,
+                "网络传输.TLS验证模式": self.config_mgr.get(
+                    "网络传输.TLS验证模式", "enabled"
+                ),
+                "网络传输.连接超时秒": self.config_mgr.get(
+                    "网络传输.连接超时秒", 10
+                ),
+                "网络传输.读超时秒": self.config_mgr.get(
+                    "网络传输.读超时秒", 30
+                ),
+            })
             self.services.register("ws_client", ws_client, uid=UID_SERVICE_MIN,
                                    _caller="qqlinker_framework.core.host")
             if hasattr(self.adapter, 'set_ws_client'):
@@ -331,6 +395,9 @@ class FrameworkHost:
 
         # ── 能力安全桥梁 ──（在所有服务和模块就绪后注册白名单方法）
         register_default_capabilities(self.gatekeeper)
+        # 注册新的多层配置桥接
+        from ..managers.config_mgr import register_config_bridge
+        register_config_bridge(self.gatekeeper, self.config_mgr)
 
         # 模块加载完毕后，传播新增字段到所有群子配置
         affected = self.group_config_mgr.propagate_new_fields()
@@ -410,7 +477,7 @@ class FrameworkHost:
     async def stop(self):
         """优雅停止框架。幂等——可被多次调用。"""
         logger = logging.getLogger(__name__)
-        from .events import SystemStopEvent
+        from .kernel.events import SystemStopEvent
         try:
             await self.event_bus.publish(SystemStopEvent())
         except Exception as e:

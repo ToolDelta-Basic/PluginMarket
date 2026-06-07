@@ -1,14 +1,26 @@
-"""玩家-QQ绑定模块，提供验证码验证流程与绑定管理服务。"""
+"""玩家-QQ绑定模块，提供验证码验证流程与绑定管理服务。
+
+安全特性:
+  - 绑定码使用 secrets.token_hex() 生成（不可预测）
+  - 绑定码 5 分钟 TTL 过期
+  - 同一 QQ 号绑定速率限制（每小时 3 次）
+"""
 import json
 import os
+import secrets
 import time
-import random
-import string
-from typing import Optional, Dict
+from typing import Dict, List, Optional
 
 from ...core.module import Module
-from ...core.decorators import command
-from ...core.events import GameChatEvent
+from ...core.kernel.decorators import command
+from ...core.kernel.events import GameChatEvent
+from ...core.kernel.sanitize import sanitize_player_name, sanitize_game_command_param
+from ...core.kernel.defguard import escape_player_name
+
+# ── 绑定安全限制 ──
+_BIND_CODE_TTL = 300          # 验证码有效期（秒）= 5 分钟
+_BIND_RATE_MAX = 3             # 每小时最大绑定尝试次数
+_BIND_RATE_WINDOW = 3600       # 速率窗口（秒）= 1 小时
 
 
 class BindingService:
@@ -18,6 +30,8 @@ class BindingService:
         self._file = os.path.join(data_dir, "bindings.json")
         self._bindings: Dict[int, str] = {}          # qq -> 游戏名
         self._pending_codes: Dict[str, tuple] = {}   # 游戏名 -> (验证码, 过期时间戳)
+        # ── 绑定速率限制 ──
+        self._bind_rate: Dict[int, List[float]] = {}  # qq -> [时间戳...]
         self._load()
 
     # ---------- 文件持久化 ----------
@@ -67,10 +81,34 @@ class BindingService:
         return False
 
     def generate_code(self, player_name: str) -> str:
-        """为玩家生成 6 位数字验证码（5 分钟有效）。"""
-        code = "".join(random.choices(string.digits, k=6))
-        self._pending_codes[player_name] = (code, time.time() + 300)
+        """为玩家生成 6 位十六进制验证码（5 分钟有效）。
+
+        使用 secrets.token_hex() 生成密码学安全随机码，
+        替代可预测的 random.choices()。
+        """
+        code = secrets.token_hex(3)[:6]  # 6 位十六进制（~16M 组合）
+        self._pending_codes[player_name] = (code, time.time() + _BIND_CODE_TTL)
         return code
+
+    def _check_bind_rate(self, qq_id: int) -> bool:
+        """检查绑定速率限制（每 QQ 每小时最多 _BIND_RATE_MAX 次）。
+
+        Args:
+            qq_id: QQ 号。
+
+        Returns:
+            True 如果允许绑定。
+        """
+        now = time.time()
+        hits = self._bind_rate.get(qq_id, [])
+        cutoff = now - _BIND_RATE_WINDOW
+        hits = [t for t in hits if t >= cutoff]
+        if len(hits) >= _BIND_RATE_MAX:
+            self._bind_rate[qq_id] = hits
+            return False
+        hits.append(now)
+        self._bind_rate[qq_id] = hits
+        return True
 
     def verify(self, player_name: str, code: str) -> bool:
         """校验验证码，成功返回 True 并移除待验证记录。"""
@@ -100,7 +138,7 @@ class PlayerBindingModule(Module):
     """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
 
     name = "player_binding"
-    tier = 300  # TIER_APP  # 用户应用层
+    tier = 100  # TIER_DAEMON  # 需要 adapter 执行游戏命令
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 
@@ -146,13 +184,29 @@ class PlayerBindingModule(Module):
         self.listen("GameChatEvent", self.on_game_chat)
 
     # ---------- 游戏内监听 ----------
+    @staticmethod
+    def _build_tellraw(player: str, text: str) -> str:
+        """安全构建 tellraw 命令，使用 Python dict → 一次性 json.dumps。
+
+        防止通过玩家名注入 JSON 结构或命令。
+        """
+        safe_player = sanitize_player_name(player)
+        safe_text = sanitize_game_command_param(text, allow_spaces=True)
+        payload = {
+            "rawtext": [{"text": safe_text}]
+        }
+        return (
+            f'tellraw "{escape_player_name(safe_player)}" '
+            + json.dumps(payload, ensure_ascii=False)
+        )
+
     async def on_game_chat(self, event: GameChatEvent):
         """监听游戏内 #绑定 请求，生成验证码并发送 tellraw。"""
         msg = (event.message or "").strip()
         if not msg:
             return
         if msg == "#绑定":
-            player = event.player_name
+            player = sanitize_player_name(event.player_name)
             existing_qq = self.binding_service.get_qq_by_player(player)
             if existing_qq:
                 self.adapter.send_game_message(
@@ -160,17 +214,17 @@ class PlayerBindingModule(Module):
                 )
                 return
             code = self.binding_service.generate_code(player)
-            # 使用 json.dumps 安全转义玩家名中的特殊字符
-            safe_player = json.dumps(player, ensure_ascii=False)
-            safe_code = json.dumps(str(code), ensure_ascii=False)
-            tellraw = (
-                f'/tellraw {safe_player} {{"rawtext":[{{"text":"§a你的绑定验证码是：'
-                f'§e{safe_code}§a，请在QQ群发送：.绑定 {safe_player} {safe_code}"}}]}}'
+            # 使用参数化接口构建 tellraw，防止 JSON 注入
+            code_msg = (
+                f"§a你的绑定验证码是：§e{code}§a，"
+                f"请在QQ群发送：.绑定 {player} {code}"
             )
-            self.adapter.send_game_command(tellraw)
-            self.adapter.send_game_command(
-                f'/tellraw {safe_player} {{"rawtext":[{{"text":"§7验证码有效期为 5 分钟"}}]}}'
+            cmd1 = self._build_tellraw(player, code_msg)
+            cmd2 = self._build_tellraw(
+                player, "§7验证码有效期为 5 分钟"
             )
+            self.adapter.send_game_command(cmd1)
+            self.adapter.send_game_command(cmd2)
 
     # ---------- QQ 命令 ----------
     @command(".绑定")
@@ -179,6 +233,12 @@ class PlayerBindingModule(Module):
         if self.binding_service.is_bound(ctx.user_id):
             await ctx.reply("你已经绑定了游戏账号，不能重复绑定。")
             return
+
+        # ── 绑定速率限制 ──
+        if not self.binding_service._check_bind_rate(ctx.user_id):
+            await ctx.reply("绑定尝试过于频繁，请稍后再试。")
+            return
+
         if len(ctx.args) < 2:
             await ctx.reply("用法：.绑定 <游戏名> <验证码>")
             return

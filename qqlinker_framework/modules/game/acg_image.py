@@ -1,11 +1,61 @@
-"""随机二次元图片模块 — 直接通过 URL 发送 ACG 图片到 QQ 群"""
+"""随机二次元图片模块 — 直接通过 URL 发送 ACG 图片到 QQ 群
+
+安全特性:
+  - URL 验证（拒绝内网地址、仅允许 http/https）
+  - 内容类型预期为 image/*（由 OneBot 客户端处理）
+"""
 import logging
 import time
+from urllib.parse import urlparse
 
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
 
 logger = logging.getLogger(__name__)
+
+# ── URL 安全验证 ──
+import ipaddress
+
+_BLOCKED_NETWORKS = [
+    ipaddress.IPv4Network("127.0.0.0/8"),
+    ipaddress.IPv4Network("10.0.0.0/8"),
+    ipaddress.IPv4Network("172.16.0.0/12"),
+    ipaddress.IPv4Network("192.168.0.0/16"),
+    ipaddress.IPv4Network("169.254.0.0/16"),
+    ipaddress.IPv6Network("::1/128"),
+    ipaddress.IPv6Network("fc00::/7"),
+]
+
+
+def _is_safe_url(url: str) -> bool:
+    """验证 URL 是否安全（拒绝内网、仅允许 http/https）。
+
+    Args:
+        url: 待验证的 URL。
+
+    Returns:
+        True 如果 URL 安全。
+    """
+    if not url:
+        return False
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+    hostname = hostname.strip()
+    try:
+        addr = ipaddress.ip_address(hostname)
+        for net in _BLOCKED_NETWORKS:
+            if addr in net:
+                return False
+    except ValueError:
+        if hostname in ("localhost", "127.0.0.1", "0.0.0.0", "[::1]"):
+            return False
+        if hostname.endswith(".local") or hostname.endswith(".internal"):
+            return False
+    return True
 
 
 class ACGImageModule(Module):
@@ -97,11 +147,24 @@ class ACGImageModule(Module):
 
         # 构造带时间戳的图片 URL（防缓存）
         api_url = self.config.get("acg_image.ACG图片API地址")
+
+        # ── URL 安全验证 ──
+        if not _is_safe_url(api_url):
+            logger.warning(
+                "[acg_image] API 地址不安全，已拦截: %s", api_url[:100]
+            )
+            fail_msg = (
+                self.config.get("acg_image.失败提示", "发送失败")
+                .replace("{qqid}", str(ctx.user_id))
+            )
+            await ctx.reply(fail_msg)
+            return
+
         cache_buster = int(time.time() * 1000)
         sep = "&" if "?" in api_url else "?"
         image_url = f"{api_url}{sep}_t={cache_buster}"
 
-        # 发送 CQ 码
+        # 发送 CQ 码（OneBot 客户端负责下载，期望返回 image/* 内容）
         image_code = f"[CQ:image,file={image_url}]"
         try:
             await ctx.reply(image_code)

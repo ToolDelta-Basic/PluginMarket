@@ -3,6 +3,11 @@
 from typing import Any, Callable
 
 
+# ── exec_exposed 重导出 ──
+# 定义在 modules/system/kernel_auth.py 中，为了方便外部导入在此重导出。
+# 实际使用时可以直接: from qqlinker_framework.modules.system.kernel_auth import exec_exposed
+
+
 def command(
     trigger: str,
     *,

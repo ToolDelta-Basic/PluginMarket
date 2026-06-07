@@ -5,7 +5,7 @@ from collections import deque
 from typing import Optional
 
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
 
 
 class TPSService:
@@ -35,7 +35,7 @@ class TPSMonitorModule(Module):
     """TPS 监控模块，提供 .性能 命令和 'tps' 服务。"""
 
     name = "tps_monitor"
-    tier = 200  # TIER_SERVICE  # service: 服务引擎
+    tier = 100  # TIER_DAEMON  # 需要 adapter 查询 TPS
     version = (1, 0, 0)
 
     default_config = {

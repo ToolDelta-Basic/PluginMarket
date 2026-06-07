@@ -671,7 +671,7 @@ class PanelModule(Module):
         except Exception as e: return {"ok": False, "error": str(e)}
 
     def _module_list(self):
-        from ...core.autodiscover import list_external_modules
+        from ...core.drivers.autodiscover import list_external_modules
         try:
             mods = list_external_modules(self.services.get("config").data_dir)
             return {"ok": True, "modules": mods}
@@ -681,7 +681,7 @@ class PanelModule(Module):
         url = body.get("url", "").strip()
         if not url: return {"ok": False, "error": "请输入 URL"}
         try:
-            from ...core.autodiscover import download_module
+            from ...core.drivers.autodiscover import download_module
             r = download_module(url, self.services.get("config").data_dir)
             if r: return {"ok": True, "name": r}
             return {"ok": False, "error": "下载失败，请检查 URL"}
@@ -691,7 +691,7 @@ class PanelModule(Module):
         name = body.get("name", "").strip()
         if not name: return {"ok": False, "error": "请输入模块名"}
         try:
-            from ...core.autodiscover import remove_external_module
+            from ...core.drivers.autodiscover import remove_external_module
             r = remove_external_module(name, self.services.get("config").data_dir)
             if r: return {"ok": True}
             return {"ok": False, "error": "模块不存在"}

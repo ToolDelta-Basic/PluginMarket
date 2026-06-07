@@ -7,7 +7,7 @@ import shutil
 import os
 from typing import Dict, List, Optional
 
-from ..core.error_hints import hint
+from ..core.kernel.error_hints import hint
 
 
 class PackageManager:

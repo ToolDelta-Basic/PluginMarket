@@ -6,7 +6,7 @@ import time
 import logging
 from typing import Optional
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)

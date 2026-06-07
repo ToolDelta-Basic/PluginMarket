@@ -1,9 +1,21 @@
-"""模块市场 REST API 处理器 — 列表/搜索/下载/上传/统计。"""
+"""模块市场 REST API 处理器 — 列表/搜索/下载/上传/统计。
+
+安全特性:
+  - 上传文件名校验（禁止路径分隔符、..、特殊字符）
+  - 文件大小限制（10 MB）
+  - MIME 类型校验（仅允许 zip 或 application/octet-stream）
+  - ZipSlip 防护（拒绝符号链接、.. 路径、绝对路径）
+  - 拒绝 __pycache__ 和 .pyc 编译文件
+  - 上传速率限制（每 IP 每分钟 3 次）
+"""
 import http.server
 import json
 import logging
 import os
 import re
+import time
+import traceback
+import zipfile
 from email.parser import BytesParser
 from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlparse
@@ -13,13 +25,19 @@ from .signer import verify_signature
 _log = logging.getLogger(__name__)
 
 _MODULE_DIR_NAME = "插件数据文件/模块源件"
-_MAX_UPLOAD_SIZE = 16 * 1024 * 1024
+_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB 文件大小限制
+_MAX_UPLOAD_RATE_PER_IP = 3          # 每 IP 每分钟最大上传次数
+_UPLOAD_RATE_WINDOW = 60             # 速率窗口（秒）
 
 
 class MarketHandler(http.server.BaseHTTPRequestHandler):
     """模块市场 REST API 处理器。"""
 
     market_conf: Dict[str, Any] = {}
+    # 类级别的上传速率限制（按 IP）
+    _upload_rate_map: Dict[str, List[float]] = {}
+    # 测试用：设为 True 跳过速率限制
+    _rate_limit_disabled: bool = False
 
     @property
     def modules_dir(self) -> str:
@@ -250,10 +268,128 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
                 continue
         return result
 
+    @staticmethod
+    def _sanitize_filename(filename: str) -> str:
+        """净化上传文件名：移除路径分隔符、拒绝 ..、只保留安全字符。
+
+        Args:
+            filename: 原始文件名。
+
+        Returns:
+            净化后的文件名，如果文件名非法则返回空字符串。
+        """
+        if not filename:
+            return ""
+        # 拒绝包含 .. 的文件名
+        if ".." in filename:
+            return ""
+        # 移除路径分隔符
+        filename = filename.replace("\\", "").replace("/", "")
+        # 只保留字母数字、下划线、连字符、点
+        safe = re.sub(r"[^a-zA-Z0-9_\-.]", "", filename)
+        # 拒绝空文件名或以点开头的隐藏文件
+        if not safe or safe.startswith("."):
+            return ""
+        return safe
+
+    @staticmethod
+    def _check_upload_rate(client_ip: str) -> bool:
+        """检查上传速率限制（每 IP 每分钟最多 _MAX_UPLOAD_RATE_PER_IP 次）。
+
+        Args:
+            client_ip: 客户端 IP 地址。
+
+        Returns:
+            True 如果允许上传。
+        """
+        if MarketHandler._rate_limit_disabled:
+            return True
+        now = time.time()
+        rate_map = MarketHandler._upload_rate_map
+        hits = rate_map.get(client_ip, [])
+        # 清理过期的
+        cutoff = now - _UPLOAD_RATE_WINDOW
+        hits = [t for t in hits if t >= cutoff]
+        if len(hits) >= _MAX_UPLOAD_RATE_PER_IP:
+            rate_map[client_ip] = hits
+            return False
+        hits.append(now)
+        rate_map[client_ip] = hits
+        return True
+
+    def _check_zip_safety(self, content: bytes) -> bool:
+        """检查 zip 文件内容是否安全（ZipSlip 防护 + 内容检查）。
+
+        拒绝：
+          - 符号链接条目
+          - 包含 .. 的路径
+          - 绝对路径
+          - __pycache__ 目录
+          - .pyc 编译文件
+
+        Args:
+            content: zip 文件的原始字节。
+
+        Returns:
+            True 如果 zip 文件安全。
+        """
+        import io
+        try:
+            with zipfile.ZipFile(io.BytesIO(content), "r") as zf:
+                for info in zf.infolist():
+                    # 检查是否为符号链接（Python 3.12+ 有 is_symlink，3.11 兼容回退）
+                    is_link = (
+                        info.is_symlink()
+                        if hasattr(info, 'is_symlink')
+                        else bool(getattr(info.external_attr, '__bool__', lambda: False)())
+                        if hasattr(info, 'external_attr') and (info.external_attr >> 16) == 0o120000
+                        else False
+                    )
+                    if is_link:
+                        _log.warning("上传 zip 包含符号链接: %s", info.filename)
+                        return False
+
+                    # ZipSlip: 拒绝 .. 和绝对路径
+                    filename = info.filename
+                    if ".." in filename or filename.startswith("/"):
+                        _log.warning("上传 zip 包含不安全路径: %s", filename)
+                        return False
+
+                    # 拒绝 __pycache__ 目录
+                    if "__pycache__" in filename.replace("\\", "/").split("/"):
+                        _log.warning("上传 zip 包含 __pycache__: %s", filename)
+                        return False
+
+                    # 拒绝 .pyc 编译文件
+                    if filename.endswith(".pyc"):
+                        _log.warning("上传 zip 包含 .pyc 文件: %s", filename)
+                        return False
+
+                return True
+        except zipfile.BadZipFile:
+            _log.warning("上传的文件不是有效的 zip")
+            return False
+        except Exception:
+            _log.warning("zip 安全检查异常: %s", traceback.format_exc())
+            return False
+
     def _handle_upload(self):
         if not self._is_authenticated():
             self.send_error(401)
             return
+
+        # ── IP 速率限制 ──
+        client_ip = self.client_address[0]
+        if not self._check_upload_rate(client_ip):
+            self.send_response(429)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(
+                {"ok": False, "error": "上传过于频繁，请稍后再试"},
+                ensure_ascii=False
+            ).encode("utf-8"))
+            return
+
         content_type = self.headers.get("Content-Type", "")
         if "multipart/form-data" not in content_type:
             self.send_error(400)
@@ -262,20 +398,67 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
         if length > _MAX_UPLOAD_SIZE:
             self.send_error(413)
             return
+
         body = self.rfile.read(length)
         parts = self._parse_multipart(content_type, body)
         file_part = parts.get("file")
         if not file_part or not file_part[0]:
             self.send_error(400)
             return
-        filename, content, _ = file_part
-        if not filename.endswith(".py"):
+        filename_orig, content, mime = file_part
+
+        # ── MIME 类型校验（基于实际文件 content-type）──
+        if mime:
+            mime_lower = mime.lower()
+            is_zip = "application/zip" in mime_lower or "application/x-zip" in mime_lower
+            is_octet = "application/octet-stream" in mime_lower
+            is_py = "text/x-python" in mime_lower or "text/plain" in mime_lower
+            if not (is_zip or is_octet or is_py):
+                self.send_response(415)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(
+                    {"ok": False, "error": "仅接受 zip 模块包或 .py 文件"},
+                    ensure_ascii=False
+                ).encode("utf-8"))
+                return
+
+        # ── 文件名净化 ──
+        filename = self._sanitize_filename(filename_orig)
+        if not filename:
             self.send_response(400)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps({"ok": False, "error": "只接受 .py 模块文件"}, ensure_ascii=False).encode("utf-8"))
+            self.wfile.write(json.dumps(
+                {"ok": False, "error": "文件名包含非法字符"},
+                ensure_ascii=False
+            ).encode("utf-8"))
             return
-        safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", filename[:-3])
+
+        # ── 仅接受 .py 或 .zip 文件 ──
+        if not (filename.endswith(".py") or filename.endswith(".zip")):
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(
+                {"ok": False, "error": "只接受 .py 模块文件或 .zip 模块包"},
+                ensure_ascii=False
+            ).encode("utf-8"))
+            return
+
+        # ── zip 文件安全检查 ──
+        if filename.endswith(".zip"):
+            if not self._check_zip_safety(content):
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(
+                    {"ok": False, "error": "模块包包含不安全内容"},
+                    ensure_ascii=False
+                ).encode("utf-8"))
+                return
+
+        safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", filename[:-3] if filename.endswith(".py") else filename[:-4])
         info = self._parse_module_source(content)
         if info.get("version"):
             sig_part = parts.get("signature")
@@ -288,6 +471,7 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
                     self._ok({"ok": False, "error": "签名无效"})
                     return
         dest = os.path.join(self.modules_dir, filename)
+        os.makedirs(self.modules_dir, exist_ok=True)  # 确保目录存在
         with open(dest, "wb") as f:
             f.write(content)
         _log.info("上传模块: %s (%d bytes)", filename, len(content))

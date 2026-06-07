@@ -36,6 +36,7 @@ class EventBus:
     def __init__(self):
         self._subscribers: dict[str, Tuple[Subscriber, ...]] = {}
         self._lock = threading.Lock()
+        self._shutdown = threading.Event()
         self._sync_loop = asyncio.new_event_loop()
         self._sync_thread = threading.Thread(
             target=self._run_sync_loop, daemon=True
@@ -98,10 +99,17 @@ class EventBus:
 
     def publish_sync(self, event: BaseEvent):
         """同步发布事件，使用后台专用事件循环。"""
-        asyncio.run_coroutine_threadsafe(self.publish(event), self._sync_loop)
+        if self._shutdown.is_set():
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(self.publish(event), self._sync_loop)
+        except RuntimeError:
+            # 事件循环已关闭（shutdown 途中的竞态）
+            pass
 
     def shutdown(self):
         """停止后台事件循环并等待线程退出。"""
+        self._shutdown.set()
         if self._sync_loop and self._sync_loop.is_running():
             self._sync_loop.call_soon_threadsafe(self._sync_loop.stop)
         if self._sync_thread and self._sync_thread.is_alive():

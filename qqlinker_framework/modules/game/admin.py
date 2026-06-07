@@ -6,9 +6,15 @@
   .执行   — 批量执行多条指令（管理员）
 
 所有指令通过白名单+危险参数过滤实现安全控制。
+所有管理员命令执行写入审计日志。
 """
 from ...core.module import Module
-from ...core.decorators import command
+from ...core.kernel.decorators import command
+from ...core.kernel.audit import audit_log, AuditLevel
+
+import logging
+
+_log = logging.getLogger(__name__)
 
 DEFAULT_DANGEROUS_ARGS = (
     "op", "deop", "stop", "restart", "reload",
@@ -88,6 +94,8 @@ class GameAdmin(Module):
     def _validate_command(self, cmd: str) -> tuple[bool, str]:
         """验证指令是否在允许列表且不含危险参数。
 
+        强制将指令小写化执行（不只是验证），防止大小写绕过。
+
         Args:
             cmd: 完整的指令字符串。
 
@@ -103,17 +111,18 @@ class GameAdmin(Module):
         dangerous_args = [
             a.lower() for a in cfg.get("危险参数", DEFAULT_DANGEROUS_ARGS)
         ]
-        cmd_clean = cmd.strip().lstrip("/").lower()
-        parts = cmd_clean.split()
-        if not parts:
+        cmd_clean = cmd.strip().lstrip("/")
+        parts_lower = cmd_clean.lower().split()
+        if not parts_lower:
             return False, "指令为空"
-        root = parts[0]
+        root = parts_lower[0]
         if root not in allowed:
             return False, f"禁止执行的命令: {root}"
-        for arg in parts[1:]:
+        for arg in parts_lower[1:]:
             if arg in dangerous_args:
                 return False, f"参数包含敏感项: {arg}"
-        return True, ""
+        # 返回小写化版本
+        return True, cmd_clean.lower()
 
     @command(".在线")
     async def cmd_list(self, ctx):
@@ -135,13 +144,24 @@ class GameAdmin(Module):
             await ctx.reply("用法：.指令 <指令>")
             return
         cmd = " ".join(ctx.args)
-        valid, err = self._validate_command(cmd)
+        valid, sanitized = self._validate_command(cmd)
         if not valid:
-            await ctx.reply(f"❌ {err}")
+            await ctx.reply(f"❌ {sanitized}")
             return
+
+        # 审计日志
+        audit_log(
+            sender=str(ctx.user_id),
+            action="game_command",
+            target=sanitized[:200],
+            detail=f"by_{ctx.nickname}_in_group_{ctx.group_id}",
+            level=AuditLevel.INFO,
+            group_id=ctx.group_id,
+        )
+
         try:
-            self.adapter.send_game_command(cmd)
-            await ctx.reply(f"✅ 已执行: /{cmd}")
+            self.adapter.send_game_command(sanitized)
+            await ctx.reply(f"✅ 已执行: /{sanitized}")
         except Exception as e:
             await ctx.reply(f"❌ 执行失败: {str(e)}")
 
@@ -165,13 +185,24 @@ class GameAdmin(Module):
             return
         results = []
         for cmd in commands:
-            valid, err = self._validate_command(cmd)
+            valid, sanitized = self._validate_command(cmd)
             if valid:
                 try:
-                    self.adapter.send_game_command(cmd)
-                    results.append(f"✅ /{cmd}")
+                    self.adapter.send_game_command(sanitized)
+                    results.append(f"✅ /{sanitized}")
                 except Exception as e:
-                    results.append(f"❌ /{cmd} (异常: {str(e)})")
+                    results.append(f"❌ /{sanitized} (异常: {str(e)})")
             else:
-                results.append(f"❌ /{cmd} ({err})")
+                results.append(f"❌ /{cmd} ({sanitized})")
+
+        # 审计日志（批量）
+        audit_log(
+            sender=str(ctx.user_id),
+            action="game_script",
+            target=f"{len(commands)} commands",
+            detail=f"by_{ctx.nickname}_results={len([r for r in results if r.startswith('✅')])}",
+            level=AuditLevel.INFO,
+            group_id=ctx.group_id,
+        )
+
         await ctx.reply("脚本执行结果：\n" + "\n".join(results))
