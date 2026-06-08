@@ -1,0 +1,10 @@
+{
+    "plugin-id": "antiteleport",
+    "author": "江小白",
+    "version": "1.0.0",
+    "description": "反传送检测插件。每秒检测位移，OP 豁免/跨维度放行/末地跳过，累进惩罚（警告→30分→1时→永久），支持封禁/解封/白名单命令，可选接入聊天栏菜单。",
+    "plugin-type": "classic",
+    "pre-plugins": {
+        "聊天栏菜单": "0.0.1"
+    }
+}
