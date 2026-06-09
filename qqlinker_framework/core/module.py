@@ -1,4 +1,4 @@
-"""模块基类 — 约定优于配置 (v1.2)
+"""模块基类 — 约定优于配置 
 
 ═══════════════════════════════════════════════════════════════════════════
  约定属性               │ 框架自动执行
@@ -31,9 +31,11 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from .kernel.services import ServiceContainer, uid_label, validate_module_tier as validate_module_uid
+from .kernel.services import ServiceContainer, uid_label, validate_module_tier as validate_module_uid, TIER_KERNEL, TIER_DAEMON
 from .kernel.bus import EventBus
 from .kernel.error_hints import hint
+from .kernel.degradation import DEGRADABLE_SERVICES, CRITICAL_SERVICES
+from .kernel.gatekeeper import GatekeeperProxy, ALLOWED_EVENTS as _ALLOWED_EVENTS_FOR_MODULE
 
 
 # ── JSON 数据库代理 ──────────────────────────────────────────
@@ -270,6 +272,10 @@ class HotReloadState:
         return dict(self._data)
 
 
+# ── 事件白名单（非 root 模块可订阅的受限事件）──
+# v5: 统一从 gatekeeper.py 导入，单一数据源
+
+
 # ── 模块基类 ─────────────────────────────────────────────────
 
 class Module(ABC):
@@ -325,8 +331,11 @@ class Module(ABC):
     _hot_state: HotReloadState | None = None
 
     def __init__(self, services: ServiceContainer, event_bus: EventBus | None = None):
-        # 保留 root 级引用用于 _data_dir fallback 等基础设施
-        self._root_services = services
+        # H1 修复: root 容器引用以名称修饰存储，防止外部直接访问。
+        # _root_services 属性 (property, 见下方) 根据 uid 返回受限视图或 root 视图:
+        #   - daemon (uid≤100): 返回 root 容器（完整权限）
+        #   - 其余: 返回 self.services（受限视图）
+        self.__root_services = services
         self.event_bus = event_bus
         # ── 防提权: 根据声明的 uid/tier 自动判断层级并校验 ──
         declared_tier = getattr(self.__class__, 'tier', None)
@@ -352,18 +361,37 @@ class Module(ABC):
         self._event_handlers: list = []
         self._tool_defs: list = []
 
-        # ── 服务注入（含 UID 权限校验）──
-        # 初始化阶段通过 root 容器注入，框架信任注册了 required_services 的模块。
-        # 运行时通过 self.services（UID 视图）限制后续的 services.get() 调用。
+        # ── 服务注入（含 UID 权限校验 + v5 优雅降级）──
+        # Fix: 通过受限视图 self.services 获取服务，而非直接使用 root 容器
+        # services。self.services 是 UID 视图，自动过滤无权限的服务。
+        # v5: 非关键服务缺失时降级运行而非崩溃。
         for srv_name in self.required_services:
-            if not services.has(srv_name):
+            if not self.services.has(srv_name):
+                # v5 降级判断: 非关键服务缺失 → 降级运行
+                if srv_name in DEGRADABLE_SERVICES:
+                    self.logger.warning(
+                        "🔶 模块 '%s': 非关键服务 '%s' 未注册，以降级模式运行",
+                        self.name, srv_name,
+                    )
+                    # 设置占位属性为 None，模块代码需自行 null-check
+                    setattr(self, srv_name, None)
+                    continue
+                # 关键服务缺失 → 仍抛异常（框架级错误）
                 raise RuntimeError(
                     f"模块 '{self.name}' 需要服务 '{srv_name}'，但未注册。"
                     f"{hint['SERVICE_NOT_FOUND']}"
                 )
             try:
-                setattr(self, srv_name, services.get(srv_name))
+                setattr(self, srv_name, self.services.get(srv_name))
             except PermissionError as e:
+                # v5 降级判断: 非关键服务无权限 → 降级运行
+                if srv_name in DEGRADABLE_SERVICES:
+                    self.logger.warning(
+                        "🔶 模块 '%s': 无权访问非关键服务 '%s' (%s)，以降级模式运行",
+                        self.name, srv_name, e,
+                    )
+                    setattr(self, srv_name, None)
+                    continue
                 raise PermissionError(
                     f"模块 '{self.name}' (uid={self.uid}/{uid_label(self.uid)}) "
                     f"无权访问服务 '{srv_name}': {e}"
@@ -377,10 +405,13 @@ class Module(ABC):
         self.db: JsonDatabase | None = None
 
         # ── 魔法属性（简化开发）──
-        # 初始化阶段通过 root 容器注入（services 参数），运行时 protected by self.services view
-        self._inject_magic_attrs(services)
+        # H1 修复: 通过受限视图 self.services 注入，不再使用 root 容器
+        self._inject_magic_attrs(self.services)
 
         # ── 能力安全桥梁（私有属性，不注册到服务容器）──
+        # _resolve_bridge 需要访问 _host (uid=0) 服务，
+        # 因此使用 root 容器。bridge 返回给 daemon 级模块使用；
+        # 外部模块通过 _root_services property（受限视图）无法获取。
         self._bridge = self._resolve_bridge(services)
 
         # ── 配置热重载：自动更新 self.cfg_* 属性 ──
@@ -388,21 +419,39 @@ class Module(ABC):
             self.event_bus.subscribe("ConfigReloadEvent", self._on_config_reloaded)
 
     @staticmethod
-    def _resolve_bridge(root_services):
+    def _resolve_bridge(services):
         """从 FrameworkHost 中解析 GatekeeperBridge 实例。
 
-        bridge 不注册在 ServiceContainer 中，只能通过 _host 服务
-        获取 FrameworkHost 再获取其 gatekeeper 属性。
-        使用 root_services（初始化阶段原始容器）绕过 UID 视图限制。
+        _host 服务为 uid=0 (root)，只能通过 root 容器访问。
+        此方法从 __init__ 调用时传入 root 容器参数，
+        外部模块无法通过 _root_services property 调用此路径。
         """
         try:
-            host = root_services.get("_host")
+            host = services.get("_host")
             return getattr(host, "gatekeeper", None)
         except Exception:
             return None
 
-    def _on_config_reloaded(self, event):
-        """配置热重载时自动更新 self.cfg_<name> 属性。"""
+    async def _on_config_reloaded(self, event):
+        """配置热重载时自动更新 self.cfg_<name> 属性。
+
+        Fix 4: asyncio.wait_for(timeout=5.0) 超时保护 — 防止坏模块
+        阻塞事件循环中后续模块的配置热更新。
+        """
+        try:
+            await asyncio.wait_for(self._do_config_reload(), timeout=5.0)
+        except asyncio.TimeoutError:
+            self.logger.warning(
+                "配置热更新超时 (5s)，模块 '%s' 可能存在阻塞操作，已跳过",
+                self.name,
+            )
+        except Exception as e:
+            self.logger.warning(
+                "配置热更新异常 '%s': %s", self.name, e
+            )
+
+    async def _do_config_reload(self):
+        """实际执行配置重载逻辑。"""
         config_svc = getattr(self, 'config', None)
         if not config_svc or not self.config_schema:
             return
@@ -421,39 +470,77 @@ class Module(ABC):
 
         模块可以直接 self.game.say(target, text) 代替
         self.services.get('adapter').send_game_message(target, text)
+
+        H1 修复: 通过受限视图（self.services）注入，防止低权限模块
+        以 root 权限越权操作。无人模块无权访问时优雅降级为 None。
         """
-        # self.adapter
+        # self.adapter — 通过受限视图获取
         try:
             self.adapter = services.get("adapter")
-        except KeyError:
+        except (KeyError, PermissionError):
             self.adapter = None
 
-        # self.config 代理 — self.config["键"] 自动调用 config.get("键")
+        # self.config 代理 — 传入模块 UID 防止越权读写
         try:
             raw_cfg = services.get("config")
-            self.config = _ConfigProxy(raw_cfg)
-        except KeyError:
+            self.config = _ConfigProxy(raw_cfg, caller_uid=self.uid)
+        except (KeyError, PermissionError):
             self.config = None
 
-        # self.group_config — 按群查询配置
+        # self.group_config — 传入 caller_uid 防止越权
         try:
             raw_gcfg = services.get("group_config")
-            self.group_config = _GroupConfigProxy(raw_gcfg)
-        except KeyError:
+            self.group_config = _GroupConfigProxy(raw_gcfg, caller_uid=self.uid)
+        except (KeyError, PermissionError):
             self.group_config = None
 
-        # self.game — 游戏操作快捷方式
-        self.game = _GameProxy(self.adapter)
+        # self.game — 游戏操作快捷方式（传入 caller_uid 用于白名单检查）
+        self.game = _GameProxy(self.adapter, caller_uid=self.uid, config=self.config)
 
-        # self.qq — QQ 操作快捷方式
+        # self.qq — QQ 操作快捷方式（传入模块 uid 用于审计）
         self.message = None
         try:
             self.message = services.get("message")
-        except KeyError:
+        except (KeyError, PermissionError):
             pass
-        self.qq = _QQProxy(self.adapter, self.services)
+        self.qq = _QQProxy(self.adapter, self.services, caller_uid=self.uid)
+
+        # ── ★ Gatekeeper 代理 — 业务模块访问框架核心的唯一通道 ──
+        # 每个模块持有自己的 GatekeeperProxy 实例，
+        # 所有核心 API 调用必须经过此代理。
+        # 代理内部做三重检查:
+        #   1. UID 级别检查（继承自 ServiceContainer.view）
+        #   2. 资源配额检查（委托给 ResourceGuardian）
+        #   3. 审计记录（委托给 AuditTrail）
+        guardian = services.try_get("guardian")
+        audit_trail = services.try_get("audit_trail")
+
+        self.gatekeeper = GatekeeperProxy(
+            services=self.services,
+            uid=self.uid,
+            module_name=self.name,
+            guardian=guardian,
+            audit=audit_trail,
+            config=self.config,
+            message=self.message,
+            event_bus=self.event_bus,
+            q_callbacks=self._commands,
+        )
 
     # ── 属性 ──
+
+    @property
+    def _root_services(self) -> ServiceContainer:
+        """H1 修复: 根据模块 uid 返回适当权限的服务容器。
+
+        kernel 级 (uid=0) 返回 root 容器。
+        daemon 级 (uid=100) 返回受限视图 — 与 kernel 区分，
+        防止 daemon 模块通过 _root_services 绕过权限检查。
+        其余模块返回受限视图 self.services。
+        """
+        if self.uid == TIER_KERNEL:
+            return self.__root_services
+        return self.services
 
     @property
     def data_dir(self) -> str:
@@ -467,9 +554,10 @@ class Module(ABC):
                     base = cfg_proxy.get_data_dir()
                 except Exception:
                     pass
-            if base is None and self._root_services is not None:
+            # H1 修复: 使用 self.services（受限视图）代替 __root_services
+            if base is None and self.services is not None:
                 try:
-                    base = self._root_services.get("config").get_data_dir()
+                    base = self.services.get("config").get_data_dir()
                 except Exception:
                     base = "data"
             if base is None:
@@ -478,6 +566,17 @@ class Module(ABC):
             os.makedirs(path, exist_ok=True)
             self._data_dir = path
         return self._data_dir
+
+    def check_file_access(self, path: str, mode: str = "r") -> bool:
+        """文件访问沙箱检查（v5 资源守护者集成）。
+
+        非 root 模块调用此方法校验文件路径是否在允许范围内。
+        返回 True 表示允许访问，False 表示拒绝。
+        """
+        guardian = self.services.try_get("guardian") if hasattr(self, 'services') and self.services else None
+        if guardian and hasattr(guardian, 'check_file_access'):
+            return guardian.check_file_access(path, self.uid, mode)
+        return True  # guardian 未启用时允许
 
     def resolve_secrets(self, text: str) -> str:
         """解析文本中的 {配置:节.键} 占位符为实际配置值。
@@ -509,8 +608,12 @@ class Module(ABC):
 
         # ── A: default_config → register_section (with scope) ──
         if cfg_svc and self.default_config:
+            # Fix: 框架初始化阶段使用 root bypass 注册配置节。
+            # _ConfigProxy 传入了 caller_uid 用于运行时校验，但
+            # _apply_conventions 是框架初始化路径，应使用 root 免检。
+            raw_cfg = cfg_svc._cfg  # 绕过 _ConfigProxy 的 caller_uid 限制
             for section, defaults in self.default_config.items():
-                cfg_svc.register_section(section, defaults)
+                raw_cfg.register_section(section, defaults, caller_uid=0)
                 # 同时向 GroupConfigManager 注册 scope
                 scope = self.config_scope.get(section, "group")
                 if group_cfg_svc:
@@ -532,14 +635,14 @@ class Module(ABC):
             dynamic = self.create_exports()
             if isinstance(dynamic, dict):
                 for name, inst in dynamic.items():
-                    self._root_services.register(name, inst)
+                    self.services.register(name, inst)
         if self.exports:
             for name, inst in self.exports.items():
-                self._root_services.register(name, inst)
+                self.services.register(name, inst)
 
         # ── D: db_collections → self.db ──
         if self.db_collections:
-            db_dir = os.path.join(self.data_dir, "db")
+            db_dir = os.path.join(self.data_dir, "数据")
             self.db = JsonDatabase(db_dir, self.db_collections)
             self.logger.debug(
                 "数据库已初始化: %s", ", ".join(self.db_collections)
@@ -555,14 +658,39 @@ class Module(ABC):
         if not self.enabled:
             self.logger.info("模块已禁用（enabled=False）")
 
+        # ── G: gatekeeper 命令/事件收集 ──
+        # 业务模块可通过 self.gatekeeper.register_command/listen
+        # 注册命令和事件，在此统一收集并合并到 _commands/_event_handlers
+        gatekeeper = getattr(self, 'gatekeeper', None)
+        if gatekeeper is not None:
+            gk_commands = gatekeeper._collect_commands()
+            for trigger, cmd_info in gk_commands.items():
+                if trigger not in self._commands:
+                    self._commands[trigger] = cmd_info
+                    self.logger.debug(
+                        "Gatekeeper 命令已收集: %s", trigger,
+                    )
+            gk_events = gatekeeper._collect_events()
+            for evt_type, handler, priority in gk_events:
+                # 委托给 Module.listen 做实际订阅（含 GroupMessageEvent 包装）
+                # 但需要绕过 listen 内部的白名单检查，因为门卫已做过
+                # 使用 _apply_gatekeeper_event 绕过重复检查
+                self._apply_gatekeeper_event(evt_type, handler, priority)
+
     async def _post_init_conventions(self) -> None:
         """on_init 之后执行的约定（依赖 on_init 中创建的资源）。"""
-        # ── G: tools → ToolManager ──
+        # ── G: tools → ToolManager（v5: 降级处理）──
         tool_mgr = getattr(self, 'tool', None)
         if tool_mgr and self.tools:
             for tool_def in self.tools:
-                tool_mgr.register_tool(tool_def)
-                self.logger.debug("工具已注册: %s", tool_def.get("name"))
+                try:
+                    tool_mgr.register_tool(tool_def)
+                    self.logger.debug("工具已注册: %s", tool_def.get("name"))
+                except Exception as e:
+                    self.logger.warning(
+                        "🔶 工具 '%s' 注册失败（降级）: %s",
+                        tool_def.get("name", "?"), e,
+                    )
 
         # ── H: scheduled → 启动定时任务 ──
         if self.scheduled:
@@ -578,6 +706,32 @@ class Module(ABC):
         for task in self._scheduled_tasks:
             task.stop()
         self._scheduled_tasks.clear()
+
+    def _apply_gatekeeper_event(self, event_type: str,
+                                handler: Callable, priority: int) -> None:
+        """应用由 Gatekeeper 代理注册的事件（绕过双重白名单检查）。
+
+        事件已经过 GatekeeperProxy.listen() 的 ALLOWED_EVENTS 校验，
+        此处只负责实际订阅 — GroupMessageEvent 自动包装群级过滤。
+        """
+        wrapped = handler
+        if event_type == "GroupMessageEvent":
+            original = handler
+            module_name = self.name
+            group_filter = getattr(self, 'group_filter', None)
+
+            async def _filtered_handler(event):
+                if group_filter is None:
+                    await original(event)
+                    return
+                if group_filter.is_module_enabled(event.group_id, module_name):
+                    await original(event)
+
+            wrapped = _filtered_handler
+
+        if self.event_bus is not None:
+            self.event_bus.subscribe(event_type, wrapped, priority)
+        self._event_handlers.append((event_type, handler, priority))
 
     # ── 生命周期 ──
 
@@ -618,6 +772,18 @@ class Module(ABC):
 
     # ── 声明式 API ──
 
+    # ── 非 root 模块命令/工具 UID 下限 ──
+    # 计算属性: daemon(≤100)可注册 daemon 级命令, service(≤200)可注册 service 级,
+    # app(≤300)限注册 app+ 级, nobody(>300)限 nobody 级。
+    # 动态取值，跟随模块自身 uid 而非硬编码。
+    @property
+    def _MIN_CMD_UID(self) -> int:
+        """模块可注册命令的最低 uid 要求 = 模块自身 uid。"""
+        return self.uid
+    @property
+    def _MIN_TOOL_UID(self) -> int:
+        return self.uid
+
     def register_command(
         self,
         trigger: str,
@@ -631,7 +797,18 @@ class Module(ABC):
         cooldown: float | None = None,
         min_uid: int = 400,
     ):
-        """注册一个命令处理器。"""
+        """注册一个命令处理器。
+
+        沙箱: 非 root 模块（uid > 0）只能注册 min_uid ≥ 自身 uid 的命令，
+        防止低权限模块注册比自己权限更高的命令。
+        """
+        # ── 沙箱检查 ──
+        if self.uid > 0 and min_uid < self._MIN_CMD_UID:
+            self.logger.warning(
+                "模块 '%s' (uid=%d) 尝试注册命令 '%s' (min_uid=%d < %d)，已拒绝",
+                self.name, self.uid, trigger, min_uid, self._MIN_CMD_UID,
+            )
+            return
         if cooldown is None:
             cooldown = self.default_cooldown
         self._commands[trigger] = {
@@ -650,7 +827,17 @@ class Module(ABC):
         """订阅事件并记录到事件处理器列表。
 
         对于 GroupMessageEvent，自动包装群级模块过滤中间件。
+
+        沙箱: 非 root 模块（uid > 0）只能订阅白名单事件：
+        GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent。
         """
+        # ── 沙箱检查：非 root 模块受限事件白名单 ──
+        if self.uid > 0 and event_type not in _ALLOWED_EVENTS_FOR_MODULE:
+            self.logger.warning(
+                "模块 '%s' (uid=%d) 尝试订阅受限事件 '%s'，已拒绝",
+                self.name, self.uid, event_type,
+            )
+            return
         wrapped = handler
         if event_type == "GroupMessageEvent":
             original = handler
@@ -661,7 +848,7 @@ class Module(ABC):
             async def _filtered_handler(event):
                 """群级模块过滤包装：检查该群是否禁用当前模块。"""
                 if group_filter is None:
-                    # 没有 filter 服务时不过滤（向后兼容）
+                    # 没有 filter 服务时不过滤
                     await original(event)
                     return
                 if group_filter.is_module_enabled(event.group_id, module_name):
@@ -673,7 +860,20 @@ class Module(ABC):
         self._event_handlers.append((event_type, handler, priority))
 
     def register_tool(self, tool_definition: dict):
-        """编程式注册工具定义。"""
+        """编程式注册工具定义。
+
+        沙箱: 非 root 模块（uid > 0）只能注册 uid ≥ 300 的工具，
+        防止低权限模块以高权限注册。
+        """
+        tool_uid = tool_definition.get("uid", 300)
+        if self.uid > 0 and tool_uid < self._MIN_TOOL_UID:
+            self.logger.warning(
+                "模块 '%s' (uid=%d) 尝试注册工具 '%s' (uid=%d < %d)，已拒绝",
+                self.name, self.uid,
+                tool_definition.get("name", "<unnamed>"),
+                tool_uid, self._MIN_TOOL_UID,
+            )
+            return
         self._tool_defs.append(tool_definition)
 
     def listen_packet(self, packet_id: int, handler: Callable[[dict], bool]):
@@ -699,41 +899,51 @@ class Module(ABC):
 # ═══════════════════════════════════════════════════════════════
 
 class _ConfigProxy:
-    """配置代理: self.config.键 自动调用 config.get("键")。"""
+    """配置代理: self.config.键 自动调用 config.get("键")。
 
-    __slots__ = ("_cfg",)
+    Fix: 传入 caller_uid 防止越权 — 任何 uid≥300 的模块
+    只能以其自身身份读写配置，不能以 uid=0 绕过权限。
+    """
 
-    def __init__(self, config_svc):
+    __slots__ = ("_cfg", "_caller_uid")
+
+    def __init__(self, config_svc, caller_uid=400):
         self._cfg = config_svc
+        self._caller_uid = caller_uid
 
     def __getattr__(self, key: str):
         if key.startswith("_"):
             raise AttributeError(key)
-        return self._cfg.get(key)
+        return self._cfg.get(key, requester_uid=self._caller_uid)
 
     def get(self, key: str, default=None):
-        return self._cfg.get(key, default)
+        return self._cfg.get(key, default, requester_uid=self._caller_uid)
 
     def set(self, key: str, value):
-        return self._cfg.set(key, value)
+        return self._cfg.set(key, value, requester_uid=self._caller_uid)
 
     def save(self):
         return self._cfg.save()
 
     def register_section(self, section: str, defaults: dict):
-        return self._cfg.register_section(section, defaults)
+        """Fix M2: 传入 caller_uid 阻止低权限模块注册高权限配置节。"""
+        return self._cfg.register_section(section, defaults, caller_uid=self._caller_uid)
 
     def get_data_dir(self):
         return self._cfg.get_data_dir()
 
 
 class _GroupConfigProxy:
-    """群配置代理: self.group_config.get(group_id, key) / .for_group(group_id)."""
+    """群配置代理: self.group_config.get(group_id, key) / .for_group(group_id).
 
-    __slots__ = ("_gcfg",)
+    传入 caller_uid 防止越权。
+    """
 
-    def __init__(self, group_config_svc):
+    __slots__ = ("_gcfg", "_caller_uid")
+
+    def __init__(self, group_config_svc, caller_uid=400):
         self._gcfg = group_config_svc
+        self._caller_uid = caller_uid
 
     def __getattr__(self, key: str):
         """代理底层 GroupConfigManager 的属性（如 repair_dir）。"""
@@ -743,37 +953,72 @@ class _GroupConfigProxy:
 
     def get(self, group_id: int, key: str, default=None):
         """获取指定群的配置值。"""
-        return self._gcfg.get(group_id, key, default)
+        return self._gcfg.get(group_id, key, default, requester_uid=self._caller_uid)
 
     def for_group(self, group_id: int) -> "_SingleGroupConfigProxy":
         """返回单群配置代理，方便链式调用。"""
-        return _SingleGroupConfigProxy(self._gcfg, group_id)
+        return _SingleGroupConfigProxy(self._gcfg, group_id, caller_uid=self._caller_uid)
 
     def get_module_config(self, group_id: int, section: str) -> dict:
         """获取指定群的模块节配置。"""
-        return self._gcfg.get_group_module_config(group_id, section)
+        return self._gcfg.get_group_module_config(group_id, section, requester_uid=self._caller_uid)
 
 
 class _SingleGroupConfigProxy:
     """单群配置代理。"""
 
-    __slots__ = ("_gcfg", "_group_id")
+    __slots__ = ("_gcfg", "_group_id", "_caller_uid")
 
-    def __init__(self, gcfg, group_id: int):
+    def __init__(self, gcfg, group_id: int, caller_uid=400):
         self._gcfg = gcfg
         self._group_id = group_id
+        self._caller_uid = caller_uid
 
     def get(self, key: str, default=None):
-        return self._gcfg.get(self._group_id, key, default)
+        return self._gcfg.get(self._group_id, key, default, requester_uid=self._caller_uid)
 
 
 class _GameProxy:
-    """游戏操作代理: self.game.say/send/cmd/players。"""
+    """游戏操作代理: self.game.say/send/cmd/players。
 
-    __slots__ = ("_adapter",)
+    Fix: cmd() 强制 UID 检查 — uid≤100 (daemon+) 放行，
+    uid>100 检查是否在 "游戏管理.允许执行命令的模块" 白名单中。
+    """
 
-    def __init__(self, adapter):
+    __slots__ = ("_adapter", "_caller_uid", "_config")
+
+    def __init__(self, adapter, caller_uid=400, config=None):
         self._adapter = adapter
+        self._caller_uid = caller_uid
+        self._config = config
+
+    def _check_cmd_permission(self) -> bool:
+        """检查当前调用者是否有权限执行游戏命令。
+
+        Returns:
+            True 表示允许执行。
+        """
+        if self._caller_uid <= 100:
+            return True  # daemon+ 放行
+        if not self._config:
+            return False
+        whitelist = self._config.get("游戏管理.允许执行命令的模块", [])
+        if not isinstance(whitelist, list):
+            whitelist = []
+        # 白名单为空则只有框架内置模块可执行
+        if not whitelist:
+            return False
+        # 当前模块名需在白名单中
+        import inspect
+        import threading
+        # 尝试从调用栈获取模块名
+        for frame_info in inspect.stack():
+            frame_locals = frame_info.frame.f_locals
+            mod = frame_locals.get('self')
+            if mod is not None and hasattr(mod, 'name') and hasattr(mod, 'uid'):
+                if mod.uid == self._caller_uid:
+                    return mod.name in whitelist
+        return False
 
     def say(self, target: str, text: str):
         """向游戏内目标发送消息。"""
@@ -781,7 +1026,13 @@ class _GameProxy:
             self._adapter.send_game_message(target, text)
 
     def cmd(self, command: str):
-        """发送游戏指令。"""
+        """发送游戏指令（需 UID 白名单检查）。"""
+        if not self._check_cmd_permission():
+            logging.getLogger(__name__).warning(
+                "游戏命令拒绝: uid=%d 不在白名单中 (cmd=%s)",
+                self._caller_uid, command[:80],
+            )
+            return
         if self._adapter:
             self._adapter.send_game_command(command)
 
@@ -813,13 +1064,19 @@ class _GameProxy:
 
 
 class _QQProxy:
-    """QQ 操作代理: self.qq.send_group(gid, text) / self.qq.send_private(uid, text)。"""
+    """QQ 操作代理: self.qq.send_group(gid, text) / self.qq.send_private(uid, text)。
 
-    __slots__ = ("_adapter", "_services")
+    Fix: 移除 fallback 到 adapter 的路径，该路径绕过 MessageManager 的
+    限流和审计。消息发送只走 message 服务（内建 guardian 检查）。
+    传入 caller_uid 用于审计追踪。
+    """
 
-    def __init__(self, adapter, services=None):
+    __slots__ = ("_adapter", "_services", "_caller_uid")
+
+    def __init__(self, adapter, services=None, caller_uid=400):
         self._adapter = adapter
         self._services = services
+        self._caller_uid = caller_uid
 
     @property
     def _msg(self):
@@ -832,25 +1089,27 @@ class _QQProxy:
         return None
 
     async def send_group(self, group_id: int, text: str):
-        """发送群消息。"""
+        """发送群消息（仅通过 MessageManager，绕过即拒绝）。
+
+        message 服务内部已包含 guardian 限流和审计追踪。
+        """
         if self._msg:
-            await self._msg.send_group(group_id, text)
-        elif self._adapter and hasattr(self._adapter, 'send_group_msg'):
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(
-                None, self._adapter.send_group_msg, group_id, text
-            )
+            await self._msg.send_group(group_id, text, requester_uid=self._caller_uid)
         else:
-            logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (group_id=%s)", group_id)
+            logging.getLogger(__name__).error(
+                "QQ代理: message 服务不可用，消息发送被拒绝 (group_id=%s, uid=%d)",
+                group_id, self._caller_uid,
+            )
 
     async def send_private(self, user_id: int, text: str):
-        """发送私聊消息（优先通过 MessageManager 削峰填谷）。"""
+        """发送私聊消息（仅通过 MessageManager，绕过即拒绝）。
+
+        message 服务内部已包含 guardian 限流和审计追踪。
+        """
         if self._msg:
-            await self._msg.send_private(user_id, text)
-        elif self._adapter and hasattr(self._adapter, 'send_private_msg'):
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(
-                None, self._adapter.send_private_msg, user_id, text
-            )
+            await self._msg.send_private(user_id, text, requester_uid=self._caller_uid)
         else:
-            logging.getLogger(__name__).warning("QQ代理: 无可用消息通道 (user_id=%s)", user_id)
+            logging.getLogger(__name__).error(
+                "QQ代理: message 服务不可用，消息发送被拒绝 (user_id=%s, uid=%d)",
+                user_id, self._caller_uid,
+            )

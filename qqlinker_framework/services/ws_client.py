@@ -236,7 +236,7 @@ class WsClient:
                     ws_kwargs["header"] = {
                         "Authorization": f"Bearer {self.token}"
                     }
-                    # Fallback: 同时保留 URL 参数兼容不支持 header 认证的旧版实现
+                    # Fallback: URL 参数认证
                     sep = "&" if "?" in addr else "?"
                     addr = f"{addr}{sep}access_token={self.token}"
                     logger.info(

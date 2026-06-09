@@ -6,7 +6,7 @@ import logging
 import time
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.services import uid_label, UID_ROOT, UID_NOBODY
+from ...core.kernel.services import uid_label, TIER_KERNEL, UID_NOBODY
 from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class AuthModule(Module):
             100: "daemon (系统守护)",
             1000: "service (服务引擎)",
             2000: "app (业务模块)",
-            3000: "nobody (三方模块)",
+            400:  "nobody (三方模块)",
         }
         tier = 0
         for t in sorted(tier_names.keys(), reverse=True):
@@ -216,7 +216,7 @@ class AuthModule(Module):
             return
 
         current_uid = self._get_user_uid(target_qq)
-        if current_uid <= UID_ROOT:
+        if current_uid <= TIER_KERNEL:
             await ctx.reply("\u274c 无法降级 root 用户")
             return
         if current_uid >= UID_NOBODY:
@@ -255,8 +255,7 @@ class AuthModule(Module):
         逻辑与 host._lookup_uid() 一致（权威实现）:
           1. 查 权限管理.UID授权 表
           2. 查 管理员.管理员QQ 列表 → uid=100
-          3. 查 游戏管理.管理员QQ 列表（兼容旧配置）→ uid=100
-          4. 否则 nobody (3000)
+          4. 否则 nobody (400)
         """
         uid_map = self.config.get("权限管理.UID授权", {})
         if isinstance(uid_map, dict):
@@ -267,7 +266,6 @@ class AuthModule(Module):
                     continue
                 if isinstance(qq_list, list) and user_id in qq_list:
                     return uid_level
-        # 管理员列表：先查 管理员.管理员QQ，再查 游戏管理.管理员QQ（兼容旧配置）
         admin_list = self.config.get("管理员.管理员QQ", [])
         if isinstance(admin_list, list):
             try:
@@ -275,11 +273,6 @@ class AuthModule(Module):
                     return 100
             except (TypeError, ValueError):
                 pass
-        admin_list2 = self.config.get("游戏管理.管理员QQ", [])
-        if isinstance(admin_list2, list):
-            try:
-                if user_id in [int(q) for q in admin_list2 if q]:
-                    return 100
             except (TypeError, ValueError):
                 pass
         return UID_NOBODY
@@ -291,13 +284,9 @@ class AuthModule(Module):
     def _get_admin_list(self) -> list:
         """获取管理员 QQ 列表。
 
-        优先查 游戏管理.管理员QQ（旧配置兼容），
         若为空或非 list 类型，回退到 管理员.管理员QQ。
         """
         try:
-            admin_list = self.config.get("游戏管理.管理员QQ", [])
-            if isinstance(admin_list, list) and admin_list:
-                return [int(q) for q in admin_list if q]
             admin_list = self.config.get("管理员.管理员QQ", [])
             if not isinstance(admin_list, list):
                 return []

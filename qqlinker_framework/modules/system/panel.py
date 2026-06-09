@@ -44,7 +44,31 @@ def _check_pw(pw: str, st: str) -> bool:
 # 会话
 # ═══════════════════════════════════════════════
 class Sessions:
-    def __init__(self): self._m = {}; self._ttl = 86400
+    def __init__(self):
+        self._m = {}
+        self._ttl = 86400
+        self._login_fails = {}        # ip → [ts, ts, ...]
+        self._max_fails = 5
+        self._fail_window = 900         # 15 分钟
+
+    def _check_bruteforce(self, ip: str) -> bool:
+        """检查是否触发爆破保护。返回 True 表示被锁定。"""
+        now = time.time()
+        fails = self._login_fails.get(ip, [])
+        fails = [t for t in fails if now - t < self._fail_window]
+        self._login_fails[ip] = fails
+        return len(fails) >= self._max_fails
+
+    def _record_fail(self, ip: str):
+        now = time.time()
+        fails = self._login_fails.setdefault(ip, [])
+        fails = [t for t in fails if now - t < self._fail_window]
+        fails.append(now)
+        self._login_fails[ip] = fails
+
+    def _clear_fails(self, ip: str):
+        self._login_fails.pop(ip, None)
+
     def mk(self, u: str) -> str:
         self._gc(); t = secrets.token_hex(32)
         self._m[t] = {"u": u, "ts": time.time()}; return t
@@ -275,9 +299,9 @@ async function rd() {
 
 function ut(uid) {
   if (uid===0) return '<span style="background:#e0556a33;color:#d05060;padding:1px 8px;border-radius:10px;font-size:.7rem">root</span>';
-  if (uid<1000) return '<span style="background:#e0904033;color:#e09040;padding:1px 8px;border-radius:10px;font-size:.7rem">daemon/'+uid+'</span>';
-  if (uid<2000) return '<span style="background:#5b8cff33;color:#5b8cff;padding:1px 8px;border-radius:10px;font-size:.7rem">service/'+uid+'</span>';
-  if (uid<3000) return '<span style="background:#40a07033;color:#40a070;padding:1px 8px;border-radius:10px;font-size:.7rem">app/'+uid+'</span>';
+  if (uid<=100) return '<span style="background:#e0904033;color:#e09040;padding:1px 8px;border-radius:10px;font-size:.7rem">daemon/'+uid+'</span>';
+  if (uid<=200) return '<span style="background:#5b8cff33;color:#5b8cff;padding:1px 8px;border-radius:10px;font-size:.7rem">service/'+uid+'</span>';
+  if (uid<=300) return '<span style="background:#40a07033;color:#40a070;padding:1px 8px;border-radius:10px;font-size:.7rem">app/'+uid+'</span>';
   return '<span style="background:#70708833;color:#707088;padding:1px 8px;border-radius:10px;font-size:.7rem">nobody</span>';
 }
 
@@ -558,8 +582,15 @@ class _H(http.server.BaseHTTPRequestHandler):
     def _handle_login(self, body):
         u = body.get("username", "").strip()
         p = body.get("password", "")
-        if not u or not p: return self._ok({"ok": False, "error": "请输入用户名和密码"})
-        if not self.provider._users.chk(u, p): return self._ok({"ok": False, "error": "用户名或密码错误"})
+        ip = self.headers.get('X-Forwarded-For', self.headers.get('X-Real-IP', '0.0.0.0')).split(',')[0].strip()
+        if not u or not p:
+            return self._ok({"ok": False, "error": "请输入用户名和密码"})
+        if self.provider._sessions._check_bruteforce(ip):
+            return self._ok({"ok": False, "error": "登录失败次数过多，请 15 分钟后重试"})
+        if not self.provider._users.chk(u, p):
+            self.provider._sessions._record_fail(ip)
+            return self._ok({"ok": False, "error": "用户名或密码错误"})
+        self.provider._sessions._clear_fails(ip)
         t = self.provider._sessions.mk(u)
         return self._ok({"ok": True, "token": t})
 
@@ -618,7 +649,7 @@ class PanelModule(Module):
             if host:
                 for m in getattr(host, '_modules', []):
                     mods.append({"name": getattr(m, 'name', '?'),
-                        "uid": getattr(m, 'uid', 3000),
+                        "uid": getattr(m, 'uid', 400),
                         "version": '.'.join(str(v) for v in getattr(m, 'version', (0,0,1))),
                         "active": getattr(m, 'enabled', True),
                         "commands": len(getattr(m, '_commands', {}))})

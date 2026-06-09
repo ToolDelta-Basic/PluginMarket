@@ -55,7 +55,7 @@ class BanStore:
     """封禁记录持久化存储，每玩家一个 JSON 文件。"""
 
     def __init__(self, data_dir: str) -> None:
-        self._dir = os.path.join(data_dir, "bans")
+        self._dir = os.path.join(data_dir, "封禁")
         os.makedirs(self._dir, exist_ok=True)
 
     def _path(self, player: str) -> str:

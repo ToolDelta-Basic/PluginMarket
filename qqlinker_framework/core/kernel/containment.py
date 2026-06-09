@@ -110,11 +110,16 @@ def safe_call(
 
 
 def _handle_caught(e: Exception, context: str, critical: bool):
-    """统一处理捕获的异常。"""
+    """统一处理捕获的异常。
+
+    Fix 5: 锁范围缩小为仅保护计数器原子操作，
+    避免日志 I/O 和 trigger_safe_shutdown 在锁内阻塞。
+    """
     global _critical_failure_count  # noqa: PYL-W0603 (containment state machine, intentional)
 
     from .error_hints import hint, ErrorMode
 
+    # Fix 5: 仅锁内执行计数器原子操作
     with _containment_lock:
         if critical:
             _critical_failure_count += 1
@@ -122,6 +127,7 @@ def _handle_caught(e: Exception, context: str, critical: bool):
         else:
             count = 0
 
+    # Fix 5: 日志和卸载触发移到锁外
     if critical:
         prefix = f"[关键 #{count}] "
     else:

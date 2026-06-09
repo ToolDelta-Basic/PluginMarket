@@ -45,14 +45,19 @@ class GroupModuleFilter:
 
     # ── 模块过滤 ──
 
-    def is_module_enabled(self, group_id: int, module_name: str) -> bool:
+    def is_module_enabled(self, group_id: int, module_name: str, caller_uid: int = 400) -> bool:
         """检查指定模块在指定群是否启用。
 
+        root(uid=0) 不受群级别过滤限制。
+
         逻辑:
-          1. 群配置 "禁用模块" 列表 → 命中则禁用
-          2. 群配置 "启用模块" 白名单 → 非空且不在列表中 → 禁用
-          3. 否则启用
+          1. root → 直接放行
+          2. 群配置 "禁用模块" 列表 → 命中则禁用
+          3. 群配置 "启用模块" 白名单 → 非空且不在列表中 → 禁用
+          4. 否则启用
         """
+        if caller_uid == 0:
+            return True
         mgr = self._get_mgr(group_id)
         if mgr is None:
             return True
@@ -81,13 +86,16 @@ class GroupModuleFilter:
     # ── 命令过滤 ──
 
     def is_command_enabled(
-        self, group_id: int, module_name: str, trigger: str
+        self, group_id: int, module_name: str, trigger: str, caller_uid: int = 400
     ) -> bool:
         """检查指定群是否启用了某个命令。
 
+        root(uid=0) 不受群级别过滤限制。
         先检查模块是否启用，再检查命令级黑/白名单。
         """
-        if not self.is_module_enabled(group_id, module_name):
+        if caller_uid == 0:
+            return True
+        if not self.is_module_enabled(group_id, module_name, caller_uid=caller_uid):
             return False
 
         mgr = self._get_mgr(group_id)

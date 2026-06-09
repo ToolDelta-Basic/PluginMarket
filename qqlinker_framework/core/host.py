@@ -7,14 +7,15 @@
 import asyncio
 import logging
 import os
-from typing import Type, Optional, List
+import time
+from typing import Type, Optional, List, Dict
 
 from .kernel.services import (
     ServiceContainer,
-    UID_ROOT,
-    UID_DAEMON_MIN,
-    UID_SERVICE_MIN,
-    UID_APP_MIN,
+    TIER_KERNEL,
+    TIER_DAEMON,
+    TIER_SERVICE,
+    TIER_APP,
     UID_NOBODY,
 )
 from .kernel.bus import EventBus
@@ -49,6 +50,10 @@ from ..services.market_server import (
 from .kernel.error_hints import hint
 from .drivers.gatekeeper import GatekeeperBridge, register_default_capabilities
 from .kernel.events import ConfigReloadEvent
+from .kernel.resource_guardian import ResourceGuardian, GuardianConfig
+from .kernel.degradation import GracefulDegradation
+from .kernel.health_score import ModuleHealthScorer
+from .drivers.watchdog import EventLoopWatchdog
 
 
 class FrameworkHost:
@@ -63,7 +68,7 @@ class FrameworkHost:
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
         self.adapter = adapter
-        self.services = ServiceContainer(tier=UID_ROOT)
+        self.services = ServiceContainer(tier=TIER_KERNEL)
         self.event_bus = EventBus()
         self.data_path = data_path or "."
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -72,6 +77,14 @@ class FrameworkHost:
         self.config_mgr = ConfigManager(file_path=config_file, data_dir=self.data_path)
         self.group_config_mgr = GroupConfigManager(self.config_mgr, self.data_path)
         self.recovery = RecoveryEngine(self.data_path)
+
+        # 多机器人守卫（连接数 >1 时自动初始化）
+        self.robot_registry = None
+        self.cross_validator = None
+        self.send_guard = None
+        self.load_balancer = None
+        self.hash_router = None
+        self._msg_mgrs: Dict[str, object] = {}  # 每机器人独立 message_mgr 映射
 
         # 驱动列表 — 不在内核依赖树中的模块
         self._drivers_enabled = {
@@ -84,41 +97,64 @@ class FrameworkHost:
         self.tool_mgr = ToolManager()
 
         # root 级 (uid=0): 终端持有者/内核开发者
-        self.services.register("event_bus", self.event_bus, uid=UID_ROOT,
+        self.services.register("event_bus", self.event_bus, uid=TIER_KERNEL,
                                _caller="qqlinker_framework.core.host")
-        # daemon 级 (uid=1): 框架内部守护 — 管理器
-        self.services.register("config", self.config_mgr, uid=UID_DAEMON_MIN,
+        # app 级 (uid=300): 所有模块可访问的管理器
+        self.services.register("config", self.config_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("group_config", self.group_config_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("group_config", self.group_config_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("package", self.package_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("package", self.package_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("command", self.command_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("command", self.command_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("tool", self.tool_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("tool", self.tool_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("adapter", adapter, uid=UID_SERVICE_MIN,
+        self.services.register("adapter", adapter, uid=TIER_SERVICE,
                                _caller="qqlinker_framework.core.host")
 
         self.module_mgr = ModuleManager(self)
         self.message_mgr = MessageManager(adapter)
-        self.services.register("message", self.message_mgr, uid=UID_DAEMON_MIN,
+        self.services.register("message", self.message_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
-        self.services.register("recovery", self.recovery, uid=UID_DAEMON_MIN,
+        self.services.register("recovery", self.recovery, uid=TIER_DAEMON,
                                _caller="qqlinker_framework.core.host")
-        # UID 查询函数（供 CommandRouter 内核级使用）
-        self.services.register("uid_lookup", self._lookup_uid, uid=UID_ROOT,
+        # UID 查询函数（所有模块可读，仅查询不修改）
+        self.services.register("uid_lookup", self._lookup_uid, uid=TIER_APP,
+                               is_factory=False,
                                _caller="qqlinker_framework.core.host")
         # FrameworkHost 自身注册为 _host 服务（供 kernel_auth .exec 等使用）
-        self.services.register("_host", self, uid=UID_ROOT,
+        self.services.register("_host", self, uid=TIER_KERNEL,
                                _caller="qqlinker_framework.core.host")
 
         # 事件桥接 + 控制台命令（在 start() 中构造，依赖 services 就绪）
         self.bridge = None
         self.console = ConsoleCommands(self)
 
+        # 资源守护者（v5 第四层奶酪片 — 运行时资源监控）
+        self.guardian = ResourceGuardian(
+            config=GuardianConfig(),
+            kill_callback=self._guardian_kill_module,
+            host_ref=self,
+        )
+
         # 能力安全桥梁（uid=0 特权，但不注册为服务）
         self.gatekeeper = GatekeeperBridge(self.services)
+
+        # ── 优雅降级引擎（v5: 级联故障隔离 + 服务分级）──
+        self.degradation = GracefulDegradation(
+            event_bus=self.event_bus,
+            on_panic=None,  # panic 回调由框架外部 watchdog 设置
+        )
+        self.services.register("degradation", self.degradation, uid=TIER_DAEMON,
+                               _caller="qqlinker_framework.core.host")
+
+        # ── 模块健康评分系统（v5: 多维度评分）──
+        self.health_scorer = ModuleHealthScorer(data_path=self.data_path)
+        self._module_health_status: Dict[str, str] = {}  # "healthy"|"degraded"|"dead"
+
+        # ── 事件循环看门狗（v5: 假死检测 + 降级恢复）──
+        self._watchdog: Optional[EventLoopWatchdog] = None
 
         self._modules: List[Module] = []
         self._router = None
@@ -189,30 +225,31 @@ class FrameworkHost:
         # 配置节
         self.config_mgr.register_section("网络连接", {
             "地址": "ws://127.0.0.1:8080", "令牌": "",
+            "启用多机器人守卫": True,
             "错误显示模式": "友好",
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("权限管理", {
             "角色": {},
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("启动检查", {
             "跳过完整性校验": False,
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("去重", {
             "本地ID有效期秒": 300, "本地内容有效期秒": 120,
             "本地最大条目数": 10000, "启用Redis": False,
             "Redis地址": "redis://localhost:6379/0",
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("调试引擎", {
             "消息记录上限": 200, "API记录上限": 100,
             "启用WebSocket原始帧": False,
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("模块管理", {
             "禁用模块": [],
             "启用模块": [],
             "禁用命令": [],
             "启用命令": [],
             "模式": "黑名单",
-        })
+        }, caller_uid=0)
         self.group_config_mgr.register_module_schema(
             "模块管理",
             {"禁用模块": [], "启用模块": [],
@@ -224,24 +261,24 @@ class FrameworkHost:
             "上传密钥": "", "签名密钥": "", "强制签名校验": False,
             "白名单模块": [], "每页数量": 20,
             "源列表": ["http://127.0.0.1:8380"],
-        })
+        }, caller_uid=0)
         # 安全配置
         self.config_mgr.register_section("审计日志", {
             "审计日志最大行数": 100000,
             "审计日志清理间隔": 86400,
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("网络传输", {
             "TLS验证模式": "enabled",
             "连接超时秒": 10,
             "读超时秒": 30,
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("SSRF防护", {
             "黑名单域名": ["metadata.google.internal", "169.254.169.254"],
             "禁止内网IP": True,
-        })
+        }, caller_uid=0)
         self.config_mgr.register_section("调试", {
             "生产模式禁用": True,
-        })
+        }, caller_uid=0)
         self.config_mgr.load()
 
         # ── 初始化审计日志 ──
@@ -251,10 +288,10 @@ class FrameworkHost:
         )
         audit_max_lines = self.config_mgr.get(
             "审计日志.审计日志最大行数", 100000
-        )
+        , requester_uid=0)
         audit_cleanup = self.config_mgr.get(
             "审计日志.审计日志清理间隔", 86400
-        )
+        , requester_uid=0)
         configure_audit(audit_log_path, audit_max_lines, audit_cleanup)
         logger.info("审计日志已配置: %s", audit_log_path)
 
@@ -271,30 +308,40 @@ class FrameworkHost:
         self.group_config_mgr.set_reload_callback(self._on_config_reloaded)
         self.group_config_mgr.start_watching(interval=3.0)
 
-        ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080")
+        ws_address = self.config_mgr.get("网络连接.地址", "ws://127.0.0.1:8080", requester_uid=0)
         # 安全: WebSocket 令牌优先从环境变量读取，避免明文存在配置文件中
         ws_token = os.environ.get("QQLINKER_WS_TOKEN",
-                                  self.config_mgr.get("网络连接.令牌", ""))
+                                  self.config_mgr.get("网络连接.令牌", "", requester_uid=0))
         logger.info("WebSocket 地址: %s", ws_address)
 
         if hasattr(self.adapter, 'set_config_mgr'):
             self.adapter.set_config_mgr(self.config_mgr)
 
-        # 去重引擎（仅通过 services 访问，不存 self.dedup）
+        # 去重引擎（仅通过 services 访问，不存 self.dedup）— 非关键服务，降级运行
         dedup_cfg = DedupConfig(
-            local_id_ttl=self.config_mgr.get("去重.本地ID有效期秒", 300),
-            local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120),
-            local_max_size=self.config_mgr.get("去重.本地最大条目数", 10000),
-            redis_enabled=self.config_mgr.get("去重.启用Redis", False),
-            redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0"),
+            local_id_ttl=self.config_mgr.get("去重.本地ID有效期秒", 300, requester_uid=0),
+            local_content_ttl=self.config_mgr.get("去重.本地内容有效期秒", 120, requester_uid=0),
+            local_max_size=self.config_mgr.get("去重.本地最大条目数", 10000, requester_uid=0),
+            redis_enabled=self.config_mgr.get("去重.启用Redis", False, requester_uid=0),
+            redis_url=self.config_mgr.get("去重.Redis地址", "redis://localhost:6379/0", requester_uid=0),
+            redis_password=os.environ.get("QQLINKER_REDIS_PASSWORD") or self.config_mgr.get("去重.Redis密码", None, requester_uid=0),
         )
-        dedup = LayeredDedup(dedup_cfg)
-        self.services.register("dedup", dedup, uid=UID_SERVICE_MIN,
-                               _caller="qqlinker_framework.core.host")
+        try:
+            dedup = LayeredDedup(dedup_cfg)
+            self.services.register("dedup", dedup, uid=TIER_SERVICE,
+                                   _caller="qqlinker_framework.core.host")
+        except Exception as e:
+            logger.warning("去重引擎初始化失败: %s", e)
+            self.degradation.on_service_fail("dedup", str(e), e)
+            dedup = None
 
-        debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
-        self.services.register("debug", debug_engine, uid=UID_NOBODY,
-                               _caller="qqlinker_framework.core.host")
+        try:
+            debug_engine = DebugEngine(self.services, self.config_mgr, self.event_bus)
+            self.services.register("debug", debug_engine, uid=UID_NOBODY,
+                                   _caller="qqlinker_framework.core.host")
+        except Exception as e:
+            logger.warning("调试引擎初始化失败: %s", e)
+            self.degradation.on_service_fail("debug_engine", str(e), e)
 
         self.tool_mgr.init_with_services(self.services)
         await self.message_mgr.start()
@@ -309,7 +356,7 @@ class FrameworkHost:
         )
 
         # 模块市场（可选，仅通过 services 访问，不存 self 引用）
-        market_cfg = self.config_mgr.get("模块市场", {})
+        market_cfg = self.config_mgr.get("模块市场", {}, requester_uid=0)
         if market_cfg.get("启用", False):
             # 安全: 敏感密钥优先从环境变量读取，避免明文存在配置文件中
             upload_token = os.environ.get(
@@ -328,16 +375,16 @@ class FrameworkHost:
             )
             market_server.start()
             # 注册到 services，stop() 中通过 services 获取并停止
-            self.services.register("market_server", market_server, uid=UID_SERVICE_MIN,
+            self.services.register("market_server", market_server, uid=TIER_SERVICE,
                                    _caller="qqlinker_framework.core.host")
             logger.info("模块市场已启动: %s", market_server.url)
 
         source_urls = market_cfg.get("源列表", ["http://127.0.0.1:8380"])
         market_aggregator = MarketSourceAggregator(source_urls)
-        self.services.register("market", market_aggregator, uid=UID_SERVICE_MIN,
+        self.services.register("market", market_aggregator, uid=TIER_SERVICE,
                                _caller="qqlinker_framework.core.host")
 
-        # WebSocket（仅通过 services 访问，不存 self.ws_client）
+        # WebSocket 多连接（仅通过 services 访问，不存 self.ws_client）
         try:
             _get_websocket()
             ws_available = True
@@ -345,28 +392,101 @@ class FrameworkHost:
             ws_available = False
 
         if ws_available:
-            ws_client = WsClient({
-                "ws_address": ws_address,
-                "ws_token": ws_token,
-                "网络传输.TLS验证模式": self.config_mgr.get(
-                    "网络传输.TLS验证模式", "enabled"
-                ),
-                "网络传输.连接超时秒": self.config_mgr.get(
-                    "网络传输.连接超时秒", 10
-                ),
-                "网络传输.读超时秒": self.config_mgr.get(
-                    "网络传输.读超时秒", 30
-                ),
-            })
-            self.services.register("ws_client", ws_client, uid=UID_SERVICE_MIN,
-                                   _caller="qqlinker_framework.core.host")
-            if hasattr(self.adapter, 'set_ws_client'):
-                self.adapter.set_ws_client(ws_client)
-            if hasattr(self.adapter, 'event_bus'):
-                self.adapter.event_bus = self.event_bus
-            ws_client.set_message_callback(self.bridge.on_ws_group_message)
-            ws_client.connect()
-            logger.info("WebSocket 连接已发起")
+            # 读取多机器人配置
+            robot_list = self.config_mgr.get("网络连接.机器人列表", None, requester_uid=0)
+            if robot_list and isinstance(robot_list, list):
+                ws_addresses = [r.get("地址", ws_address) for r in robot_list]
+                ws_tokens = [r.get("令牌", ws_token) for r in robot_list]
+            else:
+                ws_addresses = [ws_address]
+                ws_tokens = [ws_token]
+
+            # WebSocket 连接循环
+            for i, (addr, tok) in enumerate(zip(ws_addresses, ws_tokens)):
+                svc_name = "ws_client" if i == 0 else f"ws_client_{i}"
+                ws_client = WsClient({
+                    "ws_address": addr,
+                    "ws_token": tok,
+                    "网络传输.TLS验证模式": self.config_mgr.get(
+                        "网络传输.TLS验证模式", "enabled"
+                    , requester_uid=0),
+                    "网络传输.连接超时秒": self.config_mgr.get(
+                        "网络传输.连接超时秒", 10
+                    , requester_uid=0),
+                    "网络传输.读超时秒": self.config_mgr.get(
+                        "网络传输.读超时秒", 30
+                    , requester_uid=0),
+                })
+                self.services.register(svc_name, ws_client, uid=TIER_SERVICE,
+                                       _caller="qqlinker_framework.core.host")
+                if i == 0:
+                    if hasattr(self.adapter, 'set_ws_client'):
+                        self.adapter.set_ws_client(ws_client)
+                    if hasattr(self.adapter, 'event_bus'):
+                        self.adapter.event_bus = self.event_bus
+                ws_client.set_message_callback(self.bridge.on_ws_group_message)
+                ws_client.connect()
+                logger.info("WebSocket 连接已发起: %s", svc_name)
+
+            # 多机器人守卫（机器人数 > 1 且配置开关开启时初始化）
+            guard_enabled = self.config_mgr.get("网络连接.启用多机器人守卫", True, requester_uid=0)
+            if guard_enabled and len(ws_addresses) > 1:
+                from .drivers.robot_guard import RobotRegistry, CrossValidation, SendGuard
+                from .drivers.load_balancer import LoadBalancer, HashRouter
+                self.robot_registry = RobotRegistry()
+                # 根据机器人数自动计算 quorum：>50% 共识
+                n = len(ws_addresses)
+                if n > 2:
+                    quorum = max(2, n // 2 + 1)
+                else:
+                    quorum = min(2, n)
+                self.cross_validator = CrossValidation(self.robot_registry, quorum=quorum)
+
+                # ── 初始化负载均衡器 + 哈希路由器 ──
+                self.load_balancer = LoadBalancer()
+                self.hash_router = HashRouter()
+
+                # ── 初始化 SendGuard（注入负载均衡器和路由器）──
+                self.send_guard = SendGuard(
+                    self.robot_registry,
+                    load_balancer=self.load_balancer,
+                    hash_router=self.hash_router,
+                    max_retries=2,
+                )
+
+                # ── 为每个机器人创建独立的 MessageManager ──
+                linked_groups = self.config_mgr.get("消息转发.链接的群聊", [], requester_uid=0)
+                bot_names = []
+                for i, (addr, _) in enumerate(zip(ws_addresses, ws_tokens)):
+                    name = f"bot_{i}"
+                    bot_names.append(name)
+                    svc_name = "ws_client" if i == 0 else f"ws_client_{i}"
+                    ws_client = self.services.get(svc_name)
+                    self.robot_registry.register(name, ws_client, linked_groups)
+                    # 为每个机器人创建独立 MessageManager（用于队列深度查询）
+                    if name not in self._msg_mgrs:
+                        from ..managers.message_mgr import MessageManager
+                        mgr = MessageManager(self.adapter)
+                        mgr._queue = __import__('asyncio').PriorityQueue()
+                        self._msg_mgrs[name] = mgr
+                        svc_name_mgr = "message_mgr" if i == 0 else f"message_mgr_{i}"
+                        self.services.register(svc_name_mgr, mgr, uid=TIER_DAEMON,
+                                               _caller="qqlinker_framework.core.host")
+                # 注入 message_mgrs 到 SendGuard
+                self.send_guard.set_message_managers(self._msg_mgrs)
+
+                # ── 注入 send_guard 到 adapter ──
+                if hasattr(self.adapter, '_send_guard'):
+                    self.adapter._send_guard = self.send_guard
+                else:
+                    setattr(self.adapter, '_send_guard', self.send_guard)
+
+                logger.info(
+                    "[多机器人守卫] 已启用 (quorum=%d, %d 个机器人: %s)",
+                    quorum, len(ws_addresses), ", ".join(bot_names),
+                )
+                logger.info("[负载均衡] LoadBalancer (最少队列优先) + HashRouter 已初始化")
+                logger.info("[发送确认] SendGuard (send_with_ack + 故障转移, max_retries=%d) 已初始化", 2)
         else:
             logger.warning("websocket-client 未安装，跳过 WS 连接")
 
@@ -375,8 +495,16 @@ class FrameworkHost:
 
         # 群级模块过滤器
         self.group_filter = GroupModuleFilter(self.group_config_mgr)
-        self.services.register("group_filter", self.group_filter, uid=UID_DAEMON_MIN,
+        self.services.register("group_filter", self.group_filter, uid=TIER_DAEMON,
                                _caller="qqlinker_framework.core.host")
+
+        # 审计追溯系统
+        from .kernel.audit_trail import AuditTrail
+        self.audit_trail = AuditTrail(
+            data_dir=self.data_path,
+            retention_days=30,
+        )
+        logger.info("审计追溯系统已初始化: %s", self.audit_trail._data_dir)
 
         # 命令路由
         self._router = CommandRouter(
@@ -385,13 +513,26 @@ class FrameworkHost:
             group_filter=self.group_filter,
             loaded_modules=self.module_mgr._loaded_modules,
             uid_lookup=self._lookup_uid,
+            audit_trail=self.audit_trail,
         )
         self.event_bus.subscribe("GroupMessageEvent", self._router.handle_message)
 
+        # 注册内核 .审计 命令
+        self._register_audit_command()
+
         # 加载所有模块
         self._modules = await self.module_mgr.initialize_all()
+        # 模块初始化后通知健康评分系统
+        for mod in self._modules:
+            self.health_scorer.register_module(mod.name)
+            self.health_scorer.on_module_init(mod.name, success=True)
         if not any(m.name == "help" for m in self._modules):
             logger.warning("help 模块未加载，用户将无法查看命令帮助")
+
+        # ── v6: 同步模块名列表到 GroupModuleFilter ──
+        self.group_filter.set_module_names(
+            {m.name for m in self._modules}
+        )
 
         # ── 能力安全桥梁 ──（在所有服务和模块就绪后注册白名单方法）
         register_default_capabilities(self.gatekeeper)
@@ -436,6 +577,46 @@ class FrameworkHost:
 
         if not self.services.has("ws_client"):
             logger.info("未启用 WebSocket")
+        # ── 启动资源守护者 ──
+        await self.guardian.start()
+        self.services.register(
+            "guardian", self.guardian,
+            uid=TIER_DAEMON,
+            _caller="qqlinker_framework.core.host",
+        )
+
+        # ── 注册健康评分器到 services ──
+        self.services.register(
+            "health_scorer", self.health_scorer,
+            uid=TIER_DAEMON,
+            _caller="qqlinker_framework.core.host",
+        )
+        logger.info("模块健康评分器已注册")
+
+        # ── v5: 启动事件循环看门狗（假死检测 + 降级恢复）──
+        try:
+            self._watchdog = EventLoopWatchdog(
+                event_loop=self._main_loop,
+                degradation=self.degradation,
+            )
+            await self._watchdog.start()
+            self.services.register(
+                "watchdog", self._watchdog,
+                uid=TIER_DAEMON,
+                _caller="qqlinker_framework.core.host",
+            )
+        except Exception as e:
+            logger.warning("看门狗启动失败（非关键）: %s", e)
+            self.degradation.on_service_fail("watchdog", str(e), e)
+
+        # ── 启动后自动压力测试（后台线程，不阻塞）──
+        try:
+            from .kernel.stress_tester import StressTester
+            self._stress_tester = StressTester(self, data_path=self.data_path)
+            self._stress_tester.start()
+        except Exception as e:
+            logger.warning("StressTester 启动失败（非关键）: %s", e)
+
         logger.info("框架启动完成")
 
     def _bridge_game_events(self):
@@ -444,11 +625,17 @@ class FrameworkHost:
             return
         self._game_events_bridged = True
         adapter = self.adapter
-        if hasattr(adapter, 'on_game_chat'):
+        if hasattr(adapter, 'listen_game_chat'):
+            adapter.listen_game_chat(self.bridge.on_game_chat)
+        elif hasattr(adapter, 'on_game_chat'):
             adapter.on_game_chat(self.bridge.on_game_chat)
-        if hasattr(adapter, 'on_player_join'):
+        if hasattr(adapter, 'listen_player_join'):
+            adapter.listen_player_join(self.bridge.on_player_join)
+        elif hasattr(adapter, 'on_player_join'):
             adapter.on_player_join(self.bridge.on_player_join)
-        if hasattr(adapter, 'on_player_leave'):
+        if hasattr(adapter, 'listen_player_leave'):
+            adapter.listen_player_leave(self.bridge.on_player_leave)
+        elif hasattr(adapter, 'on_player_leave'):
             adapter.on_player_leave(self.bridge.on_player_leave)
 
     def _ensure_log_handlers(self):
@@ -473,6 +660,57 @@ class FrameworkHost:
             access_log.addHandler(fh)
         access_log.setLevel(logging.INFO)
         access_log.propagate = False
+
+    def send_message_round_robin(self, group_id: int, message: str) -> bool:
+        """多机器人发送（通过 SendGuard + LoadBalancer 智能调度）。
+
+        多机器人模式:
+          - 通过 SendGuard.send_with_ack() 发送（含回显确认 + 故障转移）
+          - LoadBalancer 选最空闲的机器人
+
+        单机器人模式:
+          - 降级为直接 send_group_msg
+        """
+        # 多机器人守卫模式
+        if self.send_guard is not None:
+            try:
+                return self.send_guard.send_with_ack(group_id, message, priority=1)
+            except Exception as e:
+                logging.getLogger(__name__).warning(
+                    "SendGuard 发送失败 (fallback 到轮询): %s", e
+                )
+
+        # 单机器人或 fallback：轮询
+        ws_clients = []
+        for i in range(3):  # 最多3个
+            svc_name = "ws_client" if i == 0 else f"ws_client_{i}"
+            c = self.services.try_get(svc_name)
+            if c and c.available:
+                ws_clients.append(c)
+        if not ws_clients:
+            return False
+        if not hasattr(self, '_rr_index'):
+            self._rr_index = 0
+        start = self._rr_index % len(ws_clients)
+        for offset in range(len(ws_clients)):
+            idx = (start + offset) % len(ws_clients)
+            c = ws_clients[idx]
+            try:
+                c.send_group_msg(group_id, message)
+                self._rr_index = (idx + 1) % len(ws_clients)
+                return True
+            except Exception:
+                continue
+        return False
+
+    async def _guardian_kill_module(self, module_name: str) -> None:
+        """资源守护者回调：杀死指定模块。"""
+        logger = logging.getLogger(__name__)
+        try:
+            await self.unload_module(module_name)
+            logger.warning("资源守护者已卸载模块: %s", module_name)
+        except Exception as e:
+            logger.error("资源守护者卸载模块 '%s' 失败: %s", module_name, e)
 
     async def stop(self):
         """优雅停止框架。幂等——可被多次调用。"""
@@ -511,6 +749,16 @@ class FrameworkHost:
             await self.recovery.stop()
         except Exception as e:
             logger.debug("停止恢复引擎时异常: %s", e)
+        try:
+            await self.guardian.stop()
+        except Exception as e:
+            logger.debug("停止资源守护者时异常: %s", e)
+        # ── v5: 停止看门狗 ──
+        if self._watchdog:
+            try:
+                await self._watchdog.stop()
+            except Exception as e:
+                logger.debug("停止看门狗时异常: %s", e)
         self.recovery.mark_clean_exit()
         self.recovery.clean_shutdown()
         market_server = self.services.try_get("market_server")
@@ -519,6 +767,11 @@ class FrameworkHost:
                 market_server.stop()
             except Exception as e:
                 logger.debug("停止市场服务时异常: %s", e)
+        # 持久化健康评分
+        try:
+            self.health_scorer.save()
+        except Exception as e:
+            logger.debug("保存健康评分时异常: %s", e)
         logger.info("框架已停止")
 
     # ── 配置热重载回调（watcher 线程安全）──
@@ -529,9 +782,12 @@ class FrameworkHost:
         逻辑（与 auth 模块一致）:
           1. 查 权限管理.UID授权 表
           2. 查 管理员.管理员QQ 列表 → uid=100
-          3. 否则 nobody (3000)
+          3. 否则 nobody (400)
         """
-        uid_map = self.config_mgr.get("权限管理.UID授权", {})
+        if user_id == 0:
+            return TIER_KERNEL
+
+        uid_map = self.config_mgr.get("权限管理.UID授权", {}, requester_uid=0)
         if isinstance(uid_map, dict):
             for uid_str, qq_list in uid_map.items():
                 try:
@@ -541,47 +797,185 @@ class FrameworkHost:
                 if isinstance(qq_list, list) and user_id in qq_list:
                     return uid_level
         # 管理员列表
-        admin_list = self.config_mgr.get("管理员.管理员QQ", [])
+        admin_list = self.config_mgr.get("管理员.管理员QQ", [], requester_uid=0)
         if isinstance(admin_list, list):
             try:
                 if user_id in [int(q) for q in admin_list if q]:
                     return 100
             except (TypeError, ValueError):
                 pass
-        # 兼容旧配置节
-        admin_list2 = self.config_mgr.get("游戏管理.管理员QQ", [])
-        if isinstance(admin_list2, list):
-            try:
-                if user_id in [int(q) for q in admin_list2 if q]:
-                    return 100
-            except (TypeError, ValueError):
-                pass
-        return 3000  # UID_NOBODY
+        return UID_NOBODY
 
     def _on_config_reloaded(self):
         """配置热重载后，安全广播 ConfigReloadEvent。
 
         从 watcher 线程调用，通过 run_coroutine_threadsafe 投递到主循环。
+
+        Fix 3: 0.5s 防抖窗口 — config_mgr 和 group_config_mgr 两个 watcher
+        可能短时间内同时触发，去重后只广播一次 ConfigReloadEvent。
         """
-        if self._main_loop and self._main_loop.is_running() and self.event_bus:
-            asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(ConfigReloadEvent()),
-                self._main_loop,
-            )
+        if not (self._main_loop and self._main_loop.is_running() and self.event_bus):
+            return
+        now = time.monotonic()
+        if hasattr(self, '_last_config_reload_ts'):
+            if now - self._last_config_reload_ts < 0.5:
+                return  # 防抖：静默跳过
+        self._last_config_reload_ts = now
+        asyncio.run_coroutine_threadsafe(
+            self.event_bus.publish(ConfigReloadEvent(), caller_uid=0),
+            self._main_loop,
+        )
+
+    # ── 审计追溯命令 ──
+
+    def _register_audit_command(self) -> None:
+        """注册 .审计 内核命令 (daemon 级权限)。"""
+        from .kernel.context import CommandContext
+
+        async def _cmd_audit(ctx: CommandContext):
+            """.审计 <用户|模块|热点|用户排行|统计> [参数]"""
+            at = self.audit_trail
+            if not at:
+                await ctx.reply("⚠️ 审计追溯系统未初始化")
+                return
+
+            args = ctx.args
+            if not args:
+                # 默认显示统计 + 热点
+                stats = at.get_stats()
+                hotspots = at.get_hotspots(5)
+                lines = [
+                    "📊 **审计统计**",
+                    f"  总命令数: {stats['total_commands']}",
+                    f"  成功率: {stats['success_rate']*100:.1f}%",
+                    f"  独立用户: {stats['unique_users']}",
+                    f"  独立模块: {stats['unique_modules']}",
+                    f"  平均耗时: {stats['avg_elapsed_ms']:.1f}ms",
+                ]
+                if hotspots:
+                    lines.append("  \n🔥 **热点命令 Top 5**:")
+                    for cmd, count in hotspots:
+                        lines.append(f"    {cmd}: {count} 次")
+                lines.append("\n💡 用法: .审计 <用户|模块|热点|用户排行|统计>")
+                await ctx.reply("\n".join(lines))
+                return
+
+            sub = args[0].lower()
+
+            if sub == "用户":
+                uid = int(args[1]) if len(args) > 1 and args[1].isdigit() else ctx.user_id
+                records = at.get_by_user(uid, limit=10)
+                if not records:
+                    await ctx.reply(f"📭 用户 {uid} 暂无命令记录")
+                else:
+                    lines = [f"📋 用户 {uid} 最近 {len(records)} 条命令:"]
+                    for r in records:
+                        status = "✅" if r.get("success") else "❌"
+                        lines.append(
+                            f"  {status} {r.get('command')} "
+                            f"(模块:{r.get('module')}, 耗时:{r.get('elapsed_ms',0):.0f}ms)"
+                        )
+                    await ctx.reply("\n".join(lines))
+
+            elif sub == "模块":
+                mod_name = args[1] if len(args) > 1 else "core"
+                records = at.get_by_module(mod_name, limit=10)
+                if not records:
+                    await ctx.reply(f"📭 模块 '{mod_name}' 暂无命令记录")
+                else:
+                    lines = [f"📦 模块 '{mod_name}' 最近 {len(records)} 条命令:"]
+                    for r in records:
+                        status = "✅" if r.get("success") else "❌"
+                        lines.append(
+                            f"  {status} {r.get('command')} "
+                            f"(用户:{r.get('user_id')}, 耗时:{r.get('elapsed_ms',0):.0f}ms)"
+                        )
+                    await ctx.reply("\n".join(lines))
+
+            elif sub == "热点":
+                hotspots = at.get_hotspots(10)
+                if not hotspots:
+                    await ctx.reply("📭 暂无命令数据")
+                else:
+                    lines = [f"🔥 **最常用命令 Top {len(hotspots)}**:"]
+                    for i, (cmd, count) in enumerate(hotspots, 1):
+                        lines.append(f"  {i}. {cmd}: {count} 次")
+                    await ctx.reply("\n".join(lines))
+
+            elif sub == "用户排行":
+                hot_users = at.get_hot_users(10)
+                if not hot_users:
+                    await ctx.reply("📭 暂无命令数据")
+                else:
+                    lines = [f"👤 **最活跃用户 Top {len(hot_users)}**:"]
+                    for i, (uid, count) in enumerate(hot_users, 1):
+                        lines.append(f"  {i}. QQ:{uid}: {count} 次")
+                    await ctx.reply("\n".join(lines))
+
+            elif sub == "统计":
+                stats = at.get_stats()
+                lines = [
+                    "📊 **审计统计摘要**",
+                    f"  总命令数: {stats['total_commands']}",
+                    f"  成功率: {stats['success_rate']*100:.1f}%",
+                    f"  独立用户: {stats['unique_users']}",
+                    f"  独立模块: {stats['unique_modules']}",
+                    f"  平均耗时: {stats['avg_elapsed_ms']:.1f}ms",
+                ]
+                await ctx.reply("\n".join(lines))
+
+            else:
+                await ctx.reply(
+                    "📋 **.审计 用法:**\n"
+                    "  .审计              → 统计摘要 + 热点\n"
+                    "  .审计 用户 [QQ号]  → 查询用户命令记录\n"
+                    "  .审计 模块 <模块名> → 查询模块命令记录\n"
+                    "  .审计 热点         → 最常用命令排名\n"
+                    "  .审计 用户排行     → 最活跃用户排名\n"
+                    "  .审计 统计         → 统计摘要"
+                )
+
+        self.command_mgr.register(
+            ".审计", _cmd_audit,
+            description="命令审计追溯 (用户/模块/热点/统计)",
+            plugin_name="kernel",
+            min_uid=100,  # daemon 级权限
+        )
 
     # ── 热插拔 API ──
 
     async def unload_module(self, module_name: str) -> bool:
         """卸载指定模块。"""
-        return await self.module_mgr.unload_module(module_name)
+        result = await self.module_mgr.unload_module(module_name)
+        if result:
+            self.health_scorer.save()
+            # v6: 同步 module_names
+            self.group_filter.set_module_names(
+                set(self.module_mgr._loaded_modules.keys())
+            )
+        return result
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
         """热加载新模块类。"""
-        return await self.module_mgr.load_module(module_cls)
+        mod = await self.module_mgr.load_module(module_cls)
+        if mod:
+            self.health_scorer.register_module(mod.name)
+            self.health_scorer.on_module_init(mod.name, success=True)
+            # v6: 同步 module_names
+            self.group_filter.set_module_names(
+                set(self.module_mgr._loaded_modules.keys())
+            )
+        return mod
 
     async def reload_module(self, module_name: str) -> bool:
         """重载指定模块。"""
-        return await self.module_mgr.reload_module(module_name)
+        result = await self.module_mgr.reload_module(module_name)
+        if result:
+            self.health_scorer.on_module_init(module_name, success=True)
+            self.group_filter.set_module_names(
+                set(self.module_mgr._loaded_modules.keys())
+            )
+        return result
 
     @property
     def main_loop(self):

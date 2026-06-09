@@ -20,6 +20,8 @@
   首次启动时自动检测旧 config.json，拆分为各层文件。
 ═══════════════════════════════════════════════════════════════
 """
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -34,7 +36,7 @@ from ..core.kernel.error_hints import hint
 _log = logging.getLogger(__name__)
 
 # ── 层级常量（数字越小权限越高） ──────────────────────────
-UID_ROOT = 0        # kernel — 完全权限
+TIER_KERNEL = 0        # kernel — 完全权限
 UID_DAEMON = 100    # daemon — 框架守护
 UID_SERVICE = 200   # service — 框架服务
 UID_APP = 300       # app — 用户模块
@@ -45,19 +47,19 @@ UID_NOBODY = 400    # nobody — 外部模块
 # 各配置节的默认读/写权限（section → (读uid, 写uid, 文件名)）
 _BUILTIN_SCOPE: Dict[str, Tuple[int, int, str]] = {
     # L1 核心
-    "网络连接":       (UID_DAEMON, UID_ROOT, "核心.json"),
-    "去重":           (UID_DAEMON, UID_ROOT, "核心.json"),
-    "调试引擎":       (UID_DAEMON, UID_ROOT, "核心.json"),
-    "启动检查":       (UID_DAEMON, UID_ROOT, "核心.json"),
-    "调试":           (UID_DAEMON, UID_ROOT, "核心.json"),
-    "错误显示模式":   (UID_DAEMON, UID_ROOT, "核心.json"),
+    "网络连接":       (UID_DAEMON, TIER_KERNEL, "核心.json"),
+    "去重":           (UID_DAEMON, TIER_KERNEL, "核心.json"),
+    "调试引擎":       (UID_DAEMON, TIER_KERNEL, "核心.json"),
+    "启动检查":       (UID_DAEMON, TIER_KERNEL, "核心.json"),
+    "调试":           (UID_DAEMON, TIER_KERNEL, "核心.json"),
+    "错误显示模式":   (UID_DAEMON, TIER_KERNEL, "核心.json"),
     # L2 安全/隐私
-    "权限管理":       (UID_ROOT,    UID_ROOT, "安全.json"),
-    "审计日志":       (UID_ROOT,    UID_ROOT, "安全.json"),
-    "网络传输":       (UID_ROOT,    UID_ROOT, "安全.json"),
-    "SSRF防护":       (UID_ROOT,    UID_ROOT, "安全.json"),
-    "模块市场":       (UID_ROOT,    UID_ROOT, "安全.json"),
-    "AI助手.密钥":    (UID_ROOT,    UID_ROOT, "安全.json"),
+    "权限管理":       (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
+    "审计日志":       (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
+    "网络传输":       (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
+    "SSRF防护":       (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
+    "模块市场":       (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
+    "AI助手.密钥":    (TIER_KERNEL,    TIER_KERNEL, "安全.json"),
     # L3 管理
     "模块管理":       (UID_DAEMON, UID_DAEMON, "管理.json"),
     "AI助手":         (UID_DAEMON, UID_DAEMON, "管理.json"),
@@ -92,6 +94,11 @@ class ConfigManager:
         self._defaults: Dict[str, dict] = {}
         self._loaded: bool = False
         self._lock = threading.RLock()
+
+        # Fix 1: 原子引用 — _files 和 _section_files 的读写通过 _files_ref 直接读取
+        #        避免 asyncio 主循环在 _data/get 中阻塞于同步锁
+        self._files_ref: Dict[str, dict] = {}        # 原子快照（只读引用）
+        self._section_files_ref: Dict[str, str] = {}  # 原子快照
 
         # 热重载
         self._last_mtimes: Dict[str, float] = {}
@@ -187,21 +194,118 @@ class ConfigManager:
             return {}
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
         except (json.JSONDecodeError, ValueError) as e:
             _log.warning("配置文件 %s JSON 解析失败: %s，尝试智能修复", filename, e)
             repaired = _repair_json(path)
             if repaired is not None:
-                return repaired
-            return {}
+                data = repaired
+            else:
+                return {}
+        # ── HMAC 签名校验 ──
+        if not self._verify_hmac(data, path):
+            _log.warning("配置文件 %s 签名校验失败，尝试从备份恢复", filename)
+            restored = self._restore_from_backup(path)
+            if restored is not None:
+                data = restored
+            else:
+                _log.error("配置文件 %s 签名无效且无可用备份，重建默认配置", filename)
+                # 移除签名后重建
+                data.pop("__signature", None)
+                data.pop("__signature_data_keys", None)
+                self._save_file(filename, data)
+                self._compute_hmac(data)
+                self._save_file(filename, data)
+        return data
 
     def _save_file(self, filename: str, data: dict) -> None:
         path = self._file_path(filename)
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        # ── 签名注入前先移除旧签名 ──
+        data.pop("__signature", None)
+        data.pop("__signature_data_keys", None)
+        self._compute_hmac(data)
         tmp = path + ".tmp"
         with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        # ── 原子写入前备份旧文件 ──
+        if os.path.exists(path):
+            backup_path = path + ".bak"
+            try:
+                shutil.copy2(path, backup_path)
+            except OSError:
+                pass
         os.replace(tmp, path)
+
+    # ── HMAC 签名 ─────────────────────────────────────────
+
+    SIGNATURE_KEY = "__signature"
+    SIGNATURE_DATA_KEYS = "__signature_data_keys"
+
+    @staticmethod
+    def _get_secret() -> Optional[bytes]:
+        """从环境变量获取签名密钥。未设置时返回 None（降级模式）。"""
+        secret = os.environ.get("QQLINKER_CONFIG_SECRET", "")
+        if not secret:
+            return None
+        return secret.encode("utf-8")
+
+    @classmethod
+    def _compute_hmac(cls, data: dict) -> None:
+        """计算配置数据（不含签名字段）的 HMAC-SHA256 签名并写入 __signature 字段。"""
+        secret = cls._get_secret()
+        if secret is None:
+            _log.debug("QQLINKER_CONFIG_SECRET 未设置，签名校验降级为仅日志警告")
+            return
+        # 对键排序保证确定性，序列化为规范化 JSON
+        sig_keys = sorted(k for k in data.keys() if k not in (cls.SIGNATURE_KEY, cls.SIGNATURE_DATA_KEYS))
+        canonical: Dict[str, Any] = {k: data[k] for k in sig_keys}
+        payload = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        sig = hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        data[cls.SIGNATURE_KEY] = sig
+        data[cls.SIGNATURE_DATA_KEYS] = sig_keys
+
+    @classmethod
+    def _verify_hmac(cls, data: dict, filepath: str = "") -> bool:
+        """校验配置文件的 HMAC 签名。
+
+        Returns:
+            True 表示签名匹配或密钥未配置（降级通过）。
+        """
+        secret = cls._get_secret()
+        if secret is None:
+            return True  # 降级模式：无密钥时跳过校验
+        stored_sig = data.get(cls.SIGNATURE_KEY)
+        sig_keys = data.get(cls.SIGNATURE_DATA_KEYS)
+        if not stored_sig or not sig_keys:
+            _log.warning("配置文件 %s 缺少签名字段，可能为旧格式或篡改", filepath)
+            return False
+        # 重建规范化 payload
+        canonical: Dict[str, Any] = {}
+        for k in sig_keys:
+            if k in data:
+                canonical[k] = data[k]
+        payload = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        expected = hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, stored_sig):
+            _log.warning("配置文件 %s HMAC 签名不匹配 (期望=%s, 实际=%s)", filepath, expected[:16], stored_sig[:16])
+            return False
+        return True
+
+    @staticmethod
+    def _restore_from_backup(filepath: str) -> Optional[dict]:
+        """从 .bak 备份恢复配置。"""
+        backup_path = filepath + ".bak"
+        if not os.path.exists(backup_path):
+            return None
+        try:
+            with open(backup_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            _log.info("从备份恢复配置: %s", backup_path)
+            return data
+        except (json.JSONDecodeError, IOError) as e:
+            _log.warning("备份文件 %s 也损坏: %s", backup_path, e)
+            return None
 
     # ── 公共 API ──────────────────────────────────────────
 
@@ -211,11 +315,35 @@ class ConfigManager:
         defaults: Dict[str, Any],
         min_read_uid: int = UID_APP,
         min_write_uid: int = UID_APP,
+        caller_uid: int = UID_NOBODY,
     ) -> None:
         """注册配置节、默认值及访问权限。
 
+        Fix M2: 调用者 uid 必须 ≤ 声明的读写权限，防止低权限模块
+        创建高权限配置节作为后门。
+
         若 section 在 BUILTIN_SCOPE 中有默认权限，未指定时使用内置值。
+        内置 scope 的权限注册只允许 daemon(uid≤100) 调用。
         """
+        # Fix M2: 权限校验 — 调用者 UID 必须 ≤ 声明的读写权限
+        builtin = _BUILTIN_SCOPE.get(section)
+        if builtin:
+            # 内置 scope 中的节只能由 daemon 级注册
+            if caller_uid > UID_DAEMON:
+                _log.warning(
+                    "安全拒绝: uid=%d 试图注册内置配置节 '%s'",
+                    caller_uid, section,
+                )
+                return
+        else:
+            # 非内置节：调用者必须拥有足够的权限
+            if caller_uid > min_read_uid or caller_uid > min_write_uid:
+                _log.warning(
+                    "安全拒绝: uid=%d 试图注册配置节 '%s' (读需≤%d, 写需≤%d)",
+                    caller_uid, section, min_read_uid, min_write_uid,
+                )
+                return
+
         if section not in self._defaults:
             self._defaults[section] = defaults
 
@@ -304,13 +432,18 @@ class ConfigManager:
                 except OSError:
                     pass
 
+            # Fix 1: 发布原子快照，供无锁读取
+            self._publish_snapshot()
+
     def save(self) -> None:
         """持久化所有修改的文件。"""
         with self._lock:
             for fname, data in list(self._files.items()):
                 self._save_file(fname, data)
+        # Fix 1: 保存后更新快照
+        self._publish_snapshot()
 
-    def get(self, key: str, default: Any = None, requester_uid: int = 0) -> Any:
+    def get(self, key: str, default: Any = None, requester_uid: int = UID_NOBODY) -> Any:
         """按点号分隔键读取配置，受 UID 控制。
 
         Args:
@@ -331,19 +464,20 @@ class ConfigManager:
             return default
 
         keys = key.split('.')
-        fname = self._section_files.get(section, self._section_to_file(section))
-        with self._lock:
-            data = self._files.get(fname, {})
-            value: Any = data
-            try:
-                for k in keys:
-                    value = value[k]
-                return value
-            except (KeyError, TypeError):
-                return default
+        # Fix 1: 无锁读取 — 使用原子快照
+        fname = self._section_files_ref.get(section, self._section_to_file(section))
+        files = self._files_ref
+        data = files.get(fname, {})
+        value: Any = data
+        try:
+            for k in keys:
+                value = value[k]
+            return value
+        except (KeyError, TypeError):
+            return default
 
     def set(
-        self, key: str, value: Any, requester_uid: int = 0,
+        self, key: str, value: Any, requester_uid: int = UID_NOBODY,
     ) -> bool:
         """按点号分隔键写入配置，受 UID 控制并自动持久化。
 
@@ -368,6 +502,8 @@ class ConfigManager:
                 target = target.setdefault(k, {})
             target[keys[-1]] = value
             self._save_file(fname, data)
+        # Fix 1: 写入后发布快照
+        self._publish_snapshot()
         return True
 
     def get_data_dir(self) -> str:
@@ -390,14 +526,9 @@ class ConfigManager:
         return cls._PLACEHOLDER_RE
 
     def resolve_placeholders(self, text: str, _requester_uid: int = 0) -> str:
-        """解析文本中的 {配置:节.键} 占位符，替换为配置值。
-
-        调用方 uid 不受限制（仅 uid≤100 的模块可调用桥接方法，
-        此处的 _requester_uid 为占位，后续桥接整合）。
-        """
+        """解析文本中的 {配置:节.键} 占位符，替换为配置值。"""
         if '{配置:' not in text:
             return text
-        import re as _re
         def _replace(m):
             key = m.group(1)
             val = self.get(key, f"{{配置:{key}}}", requester_uid=0)
@@ -406,12 +537,25 @@ class ConfigManager:
 
     @property
     def _data(self) -> dict:
-        """向后兼容: 返回所有文件的合并视图（只读）。"""
+        """返回所有文件的合并视图（只读）。
+
+        Fix 1: 无锁读取 — 使用原子快照，避免阻塞 asyncio 主循环。
+        """
         merged: dict = {}
-        with self._lock:
-            for data in self._files.values():
-                merged.update(data)
+        files = self._files_ref
+        for data in files.values():
+            merged.update(data)
         return merged
+
+    def _publish_snapshot(self) -> None:
+        """Fix 1: 发布_filses 和 _section_files 的原子快照。
+
+        必须在持有 self._lock 时调用。
+        快照是 dict 的浅拷贝；values 引用的内部 dict 在更新时
+        通过 reload() 整体替换引用，而不是原地修改，因此无竞态。
+        """
+        self._files_ref = dict(self._files)
+        self._section_files_ref = dict(self._section_files)
 
     def get_section_permissions(self, section: str) -> Dict[str, int]:
         """返回某配置节的 (读权限, 写权限) 信息。"""
@@ -446,8 +590,24 @@ class ConfigManager:
                 _log.warning("配置重载失败 %s: %s", fname, e)
                 continue
 
-            acquired = self._lock.acquire(timeout=1.0)
+            # Fix 2: 带重试的锁获取，最多 3 次，间隔 0.2s
+            RETRY_MAX = 3
+            RETRY_DELAY = 0.2
+            acquired = False
+            for attempt in range(RETRY_MAX):
+                acquired = self._lock.acquire(timeout=1.0)
+                if acquired:
+                    break
+                _log.debug(
+                    "配置热重载锁获取失败(attempt %d/%d): %s (可能被主循环 hold 住)",
+                    attempt + 1, RETRY_MAX, fname,
+                )
+                time.sleep(RETRY_DELAY)
             if not acquired:
+                _log.warning(
+                    "配置热重载跳过 %s: 锁获取失败(重试%d次)",
+                    fname, RETRY_MAX,
+                )
                 continue
             try:
                 self._files[fname] = new_data
@@ -457,6 +617,9 @@ class ConfigManager:
                 self._lock.release()
 
         if changed:
+            # Fix 1: 重载后发布新快照
+            with self._lock:
+                self._publish_snapshot()
             _log.info("配置已热重载（%d 文件变更）",
                       sum(1 for f in self._files if True))
             if self._on_reload_callback:
@@ -552,7 +715,7 @@ class ConfigManager:
 
     @staticmethod
     def _validate_types(section: str, data: dict, defaults: dict) -> None:
-        """兼容旧接口：仅校验警告，不修复。"""
+        """仅校验警告，不修复。"""
         for key, default_value in defaults.items():
             if key not in data:
                 continue

@@ -87,16 +87,36 @@ class EventBridge:
         if data.get("post_type") != "message":
             return
 
-        linked_groups = self.config_mgr.get("消息转发.链接的群聊", [])
+        linked_groups = self.config_mgr.get("消息转发.链接的群聊", [], requester_uid=0)
         group_id = data["group_id"]
         if group_id not in linked_groups:
             return
 
-        msg_id = data.get("message_id")
-        if msg_id and self.dedup and not self.dedup.check_and_add_id(f"raw_{msg_id}"):
-            return
-
+        # 分层去重
         text = data["message"]
+        stripped = text.strip()
+
+        # ── Layer 1: 翻页导航字符 — 永不拦截 ──
+        if stripped in ("+", "-", "q", "Q"):
+            pass  # 直接跳过一切去重
+
+        # ── Layer 2: 命令消息 — 短 TTL 专用去重 (5s) ──
+        elif stripped.startswith("."):
+            from ..kernel.defguard import safe_int
+            user_id = safe_int(data.get("user_id", 0), 0)
+            logic_id = f"cmd_{group_id}_{user_id}_{text[:30]}"
+            if self.dedup and not self.dedup.check_and_add_command(logic_id):
+                return
+
+        # ── Layer 3: 普通消息 — 标准去重 ──
+        else:
+            from .robot_guard import CrossValidation
+            from ..kernel.defguard import safe_int
+            raw_time = safe_int(data.get("time", 0), 0)
+            logic_id = CrossValidation.content_id(data)
+            if self.dedup and not self.dedup.check_and_add_id(f"raw_{raw_time}_{logic_id}"):
+                return
+
         nickname = data["nickname"]
         access_log.info("[QQ] %s: %s", nickname, text.strip())
 

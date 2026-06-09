@@ -45,7 +45,14 @@ class GameForwarder(Module):
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
-        self.dedup: LayeredDedup = services.get("dedup")
+        # 去重引擎可能因 Redis/配置原因初始化失败，降级运行
+        try:
+            self.dedup: LayeredDedup = services.get("dedup")
+        except (KeyError, PermissionError):
+            self.dedup = None
+            logging.getLogger(__name__).warning(
+                "去重服务不可用，消息转发将运行在无去重模式"
+            )
 
     async def on_init(self):
         """框架已自动注册 default_config 配置节，模块只订阅事件。"""
@@ -149,7 +156,7 @@ class GameForwarder(Module):
             return
 
         msg_id = event.raw_data.get("message_id")
-        if not msg_id or not self.dedup.check_and_add_id(str(msg_id)):
+        if not msg_id or (self.dedup and not self.dedup.check_and_add_id(str(msg_id))):
             return
 
         template = cfg.get("转发格式", "§7[QQ] {nickname}§7: {message}")

@@ -135,8 +135,8 @@ def test_config_schema():
             json.dump({"测试": {"是否调试": False, "条数": 10}}, f)
         cm = ConfigManager(fp, data_dir=tmp)
         sc = ServiceContainer()
-        sc.register("config", cm)
-        cm.register_section("测试", {"是否调试": True, "条数": 5})
+        sc.register("config", cm, uid=300)
+        cm.register_section("测试", {"是否调试": True, "条数": 5}, caller_uid=0)
         cm.load()
 
         class Inj(Module):
@@ -643,7 +643,7 @@ def test_config_type_validation():
             json.dump({"测试": {"数量": "不是数字"}}, f)
 
         cm = ConfigManager(path, data_dir=tmp)
-        cm.register_section("测试", {"数量": 10})
+        cm.register_section("测试", {"数量": 10}, caller_uid=0)
         cm.load()
         # 自动修复：str "不是数字" 无法转为 int → 回退默认值 10
         assert cm.get("测试.数量") == 10
@@ -924,7 +924,7 @@ def test_role_system_check():
 
     with tempfile.TemporaryDirectory() as tmp:
         cm = ConfigManager(os.path.join(tmp, "cfg.json"), data_dir=tmp)
-        cm.register_section("权限管理", {"角色": {"moderator": [20000], "vip": [30000]}})
+        cm.register_section("权限管理", {"角色": {"moderator": [20000], "vip": [30000]}}, caller_uid=0)
         cm.load()
         adapter = MockAdapter()
         msg_mgr = MessageManager(adapter)
@@ -952,7 +952,7 @@ def test_config_hotreload():
         with open(fp, "w") as f:
             json.dump({"test": {"val": 1}}, f)
         cm = ConfigManager(fp, data_dir=tmp)
-        cm.register_section("test", {"val": 0})
+        cm.register_section("test", {"val": 0}, caller_uid=0)
         cm.load()
         assert cm.get("test.val") == 1
         # 修改文件（直接改迁移后的文件）
@@ -1436,7 +1436,7 @@ def test_gatekeeper_default_capabilities():
             json.dump({"section": {"key": "val1"}}, f)
         svc = ServiceContainer(tier=0)
         cm = ConfigManager(fp)
-        cm.register_section("section", {"key": "default"})
+        cm.register_section("section", {"key": "default"}, caller_uid=0)
         cm.load()
         svc.register("config", cm, uid=200)
 
@@ -1464,7 +1464,7 @@ def test_gatekeeper_default_capabilities():
 def test_config_tiered_access():
     """配置分层: L1/L2 安全配置仅 root 可读，L3 管理 daemon 可读写"""
     import tempfile, json, os
-    from ..managers.config_mgr import ConfigManager, UID_ROOT, UID_DAEMON, UID_APP, UID_NOBODY
+    from ..managers.config_mgr import ConfigManager, TIER_KERNEL, UID_DAEMON, UID_APP, UID_NOBODY
 
     tmp = tempfile.mkdtemp()
     try:
@@ -1475,12 +1475,12 @@ def test_config_tiered_access():
                 "AI助手": {"是否启用": True, "温度": 0.7},
             }, f)
         cm = ConfigManager(fp, data_dir=tmp)
-        cm.register_section("模块市场", {"上传密钥": "", "端口": 8380})
-        cm.register_section("AI助手", {"是否启用": True, "温度": 0.5})
+        cm.register_section("模块市场", {"上传密钥": "", "端口": 8380}, caller_uid=0)
+        cm.register_section("AI助手", {"是否启用": True, "温度": 0.5}, caller_uid=0)
         cm.load()
 
         # root (uid=0) 可读 L2 安全配置
-        assert cm.get("模块市场.上传密钥", requester_uid=UID_ROOT) == "secret_key"
+        assert cm.get("模块市场.上传密钥", requester_uid=TIER_KERNEL) == "secret_key"
         # daemon (uid=100) 不可读 L2
         assert cm.get("模块市场.上传密钥", requester_uid=UID_DAEMON) is None
         # app (uid=300) 不可读 L2
@@ -1520,7 +1520,7 @@ def test_config_placeholder_resolve():
                 "模块市场": {"上传密钥": "sk-secret-123", "端口": 8380},
             }, f)
         cm = ConfigManager(fp, data_dir=tmp)
-        cm.register_section("模块市场", {"上传密钥": "", "端口": 8380})
+        cm.register_section("模块市场", {"上传密钥": "", "端口": 8380}, caller_uid=0)
         cm.load()
 
         # 占位符解析
@@ -1533,6 +1533,515 @@ def test_config_placeholder_resolve():
 
         # 不存在的键 → 保留占位符
         assert cm.resolve_placeholders("{配置:不存在.键}") == "{配置:不存在.键}"
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 模块健康评分测试
+# ═══════════════════════════════════════════════════════════════
+
+def test_health_score_basics():
+    """健康评分: 评分维度、等级标签、持久化"""
+    import tempfile, shutil
+    from ..core.kernel.health_score import (
+        ModuleHealthScorer, health_level, health_emoji,
+    )
+
+    tmp = tempfile.mkdtemp()
+    try:
+        s = ModuleHealthScorer(tmp)
+        s.register_module('m1')
+
+        # 初始满分
+        h = s.get_health('m1')
+        assert h['score'] == 100.0
+        assert h['level'] == 'healthy'
+        assert h['emoji'] == '✅'
+
+        # 记录失败
+        for _ in range(5):
+            s.on_command_failure('m1', 500)
+        h = s.get_health('m1')
+        assert h['score'] < 90
+
+        # 记录违规
+        for _ in range(10):
+            s.on_violation('m1')
+        h = s.get_health('m1')
+        assert h['score'] < 70
+
+        # 记录降级
+        for _ in range(3):
+            s.on_degradation('m1')
+        h = s.get_health('m1')
+        assert h['score'] < 60
+
+        # 持久化
+        s.save()
+        s2 = ModuleHealthScorer(tmp)
+        h2 = s2.get_health('m1')
+        assert abs(h2['score'] - h['score']) < 0.5
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_health_score_all_and_summary():
+    """健康评分: get_all_health + get_summary + get_lowest"""
+    import tempfile, shutil
+    from ..core.kernel.health_score import ModuleHealthScorer
+
+    tmp = tempfile.mkdtemp()
+    try:
+        s = ModuleHealthScorer(tmp)
+        s.register_module('m1')
+        s.register_module('m2')
+        s.on_module_init('m1', True)
+        s.on_module_init('m2', True)
+        s.on_command_failure('m1', 300)
+
+        all_h = s.get_all_health()
+        assert len(all_h) == 2
+
+        summary = s.get_summary()
+        assert summary['total'] == 2
+
+        lowest = s.get_lowest(1)
+        assert lowest[0]['module_name'] == 'm1'
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_health_score_levels():
+    """健康评分: 等级和 emoji 正确"""
+    from ..core.kernel.health_score import health_level, health_emoji
+
+    assert health_level(85) == 'healthy'
+    assert health_level(70) == 'attention'
+    assert health_level(50) == 'degraded'
+    assert health_level(20) == 'unhealthy'
+
+    assert health_emoji(85) == '✅'
+    assert health_emoji(70) == '⚠️'
+    assert health_emoji(50) == '🔶'
+    assert health_emoji(20) == '🔴'
+
+
+def test_health_score_unknown_module():
+    """健康评分: 未注册模块返回默认满分"""
+    import tempfile, shutil
+    from ..core.kernel.health_score import ModuleHealthScorer
+
+    tmp = tempfile.mkdtemp()
+    try:
+        s = ModuleHealthScorer(tmp)
+        h = s.get_health('nonexistent')
+        assert h['module_name'] == 'nonexistent'
+        assert h['score'] == 100.0
+        assert h['level'] == 'healthy'
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_health_score_init_failure():
+    """健康评分: 初始化失败扣分"""
+    import tempfile, shutil
+    from ..core.kernel.health_score import ModuleHealthScorer
+
+    tmp = tempfile.mkdtemp()
+    try:
+        s = ModuleHealthScorer(tmp)
+        s.register_module('bad_mod')
+        s.on_module_init('bad_mod', False)
+        h = s.get_health('bad_mod')
+        assert h['score'] < 100
+        assert h['stats']['start_fail_count'] == 1
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ═══════════════════════════════════════════════════════════
+# v1.2: 启动依赖检查测试
+# ═══════════════════════════════════════════════════════════
+
+def test_module_dep_validation_missing_service():
+    """依赖检查: 缺失服务时 validate_dependencies 返回 (False, [缺失列表], [])"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+    svc.register("config", "cfg", uid=300, _caller="qqlinker_framework.core.host")
+    svc.register("message", "msg", uid=300, _caller="qqlinker_framework.core.host")
+
+    # 注册所有依赖让实例化通过 Module.__init__ 的检查
+    svc.register("nosuch", "dummy", uid=300, _caller="qqlinker_framework.core.host")
+    svc.register("alsonothere", "dummy", uid=300, _caller="qqlinker_framework.core.host")
+
+    class MissingDepModule(Module):
+        name = "missing_dep"
+        uid = 300
+        required_services = ["config", "message", "nosuch", "alsonothere"]
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod = MissingDepModule(svc, None)
+
+    # 模拟服务被移除的场景
+    svc._services.pop("nosuch", None)
+    svc._factories.pop("nosuch", None)
+    svc._services.pop("alsonothere", None)
+    svc._factories.pop("alsonothere", None)
+
+    ok, missing, _ = mgr.validate_dependencies(mod)
+    assert not ok, "应检测到缺失服务"
+    assert "nosuch" in missing
+    assert "alsonothere" in missing
+    assert "config" not in missing
+    assert "message" not in missing
+
+
+def test_module_dep_validation_all_present():
+    """依赖检查: 所有服务都注册时 validate_dependencies 返回 (True, [], [])"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+    svc.register("config", "cfg", uid=300, _caller="qqlinker_framework.core.host")
+    svc.register("message", "msg", uid=300, _caller="qqlinker_framework.core.host")
+    svc.register("adapter", "adp", uid=300, _caller="qqlinker_framework.core.host")
+
+    class GoodModule(Module):
+        name = "good_mod"
+        uid = 300
+        required_services = ["config", "message", "adapter"]
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod = GoodModule(svc, None)
+    ok, missing, _ = mgr.validate_dependencies(mod)
+    assert ok, f"所有服务应存在，但报告缺失: {missing}"
+    assert missing == []
+
+
+def test_module_dep_validation_no_required_services():
+    """依赖检查: 无 required_services 的模块直接通过"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+
+    class NoDepModule(Module):
+        name = "no_dep"
+        uid = 300
+        required_services = []
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod = NoDepModule(svc, None)
+    ok, missing, _ = mgr.validate_dependencies(mod)
+    assert ok
+    assert missing == []
+
+
+def test_circular_dep_detection_simple():
+    """循环依赖: A 依赖 B，B 依赖 A → 检测到环"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+    svc.register("mod_a", None, uid=300, _caller="qqlinker_framework.core.host")
+    svc.register("mod_b", None, uid=300, _caller="qqlinker_framework.core.host")
+
+    class ModA(Module):
+        name = "mod_a"
+        uid = 300
+        required_services = ["mod_b"]
+        async def on_init(self):
+            pass
+
+    class ModB(Module):
+        name = "mod_b"
+        uid = 300
+        required_services = ["mod_a"]
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod_a = ModA(svc, None)
+    mod_b = ModB(svc, None)
+    circular = mgr.check_circular_dependencies([mod_a, mod_b])
+    assert len(circular) >= 2, f"应检测到循环依赖，实际: {circular}"
+    assert "mod_a" in circular
+    assert "mod_b" in circular
+
+
+def test_circular_dep_detection_chain():
+    """循环依赖: A→B→C→A 三节点环"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+    for name in ("mod_a", "mod_b", "mod_c"):
+        svc.register(name, None, uid=300, _caller="qqlinker_framework.core.host")
+
+    class ModA(Module):
+        name = "mod_a"
+        uid = 300
+        required_services = ["mod_b"]
+        async def on_init(self):
+            pass
+
+    class ModB(Module):
+        name = "mod_b"
+        uid = 300
+        required_services = ["mod_c"]
+        async def on_init(self):
+            pass
+
+    class ModC(Module):
+        name = "mod_c"
+        uid = 300
+        required_services = ["mod_a"]
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod_a = ModA(svc, None)
+    mod_b = ModB(svc, None)
+    mod_c = ModC(svc, None)
+    circular = mgr.check_circular_dependencies([mod_a, mod_b, mod_c])
+    assert len(circular) >= 3, f"应检测到三节点环，实际: {circular}"
+    assert "mod_a" in circular
+    assert "mod_b" in circular
+    assert "mod_c" in circular
+
+
+def test_circular_dep_detection_no_cycle():
+    """循环依赖: 无环 DAG 返回空列表"""
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+    from ..managers.module_mgr import ModuleManager
+
+    svc = ServiceContainer(tier=0)
+    for name in ("mod_a", "mod_b", "mod_c"):
+        svc.register(name, None, uid=300, _caller="qqlinker_framework.core.host")
+
+    class ModA(Module):
+        name = "mod_a"
+        uid = 300
+        required_services = []
+        async def on_init(self):
+            pass
+
+    class ModB(Module):
+        name = "mod_b"
+        uid = 300
+        required_services = ["mod_a"]
+        async def on_init(self):
+            pass
+
+    class ModC(Module):
+        name = "mod_c"
+        uid = 300
+        required_services = ["mod_a", "mod_b"]
+        async def on_init(self):
+            pass
+
+    class _MockHost:
+        pass
+    host = _MockHost()
+    host.services = svc
+    host.event_bus = None
+
+    mgr = ModuleManager(host)
+    mod_a = ModA(svc, None)
+    mod_b = ModB(svc, None)
+    mod_c = ModC(svc, None)
+    circular = mgr.check_circular_dependencies([mod_a, mod_b, mod_c])
+    assert circular == [], f"无环 DAG 不应检测到环，但返回: {circular}"
+
+
+# ═══════════════════════════════════════════════════════════════
+# v1.2: 自动压力测试器测试
+# ═══════════════════════════════════════════════════════════════
+
+def test_stress_tester_report_generation():
+    """压力测试: StressTester 生成报告文件"""
+    import tempfile, os, json
+    from ..core.kernel.stress_tester import StressTester
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+
+    tmp = tempfile.mkdtemp()
+    try:
+        svc = ServiceContainer(tier=0)
+
+        class TestMod(Module):
+            name = "stress_test_mod"
+            uid = 300
+            required_services = []
+            async def on_init(self):
+                pass
+
+        mod = TestMod(svc, None)
+
+        class _MockHost:
+            _modules = []
+            _main_loop = None
+
+        host = _MockHost()
+        host._modules = [mod]
+
+        tester = StressTester(host, data_path=tmp)
+        tester._run()
+
+        report_path = os.path.join(tmp, "stress_report.json")
+        assert os.path.isfile(report_path), f"报告文件应存在: {report_path}"
+        with open(report_path, "r") as f:
+            report = json.load(f)
+        assert "timestamp" in report
+        assert "modules_tested" in report
+        assert "results" in report
+        assert report["modules_tested"] >= 1
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_stress_tester_skips_kernel_modules():
+    """压力测试: uid < 300 的内核模块被跳过"""
+    import tempfile, os, json
+    from ..core.kernel.stress_tester import StressTester
+    from ..core.kernel.services import ServiceContainer
+    from ..core.module import Module
+
+    tmp = tempfile.mkdtemp()
+    try:
+        svc = ServiceContainer(tier=0)
+
+        class KernelMod(Module):
+            name = "kernel_mod"
+            uid = 0
+            required_services = []
+            async def on_init(self):
+                pass
+
+        class UserMod(Module):
+            name = "user_mod"
+            uid = 300
+            required_services = []
+            async def on_init(self):
+                pass
+
+        mod_k = KernelMod(svc, None)
+        mod_u = UserMod(svc, None)
+
+        class _MockHost:
+            _modules = []
+            _main_loop = None
+
+        host = _MockHost()
+        host._modules = [mod_k, mod_u]
+
+        tester = StressTester(host, data_path=tmp)
+        tester._run()
+
+        report_path = os.path.join(tmp, "stress_report.json")
+        with open(report_path, "r") as f:
+            report = json.load(f)
+        assert report["modules_tested"] == 1, f"只应测试 1 个用户模块，实际: {report['modules_tested']}"
+        assert report["modules_skipped"] >= 1
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_stress_tester_empty_modules():
+    """压力测试: 无模块时仍生成报告不崩溃"""
+    import tempfile, os, json
+    from ..core.kernel.stress_tester import StressTester
+
+    tmp = tempfile.mkdtemp()
+    try:
+        class _MockHost:
+            _modules = []
+            _main_loop = None
+
+        host = _MockHost()
+        host._modules = []
+
+        tester = StressTester(host, data_path=tmp)
+        tester._run()
+
+        report_path = os.path.join(tmp, "stress_report.json")
+        assert os.path.isfile(report_path)
+        with open(report_path, "r") as f:
+            report = json.load(f)
+        assert report["modules_tested"] == 0
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_stress_tester_get_last_report():
+    """压力测试: get_last_report 读取最近报告"""
+    import tempfile, os
+    from ..core.kernel.stress_tester import StressTester
+
+    tmp = tempfile.mkdtemp()
+    try:
+        class _MockHost:
+            _modules = []
+            _main_loop = None
+
+        host = _MockHost()
+        host._modules = []
+
+        tester = StressTester(host, data_path=tmp)
+        tester._run()
+
+        report = tester.get_last_report()
+        assert report is not None
+        assert "timestamp" in report
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)

@@ -57,28 +57,46 @@ class RedisClient:
     def client(self) -> Optional["redis.Redis"]:
         """获取当前 Redis 客户端，如已失效则尝试重连。
 
+        修复：ping() 移到锁外执行，避免 RLock 内网络 I/O 阻塞调用者。
+        使用双重检查模式：先快速读，需要时才加锁重建。
+
         Returns:
             Redis 客户端或 None。
         """
         if not self.config.redis_enabled or not REDIS_AVAILABLE:
             return None
+
+        # 快速路径：客户端存在，锁外 ping 验证（带超时保护）
+        client_snapshot = self._client
+        if client_snapshot is not None:
+            try:
+                client_snapshot.ping()
+                return client_snapshot
+            except Exception:
+                pass
+
+        # 慢路径：需要重建连接，加锁保护
         with self._lock:
-            if self._client is None:
-                if (
-                    time.time() - self._last_failure_time
-                    < self._failure_cooldown
-                ):
-                    return None
-                try:
-                    self._client = self._connect()
-                except RedisUnavailableError:
-                    return None
-            else:
+            # 双重检查：可能已被其他线程重建
+            if self._client is not None:
                 try:
                     self._client.ping()
+                    return self._client
                 except Exception:
                     self._client = None
-                    return None
+
+            # 冷却期检查
+            if (
+                time.time() - self._last_failure_time
+                < self._failure_cooldown
+            ):
+                return None
+
+            # 重建连接（锁内调用 _connect，但 _connect 自带超时）
+            try:
+                self._client = self._connect()
+            except RedisUnavailableError:
+                return None
             return self._client
 
     def reset(self):

@@ -108,3 +108,11 @@ class AIPostResponseReflectionEvent(BaseEvent):
 @dataclass
 class ConfigReloadEvent(BaseEvent):
     """配置热重载事件。"""
+
+
+@dataclass
+class SystemPanicEvent(BaseEvent):
+    """系统恐慌事件 — 关键服务失败时广播。"""
+
+    service: str
+    reason: str = ""

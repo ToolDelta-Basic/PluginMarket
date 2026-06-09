@@ -6,6 +6,7 @@ import traceback
 from contextvars import ContextVar
 from typing import Callable, Tuple
 from .events import BaseEvent
+from .services import UID_NOBODY
 from .defguard import safe_event_message, safe_player_name
 from .error_hints import hint
 
@@ -63,8 +64,16 @@ class EventBus:
             filtered = tuple((p, h) for p, h in current if h != handler)
             self._subscribers[event_type] = filtered
 
-    async def publish(self, event: BaseEvent):
-        """发布事件（CoW 读路径：无复制，直接引用 tuple）。"""
+    # Fix M1: 系统级事件 — 仅 uid≤DAEMON(100) 可发布
+    _SYSTEM_EVENTS: frozenset = frozenset({
+        'SystemPanicEvent', 'SystemStopEvent', 'ConfigReloadEvent'
+    })
+
+    async def publish(self, event: BaseEvent, caller_uid: int = UID_NOBODY):
+        """发布事件（CoW 读路径：无复制，直接引用 tuple）。
+
+        v5: 系统级事件仅 uid≤100 可发布，防止低权限模块滥用。
+        """
         depth = _recursion_depth.get()
         if depth >= MAX_EVENT_DEPTH:
             logging.getLogger(__name__).error(
@@ -74,10 +83,17 @@ class EventBus:
             )
             return
 
+        event_type = type(event).__name__
+        if event_type in self._SYSTEM_EVENTS and caller_uid > 100:
+            logging.getLogger(__name__).warning(
+                "安全拒绝: uid=%d 试图发布系统事件 %s",
+                caller_uid, event_type,
+            )
+            return
+
         _sanitize_event(event)
         _recursion_depth.set(depth + 1)
         try:
-            event_type = type(event).__name__
             with self._lock:
                 handlers = self._subscribers.get(event_type, ())
                 # handlers 是 tuple，不可变，安全解锁后直接遍历

@@ -1,4 +1,7 @@
-"""消息管理器"""
+"""消息管理器
+
+v2.0: 消息发送超时保护 — _dispatch 添加 asyncio.wait_for(timeout=5.0)
+"""
 import asyncio
 import time
 import logging
@@ -6,6 +9,9 @@ from enum import IntEnum
 from typing import Optional
 
 from ..core.kernel.error_hints import hint
+
+# 单条消息发送超时（秒）
+DISPATCH_TIMEOUT = 5.0
 
 
 class SendPriority(IntEnum):
@@ -17,7 +23,10 @@ class SendPriority(IntEnum):
 
 
 class MessageManager:
-    """基于令牌桶的削峰填谷消息队列管理器。"""
+    """基于令牌桶的削峰填谷消息队列管理器。
+
+    v2.0: _dispatch 加 asyncio.wait_for(timeout=5.0) 超时保护。
+    """
 
     def __init__(self, adapter):
         """初始化消息管理器。"""
@@ -26,7 +35,7 @@ class MessageManager:
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
         self._rate_limit = 20
-        self._max_burst = self._rate_limit * 3   # 新增
+        self._max_burst = self._rate_limit * 3
         self._tokens = self._max_burst
         self._last_refill = time.monotonic()
         self._lock = asyncio.Lock()
@@ -89,16 +98,29 @@ class MessageManager:
                 logger.error("消息发送异常: %s。%s", e, hint["WS_SEND_FAILED"])
 
     async def _dispatch(self, task: tuple):
-        """执行实际发送操作。"""
+        """执行实际发送操作（v2.0: 超时保护）。"""
         _, (msg_type, target, text) = task
         loop = asyncio.get_running_loop()
-        if msg_type == "group":
-            await loop.run_in_executor(
-                None, self._adapter.send_group_msg, target, text
-            )
-        elif msg_type == "private":
-            await loop.run_in_executor(
-                None, self._adapter.send_private_msg, target, text
+        try:
+            if msg_type == "group":
+                await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None, self._adapter.send_group_msg, target, text
+                    ),
+                    timeout=DISPATCH_TIMEOUT,
+                )
+            elif msg_type == "private":
+                await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None, self._adapter.send_private_msg, target, text
+                    ),
+                    timeout=DISPATCH_TIMEOUT,
+                )
+        except asyncio.TimeoutError:
+            logging.getLogger(__name__).warning(
+                "消息发送超时 (%d秒): type=%s, target=%s, text[:80]=%s。跳过",
+                DISPATCH_TIMEOUT, msg_type, target,
+                str(text)[:80],
             )
 
     async def _wait_for_token(self):

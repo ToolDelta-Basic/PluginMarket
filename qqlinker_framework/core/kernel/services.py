@@ -22,9 +22,10 @@
 
 ═══════════════════════════════════════════════════════════════════════════
 """
+import inspect
 import logging
 import threading
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional
 
 _log = logging.getLogger(__name__)
 
@@ -44,14 +45,7 @@ TIER_LABELS: Dict[int, str] = {
     TIER_NOBODY: "nobody",
 }
 
-# 兼容旧代码别名
-UID_ROOT = TIER_KERNEL
-UID_DAEMON_MIN = TIER_DAEMON
-UID_DAEMON_MAX = TIER_DAEMON
-UID_SERVICE_MIN = TIER_SERVICE
-UID_SERVICE_MAX = TIER_SERVICE
-UID_APP_MIN = TIER_APP
-UID_APP_MAX = TIER_APP
+# 仅保留 UID_NOBODY 别名（广泛使用），其余使用 TIER_*
 UID_NOBODY = TIER_NOBODY
 
 # ── 各层允许声明的等级 ─────────────────────────────────────
@@ -71,34 +65,13 @@ def tier_label(tier: int) -> str:
     return TIER_LABELS.get(tier, f"unknown({tier})")
 
 
-def _uid_label_range(uid: int) -> str:
-    """旧版范围式 UID → 标签映射（向后兼容）。
-
-    范围:
-      0        → root/kernel
-      1-999    → daemon
-      1000-1999 → service
-      2000-2999 → app
-      3000+    → nobody
-    """
-    if uid == 0:
-        return "root"
-    if uid <= 999:
-        return "daemon"
-    if uid <= 1999:
-        return "service"
-    if uid <= 2999:
-        return "app"
-    return "nobody"
-
-
-# 兼容旧代码 — 范围式 UID 标签
-uid_label = _uid_label_range
-
+def uid_label(uid: int) -> str:
+    """返回等级的可读标签（精确 tier）。"""
+    return TIER_LABELS.get(uid, f"unknown({uid})")
 
 def uid_layer(uid: int) -> str:
-    """返回等级标签（范围式兼容）。"""
-    return _uid_label_range(uid)
+    """返回等级标签。"""
+    return uid_label(uid)
 
 
 def validate_module_tier(
@@ -136,84 +109,27 @@ def validate_module_tier(
     return allowed
 
 
-# 兼容旧代码
-validate_module_uid = validate_module_tier
-
-def _validate_module_uid_range(
-    declared: int, module_name: str = "",
-    layer: str = "app"
-) -> int:
-    """旧版范围式 UID 校验（向后兼容）。
-
-    范围:
-      root:    0
-      daemon:  1-999
-      service: 1000-1999
-      app:     2000-2999
-      nobody:  3000+
-
-    若声明值在对应层级范围内，则保留；否则降级到层级最小值。
-    """
-    layer_ranges = {
-        "kernel": (0, 0),
-        "root": (0, 0),
-        "daemon": (TIER_DAEMON, 999),
-        "service": (TIER_SERVICE, 1999),
-        "app": (TIER_APP, 2999),
-        "nobody": (TIER_NOBODY, 999999),
-    }
-    lo, hi = layer_ranges.get(layer, (TIER_NOBODY, 999999))
-    fallback = lo if lo > 0 else TIER_APP  # root 不可声明
-
-    # 硬限制: kernel(0) 不可通过模块声明获得
-    if declared == 0:
-        _log.warning(
-            "模块 '%s' 声明了 root 等级 (0)，这是严重的安全违规。"
-            "已强制降级为 %s。",
-            module_name, uid_label(fallback),
-        )
-        return fallback
-
-    if lo <= declared <= hi:
-        return declared
-
-    _log.warning(
-        "模块 '%s' 声明了非法 UID %d (层级=%s, 允许=%d-%d)，"
-        "已自动降级为 %d。",
-        module_name, declared, layer, lo, hi, fallback,
-    )
-    return fallback
-
-# 别名: uid_label/uid_layer 使用范围式，但 module.py 内部调用 validate_module_uid
-# 需要在 module.py 中使用 validate_module_tier (精确 tier)。这里保留 validate_module_uid
-# 作为兼容别名但 module.py 已使用正确的 validate_module_uid 导入。
-# 修改 module.py 使其使用 validate_module_tier 以保持 v2 行为。
-validate_module_uid = _validate_module_uid_range
 
 
 # ── 白名单：可信的 daemon 级路径 ────────────────────────────
+# L1 修复: 改为 frozenset 显式匹配，不再使用字符串前缀匹配
+# 避免 qqlinker_framework.modules.unknown_fake 伪造成 qqlinker_framework.modules
+# 包含框架实际使用的所有 caller 字符串
 
-_DAEMON_TRUSTED_PATHS: Set[str] = {
-    "qqlinker_framework.core",
-    "qqlinker_framework.managers",
+_DAEMON_TRUSTED_MODULES: frozenset = frozenset({
+    "qqlinker_framework.core.host",
+    "qqlinker_framework.__init__",
     "qqlinker_framework.modules.security.orion",
-    "qqlinker_framework.modules.ai",
-    "qqlinker_framework.modules.game.admin",
-    "qqlinker_framework.modules.game.forwarder",
-    "qqlinker_framework.modules.game.tracker",
-    "qqlinker_framework.modules.logging",
-    "qqlinker_framework.modules.system.auth",
-}
+})
 
 
 def is_daemon_trusted(caller_module: str) -> bool:
-    """检查调用方是否来自可信的内核/守护路径。"""
-    for p in _DAEMON_TRUSTED_PATHS:
-        if caller_module == p or (
-            caller_module.startswith(p) and caller_module[len(p)] == '.'
-        ):
-            return True
-    return False
+    """检查调用方是否来自可信的内核/守护路径。
+
+    L1 修复: 使用 frozenset 精确匹配，不再依赖字符串前缀匹配。
+    前缀匹配可被 qqlinker_framework.modules.fake 等路径伪造绕过。
+    """
+    return caller_module in _DAEMON_TRUSTED_MODULES
 
 
 class ServiceContainer:
@@ -230,6 +146,8 @@ class ServiceContainer:
         self._factories: Dict[str, Callable[[], Any]] = {}
         self._lock = threading.Lock()
         self._deps: Dict[str, Set[str]] = {}
+        # ★ C1 修复: 视图锁定标记（root 容器本身不锁定 _tier 修改）
+        self._view_locked = False
 
     @property
     def tier(self) -> int:
@@ -239,18 +157,34 @@ class ServiceContainer:
     def tier_name(self) -> str:
         return tier_label(self._tier)
 
-    # 兼容旧代码
     @property
     def uid(self) -> int:
         return self._tier
 
     @uid.setter
     def uid(self, value: int):
-        self._tier = value
+        raise PermissionError(
+            "ServiceContainer.uid 只读。视图的 tier 在创建时已锁定，"
+            "不可提升权限。使用 view(tier) 创建新的低权限视图。"
+        )
 
     @property
     def uid_name(self) -> str:
         return tier_label(self._tier)
+
+    def __setattr__(self, name, value):
+        """拦截 _tier 的直接赋值，防止越权提权。
+
+        C1 修复: 恶意模块可执行 self.services._tier = 0 获得 root。
+        视图创建后 _view_locked=True，任何 _tier 修改均被拒绝。
+        view() 使用 object.__setattr__ 绕过锁定以在构造期设置值。
+        """
+        if name == '_tier' and getattr(self, '_view_locked', False):
+            raise PermissionError(
+                "ServiceContainer._tier 只读。视图的 tier 在创建时已锁定，"
+                "不可提升权限。"
+            )
+        super().__setattr__(name, value)
 
     def view(self, tier: int) -> "ServiceContainer":
         """创建一个等级受限的视图，共享底层服务注册表。
@@ -260,17 +194,20 @@ class ServiceContainer:
         防止低权限模块越权获取高级别服务。
         """
         view = ServiceContainer.__new__(ServiceContainer)
-        view._tier = tier
+        object.__setattr__(view, '_tier', tier)
         view._services = self._services
         view._factories = self._factories
         view._service_tiers = self._service_tiers
         view._deps = self._deps
         view._lock = self._lock
+        # ★ C1 修复: 锁定视图，_tier 此后不可修改
+        object.__setattr__(view, '_view_locked', True)
         return view
 
     def register(
         self, name: str, instance_or_factory: Any, *,
         uid: int = TIER_SERVICE,
+        is_factory: Optional[bool] = None,
         _caller: str = "",
     ):
         """注册服务实例或工厂函数。
@@ -279,6 +216,7 @@ class ServiceContainer:
             name: 服务名称。
             instance_or_factory: 实例或可调用工厂。
             uid: 该服务的等级（数值越小权限越高）。
+            is_factory: None=自动检测, True=强制工厂, False=强制服务实例。
             _caller: 内部用，调用方的模块路径（用于防提权校验）。
         """
         if name in self._services or name in self._factories:
@@ -295,7 +233,11 @@ class ServiceContainer:
             )
 
         with self._lock:
-            if callable(instance_or_factory):
+            if is_factory is True:
+                self._factories[name] = instance_or_factory
+            elif is_factory is False:
+                self._services[name] = instance_or_factory
+            elif callable(instance_or_factory) and not inspect.isclass(instance_or_factory):
                 self._factories[name] = instance_or_factory
             else:
                 self._services[name] = instance_or_factory
@@ -351,7 +293,7 @@ class ServiceContainer:
         """注册模块对服务的依赖关系（测试用 API）。
 
         在 v2 tier 体系中，依赖关系由服务注册时的 uid 值隐式表达。
-        该方法保留作为兼容接口，实际不做任何操作。
+        该方法保留作为兼容接口。
         """
         _log.debug("依赖注册（无操作）: '%s' -> '%s'", dependent, service_name)
 
@@ -368,7 +310,7 @@ class ServiceContainer:
                     'command', 'tool', 'adapter', 'message', 'package',
                     'recovery', 'uid_lookup', 'group_config', 'group_filter',
                     'dedup', 'debug', 'market_server', 'market', 'ws_client'):
-                modules.append((self._service_tiers.get(name, 999), name))
+                modules.append((self._service_tiers.get(name, 400), name))
         modules.sort()
         return [name for _, name in modules]
 

@@ -109,11 +109,12 @@ def is_trusted_image_host(url: str) -> bool:
     if not hostname:
         return False
     hostname = hostname.lower()
-    # 检查精确匹配或父域名匹配
+    # 检查精确匹配或子域名匹配（避免 .com 型误匹配）
     if hostname in _TRUSTED_IMAGE_HOSTS:
         return True
     for trusted in _TRUSTED_IMAGE_HOSTS:
-        if hostname.endswith("." + trusted):
+        # 只匹配 exact.com 或 sub.exact.com，防止 attacker-fake.com 绕过
+        if hostname == trusted or hostname.endswith("." + trusted):
             return True
     return False
 

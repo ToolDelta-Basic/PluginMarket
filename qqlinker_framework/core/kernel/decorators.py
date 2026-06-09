@@ -25,7 +25,7 @@ def command(
         trigger: 命令触发词（如 ".帮助"）。
         cooldown: 冷却秒。None 取模块 default_cooldown。
         required_role: 需要的角色名（如 "moderator"），空串表示不限制。
-        min_uid: 最低 UID 等级要求。默认 3000 (nobody)，即所有人可用。
+        min_uid: 最低 UID 等级要求。默认 400 (nobody)，即所有人可用。
     """
 
     def decorator(func: Callable):

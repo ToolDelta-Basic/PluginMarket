@@ -4,6 +4,7 @@
 ⚠️ 安全限制：仅当 Python __debug__ 为 True 或配置明确启用时才激活。
 生产环境应禁用此模块。
 """
+import os
 import asyncio
 import logging
 import time
@@ -24,13 +25,15 @@ class DebugEngine:
         self._ops: Dict[str, Dict[str, Callable]] = {}
         self._lock = asyncio.Lock()
 
-        # 安全检查: 生产模式下禁用调试引擎
-        debug_enabled = config.get("调试.生产模式禁用", True)
-        if debug_enabled and not __debug__:
+        # 安全检查: 生产模式下强制禁用调试引擎
+        # 仅在 __debug__=True 且显式设置 调试.生产模式禁用=false 时启用
+        force_debug = os.environ.get("QQLINKER_FORCE_DEBUG", "0") == "1"
+        config_allow = not config.get("调试.生产模式禁用", True)
+        if not force_debug and (not __debug__ or not config_allow):
             self._disabled = True
             _logger.warning(
-                "⚠️ 调试引擎已在生产模式(__debug__=False)下禁用。"
-                "设置 调试.生产模式禁用=false 可强制启用。"
+                "⚠️ 调试引擎已禁用。"
+                "开发模式: 设置 QQLINKER_FORCE_DEBUG=1 + 调试.生产模式禁用=false"
             )
         else:
             self._disabled = False

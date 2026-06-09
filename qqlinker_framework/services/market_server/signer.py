@@ -52,10 +52,13 @@ def verify_signature(name: str, version: str, signature: str,
     # 解析签名和时间戳
     parts = signature.rsplit(":", 1)
     if len(parts) != 2:
-        # 兼容旧格式（无时间戳）
-        return hmac.compare_digest(
-            sign_module_legacy(name, version, secret), signature
-        )
+        # 旧格式（无时间戳）— 使用当前签名重新验证
+        expected = hmac.new(
+            secret.encode("utf-8"),
+            f"{name}:{version}".encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()[:16]
+        return hmac.compare_digest(expected, signature)
 
     sig_hex, ts_str = parts
     try:
@@ -83,12 +86,6 @@ def verify_signature(name: str, version: str, signature: str,
             return False  # 已使用过的 nonce
 
     return True
-
-
-def sign_module_legacy(name: str, version: str, secret: str) -> str:
-    """旧版签名（不含时间戳，向后兼容）。"""
-    msg = f"{name}:{version}".encode("utf-8")
-    return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:16]
 
 
 def _check_and_record_nonce(nonce: str) -> bool:

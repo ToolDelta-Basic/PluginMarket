@@ -166,6 +166,26 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return False
         return self._ws_client.send_group_msg(group_id, message)
 
+    def send_message_round_robin(self, group_id: int, message: str) -> bool:
+        """轮询式群消息发送。
+
+        多机器人模式:
+          - 如果 send_guard 可用 → 通过 SendGuard.send_with_ack() 发送
+          - SendGuard 自动选择机器人 → 发送 → 回显确认 → 故障转移
+
+        ToolDelta 单机器人模式下降级为 plugin.send_group_msg。
+        """
+        send_guard = getattr(self, '_send_guard', None)
+        if send_guard is not None:
+            try:
+                return send_guard.send_with_ack(group_id, message, priority=1)
+            except Exception:
+                pass
+        if hasattr(self.plugin, 'send_group_msg'):
+            return self.plugin.send_group_msg(group_id, message)
+        # 向后兼容 fallback
+        return self.send_group_msg(group_id, message)
+
     def send_private_msg(self, user_id: int, message: str) -> bool:
         """发送私聊消息。"""
         if not self._ws_client:

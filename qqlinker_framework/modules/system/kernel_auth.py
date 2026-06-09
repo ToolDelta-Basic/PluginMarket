@@ -13,7 +13,7 @@ import logging
 import time
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.services import uid_label, UID_ROOT, UID_DAEMON_MIN, UID_SERVICE_MIN, UID_NOBODY
+from ...core.kernel.services import uid_label, TIER_KERNEL, TIER_DAEMON, TIER_SERVICE, UID_NOBODY
 from ...core.kernel.audit import audit_log, audit_log_exec, AuditLevel
 from .auth import persist_user_uid
 
@@ -68,13 +68,13 @@ class KernelAuthModule(Module):
         禁止: .grant <任何人> 0    (root 只能在配置文件设置)
         """
         caller_uid = self._get_user_uid(ctx.user_id)
-        if caller_uid > UID_ROOT:
+        if caller_uid > TIER_KERNEL:
             await ctx.reply(f"\u274c 仅 root(0) 可使用此命令。你的 UID: {caller_uid}")
             return
 
         if len(ctx.args) < 1:
             await ctx.reply("用法: .grant <QQ号> [uid等级]\n"
-                            "等级: 100=daemon, 1000=service, 2000=app(默认), 3000=nobody")
+                            "等级: 0=root, 100=daemon, 200=service, 300=app(默认), 400=nobody")
             return
 
         try:
@@ -97,7 +97,7 @@ class KernelAuthModule(Module):
             return
 
         # ★ 硬限制: 禁止通过 .grant 授予 uid=0
-        if new_uid <= UID_ROOT:
+        if new_uid <= TIER_KERNEL:
             audit_log(
                 sender=str(ctx.user_id),
                 action="grant_root_attempt",
@@ -169,7 +169,7 @@ class KernelAuthModule(Module):
         root 的调用权限不被被调用方法阻止。
         """
         user_uid = self._get_user_uid(ctx.user_id)
-        if user_uid > UID_ROOT:
+        if user_uid > TIER_KERNEL:
             await ctx.reply(f"\u274c 仅 root(0) 可使用此命令。你的 UID: {user_uid}")
             return
 
@@ -179,7 +179,7 @@ class KernelAuthModule(Module):
             try:
                 host = self.services.get("_host")
                 for name, mod in host.module_mgr._loaded_modules.items():
-                    mod_uid = getattr(mod, 'uid', 9999)
+                    mod_uid = getattr(mod, 'uid', 400)
                     if mod_uid > 0:
                         # 只列出有 exec_exposed 方法的模块
                         exposed = [
@@ -218,7 +218,7 @@ class KernelAuthModule(Module):
 
         target_uid = getattr(target_mod, 'uid', UID_NOBODY)
         # root 不能通过 .exec 调用其他 root 级模块（包括自身 kernel_auth）
-        if target_uid <= UID_ROOT:
+        if target_uid <= TIER_KERNEL:
             await ctx.reply(f"\u274c 禁止调用 root 级模块 '{mod_name}'")
             return
 
@@ -278,8 +278,7 @@ class KernelAuthModule(Module):
         逻辑与 host._lookup_uid() 一致（权威实现）:
           1. 查 权限管理.UID授权 表
           2. 查 管理员.管理员QQ 列表 → uid=100
-          3. 查 游戏管理.管理员QQ 列表（兼容旧配置）→ uid=100
-          4. 否则 nobody (3000)
+          4. 否则 nobody (400)
         """
         uid_map = self.config.get("权限管理.UID授权", {})
         if isinstance(uid_map, dict):
@@ -297,11 +296,6 @@ class KernelAuthModule(Module):
                     return 100
             except (TypeError, ValueError):
                 pass
-        admin_list2 = self.config.get("游戏管理.管理员QQ", [])
-        if isinstance(admin_list2, list):
-            try:
-                if user_id in [int(q) for q in admin_list2 if q]:
-                    return 100
             except (TypeError, ValueError):
                 pass
         return UID_NOBODY
@@ -313,13 +307,9 @@ class KernelAuthModule(Module):
     def _get_admin_list(self) -> list:
         """获取管理员 QQ 列表。
 
-        优先查 游戏管理.管理员QQ（旧配置兼容），
         若为空或非 list 类型，回退到 管理员.管理员QQ。
         """
         try:
-            admin_list = self.config.get("游戏管理.管理员QQ", [])
-            if isinstance(admin_list, list) and admin_list:
-                return [int(q) for q in admin_list if q]
             admin_list = self.config.get("管理员.管理员QQ", [])
             if not isinstance(admin_list, list):
                 return []

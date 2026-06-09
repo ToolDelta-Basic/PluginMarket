@@ -136,6 +136,35 @@ class IFrameworkAdapter(ABC):
     def send_game_actionbar(self, target: str, text: str) -> None:
         """向玩家显示行动栏消息（可选实现）。"""
 
+    # ── 可选扩展: 轮询发信 ────────────────────────────────
+
+    def send_message_round_robin(  # noqa: PYL-R0201 (abstract interface — subclasses may need self for multi-bot round-robin)
+        self, group_id: int, message: str
+    ) -> bool:
+        """轮询式群消息发送（多机器人场景下自动切换机器人）。
+
+        多机器人模式:
+          - 如果 send_guard 可用 → 通过 SendGuard.send_with_ack() 发送
+          - SendGuard 自动选择机器人 → 发送 → 回显确认 → 故障转移
+
+        单机器人模式:
+          降级为 send_group_msg。
+
+        Args:
+            group_id: QQ 群号。
+            message: 消息文本。
+
+        Returns:
+            是否发送成功。
+        """
+        send_guard = getattr(self, '_send_guard', None)
+        if send_guard is not None:
+            try:
+                return send_guard.send_with_ack(group_id, message, priority=1)
+            except Exception:
+                pass
+        return self.send_group_msg(group_id, message)
+
     # ── 可选扩展: 跨插件 API 代理 ─────────────────────────────
 
     def register_pre_plugin_api(  # noqa: PYL-R0201 (abstract interface — subclasses may need self for adapter-specific API registration)

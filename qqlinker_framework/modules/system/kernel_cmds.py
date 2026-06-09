@@ -28,8 +28,9 @@ if TYPE_CHECKING:
     from ...core.host import FrameworkHost
 
 from ...core.kernel.services import (
-    UID_ROOT,
+    TIER_KERNEL,
     UID_NOBODY,
+    TIER_LABELS,
     uid_label,
 )
 from ...core.module import Module
@@ -131,10 +132,61 @@ class CmdSession:
             return f"✗ 异常: {e}"
 
     def _cmd_grant(self, params):
-        return "✗ grant: UID 分配器模块需另行实现。请使用 auth 模块的 .grant 命令。"
+        target_name = params.get("name", "")
+        target_tier = params.get("tier", "").lower()
+        if not target_name or not target_tier:
+            return "用法: .grant --name <模块名> --tier <kernel|daemon|service|app|nobody>"
+        valid = {"kernel", "daemon", "service", "app", "nobody"}
+        if target_tier not in valid:
+            return f"✗ 无效 tier: '{target_tier}'"
+
+        # 查找模块
+        loaded = self.host.module_mgr._loaded_modules
+        mod = loaded.get(target_name)
+        if mod is None:
+            return f"✗ 模块 '{target_name}' 未加载"
+
+        old_uid = getattr(mod, 'uid', 400)
+
+        # 安全检查
+        if target_tier == "kernel":
+            return "✗ 不可将模块提权至 kernel(0)"
+        if old_uid == 0:
+            return "✗ 不可降级 uid=0 的内核模块"
+
+        reverse_labels = {v: k for k, v in TIER_LABELS.items()}
+        new_uid = reverse_labels.get(target_tier, 400)
+
+        # 持久化外部模块授权
+        from ..core.drivers.autodiscover import grant_external_module_uid
+        try:
+            grant_external_module_uid(target_name, new_uid)
+        except Exception:
+            pass
+
+        # 刷新模块视图
+        mod.refresh_view(new_uid, self.host.services)
+        old_tier = TIER_LABELS.get(old_uid, str(old_uid))
+        return f"✓ 模块 '{target_name}': {old_tier}(uid={old_uid}) → {target_tier}(uid={new_uid})"
 
     def _cmd_revoke(self, params):
-        return "✗ revoke: UID 分配器模块需另行实现。请使用 auth 模块的 .revoke 命令。"
+        target_name = params.get("name", "")
+        if not target_name:
+            return "用法: .revoke --name <模块名>"
+        loaded = self.host.module_mgr._loaded_modules
+        mod = loaded.get(target_name)
+        if mod is None:
+            return f"✗ 模块 '{target_name}' 未加载"
+        old_uid = getattr(mod, 'uid', 400)
+        if old_uid == 0:
+            return "✗ 不可撤销 uid=0 的内核模块"
+        from ..core.drivers.autodiscover import revoke_external_module_uid
+        try:
+            revoke_external_module_uid(target_name)
+        except Exception:
+            pass
+        mod.refresh_view(400, self.host.services)
+        return f"✓ 模块 '{target_name}' 授权已撤销 → nobody(400)"
 
     def _cmd_ulist(self, params):
         loaded = self.host.module_mgr._loaded_modules
@@ -149,7 +201,26 @@ class CmdSession:
         return "\n".join(lines)
 
     def _cmd_exec(self, params):
-        return "✗ .exec 功能暂未实现。"
+        call_target = params.get("call", "")
+        if not call_target:
+            return "用法: .exec --call <模块名.方法名> [arg1 arg2]"
+        parts = call_target.split(".", 1)
+        if len(parts) != 2:
+            return "✗ 格式: .exec --call <模块.方法>"
+        mod_name, method_name = parts
+        loaded = self.host.module_mgr._loaded_modules
+        mod = loaded.get(mod_name)
+        if mod is None:
+            return f"✗ 模块 '{mod_name}' 未加载"
+        method = getattr(mod, method_name, None)
+        if method is None or not callable(method):
+            return f"✗ '{method_name}' 在 '{mod_name}' 中不存在"
+        args = list(params.values()) if params else []
+        try:
+            result = method(*args) if args else method()
+            return f"✓ {mod_name}.{method_name}: {str(result)[:500]}" if result is not None else f"✓ {mod_name}.{method_name} 执行完成"
+        except Exception as e:
+            return f"✗ {mod_name}.{method_name}: {e}"
 
     def _cmd_run(self, params):
         cmd = params.get("cmd", "")
@@ -233,7 +304,7 @@ class KernelCMDsModule(Module):
 
 
 def can_enter_cmd(caller_uid: int, admin_uids: Optional[List[int]] = None) -> bool:
-    if caller_uid == UID_ROOT:
+    if caller_uid == TIER_KERNEL:
         return True
     if admin_uids and caller_uid in admin_uids:
         return True

@@ -9,11 +9,14 @@
  · .配置预览 <群号> <节名> 预览某群某节合并后的配置
  · 备份文件存放至 data/repair_backups/，路径模式下按模块约定
 
- 安全：.修复配置 会校验操作人是否属于目标群
+ 权限: UID≤100 或管理员可查看/修复
+ 隐私: 自动脱敏令牌、密钥、QQ号等敏感字段
 ═══════════════════════════════════════════════════════════════════════════
 """
+import json
 import logging
 import os
+import re
 from datetime import datetime
 
 from ...core.module import Module
@@ -22,15 +25,54 @@ from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
 
+# ── 脱敏工具 ──
+# 仅脱敏密钥/令牌/密码等明确的敏感键值对，不再按模式匹配脱敏 QQ 号。
+# QQ 号是否属于隐私内容，由各需求模块自行标记（通过 format/render 阶段处理）。
+_KEY_SECRET_PATTERN = re.compile(
+    r'["\']?(?:token|令牌|Token|secret|Secret|密钥|key|Key|password|密码|passwd)["\']?\s*[:=]\s*["\']?([^"\',}\s]{4,})["\']?',
+)
+
+
+def _redact_sensitive(text: str) -> str:
+    """脱敏密钥/令牌等敏感值。不处理 QQ 号——由需求模块自行标记。"""
+    return _KEY_SECRET_PATTERN.sub(r'\1=***', text)
+
+
+def _check_uid_auth(ctx, services, uid_lookup=None) -> bool:
+    """UID 级别权限检查: uid≤100 或管理员。"""
+    # UID 检查
+    if uid_lookup:
+        try:
+            user_uid = uid_lookup(ctx.user_id)
+        except Exception:
+            user_uid = 400  # UID_NOBODY
+    else:
+        user_uid = 400  # UID_NOBODY
+    
+    # uid≤100 或 root(0) 直接放行
+    if user_uid <= 100:
+        return True
+    
+    # fallback: 检查 op_only 列表
+    try:
+        config = services.get("config")
+        admin_list = config.get("管理员.管理员QQ", [])
+        if ctx.user_id in [int(q) for q in admin_list if q]:
+            return True
+    except Exception:
+        pass
+    
+    return False
+
 
 class ConfigRepairModule(Module):
     """配置修复与诊断模块。"""
 
     name = "config_repair"
-    tier = 200  # TIER_SERVICE  # service: 内核服务级
-    version = (1, 0, 0)
+    tier = 200  # TIER_SERVICE
+    version = (1, 0, 1)
     dependencies: list[str] = []
-    required_services = ["config", "group_config", "message", "command"]
+    required_services = ["config", "group_config", "message"]
 
     default_config = {
         "配置修复": {
@@ -39,14 +81,28 @@ class ConfigRepairModule(Module):
             "备份保留天数": 30,
         }
     }
-    config_scope = {"配置修复": "global"}  # 管理员QQ 只在主配置
+    config_scope = {"配置修复": "global"}
+
+    def __init__(self, services, event_bus):
+        super().__init__(services, event_bus)
+        self._uid_lookup = None
 
     async def on_init(self) -> None:
-        """模块就绪。命令通过 @command 装饰器自动注册。"""
+        try:
+            self._uid_lookup = self.services.get("uid_lookup")
+        except Exception:
+            pass
         _log.info("[config_repair] 配置修复模块已就绪")
 
-    @command(".修复配置", op_only=True, argument_hint="<群号>", description="修复指定群的子配置（管理员）")
+    def _check_auth(self, ctx) -> bool:
+        """权限: uid≤100 或管理员。"""
+        return _check_uid_auth(ctx, self.services, self._uid_lookup)
+
+    @command("配置修复", argument_hint="<群号>", description="修复指定群的子配置", min_uid=200)
     async def _cmd_repair(self, ctx):
+        if not self._check_auth(ctx):
+            await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")
+            return
         """手动修复指定群的子配置。
 
         校验操作人是否属于目标群，防止越权操作。
@@ -99,8 +155,11 @@ class ConfigRepairModule(Module):
             _log.error("[config_repair] 修复群 %d 失败: %s", group_id, e)
             await ctx.reply(f"❌ 修复失败: {e}")
 
-    @command(".配置状态", op_only=True, description="查看所有群子配置状态（管理员）")
+    @command("配置状态", argument_hint="", description="查看所有群子配置状态", min_uid=200)
     async def _cmd_status(self, ctx):
+        if not self._check_auth(ctx):
+            await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")
+            return
         """查看所有群子配置的状态。"""
         configs = self.group_config.list_group_configs()
         if not configs:
@@ -131,8 +190,11 @@ class ConfigRepairModule(Module):
 
         await ctx.reply("\n".join(lines))
 
-    @command(".配置预览", op_only=True, argument_hint="<群号> <节名>", description="预览某群某节配置（管理员）")
+    @command("配置预览", argument_hint="<群号> <节名>", description="预览某群某节配置", min_uid=200)
     async def _cmd_preview(self, ctx):
+        if not self._check_auth(ctx):
+            await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")
+            return
         """预览某群某配置节的值。"""
         args = ctx.args
         if len(args) < 2:
@@ -157,10 +219,11 @@ class ConfigRepairModule(Module):
                 await ctx.reply(f"❌ 群 {group_id} 中没有配置项: {key}")
                 return
 
-            import json
             formatted = json.dumps(value, ensure_ascii=False, indent=2)
             if len(formatted) > 1500:
                 formatted = formatted[:1500] + "\n... (截断)"
+            # 脱敏
+            formatted = _redact_sensitive(formatted)
             await ctx.reply(
                 f"📋 群 {group_id} 配置 [{key}]:\n{formatted}"
             )

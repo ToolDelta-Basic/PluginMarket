@@ -83,6 +83,14 @@ def _scan_module_source(source: str) -> List[str]:
         # 可通过 getattr 动态访问的危险模块名
         _DANGEROUS_GETATTR_MODULES = frozenset({'os', 'sys', 'subprocess'})
 
+        def _is_name(self, node, names):
+            """Fix H2: 检查节点是否为指定的 Name 节点。
+
+            修复前此方法作为类外 @staticmethod 定义，导致
+            self._is_name 抛出 AttributeError → 扫描崩溃。
+            """
+            return isinstance(node, ast.Name) and node.id in names
+
         def visit_Call(self, node):
             # 检查 func 是否为危险调用
             name = _get_call_name(node.func)
@@ -103,12 +111,10 @@ def _scan_module_source(source: str) -> List[str]:
                     found.append(name)
             self.generic_visit(node)
 
-    @staticmethod
-    def _is_name(node, names):
-        """检查节点是否为指定的 Name 节点。"""
-        return isinstance(node, ast.Name) and node.id in names
-
-    _DangerousVisitor().visit(tree)
+    try:
+        _DangerousVisitor().visit(tree)
+    except Exception as e:
+        logger.warning("模块源码AST扫描异常(%s)，跳过安全分析: %s", type(e).__name__, e)
     return found
 
 
@@ -380,15 +386,14 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
             and attr is not Module
             and getattr(attr, "name", None)
         ):
-            # ★ 安全：外部模块声明的 uid 不可信，强制降级
+            # 外部模块 uid: 优先从持久化授权文件读取，否则默认 400
+            from ..managers.config_mgr import UID_NB as _NB
             declared_uid = getattr(attr, "uid", 400)
-            if declared_uid < 400:
-                logger.warning(
-                    "外部模块 '%s' 声明了不可信的 uid=%d，"
-                    "已强制降级为 nobody (uid=%d)。",
-                    attr.name, declared_uid, UID_NOBODY,
-                )
-                attr.uid = 400
+            # 尝试从授权记录读取持久化的有效 uid
+            effective_uid = _load_external_uid_persisted(
+                attr.name, int(declared_uid)
+            )
+            attr.uid = effective_uid
             return attr
     return None
 
@@ -539,4 +544,73 @@ def remove_external_module(name: str, data_path: str) -> bool:
         _shutil.rmtree(pkg_path)
         return True
 
+    return False
+
+# ── 外部模块 UID 持久化 ──────────────────────────────
+
+_EXTERNAL_UID_FILE = None
+
+def _get_external_uid_file() -> str:
+    global _EXTERNAL_UID_FILE
+    if _EXTERNAL_UID_FILE is None:
+        import os as _os
+        # 放在 data 目录下，不污染配置
+        _EXTERNAL_UID_FILE = _os.path.join(
+            _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))),
+            "data", "external_uids.json"
+        )
+    return _EXTERNAL_UID_FILE
+
+
+def _load_external_uids() -> dict:
+    fpath = _get_external_uid_file()
+    if _os.path.isfile(fpath):
+        try:
+            with open(fpath, "r") as f:
+                return _json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _save_external_uids(data: dict) -> None:
+    fpath = _get_external_uid_file()
+    _os.makedirs(_os.path.dirname(fpath), exist_ok=True)
+    with open(fpath, "w") as f:
+        _json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _load_external_uid_persisted(module_name: str, declared_uid: int) -> int:
+    """读取外部模块的持久化 uid，取声明值和授权值的较大者（权限更低）。"""
+    uids = _load_external_uids()
+    granted = uids.get(module_name)
+    if granted is not None:
+        return granted
+    # 未授权 → 保持 400 (nobody)
+    return 400
+
+
+def grant_external_module_uid(module_name: str, new_uid: int) -> bool:
+    """root 用户为外部模块授予新的 uid 等级并持久化。
+
+    Returns:
+        True 表示成功。
+    """
+    if new_uid < 0:
+        return False
+    uids = _load_external_uids()
+    uids[module_name] = new_uid
+    _save_external_uids(uids)
+    logger.info("外部模块 '%s' uid 已授予: %d (已持久化)", module_name, new_uid)
+    return True
+
+
+def revoke_external_module_uid(module_name: str) -> bool:
+    """撤销外部模块的授权，回退到 nobody(400)。"""
+    uids = _load_external_uids()
+    if module_name in uids:
+        del uids[module_name]
+        _save_external_uids(uids)
+        logger.info("外部模块 '%s' uid 授权已撤销 → nobody(400)", module_name)
+        return True
     return False

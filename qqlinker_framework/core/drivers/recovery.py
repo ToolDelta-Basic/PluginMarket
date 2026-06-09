@@ -39,6 +39,7 @@ import re
 import secrets
 import time
 from typing import Any, Callable, Optional
+from ..kernel.services import TIER_NOBODY
 
 _log = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ _log = logging.getLogger(__name__)
 RESTART_WINDOW_SECONDS = 300   # 5 分钟窗口
 RESTART_MAX_IN_WINDOW = 3      # 窗口内最多 3 次重启
 MAX_CHECKPOINT_SIZE = 256 * 1024  # 检查点最大 256KB
-UID_NOBODY_MIN = 3000             # nobody 级模块起始 uid
+# nobody 级模块 uid 阈值
 _MODULE_NAME_RE = re.compile(r'[^a-zA-Z0-9_-]')  # 模块名净化
 _CHECKPOINT_HEADER = b"QQLINKER_CHECKPOINT_V1"  # HMAC 签名前缀
 
@@ -56,15 +57,15 @@ class RecoveryEngine:
 
     def __init__(self, data_dir: str):
         self._data_dir = data_dir
-        self._heartbeat_path = os.path.join(data_dir, "data", ".heartbeat")
-        self._crashed_path = os.path.join(data_dir, "data", ".crashed")
+        self._heartbeat_path = os.path.join(data_dir, "数据", ".心跳")
+        self._crashed_path = os.path.join(data_dir, "数据", ".崩溃标记")
         self._restart_guard_path = os.path.join(
-            data_dir, "data", ".restart_guard.json"
+            data_dir, "数据", ".restart_guard.json"
         )
         self._restart_blocked_path = os.path.join(
-            data_dir, "data", ".restart_blocked"
+            data_dir, "数据", ".restart_blocked"
         )
-        self._checkpoint_dir = os.path.join(data_dir, "data", "checkpoints")
+        self._checkpoint_dir = os.path.join(data_dir, "数据", "检查点")
         os.makedirs(os.path.dirname(self._heartbeat_path), exist_ok=True)
         os.makedirs(self._checkpoint_dir, exist_ok=True)
 
@@ -101,7 +102,7 @@ class RecoveryEngine:
 
         密钥存储在 data/.checkpoint_key 中，仅在首次运行时生成。
         """
-        key_path = os.path.join(self._data_dir, "data", ".checkpoint_key")
+        key_path = os.path.join(self._data_dir, "数据", ".检查点密钥")
         try:
             if os.path.exists(key_path):
                 with open(key_path, "rb") as f:
@@ -109,8 +110,8 @@ class RecoveryEngine:
                 if len(key) == 32:
                     return key
                 _log.warning("检查点密钥长度异常，重新生成")
-        except OSError:
-            pass
+        except OSError as e:
+            _log.debug("读取检查点密钥失败: %s，将重新生成", e)
         # 生成新密钥
         key = secrets.token_bytes(32)
         try:
@@ -166,8 +167,8 @@ class RecoveryEngine:
         try:
             with open(self._crashed_path, 'w') as f:
                 f.write(str(int(time.time())))
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("无法写入崩溃标记 %s: %s", self._crashed_path, e)
 
     def clean_shutdown(self) -> None:
         """正常退出：删除崩溃标记和心跳文件。"""
@@ -288,7 +289,7 @@ class RecoveryEngine:
 
         强制执行:
           1. 模块必须覆写 checkpoint()（区别于基类默认返回 None）
-          2. nobody 级 (uid>=3000) 模块禁止使用检查点
+          2. nobody 级 (uid>=TIER_NOBODY) 模块禁止使用检查点
         """
         if not hasattr(module, 'checkpoint') or not callable(module.checkpoint):
             _log.warning(
@@ -305,7 +306,7 @@ class RecoveryEngine:
             )
             return
         # UID 隔离: nobody 级模块禁止 checkpoint
-        if getattr(module, 'uid', 0) >= UID_NOBODY_MIN:
+        if getattr(module, 'uid', 0) >= TIER_NOBODY:
             _log.warning(
                 "模块 '%s' (uid=%d, nobody 级) 禁止使用检查点功能，跳过注册",
                 module.name, module.uid,

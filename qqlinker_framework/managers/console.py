@@ -201,4 +201,13 @@ class ConsoleCommands:
         debug = host.services.get("debug")
         if debug:
             status["counters"] = debug.get_counters()
+        # ── v5: 降级和看门狗状态 ──
+        degradation = host.services.try_get("degradation")
+        if degradation:
+            status["degradation"] = degradation.get_status_summary()
+        if hasattr(host, 'module_mgr'):
+            status["module_health"] = host.module_mgr.get_module_health_summary()
+        watchdog = host.services.try_get("watchdog")
+        if watchdog:
+            status["watchdog"] = watchdog.get_stats()
         print(json.dumps(status, ensure_ascii=False, indent=2))

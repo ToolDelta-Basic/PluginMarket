@@ -60,7 +60,7 @@ hint = {
         "输入 .帮助 查看命令用法。",
     "COMMAND_PERMISSION_DENIED":
         "权限不足。该命令仅对管理员开放。"
-        "请联系管理员将你的 QQ 号添加到 [游戏管理.管理员QQ] 配置中。",
+        "请联系管理员将你的 QQ 号添加到 [管理员.管理员QQ] 配置中。",
     "COMMAND_COOLDOWN":
         "命令冷却中。为防止滥用，该命令有使用频率限制，请稍后再试。",
     "COMMAND_NOT_FOUND":
@@ -173,7 +173,7 @@ class ErrorMode:
             return cls._mode
         if cls._config_svc:
             try:
-                cfg = cls._config_svc.get("网络连接.错误显示模式")
+                cfg = cls._config_svc.get("网络连接.错误显示模式", requester_uid=0)
                 if cfg in ("调试", "debug", "Debug"):
                     cls._mode = cls.DEBUG
                     return cls._mode
