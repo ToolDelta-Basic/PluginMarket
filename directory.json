@@ -1,68 +1,146 @@
 {
-    "头衔系统": [
+    "基础聊天栏菜单": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "Readme.md",
+        "kimi.py"
     ],
-    "简易建造": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "公会系统": [
-        "readme.md",
-        "错误处理.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "公会系统/guild": [
-        "config.py",
-        "service.py",
-        "models.py",
-        "handlers.py",
-        "matchers.py",
-        "logic.py",
-        "validators.py",
-        "control.py",
-        "handlers_quick.py"
-    ],
-    "雪球菜单v3": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "[pkg]新手插件包": [
-        "datas.json"
-    ],
-    "[pkg]新手插件包/插件配置文件": [
-        "自定义聊天栏菜单.json",
-        "聊天栏菜单.json"
+    "签到系统": [
+        "datas.json",
+        "__init__.py"
     ],
     "更好的钓鱼": [
         "属性.json",
-        "readme.txt",
-        "data_operation.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "违规名称踢出": [
-        "__init__.py",
         "datas.json",
-        "词库.json"
+        "__init__.py",
+        "data_operation.py",
+        "readme.txt"
+    ],
+    "等级检测": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MCFunction计划任务": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MCFunction计划任务/examples": [
+        "示例-系统启动.mcfunction",
+        "示例-触发词.mcfunction",
+        "示例-定时任务.mcfunction"
+    ],
+    "井字棋": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "无邪玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "协管系统": [
+        "使用方法.md",
+        "core.py",
+        "datas.json",
+        "__init__.py",
+        "config.py",
+        "deepseek.py"
+    ],
+    "兑换码系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "Lumelta": [
+        "LICENSE",
+        ".gitignore",
+        "NOTICE",
+        "datas.json",
+        "__init__.py",
+        "README.md"
+    ],
+    "Lumelta/wrap": [
+        "safe.py",
+        "json.py",
+        "control.py",
+        "loosejson.py",
+        "__init__.py",
+        "lua.py",
+        "user_data.py",
+        "make.py",
+        "conversion.py",
+        "database.py",
+        "omega.py",
+        "config.py"
+    ],
+    "Lumelta/wrap/omega_sub_modules": [
+        "common.py",
+        "builder.py",
+        "cmds.py",
+        "websocket.py",
+        "flex.py",
+        "cqhttp.py",
+        "bot_action.py",
+        "players.py",
+        "__init__.py",
+        "system.py",
+        "menu.py",
+        "bot_uq.py",
+        "async_http.py",
+        "storage.py",
+        "listen.py",
+        "share.py",
+        "storage_path.py"
+    ],
+    "Lumelta/wrap/builtin_plugins": [],
+    "Lumelta/wrap/builtin_plugins/返回死亡点": [
+        "__init__.py"
+    ],
+    "Lumelta/neomega_storage": [
+        "NOTICE"
+    ],
+    "Lumelta/neomega_storage/config": [
+        "backend_menu.lua",
+        "neomega框架配置.json",
+        "cq_http_core.lua",
+        "game_menu.lua"
+    ],
+    "Lumelta/neomega_storage/config/领地[lua]": [
+        "领地[LuaLoader]-1.json"
+    ],
+    "Lumelta/neomega_storage/config/后台发送命令[lua]": [
+        "后台发送命令[LuaLoader]-1.json"
+    ],
+    "Lumelta/neomega_storage/config/返回死亡点": [
+        "返回死亡点[Built-In]-1.json"
+    ],
+    "Lumelta/neomega_storage/config/Python系统监测[lua]": [
+        "Python系统监测[LuaLoader]-1.json"
+    ],
+    "Lumelta/neomega_storage/config/全物品商店[lua]": [
+        "全物品商店[LuaLoader]-更合理的价格表.json"
+    ],
+    "Lumelta/neomega_storage/config/creator[lua]": [
+        "creator[LuaLoader]-1.json"
+    ],
+    "Lumelta/neomega_storage/lang": [],
+    "Lumelta/neomega_storage/lang/LuaLoader": [
+        "creator.lua",
+        "领地.lua",
+        "全物品商店.lua",
+        "coromega.lua",
+        "Python系统监测.lua",
+        "后台发送命令.lua"
+    ],
+    "00榛缈插件性能分析": [
+        "datas.json",
+        "__init__.py"
     ],
     "机器人发言": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "多功能玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "清理实体分数": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
     "猫七街云黑封禁": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
     "猫七街云黑封禁/server": [
         "server.py"
@@ -70,375 +148,27 @@
     "猫七街云黑封禁/server/官方云黑列表": [
         "blacklist.json"
     ],
-    "简易建造-Pro": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "发言频率限制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_统一消息风格": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "举报系统": [
-        "Readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "『Orion System』违规与作弊行为综合反制系统": [
-        "README.md",
-        "config.py",
-        "ban_system.py",
-        "utils.py",
-        "core.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令链导出器": [
-        "README.md",
-        "__init__.py"
-    ],
-    "前置_献给机械的花束": [
-        "place_nbt_block.py",
-        "define.py",
-        "chest_cache.py",
-        "server_running.py",
-        "place_large_chest.py",
-        "readme.txt",
-        "log_record.py",
-        "get_nbt_block_hash.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "权限管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "巡逻": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "番茄小说": [
-        "__init__.py",
+    "等级检测增强版": [
         "datas.json",
-        "TomatoNovelAPI.py"
-    ],
-    "pip模块支持": [
         "__init__.py",
-        "datas.json"
+        "README.md"
     ],
-    "空岛分配": [
+    "皮肤异常拉黑丨锁服反制": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "README.md"
     ],
-    "玩家人数限制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "玩家记录": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "签到系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins": [],
-    "desperated_plugins/睡觉统计": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/bdx导入器Pro": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/bdx导出器Pro": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/多服聊天互通": [
-        "README.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/木桶玩家商店-试验版": [
-        "shop_lib.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/bdx导出器": [
-        "utils.py",
-        "struct_loader.py",
-        "progress_bar.py",
-        "scanner.py",
-        "state_dump.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "desperated_plugins/bdx导出器/bdx_utils": [
-        "structs.py",
-        "writer.py",
-        "construct_file.py"
-    ],
-    "定时任务": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "定时任务/示例定时任务": [
-        "扫地姬.mcfunction"
-    ],
-    "玩家交易所": [
-        "data_operation.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "循环替换拒绝方块": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "世界备份v2": [
-        "recover.py",
-        "define.py",
-        "releases.py",
-        "world_backup.py",
-        "recover_tool_name.py",
-        "on_chat.py",
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_聊天栏菜单": [
-        "config_getter.py",
-        "使用方法.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "随机商店": [
-        "xlsx转json.py",
-        "readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "简单世界恢复": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "进服一言": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "无邪玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "物品制作器": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_基本插件功能库": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "更明显的@玩家": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版/websocket": [
-        "_logging.py",
-        "_exceptions.py",
-        "_core.py",
-        "_url.py",
-        "_app.py",
-        "_socket.py",
-        "_abnf.py",
-        "_http.py",
-        "_cookiejar.py",
-        "_wsdump.py",
-        "_utils.py",
-        "py.typed",
-        "__init__.py",
-        "_ssl_compat.py",
-        "_handshake.py"
-    ],
-    "群服互通云链版/websocket/tests": [
-        "test_abnf.py",
-        "echo-server.py",
-        "test_cookiejar.py",
-        "test_websocket.py",
-        "test_http.py",
-        "test_app.py",
-        "test_url.py",
+    "活塞限速": [
+        "datas.json",
         "__init__.py"
     ],
-    "群服互通云链版/websocket/tests/data": [
-        "header02.txt",
-        "header01.txt",
-        "header03.txt"
-    ],
-    "入服欢迎": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "空岛系统": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "插件接口获取修复": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_玩家死亡检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "mcstructure导入器[可导入命令]": [
-        "config.py",
-        "nbt_parser.py",
-        "command_loader.py",
-        "core.py",
-        "chunk_painter.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "等级检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "简单世界导入": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "类式插件创建器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "挂机检测": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_玩家XUID获取": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "兑换码系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_循环获取玩家坐标": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "点歌台": [
-        "readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版Ultra版": [
-        "qq_mixin.py",
-        "runtime_mixin.py",
-        "orion_mixin.py",
-        "config_mixin.py",
-        "message_utils.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通云链版Ultra版/websocket": [
-        "_logging.py",
-        "_exceptions.py",
-        "_core.py",
-        "_url.py",
-        "_app.py",
-        "_socket.py",
-        "_abnf.py",
-        "_http.py",
-        "_cookiejar.py",
-        "_wsdump.py",
-        "_utils.py",
-        "__init__.py",
-        "_ssl_compat.py",
-        "_handshake.py"
-    ],
-    "超频刷屏反制": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "ai聊天": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "32k盒子显示": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "更好的公告栏": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "封禁系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "demo-商店系统": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "音乐播放器": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_MIDI播放器/Musicreater": [
-        "main.py",
-        "utils.py",
-        "types.py",
-        "constants.py",
-        "subclass.py",
-        "__init__.py",
-        "exceptions.py"
-    ],
-    "前置_MIDI播放器/mido": [
-        "frozen.py",
-        "ports.py",
-        "syx.py",
-        "parser.py",
-        "tokenizer.py",
-        "__init__.py"
-    ],
-    "前置_MIDI播放器/mido/midifiles": [
-        "units.py",
-        "midifiles.py",
-        "tracks.py",
-        "meta.py",
-        "__init__.py"
-    ],
-    "前置_MIDI播放器/mido/messages": [
-        "decode.py",
-        "checks.py",
-        "messages.py",
-        "strings.py",
-        "specs.py",
-        "encode.py",
+    "Web版插件市场-试行": [
+        "datas.json",
         "__init__.py"
     ],
     "服服互通": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
     "服服互通/protocol": [],
     "服服互通/protocol/interface": [
@@ -449,108 +179,1185 @@
         "basic.py",
         "define.py"
     ],
-    "任务系统": [
-        "readme.txt",
+    "指令调试器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "公会系统": [
+        "错误处理.md",
+        "datas.json",
         "__init__.py",
+        "readme.md"
+    ],
+    "公会系统/guild": [
+        "handlers.py",
+        "service.py",
+        "models.py",
+        "matchers.py",
+        "validators.py",
+        "control.py",
+        "logic.py",
+        "config.py",
+        "handlers_quick.py"
+    ],
+    "群服互通云链版Ultra版": [
+        "orion_mixin.py",
+        "message_utils.py",
+        "runtime_mixin.py",
+        "datas.json",
+        "__init__.py",
+        "qq_mixin.py",
+        "config_mixin.py"
+    ],
+    "群服互通云链版Ultra版/websocket": [
+        "_app.py",
+        "_http.py",
+        "_ssl_compat.py",
+        "_socket.py",
+        "_wsdump.py",
+        "__init__.py",
+        "_url.py",
+        "_utils.py",
+        "_exceptions.py",
+        "_logging.py",
+        "_abnf.py",
+        "_core.py",
+        "_cookiejar.py",
+        "_handshake.py"
+    ],
+    "游戏内显示插件报错": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "简单世界导入": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "[pkg]防挂插件包": [
         "datas.json"
     ],
-    "商店系统": [
-        "配置.json",
+    "可升级云仓库": [
+        "data.json",
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
+    ],
+    "白名单&管理员检测云链联动版": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "Q&A答题": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "类式插件创建器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家交易所": [
+        "datas.json",
+        "__init__.py",
+        "data_operation.py"
+    ],
+    "清空全部玩家末影箱": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_统一消息风格": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_玩家XUID获取": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "信任玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_世界交互": [
+        "safe_uuid.py",
+        "datas.json",
+        "__init__.py",
+        "structure.py"
+    ],
+    "时间同步计分板": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "ai聊天": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "世界备份v2": [
+        "recover.py",
+        "world_backup.py",
+        "datas.json",
+        "__init__.py",
+        "define.py",
+        "releases.py",
+        "readme.txt",
+        "recover_tool_name.py",
+        "on_chat.py"
+    ],
+    "简单世界导出": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "简单程序启动器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "灵魂出窍": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "全服喇叭": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "五子棋小游戏": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "循环替换拒绝方块": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "世界备份": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "单方块空岛系统": [
+        "datas.json",
+        "__init__.py",
+        "data_operation.py",
+        "player_exchange.py"
+    ],
+    "『Orion System』违规与作弊行为综合反制系统": [
+        "core.py",
+        "utils.py",
+        "datas.json",
+        "__init__.py",
+        "config.py",
+        "ban_system.py",
+        "README.md"
+    ],
+    "进服一言": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家记录": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "公告栏[Mono]": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "公告栏[Mono]/pytz": [
+        "exceptions.py",
+        "lazy.py",
+        "__init__.py",
+        "tzfile.py",
+        "tzinfo.py",
+        "reference.py"
+    ],
+    "公告栏[Mono]/pytz/zoneinfo": [],
+    "公告栏[Mono]/pytz/zoneinfo/Asia": [
+        "Shanghai"
+    ],
+    "前置_循环获取玩家坐标": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "雪球菜单v3": [
+        "datas.json",
+        "__init__.py"
     ],
     "计分板支持": [
         "__init__.py"
     ],
-    "白名单&管理员检测": [
+    "简易建造": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
     ],
-    "银狼的指令区工程导入导出": [
-        "loader.py",
-        "file.py",
-        "define.py",
-        "dumper.py",
+    "头衔系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_基本插件功能库": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "超频刷屏反制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "兑换码": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "file.py"
     ],
-    "性能管理": [
+    "违规名称踢出": [
+        "词库.json",
+        "datas.json",
+        "__init__.py"
+    ],
+    "简易建造-Pro": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
     ],
-    "MySQL连接器": [
-        "__init__.py",
-        "datas.json"
+    "管理员白名单": [
+        "datas.json",
+        "__init__.py"
     ],
-    "服务器黑名单封禁系统": [
-        "README.md",
-        "__init__.py",
-        "datas.json"
+    "多功能玩家互传": [
+        "datas.json",
+        "__init__.py"
     ],
-    "玩家数据管理": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "五子棋小游戏": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "NekoMaid中转站Agent": [
-        "readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令发送监视器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_主动区块请求": [
-        "sub_chunk_process.py",
-        "define.py",
-        "requet_queue.py",
-        "sub_chunk_classifier.py",
-        "api.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "传送点设置": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "schematic导入器": [
-        "config.py",
+    "mcstructure导入器[可导入命令]": [
         "nbt_parser.py",
         "core.py",
+        "command_loader.py",
+        "datas.json",
+        "__init__.py",
         "chunk_painter.py",
+        "config.py"
+    ],
+    "入服欢迎": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "举报系统": [
+        "datas.json",
         "__init__.py",
-        "Minecraft_BE_block_id.json",
+        "Readme.md"
+    ],
+    "前置_玩家死亡检测": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "群服互通本地版启动器": [
+        "qlutils.py",
+        "cfg_mgr.py",
+        "proc_mgr.py",
+        "datas.json",
+        "__init__.py",
+        "proc.py",
+        "cfg_formatter.py"
+    ],
+    "封禁系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "admin命令": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "清理实体分数": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "[pkg]新手插件包": [
         "datas.json"
     ],
-    "猫七街玩家互传": [
-        "__init__.py",
-        "datas.json"
+    "[pkg]新手插件包/插件配置文件": [
+        "聊天栏菜单.json",
+        "自定义聊天栏菜单.json"
     ],
-    "控制台一键更新插件": [
+    "demo-商店系统": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "任务系统": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
+    ],
+    "插件接口获取修复": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "插件快捷安装": [
+        "installer.py",
+        "datas.json",
+        "__init__.py",
+        "README.md"
+    ],
+    "控制台执行MC指令": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "聊天历史记录": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "白名单&管理员检测": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "云计分板API": [
+        "云计分板API.md",
+        "datas.json",
+        "__init__.py"
+    ],
+    "随机商店": [
+        "xlsx转json.py",
+        "datas.json",
+        "__init__.py",
+        "readme.md"
+    ],
+    "活力API": [
+        "datas.json",
+        "__init__.py",
+        "README.md"
+    ],
+    "银行插件": [
+        "datas.json",
+        "__init__.py"
     ],
     "宠物背包清理": [
-        "readme.md",
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.md"
     ],
-    "音效播放器": [
-        "readme.txt",
+    "前置_Cb2Bot通信": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
+    ],
+    "命令方块代发言支持": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "系统上线提示[Mono]": [
+        "datas.json",
+        "__init__.py"
     ],
     "FateArk掉线检测": [
-        "__init__.py",
-        "datas.json"
+        "datas.json",
+        "__init__.py"
     ],
-    "全服喇叭": [
+    "性能管理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "定时任务": [
+        "datas.json",
         "__init__.py",
-        "datas.json"
+        "readme.txt"
+    ],
+    "定时任务/示例定时任务": [
+        "扫地姬.mcfunction"
+    ],
+    "pip模块支持": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "更明显的@玩家": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "简单世界恢复": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "空岛系统": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "发言频率限制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "商店系统": [
+        "datas.json",
+        "__init__.py",
+        "配置.json"
+    ],
+    "死亡点返回": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "进服验证": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "计分板重置": [
+        "datas.json",
+        "__init__.py",
+        "data_operation.py"
+    ],
+    "NekoMaid中转站Agent": [
+        "datas.json",
+        "__init__.py",
+        "readme.md"
+    ],
+    "32k盒子显示": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "发言频率限制v2": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "获取全服玩家皮肤": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "服务器黑名单封禁系统": [
+        "datas.json",
+        "__init__.py",
+        "README.md"
+    ],
+    "更好的公告栏": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_MIDI播放器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_MIDI播放器/mido": [
+        "parser.py",
+        "ports.py",
+        "syx.py",
+        "__init__.py",
+        "tokenizer.py",
+        "frozen.py"
+    ],
+    "前置_MIDI播放器/mido/midifiles": [
+        "__init__.py",
+        "tracks.py",
+        "midifiles.py",
+        "units.py",
+        "meta.py"
+    ],
+    "前置_MIDI播放器/mido/messages": [
+        "strings.py",
+        "checks.py",
+        "__init__.py",
+        "decode.py",
+        "encode.py",
+        "specs.py",
+        "messages.py"
+    ],
+    "前置_MIDI播放器/Musicreater": [
+        "subclass.py",
+        "main.py",
+        "exceptions.py",
+        "constants.py",
+        "utils.py",
+        "__init__.py",
+        "types.py"
+    ],
+    "更好的兑换码": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_主动区块请求": [
+        "requet_queue.py",
+        "datas.json",
+        "__init__.py",
+        "define.py",
+        "sub_chunk_process.py",
+        "api.py",
+        "sub_chunk_classifier.py"
+    ],
+    "权限管理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "空岛分配": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_献给机械的花束": [
+        "place_nbt_block.py",
+        "datas.json",
+        "__init__.py",
+        "chest_cache.py",
+        "get_nbt_block_hash.py",
+        "place_large_chest.py",
+        "define.py",
+        "server_running.py",
+        "readme.txt",
+        "log_record.py"
+    ],
+    "传送点设置": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "音效播放器": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "前置_tps计算器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "银狼的指令区工程导入导出": [
+        "dumper.py",
+        "loader.py",
+        "datas.json",
+        "__init__.py",
+        "define.py",
+        "file.py"
+    ],
+    "schematic导入器": [
+        "nbt_parser.py",
+        "core.py",
+        "Minecraft_BE_block_id.json",
+        "datas.json",
+        "__init__.py",
+        "chunk_painter.py",
+        "config.py"
+    ],
+    "控制台一键更新插件": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "点歌台": [
+        "datas.json",
+        "__init__.py",
+        "readme.md"
+    ],
+    "重启": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "世界の记忆": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "音乐播放器": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "前置_聊天栏菜单": [
+        "使用方法.md",
+        "datas.json",
+        "__init__.py",
+        "config_getter.py"
+    ],
+    "巡逻": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "大范围fill": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "MySQL连接器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "物品制作器": [
+        "datas.json",
+        "__init__.py",
+        "readme.txt"
+    ],
+    "命令链导出器": [
+        "__init__.py",
+        "README.md"
+    ],
+    "区块显示器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家人数限制": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "前置_大字替换": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家数据管理": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "自定义聊天栏菜单": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "群服互通云链版": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "群服互通云链版/背包绘制": [
+        "inventory.png"
+    ],
+    "群服互通云链版/背包绘制/材质图片": [],
+    "群服互通云链版/背包绘制/材质图片/items": [
+        "egg_cod.png",
+        "quiver.png",
+        "ghast_tear.png",
+        "egg_sheep.png",
+        "light_block_1.png",
+        "potion_bottle_splash.png",
+        "egg_stray.png",
+        "rotten_flesh.png",
+        "light_block_11.png",
+        "leather.png",
+        "egg_pigzombie.png",
+        "empty_armor_slot_helmet.png",
+        "record_mall.png",
+        "dye_powder_black_new.png",
+        "iron_pickaxe.png",
+        "gold_chestplate.png",
+        "potion_bottle_absorption.png",
+        "fish_clownfish_raw.png",
+        "sign_birch.png",
+        "tipped_arrow_turtlemaster.png",
+        "lever.png",
+        "potato.png",
+        "bed_cyan.png",
+        "bow_standby.png",
+        "bucket_tropical.png",
+        "egg_dolphin.png",
+        "sign_acacia.png",
+        "map_nautilus.png",
+        "fishing_rod_uncast.png",
+        "potion_bottle_splash_poison.png",
+        "light_block_3.png",
+        "lantern.png",
+        "dragons_breath.png",
+        "potion_bottle_saturation.png",
+        "potion_bottle_lingering_nightVision.png",
+        "dye_powder_light_blue.png",
+        "potion_bottle_lingering_invisibility.png",
+        "potion_bottle_splash_turtleMaster.png",
+        "diamond_leggings.png",
+        "stone_axe.png",
+        "dye_powder_black.png",
+        "record_wait.png",
+        "potion_bottle_splash_weakness.png",
+        "potion_bottle_splash_levitation.png",
+        "clock_item.png",
+        "leather_horse_armor.tga",
+        "egg_blaze.png",
+        "prismarine_crystals.png",
+        "egg_cave_spider.png",
+        "armor_stand.png",
+        "egg_enderman.png",
+        "bed_yellow.png",
+        "dye_powder_lime.png",
+        "nether_wart.png",
+        "ender_pearl.png",
+        "name_tag.png",
+        "light_block_13.png",
+        "light_block_10.png",
+        "flower_pot.png",
+        "repeater.png",
+        "egg_villager.png",
+        "potion_bottle_splash_damageBoost.png",
+        "bread.png",
+        "chicken_raw.png",
+        "potion_bottle_damageBoost.png",
+        "potion_bottle_splash_jump.png",
+        "fish_raw.png",
+        "iron_boots.png",
+        "egg_null.png",
+        "prismarine_shard.png",
+        "bucket_milk.png",
+        "beetroot.png",
+        "dye_powder_blue.png",
+        "blaze_rod.png",
+        "minecart_furnace.png",
+        "kelp.png",
+        "record_stal.png",
+        "map_mansion.png",
+        "porkchop_raw.png",
+        "seeds_melon.png",
+        "potion_bottle_lingering_heal.png",
+        "empty_armor_slot_boots.png",
+        "gold_sword.png",
+        "experience_bottle.png",
+        "boat_jungle.png",
+        "dye_powder_gray.png",
+        "feather.png",
+        "record_chirp.png",
+        "light_block_14.png",
+        "egg_rabbit.png",
+        "bed_blue.png",
+        "crossbow_firework.png",
+        "bed_red.png",
+        "map_monument.png",
+        "elytra.png",
+        "egg_zombievillager.png",
+        "phantom_membrane.png",
+        "string.png",
+        "tipped_arrow_leaping.png",
+        "potion_bottle_weakness.png",
+        "spawn_egg.png",
+        "seeds_beetroot.png",
+        "nautilus.png",
+        "gold_boots.png",
+        "book_writable.png",
+        "potion_bottle_splash_absorption.png",
+        "wood_pickaxe.png",
+        "bed_white.png",
+        "bucket_pufferfish.png",
+        "egg_lava_slime.png",
+        "bed_gray.png",
+        "spider_eye.png",
+        "cake.png",
+        "minecart_tnt.png",
+        "egg_mushroomcow.png",
+        "potion_bottle_splash_harm.png",
+        "totem.png",
+        "diamond_boots.png",
+        "emerald.png",
+        "minecart_command_block.png",
+        "rabbit_foot.png",
+        "tipped_arrow_poison.png",
+        "boat_acacia.png",
+        "boat_darkoak.png",
+        "map_filled.png",
+        "potion_bottle_moveSlowdown.png",
+        "carrot_golden.png",
+        "book_enchanted.png",
+        "iron_ingot.png",
+        "gunpowder.png",
+        "boat_oak.png",
+        "egg_chicken.png",
+        "egg_mask.png",
+        "potion_bottle_waterBreathing.png",
+        "lead.png",
+        "record_cat.png",
+        "chorus_fruit_popped.png",
+        "dye_powder_blue_new.png",
+        "wood_sword.png",
+        "sign.png",
+        "egg_polarbear.png",
+        "sugar.png",
+        "egg_drowned.png",
+        "end_crystal.png",
+        "potion_bottle_lingering_wither.png",
+        "iron_nugget.png",
+        "book_normal.png",
+        "tipped_arrow_waterbreathing.png",
+        "potato_baked.png",
+        "egg_agent.png",
+        "tipped_arrow_nightvision.png",
+        "spider_eye_fermented.png",
+        "painting.png",
+        "redstone_dust.png",
+        "potion_bottle_moveSpeed.png",
+        "potion_bottle_turtleMaster.png",
+        "tipped_arrow_fireres.png",
+        "apple_golden.png",
+        "banner_pattern.png",
+        "cookie.png",
+        "potion_bottle_lingering_poison.png",
+        "potion_bottle_heal.png",
+        "door_iron.png",
+        "iron_sword.png",
+        "villagebell.png",
+        "sign_jungle.png",
+        "dye_powder_white.png",
+        "chalkboard_large.png",
+        "dried_kelp.png",
+        "diamond.png",
+        "stone_shovel.png",
+        "potion_bottle_slowFall.png",
+        "light_block_5.png",
+        "potion_bottle_splash_wither.png",
+        "crossbow_arrow.png",
+        "bucket_water.png",
+        "turtle_shell_piece.png",
+        "tipped_arrow_healing.png",
+        "pumpkin_pie.png",
+        "egg_spider.png",
+        "brick.png",
+        "nether_star.png",
+        "potion_bottle_lingering_damageBoost.png",
+        "potion_bottle_lingering_turtleMaster.png",
+        "door_acacia.png",
+        "egg_ocelot.png",
+        "egg_donkey.png",
+        "fireworks.png",
+        "potion_bottle_digSlowdown.png",
+        "egg_template.pdn",
+        "iron_axe.png",
+        "minecart_normal.png",
+        "potion_bottle_invisibility.png",
+        "door_wood.png",
+        "fireball.png",
+        "egg_parrot.png",
+        "shears.png",
+        "door_jungle.png",
+        "egg_vindicator.png",
+        "potion_bottle_healthBoost.png",
+        "potion_overlay.png",
+        "empty_armor_slot_leggings.png",
+        "dye_powder_brown.png",
+        "sign_darkoak.png",
+        "potion_bottle_splash_digSpeed.png",
+        "crossbow_pulling_2.png",
+        "potion_bottle_digSpeed.png",
+        "potion_bottle_lingering_jump.png",
+        "clay_ball.png",
+        "seeds_pumpkin.png",
+        "tipped_arrow_base.png",
+        "bow_pulling_1.png",
+        "rabbit_cooked.png",
+        "gold_ingot.png",
+        "potion_bottle_drinkable.png",
+        "dye_powder_yellow.png",
+        "wood_shovel.png",
+        "quartz.png",
+        "melon_speckled.png",
+        "iron_hoe.png",
+        "empty_armor_slot_shield.png",
+        "egg_ghast.png",
+        "potion_bottle_splash_digSlowdown.png",
+        "record_11.png",
+        "leather_boots.tga",
+        "compass_item.png",
+        "light_block_2.png",
+        "potion_bottle_wither.png",
+        "beetroot_soup.png",
+        "egg_cow.png",
+        "carrot_on_a_stick.png",
+        "potion_bottle_lingering_luck.png",
+        "potion_bottle_splash_blindness.png",
+        "iron_helmet.png",
+        "light_block_0.png",
+        "item_frame.png",
+        "rabbit_raw.png",
+        "record_13.png",
+        "egg_silverfish.png",
+        "egg_witch.png",
+        "beef_cooked.png",
+        "diamond_hoe.png",
+        "tipped_arrow_slow.png",
+        "mutton_cooked.png",
+        "potion_bottle_poison.png",
+        "potion_bottle_splash_heal.png",
+        "potato_poisonous.png",
+        "egg_fish.png",
+        "dye_powder_red.png",
+        "egg_skeleton.png",
+        "potion_bottle_splash_invisibility.png",
+        "ruby.png",
+        "fish_pufferfish_raw.png",
+        "dye_powder_silver.png",
+        "potion_bottle_levitation.png",
+        "potion_bottle_splash_moveSpeed.png",
+        "trident.png",
+        "potion_bottle_splash_nightVision.png",
+        "beef_raw.png",
+        "egg.png",
+        "mutton_raw.png",
+        "fishing_rod_cast.png",
+        "gold_helmet.png",
+        "egg_husk.png",
+        "bed_green.png",
+        "book_portfolio.png",
+        "egg_guardian.png",
+        "bow_pulling_2.png",
+        "dye_powder_magenta.png",
+        "potion_bottle_resistance.png",
+        "apple.png",
+        "dragon_fireball.png",
+        "iron_leggings.png",
+        "leather_chestplate.png",
+        "watch_atlas.png",
+        "door_dark_oak.png",
+        "light_block_12.png",
+        "door_spruce.png",
+        "potion_bottle_lingering_slowFall.png",
+        "bow_pulling_0.png",
+        "hopper.png",
+        "light_block_7.png",
+        "tipped_arrow_weakness.png",
+        "potion_bottle_jump.png",
+        "fish_salmon_raw.png",
+        "arrow.png",
+        "snowball.png",
+        "tipped_arrow_invisibility.png",
+        "gold_shovel.png",
+        "tipped_arrow_slowfalling.png",
+        "gold_nugget.png",
+        "suspicious_stew.png",
+        "egg_pig.png",
+        "egg_zombie.png",
+        "gold_horse_armor.png",
+        "potion_bottle_splash_slowFall.png",
+        "bed_silver.png",
+        "campfire.png",
+        "boat.png",
+        "potion_bottle_fireResistance.png",
+        "egg_llama.png",
+        "egg_panda.png",
+        "tipped_arrow_head.png",
+        "chainmail_leggings.png",
+        "fireworks_charge.tga",
+        "minecart_hopper.png",
+        "tipped_arrow_regen.png",
+        "saddle.png",
+        "carrot.png",
+        "iron_shovel.png",
+        "light_block_6.png",
+        "comparator.png",
+        "brewing_stand.png",
+        "potion_bottle_lingering_weakness.png",
+        "bed_black.png",
+        "turtle_egg.png",
+        "chalkboard_medium.png",
+        "potion_bottle_lingering_harm.png",
+        "empty_armor_slot_chestplate.png",
+        "tipped_arrow_luck.png",
+        "flint.png",
+        "egg_cat.png",
+        "leather_helmet.tga",
+        "chalkboard_small.png",
+        "dye_powder_purple.png",
+        "potion_bottle_splash_hunger.png",
+        "map_empty.png",
+        "bed_light_blue.png",
+        "potion_bottle_regeneration.png",
+        "gold_axe.png",
+        "egg_skeletonhorse.png",
+        "egg_turtle.png",
+        "boat_spruce.png",
+        "light_block_8.png",
+        "diamond_shovel.png",
+        "egg_salmon.png",
+        "magma_cream.png",
+        "bed_purple.png",
+        "charcoal.png",
+        "spawn_egg_overlay.png",
+        "rabbit_stew.png",
+        "diamond_sword.png",
+        "melon.png",
+        "broken_elytra.png",
+        "door_birch.png",
+        "egg_elderguardian.png",
+        "record_mellohi.png",
+        "egg_wither.png",
+        "potion_bottle_lingering.png",
+        "egg_fox.png",
+        "tipped_arrow_swift.png",
+        "tipped_arrow_harm.png",
+        "potion_bottle_splash_moveSlowdown.png",
+        "potion_bottle_lingering_waterBreathing.png",
+        "egg_shulker.png",
+        "glowstone_dust.png",
+        "flint_and_steel.png",
+        "rabbit_hide.png",
+        "record_ward.png",
+        "stone_pickaxe.png",
+        "dye_powder_orange.png",
+        "bucket_salmon.png",
+        "chorus_fruit.png",
+        "egg_endermite.png",
+        "turtle_helmet.png",
+        "sea_pickle.png",
+        "potion_bottle_splash_saturation.png",
+        "leather_leggings.tga",
+        "chainmail_boots.png",
+        "iron_chestplate.png",
+        "record_blocks.png",
+        "egg_pillager.png",
+        "coal.png",
+        "mushroom_stew.png",
+        "seeds_wheat.png",
+        "record_strad.png",
+        "diamond_helmet.png",
+        "crossbow_pulling_1.png",
+        "dye_powder_brown_new.png",
+        "diamond_pickaxe.png",
+        "heartofthesea_closed.png",
+        "egg_evoker.png",
+        "potion_bottle_splash_regeneration.png",
+        "porkchop_cooked.png",
+        "egg_pufferfish.png",
+        "potion_bottle_splash_healthBoost.png",
+        "sweet_berries.png",
+        "potion_bottle_confusion.png",
+        "egg_wanderingtrader.png",
+        "potion_bottle_lingering_moveSlowdown.png",
+        "chainmail_chestplate.png",
+        "potion_bottle_empty.png",
+        "egg_npc.png",
+        "egg_phantom.png",
+        "light_block_9.png",
+        "map_locked.png",
+        "bed_brown.png",
+        "gold_leggings.png",
+        "diamond_axe.png",
+        "potion_bottle_splash_fireResistance.png",
+        "fish_cooked.png",
+        "netherbrick.png",
+        "potion_bottle_splash_waterBreathing.png",
+        "tipped_arrow_strength.png",
+        "egg_slime.png",
+        "gold_pickaxe.png",
+        "bucket_empty.png",
+        "stone_sword.png",
+        "minecart_chest.png",
+        "shulker_shell.png",
+        "potion_bottle_lingering_fireResistance.png",
+        "dye_powder_white_new.png",
+        "egg_ravager.png",
+        "potion_bottle_nightVision.png",
+        "light_block_15.png",
+        "iron_horse_armor.png",
+        "egg_mule.png",
+        "bed_magenta.png",
+        "egg_creeper.png",
+        "paper.png",
+        "diamond_chestplate.png",
+        "bone.png",
+        "light_block_4.png",
+        "ender_eye.png",
+        "tipped_arrow_wither.png",
+        "crossbow_pulling_0.png",
+        "bucket_lava.png",
+        "bed_orange.png",
+        "egg_horse.png",
+        "bamboo.png",
+        "potion_bottle_harm.png",
+        "egg_bat.png",
+        "egg_clownfish.png",
+        "crossbow_standby.png",
+        "dye_powder_cyan.png",
+        "potion_bottle_splash_confusion.png",
+        "potion_bottle_lingering_regeneration.png",
+        "record_far.png",
+        "wheat.png",
+        "gold_hoe.png",
+        "potion_bottle_hunger.png",
+        "fish_salmon_cooked.png",
+        "dye_powder_pink.png",
+        "blaze_powder.png",
+        "bucket_cod.png",
+        "bed_lime.png",
+        "book_written.png",
+        "egg_vex.png",
+        "stick.png",
+        "potion_bottle_splash_resistance.png",
+        "slimeball.png",
+        "diamond_horse_armor.png",
+        "potion_bottle_lingering_moveSpeed.png",
+        "tipped_arrow.png",
+        "sign_spruce.png",
+        "egg_wolf.png",
+        "potion_bottle_blindness.png",
+        "cauldron.png",
+        "compass_atlas.png",
+        "stone_hoe.png",
+        "potion_bottle_lingering_empty.png",
+        "wood_hoe.png",
+        "reeds.png",
+        "egg_squid.png",
+        "bed_pink.png",
+        "wood_axe.png",
+        "chainmail_helmet.png",
+        "dye_powder_green.png",
+        "bowl.png",
+        "chicken_cooked.png",
+        "boat_birch.png",
+        "egg_zombiehorse.png"
+    ],
+    "群服互通云链版/websocket": [
+        "_app.py",
+        "_http.py",
+        "_ssl_compat.py",
+        "_socket.py",
+        "_wsdump.py",
+        "__init__.py",
+        "py.typed",
+        "_url.py",
+        "_utils.py",
+        "_exceptions.py",
+        "_logging.py",
+        "_abnf.py",
+        "_core.py",
+        "_cookiejar.py",
+        "_handshake.py"
+    ],
+    "群服互通云链版/websocket/tests": [
+        "test_url.py",
+        "test_http.py",
+        "test_cookiejar.py",
+        "test_app.py",
+        "test_websocket.py",
+        "echo-server.py",
+        "__init__.py",
+        "test_abnf.py"
+    ],
+    "群服互通云链版/websocket/tests/data": [
+        "header01.txt",
+        "header02.txt",
+        "header03.txt"
+    ],
+    "番茄小说": [
+        "TomatoNovelAPI.py",
+        "datas.json",
+        "__init__.py"
+    ],
+    "玩家转账": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "命令发送监视器": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "猫七街玩家互传": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins": [],
+    "desperated_plugins/bdx导出器Pro": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/bdx导入器Pro": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/睡觉统计": [
+        "datas.json",
+        "__init__.py"
+    ],
+    "desperated_plugins/木桶玩家商店-试验版": [
+        "datas.json",
+        "__init__.py",
+        "shop_lib.py"
+    ],
+    "desperated_plugins/bdx导出器": [
+        "struct_loader.py",
+        "state_dump.py",
+        "utils.py",
+        "datas.json",
+        "__init__.py",
+        "scanner.py",
+        "progress_bar.py"
+    ],
+    "desperated_plugins/bdx导出器/bdx_utils": [
+        "writer.py",
+        "construct_file.py",
+        "structs.py"
+    ],
+    "desperated_plugins/多服聊天互通": [
+        "README.txt",
+        "datas.json",
+        "__init__.py"
     ],
     "[pkg]音乐杂合包": [
         "datas.json"
@@ -558,466 +1365,137 @@
     "[pkg]音乐杂合包/插件数据文件": [],
     "[pkg]音乐杂合包/插件数据文件/点歌台": [],
     "[pkg]音乐杂合包/插件数据文件/点歌台/音乐列表": [
-        "恋爱循环.midseq",
-        "某科学的超电磁炮.midseq",
-        "三重审判.midseq",
-        "狂妄之人.midseq",
-        "爱情故事.midseq",
-        "决心鱼.midseq",
-        "千本樱.midseq",
-        "转身即心痛.midseq",
-        "新闻联播.midseq",
-        "蜡笔小新.midseq",
-        "怪物-原神.midseq",
-        "解开.midseq",
-        "你瞒我瞒.midseq",
-        "子弹地狱.midseq",
-        "兰亭序.midseq",
-        "以父之名.midseq",
-        "雷欧奥特曼.midseq",
-        "爬行者.midseq",
-        "极乐净土.midseq",
-        "哆啦A梦.midseq",
-        "你干吗嗨嗨呦.midseq",
-        "蒲公英的约定.midseq",
-        "Undertale.midseq",
-        "宝贝别哭.midseq",
-        "诀别书.midseq",
-        "原神大厅音乐.midseq",
-        "苏公提.midseq",
-        "新鸳鸯蝴蝶梦.midseq",
-        "卡农.midseq",
-        "Pvz水池.midseq",
-        "僵王博士.midseq",
-        "甩葱歌.midseq",
-        "突然好想你.midseq",
-        "名侦探柯南.midseq",
-        "旋转鸡块.midseq",
-        "我的世界.midseq",
-        "see you again.midseq",
-        "稻香.midseq",
-        "银行不妙曲.midseq",
-        "鱼宴Plus.midseq",
-        "浪人琵琶.midseq",
-        "世界末日(ARMAGEDN).midseq",
-        "默哀.midseq",
-        "天空之城.midseq",
-        "海阔天空.midseq",
-        "下坠Falling.midseq",
-        "彩虹猫.midseq",
-        "退后.midseq",
-        "玄武国.midseq",
-        "灌篮高手.midseq",
         "桃源恋歌.midseq",
-        "百年孤寂.midseq",
-        "苹果香.midseq",
-        "小埋单轨.midseq",
-        "鸟之诗.midseq",
-        "春节序曲.midseq",
+        "恋爱循环.midseq",
+        "甩葱歌.midseq",
+        "千本樱.midseq",
         "星茶会.midseq",
-        "Tokyovania墨水.midseq",
-        "坏苹果.midseq",
+        "某科学的超电磁炮.midseq",
+        "名侦探柯南.midseq",
+        "世界末日(ARMAGEDN).midseq",
+        "哆啦A梦.midseq",
+        "苹果香.midseq",
+        "爬行者.midseq",
+        "转身即心痛.midseq",
+        "春节序曲.midseq",
         "雪花竞技场[请不要外传].schem",
-        "我落泪情绪零碎.midseq",
+        "小埋单轨.midseq",
+        "子弹地狱.midseq",
+        "下坠Falling.midseq",
+        "极乐净土.midseq",
+        "决心鱼.midseq",
+        "僵王博士.midseq",
+        "新闻联播.midseq",
+        "三重审判.midseq",
+        "诀别书.midseq",
+        "爱情故事.midseq",
+        "宝贝别哭.midseq",
+        "蒲公英的约定.midseq",
+        "天空之城.midseq",
+        "突然好想你.midseq",
+        "怪物-原神.midseq",
+        "彩虹猫.midseq",
+        "默哀.midseq",
+        "卡农.midseq",
+        "蜡笔小新.midseq",
+        "see you again.midseq",
+        "我的世界.midseq",
+        "坏苹果.midseq",
         "空白.midseq",
-        "世界末日(Il mondo).midseq"
+        "世界末日(Il mondo).midseq",
+        "Undertale.midseq",
+        "旋转鸡块.midseq",
+        "原神大厅音乐.midseq",
+        "我落泪情绪零碎.midseq",
+        "百年孤寂.midseq",
+        "以父之名.midseq",
+        "解开.midseq",
+        "新鸳鸯蝴蝶梦.midseq",
+        "玄武国.midseq",
+        "退后.midseq",
+        "苏公提.midseq",
+        "银行不妙曲.midseq",
+        "灌篮高手.midseq",
+        "你干吗嗨嗨呦.midseq",
+        "Tokyovania墨水.midseq",
+        "海阔天空.midseq",
+        "雷欧奥特曼.midseq",
+        "狂妄之人.midseq",
+        "稻香.midseq",
+        "浪人琵琶.midseq",
+        "兰亭序.midseq",
+        "鱼宴Plus.midseq",
+        "你瞒我瞒.midseq",
+        "鸟之诗.midseq",
+        "Pvz水池.midseq"
     ],
     "[pkg]音乐杂合包/插件数据文件/音乐播放器": [
-        "恋爱循环.midseq",
-        "某科学的超电磁炮.midseq",
-        "三重审判.midseq",
-        "狂妄之人.midseq",
-        "爱情故事.midseq",
-        "决心鱼.midseq",
-        "千本樱.midseq",
-        "转身即心痛.midseq",
-        "新闻联播.midseq",
-        "蜡笔小新.midseq",
-        "怪物-原神.midseq",
-        "解开.midseq",
-        "你瞒我瞒.midseq",
-        "子弹地狱.midseq",
-        "兰亭序.midseq",
-        "以父之名.midseq",
-        "雷欧奥特曼.midseq",
-        "爬行者.midseq",
-        "极乐净土.midseq",
-        "哆啦A梦.midseq",
-        "你干吗嗨嗨呦.midseq",
-        "蒲公英的约定.midseq",
-        "Undertale.midseq",
-        "宝贝别哭.midseq",
-        "诀别书.midseq",
-        "原神大厅音乐.midseq",
-        "苏公提.midseq",
-        "新鸳鸯蝴蝶梦.midseq",
-        "卡农.midseq",
-        "Pvz水池.midseq",
-        "僵王博士.midseq",
-        "甩葱歌.midseq",
-        "突然好想你.midseq",
-        "名侦探柯南.midseq",
-        "旋转鸡块.midseq",
-        "我的世界.midseq",
-        "see you again.midseq",
-        "稻香.midseq",
-        "银行不妙曲.midseq",
-        "鱼宴Plus.midseq",
-        "浪人琵琶.midseq",
-        "世界末日(ARMAGEDN).midseq",
-        "默哀.midseq",
-        "天空之城.midseq",
-        "海阔天空.midseq",
-        "下坠Falling.midseq",
-        "彩虹猫.midseq",
-        "退后.midseq",
-        "玄武国.midseq",
-        "灌篮高手.midseq",
         "桃源恋歌.midseq",
-        "百年孤寂.midseq",
-        "苹果香.midseq",
-        "小埋单轨.midseq",
-        "鸟之诗.midseq",
-        "春节序曲.midseq",
+        "恋爱循环.midseq",
+        "甩葱歌.midseq",
+        "千本樱.midseq",
         "星茶会.midseq",
-        "Tokyovania墨水.midseq",
-        "坏苹果.midseq",
+        "某科学的超电磁炮.midseq",
+        "名侦探柯南.midseq",
+        "世界末日(ARMAGEDN).midseq",
+        "哆啦A梦.midseq",
+        "苹果香.midseq",
+        "爬行者.midseq",
+        "转身即心痛.midseq",
+        "春节序曲.midseq",
         "雪花竞技场[请不要外传].schem",
-        "我落泪情绪零碎.midseq",
+        "小埋单轨.midseq",
+        "子弹地狱.midseq",
+        "下坠Falling.midseq",
+        "极乐净土.midseq",
+        "决心鱼.midseq",
+        "僵王博士.midseq",
+        "新闻联播.midseq",
+        "三重审判.midseq",
+        "诀别书.midseq",
+        "爱情故事.midseq",
+        "宝贝别哭.midseq",
+        "蒲公英的约定.midseq",
+        "天空之城.midseq",
+        "突然好想你.midseq",
+        "怪物-原神.midseq",
+        "彩虹猫.midseq",
+        "默哀.midseq",
+        "卡农.midseq",
+        "蜡笔小新.midseq",
+        "see you again.midseq",
+        "我的世界.midseq",
+        "坏苹果.midseq",
         "空白.midseq",
-        "世界末日(Il mondo).midseq"
+        "世界末日(Il mondo).midseq",
+        "Undertale.midseq",
+        "旋转鸡块.midseq",
+        "原神大厅音乐.midseq",
+        "我落泪情绪零碎.midseq",
+        "百年孤寂.midseq",
+        "以父之名.midseq",
+        "解开.midseq",
+        "新鸳鸯蝴蝶梦.midseq",
+        "玄武国.midseq",
+        "退后.midseq",
+        "苏公提.midseq",
+        "银行不妙曲.midseq",
+        "灌篮高手.midseq",
+        "你干吗嗨嗨呦.midseq",
+        "Tokyovania墨水.midseq",
+        "海阔天空.midseq",
+        "雷欧奥特曼.midseq",
+        "狂妄之人.midseq",
+        "稻香.midseq",
+        "浪人琵琶.midseq",
+        "兰亭序.midseq",
+        "鱼宴Plus.midseq",
+        "你瞒我瞒.midseq",
+        "鸟之诗.midseq",
+        "Pvz水池.midseq"
     ],
-    "Web版插件市场-试行": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "简单程序启动器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "管理员白名单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "银行插件": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "公告栏[Mono]/pytz": [
-        "tzinfo.py",
-        "tzfile.py",
-        "reference.py",
-        "lazy.py",
-        "__init__.py",
-        "exceptions.py"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo": [],
-    "公告栏[Mono]/pytz/zoneinfo/Asia": [
-        "Shanghai"
-    ],
-    "前置_世界交互": [
-        "structure.py",
-        "__init__.py",
+    "挂机检测": [
         "datas.json",
-        "safe_uuid.py"
-    ],
-    "Q&A答题": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "协管系统": [
-        "config.py",
-        "deepseek.py",
-        "core.py",
-        "使用方法.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_大字替换": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "白名单&管理员检测云链联动版": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "区块显示器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "活塞限速": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_Cb2Bot通信": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "更好的兑换码": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "指令调试器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "活力API": [
-        "README.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "前置_tps计算器": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "世界の记忆": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "[pkg]防挂插件包": [
-        "datas.json"
-    ],
-    "灵魂出窍": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "admin命令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "重启": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "死亡点返回": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "计分板重置": [
-        "data_operation.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "井字棋": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "群服互通本地版启动器": [
-        "cfg_mgr.py",
-        "cfg_formatter.py",
-        "proc.py",
-        "proc_mgr.py",
-        "__init__.py",
-        "qlutils.py",
-        "datas.json"
-    ],
-    "简单世界导出": [
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "系统上线提示[Mono]": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "等级检测增强版": [
-        "README.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "命令方块代发言支持": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "清空全部玩家末影箱": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "大范围fill": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "世界备份": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "游戏内显示插件报错": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "获取全服玩家皮肤": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "可升级云仓库": [
-        "data.json",
-        "readme.txt",
-        "__init__.py",
-        "datas.json"
-    ],
-    "玩家转账": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "皮肤异常拉黑丨锁服反制": [
-        "README.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "Lumelta": [
-        "README.md",
-        "LICENSE",
-        "NOTICE",
-        ".gitignore",
-        "__init__.py",
-        "datas.json"
-    ],
-    "Lumelta/neomega_storage": [
-        "NOTICE"
-    ],
-    "Lumelta/neomega_storage/config": [
-        "game_menu.lua",
-        "neomega框架配置.json",
-        "cq_http_core.lua",
-        "backend_menu.lua"
-    ],
-    "Lumelta/neomega_storage/config/返回死亡点": [
-        "返回死亡点[Built-In]-1.json"
-    ],
-    "Lumelta/neomega_storage/config/全物品商店[lua]": [
-        "全物品商店[LuaLoader]-更合理的价格表.json"
-    ],
-    "Lumelta/neomega_storage/config/后台发送命令[lua]": [
-        "后台发送命令[LuaLoader]-1.json"
-    ],
-    "Lumelta/neomega_storage/config/creator[lua]": [
-        "creator[LuaLoader]-1.json"
-    ],
-    "Lumelta/neomega_storage/config/领地[lua]": [
-        "领地[LuaLoader]-1.json"
-    ],
-    "Lumelta/neomega_storage/config/Python系统监测[lua]": [
-        "Python系统监测[LuaLoader]-1.json"
-    ],
-    "Lumelta/neomega_storage/lang": [],
-    "Lumelta/neomega_storage/lang/LuaLoader": [
-        "后台发送命令.lua",
-        "creator.lua",
-        "coromega.lua",
-        "领地.lua",
-        "全物品商店.lua",
-        "Python系统监测.lua"
-    ],
-    "Lumelta/wrap": [
-        "conversion.py",
-        "config.py",
-        "make.py",
-        "database.py",
-        "lua.py",
-        "safe.py",
-        "loosejson.py",
-        "user_data.py",
-        "control.py",
-        "__init__.py",
-        "json.py",
-        "omega.py"
-    ],
-    "Lumelta/wrap/omega_sub_modules": [
-        "bot_uq.py",
-        "async_http.py",
-        "builder.py",
-        "bot_action.py",
-        "system.py",
-        "flex.py",
-        "cmds.py",
-        "menu.py",
-        "listen.py",
-        "storage.py",
-        "share.py",
-        "cqhttp.py",
-        "websocket.py",
-        "storage_path.py",
-        "common.py",
-        "players.py",
         "__init__.py"
-    ],
-    "Lumelta/wrap/builtin_plugins": [],
-    "Lumelta/wrap/builtin_plugins/返回死亡点": [
-        "__init__.py"
-    ],
-    "插件快捷安装": [
-        "README.md",
-        "installer.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "兑换码": [
-        "file.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "控制台执行MC指令": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "单方块空岛系统": [
-        "player_exchange.py",
-        "data_operation.py",
-        "__init__.py",
-        "datas.json"
-    ],
-    "进服验证": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "时间同步计分板": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "MCFunction计划任务/examples": [
-        "示例-触发词.mcfunction",
-        "示例-系统启动.mcfunction",
-        "示例-定时任务.mcfunction"
-    ],
-    "基础聊天栏菜单": [
-        "kimi.py",
-        "Readme.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "信任玩家互传": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "00榛缈插件性能分析": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "云计分板API": [
-        "云计分板API.md",
-        "__init__.py",
-        "datas.json"
-    ],
-    "发言频率限制v2": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "聊天历史记录": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "自定义聊天栏菜单": [
-        "__init__.py",
-        "datas.json"
     ]
 }
