@@ -232,6 +232,7 @@
     "简单世界导入": [
         "datas.json",
         "__init__.py",
+        "task_store.pytask_store.py",
         "readme.txt"
     ],
     "[pkg]防挂插件包": [
