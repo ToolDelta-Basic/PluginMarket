@@ -159,12 +159,14 @@ class BelownameTitlePlugin(Plugin):
         self._send_player_help(reply)
 
     def _send_player_help(self, reply: Callable[[str], None]):
+        """Send the available player title commands to the caller."""
         reply("§a.购买称号 <称号名字> §7- 花费金币购买称号")
         reply("§a.更改称号 <称号名字> §7- 花费金币替换自己当前称号")
         reply("§a.移除称号 §7- 删除自己当前称号")
         reply("§a.我的称号 §7- 查看自己当前使用的称号")
 
     def _send_console_help(self, reply: Callable[[str], None]):
+        """Send the available console title commands to the caller."""
         reply("§a称号 新增 <玩家名> <称号名字> §7- 给玩家新增并设为当前称号")
         reply("§a称号 删除 <玩家名> <称号名字> §7- 删除玩家的指定称号")
         reply("§a称号 更改 <玩家名> <称号名字> §7- 切换玩家当前称号")
@@ -172,6 +174,7 @@ class BelownameTitlePlugin(Plugin):
         reply("§a称号 list §7- 查看所有玩家称号")
 
     def _buy_title(self, player: Player, title: str, reply: Callable[[str], None]):
+        """Charge the player, equip the purchased title, and clean up the old one."""
         if not title:
             reply("§c称号名字不能为空")
             return
@@ -204,6 +207,7 @@ class BelownameTitlePlugin(Plugin):
         *,
         cost: bool,
     ):
+        """Switch the caller's equipped title and optionally charge the configured fee."""
         if not title:
             reply("§c称号名字不能为空")
             return
@@ -215,12 +219,11 @@ class BelownameTitlePlugin(Plugin):
             reply("§e你当前已经在使用这个称号")
             return
         switch_cost = int(self.cfg["更改称号价格"])
-        if cost and switch_cost > 0:
-            if not self._change_score(player.name, -switch_cost):
-                reply(
-                    f"§c金币不足，更改需要 {switch_cost} {self.cfg['金币计分板名']}。"
-                )
-                return
+        if cost and switch_cost > 0 and not self._change_score(player.name, -switch_cost):
+            reply(
+                f"§c金币不足，更改需要 {switch_cost} {self.cfg['金币计分板名']}。"
+            )
+            return
         pdata["current_title"] = title
         self._ensure_objective(title)
         self.save_player_data()
@@ -237,6 +240,7 @@ class BelownameTitlePlugin(Plugin):
         player: Player,
         reply: Callable[[str], None],
     ):
+        """Remove the caller's currently equipped title if one exists."""
         title = self._get_or_create_player_data(player.name).get("current_title", "")
         if not isinstance(title, str) or not title.strip():
             reply("§e你当前没有称号可移除")
@@ -244,11 +248,13 @@ class BelownameTitlePlugin(Plugin):
         self._remove_player_title(player.name, title, reply, actor_label="你")
 
     def _show_player_titles(self, player_name: str, reply: Callable[[str], None]):
+        """Show the current equipped title for the requested player."""
         pdata = self._get_or_create_player_data(player_name)
         current = pdata.get("current_title") or "无"
         reply(f"§a当前称号: §f{current}")
 
     def _handle_console_add(self, args: list[str], reply: Callable[[str], None]):
+        """Validate and dispatch the console add-title request."""
         if len(args) < 2:
             reply("§c用法: 称号 新增 <玩家名> <称号名字>")
             return
@@ -267,6 +273,7 @@ class BelownameTitlePlugin(Plugin):
         title: str,
         reply: Callable[[str], None],
     ):
+        """Apply the console add-title request to the resolved player."""
         self._validate_scoreboard_exists_or_raise()
         pdata = self._get_or_create_player_data(matched)
         old_title = str(pdata.get("current_title", "") or "")
@@ -279,6 +286,7 @@ class BelownameTitlePlugin(Plugin):
         reply(f"§a已为玩家 {matched} 新增称号并装备: §f{title}")
 
     def _handle_console_delete(self, args: list[str], reply: Callable[[str], None]):
+        """Validate and dispatch the console delete-title request."""
         if len(args) < 2:
             reply("§c用法: 称号 删除 <玩家名> <称号名字>")
             return
@@ -297,9 +305,11 @@ class BelownameTitlePlugin(Plugin):
         title: str,
         reply: Callable[[str], None],
     ):
+        """Apply the console delete-title request to the resolved player."""
         self._remove_player_title(matched, title, reply, actor_label=f"玩家 {matched}")
 
     def _handle_console_switch(self, args: list[str], reply: Callable[[str], None]):
+        """Validate and dispatch the console switch-title request."""
         if len(args) < 2:
             reply("§c用法: 称号 更改 <玩家名> <称号名字>")
             return
@@ -318,6 +328,7 @@ class BelownameTitlePlugin(Plugin):
         title: str,
         reply: Callable[[str], None],
     ):
+        """Apply the console switch-title request to the resolved player."""
         pdata = self._get_or_create_player_data(matched)
         old_title = str(pdata.get("current_title", "") or "")
         if old_title == title:
@@ -522,14 +533,16 @@ class BelownameTitlePlugin(Plugin):
             f"缺少计分板: {scoreboard_name}。请先在游戏中创建该计分板后再运行插件。"
         )
 
-    def _objective_exists_in_response(self, resp: Any, scoreboard_name: str) -> bool:
+    @staticmethod
+    def _objective_exists_in_response(resp: Any, scoreboard_name: str) -> bool:
         for msg in getattr(resp, "OutputMessages", []):
             parameters = getattr(msg, "Parameters", [])
             if scoreboard_name in parameters:
                 return True
         return False
 
-    def _response_has_objective_not_found(self, resp: Any, scoreboard_name: str) -> bool:
+    @staticmethod
+    def _response_has_objective_not_found(resp: Any, scoreboard_name: str) -> bool:
         for msg in getattr(resp, "OutputMessages", []):
             if getattr(msg, "Message", "") == "commands.scoreboard.objectiveNotFound":
                 params = getattr(msg, "Parameters", [])
@@ -877,7 +890,8 @@ class BelownameTitlePlugin(Plugin):
             return None
         return fuzzy[0]
 
-    def _player_reply(self, player: Player):
+    @staticmethod
+    def _player_reply(player: Player):
         def reply(msg: str):
             player.show(msg)
 
