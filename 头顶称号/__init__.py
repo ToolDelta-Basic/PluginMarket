@@ -207,7 +207,7 @@ class BelownameTitlePlugin(Plugin):
         *,
         cost: bool,
     ):
-        """Switch the caller's equipped title and optionally charge the configured fee."""
+        """Switch the caller title and optionally charge the configured fee."""
         if not title:
             reply("§c称号名字不能为空")
             return
@@ -219,7 +219,11 @@ class BelownameTitlePlugin(Plugin):
             reply("§e你当前已经在使用这个称号")
             return
         switch_cost = int(self.cfg["更改称号价格"])
-        if cost and switch_cost > 0 and not self._change_score(player.name, -switch_cost):
+        if (
+            cost
+            and switch_cost > 0
+            and not self._change_score(player.name, -switch_cost)
+        ):
             reply(
                 f"§c金币不足，更改需要 {switch_cost} {self.cfg['金币计分板名']}。"
             )
@@ -516,6 +520,7 @@ class BelownameTitlePlugin(Plugin):
             self.print_err(f"自动下载前置_聊天栏菜单失败: {err}")
 
     def _validate_scoreboard_exists_or_raise(self):
+        """Ensure the currency scoreboard exists before title operations run."""
         if self.scoreboard_checked:
             return
         scoreboard_name = str(self.cfg["金币计分板名"])
@@ -545,6 +550,7 @@ class BelownameTitlePlugin(Plugin):
 
     @staticmethod
     def _objective_exists_in_response(resp: Any, scoreboard_name: str) -> bool:
+        """Return whether a scoreboard objective name appears in a command response."""
         for msg in getattr(resp, "OutputMessages", []):
             parameters = getattr(msg, "Parameters", [])
             if scoreboard_name in parameters:
@@ -553,6 +559,7 @@ class BelownameTitlePlugin(Plugin):
 
     @staticmethod
     def _response_has_objective_not_found(resp: Any, scoreboard_name: str) -> bool:
+        """Return whether a command response reports a missing scoreboard objective."""
         for msg in getattr(resp, "OutputMessages", []):
             if getattr(msg, "Message", "") == "commands.scoreboard.objectiveNotFound":
                 params = getattr(msg, "Parameters", [])
@@ -560,16 +567,20 @@ class BelownameTitlePlugin(Plugin):
         return False
 
     def _ensure_player_default_score(self, player_name: str):
+        """Create the default currency score for a player when it is missing."""
         self._validate_scoreboard_exists_or_raise()
         scoreboard_name = str(self.cfg["金币计分板名"])
         try:
             self._get_score(player_name, scoreboard_name)
         except Exception:
+            default_score = int(self.cfg["????"])
             self.game_ctrl.sendwocmd(
-                f"scoreboard players set {self._selector(player_name)} {scoreboard_name} {int(self.cfg['默认金币'])}"
+                f"scoreboard players set {self._selector(player_name)} "
+                f"{scoreboard_name} {default_score}"
             )
 
     def _change_score(self, player_name: str, delta: int) -> bool:
+        """Apply a currency delta to a player and reject negative overdrafts."""
         scoreboard_name = str(self.cfg["金币计分板名"])
         selector = self._selector(player_name)
         if delta < 0:
@@ -590,6 +601,7 @@ class BelownameTitlePlugin(Plugin):
         return True
 
     def _get_score(self, player_name: str, scoreboard_name: str) -> int:
+        """Read the current score value for one player from the target scoreboard."""
         selector = self._selector(player_name)
         resp = self.game_ctrl.sendwscmd_with_resp(
             f"/scoreboard players test {selector} {scoreboard_name} * *",
@@ -602,7 +614,8 @@ class BelownameTitlePlugin(Plugin):
             raise ValueError("计分板参数为空")
         return int(params[0])
 
-    def _load_player_data(self) -> dict[str, dict[str, Any]]:
+    def _read_raw_player_data(self) -> dict[str, Any]:
+        """Read the raw persisted title data from disk and validate the root shape."""
         if self.titles_path is None:
             return {}
         if not self.titles_path.exists():
@@ -611,38 +624,58 @@ class BelownameTitlePlugin(Plugin):
         try:
             raw = json.loads(self.titles_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            self.print_war("titles.json 格式错误，已忽略旧数据并重新生成。")
+            self.print_war("titles.json ?????????????????")
             return {}
         if not isinstance(raw, dict):
-            self.print_war("titles.json 根节点必须为对象，已忽略旧数据。")
+            self.print_war("titles.json ????????????????")
             return {}
+        return raw
+
+    @staticmethod
+    def _extract_current_title(pdata: dict[str, Any]) -> tuple[Any, bool]:
+        """Extract the current title, falling back to legacy owned_titles data."""
+        current_raw = pdata.get("current_title", "")
+        if current_raw or not isinstance(pdata.get("owned_titles"), list):
+            return current_raw, False
+
+        for item in pdata["owned_titles"]:
+            if isinstance(item, str) and item.strip():
+                return item, True
+        return current_raw, False
+
+    @staticmethod
+    def _migrate_player_entry(
+        player_name: Any,
+        pdata: Any,
+    ) -> tuple[str | None, dict[str, Any] | None, bool]:
+        """Convert one raw player entry into the current storage shape."""
+        if not isinstance(player_name, str):
+            return None, None, True
+        if isinstance(pdata, str):
+            return player_name, {"current_title": pdata}, True
+        if not isinstance(pdata, dict):
+            return None, None, True
+
+        current_raw, changed = BelownameTitlePlugin._extract_current_title(pdata)
+        current_title = current_raw.strip() if isinstance(current_raw, str) else ""
+        changed = changed or current_title != pdata.get("current_title", "")
+        return player_name, {"current_title": current_title}, changed
+
+    def _load_player_data(self) -> dict[str, dict[str, Any]]:
+        """Load persisted title data and migrate legacy player records in memory."""
+        raw = self._read_raw_player_data()
 
         migrated: dict[str, dict[str, Any]] = {}
         changed = False
         for player_name, pdata in raw.items():
-            if not isinstance(player_name, str):
-                changed = True
+            migrated_name, migrated_data, entry_changed = self._migrate_player_entry(
+                player_name,
+                pdata,
+            )
+            changed = changed or entry_changed
+            if migrated_name is None or migrated_data is None:
                 continue
-            if isinstance(pdata, str):
-                migrated[player_name] = {
-                    "current_title": pdata,
-                }
-                changed = True
-                continue
-            if not isinstance(pdata, dict):
-                changed = True
-                continue
-            current_raw = pdata.get("current_title", "")
-            if not current_raw and isinstance(pdata.get("owned_titles"), list):
-                for item in pdata["owned_titles"]:
-                    if isinstance(item, str) and item.strip():
-                        current_raw = item
-                        changed = True
-                        break
-            current_title = current_raw.strip() if isinstance(current_raw, str) else ""
-            migrated[player_name] = {
-                "current_title": current_title,
-            }
+            migrated[migrated_name] = migrated_data
         self.player_data = migrated
         for player_name in list(self.player_data):
             if self._normalize_player_record(player_name):
@@ -652,6 +685,7 @@ class BelownameTitlePlugin(Plugin):
         return migrated
 
     def save_player_data(self):
+        """Persist the normalized player title data back to titles.json."""
         if self.titles_path is None:
             return
         self.titles_path.write_text(
@@ -660,6 +694,7 @@ class BelownameTitlePlugin(Plugin):
         )
 
     def _normalize_player_record(self, player_name: str) -> bool:
+        """Trim and normalize one player record, removing empty-title entries."""
         pdata = self.player_data.get(player_name)
         if pdata is None:
             return False
@@ -694,7 +729,8 @@ class BelownameTitlePlugin(Plugin):
     def _blank_title(self) -> str:
         return str(self.cfg["无称号显示文本"])
 
-    def _objective_name(self, title: str) -> str:
+    @staticmethod
+    def _objective_name(title: str) -> str:
         digest = hashlib.md5(title.encode("utf-8")).hexdigest()[:10]
         return f"tdt_{digest}"
 
