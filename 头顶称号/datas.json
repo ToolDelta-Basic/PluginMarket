@@ -1,0 +1,11 @@
+{
+    "author": "南Nan",
+    "version": "0.2.0",
+    "description": "头顶称号, 支持购买、切换、管理玩家头顶称号，并接入前置_聊天栏菜单",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "聊天栏菜单": "0.4.1"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "头顶称号"
+}
