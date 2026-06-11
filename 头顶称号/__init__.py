@@ -25,6 +25,7 @@ class BelownameTitlePlugin(Plugin):
     DATA_FILE_NAME = "titles.json"
 
     def __init__(self, frame):
+        """Initialize plugin state, caches, and event listeners."""
         super().__init__(frame)
         self.cfg: dict[str, Any] = {}
         self.titles_path: Path | None = None
@@ -851,6 +852,7 @@ class BelownameTitlePlugin(Plugin):
         self.player_current_objective[player_name] = objective
 
     def _reset_player_objectives(self, player_name: str):
+        """Reset all managed title objectives for one player selector."""
         selector = self._selector(player_name)
         for objective in self.managed_objectives:
             self.game_ctrl.sendwocmd(
@@ -858,6 +860,7 @@ class BelownameTitlePlugin(Plugin):
             )
 
     def _restore_list_objective(self):
+        """Restore the configured list-display objective after title refresh work."""
         list_objective = str(self.cfg["玩家列表列显示计分板的名字"]).strip()
         if not list_objective:
             return
@@ -866,11 +869,13 @@ class BelownameTitlePlugin(Plugin):
         )
 
     def refresh_player(self, player_name: str, full_cleanup: bool = False):
+        """Refresh one player and then restore the configured list-display slot."""
         with self.refresh_lock:
             self._refresh_player(player_name, full_cleanup)
             self._restore_list_objective()
 
     def refresh_all(self, full_cleanup: bool = False):
+        """Refresh all online titled players while avoiding concurrent full refreshes."""
         if not self.refresh_lock.acquire(blocking=False):
             return
         try:
@@ -905,12 +910,14 @@ class BelownameTitlePlugin(Plugin):
 
     @utils.thread_func("头顶称号全服刷新")
     def refresh_all_later(self, delay: float = 0.0, full_cleanup: bool = False):
+        """Run a delayed full refresh in a background thread."""
         if delay > 0:
             time.sleep(delay)
         self.refresh_all(full_cleanup)
 
     @utils.thread_func("头顶称号循环刷新")
     def refresh_loop(self):
+        """Periodically refresh all online titled players until the frame exits."""
         refresh_interval = float(self.cfg["刷新间隔秒"])
         if refresh_interval <= 0:
             return
@@ -924,6 +931,7 @@ class BelownameTitlePlugin(Plugin):
         delay: float = 0.0,
         full_cleanup: bool = False,
     ):
+        """Run a delayed single-player refresh in a background thread."""
         if delay > 0:
             time.sleep(delay)
         self.refresh_player(player_name, full_cleanup)
@@ -933,6 +941,7 @@ class BelownameTitlePlugin(Plugin):
         keyword: str,
         reply: Callable[[str], None] | None,
     ) -> str | None:
+        """Return one exact player match, otherwise reject ambiguous fuzzy matches."""
         candidates = sorted(
             set(self._online_names()) | set(self.player_data.keys()),
             key=lambda item: (item != keyword, len(item), item),
@@ -955,7 +964,9 @@ class BelownameTitlePlugin(Plugin):
 
     @staticmethod
     def _player_reply(player: Player):
+        """Build a reply callback that sends messages to one in-game player."""
         def reply(msg: str):
+            """Send one formatted message to the target in-game player."""
             player.show(msg)
 
         return reply
@@ -964,6 +975,7 @@ class BelownameTitlePlugin(Plugin):
     def _console_reply():
         """Return a console reply callback that prints through the plugin logger."""
         def reply(msg: str):
+            """Print one formatted message to the ToolDelta console output."""
             utils.Print.print_inf(msg)
 
         return reply
