@@ -77,7 +77,9 @@ class LandData:
         members = [LandMember.from_dict(m) for m in d.get("members", [])]
         shape = cls.normalize_shape(d.get("shape", "圆形"))
         radius = d["radius"]
-        size = cls.normalize_size(d.get("size"), radius) if shape == "方形" else None
+        size = cls.normalize_size(
+            d.get("size"),
+            radius) if shape == "方形" else None
         return cls(
             land_id=d["land_id"],
             name=d["name"],
@@ -95,12 +97,21 @@ class LandData:
     @staticmethod
     def normalize_shape(raw: Any) -> str:
         shape = str(raw or "圆形").strip().lower()
-        if shape in ("方形", "矩形", "长方形", "square", "box", "立方体", "长方体", "cuboid"):
+        if shape in (
+            "方形",
+            "矩形",
+            "长方形",
+            "square",
+            "box",
+            "立方体",
+            "长方体",
+                "cuboid"):
             return "方形"
         return "圆形"
 
     @staticmethod
-    def normalize_size(raw: Any, fallback_radius: int = 1) -> Tuple[int, int, int]:
+    def normalize_size(
+            raw: Any, fallback_radius: int = 1) -> Tuple[int, int, int]:
         if isinstance(raw, (list, tuple)) and len(raw) == 3:
             try:
                 length = max(1, int(raw[0]))
@@ -118,7 +129,8 @@ class LandData:
     def get_size(self) -> Tuple[int, int, int]:
         return self.normalize_size(self.size, self.radius)
 
-    def get_bounds(self) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+    def get_bounds(self) -> Tuple[Tuple[float,
+                                        float, float], Tuple[float, float, float]]:  # noqa: E501
         length, height, width = self.get_size()
         cx, cy, cz = self.center
         half = (length / 2, height / 2, width / 2)
@@ -133,7 +145,8 @@ class LandData:
             min_pos, max_pos = self.get_bounds()
             return all(min_pos[i] <= pos[i] <= max_pos[i] for i in range(3))
         cx, cy, cz = self.center
-        return (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2 <= self.radius ** 2
+        return (x - cx) ** 2 + (y - cy) ** 2 + \
+            (z - cz) ** 2 <= self.radius ** 2
 
     def range_text(self) -> str:
         if self.is_box():

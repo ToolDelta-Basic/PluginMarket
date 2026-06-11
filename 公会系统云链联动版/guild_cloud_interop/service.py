@@ -1,6 +1,8 @@
 from tooldelta import fmts
 
 # FIRE 数据事务处理器 FIRE
+
+
 class DataTransaction:
     """数据事务处理器 - 确保数据一致性"""
 
@@ -12,7 +14,8 @@ class DataTransaction:
 
     def __enter__(self):
         try:
-            self.backup_data = self.guild_manager._load_guilds(force_reload=True)
+            self.backup_data = self.guild_manager._load_guilds(
+                force_reload=True)
             import copy
             self.backup_data = copy.deepcopy(self.backup_data)
         except Exception as e:

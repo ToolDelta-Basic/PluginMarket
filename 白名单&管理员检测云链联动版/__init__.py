@@ -4,7 +4,7 @@ import time
 import threading
 from typing import Any
 
-from tooldelta import Player, Plugin, cfg, fmts, game_utils, plugin_entry, utils
+from tooldelta import Player, Plugin, cfg, fmts, game_utils, plugin_entry, utils  # noqa: E501
 
 
 CONFIG_FILE_DIR = "插件配置文件"
@@ -85,7 +85,8 @@ class WhitelistAndOpCheck(Plugin):
                     if key not in result:
                         result[key] = copy.deepcopy(value)
             return result
-        return copy.deepcopy(raw) if raw is not None else copy.deepcopy(default)
+        return copy.deepcopy(
+            raw) if raw is not None else copy.deepcopy(default)
 
     @staticmethod
     def trim_fixed_keys(raw: Any, default: dict[str, Any]) -> dict[str, Any]:
@@ -130,7 +131,11 @@ class WhitelistAndOpCheck(Plugin):
         return result if result > 0 else fallback
 
     @staticmethod
-    def normalize_str(value: Any, fallback: str, *, allow_empty: bool = False) -> str:
+    def normalize_str(
+            value: Any,
+            fallback: str,
+            *,
+            allow_empty: bool = False) -> str:
         if value is None:
             return fallback
         text = str(value)
@@ -139,14 +144,16 @@ class WhitelistAndOpCheck(Plugin):
         return fallback
 
     @classmethod
-    def normalize_player_mapping(cls, raw: Any, fallback: dict[str, str]) -> dict[str, str]:
+    def normalize_player_mapping(
+            cls, raw: Any, fallback: dict[str, str]) -> dict[str, str]:
         source = raw if isinstance(raw, dict) else fallback
         result: dict[str, str] = {}
         for xuid, player_name in source.items():
             xuid_text = str(xuid).strip()
             if not xuid_text:
                 continue
-            result[xuid_text] = cls.normalize_str(player_name, "", allow_empty=True)
+            result[xuid_text] = cls.normalize_str(
+                player_name, "", allow_empty=True)
         return result
 
     @classmethod
@@ -175,7 +182,8 @@ class WhitelistAndOpCheck(Plugin):
         )
 
         whitelist_default = cls.DEFAULT_CFG["白名单"]
-        whitelist = cls.trim_fixed_keys(normalized.get("白名单"), whitelist_default)
+        whitelist = cls.trim_fixed_keys(
+            normalized.get("白名单"), whitelist_default)
         whitelist["开启状态"] = cls.normalize_bool(
             whitelist.get("开启状态"),
             whitelist_default["开启状态"],
@@ -191,7 +199,8 @@ class WhitelistAndOpCheck(Plugin):
         normalized["白名单"] = whitelist
 
         admin_default = cls.DEFAULT_CFG["管理员检测"]
-        admin_check = cls.trim_fixed_keys(normalized.get("管理员检测"), admin_default)
+        admin_check = cls.trim_fixed_keys(
+            normalized.get("管理员检测"), admin_default)
         admin_check["开启状态"] = cls.normalize_bool(
             admin_check.get("开启状态"),
             admin_default["开启状态"],
@@ -256,7 +265,8 @@ class WhitelistAndOpCheck(Plugin):
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         try:
-            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY, DYNAMIC_LOAD_DEFAULT_INTERVAL))
+            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY,
+                           DYNAMIC_LOAD_DEFAULT_INTERVAL))
         except (TypeError, ValueError):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
@@ -281,7 +291,8 @@ class WhitelistAndOpCheck(Plugin):
                 self._config_file_state = current_state
                 fmts.print_err(f"{self.name} 配置文件热更新失败: {err}")
 
-    def api_reload_checker_config(self) -> tuple[bool, str, dict[str, int | float | bool]]:
+    def api_reload_checker_config(
+            self) -> tuple[bool, str, dict[str, int | float | bool]]:
         try:
             self.reload_runtime_config(announce=False)
         except Exception as err:
@@ -300,12 +311,6 @@ class WhitelistAndOpCheck(Plugin):
             None,
             "在控制台修改白名单（需要玩家先登录一次服务器）",
             self.console_manage_whitelist,
-        )
-        self.frame.add_console_cmd_trigger(
-            ["OP操作"],
-            None,
-            "在控制台修改服务器 OP（需要玩家先登录一次服务器）",
-            self.console_manage_admins,
         )
         self.start_periodic_check()
 
@@ -493,7 +498,7 @@ class WhitelistAndOpCheck(Plugin):
 
     def console_manage_whitelist(self, _args: list[str]):
         """打开控制台白名单管理菜单。"""
-        self.console_manage_player_mapping(
+        self.console_manage_whitelist_mapping(
             title="白名单",
             add_action=self.add_whitelist_player,
             remove_action=self.remove_whitelist_player,
@@ -501,17 +506,7 @@ class WhitelistAndOpCheck(Plugin):
             remove_prompt="请输入要移除的玩家昵称：",
         )
 
-    def console_manage_admins(self, _args: list[str]):
-        """打开控制台服务器管理员管理菜单。"""
-        self.console_manage_player_mapping(
-            title="服务器管理员",
-            add_action=self.add_admin_player,
-            remove_action=self.remove_admin_player,
-            add_prompt="请输入要添加的玩家昵称：",
-            remove_prompt="请输入要移除的玩家昵称：",
-        )
-
-    def console_manage_player_mapping(
+    def console_manage_whitelist_mapping(
         self,
         title: str,
         add_action,
@@ -519,7 +514,7 @@ class WhitelistAndOpCheck(Plugin):
         add_prompt: str,
         remove_prompt: str,
     ):
-        """复用同一套控制台交互来管理白名单和管理员列表。"""
+        """控制台白名单增删交互。"""
         option_add = f"添加{title}"
         option_remove = f"移除{title}"
         while True:

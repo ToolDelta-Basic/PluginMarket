@@ -42,8 +42,10 @@ class QQLinkerBindingMixin:
 
         data = self._binding_default_data()
         if isinstance(raw, dict):
-            data["qq_to_xuids"] = self._normalize_binding_map(raw.get("qq_to_xuids"))
-            data["xuid_to_qqs"] = self._normalize_binding_map(raw.get("xuid_to_qqs"))
+            data["qq_to_xuids"] = self._normalize_binding_map(
+                raw.get("qq_to_xuids"))
+            data["xuid_to_qqs"] = self._normalize_binding_map(
+                raw.get("xuid_to_qqs"))
             names = raw.get("xuid_names", {})
             if isinstance(names, dict):
                 data["xuid_names"] = {
@@ -153,7 +155,8 @@ class QQLinkerBindingMixin:
             return None
         return self.read_binding_data()["xuid_names"].get(xuid_key)
 
-    def api_get_bound_players_by_qq(self, qqid: int | str) -> list[dict[str, str]]:
+    def api_get_bound_players_by_qq(
+            self, qqid: int | str) -> list[dict[str, str]]:
         """Return player records bound to a QQ number."""
         data = self.read_binding_data()
         result: list[dict[str, str]] = []
@@ -175,7 +178,7 @@ class QQLinkerBindingMixin:
         player_name = data["xuid_names"].get(xuid_key, "")
         return [
             {"qq": qqid, "xuid": xuid_key, "player_name": player_name}
-            for qqid in self._binding_qq_values(data["xuid_to_qqs"].get(xuid_key, []))
+            for qqid in self._binding_qq_values(data["xuid_to_qqs"].get(xuid_key, []))  # noqa: E501
         ]
 
     def api_get_xuids_by_player_name(
@@ -208,7 +211,8 @@ class QQLinkerBindingMixin:
     ) -> list[int]:
         """Return QQ numbers bound to matching player names."""
         qqids: list[int] = []
-        for xuid in self.api_get_xuids_by_player_name(player_name, ignore_case):
+        for xuid in self.api_get_xuids_by_player_name(
+                player_name, ignore_case):
             for qqid in self.api_get_qqs_by_xuid(xuid):
                 if qqid not in qqids:
                     qqids.append(qqid)
@@ -237,7 +241,7 @@ class QQLinkerBindingMixin:
         player_name: str = "",
         group_id: int | None = None,
     ) -> tuple[bool, str]:
-        """Create or refresh a QQ/XUID binding, respecting multi-bind config."""
+        """Create or refresh a QQ/XUID binding, respecting multi-bind config."""  # noqa: E501
         qq_key = self._binding_qq_key(qqid)
         xuid_key = self._binding_xuid_key(xuid)
         if not qq_key or not qq_key.isdigit():
@@ -252,7 +256,8 @@ class QQLinkerBindingMixin:
             name,
         )
 
-    def api_unbind_qq_from_xuid(self, qqid: int | str, xuid: str) -> tuple[bool, str]:
+    def api_unbind_qq_from_xuid(
+            self, qqid: int | str, xuid: str) -> tuple[bool, str]:
         """Remove one exact QQ/XUID binding relation."""
         qq_key = self._binding_qq_key(qqid)
         xuid_key = self._binding_xuid_key(xuid)
@@ -391,7 +396,7 @@ class QQLinkerBindingMixin:
             codes = [
                 code
                 for code, pending in self.pending_bindings.items()
-                if pending.get("group_id") == group_id and pending.get("qqid") == qqid
+                if pending.get("group_id") == group_id and pending.get("qqid") == qqid  # noqa: E501
             ]
         for code in codes:
             self._pop_pending_binding(code)
@@ -405,7 +410,8 @@ class QQLinkerBindingMixin:
         return pending
 
     def _schedule_binding_timeout(self, code: str, timeout_seconds: int):
-        timer = threading.Timer(timeout_seconds, self._handle_binding_timeout, args=(code,))
+        timer = threading.Timer(
+            timeout_seconds, self._handle_binding_timeout, args=(code,))
         timer.daemon = True
         with self.pending_bindings_lock:
             self.pending_binding_timers[code] = timer
@@ -467,7 +473,11 @@ class QQLinkerBindingMixin:
             self.BINDING_TIMEOUT_MINUTES_DEFAULT,
         )
 
-    def _render_binding_text(self, text: str, code: str, timeout_minutes: int) -> str:
+    def _render_binding_text(
+            self,
+            text: str,
+            code: str,
+            timeout_minutes: int) -> str:
         return (
             text
             .replace("{auth_code}", code)
@@ -482,7 +492,8 @@ class QQLinkerBindingMixin:
         raw = self._binding_cfg().get("绑定触发词", ["绑定"])
         return self.normalize_string_triggers(raw, ["绑定"])
 
-    def _start_binding_request(self, group_id: int, qqid: int) -> tuple[bool, str]:
+    def _start_binding_request(
+            self, group_id: int, qqid: int) -> tuple[bool, str]:
         if not self._binding_enabled(group_id):
             return False, "QQ绑定功能当前已关闭"
 
@@ -532,7 +543,11 @@ class QQLinkerBindingMixin:
         )
         return True, "绑定验证码已发送"
 
-    def _handle_binding_trigger(self, group_id: int, qqid: int, clean_msg: str) -> bool:
+    def _handle_binding_trigger(
+            self,
+            group_id: int,
+            qqid: int,
+            clean_msg: str) -> bool:
         if not self._binding_enabled(group_id):
             return False
         if clean_msg not in self.get_group_binding_triggers(group_id):
@@ -616,7 +631,12 @@ class QQLinkerBindingMixin:
         )
         return True
 
-    def _bind_qq_to_xuid(self, group_id: int, qqid: int, xuid: str, player_name: str):
+    def _bind_qq_to_xuid(
+            self,
+            group_id: int,
+            qqid: int,
+            xuid: str,
+            player_name: str):
         cfg = self._binding_cfg()
         allow_multi_xuid = bool(cfg.get("是否允许单QQ号可绑定多游戏ID", False))
         allow_multi_qq = bool(cfg.get("是否允许单游戏ID可绑定多QQ号", False))

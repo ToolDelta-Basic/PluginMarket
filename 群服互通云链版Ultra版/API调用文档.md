@@ -3,7 +3,7 @@
 插件名称：群服互通云链版Ultra版  
 插件 ID：群服互通云链版Ultra版  
 API 别名：QQLinkerUltraAPI  
-当前文档基于插件版本：1.1.17
+当前文档基于插件版本：2.0.0
 
 本文说明其它 ToolDelta 类式插件如何调用本插件暴露的 API。推荐优先使用带 `api_` 前缀的方法和 `add_trigger(...)`；没有 `api_` 前缀的业务方法可能随内部实现调整。
 
@@ -16,7 +16,7 @@ API 别名：QQLinkerUltraAPI
 ```json
 {
   "pre-plugins": {
-    "群服互通云链版Ultra版": ">=1.1.17"
+    "群服互通云链版Ultra版": ">=2.0.0"
   }
 }
 ```
@@ -38,7 +38,7 @@ class ExamplePlugin(Plugin):
         self.ListenPreload(self.on_preload)
 
     def on_preload(self):
-        self.qqlinker = self.GetPluginAPI("QQLinkerUltraAPI", (1, 1, 17))
+        self.qqlinker = self.GetPluginAPI("QQLinkerUltraAPI", (2, 0, 0))
 
 
 entry = plugin_entry(ExamplePlugin)

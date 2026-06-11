@@ -31,7 +31,7 @@ class QQLinker(
 ):
     """群服互通云链版 Ultra 的插件入口类。"""
 
-    version = (1, 1, 17)
+    version = (2, 0, 0)
     name = "群服互通云链版Ultra版"
     author = "大庆油田 / 小六神"
     description = "提供多群独立管理的群服互通、QQ群管理员体系和 Orion 联动封禁功能"
@@ -85,15 +85,13 @@ class QQLinker(
     ):
         """按 Orion 风格打印一张控制台信息卡片。"""
         card = (
-            self.console_menu_header(title)
-            + "\n"
-            + self.console_menu_footer(
+            self.console_menu_header(title) +
+            "\n" +
+            self.console_menu_footer(
                 page_label,
                 "\n".join(
-                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines
-                ),
-            )
-        )
+                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines),  # noqa: E501
+            ))
         {
             "info": fmts.print_inf,
             "success": fmts.print_suc,
@@ -166,10 +164,12 @@ class QQLinker(
         """
         self.tps_calc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
         self.orion = self.GetPluginAPI("Orion_System", force=False)
-        self.whitelist_checker = self.GetPluginAPI("白名单&管理员检测云链联动版", force=False)
+        self.whitelist_checker = self.GetPluginAPI(
+            "白名单&管理员检测云链联动版", force=False)
         self.task_system = self.GetPluginAPI("任务系统云链联动版", force=False)
         self.land_system = self.GetPluginAPI("领地系统云链联动版", (0, 1, 17), False)
-        self.guild_system = self.GetPluginAPI("guild-cloud-interop", (0, 1, 7), False)
+        self.guild_system = self.GetPluginAPI(
+            "guild-cloud-interop", (0, 1, 7), False)
 
     def on_inject(self):
         """
@@ -231,5 +231,5 @@ class QQLinker(
 entry = plugin_entry(
     QQLinker,
     ["群服互通云链版Ultra版", "QQLinkerUltraAPI"],
-    (1, 1, 17),
+    (2, 0, 0),
 )

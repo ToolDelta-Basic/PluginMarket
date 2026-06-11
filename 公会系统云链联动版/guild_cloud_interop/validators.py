@@ -1,5 +1,6 @@
 from typing import Tuple
 
+
 class InputValidator:
     """输入验证器"""
 
@@ -35,7 +36,8 @@ class InputValidator:
         return True, ""
 
     @staticmethod
-    def validate_positive_integer(value: str, field_name: str = "数值") -> Tuple[bool, int, str]:
+    def validate_positive_integer(
+            value: str, field_name: str = "数值") -> Tuple[bool, int, str]:
         """验证正整数"""
         if not value:
             return False, 0, f"{field_name}不能为空"

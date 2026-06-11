@@ -38,7 +38,8 @@ def apply_runtime_config(plugin: Any, *, announce: bool = False) -> None:
     plugin.item_matcher = ItemNameMatcher()
     plugin._effect_refresh_cache = {}
 
-    sync_runtime_config_bindings = getattr(plugin, "sync_runtime_config_bindings", None)
+    sync_runtime_config_bindings = getattr(
+        plugin, "sync_runtime_config_bindings", None)
     if callable(sync_runtime_config_bindings):
         sync_runtime_config_bindings()
 

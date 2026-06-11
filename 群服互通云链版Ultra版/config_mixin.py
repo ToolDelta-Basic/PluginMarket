@@ -136,7 +136,7 @@ class QQLinkerConfigMixin:
                 "替换花里胡哨的昵称": True,
                 "替换花里胡哨的消息": True,
             },
-            QQLinkerConfigMixin.PERMISSION_SETTINGS_KEY: QQLinkerConfigMixin.permission_default(),
+            QQLinkerConfigMixin.PERMISSION_SETTINGS_KEY: QQLinkerConfigMixin.permission_default(),  # noqa: E501
             "指令设置": {
                 "发送指令前缀": "/",
                 "帮助菜单唤醒词": ["help", "帮助"],
@@ -171,11 +171,14 @@ class QQLinkerConfigMixin:
         return {
             cls.DYNAMIC_LOAD_SETTINGS_KEY: {
                 cls.DYNAMIC_LOAD_ENABLED_KEY: True,
-                cls.DYNAMIC_LOAD_INTERVAL_KEY: cls.RUNTIME_CONFIG_RELOAD_INTERVAL,
+                cls.DYNAMIC_LOAD_INTERVAL_KEY: cls.RUNTIME_CONFIG_RELOAD_INTERVAL,  # noqa: E501
             },
-            "云链设置": {"地址": "ws://127.0.0.1:3001", "校验码": ""},
+            "云链设置": {
+                "地址": "ws://127.0.0.1:3001",
+                "校验码": ""},
             "绑定设置": cls.binding_default(),
-            "群聊设置": [cls.group_default()],
+            "群聊设置": [
+                cls.group_default()],
         }
 
     @classmethod
@@ -320,7 +323,8 @@ class QQLinkerConfigMixin:
             if isinstance(raw, dict):
                 for key, value in raw.items():
                     if key in result:
-                        result[key] = cls.merge_with_default(value, result[key])
+                        result[key] = cls.merge_with_default(
+                            value, result[key])
                     else:
                         result[key] = value
             return result
@@ -354,7 +358,8 @@ class QQLinkerConfigMixin:
         self._merge_command_cfg(group_cfg, old_cmd)
         return group_cfg
 
-    def _merge_binding_cfg(self, binding_cfg: dict[str, Any], old_binding: Any):
+    def _merge_binding_cfg(
+            self, binding_cfg: dict[str, Any], old_binding: Any):
         """把 QQ 与游戏 ID 绑定设置合并进全局配置。"""
         if not isinstance(old_binding, dict):
             return
@@ -427,12 +432,14 @@ class QQLinkerConfigMixin:
             or binding_cfg["绑定成功提示文本"]
         )
 
-    def _merge_game_to_group_cfg(self, group_cfg: dict[str, Any], old_g2q: Any):
+    def _merge_game_to_group_cfg(
+            self, group_cfg: dict[str, Any], old_g2q: Any):
         """把旧版“游戏到群”配置段合并进当前群配置。"""
         if not isinstance(old_g2q, dict):
             return
         game_to_group = group_cfg["游戏到群"]
-        game_to_group["是否启用"] = bool(old_g2q.get("是否启用", game_to_group["是否启用"]))
+        game_to_group["是否启用"] = bool(
+            old_g2q.get("是否启用", game_to_group["是否启用"]))
         game_to_group["转发格式"] = str(old_g2q.get("转发格式", game_to_group["转发格式"]))
         game_to_group["仅转发以下符号开头的消息(列表为空则全部转发)"] = self._clean_string_list(
             old_g2q.get(
@@ -453,12 +460,14 @@ class QQLinkerConfigMixin:
             old_g2q.get("转发玩家进退提示", game_to_group["转发玩家进退提示"])
         )
 
-    def _merge_group_to_game_cfg(self, group_cfg: dict[str, Any], old_q2g: Any):
+    def _merge_group_to_game_cfg(
+            self, group_cfg: dict[str, Any], old_q2g: Any):
         """把旧版“群到游戏”配置段合并进当前群配置。"""
         if not isinstance(old_q2g, dict):
             return
         group_to_game = group_cfg["群到游戏"]
-        group_to_game["是否启用"] = bool(old_q2g.get("是否启用", group_to_game["是否启用"]))
+        group_to_game["是否启用"] = bool(
+            old_q2g.get("是否启用", group_to_game["是否启用"]))
         group_to_game["转发格式"] = str(old_q2g.get("转发格式", group_to_game["转发格式"]))
         group_to_game["仅转发以下符号开头的消息(列表为空则全部转发)"] = self._clean_string_list(
             old_q2g.get(
@@ -468,7 +477,8 @@ class QQLinkerConfigMixin:
             group_to_game["仅转发以下符号开头的消息(列表为空则全部转发)"],
             allow_empty=True,
         )
-        group_to_game["屏蔽的QQ号"] = self.normalize_int_list(old_q2g.get("屏蔽的QQ号", []))
+        group_to_game["屏蔽的QQ号"] = self.normalize_int_list(
+            old_q2g.get("屏蔽的QQ号", []))
         group_to_game["替换花里胡哨的昵称"] = bool(
             old_q2g.get("替换花里胡哨的昵称", group_to_game["替换花里胡哨的昵称"])
         )
@@ -490,11 +500,14 @@ class QQLinkerConfigMixin:
         if not isinstance(data, dict):
             data = {}
         return {
-            "admins": self.normalize_int_list(data.get("admins", [])),
-            "super_admins": self.normalize_int_list(data.get("super_admins", [])),
-        }
+            "admins": self.normalize_int_list(
+                data.get(
+                    "admins", [])), "super_admins": self.normalize_int_list(
+                data.get(
+                    "super_admins", [])), }
 
-    def _merge_permission_item(self, next_item: dict[str, bool], raw_item: Any):
+    def _merge_permission_item(
+            self, next_item: dict[str, bool], raw_item: Any):
         if not isinstance(raw_item, dict):
             return
         for key, fallback in list(next_item.items()):
@@ -521,7 +534,8 @@ class QQLinkerConfigMixin:
             feature_permissions = old_permissions.get("各功能权限设置", {})
             if isinstance(feature_permissions, dict):
                 for key, next_item in permission_cfg["各功能权限设置"].items():
-                    self._merge_permission_item(next_item, feature_permissions.get(key))
+                    self._merge_permission_item(
+                        next_item, feature_permissions.get(key))
 
         owner_qq = self.normalize_owner_qq(permission_cfg.get("所有者QQ号"))
         permission_cfg["所有者QQ号"] = owner_qq
@@ -667,7 +681,10 @@ class QQLinkerConfigMixin:
         )
 
     @staticmethod
-    def _clean_string_list(raw: Any, fallback: list[str], allow_empty: bool = False):
+    def _clean_string_list(
+            raw: Any,
+            fallback: list[str],
+            allow_empty: bool = False):
         """清理字符串列表，失败时回退到默认值。"""
         if isinstance(raw, list):
             cleaned = [str(item) for item in raw if isinstance(item, str)]
@@ -751,8 +768,10 @@ class QQLinkerConfigMixin:
             super_admins = self.normalize_int_list(
                 permission_cfg.get("超级管理员QQ号", [])
             )
-            admins = self.normalize_int_list(permission_cfg.get("普通管理员QQ号", []))
-            self._append_unique_ints(super_admins, legacy_state["super_admins"])
+            admins = self.normalize_int_list(
+                permission_cfg.get("普通管理员QQ号", []))
+            self._append_unique_ints(
+                super_admins, legacy_state["super_admins"])
             self._append_unique_ints(admins, legacy_state["admins"])
             permission_cfg["所有者QQ号"] = owner_qq
             permission_cfg["超级管理员QQ号"] = super_admins
@@ -790,25 +809,20 @@ class QQLinkerConfigMixin:
 
         dynamic_load_cfg = raw_cfg.get(self.DYNAMIC_LOAD_SETTINGS_KEY, {})
         if isinstance(dynamic_load_cfg, dict):
-            new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.DYNAMIC_LOAD_ENABLED_KEY] = bool(
+            new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.DYNAMIC_LOAD_ENABLED_KEY] = bool(  # noqa: E501
                 dynamic_load_cfg.get(
                     self.DYNAMIC_LOAD_ENABLED_KEY,
-                    new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.DYNAMIC_LOAD_ENABLED_KEY],
+                    new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.DYNAMIC_LOAD_ENABLED_KEY],  # noqa: E501
                 )
             )
-            new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.DYNAMIC_LOAD_INTERVAL_KEY] = (
-                self._normalize_positive_int(
-                    dynamic_load_cfg.get(
-                        self.DYNAMIC_LOAD_INTERVAL_KEY,
-                        new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][
-                            self.DYNAMIC_LOAD_INTERVAL_KEY
-                        ],
-                    ),
-                    new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][
-                        self.DYNAMIC_LOAD_INTERVAL_KEY
-                    ],
-                )
-            )
+            new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY][self.
+                                                    DYNAMIC_LOAD_INTERVAL_KEY] = (self._normalize_positive_int(  # noqa: E501
+                                                        dynamic_load_cfg.get(
+                                                            self.DYNAMIC_LOAD_INTERVAL_KEY,  # noqa: E501
+                                                            new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY]  # noqa: E501
+                                                            [self.DYNAMIC_LOAD_INTERVAL_KEY],),  # noqa: E501
+                                                        new_cfg[self.DYNAMIC_LOAD_SETTINGS_KEY]  # noqa: E501
+                                                        [self.DYNAMIC_LOAD_INTERVAL_KEY],))  # noqa: E501
 
         cloud_cfg = raw_cfg.get("云链设置", {})
         if isinstance(cloud_cfg, dict):
@@ -914,24 +928,32 @@ class QQLinkerConfigMixin:
 
     def refresh_runtime_config_file_state(self) -> None:
         """记录当前配置文件状态，避免刚启动就重复热载一次。"""
-        path = getattr(self, "_runtime_config_path", None) or self.runtime_config_path()
+        path = getattr(
+            self,
+            "_runtime_config_path",
+            None) or self.runtime_config_path()
         self._runtime_config_path = path
         self._runtime_config_file_state = self.runtime_config_file_state(path)
 
     def is_runtime_config_reload_enabled(self) -> bool:
         """返回是否启用本插件配置文件动态载入。"""
-        settings = getattr(self, "cfg", {}).get(self.DYNAMIC_LOAD_SETTINGS_KEY, {})
+        settings = getattr(
+            self, "cfg", {}).get(
+            self.DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return True
         return bool(settings.get(self.DYNAMIC_LOAD_ENABLED_KEY, True))
 
     def runtime_config_reload_interval(self) -> int:
         """返回动态载入检测间隔秒数。"""
-        settings = getattr(self, "cfg", {}).get(self.DYNAMIC_LOAD_SETTINGS_KEY, {})
+        settings = getattr(
+            self, "cfg", {}).get(
+            self.DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return self.RUNTIME_CONFIG_RELOAD_INTERVAL
         return self._normalize_positive_int(
-            settings.get(self.DYNAMIC_LOAD_INTERVAL_KEY, self.RUNTIME_CONFIG_RELOAD_INTERVAL),
+            settings.get(self.DYNAMIC_LOAD_INTERVAL_KEY,
+                         self.RUNTIME_CONFIG_RELOAD_INTERVAL),
             self.RUNTIME_CONFIG_RELOAD_INTERVAL,
         )
 
@@ -953,7 +975,10 @@ class QQLinkerConfigMixin:
         if not self.is_runtime_config_reload_enabled():
             return False
 
-        path = getattr(self, "_runtime_config_path", None) or self.runtime_config_path()
+        path = getattr(
+            self,
+            "_runtime_config_path",
+            None) or self.runtime_config_path()
         self._runtime_config_path = path
         current_state = self.runtime_config_file_state(path)
         if current_state is None or current_state == getattr(
@@ -980,7 +1005,11 @@ class QQLinkerConfigMixin:
 
     @staticmethod
     def _extract_config_items(full_config: Any) -> Any:
-        if isinstance(full_config, dict) and isinstance(full_config.get("配置项"), dict):
+        if isinstance(
+                full_config,
+                dict) and isinstance(
+                full_config.get("配置项"),
+                dict):
             return full_config["配置项"]
         return full_config
 
@@ -990,7 +1019,8 @@ class QQLinkerConfigMixin:
         # 给还按“单群互通”接口调用的旧插件留一个兼容入口。
         return self.group_order[0] if self.group_order else None
 
-    def _permission_cfg_for_group(self, group_id: int) -> dict[str, Any] | None:
+    def _permission_cfg_for_group(
+            self, group_id: int) -> dict[str, Any] | None:
         group_cfg = getattr(self, "group_cfgs", {}).get(group_id)
         if not isinstance(group_cfg, dict):
             return None
@@ -1003,9 +1033,11 @@ class QQLinkerConfigMixin:
         if permission_cfg is None:
             return {"admins": [], "super_admins": []}
         return {
-            "admins": self.normalize_int_list(permission_cfg.get("普通管理员QQ号", [])),
-            "super_admins": self.normalize_int_list(permission_cfg.get("超级管理员QQ号", [])),
-        }
+            "admins": self.normalize_int_list(
+                permission_cfg.get(
+                    "普通管理员QQ号", [])), "super_admins": self.normalize_int_list(
+                permission_cfg.get(
+                    "超级管理员QQ号", [])), }
 
     def get_group_owner_qq(self, group_id: int) -> int | None:
         """读取群配置中的所有者 QQ。"""
@@ -1024,9 +1056,11 @@ class QQLinkerConfigMixin:
             return
         owner_qq = self.get_group_owner_qq(group_id)
         normalized = {
-            "admins": self.normalize_int_list(state.get("admins", [])),
-            "super_admins": self.normalize_int_list(state.get("super_admins", [])),
-        }
+            "admins": self.normalize_int_list(
+                state.get(
+                    "admins", [])), "super_admins": self.normalize_int_list(
+                state.get(
+                    "super_admins", [])), }
         permission_cfg["普通管理员QQ号"] = normalized["admins"]
         permission_cfg["超级管理员QQ号"] = normalized["super_admins"]
         self.persist_runtime_config()
@@ -1060,7 +1094,11 @@ class QQLinkerConfigMixin:
         state = self.read_group_state(group_id)
         return qqid in state["super_admins"] or qqid in state["admins"]
 
-    def has_group_permission(self, group_id: int, qqid: int, permission_name: str) -> bool:
+    def has_group_permission(
+            self,
+            group_id: int,
+            qqid: int,
+            permission_name: str) -> bool:
         """按群配置中的“各功能权限设置”判断某个 QQ 是否可用指定功能。"""
         if self.is_group_owner(group_id, qqid):
             return True
@@ -1136,7 +1174,7 @@ class QQLinkerConfigMixin:
         return list(self.group_order)
 
     def api_get_default_group(self) -> int | None:
-        """Return the first configured group ID for old single-group callers."""
+        """Return the first configured group ID for old single-group callers."""  # noqa: E501
         return self.linked_group
 
     def api_is_group_configured(self, group_id: int | str) -> bool:
@@ -1144,14 +1182,16 @@ class QQLinkerConfigMixin:
         gid = self._api_int_value(group_id)
         return gid in self.group_cfgs if gid is not None else False
 
-    def api_get_group_config(self, group_id: int | str) -> dict[str, Any] | None:
+    def api_get_group_config(self, group_id: int |
+                             str) -> dict[str, Any] | None:
         """Return a copy of one group's runtime config."""
         gid = self._api_int_value(group_id)
         if gid is None or gid not in self.group_cfgs:
             return None
         return deepcopy(self.group_cfgs[gid])
 
-    def api_get_group_state(self, group_id: int | str) -> dict[str, list[int]] | None:
+    def api_get_group_state(self, group_id: int |
+                            str) -> dict[str, list[int]] | None:
         """Return a copy of one group's admin state."""
         gid = self._api_int_value(group_id)
         if gid is None or gid not in self.group_cfgs:
@@ -1196,7 +1236,10 @@ class QQLinkerConfigMixin:
             return False
         return self.is_group_admin(gid, qid)
 
-    def api_is_group_super_admin(self, group_id: int | str, qqid: int | str) -> bool:
+    def api_is_group_super_admin(
+            self,
+            group_id: int | str,
+            qqid: int | str) -> bool:
         """Return whether a QQ number is a super admin in a group."""
         gid = self._api_int_value(group_id)
         qid = self._api_int_value(qqid)
@@ -1249,7 +1292,8 @@ class QQLinkerConfigMixin:
             return False, "QQ号无效"
         return self.remove_group_role(gid, qid, bool(is_super))
 
-    def api_get_group_triggers(self, group_id: int | str) -> dict[str, Any] | None:
+    def api_get_group_triggers(
+            self, group_id: int | str) -> dict[str, Any] | None:
         """Return normalized trigger words and menu controls for one group."""
         gid = self._api_int_value(group_id)
         if gid is None or gid not in self.group_cfgs:
@@ -1350,9 +1394,11 @@ class QQLinkerConfigMixin:
                 return 10
         return 10
 
-    def get_group_config_file_items_per_page(self, group_id: int | None = None):
+    def get_group_config_file_items_per_page(
+            self, group_id: int | None = None):
         """读取配置文件整文件修改模式选择菜单每页条数。"""
-        group_cfg = self.group_cfgs.get(group_id) if group_id is not None else None
+        group_cfg = self.group_cfgs.get(
+            group_id) if group_id is not None else None
         if group_cfg is not None:
             try:
                 return max(
@@ -1421,7 +1467,8 @@ class QQLinkerConfigMixin:
                 "退出整个菜单触发词",
                 self.MENU_EXIT_TRIGGERS_DEFAULT,
             )
-            return self.normalize_string_triggers(raw, self.MENU_EXIT_TRIGGERS_DEFAULT)
+            return self.normalize_string_triggers(
+                raw, self.MENU_EXIT_TRIGGERS_DEFAULT)
         return list(self.MENU_EXIT_TRIGGERS_DEFAULT)
 
     def get_group_menu_back_triggers(self, group_id: int | None = None):
@@ -1431,7 +1478,8 @@ class QQLinkerConfigMixin:
                 "返回上一级菜单触发词",
                 self.MENU_BACK_TRIGGERS_DEFAULT,
             )
-            return self.normalize_string_triggers(raw, self.MENU_BACK_TRIGGERS_DEFAULT)
+            return self.normalize_string_triggers(
+                raw, self.MENU_BACK_TRIGGERS_DEFAULT)
         return list(self.MENU_BACK_TRIGGERS_DEFAULT)
 
     def is_menu_exit_input(self, user_input: str, group_id: int | None = None):
@@ -1451,10 +1499,13 @@ class QQLinkerConfigMixin:
         )
 
     def menu_exit_hint(self, group_id: int | None = None, action: str = "退出"):
-        return f"输入 {' / '.join(self.get_group_menu_exit_triggers(group_id))} {action}"
+        return f"输入 {' / '.join(self.get_group_menu_exit_triggers(group_id))} {action}"  # noqa: E501
 
-    def menu_back_hint(self, group_id: int | None = None, action: str = "返回上级菜单"):
-        return f"输入 {' / '.join(self.get_group_menu_back_triggers(group_id))} {action}"
+    def menu_back_hint(
+            self,
+            group_id: int | None = None,
+            action: str = "返回上级菜单"):
+        return f"输入 {' / '.join(self.get_group_menu_back_triggers(group_id))} {action}"  # noqa: E501
 
     def normalize_menu_control_hints(
         self,
@@ -1491,7 +1542,8 @@ class QQLinkerConfigMixin:
             "QQ群封禁唤醒词",
             ["orban", "orion ban", "猎户封禁"],
         )
-        return self.normalize_string_triggers(raw, ["orban", "orion ban", "猎户封禁"])
+        return self.normalize_string_triggers(
+            raw, ["orban", "orion ban", "猎户封禁"])
 
     def get_group_orion_unban_triggers(self, group_id: int):
         """读取某个群的 Orion 解封触发词。"""
@@ -1500,7 +1552,8 @@ class QQLinkerConfigMixin:
             "QQ群解封唤醒词",
             ["orunban", "orion unban", "猎户解封"],
         )
-        return self.normalize_string_triggers(raw, ["orunban", "orion unban", "猎户解封"])
+        return self.normalize_string_triggers(
+            raw, ["orunban", "orion unban", "猎户解封"])
 
     def get_group_checker_menu_triggers(self, group_id: int):
         """读取某个群的白名单联动菜单触发词。"""
@@ -1521,7 +1574,8 @@ class QQLinkerConfigMixin:
         """读取某个群的领地系统云链联动版菜单触发词。"""
         group_cfg = self.group_cfgs[group_id]
         raw = group_cfg["指令设置"].get("领地系统菜单唤醒词", ["领地系统云链联动版", "领地系统", "领地管理"])
-        return self.normalize_string_triggers(raw, ["领地系统云链联动版", "领地系统", "领地管理"])
+        return self.normalize_string_triggers(
+            raw, ["领地系统云链联动版", "领地系统", "领地管理"])
 
     def get_group_guild_menu_triggers(self, group_id: int):
         """读取某个群的公会系统管理菜单触发词。"""
@@ -1556,8 +1610,13 @@ class QQLinkerConfigMixin:
         if not inspect.isroutine(func) and not callable(func):
             raise TypeError("func 必须是可调用对象")
         self.triggers.append(
-            QQMsgTrigger(triggers, argument_hint, usage, func, args_pd, op_only)
-        )
+            QQMsgTrigger(
+                triggers,
+                argument_hint,
+                usage,
+                func,
+                args_pd,
+                op_only))
 
     def set_manual_launch(self, port: int):
         """切换到“本地启动器负责拉起云链”的模式。"""

@@ -31,19 +31,23 @@ class QQLinkerConfigEditorMixin:
         if not self._can_use_group_permission(group_id, qqid, "配置配置文件权限"):
             self._reply_menu_permission_denied(group_id, qqid)
             return
-        self._config_center_menu({"mode": "qq", "group_id": group_id, "qqid": qqid})
+        self._config_center_menu(
+            {"mode": "qq", "group_id": group_id, "qqid": qqid})
 
     def on_console_config_center(self, _args: list[str]):
         """控制台侧配置中心入口。"""
         self._config_center_menu({"mode": "console"})
 
     def _config_group_id(self, ctx: dict[str, Any]) -> int | None:
-        return int(ctx["group_id"]) if ctx.get("mode") == "qq" and "group_id" in ctx else None
+        return int(ctx["group_id"]) if ctx.get(
+            "mode") == "qq" and "group_id" in ctx else None
 
-    def _config_exit_hint(self, ctx: dict[str, Any], action: str = "退出") -> str:
+    def _config_exit_hint(
+            self, ctx: dict[str, Any], action: str = "退出") -> str:
         return self.menu_exit_hint(self._config_group_id(ctx), action)
 
-    def _config_back_hint(self, ctx: dict[str, Any], action: str = "返回上级菜单") -> str:
+    def _config_back_hint(
+            self, ctx: dict[str, Any], action: str = "返回上级菜单") -> str:
         return self.menu_back_hint(self._config_group_id(ctx), action)
 
     def _config_normalize_control_hints(
@@ -122,16 +126,19 @@ class QQLinkerConfigEditorMixin:
         while True:
             files = self._discover_config_files()
             if not files:
-                self._config_error(ctx, f"未找到 {self.CONFIG_FILE_DIR}/*.json 配置文件")
+                self._config_error(
+                    ctx, f"未找到 {
+                        self.CONFIG_FILE_DIR}/*.json 配置文件")
                 return
-            per_page = self.get_group_config_file_items_per_page(self._config_group_id(ctx))
+            per_page = self.get_group_config_file_items_per_page(
+                self._config_group_id(ctx))
             total_pages, start_index, end_index = self.simple_paginate(
                 len(files),
                 per_page,
                 page,
             )
             page = min(page, total_pages)
-            page_files = files[start_index - 1 : end_index]
+            page_files = files[start_index - 1: end_index]
             options = [item["display"] for item in page_files]
             choice = self._config_prompt(
                 ctx,
@@ -170,15 +177,18 @@ class QQLinkerConfigEditorMixin:
                 else:
                     self._config_error(ctx, f"不存在第 {page_num} 页")
                 continue
-            selected = self.parse_displayed_menu_choice(choice, len(page_files))
+            selected = self.parse_displayed_menu_choice(
+                choice, len(page_files))
             if selected is None:
                 self._config_error(ctx, "输入有误")
                 continue
-            result = self._edit_config_file_whole(ctx, files[start_index + selected - 2])
+            result = self._edit_config_file_whole(
+                ctx, files[start_index + selected - 2])
             if result is self.CONFIG_EXIT:
                 return self.CONFIG_EXIT
 
-    def _edit_config_file_whole(self, ctx: dict[str, Any], item: dict[str, str]):
+    def _edit_config_file_whole(
+            self, ctx: dict[str, Any], item: dict[str, str]):
         try:
             with open(item["path"], "r", encoding="utf-8-sig") as file:
                 content = file.read()
@@ -198,7 +208,11 @@ class QQLinkerConfigEditorMixin:
             )
             raw = self._config_input_result(
                 ctx,
-                self.qq_prompt(ctx["group_id"], ctx["qqid"], prompt_text, timeout=600),
+                self.qq_prompt(
+                    ctx["group_id"],
+                    ctx["qqid"],
+                    prompt_text,
+                    timeout=600),
             )
         else:
             self.print_console_card(
@@ -274,13 +288,14 @@ class QQLinkerConfigEditorMixin:
     def _config_restore_backup_menu(self, ctx: dict[str, Any]):
         while True:
             backups = self._load_config_backup_index()
-            backups = [item for item in backups if os.path.isfile(item.get("backup_path", ""))]
+            backups = [item for item in backups if os.path.isfile(
+                item.get("backup_path", ""))]
             if not backups:
                 self._config_error(ctx, "暂无可还原的配置文件备份")
                 return
             backups = list(reversed(backups[-30:]))
             options = [
-                f"{item['id']} / {item['config_name']} / {item.get('created_at', '')}"
+                f"{item['id']} / {item['config_name']} / {item.get('created_at', '')}"  # noqa: E501
                 for item in backups
             ]
             choice = self._config_prompt(
@@ -306,7 +321,8 @@ class QQLinkerConfigEditorMixin:
             self._restore_config_backup(ctx, backups[selected - 1])
             return
 
-    def _restore_config_backup(self, ctx: dict[str, Any], backup: dict[str, str]):
+    def _restore_config_backup(
+            self, ctx: dict[str, Any], backup: dict[str, str]):
         current_item = {
             "name": backup["config_name"],
             "path": backup["original_path"],
@@ -356,7 +372,9 @@ class QQLinkerConfigEditorMixin:
         return path
 
     def _config_backup_index_path(self) -> str:
-        return os.path.join(self._config_backup_root(), self.CONFIG_BACKUP_INDEX)
+        return os.path.join(
+            self._config_backup_root(),
+            self.CONFIG_BACKUP_INDEX)
 
     def _load_config_backup_index(self) -> list[dict[str, str]]:
         path = self._config_backup_index_path()
@@ -385,7 +403,8 @@ class QQLinkerConfigEditorMixin:
         if not self._is_safe_config_path(item["path"]):
             raise ValueError("配置文件路径不在允许的插件配置目录内")
         created_at = time.strftime("%Y-%m-%d %H:%M:%S")
-        stamp = time.strftime("%Y%m%d-%H%M%S") + f"-{int(time.time() * 1000) % 1000:03d}"
+        stamp = time.strftime("%Y%m%d-%H%M%S") + \
+            f"-{int(time.time() * 1000) % 1000:03d}"
         safe_name = self._safe_backup_name(item["name"])
         backup_id = f"{stamp}-{safe_name}"
         backup_dir = os.path.join(self._config_backup_root(), safe_name)
@@ -407,7 +426,8 @@ class QQLinkerConfigEditorMixin:
 
     @staticmethod
     def _safe_backup_name(name: str) -> str:
-        return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in name) or "config"
+        return "".join(ch if ch.isalnum() or ch in ("-", "_")
+                       else "_" for ch in name) or "config"
 
     def _read_console_config_json_text(self, ctx: dict[str, Any]):
         lines: list[str] = []
@@ -445,7 +465,8 @@ class QQLinkerConfigEditorMixin:
         return text
 
     @staticmethod
-    def _config_file_shape_matches(original: Any, new_config: dict[str, Any]) -> bool:
+    def _config_file_shape_matches(
+            original: Any, new_config: dict[str, Any]) -> bool:
         if not isinstance(original, dict):
             return True
         if isinstance(original.get("配置项"), dict):
@@ -456,7 +477,9 @@ class QQLinkerConfigEditorMixin:
         cfg_dir = os.path.abspath(self.CONFIG_FILE_DIR)
         target = os.path.abspath(path)
         try:
-            return os.path.commonpath([cfg_dir, target]) == cfg_dir and target.lower().endswith(".json")
+            return os.path.commonpath(
+                [cfg_dir, target]) == cfg_dir and target.lower().endswith(
+                ".json")
         except ValueError:
             return False
 
@@ -464,7 +487,8 @@ class QQLinkerConfigEditorMixin:
         backup_root = os.path.abspath(self._config_backup_root())
         target = os.path.abspath(path)
         try:
-            return os.path.commonpath([backup_root, target]) == backup_root and target.lower().endswith(".json")
+            return os.path.commonpath(
+                [backup_root, target]) == backup_root and target.lower().endswith(".json")  # noqa: E501
         except ValueError:
             return False
 
@@ -475,14 +499,16 @@ class QQLinkerConfigEditorMixin:
             return config_items
         return full_config
 
-    def _apply_runtime_config_file(self, item: dict[str, str], full_config: dict[str, Any]) -> str:
+    def _apply_runtime_config_file(
+            self, item: dict[str, str], full_config: dict[str, Any]) -> str:
         config_name = item["name"]
         config_items = self._extract_config_items(full_config)
         try:
             if config_name == self.name:
                 message = self.apply_ultra_runtime_config(config_items)
                 self._runtime_config_path = item["path"]
-                self._runtime_config_file_state = self.runtime_config_file_state(item["path"])
+                self._runtime_config_file_state = self.runtime_config_file_state(  # noqa: E501
+                    item["path"])
                 return message
             if (
                 config_name == "白名单&管理员检测云链联动版"
@@ -490,7 +516,8 @@ class QQLinkerConfigEditorMixin:
                 and hasattr(self.whitelist_checker, "_cfg")
             ):
                 plugin = self.whitelist_checker
-                merged = plugin.merge_with_default(config_items, plugin.DEFAULT_CFG)
+                merged = plugin.merge_with_default(
+                    config_items, plugin.DEFAULT_CFG)
                 cfg.check_auto(plugin.STD_CFG, merged)
                 plugin._cfg = merged
                 return "白名单&管理员检测配置已动态载入"
@@ -510,7 +537,7 @@ class QQLinkerConfigEditorMixin:
                 self._apply_land_runtime_config(self.land_system)
                 return "领地系统配置已动态载入"
             if (
-                config_name in ("『Orion System』违规与作弊行为综合反制系统", "Orion System 猎户座")
+                config_name in ("『Orion System』违规与作弊行为综合反制系统", "Orion System 猎户座")  # noqa: E501
                 and self.orion is not None
                 and hasattr(self.orion, "config_mgr")
             ):
@@ -561,11 +588,14 @@ class QQLinkerConfigEditorMixin:
                 hints,
                 self._config_group_id(ctx),
             )
-            result = self.qq_prompt(ctx["group_id"], ctx["qqid"], text, timeout=120)
+            result = self.qq_prompt(
+                ctx["group_id"], ctx["qqid"], text, timeout=120)
         else:
-            lines = [f"[ {i + 1} ] {option}" for i, option in enumerate(options)]
+            lines = [f"[ {i + 1} ] {option}" for i,
+                     option in enumerate(options)]
             lines.extend(hints)
-            result = self.prompt_console_input("群服互通 配置中心", subtitle, lines, "请输入")
+            result = self.prompt_console_input(
+                "群服互通 配置中心", subtitle, lines, "请输入")
         if result is None:
             self._config_error(ctx, "回复超时，已退出菜单")
             return self.CONFIG_EXIT

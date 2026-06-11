@@ -1,8 +1,9 @@
 from threading import Event
 from typing import Dict
 
-from tooldelta import plugin_entry, Plugin, ToolDelta, TYPE_CHECKING, utils, Player, FrameExit
+from tooldelta import plugin_entry, Plugin, ToolDelta, TYPE_CHECKING, utils, Player, FrameExit  # noqa: E501
 from tooldelta.constants import PacketIDS
+from tooldelta.utils import tempjson
 
 from guild_cloud_interop.matchers import ItemNameMatcher
 from guild_cloud_interop.handlers import handlers
@@ -11,7 +12,7 @@ from guild_cloud_interop.logic import logic_functions
 from guild_cloud_interop.api import guild_api_functions
 from guild_cloud_interop.control import GuildManager
 from guild_cloud_interop.config import Config, PLUGIN_ENABLED_KEY
-from guild_cloud_interop.config_watcher import config_reload_task, refresh_config_file_state
+from guild_cloud_interop.config_watcher import config_reload_task, refresh_config_file_state  # noqa: E501
 from guild_cloud_interop.ui import wrap_player
 
 
@@ -43,15 +44,18 @@ class GuildPlugin(Plugin):
         self._guild_menu_callback = None
         self._guild_menu_chatbar_entry = None
         self._guild_runtime_events = {}
-        self.item_matcher = ItemNameMatcher() 
+        self.item_matcher = ItemNameMatcher()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
         self.ListenFrameExit(self.on_frame_exit)
-        self.exp_thread = utils.createThread(self.guild_exp_task, usage="公会经验增加任务")
-        self.online_thread = utils.createThread(self.update_online_task, usage="在线状态更新任务")
+        self.exp_thread = utils.createThread(
+            self.guild_exp_task, usage="公会经验增加任务")
+        self.online_thread = utils.createThread(
+            self.update_online_task, usage="在线状态更新任务")
         refresh_config_file_state(self)
-        self.config_thread = utils.createThread(config_reload_task, args=(self,), usage="公会配置热更新任务")
+        self.config_thread = utils.createThread(
+            config_reload_task, args=(self,), usage="公会配置热更新任务")
 
     def _plugin_enabled(self) -> bool:
         return bool(getattr(self, "config", {}).get(PLUGIN_ENABLED_KEY, False))
@@ -104,14 +108,15 @@ class GuildPlugin(Plugin):
         for candidate in chatbar_triggers:
             if getattr(candidate, "usage", None) != "公会系统指令":
                 continue
-            if callback is not None and getattr(candidate, "func", None) is not callback:
+            if callback is not None and getattr(
+                    candidate, "func", None) is not callback:
                 continue
             self._guild_menu_chatbar_entry = candidate
             return candidate
         return None
 
     def sync_runtime_config_bindings(self):
-        """Apply hot-reloaded config values that are registered outside Config."""
+        """Apply hot-reloaded config values that are registered outside Config."""  # noqa: E501
         entry = self._find_guild_menu_chatbar_entry()
         if entry is None:
             return
@@ -122,13 +127,15 @@ class GuildPlugin(Plugin):
             return
 
         entry.triggers = commands
-    
+
     def on_inject(self):
         if not self._plugin_enabled():
             return
 
-        self.game_ctrl.sendwocmd(f"/scoreboard objectives add {Config.GUILD_SCOREBOARD} dummy 积分")
-        self.game_ctrl.sendwocmd(f"/scoreboard players add @a {Config.GUILD_SCOREBOARD} 0")
+        self.game_ctrl.sendwocmd(
+            f"/scoreboard objectives add {Config.GUILD_SCOREBOARD} dummy 积分")
+        self.game_ctrl.sendwocmd(
+            f"/scoreboard players add @a {Config.GUILD_SCOREBOARD} 0")
         guild_menu_commands = self._guild_menu_commands()
         self._guild_menu_callback = self.ui_callback(self.guild_menu_cb)
         self.chatbar.add_new_trigger(
@@ -142,54 +149,41 @@ class GuildPlugin(Plugin):
             self._guild_menu_chatbar_entry = chatbar_triggers[-1]
 
         trigger_configs = [
-            {
-                "commands": ["gc", "公会聊天"],
-                "args": [("message", str, "")],
-                "description": "公会聊天频道",
-                "callback": self.guild_chat_cb,
-            },
-            {
-                "commands": ["仓库出售", "出售"],
-                "args": [("item_id", str, ""), ("count", int, 1), ("price", int, 0)],
-                "description": "快速出售物品到仓库",
-                "callback": self.quick_vault_sell,
-            },
-            {
-                "commands": ["自定义出售"],
-                "args": [("item_id", str, ""), ("count", int, 1), ("price", int, 0)],
-                "description": "自定义价格出售物品到仓库",
-                "callback": self.custom_vault_sell,
-            },
-            {
-                "commands": ["物品列表", "支持物品"],
-                "args": [("", str, "")],
-                "description": "查看支持的物品名称列表",
-                "callback": self.show_item_list,
-            },
-            {
-                "commands": ["清理公会数据"],
-                "args": [("confirm", str, "")],
-                "description": "清理所有公会数据 (管理员专用)",
-                "callback": self.admin_clear_guild_data,
-            },
-            {
-                "commands": ["调试公会菜单"],
-                "args": [("", str, "")],
-                "description": "调试公会菜单显示问题",
-                "callback": self.debug_guild_menu,
-            },
-            {
-                "commands": ["调试据点功能"],
-                "args": [("", str, "")],
-                "description": "调试据点功能问题",
-                "callback": self.debug_base_function,
-            },
-        ]
+            {"commands": ["gc", "公会聊天"],
+             "args": [("message", str, "")],
+             "description": "公会聊天频道", "callback": self.guild_chat_cb, },
+            {"commands": ["仓库出售", "出售"],
+             "args":
+             [("item_id", str, ""),
+              ("count", int, 1),
+              ("price", int, 0)],
+             "description": "快速出售物品到仓库", "callback": self.quick_vault_sell, },
+            {"commands": ["自定义出售"],
+             "args":
+             [("item_id", str, ""),
+              ("count", int, 1),
+              ("price", int, 0)],
+             "description": "自定义价格出售物品到仓库",
+             "callback": self.custom_vault_sell, },
+            {"commands": ["物品列表", "支持物品"],
+             "args": [("", str, "")],
+             "description": "查看支持的物品名称列表", "callback": self.show_item_list, },
+            {"commands": ["清理公会数据"],
+             "args": [("confirm", str, "")],
+             "description": "清理所有公会数据 (管理员专用)",
+             "callback": self.admin_clear_guild_data, },
+            {"commands": ["调试公会菜单"],
+             "args": [("", str, "")],
+             "description": "调试公会菜单显示问题", "callback": self.debug_guild_menu, },
+            {"commands": ["调试据点功能"],
+             "args": [("", str, "")],
+             "description": "调试据点功能问题",
+             "callback": self.debug_base_function, },]
 
         # 注册数据更新菜单
         self.frame.add_console_cmd_trigger(
             ["更新公会数据"],
-            "","更新由于版本更新导致的数据丢失",
+            "", "更新由于版本更新导致的数据丢失",
             self.guild_update_data
         )
         for trigger in trigger_configs:
@@ -208,11 +202,22 @@ class GuildPlugin(Plugin):
             return
 
         player_name = getattr(player, "safe_name", player.name)
-        self.game_ctrl.sendcmd(f"/scoreboard players add {player_name} {Config.GUILD_SCOREBOARD} 0")
-        self._apply_guild_effects_to_player(player.name, force=True, command_delay=0)
+        self.game_ctrl.sendcmd(
+            f"/scoreboard players add {player_name} {Config.GUILD_SCOREBOARD} 0")  # noqa: E501
+        self._apply_guild_effects_to_player(
+            player.name, force=True, command_delay=0)
 
     def on_frame_exit(self, _: FrameExit):
         self._stop_event.set()
+        try:
+            if not self.guild_manager.flush_dirty_guilds():
+                self.print_err("保存公会数据失败")
+        except Exception as err:
+            self.print_err(f"保存公会数据失败: {err}")
+        try:
+            tempjson.flush(self.guilds_file)
+        except Exception:
+            pass
         for attr in ("exp_thread", "online_thread", "config_thread"):
             thread = getattr(self, attr, None)
             if thread is None:
@@ -222,7 +227,9 @@ class GuildPlugin(Plugin):
             except Exception:
                 pass
 
-for name, func in {**handlers, **handlers_quick, **logic_functions, **guild_api_functions}.items():
+
+for name, func in {**handlers, **handlers_quick, **
+                   logic_functions, **guild_api_functions}.items():
     setattr(GuildPlugin, name, func)
 
 

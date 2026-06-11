@@ -61,10 +61,12 @@ class QQLinkerRuntimeMixin:
                 return f'😅 未知的 MC 指令, 可能是指令格式有误: "{cmd}"'
             if translate is not None:
                 output_text = "\n".join(
-                    translate(i.Message, i.Parameters) for i in result.OutputMessages
-                )
+                    translate(
+                        i.Message,
+                        i.Parameters) for i in result.OutputMessages)
             else:
-                output_text = "\n".join(i.Message for i in result.OutputMessages)
+                output_text = "\n".join(
+                    i.Message for i in result.OutputMessages)
             if result.SuccessCount:
                 return "😄 指令执行成功，执行结果：\n" + output_text
             return "😭 指令执行失败，原因：\n" + output_text
@@ -91,7 +93,7 @@ class QQLinkerRuntimeMixin:
         if trans_chars:
             for prefix in trans_chars:
                 if msg.startswith(prefix):
-                    return True, msg[len(prefix) :]
+                    return True, msg[len(prefix):]
             return False, msg
         if block_prefixs:
             for prefix in block_prefixs:
@@ -128,20 +130,12 @@ class QQLinkerRuntimeMixin:
                 )
                 session_id = self._start_ws_session()
                 ws_app = websocket.WebSocketApp(
-                    target,
-                    header,
-                    on_message=lambda a, b, sid=session_id: self.on_ws_message(
-                        a, b, sid
-                    )
-                    and None,
-                    on_error=lambda a, b, sid=session_id: self.on_ws_error(a, b, sid),
-                    on_close=lambda a, b, c, sid=session_id: self.on_ws_close(
-                        a, b, c, sid
-                    ),
-                )
-                ws_app.on_open = lambda ws_obj, sid=session_id: self.on_ws_open(
-                    ws_obj, sid
-                )
+                    target, header, on_message=lambda a, b, sid=session_id: self.on_ws_message(  # noqa: E501
+                        a, b, sid) and None, on_error=lambda a, b, sid=session_id: self.on_ws_error(  # noqa: E501
+                        a, b, sid), on_close=lambda a, b, c, sid=session_id: self.on_ws_close(  # noqa: E501
+                        a, b, c, sid), )
+                ws_app.on_open = lambda ws_obj, sid=session_id: self.on_ws_open(  # noqa: E501
+                    ws_obj, sid)
                 self.ws = ws_app
                 self.available = False
                 ws_app.run_forever()
@@ -223,7 +217,8 @@ class QQLinkerRuntimeMixin:
             result = self.execute_cmd_and_get_zhcn_cb(cmd)
         except Exception as err:
             return False, f"MC指令执行失败: {err}"
-        message = "\n".join(result) if isinstance(result, list) else str(result)
+        message = "\n".join(result) if isinstance(
+            result, list) else str(result)
         fail_markers = (
             "指令执行失败",
             "未知的 MC 指令",
@@ -266,7 +261,7 @@ class QQLinkerRuntimeMixin:
         group_id: int | str,
         message: str,
     ) -> tuple[bool, str] | None:
-        """Preview whether a game chat message would be forwarded to a group."""
+        """Preview whether a game chat message would be forwarded to a group."""  # noqa: E501
         try:
             gid = int(str(group_id).strip())
         except (TypeError, ValueError):
@@ -316,7 +311,8 @@ class QQLinkerRuntimeMixin:
             self._message_listeners = {}
         return self._message_listeners
 
-    def api_register_message_listener(self, name: str, listener) -> tuple[bool, str]:
+    def api_register_message_listener(
+            self, name: str, listener) -> tuple[bool, str]:
         """Register a raw group message listener callback."""
         listener_name = str(name).strip()
         if not listener_name:
@@ -347,8 +343,9 @@ class QQLinkerRuntimeMixin:
             for name, listener in self._get_message_listener_store().items()
         ]
 
-    def _stop_when_message_listener_handled(self, data: dict[str, Any]) -> bool:
-        """Run registered raw message listeners; truthy return stops processing."""
+    def _stop_when_message_listener_handled(
+            self, data: dict[str, Any]) -> bool:
+        """Run registered raw message listeners; truthy return stops processing."""  # noqa: E501
         for name, listener in list(self._get_message_listener_store().items()):
             try:
                 if listener(deepcopy(data)):
@@ -397,7 +394,8 @@ class QQLinkerRuntimeMixin:
         group_id, group_cfg, msg, user_id, nickname = payload
         if self._consume_waiting_reply(group_id, user_id, msg):
             return
-        if self._stop_when_group_broadcast_handled(group_id, user_id, nickname, msg):
+        if self._stop_when_group_broadcast_handled(
+                group_id, user_id, nickname, msg):
             return
         if self.execute_triggers(group_id, user_id, msg):
             return
@@ -408,7 +406,8 @@ class QQLinkerRuntimeMixin:
         bc_recv = self.BroadcastEvent(InternalBroadcast("群服互通/数据json", data))
         if any(bc_recv):
             return True
-        if data.get("post_type") != "message" or data.get("message_type") != "group":
+        if data.get("post_type") != "message" or data.get(
+                "message_type") != "group":
             return True
         if self._stop_when_message_listener_handled(data):
             return True
@@ -440,7 +439,11 @@ class QQLinkerRuntimeMixin:
             raise ValueError(f"键 'message' 值不是字符串类型, 而是 {msg}")
         return msg
 
-    def _consume_waiting_reply(self, group_id: int, user_id: int, msg: str) -> bool:
+    def _consume_waiting_reply(
+            self,
+            group_id: int,
+            user_id: int,
+            msg: str) -> bool:
         """把当前消息投递给等待输入的菜单回调。"""
         wait_key = (group_id, user_id)
         cb = self.waitmsg_cbs.pop(wait_key, None)
@@ -490,7 +493,7 @@ class QQLinkerRuntimeMixin:
                     break
             if matched_prefix is None:
                 return
-            msg = msg[len(matched_prefix) :]
+            msg = msg[len(matched_prefix):]
 
         if group_cfg["群到游戏"]["替换花里胡哨的昵称"]:
             nickname = remove_color(nickname)
@@ -511,7 +514,8 @@ class QQLinkerRuntimeMixin:
         if not isinstance(error, Exception):
             # 某些 WebSocket 实现会在连接仍然可用时回调空字符串/None。
             # 这类“空错误”没有实际诊断价值，也不代表连接真的断开。
-            if error is None or (isinstance(error, str) and error.strip() == ""):
+            if error is None or (isinstance(error, str)
+                                 and error.strip() == ""):
                 return
             self._print_cloud_status(
                 "群服互通 云链连接",
@@ -531,12 +535,17 @@ class QQLinkerRuntimeMixin:
             level="error",
         )
 
-    def waitMsg(self, qqid: int, timeout=60, group_id: int | None = None) -> str | None:
+    def waitMsg(
+            self,
+            qqid: int,
+            timeout=60,
+            group_id: int | None = None) -> str | None:
         """等待某个 QQ 在指定群里的下一条回复。
         带 `group_id` 时只收同群回复，不带时保留对旧插件的兼容行为。
         """
         getter, setter = utils.create_result_cb(str)
-        key: int | tuple[int, int] = qqid if group_id is None else (group_id, qqid)
+        key: int | tuple[int, int] = qqid if group_id is None else (
+            group_id, qqid)
         self.waitmsg_cbs[key] = setter
         try:
             return getter(timeout)
@@ -613,7 +622,8 @@ class QQLinkerRuntimeMixin:
         if not self.ws:
             return
         for group_id, group_cfg in self.iter_game_to_group_targets():
-            can_send, filtered_msg = self.should_forward_game_message(msg, group_cfg)
+            can_send, filtered_msg = self.should_forward_game_message(
+                msg, group_cfg)
             if not can_send:
                 continue
             self.sendmsg(
@@ -643,7 +653,11 @@ class QQLinkerRuntimeMixin:
             do_remove_cq_code=False,
         )
 
-    def _handle_exact_trigger(self, group_id: int, qqid: int, clean_msg: str) -> bool:
+    def _handle_exact_trigger(
+            self,
+            group_id: int,
+            qqid: int,
+            clean_msg: str) -> bool:
         """处理帮助、管理员菜单、背包查询等完全匹配型触发词。"""
         if self._handle_binding_trigger(group_id, qqid, clean_msg):
             return True
@@ -774,13 +788,18 @@ class QQLinkerRuntimeMixin:
                 self._reply_permission_denied(group_id, qqid)
                 return True
             if not args_validator(args):
-                self._reply_to_qq(group_id, qqid, f"参数错误，格式：{trigger} {args_hint}")
+                self._reply_to_qq(
+                    group_id, qqid, f"参数错误，格式：{trigger} {args_hint}")
                 return True
             handler(group_id, qqid, args)
             return True
         return False
 
-    def _handle_external_trigger(self, group_id: int, qqid: int, msg: str) -> bool:
+    def _handle_external_trigger(
+            self,
+            group_id: int,
+            qqid: int,
+            msg: str) -> bool:
         """处理外部插件注册进来的自定义触发词。"""
         for trigger in self.triggers:
             matched = trigger.match(msg)
@@ -827,7 +846,11 @@ class QQLinkerRuntimeMixin:
         suffix = f" {argument_hint}" if argument_hint else ""
         self._reply_to_qq(group_id, qqid, f"参数错误，格式：{trigger}{suffix}")
 
-    def _has_group_permission(self, group_id: int, qqid: int, permission_name: str) -> bool:
+    def _has_group_permission(
+            self,
+            group_id: int,
+            qqid: int,
+            permission_name: str) -> bool:
         if hasattr(self, "has_group_permission"):
             return self.has_group_permission(group_id, qqid, permission_name)
         return self.is_group_admin(group_id, qqid)
@@ -905,7 +928,7 @@ class QQLinkerRuntimeMixin:
             cq_end = msg.find("]")
             if cq_end != -1:
                 head = msg[: cq_end + 1]
-                tail = msg[cq_end + 1 :].lstrip()
+                tail = msg[cq_end + 1:].lstrip()
                 msg = head if tail == "" else head + "\n" + tail
         if do_remove_cq_code:
             msg = remove_cq_code(msg)
@@ -933,7 +956,10 @@ class QQLinkerRuntimeMixin:
         if not self.available:
             return False, "云链当前未连接"
         try:
-            self.sendmsg(gid, str(message), do_remove_cq_code=bool(remove_cq_code))
+            self.sendmsg(
+                gid,
+                str(message),
+                do_remove_cq_code=bool(remove_cq_code))
         except Exception as err:
             return False, f"发送群消息失败: {err}"
         return True, "已发送群消息"

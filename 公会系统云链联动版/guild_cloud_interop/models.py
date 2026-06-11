@@ -4,17 +4,19 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Any
-from tooldelta import  fmts
+from tooldelta import fmts
 from datetime import datetime
 from guild_cloud_interop.config import Config
 
 # FIRE 枚举类型 FIRE
+
+
 class GuildRank(Enum):
     OWNER = "owner"
     DEPUTY = "deputy"
     ELDER = "elder"
     MEMBER = "member"
-    
+
     @property
     def display_name(self):
         return {
@@ -68,7 +70,12 @@ class GuildBase:
     z: float
 
     def to_dict(self):
-        return {"dimension": self.dimension, "x": self.x, "y": self.y, "z": self.z}
+        return {
+            "dimension": self.dimension,
+            "x": self.x,
+            "y": self.y,
+            "z": self.z}
+
 
 @dataclass
 class VaultItem:
@@ -107,7 +114,7 @@ class GuildMember:
     join_time: float
     contribution: int = 0
     last_online: float = field(default_factory=time.time)
-    
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -116,7 +123,7 @@ class GuildMember:
             "contribution": self.contribution,
             "last_online": self.last_online
         }
-    
+
     @classmethod
     def from_dict(cls, data):
         return cls(
@@ -288,6 +295,7 @@ class GuildTask:
             participants=data.get("participants", [])
         )
 
+
 @dataclass
 class GuildStats:
     """公会统计数据"""
@@ -316,6 +324,7 @@ class GuildStats:
             level_up_history=data.get("level_up_history", [])
         )
 
+
 @dataclass
 class GuildData:
     """公会完整数据"""
@@ -339,7 +348,7 @@ class GuildData:
     join_requests: List[GuildJoinRequest] = field(default_factory=list)
     vault_trade_logs: List[VaultTradeLog] = field(default_factory=list)
     audit_logs: List[GuildAuditLog] = field(default_factory=list)
-    
+
     def add_log(self, message: str):
         """添加日志"""
         timestamp = datetime.now().strftime("%m-%d %H:%M")
@@ -366,10 +375,16 @@ class GuildData:
             result=result,
             timestamp=time.time() if now is None else now,
         ))
-        max_logs = int(getattr(Config, "GUILD_DATA_SAFETY_CONFIG", {}).get("审计日志保留数量", 200))
+        max_logs = int(
+            getattr(
+                Config,
+                "GUILD_DATA_SAFETY_CONFIG",
+                {}).get(
+                "审计日志保留数量",
+                200))
         if max_logs > 0 and len(self.audit_logs) > max_logs:
             self.audit_logs = self.audit_logs[-max_logs:]
-    
+
     def get_member(self, name: str) -> Optional[GuildMember]:
         """获取成员信息"""
         for member in self.members:
@@ -377,18 +392,30 @@ class GuildData:
                 return member
         return None
 
-    def pending_join_requests(self, now: Optional[float] = None) -> List[GuildJoinRequest]:
+    def pending_join_requests(
+            self,
+            now: Optional[float] = None) -> List[GuildJoinRequest]:
         """获取未过期的待处理加入申请"""
         current_time = time.time() if now is None else now
-        expire_seconds = int(getattr(Config, "GUILD_JOIN_REQUEST_CONFIG", {}).get("申请有效期秒", 86400))
+        expire_seconds = int(
+            getattr(
+                Config,
+                "GUILD_JOIN_REQUEST_CONFIG",
+                {}).get(
+                "申请有效期秒",
+                86400))
         return [
             request
             for request in self.join_requests
             if request.status == "pending"
-            and (expire_seconds <= 0 or current_time - request.create_time <= expire_seconds)
+            and (expire_seconds <= 0 or current_time - request.create_time <= expire_seconds)  # noqa: E501
         ]
 
-    def add_join_request(self, player_name: str, reason: str = "", now: Optional[float] = None) -> bool:
+    def add_join_request(
+            self,
+            player_name: str,
+            reason: str = "",
+            now: Optional[float] = None) -> bool:
         """添加离线加入申请"""
         if self.get_member(player_name):
             return False
@@ -403,7 +430,9 @@ class GuildData:
                 return False
 
         max_pending = int(join_config.get("每个公会最多待处理申请数", 30))
-        if max_pending > 0 and len(self.pending_join_requests(now=current_time)) >= max_pending:
+        if max_pending > 0 and len(
+            self.pending_join_requests(
+                now=current_time)) >= max_pending:
             return False
 
         self.join_requests.append(GuildJoinRequest(
@@ -412,7 +441,8 @@ class GuildData:
             create_time=current_time,
         ))
         self.add_log(f"{player_name} 提交了加入申请")
-        self.add_audit_log("join_request_create", player_name, detail=reason, now=current_time)
+        self.add_audit_log("join_request_create", player_name,
+                           detail=reason, now=current_time)
         return True
 
     def resolve_join_request(
@@ -432,7 +462,9 @@ class GuildData:
             request.handler = handler
             request.handle_time = current_time
             request.result_reason = result_reason
-            self.add_log(f"{handler} {'批准' if approved else '拒绝'}了 {player_name} 的加入申请")
+            self.add_log(
+                f"{handler} {
+                    '批准' if approved else '拒绝'}了 {player_name} 的加入申请")
             self.add_audit_log(
                 "join_request_approve" if approved else "join_request_reject",
                 handler,
@@ -442,7 +474,7 @@ class GuildData:
             )
             return True
         return False
-    
+
     def has_permission(self, player_name: str, permission: str) -> bool:
         """检查成员权限 - 优化版本"""
         if not player_name or not permission:
@@ -504,7 +536,8 @@ class GuildData:
     def get_item_value(self, item_id: str) -> int:
         """获取物品的贡献点价值"""
         # 优先使用自定义价值，否则使用默认价值
-        return self.custom_item_values.get(item_id, Config.DEFAULT_ITEM_VALUES.get(item_id, 1))
+        return self.custom_item_values.get(
+            item_id, Config.DEFAULT_ITEM_VALUES.get(item_id, 1))
 
     def add_vault_item(self, item: VaultItem) -> bool:
         """添加物品到仓库"""
@@ -541,21 +574,37 @@ class GuildData:
             timestamp=time.time() if now is None else now,
             detail=detail,
         ))
-        max_logs = int(getattr(Config, "GUILD_VAULT_CONFIG", {}).get("交易日志保留数量", 120))
+        max_logs = int(
+            getattr(
+                Config,
+                "GUILD_VAULT_CONFIG",
+                {}).get(
+                "交易日志保留数量",
+                120))
         if max_logs > 0 and len(self.vault_trade_logs) > max_logs:
             self.vault_trade_logs = self.vault_trade_logs[-max_logs:]
 
-    def cancel_vault_item(self, actor: str, index: int, now: Optional[float] = None) -> Optional[VaultItem]:
+    def cancel_vault_item(
+            self,
+            actor: str,
+            index: int,
+            now: Optional[float] = None) -> Optional[VaultItem]:
         """撤回仓库上架物品"""
         item = self.remove_vault_item(index)
         if not item:
             return None
 
-        self.add_vault_trade_log("cancel", item, actor, detail="撤回上架物品", now=now)
-        self.add_audit_log("vault_cancel", actor, target=item.seller, detail=item.item_id, now=now)
-        self.add_log(f"{actor} 撤回了 {item.seller} 上架的 {item.item_id} x{item.count}")
+        self.add_vault_trade_log(
+            "cancel", item, actor, detail="撤回上架物品", now=now)
+        self.add_audit_log("vault_cancel", actor, target=item.seller,
+                           detail=item.item_id, now=now)
+        self.add_log(
+            f"{actor} 撤回了 {
+                item.seller} 上架的 {
+                item.item_id} x{
+                item.count}")
         return item
-    
+
     def to_dict(self):
         return {
             "guild_id": self.guild_id,
@@ -566,18 +615,24 @@ class GuildData:
             "create_time": self.create_time,
             "base": self.base.to_dict() if self.base else None,
             "vault": self.vault,
-            "vault_items": [item.to_dict() for item in self.vault_items],
+            "vault_items": [
+                item.to_dict() for item in self.vault_items],
             "custom_item_values": self.custom_item_values,
             "announcement": self.announcement,
             "purchased_effects": self.purchased_effects,
-            "members": [m.to_dict() for m in self.members],
+            "members": [
+                m.to_dict() for m in self.members],
             "logs": self.logs,
             "stats": self.stats.to_dict(),
             "settings": self.settings,
-            "tasks": [task.to_dict() for task in self.tasks],
-            "join_requests": [request.to_dict() for request in self.join_requests],
-            "vault_trade_logs": [log.to_dict() for log in self.vault_trade_logs],
-            "audit_logs": [log.to_dict() for log in self.audit_logs],
+            "tasks": [
+                task.to_dict() for task in self.tasks],
+            "join_requests": [
+                request.to_dict() for request in self.join_requests],
+            "vault_trade_logs": [
+                log.to_dict() for log in self.vault_trade_logs],
+            "audit_logs": [
+                log.to_dict() for log in self.audit_logs],
         }
 
     @classmethod
@@ -586,7 +641,12 @@ class GuildData:
         try:
             if data.get("base") and isinstance(data["base"], dict):
                 base_data = data["base"]
-                if all(key in base_data for key in ["dimension", "x", "y", "z"]):
+                if all(
+                    key in base_data for key in [
+                        "dimension",
+                        "x",
+                        "y",
+                        "z"]):
                     base = GuildBase(
                         dimension=base_data["dimension"],
                         x=float(base_data["x"]),
@@ -624,7 +684,8 @@ class GuildData:
 
         # 处理统计数据
         stats_data = data.get("stats", {})
-        stats = GuildStats.from_dict(stats_data) if isinstance(stats_data, dict) else GuildStats()
+        stats = GuildStats.from_dict(stats_data) if isinstance(
+            stats_data, dict) else GuildStats()
 
         # 处理任务数据
         tasks = []

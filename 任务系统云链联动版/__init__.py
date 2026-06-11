@@ -98,16 +98,17 @@ class TaskSystemCloudInterop(Plugin):
                     "§7在15s内输入§f任务前的序号§r§7可以提交此任务 §f其他§7以退出",
                 ],
                 "接到新任务时执行的指令": [
-                    "/execute as @a[name=[玩家名]] at @s run playsound note.pling @s ~~~ 1 1.4",
-                    '/tellraw @a[name=[玩家名]] {"rawtext":[{"text":"§d▶ §e收到新任务 §f[任务显示名]\n  §7[任务描述] \n§3输入§b.rw§3以提交任务"}]}',
+                    "/execute as @a[name=[玩家名]] at @s run playsound note.pling @s ~~~ 1 1.4",  # noqa: E501
+                    '/tellraw @a[name=[玩家名]] {"rawtext":[{"text":"§d▶ §e收到新任务 §f[任务显示名]\n  §7[任务描述] \n§3输入§b.rw§3以提交任务"}]}',  # noqa: E501
                 ],
                 "任务无法提交的显示": {
                     "格式": "§c任务无法达成， 原因:\n [原因]",
                 },
-                "任务无法开始的显示": {"格式": "§c任务无法开始， 原因:\n [原因]"},
+                "任务无法开始的显示": {
+                    "格式": "§c任务无法开始， 原因:\n [原因]"},
                 "任务完成执行的指令": [
                     '/tellraw @a[name=[玩家名]] {"rawtext":[{"text":"§a任务完成"}]}',
-                    "/execute as @a[name=[玩家名]] at @s run playsound random.levelup @s",
+                    "/execute as @a[name=[玩家名]] at @s run playsound random.levelup @s",  # noqa: E501
                 ],
             },
         }
@@ -156,7 +157,8 @@ class TaskSystemCloudInterop(Plugin):
                     if key not in result:
                         result[key] = copy.deepcopy(value)
             return result
-        return copy.deepcopy(raw) if raw is not None else copy.deepcopy(default)
+        return copy.deepcopy(
+            raw) if raw is not None else copy.deepcopy(default)
 
     @staticmethod
     def _trim_fixed_keys(raw: Any, default: dict[str, Any]) -> dict[str, Any]:
@@ -191,7 +193,11 @@ class TaskSystemCloudInterop(Plugin):
         return result if result > 0 else fallback
 
     @staticmethod
-    def _normalize_str(value: Any, fallback: str, *, allow_empty: bool = False) -> str:
+    def _normalize_str(
+            value: Any,
+            fallback: str,
+            *,
+            allow_empty: bool = False) -> str:
         if value is None:
             return fallback
         text = str(value)
@@ -302,7 +308,8 @@ class TaskSystemCloudInterop(Plugin):
             raw_cfg, _ = config.get_plugin_config_and_version(
                 self.name, {}, self._cfg_default, self.version
             )
-            merged_cfg = self._normalize_runtime_config(raw_cfg, self._cfg_default)
+            merged_cfg = self._normalize_runtime_config(
+                raw_cfg, self._cfg_default)
             config.check_auto(self._cfg_std, merged_cfg)
         except Exception as err:
             fmts.print_err(f"{self.name} 主配置文件自动更新失败，已使用默认配置: {err}")
@@ -325,7 +332,11 @@ class TaskSystemCloudInterop(Plugin):
                 for file in os.listdir(sub_path):
                     if not file.endswith(".json"):
                         continue
-                    cfg = config.get_cfg(os.path.join(sub_path, file), self._quest_std)
+                    cfg = config.get_cfg(
+                        os.path.join(
+                            sub_path,
+                            file),
+                        self._quest_std)
                     tag_name = f"{cfg_quest_dir}/{file[:-5]}"
                     quests[tag_name] = Quest(
                         tag_name,
@@ -389,7 +400,9 @@ class TaskSystemCloudInterop(Plugin):
                 path = os.path.join(root, filename)
                 state = self.file_state(path)
                 if state is not None:
-                    states.append((os.path.relpath(path, self.QUEST_PATH), state))
+                    states.append(
+                        (os.path.relpath(
+                            path, self.QUEST_PATH), state))
         return tuple(sorted(states))
 
     def refresh_config_file_state(self):
@@ -407,13 +420,15 @@ class TaskSystemCloudInterop(Plugin):
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         try:
-            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY, DYNAMIC_LOAD_DEFAULT_INTERVAL))
+            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY,
+                           DYNAMIC_LOAD_DEFAULT_INTERVAL))
         except (TypeError, ValueError):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
 
     def config_reload_task(self):
-        while not self._config_reload_stop.wait(self.dynamic_config_reload_interval()):
+        while not self._config_reload_stop.wait(
+                self.dynamic_config_reload_interval()):
             if not self.is_dynamic_config_reload_enabled():
                 self.refresh_config_file_state()
                 continue
@@ -474,11 +489,13 @@ class TaskSystemCloudInterop(Plugin):
         if quest := self.get_quest(quest_query):
             return quest, ""
 
-        exact_matches = [i for i in self.quests.values() if i.show_name == quest_query]
+        exact_matches = [
+            i for i in self.quests.values() if i.show_name == quest_query]
         if len(exact_matches) == 1:
             return exact_matches[0], ""
         if len(exact_matches) > 1:
-            labels = "、".join(self.get_quest_label(i) for i in exact_matches[:5])
+            labels = "、".join(self.get_quest_label(i)
+                              for i in exact_matches[:5])
             return None, f"匹配到多个同名任务，请改用任务标签名：{labels}"
 
         query_lower = quest_query.casefold()
@@ -491,7 +508,8 @@ class TaskSystemCloudInterop(Plugin):
         if len(fuzzy_matches) == 1:
             return fuzzy_matches[0], ""
         if len(fuzzy_matches) > 1:
-            labels = "、".join(self.get_quest_label(i) for i in fuzzy_matches[:5])
+            labels = "、".join(self.get_quest_label(i)
+                              for i in fuzzy_matches[:5])
             if len(fuzzy_matches) > 5:
                 labels += "……"
             return None, f"匹配到多个任务：{labels}"
@@ -661,10 +679,11 @@ class TaskSystemCloudInterop(Plugin):
             err_strs = []
             player_finished_quests = self.read_quests_finished(player)
             for quest_name in quest.need_quests_prefix:
-                if (
-                    need_quest := self.get_quest(quest_name)
-                ) not in player_finished_quests:
-                    assert need_quest
+                need_quest = self.get_quest(quest_name)
+                if need_quest is None:
+                    err_strs.append(f"{quest_name} (任务配置不存在)")
+                    continue
+                if need_quest not in player_finished_quests:
                     err_strs.append(need_quest.show_name)
             if err_strs:
                 return False, "需要完成任务:\n  " + "\n  ".join(err_strs)
@@ -676,7 +695,7 @@ class TaskSystemCloudInterop(Plugin):
                 else:
                     count = ext_data[0]
                     data = 0
-                if (item_count_now := player.getItemCount(item_id, data)) < count:
+                if (item_count_now := player.getItemCount(item_id, data)) < count:  # noqa: E501
                     err_strs.append(
                         f"§f{item_name} §7(§c{item_count_now}§7/§f{count}§7)"
                     )
@@ -709,23 +728,29 @@ class TaskSystemCloudInterop(Plugin):
             self.show_fail(player, "该任务已经完成")
             return False
         o["quests_ok"][quest.tag_name] = int(time.time())
-        o["in_quests"] = [
-            tag_name for tag_name in o["in_quests"] if tag_name != quest.tag_name
-        ]
+        o["in_quests"] = [tag_name for tag_name in o["in_quests"]
+                          if tag_name != quest.tag_name]
         self.write_player_quest_data(player, o)
         self.game_ctrl.sendwocmd(
-            f"/execute as @a[name={player.name}] at @s run playsound random.levelup @s"
+            f"/execute as @a[name={player.name}] at @s run playsound random.levelup @s"  # noqa: E501
         )
         player.show("§a۞ §l任务完成 §r§e奖励已下发~")
         for cmd in quest.exec_cmds_when_finished:
-            self.game_ctrl.sendwocmd(utils.simple_fmt({"[玩家名]": player.name}, cmd))
-        for item_name, (item_id, count) in quest.items_give_when_finished.items():
-            self.game_ctrl.sendwocmd(f"give @a[name={player.name}] {item_id} {count}")
+            self.game_ctrl.sendwocmd(
+                utils.simple_fmt({"[玩家名]": player.name}, cmd))
+        for item_name, (item_id,
+                        count) in quest.items_give_when_finished.items():
+            self.game_ctrl.sendwocmd(
+                f"give @a[name={player.name}] {item_id} {count}")
             player.show(f" §7 + {count}x§f{item_name}")
         self.show_succ(player, "任务已提交, 请退出聊天栏")
-        for new_quest in quest.start_quest_when_finished:
-            new_quest = self.get_quest(new_quest)
-            assert new_quest
+        for new_quest_name in quest.start_quest_when_finished:
+            new_quest = self.get_quest(new_quest_name)
+            if new_quest is None:
+                fmts.print_err(
+                    f"{self.name}: 完成任务后开始的任务不存在: {new_quest_name}"
+                )
+                continue
             self.add_quest(player, new_quest)
         return True
 
@@ -789,7 +814,8 @@ class TaskSystemCloudInterop(Plugin):
             self.print(f"§6on_quest_ok: 玩家 {target_name} 不存在")
             return
         if quest is not None:
-            ok, reason = self.detect_quest(target, quest, allow_command_block=True)
+            ok, reason = self.detect_quest(
+                target, quest, allow_command_block=True)
             if not ok:
                 self.show_fail(target, reason)
                 return
@@ -866,7 +892,8 @@ class TaskSystemCloudInterop(Plugin):
 
     @utils.thread_func("管理员向玩家添加任务")
     def force_add_quest_menu(self, player: Player, args: tuple):
-        # with utils.ChatbarLock(player, lambda _: print(utils.chatbar_lock_list)):
+        # with utils.ChatbarLock(player, lambda _:
+        # print(utils.chatbar_lock_list)):
         (quest_tagname,) = args
         if (quest := self.get_quest(quest_tagname)) is None:
             player.show("§c任务标签名不存在")
@@ -958,7 +985,8 @@ class TaskSystemCloudInterop(Plugin):
         mins, secs = divmod(left, 60)
         if secs > 0 and mins == 0:
             mins = 1
-        return utils.simple_fmt({"%d": days, "%H": hrs, "%M": mins, "%S": secs}, fmt)
+        return utils.simple_fmt(
+            {"%d": days, "%H": hrs, "%M": mins, "%S": secs}, fmt)
 
 
 entry = plugin_entry(

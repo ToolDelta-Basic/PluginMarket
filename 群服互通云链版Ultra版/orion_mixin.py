@@ -67,15 +67,13 @@ class QQLinkerOrionMixin:
     ):
         """按 Orion 风格打印一张控制台信息卡片。"""
         card = (
-            self.console_menu_header(title)
-            + "\n"
-            + self.console_menu_footer(
+            self.console_menu_header(title) +
+            "\n" +
+            self.console_menu_footer(
                 page_label,
                 "\n".join(
-                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines
-                ),
-            )
-        )
+                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines),  # noqa: E501
+            ))
         {
             "info": fmts.print_inf,
             "success": fmts.print_suc,
@@ -145,9 +143,17 @@ class QQLinkerOrionMixin:
         ok, msg = self.orion_unban_player(args[0])
         self.reply_result(group_id, sender, ok, msg)
 
-    def qq_prompt(self, group_id: int, qqid: int, text: str, timeout: int = 60):
+    def qq_prompt(
+            self,
+            group_id: int,
+            qqid: int,
+            text: str,
+            timeout: int = 60):
         """发送一段提示文本，并等待同群同 QQ 的下一条回复。"""
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {text}", do_remove_cq_code=False)
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] {text}",
+            do_remove_cq_code=False)
         resp = self.waitMsg(qqid, timeout=timeout, group_id=group_id)
         if isinstance(resp, str):
             return resp.strip()
@@ -241,7 +247,7 @@ class QQLinkerOrionMixin:
     def orion_device_status_text(self, device_id: str):
         """读取某个设备号在 Orion 中的封禁状态摘要。"""
         orion = self.require_orion()
-        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"
+        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"  # noqa: E501
         if not os.path.exists(path):
             return "未封禁"
         try:
@@ -279,7 +285,8 @@ class QQLinkerOrionMixin:
         """读取历史玩家名称到 xuid 的映射数据。"""
         path = os.path.join("插件数据文件", "前置-玩家XUID获取", "xuids.json")
         try:
-            return self.orion.utils.disk_read_need_exists(path) if self.orion else {}
+            return self.orion.utils.disk_read_need_exists(
+                path) if self.orion else {}
         except Exception:
             return {}
 
@@ -312,7 +319,7 @@ class QQLinkerOrionMixin:
         )
         output_lines = [
             item["display"]
-            for item in matched_items[start_index - 1 : end_index]
+            for item in matched_items[start_index - 1: end_index]
         ]
         displayed_count = len(output_lines)
         self.sendmsg(
@@ -527,7 +534,7 @@ class QQLinkerOrionMixin:
                 {
                     "value": (device_id, player_info),
                     "display": (
-                        f"{device_id} - {self.format_device_history(player_info)}"
+                        f"{device_id} - {self.format_device_history(player_info)}"  # noqa: E501
                         f" - {self.orion_device_status_text(device_id)}"
                     ),
                 }
@@ -564,7 +571,8 @@ class QQLinkerOrionMixin:
         if self.is_menu_exit_input(user_input, group_id):
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return None
-        ban_time = self.orion.utils.ban_time_format(user_input) if self.orion else 0
+        ban_time = self.orion.utils.ban_time_format(
+            user_input) if self.orion else 0
         if ban_time == 0:
             self.reply_to_qq(group_id, qqid, "❀ 您输入的封禁时间有误")
             return None
@@ -641,7 +649,11 @@ class QQLinkerOrionMixin:
         self.reply_to_qq(group_id, qqid, "❀ 您的输入有误")
         return None
 
-    def _apply_selected_orion_ban(self, group_id: int, qqid: int, ban_target: dict):
+    def _apply_selected_orion_ban(
+            self,
+            group_id: int,
+            qqid: int,
+            ban_target: dict):
         """把封禁时间和封禁原因的通用交互流程复用到所有封禁模式。"""
         ban_time = self.qq_get_orion_ban_time(group_id, qqid)
         if ban_time is None:
@@ -729,16 +741,14 @@ class QQLinkerOrionMixin:
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         if choice == "1":
-            xuid_dir = f"{self.orion.data_path}/{self.orion.config_mgr.xuid_dir}"
+            xuid_dir = f"{self.orion.data_path}/{self.orion.config_mgr.xuid_dir}"  # noqa: E501
             xuid_data: dict[str, str] = {}
             if os.path.isdir(xuid_dir):
                 for xuid_json in os.listdir(xuid_dir):
                     xuid = xuid_json.replace(".json", "")
                     try:
-                        xuid_data[xuid] = self.orion.xuid_getter.get_name_by_xuid(
-                            xuid,
-                            True,
-                        )
+                        xuid_data[xuid] = self.orion.xuid_getter.get_name_by_xuid(  # noqa: E501
+                            xuid, True, )
                     except Exception:
                         xuid_data[xuid] = xuid
             xuid, player_name = self.qq_select_orion_xuid(
@@ -754,7 +764,9 @@ class QQLinkerOrionMixin:
             self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "2":
-            device_dir = f"{self.orion.data_path}/{self.orion.config_mgr.device_id_dir}"
+            device_dir = f"{
+                self.orion.data_path}/{
+                self.orion.config_mgr.device_id_dir}"
             player_data = self.build_device_history_data()
             device_data: dict[str, dict[str, list[str]]] = {}
             if os.path.isdir(device_dir):
@@ -785,13 +797,15 @@ class QQLinkerOrionMixin:
         try:
             xuid = self.orion.xuid_getter.get_xuid_by_name(target, True)
             try:
-                player_name = self.orion.xuid_getter.get_name_by_xuid(xuid, True)
+                player_name = self.orion.xuid_getter.get_name_by_xuid(
+                    xuid, True)
             except Exception:
                 player_name = target
         except Exception:
             xuid = target
             try:
-                player_name = self.orion.xuid_getter.get_name_by_xuid(xuid, True)
+                player_name = self.orion.xuid_getter.get_name_by_xuid(
+                    xuid, True)
             except Exception:
                 player_name = target
 
@@ -868,7 +882,7 @@ class QQLinkerOrionMixin:
         orion = self.require_orion()
         # 设备号封禁会顺手踢掉当前在线、且命中过这个设备号的玩家。
         timestamp_now, date_now = orion.utils.now()
-        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"
+        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"  # noqa: E501
         with orion.lock_ban_device_id:
             ban_data = orion.utils.disk_read(path)
             timestamp_end, date_end = orion.utils.calculate_ban_end_time(
@@ -917,7 +931,7 @@ class QQLinkerOrionMixin:
     ):
         """删除 Orion 中某个设备号的封禁记录。"""
         orion = self.require_orion()
-        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"
+        path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"  # noqa: E501
         if not os.path.exists(path):
             return False, f"设备号 {device_id} 当前不在 Orion 的设备号封禁列表中"
         os.remove(path)

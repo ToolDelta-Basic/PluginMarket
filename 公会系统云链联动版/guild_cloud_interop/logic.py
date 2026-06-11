@@ -7,7 +7,7 @@ from tooldelta import Player, game_utils, fmts
 from tooldelta.utils import tempjson
 
 from guild_cloud_interop.config import Config
-from guild_cloud_interop.models import GuildData, GuildMember,GuildRank ,VaultItem
+from guild_cloud_interop.models import GuildData, GuildMember, GuildRank, VaultItem  # noqa: E501
 from guild_cloud_interop.prompts import render_config_prompt
 from guild_cloud_interop.ui import format_page_footer, format_panel
 
@@ -24,10 +24,13 @@ def _menu_config() -> dict[str, Any]:
     return config if isinstance(config, dict) else {}
 
 
-def _menu_item(group: str, key: str, fallback_name: str, fallback_desc: str) -> tuple[str, str]:
+def _menu_item(group: str, key: str, fallback_name: str,
+               fallback_desc: str) -> tuple[str, str]:
     menu_config = _menu_config()
     group_config = menu_config.get(group, {})
-    item_config = group_config.get(key, {}) if isinstance(group_config, dict) else {}
+    item_config = group_config.get(
+        key, {}) if isinstance(
+        group_config, dict) else {}
     if not isinstance(item_config, dict):
         item_config = {}
     name = item_config.get("名称")
@@ -42,8 +45,11 @@ def _menu_item_name(group: str, key: str, fallback_name: str) -> str:
     return _menu_item(group, key, fallback_name, "")[0]
 
 
-
-def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optional[GuildMember]) -> Optional[str]:
+def _show_menu(
+        self,
+        player: Player,
+        guild: Optional[GuildData],
+        member: Optional[GuildMember]) -> Optional[str]:
     """显示公会菜单并返回用户选择 - 增强版本"""
 
     # 数据完整性检查
@@ -59,18 +65,23 @@ def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optiona
     is_member = guild is not None
     is_owner = member and member.rank == GuildRank.OWNER
     can_manage_members = bool(
-        guild
-        and member
-        and any(
-            guild.has_permission(player.name, permission)
-            for permission in ("kick", "set_rank", "transfer_owner", "join_queue")
-        )
-    )
+        guild and member and any(
+            guild.has_permission(
+                player.name,
+                permission) for permission in (
+                "kick",
+                "set_rank",
+                "transfer_owner",
+                "join_queue")))
 
     # 调试日志
     if guild:
-        fmts.print_inf(f"菜单显示 - 玩家: {player.name}, 公会: {guild.name}, 成员职位: {member.rank.value if member else 'None'}, 是否会长: {is_owner}")
-    
+        fmts.print_inf(
+            f"菜单显示 - 玩家: {
+                player.name}, 公会: {
+                guild.name}, 成员职位: {
+                member.rank.value if member else 'None'}, 是否会长: {is_owner}")
+
     menu_config = _menu_config()
     base_items = [
         ("创建", "创建自己的公会", not is_member),
@@ -91,11 +102,11 @@ def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optiona
     ]
 
     optional_menu_config = [
-        (Config.GUILD_FUNCTION_VAULT,    "仓库", "公会仓库", is_member),
-        (Config.GUILD_FUNCTION_BASE,     "据点", "据点相关操作", is_member),
+        (Config.GUILD_FUNCTION_VAULT, "仓库", "公会仓库", is_member),
+        (Config.GUILD_FUNCTION_BASE, "据点", "据点相关操作", is_member),
         (Config.GUILD_FUNCTION_DONATION, "捐献", "捐献物品到公会", is_member),
-        (Config.GUILD_FUNCTION_TASKS,    "任务", "公会任务系统", is_member),
-        (Config.GUILD_FUNCTION_EFFECT,   "效果", "通过钻石获得效果增益", is_member),
+        (Config.GUILD_FUNCTION_TASKS, "任务", "公会任务系统", is_member),
+        (Config.GUILD_FUNCTION_EFFECT, "效果", "通过钻石获得效果增益", is_member),
         (Config.GUILD_FUNCTION_RANKINGS, "排行", "查看公会排行榜", True),
     ]
 
@@ -103,12 +114,12 @@ def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optiona
         if enabled:
             menu_items.append((*_menu_item("可选功能", cmd, cmd, desc), condition))
 
-    
     available_items = [(cmd, desc) for cmd, desc, cond in menu_items if cond]
-    
+
     if member and guild:
         subtitle_template = menu_config.get("成员身份显示模板", "[{rank}§f] §e{guild}")
-        subtitle = _format_template(subtitle_template, rank=member.rank.display_name, guild=guild.name)
+        subtitle = _format_template(
+            subtitle_template, rank=member.rank.display_name, guild=guild.name)
     else:
         subtitle = str(menu_config.get("游客身份显示", "[§7游客§f]"))
 
@@ -123,13 +134,15 @@ def _show_menu(self, player: Player, guild: Optional[GuildData], member: Optiona
         subtitle=subtitle,
         footer=f"{number_prompt}\n{name_prompt}",
     ))
-    choice_map = {str(index): cmd for index, (cmd, _desc) in enumerate(available_items, start=1)}
+    choice_map = {str(index): cmd for index, (cmd, _desc)
+                  in enumerate(available_items, start=1)}
     choice_map.update({cmd: cmd for cmd, _desc in available_items})
     user_input = game_utils.waitMsg(player.name, timeout=30)
     if user_input is None:
         player.show(render_config_prompt("菜单回复超时提示词"))
         return None
     return choice_map.get(user_input, user_input)
+
 
 def guild_update_data(self, args: list[str]):
     """更新过去的数据，确保所有公会都有 guild_id，且与外层 id 一致"""
@@ -154,23 +167,26 @@ def guild_update_data(self, args: list[str]):
     else:
         fmts.print_inf("无需更新，所有 数据 已正确")
 
+
 def guild_menu_cb(self, player: Player, args: tuple):
     """公会菜单回调函数 - 增强版本"""
     player_xuid = self.xuidm.get_xuid_by_name(player.name, allow_offline=True)
 
     # 强制刷新缓存以确保数据最新
-    guild = self.guild_manager.get_guild_by_player(player.name, force_reload=True)
+    guild = self.guild_manager.get_guild_by_player(
+        player.name, force_reload=True)
     member = guild.get_member(player.name) if guild else None
 
     # 额外的数据验证
     if guild and not member:
         fmts.print_err(f"数据不一致警告：玩家 {player.name} 在公会 {guild.name} 中但找不到成员记录")
         # 尝试重新加载数据
-        guild = self.guild_manager.get_guild_by_player(player.name, force_reload=True)
+        guild = self.guild_manager.get_guild_by_player(
+            player.name, force_reload=True)
         member = guild.get_member(player.name) if guild else None
-        
+
     subcommand = self._show_menu(player, guild, member)
-        
+
     if subcommand is None or subcommand in ("q", "Q", ".", "。"):
         return True
 
@@ -185,38 +201,38 @@ def guild_menu_cb(self, player: Player, args: tuple):
         if subcommand not in frozen_readonly_items:
             self.show_guild_frozen(player, guild)
             return True
-        
+
     # 路由到对应的处理函数
     # 功能项配置：功能是否启用、菜单标题、处理函数
     optional_handlers_config = [
-        (Config.GUILD_FUNCTION_VAULT,   "仓库",   self._handle_vault),
-        (Config.GUILD_FUNCTION_BASE,    "据点",   self._handle_base_menu),
-        (Config.GUILD_FUNCTION_DONATION, "捐献",  self._handle_donation),
-        (Config.GUILD_FUNCTION_TASKS,   "任务",   self._handle_tasks),
-        (Config.GUILD_FUNCTION_EFFECT,  "效果",   self._handle_effect),
-        (Config.GUILD_FUNCTION_RANKINGS, "排行",  self._handle_rankings),
+        (Config.GUILD_FUNCTION_VAULT, "仓库", self._handle_vault),
+        (Config.GUILD_FUNCTION_BASE, "据点", self._handle_base_menu),
+        (Config.GUILD_FUNCTION_DONATION, "捐献", self._handle_donation),
+        (Config.GUILD_FUNCTION_TASKS, "任务", self._handle_tasks),
+        (Config.GUILD_FUNCTION_EFFECT, "效果", self._handle_effect),
+        (Config.GUILD_FUNCTION_RANKINGS, "排行", self._handle_rankings),
     ]
 
     # 基础菜单项（总是存在）
     handlers = {
-        _menu_item_name("基础功能", "创建", "创建"): lambda: self._handle_create_guild(player, player_xuid),
-        _menu_item_name("基础功能", "列表", "列表"): lambda: self._handle_list_guilds(player),
-        _menu_item_name("基础功能", "查看", "查看"): lambda: self._handle_view_guild(player),
-        _menu_item_name("基础功能", "成员", "成员"): lambda: self._handle_view_members(player),
-        _menu_item_name("基础功能", "日志", "日志"): lambda: self._handle_view_logs(player),
-        _menu_item_name("基础功能", "公告", "公告"): lambda: self._handle_announcement(player),
-        _menu_item_name("基础功能", "加入", "加入"): lambda: self._handle_join_guild(player),
-        _menu_item_name("基础功能", "退出", "退出"): lambda: self._handle_leave_guild(player),
-        _menu_item_name("基础功能", "管理", "管理"): lambda: self._handle_manage_members(player),
-        _menu_item_name("基础功能", "解散", "解散"): lambda: self._handle_dissolve_guild(player, player_xuid),
+        _menu_item_name("基础功能", "创建", "创建"): lambda: self._handle_create_guild(player, player_xuid),  # noqa: E501
+        _menu_item_name("基础功能", "列表", "列表"): lambda: self._handle_list_guilds(player),  # noqa: E501
+        _menu_item_name("基础功能", "查看", "查看"): lambda: self._handle_view_guild(player),  # noqa: E501
+        _menu_item_name("基础功能", "成员", "成员"): lambda: self._handle_view_members(player),  # noqa: E501
+        _menu_item_name("基础功能", "日志", "日志"): lambda: self._handle_view_logs(player),  # noqa: E501
+        _menu_item_name("基础功能", "公告", "公告"): lambda: self._handle_announcement(player),  # noqa: E501
+        _menu_item_name("基础功能", "加入", "加入"): lambda: self._handle_join_guild(player),  # noqa: E501
+        _menu_item_name("基础功能", "退出", "退出"): lambda: self._handle_leave_guild(player),  # noqa: E501
+        _menu_item_name("基础功能", "管理", "管理"): lambda: self._handle_manage_members(player),  # noqa: E501
+        _menu_item_name("基础功能", "解散", "解散"): lambda: self._handle_dissolve_guild(player, player_xuid),  # noqa: E501
     }
 
     # 追加可选功能项
     for enabled, title, func in optional_handlers_config:
         if enabled:
-            handlers[_menu_item_name("可选功能", title, title)] = lambda f=func: f(player)
+            handlers[_menu_item_name("可选功能", title, title)
+                     ] = lambda f=func: f(player)
 
-        
     handler = handlers.get(subcommand)
     if handler:
         return handler()
@@ -225,7 +241,12 @@ def guild_menu_cb(self, player: Player, args: tuple):
 
     return True
 
-def _create_progress_bar(self, current: int, total: int, length: int = 10) -> str:
+
+def _create_progress_bar(
+        self,
+        current: int,
+        total: int,
+        length: int = 10) -> str:
     """创建进度条"""
     if total == 0:
         return "§7[§c无效§7]"
@@ -239,6 +260,7 @@ def _create_progress_bar(self, current: int, total: int, length: int = 10) -> st
 
     return f"§7[{bar}§7] §f{percentage}%"
 
+
 def _format_time_duration(self, seconds: float) -> str:
     """格式化时间长度"""
     if seconds < 60:
@@ -250,13 +272,20 @@ def _format_time_duration(self, seconds: float) -> str:
     else:
         return f"{int(seconds // 86400)}天"
 
+
 def _get_item_display_name(self, item_id: str) -> str:
     """获取物品显示名称"""
     return self.item_matcher.get_chinese_name(item_id)
 
-def _has_inventory_space(self, player: Player, item_id: str, count: int) -> bool:
+
+def _has_inventory_space(
+        self,
+        player: Player,
+        item_id: str,
+        count: int) -> bool:
     """检查玩家背包是否有足够空间"""
     return True
+
 
 def _handle_base_menu(self, player: Player) -> bool:
     """据点菜单"""
@@ -268,31 +297,37 @@ def _handle_base_menu(self, player: Player) -> bool:
         return True
     can_return = guild.has_permission(player.name, "return_base")
     can_set = guild.has_permission(player.name, "setbase")
-    
+
     player.show("§r========== §a据点菜单§r ==========")
-    
+
     if guild.base:
         base = guild.base
-        dim_name = Config.DIMENSION_NAMES.get(base.dimension, f"维度{base.dimension}")
-        player.show(f"§7当前据点: §f{dim_name} ({base.x:.1f}, {base.y:.1f}, {base.z:.1f})")
+        dim_name = Config.DIMENSION_NAMES.get(
+            base.dimension, f"维度{base.dimension}")
+        player.show(
+            f"§7当前据点: §f{dim_name} ({
+                base.x:.1f}, {
+                base.y:.1f}, {
+                base.z:.1f})")
         if can_return:
             player.show("§e1. §f传送到据点")
     else:
         player.show("§7当前据点: §c未设置")
-    
+
     if can_set:
         player.show("§e2. §f设置据点")
-    
+
     player.show("§7输入选项序号，q 返回")
-    
+
     choice = game_utils.waitMsg(player.name, timeout=30)
-    
+
     if choice == "1" and guild.base and can_return:
         return self._handle_return_base(player)
     elif choice == "2" and can_set:
         return self._handle_set_base(player)
-    
+
     return True
+
 
 def guild_chat_cb(self, player: Player, args: tuple):
     """公会聊天回调"""
@@ -303,14 +338,14 @@ def guild_chat_cb(self, player: Player, args: tuple):
     if self.guild_is_frozen(guild):
         self.show_guild_frozen(player, guild)
         return True
-    
+
     message = args[0] if args and args[0] else None
-    
+
     if not message:
         # 切换聊天模式
         current_mode = self.guild_chat_mode.get(player.name, False)
         self.guild_chat_mode[player.name] = not current_mode
-        
+
         if self.guild_chat_mode[player.name]:
             player.show("§l§a公会 §d>> §r已切换到公会聊天模式")
         else:
@@ -318,8 +353,9 @@ def guild_chat_cb(self, player: Player, args: tuple):
     else:
         # 发送公会消息
         self._send_guild_message(guild, player.name, message)
-    
+
     return True
+
 
 def _send_guild_message(self, guild: GuildData, sender: str, message: str):
     """发送公会聊天消息"""
@@ -328,16 +364,18 @@ def _send_guild_message(self, guild: GuildData, sender: str, message: str):
     member = guild.get_member(sender)
     if not member:
         return
-    
+
     # 构建消息
-    chat_msg = f"§d✧§b[公会]§d✦ {member.rank.display_name} §e{sender}§7: §f{message}"
-    
+    chat_msg = f"§d✧§b[公会]§d✦ {
+        member.rank.display_name} §e{sender}§7: §f{message}"
+
     # 发送给所有在线的公会成员
     for member in guild.members:
         if member.name in self.game_ctrl.allplayers:
             self.game_ctrl.sendcmd(
-                f'/tellraw {member.name} {{"rawtext":[{{"text":"{chat_msg}"}}]}}'
+                f'/tellraw {member.name} {{"rawtext":[{{"text":"{chat_msg}"}}]}}'  # noqa: E501
             )
+
 
 def on_chat_packet(self, packet):
     """处理聊天数据包"""
@@ -345,24 +383,26 @@ def on_chat_packet(self, packet):
         # 检查是否是玩家聊天
         if packet.get("type") != 1:  # 1 表示玩家聊天
             return False
-        
+
         sender = packet.get("source_name", "")
         message = packet.get("message", "")
-        
+
         # 检查是否在公会聊天模式
         if self.guild_chat_mode.get(sender, False):
             guild = self.guild_manager.get_guild_by_player(sender)
             if guild:
                 self._send_guild_message(guild, sender, message)
                 return True  # 阻止原始消息
-    except:
+    except BaseException:
         pass
-    
+
     return False
+
 
 def _should_stop(self) -> bool:
     stop_event = getattr(self, "_stop_event", None)
     return bool(stop_event and stop_event.is_set())
+
 
 def _wait_or_stopped(self, seconds: float) -> bool:
     stop_event = getattr(self, "_stop_event", None)
@@ -370,6 +410,7 @@ def _wait_or_stopped(self, seconds: float) -> bool:
         time.sleep(seconds)
         return False
     return stop_event.wait(seconds)
+
 
 def _apply_guild_effects_to_player(
     self,
@@ -380,7 +421,7 @@ def _apply_guild_effects_to_player(
     effect_names: Optional[set] = None,
 ) -> int:
     """按需给单个在线玩家补发公会增益，避免周期性全量刷命令压租赁服。"""
-    if not Config.GUILD_FUNCTION_EFFECT or player_name not in self.game_ctrl.allplayers:
+    if not Config.GUILD_FUNCTION_EFFECT or player_name not in self.game_ctrl.allplayers:  # noqa: E501
         return 0
 
     if guild is None:
@@ -410,17 +451,20 @@ def _apply_guild_effects_to_player(
         try:
             amplifier = max(int(raw_level) - 1, 0)
         except (TypeError, ValueError):
-            fmts.print_err(f"公会 {guild.name} 的效果 {effect_name} 等级无效: {raw_level}")
+            fmts.print_err(
+                f"公会 {
+                    guild.name} 的效果 {effect_name} 等级无效: {raw_level}")
             continue
 
         cache_key = (player_name, effect_name)
         cached = cache.get(cache_key)
         if not force and cached:
             cached_amplifier, cached_time = cached
-            if cached_amplifier == amplifier and now - cached_time < refresh_interval:
+            if cached_amplifier == amplifier and now - cached_time < refresh_interval:  # noqa: E501
                 continue
 
-        if sent_count and command_delay > 0 and _wait_or_stopped(self, command_delay):
+        if sent_count and command_delay > 0 and _wait_or_stopped(
+                self, command_delay):
             break
 
         try:
@@ -434,7 +478,11 @@ def _apply_guild_effects_to_player(
 
     return sent_count
 
-def _refresh_online_effects(self, online_players: List[str], guilds: Optional[dict] = None) -> int:
+
+def _refresh_online_effects(
+        self,
+        online_players: List[str],
+        guilds: Optional[dict] = None) -> int:
     if not Config.GUILD_FUNCTION_EFFECT:
         return 0
 
@@ -456,9 +504,11 @@ def _refresh_online_effects(self, online_players: List[str], guilds: Optional[di
             if guild_id:
                 guild = guilds.get(guild_id)
 
-        sent_count += _apply_guild_effects_to_player(self, player_name, guild=guild)
+        sent_count += _apply_guild_effects_to_player(
+            self, player_name, guild=guild)
 
     return sent_count
+
 
 def guild_exp_task(self):
     """公会经验更新任务"""
@@ -470,30 +520,31 @@ def guild_exp_task(self):
 
         try:
             fmts.print_inf("正在更新公会经验...")
-            
+
             online_players = list(self.game_ctrl.allplayers)
             guilds = self.guild_manager._load_guilds(force_reload=True)
             guild_online_count = {}
             level_ups = []
-            
+
             # 统计每个公会在线人数
             for player_name in online_players:
                 guild = self.guild_manager.get_guild_by_player(player_name)
                 if guild:
-                    guild_online_count[guild.guild_id] = guild_online_count.get(guild.guild_id, 0) + 1
-            
+                    guild_online_count[guild.guild_id] = guild_online_count.get(  # noqa: E501
+                        guild.guild_id, 0) + 1
+
             # 更新经验和等级
             for gid, count in guild_online_count.items():
                 if count == 0:
                     continue
-                
+
                 guild = guilds[gid]
                 exp_add, _ = self.guild_apply_reward_multipliers(
                     count * Config.EXP_PER_ONLINE_MEMBER,
                     0,
                 )
                 guild.exp += exp_add
-                
+
                 # 处理升级
                 level = guild.level
                 next_required_exp = Config.GUILD_LEVEL_EXP.get(level + 1)
@@ -503,20 +554,21 @@ def guild_exp_task(self):
                     next_required_exp = Config.GUILD_LEVEL_EXP.get(level + 1)
                     level_ups.append((guild.name, level))
                     guild.add_log(f"公会升级到 {level} 级")
-                
+
                 guild.level = level
-            
+
             self.guild_manager.save_guilds(guilds)
-            
+
             for guild_name, new_level in level_ups:
                 if _should_stop(self):
                     break
                 self.game_ctrl.sendcmd(
-                    f'/tellraw @a {{"rawtext":[{{"text":"§l§a公会 §d>> §r公会 §e{guild_name}§r 升级到了 §e{new_level}§r 级！"}}]}}'
+                    f'/tellraw @a {{"rawtext":[{{"text":"§l§a公会 §d>> §r公会 §e{guild_name}§r 升级到了 §e{new_level}§r 级！"}}]}}'  # noqa: E501
                 )
         except Exception as e:
             fmts.print_err(f"更新公会经验出错: {e}")
-            
+
+
 def update_online_task(self):
     """更新在线状态任务"""
     while not _should_stop(self):
@@ -529,7 +581,8 @@ def update_online_task(self):
 
             self.guild_manager.update_online_status(online_players)  # 传名字列表
             guilds = self.guild_manager._load_guilds()
-            sent_count = _refresh_online_effects(self, online_players, guilds=guilds)
+            sent_count = _refresh_online_effects(
+                self, online_players, guilds=guilds)
 
             if sent_count:
                 fmts.print_inf(f"已低频补发 {sent_count} 条公会增益命令")
@@ -537,16 +590,21 @@ def update_online_task(self):
             fmts.print_err(f"更新在线状态出错: {e}")
 
 
-
 def on_player_action(self, packet):
     """监听玩家行为，用于任务进度跟踪"""
     try:
-        #TODO 等待具体的数据包格式
+        # TODO 等待具体的数据包格式
         pass
     except Exception as e:
         fmts.print_err(f"处理玩家行为事件出错: {e}")
 
-def update_task_progress(self, player_name: str, task_type: str, target: str, amount: int = 1):
+
+def update_task_progress(
+        self,
+        player_name: str,
+        task_type: str,
+        target: str,
+        amount: int = 1):
     """更新任务进度"""
     try:
         guild = self.guild_manager.get_guild_by_player(player_name)
@@ -560,7 +618,7 @@ def update_task_progress(self, player_name: str, task_type: str, target: str, am
             if (task.completed or
                 task.task_type != task_type or
                 task.target != target or
-                player_name not in task.participants):
+                    player_name not in task.participants):
                 continue
 
             task.current_count += amount
@@ -570,10 +628,8 @@ def update_task_progress(self, player_name: str, task_type: str, target: str, am
                 task.current_count = task.target_count
 
                 # 发放奖励
-                reward_exp, reward_contribution = self.guild_apply_reward_multipliers(
-                    task.reward_exp,
-                    task.reward_contribution,
-                )
+                reward_exp, reward_contribution = self.guild_apply_reward_multipliers(  # noqa: E501
+                    task.reward_exp, task.reward_contribution, )
                 member = guild.get_member(player_name)
                 if member:
                     member.contribution += reward_contribution
@@ -583,7 +639,7 @@ def update_task_progress(self, player_name: str, task_type: str, target: str, am
                 # 通知玩家
                 if player_name in self.game_ctrl.allplayers:
                     self.game_ctrl.sendcmd(
-                        f'/tellraw {player_name} {{"rawtext":[{{"text":"§l§a公会任务 §d>> §r任务 \'{task.name}\' 已完成！获得 {reward_contribution} 贡献点和 {reward_exp} 公会经验"}}]}}'
+                        f'/tellraw {player_name} {{"rawtext":[{{"text":"§l§a公会任务 §d>> §r任务 \'{task.name}\' 已完成！获得 {reward_contribution} 贡献点和 {reward_exp} 公会经验"}}]}}'  # noqa: E501
                     )
 
                 guild.add_log(f"{player_name} 完成了任务: {task.name}")
@@ -597,11 +653,14 @@ def update_task_progress(self, player_name: str, task_type: str, target: str, am
     except Exception as e:
         fmts.print_err(f"更新任务进度出错: {e}")
 
+
 def check_and_complete_trade_tasks(self, player_name: str):
     """检查并完成贸易任务"""
     self.update_task_progress(player_name, "trade", "trade_count", 1)
 
-def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, Any]]:
+
+def get_guild_rankings(
+        self, sort_by: str = "level") -> List[Tuple[GuildData, Any]]:
     """获取公会排行榜"""
     guilds = self.guild_manager._load_guilds()
     guild_list = list(guilds.values())
@@ -618,12 +677,16 @@ def get_guild_rankings(self, sort_by: str = "level") -> List[Tuple[GuildData, An
     elif sort_by == "activity":
         # 基于最近活跃度排序
         current_time = time.time()
-        guild_list.sort(key=lambda g: max([m.last_online for m in g.members] + [0]), reverse=True)
-        return [(g, max([m.last_online for m in g.members] + [0])) for g in guild_list]
+        guild_list.sort(key=lambda g: max(
+            [m.last_online for m in g.members] + [0]), reverse=True)
+        return [(g, max([m.last_online for m in g.members] + [0]))
+                for g in guild_list]
     else:
         return [(g, 0) for g in guild_list]
 
-def get_member_rankings(self, guild_id: str, sort_by: str = "contribution") -> List[Tuple[GuildMember, Any]]:
+
+def get_member_rankings(
+        self, guild_id: str, sort_by: str = "contribution") -> List[Tuple[GuildMember, Any]]:  # noqa: E501
     """获取公会成员排行榜"""
     guilds = self.guild_manager._load_guilds()
     guild = guilds.get(guild_id)
@@ -646,30 +709,38 @@ def get_member_rankings(self, guild_id: str, sort_by: str = "contribution") -> L
     else:
         return [(m, 0) for m in members]
 
-def _paginate_display(self, player: Player, items: List[Any], 
-                     title: str, formatter, allow_selection: bool = False) -> Optional[int]:
+
+def _paginate_display(
+        self,
+        player: Player,
+        items: List[Any],
+        title: str,
+        formatter,
+        allow_selection: bool = False) -> Optional[int]:
     """分页显示通用函数"""
     if not items:
         player.show(render_config_prompt("通用分页为空提示词", title=title))
         return None
-    
+
     page = 1
-    max_page = (len(items) + Config.ITEMS_PER_PAGE - 1) // Config.ITEMS_PER_PAGE
-    
+    max_page = (len(items) + Config.ITEMS_PER_PAGE -
+                1) // Config.ITEMS_PER_PAGE
+
     while True:
         page = max(1, min(page, max_page))
         start = (page - 1) * Config.ITEMS_PER_PAGE
         end = start + Config.ITEMS_PER_PAGE
-        
+
         msg = format_panel(title, subtitle=f"第 {page}/{max_page} 页")
-        
+
         for i, item in enumerate(items[start:end], start=1):
             msg += "\n" + formatter(start + i, item).rstrip()
-        
-        msg += "\n" + format_page_footer(page, max_page, start + 1, end, allow_selection)
-        
+
+        msg += "\n" + format_page_footer(page, max_page,
+                                         start + 1, end, allow_selection)
+
         player.show(msg)
-        
+
         choice = game_utils.waitMsg(player.name, timeout=20)
         if choice is None:
             player.show(render_config_prompt("通用分页超时提示词"))
@@ -687,6 +758,7 @@ def _paginate_display(self, player: Player, items: List[Any],
                 return idx - 1
             else:
                 player.show(render_config_prompt("通用分页无效选择提示词"))
+
 
 def custom_vault_sell(self, player: Player, args: tuple):
     """自定义价格出售物品到仓库"""
@@ -784,17 +856,20 @@ def custom_vault_sell(self, player: Player, args: tuple):
     )
 
     guild.vault_items.append(vault_item)
-    guild.add_log(f"{player.name} 自定义价格出售了 {item_name} x{count} (价格{custom_price}贡献点)")
+    guild.add_log(
+        f"{player.name} 自定义价格出售了 {item_name} x{count} (价格{custom_price}贡献点)")
 
     # 保存数据
     self.guild_manager.save_guilds(guilds)
 
-    player.show(f"§l§a公会仓库 §d>> §r自定义价格出售成功！{item_name} x{count} 已上架，价格 {custom_price} 贡献点")
+    player.show(
+        f"§l§a公会仓库 §d>> §r自定义价格出售成功！{item_name} x{count} 已上架，价格 {custom_price} 贡献点")  # noqa: E501
 
     # 更新贸易任务进度
     self.check_and_complete_trade_tasks(player.name)
 
     return True
+
 
 def show_item_list(self, player: Player, args: tuple):
     """显示支持的物品名称列表"""
@@ -833,6 +908,7 @@ def show_item_list(self, player: Player, args: tuple):
 
     return True
 
+
 def admin_clear_guild_data(self, player: Player, args: tuple):
     """管理员清理公会数据功能"""
     confirm = args[0] if args and args[0] else ""
@@ -865,13 +941,19 @@ def admin_clear_guild_data(self, player: Player, args: tuple):
             player.show(f"§a已创建数据备份：{backup_file}")
 
         # 清理内存中的数据
-        self.guild_manager._guilds_cache = {}
+        self.guild_manager._cache = {}
         self.guild_manager._player_guild_cache = {}
-        self.guild_manager._last_cache_time = 0
+        self.guild_manager._dirty_guilds.clear()
+        self.guild_manager._last_load_time = 0
+        self.guild_manager._last_save_time = 0
 
         # 清理数据文件
         empty_data = {}
-        tempjson.save_and_write(self.guilds_file, empty_data)
+        tempjson.load_and_write(
+            self.guilds_file,
+            empty_data,
+            need_file_exists=False)
+        tempjson.flush(self.guilds_file)
 
         player.show("§l§a公会数据清理完成§r")
         player.show("§a✅ 已清空所有公会记录")
@@ -888,6 +970,7 @@ def admin_clear_guild_data(self, player: Player, args: tuple):
         fmts.print_err(f"清理公会数据时出错：{e}")
 
     return True
+
 
 def debug_guild_menu(self, player: Player, args: tuple):
     """调试公会菜单显示问题"""
@@ -917,7 +1000,8 @@ def debug_guild_menu(self, player: Player, args: tuple):
             # 测试菜单条件
             is_member = guild is not None
             is_owner = member and member.rank == GuildRank.OWNER
-            is_deputy_or_above = member and member.rank in [GuildRank.OWNER, GuildRank.DEPUTY]
+            is_deputy_or_above = member and member.rank in [
+                GuildRank.OWNER, GuildRank.DEPUTY]
 
             player.show("§7菜单条件测试:")
             player.show(f"  is_member: §f{is_member}")
@@ -939,7 +1023,6 @@ def debug_guild_menu(self, player: Player, args: tuple):
                 ("效果", Config.GUILD_FUNCTION_EFFECT and is_member),
             ]
 
-
             player.show("§7菜单项显示测试:")
             for menu_name, condition in menu_tests:
                 status = "✅显示" if condition else "❌隐藏"
@@ -951,6 +1034,7 @@ def debug_guild_menu(self, player: Player, args: tuple):
 
     player.show("=" * 40)
     return True
+
 
 def debug_base_function(self, player: Player, args: tuple):
     """调试据点功能问题"""
@@ -992,7 +1076,14 @@ def debug_base_function(self, player: Player, args: tuple):
             player.show(f"  据点存在: §a是")
             player.show(f"  维度: §f{base.dimension}")
             player.show(f"  坐标: §f({base.x}, {base.y}, {base.z})")
-            player.show(f"  坐标类型: §f{type(base.x).__name__}, {type(base.y).__name__}, {type(base.z).__name__}")
+            player.show(
+                f"  坐标类型: §f{
+                    type(
+                        base.x).__name__}, {
+                    type(
+                        base.y).__name__}, {
+                    type(
+                        base.z).__name__}")
 
             # 验证坐标有效性
             try:
@@ -1014,7 +1105,7 @@ def debug_base_function(self, player: Player, args: tuple):
                 ("sendwocmd", f"tp {player.name} {base.x} {base.y} {base.z}"),
             ]
             for i, (method, cmd) in enumerate(tp_methods):
-                player.show(f"  方法{i+1}({method}): §f{cmd}")
+                player.show(f"  方法{i + 1}({method}): §f{cmd}")
 
         else:
             player.show(f"  据点存在: §c否")
@@ -1027,32 +1118,32 @@ def debug_base_function(self, player: Player, args: tuple):
 
 
 logic_functions = {
-    "_show_menu":_show_menu,
-    "guild_update_data":guild_update_data,
-    "guild_menu_cb":guild_menu_cb,
-    "_create_progress_bar":_create_progress_bar,
-    "_format_time_duration":_format_time_duration,
-    "_get_item_display_name":_get_item_display_name,
-    "_has_inventory_space":_has_inventory_space,
-    "_handle_base_menu":_handle_base_menu,
-    "_send_guild_message":_send_guild_message,
-    "on_chat_packet":on_chat_packet,
-    "_should_stop":_should_stop,
-    "_wait_or_stopped":_wait_or_stopped,
-    "_apply_guild_effects_to_player":_apply_guild_effects_to_player,
-    "_refresh_online_effects":_refresh_online_effects,
-    "guild_exp_task":guild_exp_task,
-    "update_online_task":update_online_task,
-    "on_player_action":on_player_action,
-    "update_task_progress":update_task_progress,
-    "check_and_complete_trade_tasks":check_and_complete_trade_tasks,
-    "get_member_rankings":get_member_rankings,
-    "_paginate_display":_paginate_display,
-    "custom_vault_sell":custom_vault_sell,
-    "show_item_list":show_item_list,
-    "admin_clear_guild_data":admin_clear_guild_data,
-    "guild_chat_cb":guild_chat_cb,
-    "debug_guild_menu":debug_guild_menu,
-    "debug_base_function":debug_base_function,
-    "get_guild_rankings":get_guild_rankings
+    "_show_menu": _show_menu,
+    "guild_update_data": guild_update_data,
+    "guild_menu_cb": guild_menu_cb,
+    "_create_progress_bar": _create_progress_bar,
+    "_format_time_duration": _format_time_duration,
+    "_get_item_display_name": _get_item_display_name,
+    "_has_inventory_space": _has_inventory_space,
+    "_handle_base_menu": _handle_base_menu,
+    "_send_guild_message": _send_guild_message,
+    "on_chat_packet": on_chat_packet,
+    "_should_stop": _should_stop,
+    "_wait_or_stopped": _wait_or_stopped,
+    "_apply_guild_effects_to_player": _apply_guild_effects_to_player,
+    "_refresh_online_effects": _refresh_online_effects,
+    "guild_exp_task": guild_exp_task,
+    "update_online_task": update_online_task,
+    "on_player_action": on_player_action,
+    "update_task_progress": update_task_progress,
+    "check_and_complete_trade_tasks": check_and_complete_trade_tasks,
+    "get_member_rankings": get_member_rankings,
+    "_paginate_display": _paginate_display,
+    "custom_vault_sell": custom_vault_sell,
+    "show_item_list": show_item_list,
+    "admin_clear_guild_data": admin_clear_guild_data,
+    "guild_chat_cb": guild_chat_cb,
+    "debug_guild_menu": debug_guild_menu,
+    "debug_base_function": debug_base_function,
+    "get_guild_rankings": get_guild_rankings
 }

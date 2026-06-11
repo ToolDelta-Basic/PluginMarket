@@ -48,7 +48,11 @@ def setReconnect(reconnectInterval: int) -> None:
 class DispatcherBase:
     """Base dispatcher that coordinates socket reads and reconnects."""
 
-    def __init__(self, app: Any, ping_timeout: Union[float, int, None]) -> None:
+    def __init__(self,
+                 app: Any,
+                 ping_timeout: Union[float,
+                                     int,
+                                     None]) -> None:
         """Store the owning app and ping timeout used by the dispatcher."""
         self.app = app
         self.ping_timeout = ping_timeout
@@ -101,7 +105,7 @@ class SSLDispatcher(DispatcherBase):
         read_callback: Callable,
         check_callback: Callable,
     ) -> None:
-        """Read SSL socket events while also handling pending decrypted bytes."""
+        """Read SSL socket events while also handling pending decrypted bytes."""  # noqa: E501
         sock = self.app.sock.sock
         sel = selectors.DefaultSelector()
         sel.register(sock, selectors.EVENT_READ)
@@ -131,7 +135,12 @@ class SSLDispatcher(DispatcherBase):
 class WrappedDispatcher:
     """Adapter for custom dispatcher implementations."""
 
-    def __init__(self, app, ping_timeout: Union[float, int, None], dispatcher) -> None:
+    def __init__(self,
+                 app,
+                 ping_timeout: Union[float,
+                                     int,
+                                     None],
+                 dispatcher) -> None:
         """Wrap a custom dispatcher and register its abort signal handler."""
         self.app = app
         self.ping_timeout = ping_timeout
@@ -159,7 +168,7 @@ class WrappedDispatcher:
 
 
 class WebSocketApp:
-    """Higher-level WebSocket API similar to the JavaScript WebSocket object."""
+    """Higher-level WebSocket API similar to the JavaScript WebSocket object."""  # noqa: E501
 
     def __init__(
         self,
@@ -192,7 +201,7 @@ class WebSocketApp:
             If the parameter is a callable object, it is called just before
             the connection attempt.
             The returned dict or list is used as custom header value.
-            This could be useful in order to properly setup timestamp dependent headers.
+            This could be useful in order to properly setup timestamp dependent headers.  # noqa: E501
         on_open: function
             Callback object which is called at opening websocket.
             on_open has one argument.
@@ -276,20 +285,24 @@ class WebSocketApp:
         self.has_done_teardown = False
         self.has_done_teardown_lock = threading.Lock()
 
-    def send(self, data: Union[bytes, str], opcode: int = ABNF.OPCODE_TEXT) -> None:
+    def send(self, data: Union[bytes, str],
+             opcode: int = ABNF.OPCODE_TEXT) -> None:
         """Send a message using the supplied opcode."""
         if not self.sock or self.sock.send(data, opcode) == 0:
-            raise WebSocketConnectionClosedException("Connection is already closed.")
+            raise WebSocketConnectionClosedException(
+                "Connection is already closed.")
 
     def send_text(self, text_data: str) -> None:
         """Send UTF-8 encoded text data."""
         if not self.sock or self.sock.send(text_data, ABNF.OPCODE_TEXT) == 0:
-            raise WebSocketConnectionClosedException("Connection is already closed.")
+            raise WebSocketConnectionClosedException(
+                "Connection is already closed.")
 
     def send_bytes(self, data: Union[bytes, bytearray]) -> None:
         """Send binary data."""
         if not self.sock or self.sock.send(data, ABNF.OPCODE_BINARY) == 0:
-            raise WebSocketConnectionClosedException("Connection is already closed.")
+            raise WebSocketConnectionClosedException(
+                "Connection is already closed.")
 
     def close(self, **kwargs) -> None:
         """Close the websocket connection."""
@@ -316,9 +329,11 @@ class WebSocketApp:
 
     def _send_ping(self) -> None:
         """Periodically send ping frames while the connection stays open."""
-        if self.stop_ping.wait(self.ping_interval) or self.keep_running is False:
+        if self.stop_ping.wait(
+                self.ping_interval) or self.keep_running is False:
             return
-        while not self.stop_ping.wait(self.ping_interval) and self.keep_running is True:
+        while not self.stop_ping.wait(
+                self.ping_interval) and self.keep_running is True:
             if self.sock:
                 self.last_ping_tm = time.time()
                 try:
@@ -350,7 +365,7 @@ class WebSocketApp:
         """
         Run event loop for WebSocket framework.
 
-        This loop is an infinite loop and is alive while websocket is available.
+        This loop is an infinite loop and is alive while websocket is available.  # noqa: E501
 
         Parameters
         ----------
@@ -423,7 +438,7 @@ class WebSocketApp:
         self.keep_running = True
 
         def read() -> bool:
-            """Read one frame from the socket and dispatch the matching callbacks."""
+            """Read one frame from the socket and dispatch the matching callbacks."""  # noqa: E501
             if not self.keep_running:
                 return teardown()
 
@@ -446,7 +461,11 @@ class WebSocketApp:
                 self.last_pong_tm = time.time()
                 self._callback(self.on_pong, frame.data)
             elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:
-                self._callback(self.on_data, frame.data, frame.opcode, frame.fin)
+                self._callback(
+                    self.on_data,
+                    frame.data,
+                    frame.opcode,
+                    frame.fin)
                 self._callback(self.on_cont_message, frame.data, frame.fin)
             else:
                 data = frame.data
@@ -458,7 +477,7 @@ class WebSocketApp:
             return True
 
         def check() -> bool:
-            """Check whether the connection exceeded the configured ping timeout."""
+            """Check whether the connection exceeded the configured ping timeout."""  # noqa: E501
             if self.ping_timeout:
                 has_timeout_expired = (
                     time.time() - self.last_ping_tm > self.ping_timeout
@@ -491,7 +510,7 @@ class WebSocketApp:
             ],
             reconnecting: bool = False,
         ) -> bool:
-            """Handle disconnects, teardown, and optional reconnect scheduling."""
+            """Handle disconnects, teardown, and optional reconnect scheduling."""  # noqa: E501
             self.has_errored = True
             self._stop_ping_thread()
             if not reconnecting:
@@ -509,9 +528,8 @@ class WebSocketApp:
                 _logging.info("%s - reconnect", e)
                 if custom_dispatcher:
                     _logging.debug(
-                        "Calling custom dispatcher reconnect [%s frames in stack]",
-                        len(inspect.stack()),
-                    )
+                        "Calling custom dispatcher reconnect [%s frames in stack]", len(  # noqa: E501
+                            inspect.stack()),)
                     dispatcher.reconnect(reconnect, setSock)
             else:
                 _logging.error("%s - goodbye", e)
@@ -563,7 +581,7 @@ class WebSocketApp:
 
             self.sock.settimeout(getdefaulttimeout())
             try:
-                header = self.header() if callable(self.header) else self.header
+                header = self.header() if callable(self.header) else self.header  # noqa: E501
 
                 self.sock.connect(
                     self.url,

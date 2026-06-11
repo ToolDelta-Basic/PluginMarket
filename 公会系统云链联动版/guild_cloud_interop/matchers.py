@@ -55,12 +55,19 @@ class ItemNameMatcher:
         # 搜索中文名称
         for chinese_name in self.chinese_names.keys():
             if user_input in chinese_name.lower():
-                matches.append((chinese_name, self._calculate_match_score(user_input, chinese_name)))
+                matches.append(
+                    (chinese_name, self._calculate_match_score(
+                        user_input, chinese_name)))
 
         # 搜索别名
         for alias, chinese_name in self.aliases.items():
-            if user_input in alias.lower() and chinese_name not in [m[0] for m in matches]:
-                matches.append((chinese_name, self._calculate_match_score(user_input, alias)))
+            if user_input in alias.lower() and chinese_name not in [
+                    m[0] for m in matches]:
+                matches.append(
+                    (chinese_name,
+                     self._calculate_match_score(
+                         user_input,
+                         alias)))
 
         # 按匹配度排序
         matches.sort(key=lambda x: x[1], reverse=True)
@@ -103,9 +110,13 @@ class ItemNameMatcher:
 
     def get_chinese_name(self, item_id: str) -> str:
         """根据物品ID获取中文名称"""
-        return self.id_to_chinese.get(item_id, item_id.replace("minecraft:", "").replace("_", " ").title())
+        return self.id_to_chinese.get(
+            item_id, item_id.replace(
+                "minecraft:", "").replace(
+                "_", " ").title())
 
-    def get_suggestions(self, user_input: str, max_suggestions: int = 5) -> List[Tuple[str, str]]:
+    def get_suggestions(self, user_input: str,
+                        max_suggestions: int = 5) -> List[Tuple[str, str]]:
         """获取输入建议，返回 (中文名称, 物品ID) 的列表"""
         if not user_input:
             return []
@@ -119,7 +130,8 @@ class ItemNameMatcher:
 
         return suggestions
 
-    def validate_and_suggest(self, user_input: str) -> Tuple[Optional[str], List[str]]:
+    def validate_and_suggest(
+            self, user_input: str) -> Tuple[Optional[str], List[str]]:
         """验证输入并提供建议
         返回: (找到的物品ID, 建议列表)
         """

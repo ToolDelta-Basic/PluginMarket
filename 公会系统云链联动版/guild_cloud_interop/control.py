@@ -7,10 +7,12 @@ from typing import Dict, List, Optional, Tuple, Any, Set
 from tooldelta import fmts
 from tooldelta.utils import tempjson
 from guild_cloud_interop.config import Config
-from guild_cloud_interop.models import GuildData, GuildMember,GuildRank
+from guild_cloud_interop.models import GuildData, GuildMember, GuildRank
 from guild_cloud_interop.service import DataTransaction
 
 # FIRE 公会管理器 FIRE
+
+
 class GuildManager:
     """公会管理器，负责公会数据的增删改查"""
 
@@ -24,7 +26,8 @@ class GuildManager:
         self._last_save_time = 0
         self._batch_operations: List[callable] = []  # 批量操作队列
 
-    def validate_guild_data(self, guild_data: GuildData) -> Tuple[bool, List[str]]:
+    def validate_guild_data(
+            self, guild_data: GuildData) -> Tuple[bool, List[str]]:
         """验证公会数据的完整性"""
         errors = []
 
@@ -41,15 +44,19 @@ class GuildManager:
         # 检查会长
         owners = [m for m in guild_data.members if m.rank == GuildRank.OWNER]
         if len(owners) != 1:
-            errors.append(f"公会应该有且仅有一个会长，当前有{len(owners)}个 Err:event.check.data.owner_length_LMAX")
+            errors.append(
+                f"公会应该有且仅有一个会长，当前有{
+                    len(owners)}个 Err:event.check.data.owner_length_LMAX")
 
         # 检查成员数量
         if len(guild_data.members) > Config.MAX_GUILD_MEMBERS:
-            errors.append(f"成员数量超过限制：{len(guild_data.members)}/{Config.MAX_GUILD_MEMBERS} Err:event.check.data.member_length_LMAX")
+            errors.append(
+                f"成员数量超过限制：{len(guild_data.members)}/{Config.MAX_GUILD_MEMBERS} Err:event.check.data.member_length_LMAX")  # noqa: E501
 
         # 检查仓库物品
         if len(guild_data.vault_items) > Config.VAULT_INITIAL_SLOTS:
-            errors.append(f"仓库物品超过容量：{len(guild_data.vault_items)}/{Config.VAULT_INITIAL_SLOTS} Err:event.check.data.vault_items_LMAX")
+            errors.append(
+                f"仓库物品超过容量：{len(guild_data.vault_items)}/{Config.VAULT_INITIAL_SLOTS} Err:event.check.data.vault_items_LMAX")  # noqa: E501
 
         # 检查数据类型
         if not isinstance(guild_data.exp, (int, float)) or guild_data.exp < 0:
@@ -63,18 +70,19 @@ class GuildManager:
     def create_transaction(self):
         """创建数据事务"""
         return DataTransaction(self)
-    
+
     def _load_guilds(self, force_reload: bool = False) -> Dict[str, GuildData]:
         """加载公会数据，带缓存"""
         current_time = time.time()
-        if (not force_reload and self._cache is not None and 
-            current_time - self._last_load_time < self.cache_duration):
+        if (not force_reload and self._cache is not None and
+                current_time - self._last_load_time < self.cache_duration):
             return self._cache
-        
-        raw_data = tempjson.load_and_read(self.file_path, need_file_exists=False, default={})
+
+        raw_data = tempjson.load_and_read(
+            self.file_path, need_file_exists=False, default={})
         self._cache = {}
         self._player_guild_cache.clear()
-        
+
         load_errors = []
         for guild_id, guild_dict in raw_data.items():
             try:
@@ -83,7 +91,8 @@ class GuildManager:
                 # 验证数据完整性
                 is_valid, errors = self.validate_guild_data(guild)
                 if not is_valid:
-                    load_errors.extend([f"公会{guild_id}: {error}" for error in errors])
+                    load_errors.extend(
+                        [f"公会{guild_id}: {error}" for error in errors])
                     continue
 
                 self._cache[guild_id] = guild
@@ -102,17 +111,19 @@ class GuildManager:
             if len(load_errors) > 3:
                 fmts.print_err(f"  ... 还有 {len(load_errors) - 3} 个错误")
 
-                
         self._last_load_time = current_time
         return self._cache
-    
-    def save_guilds(self, guilds: Dict[str, GuildData], force: bool = False) -> bool:
+
+    def save_guilds(self,
+                    guilds: Dict[str,
+                                 GuildData],
+                    force: bool = False) -> bool:
         """保存公会数据，支持批量保存优化"""
         try:
             current_time = time.time()
 
             # 如果不是强制保存且距离上次保存时间不足，则延迟保存
-            if not force and current_time - self._last_save_time < Config.BATCH_SAVE_INTERVAL:
+            if not force and current_time - self._last_save_time < Config.BATCH_SAVE_INTERVAL:  # noqa: E501
                 self._dirty_guilds.update(guilds.keys())
                 return True
 
@@ -139,6 +150,8 @@ class GuildManager:
 
             # 写入文件
             tempjson.write(self.file_path, raw_data)
+            if force:
+                tempjson.flush(self.file_path)
 
             # 更新缓存和状态
             self._cache = guilds.copy()
@@ -165,7 +178,9 @@ class GuildManager:
             return
 
         data_dir = os.path.dirname(self.file_path)
-        backup_dir = os.path.join(data_dir, safety_config.get("备份目录名", "公会数据备份"))
+        backup_dir = os.path.join(
+            data_dir, safety_config.get(
+                "备份目录名", "公会数据备份"))
         os.makedirs(backup_dir, exist_ok=True)
 
         timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -194,18 +209,24 @@ class GuildManager:
 
     def flush_dirty_guilds(self) -> bool:
         """强制保存所有标记为脏的公会数据"""
-        if not self._dirty_guilds or not self._cache:
+        if not self._dirty_guilds:
             return True
 
-        dirty_guilds = {gid: self._cache[gid] for gid in self._dirty_guilds if gid in self._cache}
-        return self.save_guilds(dirty_guilds, force=True)
-    
-    def get_guild_by_player(self, player_name: str, force_reload: bool = False) -> Optional[GuildData]:
+        if self._cache is None:
+            self._load_guilds(force_reload=True)
+        if self._cache is None:
+            return False
+        return self.save_guilds(self._cache, force=True)
+
+    def get_guild_by_player(
+            self,
+            player_name: str,
+            force_reload: bool = False) -> Optional[GuildData]:
         """根据玩家名获取其所在公会"""
         guilds = self._load_guilds(force_reload=force_reload)
         guild_id = self._player_guild_cache.get(player_name)
         return guilds.get(guild_id) if guild_id else None
-    
+
     def get_guild_by_name(self, guild_name: str) -> Optional[GuildData]:
         """根据公会名获取公会"""
         guilds = self._load_guilds()
@@ -213,21 +234,25 @@ class GuildManager:
             if guild.name == guild_name:
                 return guild
         return None
-    
-    def create_guild(self, owner_xuid: str, owner_name: str, guild_name: str) -> bool:
+
+    def create_guild(
+            self,
+            owner_xuid: str,
+            owner_name: str,
+            guild_name: str) -> bool:
         """创建公会"""
         guilds = self._load_guilds(force_reload=True)
-        
+
         # 检查是否已有同名公会
         if any(g.name == guild_name for g in guilds.values()):
             return False
-        
+
         owner_member = GuildMember(
             name=owner_name,
             rank=GuildRank.OWNER,
             join_time=time.time()
         )
-        
+
         new_guild = GuildData(
             guild_id=owner_xuid,
             name=guild_name,
@@ -235,33 +260,38 @@ class GuildManager:
             members=[owner_member]
         )
         new_guild.add_log(f"公会 {guild_name} 成立")
-        
+
         guilds[owner_xuid] = new_guild
         self.save_guilds(guilds)
         return True
-    
-    def add_member(self, guild_name: str, player_name: str, inviter: str = None) -> bool:
+
+    def add_member(
+            self,
+            guild_name: str,
+            player_name: str,
+            inviter: str = None) -> bool:
         """添加成员到公会"""
         guilds = self._load_guilds(force_reload=True)
         guild = self.get_guild_by_name(guild_name)
-        
+
         if not guild or len(guild.members) >= Config.MAX_GUILD_MEMBERS:
             return False
-        
+
         new_member = GuildMember(
             name=player_name,
             rank=GuildRank.MEMBER,
             join_time=time.time()
         )
-        
+
         guild.members.append(new_member)
-        guild.add_log(f"{player_name} 加入公会" + (f" (邀请人: {inviter})" if inviter else ""))
-        
+        guild.add_log(f"{player_name} 加入公会" +
+                      (f" (邀请人: {inviter})" if inviter else ""))
+
         # 更新缓存
         self._player_guild_cache[player_name] = guild.guild_id
         self.save_guilds(guilds)
         return True
-    
+
     def remove_member(self, player_name: str) -> Optional[str]:
         """从公会移除成员，返回公会名"""
         guilds = self._load_guilds(force_reload=True)
@@ -283,8 +313,12 @@ class GuildManager:
             del self._player_guild_cache[player_name]
         self.save_guilds(guilds)
         return guild.name
-    
-    def set_member_rank(self, guild: GuildData, player_name: str, new_rank: GuildRank) -> bool:
+
+    def set_member_rank(
+            self,
+            guild: GuildData,
+            player_name: str,
+            new_rank: GuildRank) -> bool:
         """设置成员职位"""
         guilds = self._load_guilds(force_reload=True)
         current_guild = guilds.get(guild.guild_id)
@@ -292,17 +326,18 @@ class GuildManager:
             return False
 
         member = current_guild.get_member(player_name)
-        
+
         if not member or member.rank == GuildRank.OWNER:
             return False
-        
+
         old_rank = member.rank
         member.rank = new_rank
-        current_guild.add_log(f"{player_name} 职位变更: {old_rank.display_name} -> {new_rank.display_name}")
+        current_guild.add_log(
+            f"{player_name} 职位变更: {old_rank.display_name} -> {new_rank.display_name}")  # noqa: E501
 
         self.save_guilds(guilds, force=True)
         return True
-    
+
     def update_contribution(self, player_name: str, amount: int) -> bool:
         """更新成员贡献度"""
         guild = self.get_guild_by_player(player_name)
@@ -341,15 +376,15 @@ class GuildManager:
             self.flush_dirty_guilds()
 
         return success_count
-    
+
     def update_online_status(self, online_players: List[str]) -> None:
         """更新在线状态"""
         guilds = self._load_guilds(force_reload=True)
         current_time = time.time()
-        
+
         for guild in guilds.values():
             for member in guild.members:
                 if member.name in online_players:
                     member.last_online = current_time
-        
+
         self.save_guilds(guilds)

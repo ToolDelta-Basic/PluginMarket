@@ -16,8 +16,10 @@ SUCCESS_PREFIX = "§a❀ "
 MAX_CHAT_MESSAGE_CHARS = 240
 
 
-def split_chat_chunks(text: str, max_chars: int = MAX_CHAT_MESSAGE_CHARS) -> list[str]:
-    """Split rich-text chat output into line-preserving chunks for rental servers."""
+def split_chat_chunks(
+        text: str,
+        max_chars: int = MAX_CHAT_MESSAGE_CHARS) -> list[str]:
+    """Split rich-text chat output into line-preserving chunks for rental servers."""  # noqa: E501
     chunks: list[str] = []
     current: list[str] = []
     current_len = 0
@@ -86,11 +88,11 @@ def normalize_inline(text: str) -> str:
 
 
 def classify_prefix(text: str) -> str:
-    if "错误" in text or "失败" in text or "无效" in text or "不足" in text or "权限不足" in text:
+    if "错误" in text or "失败" in text or "无效" in text or "不足" in text or "权限不足" in text:  # noqa: E501
         return ERROR_PREFIX
-    if "警告" in text or "超时" in text or "已满" in text or "不存在" in text or "未找到" in text:
+    if "警告" in text or "超时" in text or "已满" in text or "不存在" in text or "未找到" in text:  # noqa: E501
         return WARN_PREFIX
-    if "成功" in text or "已创建" in text or "已加入" in text or "已退出" in text or "已更新" in text:
+    if "成功" in text or "已创建" in text or "已加入" in text or "已退出" in text or "已更新" in text:  # noqa: E501
         return SUCCESS_PREFIX
     return INFO_PREFIX
 
@@ -102,13 +104,18 @@ def format_option(line: str) -> str | None:
     if match:
         return OPTION_PREFIX.format(match.group(1), match.group(2).strip())
 
-    match = re.match(r"^(?:§[0-9a-frlomnk])*●\s*(.+?)(?:\s*§7[-—]\s*|\s+-\s+)(.+)$", clean)
+    match = re.match(
+        r"^(?:§[0-9a-frlomnk])*●\s*(.+?)(?:\s*§7[-—]\s*|\s+-\s+)(.+)$", clean)
     if match:
-        return f"§l§b[ §e-§b ] §r§e{match.group(1).strip()} §7- §f{match.group(2).strip()}"
+        return f"§l§b[ §e-§b ] §r§e{
+            match.group(1).strip()} §7- §f{
+            match.group(2).strip()}"
 
     match = re.match(r"^([^\s]+)\s+§7[-—]\s*(.+)$", clean)
     if match:
-        return f"§l§b[ §e-§b ] §r§e{match.group(1).strip()} §7- §f{match.group(2).strip()}"
+        return f"§l§b[ §e-§b ] §r§e{
+            match.group(1).strip()} §7- §f{
+            match.group(2).strip()}"
 
     return None
 
@@ -116,7 +123,7 @@ def format_option(line: str) -> str | None:
 def format_title(title: str) -> str:
     title = normalize_inline(title)
     title = title.replace("§a", "§6").replace("§c", "§c")
-    return f"{ORION_BORDER}\n{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d\n{ORION_BORDER}"
+    return f"{ORION_BORDER}\n{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d\n{ORION_BORDER}"  # noqa: E501
 
 
 def format_message(text: str) -> str:
@@ -191,7 +198,10 @@ def format_panel(
         output.append(f"§e>§g>§6>§f{subtitle}")
     output.append(ORION_BORDER)
     for index, (label, description) in enumerate(options, start=1):
-        output.append(OPTION_PREFIX.format(index, f"{label} §7- §f{description}"))
+        output.append(
+            OPTION_PREFIX.format(
+                index,
+                f"{label} §7- §f{description}"))
     for line in lines:
         output.append(format_message(line))
     if footer:
@@ -199,10 +209,15 @@ def format_panel(
     return "\n".join(output)
 
 
-def format_page_footer(page: int, total_pages: int, start: int, end: int, allow_selection: bool) -> str:
+def format_page_footer(
+        page: int,
+        total_pages: int,
+        start: int,
+        end: int,
+        allow_selection: bool) -> str:
     lines = [
         ORION_BORDER,
-        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]",
+        f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]",  # noqa: E501
     ]
     if allow_selection:
         lines.append(f"{INFO_PREFIX}输入 §e[{start}-{end}]§r 之间的数字以选择")

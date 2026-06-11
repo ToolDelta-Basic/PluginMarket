@@ -357,13 +357,13 @@ DEFAULT_CONFIG_JSON = r'''{
                   "已有公会提示词":  "§c❀ §r你已经有公会了",
                   "快捷创建缺少名称提示词":  "§a❀ §r请输入公会名称，例如: 公会创建 我的公会",
                   "快捷创建名称长度无效提示词":  "§c❀ §r公会名必须在2-16个字符之间",
-                  "创建公会余额不足提示词":  "§c❀ §r创建公会需要 §e{consume}§r 点 §b{scoreboard}§r 计分板积分\n§c❀ §r当前余额: §f{balance}",
-                  "创建公会提示词":  "§a❀ §r创建公会将消耗 §e{consume} §b{scoreboard} \n§a❀ §r当前余额: §f{balance}\n§a❀ §r输入 §a确认§7 继续创建，输入 §cq§7 取消",
+                  "创建公会余额不足提示词":  "§c❀ §r创建公会需要 §e{consume}§r 点 §b{scoreboard}§r 计分板积分\n§c❀ §r当前余额: §f{balance}",  # noqa: E501
+                  "创建公会提示词":  "§a❀ §r创建公会将消耗 §e{consume} §b{scoreboard} \n§a❀ §r当前余额: §f{balance}\n§a❀ §r输入 §a确认§7 继续创建，输入 §cq§7 取消",  # noqa: E501
                   "创建公会回复超时提示词":  "§c❀ §r回复超时，已取消创建公会",
                   "创建公会取消提示词":  "§c❀ §r已取消创建公会",
                   "创建公会输入名称提示词":  "§a❀ §r请输入公会名字:\n§a❀ §r要求: 2-20个字符，不能包含特殊符号",
                   "创建公会名称无效提示词":  "§c❀ §r{error}",
-                  "创建公会二次余额不足提示词":  "§c❀ §r当前 §b{scoreboard}§r 余额不足，需要 §e{consume}§r，当前 §f{balance}",
+                  "创建公会二次余额不足提示词":  "§c❀ §r当前 §b{scoreboard}§r 余额不足，需要 §e{consume}§r，当前 §f{balance}",  # noqa: E501
                   "创建公会成功提示词":  "§a❀ §r已创建公会 §e{guild}",
                   "创建公会全服公告提示词":  "§a❀ §r§e{player}§r 创建了公会 §e{guild}§r！",
                   "创建公会名称已存在提示词":  "§c❀ §r该公会名已存在",
@@ -787,8 +787,8 @@ CONFIG_ATTRIBUTE_ALIASES = {
 }
 
 CONFIG_ATTRIBUTE_KEYS = {
-    config_key: attr_name for attr_name, config_key in CONFIG_ATTRIBUTE_ALIASES.items()
-}
+    config_key: attr_name for attr_name,
+    config_key in CONFIG_ATTRIBUTE_ALIASES.items()}
 
 REMOVED_CONFIG_ATTRIBUTES = ("GUILD_LEVELS",)
 
@@ -808,7 +808,7 @@ DYNAMIC_LOAD_DEFAULT = {
 def _merge_config(raw: Any, default: Any) -> Any:
     if isinstance(default, dict):
         merged = {
-            key: _merge_config(raw.get(key) if isinstance(raw, dict) else None, value)
+            key: _merge_config(raw.get(key) if isinstance(raw, dict) else None, value)  # noqa: E501
             for key, value in default.items()
         }
 
@@ -836,7 +836,11 @@ def _normalize_bool(value: Any, fallback: bool) -> bool:
     return bool(fallback)
 
 
-def _normalize_str(value: Any, fallback: str, *, allow_empty: bool = False) -> str:
+def _normalize_str(
+        value: Any,
+        fallback: str,
+        *,
+        allow_empty: bool = False) -> str:
     if value is None:
         return fallback
     text = str(value).strip()
@@ -879,7 +883,11 @@ def _normalize_non_negative_int(value: Any, fallback: int) -> int:
     return result if result >= 0 else fallback
 
 
-def _normalize_string_list(value: Any, fallback: list[str], *, allow_empty: bool = False) -> list[str]:
+def _normalize_string_list(
+        value: Any,
+        fallback: list[str],
+        *,
+        allow_empty: bool = False) -> list[str]:
     if isinstance(value, str):
         candidates = [value]
     elif isinstance(value, list):
@@ -899,7 +907,8 @@ def _normalize_string_list(value: Any, fallback: list[str], *, allow_empty: bool
     return copy.deepcopy(fallback)
 
 
-def _normalize_any_key_dict(raw: Any, fallback: dict[str, Any], value_normalizer) -> dict[str, Any]:
+def _normalize_any_key_dict(
+        raw: Any, fallback: dict[str, Any], value_normalizer) -> dict[str, Any]:  # noqa: E501
     source = raw if isinstance(raw, dict) else fallback
     default_values = fallback if isinstance(fallback, dict) else {}
     result: dict[str, Any] = {}
@@ -912,7 +921,8 @@ def _normalize_any_key_dict(raw: Any, fallback: dict[str, Any], value_normalizer
     return result
 
 
-def _normalize_menu_items(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+def _normalize_menu_items(
+        raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
     source = _merge_config(raw, fallback)
     result: dict[str, Any] = {}
     for key, item_fallback in fallback.items():
@@ -920,20 +930,27 @@ def _normalize_menu_items(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(item, dict):
             item = {}
         result[key] = {
-            "名称": _normalize_str(item.get("名称"), item_fallback["名称"]),
-            "描述": _normalize_str(item.get("描述"), item_fallback["描述"], allow_empty=True),
+            "名称": _normalize_str(
+                item.get("名称"),
+                item_fallback["名称"]),
+            "描述": _normalize_str(
+                item.get("描述"),
+                item_fallback["描述"],
+                allow_empty=True),
         }
     return result
 
 
-def _trim_fixed_keys(raw: dict[str, Any], default: dict[str, Any]) -> dict[str, Any]:
+def _trim_fixed_keys(raw: dict[str, Any],
+                     default: dict[str, Any]) -> dict[str, Any]:
     return {
         key: raw.get(key, copy.deepcopy(value))
         for key, value in default.items()
     }
 
 
-def _normalize_market_config(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+def _normalize_market_config(
+        raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
     raw = raw if isinstance(raw, dict) else {}
     result = copy.deepcopy(fallback)
     bool_keys = (
@@ -958,13 +975,15 @@ def _normalize_market_config(raw: Any, fallback: dict[str, Any]) -> dict[str, An
     for key in bool_keys:
         result[key] = _normalize_bool(raw.get(key, result[key]), result[key])
     for key in positive_int_keys:
-        result[key] = _normalize_positive_int(raw.get(key, result[key]), result[key])
+        result[key] = _normalize_positive_int(
+            raw.get(key, result[key]), result[key])
     for key in number_keys:
         result[key] = _normalize_number(raw.get(key, result[key]), result[key])
     return result
 
 
-def _normalize_effects_config(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+def _normalize_effects_config(
+        raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
     source = raw if isinstance(raw, dict) else fallback
     default_effect = next(iter(fallback.values())) if fallback else {}
     result: dict[str, Any] = {}
@@ -973,7 +992,7 @@ def _normalize_effects_config(raw: Any, fallback: dict[str, Any]) -> dict[str, A
             effect_cfg = {}
         default = fallback.get(str(effect_id), default_effect)
         result[str(effect_id)] = {
-            "name": _normalize_str(effect_cfg.get("name"), default.get("name", str(effect_id))),
+            "name": _normalize_str(effect_cfg.get("name"), default.get("name", str(effect_id))),  # noqa: E501
             "levels": _normalize_any_key_dict(
                 effect_cfg.get("levels"),
                 default.get("levels", {}),
@@ -994,7 +1013,8 @@ def _normalize_effects_config(raw: Any, fallback: dict[str, Any]) -> dict[str, A
     return result
 
 
-def _normalize_permissions(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+def _normalize_permissions(
+        raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
     source = raw if isinstance(raw, dict) else fallback
     default_role = next(iter(fallback.values())) if fallback else {}
     result: dict[str, dict[str, bool]] = {}
@@ -1004,13 +1024,14 @@ def _normalize_permissions(raw: Any, fallback: dict[str, Any]) -> dict[str, Any]
         default_permissions = fallback.get(str(role), default_role)
         merged_permissions = _merge_config(permissions, default_permissions)
         result[str(role)] = {
-            str(key): _normalize_bool(value, bool(default_permissions.get(key, False)))
+            str(key): _normalize_bool(value, bool(default_permissions.get(key, False)))  # noqa: E501
             for key, value in merged_permissions.items()
         }
     return result
 
 
-def _normalize_task_templates(raw: Any, fallback: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _normalize_task_templates(
+        raw: Any, fallback: list[dict[str, Any]]) -> list[dict[str, Any]]:
     source = raw if isinstance(raw, list) else fallback
     default_template = fallback[0] if fallback else {}
     result: list[dict[str, Any]] = []
@@ -1020,10 +1041,18 @@ def _normalize_task_templates(raw: Any, fallback: list[dict[str, Any]]) -> list[
         default = _merge_config(template, default_template)
         result.append(
             {
-                "name": _normalize_str(template.get("name"), default["name"]),
-                "description": _normalize_str(template.get("description"), default["description"]),
-                "task_type": _normalize_str(template.get("task_type"), default["task_type"]),
-                "target": _normalize_str(template.get("target"), default["target"]),
+                "name": _normalize_str(
+                    template.get("name"),
+                    default["name"]),
+                "description": _normalize_str(
+                    template.get("description"),
+                    default["description"]),
+                "task_type": _normalize_str(
+                    template.get("task_type"),
+                    default["task_type"]),
+                "target": _normalize_str(
+                    template.get("target"),
+                    default["target"]),
                 "target_count": _normalize_positive_int(
                     template.get("target_count"),
                     default["target_count"],
@@ -1036,8 +1065,7 @@ def _normalize_task_templates(raw: Any, fallback: list[dict[str, Any]]) -> list[
                     template.get("reward_contribution"),
                     default["reward_contribution"],
                 ),
-            }
-        )
+            })
     return result or copy.deepcopy(fallback)
 
 
@@ -1065,12 +1093,15 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
     config["基础配置"] = _trim_fixed_keys(config["基础配置"], default["基础配置"])
     base = config["基础配置"]
     base_default = default["基础配置"]
-    base["是否启用插件"] = _normalize_bool(base.get("是否启用插件"), base_default["是否启用插件"])
+    base["是否启用插件"] = _normalize_bool(
+        base.get("是否启用插件"), base_default["是否启用插件"])
     base["公会菜单唤醒词"] = _normalize_string_list(
         base.get("公会菜单唤醒词"),
         base_default["公会菜单唤醒词"],
     )
-    base["积分计分板名称"] = _normalize_str(base.get("积分计分板名称"), base_default["积分计分板名称"])
+    base["积分计分板名称"] = _normalize_str(
+        base.get("积分计分板名称"),
+        base_default["积分计分板名称"])
     for key in ("缓存有效时间秒", "批量保存间隔秒", "批量保存最大数量"):
         base[key] = _normalize_positive_int(base.get(key), base_default[key])
 
@@ -1082,9 +1113,11 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
         "在线经验增加间隔秒",
         "每页显示数量",
     ):
-        guild[key] = _normalize_positive_int(guild.get(key), guild_default[key])
+        guild[key] = _normalize_positive_int(
+            guild.get(key), guild_default[key])
     for key in ("在线成员每次增加经验", "每日登录经验"):
-        guild[key] = _normalize_non_negative_int(guild.get(key), guild_default[key])
+        guild[key] = _normalize_non_negative_int(
+            guild.get(key), guild_default[key])
     guild["捐献转经验倍率"] = _normalize_number(
         guild.get("捐献转经验倍率"),
         guild_default["捐献转经验倍率"],
@@ -1092,24 +1125,28 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
     guild[LEVEL_EXP_CONFIG_KEY] = _normalize_any_key_dict(
         guild.get(LEVEL_EXP_CONFIG_KEY),
         guild_default[LEVEL_EXP_CONFIG_KEY],
-        lambda value, fallback_value: _normalize_positive_int(value, int(fallback_value or 1)),
+        lambda value, fallback_value: _normalize_positive_int(
+            value, int(fallback_value or 1)),
     )
 
     config["功能开关"] = _trim_fixed_keys(config["功能开关"], default["功能开关"])
     feature_switches = config["功能开关"]
     for key, fallback in default["功能开关"].items():
-        feature_switches[key] = _normalize_bool(feature_switches.get(key), fallback)
+        feature_switches[key] = _normalize_bool(
+            feature_switches.get(key), fallback)
 
     config["仓库配置"] = _trim_fixed_keys(config["仓库配置"], default["仓库配置"])
     vault = config["仓库配置"]
     vault_default = default["仓库配置"]
-    vault["初始容量"] = _normalize_positive_int(vault.get("初始容量"), vault_default["初始容量"])
+    vault["初始容量"] = _normalize_positive_int(
+        vault.get("初始容量"), vault_default["初始容量"])
     vault["每级增加容量"] = _normalize_non_negative_int(
         vault.get("每级增加容量"),
         vault_default["每级增加容量"],
     )
     vault["交易税率"] = _normalize_number(vault.get("交易税率"), vault_default["交易税率"])
-    vault["市场配置"] = _normalize_market_config(vault.get("市场配置"), vault_default["市场配置"])
+    vault["市场配置"] = _normalize_market_config(
+        vault.get("市场配置"), vault_default["市场配置"])
 
     config["经验配置"] = _trim_fixed_keys(config["经验配置"], default["经验配置"])
     config["经验配置"]["在线经验"] = _trim_fixed_keys(
@@ -1147,8 +1184,8 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
     config["据点配置"]["维度名称映射"] = _normalize_any_key_dict(
         config["据点配置"].get("维度名称映射"),
         default["据点配置"]["维度名称映射"],
-        lambda value, fallback_value: _normalize_str(value, str(fallback_value or "")),
-    )
+        lambda value,
+        fallback_value: _normalize_str(value, str(fallback_value or "")),)
 
     config["效果系统"] = _trim_fixed_keys(config["效果系统"], default["效果系统"])
     effects = config["效果系统"]
@@ -1170,7 +1207,8 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
         create_default["创建公会消耗积分"],
     )
     for key in ("创建冷却秒", "最短公会名长度", "最长公会名长度"):
-        create_cfg[key] = _normalize_positive_int(create_cfg.get(key), create_default[key])
+        create_cfg[key] = _normalize_positive_int(
+            create_cfg.get(key), create_default[key])
     create_cfg["禁止公会名列表"] = _normalize_string_list(
         create_cfg.get("禁止公会名列表"),
         create_default["禁止公会名列表"],
@@ -1201,7 +1239,8 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
         if isinstance(fallback, bool):
             join_cfg[key] = _normalize_bool(join_cfg.get(key), fallback)
         else:
-            join_cfg[key] = _normalize_positive_int(join_cfg.get(key), fallback)
+            join_cfg[key] = _normalize_positive_int(
+                join_cfg.get(key), fallback)
 
     config["任务系统"] = _trim_fixed_keys(config["任务系统"], default["任务系统"])
     task_cfg = config["任务系统"]
@@ -1220,9 +1259,11 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
         "创建任务描述最大长度",
         "创建任务目标数量上限",
     ):
-        task_cfg[key] = _normalize_positive_int(task_cfg.get(key), task_default[key])
+        task_cfg[key] = _normalize_positive_int(
+            task_cfg.get(key), task_default[key])
     for key in ("创建任务贡献奖励上限", "创建任务经验奖励上限"):
-        task_cfg[key] = _normalize_non_negative_int(task_cfg.get(key), task_default[key])
+        task_cfg[key] = _normalize_non_negative_int(
+            task_cfg.get(key), task_default[key])
     task_cfg["自动任务模板列表"] = _normalize_task_templates(
         task_cfg.get("自动任务模板列表"),
         task_default["自动任务模板列表"],
@@ -1237,7 +1278,9 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
     config["数据安全"] = _trim_fixed_keys(config["数据安全"], default["数据安全"])
     safety = config["数据安全"]
     safety_default = default["数据安全"]
-    safety["备份目录名"] = _normalize_str(safety.get("备份目录名"), safety_default["备份目录名"])
+    safety["备份目录名"] = _normalize_str(
+        safety.get("备份目录名"),
+        safety_default["备份目录名"])
     for key in (
         "启用保存前备份",
         "强制保存时也备份",
@@ -1276,7 +1319,8 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
         "输入数字提示模板",
         "输入名称提示词",
     ):
-        menu_config[key] = _normalize_str(menu_config.get(key), menu_default[key], allow_empty=True)
+        menu_config[key] = _normalize_str(menu_config.get(
+            key), menu_default[key], allow_empty=True)
     menu_config["基础功能"] = _normalize_menu_items(
         menu_config.get("基础功能"),
         menu_default["基础功能"],
@@ -1292,13 +1336,17 @@ def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
     economy["默认物品价值"] = _normalize_any_key_dict(
         economy.get("默认物品价值"),
         economy_default["默认物品价值"],
-        lambda value, fallback_value: _normalize_number(value, fallback_value or 1),
+        lambda value,
+        fallback_value: _normalize_number(
+            value,
+            fallback_value or 1),
     )
     for key in ("中文物品名称", "物品别名"):
         economy[key] = _normalize_any_key_dict(
             economy.get(key),
             economy_default[key],
-            lambda value, fallback_value: _normalize_str(value, str(fallback_value or "")),
+            lambda value, fallback_value: _normalize_str(
+                value, str(fallback_value or "")),
         )
 
     return config
@@ -1556,7 +1604,8 @@ def _build_runtime_config(grouped_config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _set_config_attributes(config_cls: type, normalized_config: dict[str, Any]) -> None:
+def _set_config_attributes(
+        config_cls: type, normalized_config: dict[str, Any]) -> None:
     for attr_name in REMOVED_CONFIG_ATTRIBUTES:
         if hasattr(config_cls, attr_name):
             delattr(config_cls, attr_name)
@@ -1582,7 +1631,10 @@ class Config:
         settings = cls._grouped_config.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT[DYNAMIC_LOAD_ENABLED_KEY]
-        return bool(settings.get(DYNAMIC_LOAD_ENABLED_KEY, DYNAMIC_LOAD_DEFAULT[DYNAMIC_LOAD_ENABLED_KEY]))
+        return bool(
+            settings.get(
+                DYNAMIC_LOAD_ENABLED_KEY,
+                DYNAMIC_LOAD_DEFAULT[DYNAMIC_LOAD_ENABLED_KEY]))
 
     @classmethod
     def dynamic_load_interval(cls) -> int:
@@ -1590,12 +1642,19 @@ class Config:
         if not isinstance(settings, dict):
             return RUNTIME_CONFIG_RELOAD_INTERVAL
         return _normalize_positive_int(
-            settings.get(DYNAMIC_LOAD_INTERVAL_KEY, RUNTIME_CONFIG_RELOAD_INTERVAL),
+            settings.get(
+                DYNAMIC_LOAD_INTERVAL_KEY,
+                RUNTIME_CONFIG_RELOAD_INTERVAL),
             RUNTIME_CONFIG_RELOAD_INTERVAL,
         )
 
     @classmethod
-    def load(cls, plugin_name: str, version: tuple[int, int, int]) -> dict[str, Any]:
+    def load(cls,
+             plugin_name: str,
+             version: tuple[int,
+                            int,
+                            int]) -> dict[str,
+                                          Any]:
         default_config = copy.deepcopy(DEFAULT_CONFIG)
 
         try:
@@ -1606,7 +1665,8 @@ class Config:
                 version,
             )
         except Exception as err:
-            fmts.print_err(f"{plugin_name} config load failed, using defaults: {err}")
+            fmts.print_err(
+                f"{plugin_name} config load failed, using defaults: {err}")
             raw_config = default_config
 
         try:
@@ -1614,7 +1674,8 @@ class Config:
             grouped_config = _normalize_grouped_config(raw_config)
             cfg.check_auto(cls.grouped_config_std(), grouped_config)
         except Exception as err:
-            fmts.print_err(f"{plugin_name} config validation failed, using defaults: {err}")
+            fmts.print_err(
+                f"{plugin_name} config validation failed, using defaults: {err}")  # noqa: E501
             grouped_config = _normalize_grouped_config({})
             cfg.check_auto(cls.grouped_config_std(), grouped_config)
         cfg.upgrade_plugin_config(plugin_name, grouped_config, version)

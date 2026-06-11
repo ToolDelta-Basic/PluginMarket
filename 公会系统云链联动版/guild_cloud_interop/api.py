@@ -39,7 +39,8 @@ def _actor(actor: str | None) -> str:
     return text or "QQ管理"
 
 
-def _to_int(value: object, field_name: str, minimum: int | None = None) -> tuple[bool, str, int]:
+def _to_int(value: object, field_name: str, minimum: int |
+            None = None) -> tuple[bool, str, int]:
     try:
         parsed = int(str(value).strip())
     except (TypeError, ValueError):
@@ -69,7 +70,10 @@ def _rebuild_player_cache(self, guilds: dict[str, GuildData]) -> None:
             self.guild_manager._player_guild_cache[member.name] = guild_id
 
 
-def _save_guilds(self, guilds: dict[str, GuildData], force: bool = True) -> bool:
+def _save_guilds(self,
+                 guilds: dict[str,
+                              GuildData],
+                 force: bool = True) -> bool:
     _rebuild_player_cache(self, guilds)
     ok = self.guild_manager.save_guilds(guilds, force=force)
     if ok:
@@ -104,7 +108,7 @@ def _find_guild(
     fuzzy = [
         guild
         for guild in guild_map.values()
-        if query_lower in guild.name.casefold() or query_lower in guild.guild_id.casefold()
+        if query_lower in guild.name.casefold() or query_lower in guild.guild_id.casefold()  # noqa: E501
     ]
     if len(fuzzy) == 1:
         return fuzzy[0], ""
@@ -149,7 +153,8 @@ def _find_player_context(
     return name, guild, member, ""
 
 
-def _find_task(guild: GuildData, task_query: object) -> tuple[Optional[GuildTask], str]:
+def _find_task(guild: GuildData,
+               task_query: object) -> tuple[Optional[GuildTask], str]:
     query = str(task_query or "").strip()
     if not query:
         return None, "任务不能为空"
@@ -160,12 +165,13 @@ def _find_task(guild: GuildData, task_query: object) -> tuple[Optional[GuildTask
     matched = [
         task
         for task in guild.tasks
-        if query_lower in task.task_id.casefold() or query_lower in task.name.casefold()
+        if query_lower in task.task_id.casefold() or query_lower in task.name.casefold()  # noqa: E501
     ]
     if len(matched) == 1:
         return matched[0], ""
     if len(matched) > 1:
-        names = "、".join(f"{task.name}({task.task_id})" for task in matched[:5])
+        names = "、".join(
+            f"{task.name}({task.task_id})" for task in matched[:5])
         return None, f"匹配到多个任务：{names}"
     return None, f"任务不存在：{query}"
 
@@ -192,7 +198,8 @@ def _base_summary(base: GuildBase | None) -> dict[str, Any] | None:
     }
 
 
-def _vault_item_summary(item: VaultItem, index: int | None = None) -> dict[str, Any]:
+def _vault_item_summary(item: VaultItem, index: int |
+                        None = None) -> dict[str, Any]:
     data = item.to_dict()
     if index is not None:
         data["index"] = index
@@ -223,8 +230,8 @@ def _guild_summary(guild: GuildData) -> dict[str, Any]:
         "frozen": bool(settings.get("frozen", False)),
         "frozen_reason": str(settings.get("frozen_reason", "")),
         "base_locked": bool(settings.get("base_locked", False)),
-        "active_tasks": len([task for task in guild.tasks if not task.completed]),
-        "completed_tasks": len([task for task in guild.tasks if task.completed]),
+        "active_tasks": len([task for task in guild.tasks if not task.completed]),  # noqa: E501
+        "completed_tasks": len([task for task in guild.tasks if task.completed]),  # noqa: E501
         "total_contribution": guild.stats.total_contribution,
     }
 
@@ -268,7 +275,8 @@ def guild_apply_reward_multipliers(
     contribution: int | float = 0,
 ) -> tuple[int, int]:
     exp_out = int(float(exp) * _activity_multiplier(self, "exp"))
-    contribution_out = int(float(contribution) * _activity_multiplier(self, "contribution"))
+    contribution_out = int(float(contribution) *
+                           _activity_multiplier(self, "contribution"))
     return max(0, exp_out), max(0, contribution_out)
 
 
@@ -297,11 +305,13 @@ def show_guild_frozen(self, player, guild: GuildData | None) -> None:
 def api_list_guilds(self) -> tuple[bool, str, list[dict[str, Any]]]:
     guilds = _load_guilds(self)
     data = [_guild_summary(guild) for guild in guilds.values()]
-    data.sort(key=lambda item: (-int(item["level"]), -int(item["member_count"]), item["name"]))
+    data.sort(key=lambda item: (-int(item["level"]), -
+              int(item["member_count"]), item["name"]))
     return True, f"共 {len(data)} 个公会", data
 
 
-def api_get_guild(self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_get_guild(
+        self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
@@ -311,7 +321,8 @@ def api_get_guild(self, guild_query: str) -> tuple[bool, str, Optional[dict[str,
     return True, "查询成功", data
 
 
-def api_get_player_record(self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_get_player_record(
+        self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_player_guild(self, player_name, guilds)
     if guild is None:
@@ -327,7 +338,7 @@ def api_get_player_record(self, player_name: str) -> tuple[bool, str, Optional[d
     vault_records = [
         log.to_dict()
         for log in guild.vault_trade_logs
-        if log.actor == member.name or log.seller == member.name or log.buyer == member.name
+        if log.actor == member.name or log.seller == member.name or log.buyer == member.name  # noqa: E501
     ]
     return True, "查询成功", {
         "guild": _guild_summary(guild),
@@ -337,7 +348,8 @@ def api_get_player_record(self, player_name: str) -> tuple[bool, str, Optional[d
     }
 
 
-def api_get_player_guild_menu_state(self, player_name: str) -> tuple[bool, str, dict[str, Any]]:
+def api_get_player_guild_menu_state(
+        self, player_name: str) -> tuple[bool, str, dict[str, Any]]:
     """Return safe QQ-side guild menu state for one player identity."""
     guilds = _load_guilds(self)
     name, guild, member, err = _find_player_context(self, player_name, guilds)
@@ -366,7 +378,12 @@ def api_get_player_guild_menu_state(self, player_name: str) -> tuple[bool, str, 
     }
 
 
-def api_get_own_guild_logs(self, player_name: str, limit: int = 20) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_get_own_guild_logs(self,
+                           player_name: str,
+                           limit: int = 20) -> tuple[bool,
+                                                     str,
+                                                     Optional[dict[str,
+                                                                   Any]]]:
     """Return logs for the guild that the player belongs to."""
     ok, _err, parsed_limit = _to_int(limit, "日志数量", 1)
     if not ok:
@@ -377,33 +394,39 @@ def api_get_own_guild_logs(self, player_name: str, limit: int = 20) -> tuple[boo
         return False, err, None
     data: dict[str, Any] = {"logs": guild.logs[-parsed_limit:]}
     if guild.has_permission(name, "audit_log"):
-        data["audit_logs"] = [log.to_dict() for log in guild.audit_logs[-parsed_limit:]]
-        data["vault_trade_logs"] = [log.to_dict() for log in guild.vault_trade_logs[-parsed_limit:]]
+        data["audit_logs"] = [log.to_dict()
+                              for log in guild.audit_logs[-parsed_limit:]]
+        data["vault_trade_logs"] = [log.to_dict()
+                                    for log in guild.vault_trade_logs[-parsed_limit:]]  # noqa: E501
     else:
         data["audit_logs"] = []
         data["vault_trade_logs"] = []
     return True, "查询成功", data
 
 
-def api_get_own_guild_vault(self, player_name: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:
-    """Return the current player's guild vault after normal guild permission checks."""
+def api_get_own_guild_vault(
+        self, player_name: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:  # noqa: E501
+    """Return the current player's guild vault after normal guild permission checks."""  # noqa: E501
     guilds = _load_guilds(self)
     name, guild, member, err = _find_player_context(self, player_name, guilds)
     if guild is None or member is None:
         return False, err, None
     if not guild.has_permission(name, "vault"):
         return False, "你没有使用仓库权限", None
-    data = [_vault_item_summary(item, index) for index, item in enumerate(guild.vault_items, start=1)]
+    data = [_vault_item_summary(item, index)
+            for index, item in enumerate(guild.vault_items, start=1)]
     return True, f"{guild.name} 仓库共有 {len(data)} 件上架物品", data
 
 
-def api_get_own_guild_tasks(self, player_name: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:
+def api_get_own_guild_tasks(
+        self, player_name: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:  # noqa: E501
     """Return the task list for the guild that the player belongs to."""
     guilds = _load_guilds(self)
     _name, guild, member, err = _find_player_context(self, player_name, guilds)
     if guild is None or member is None:
         return False, err, None
-    return True, f"{guild.name} 共有 {len(guild.tasks)} 个任务", [_task_summary(task) for task in guild.tasks]
+    return True, f"{guild.name} 共有 {len(guild.tasks)} 个任务", [
+        _task_summary(task) for task in guild.tasks]
 
 
 def api_request_join_guild_as_player(
@@ -419,12 +442,14 @@ def api_request_join_guild_as_player(
     guilds = _load_guilds(self)
     current_guild, _ = _find_player_guild(self, name, guilds)
     if current_guild is not None:
-        return False, f"你已经加入了公会 {current_guild.name}", _guild_summary(current_guild)
+        return False, f"你已经加入了公会 {
+            current_guild.name}", _guild_summary(current_guild)
     target_guild, err = _find_guild(self, guild_query, guilds)
     if target_guild is None:
         return False, err, None
     if _ensure_settings(target_guild).get("frozen", False):
-        return False, f"公会 {target_guild.name} 已被冻结，暂不能提交申请", _guild_summary(target_guild)
+        return False, f"公会 {
+            target_guild.name} 已被冻结，暂不能提交申请", _guild_summary(target_guild)
     if len(target_guild.members) >= Config.MAX_GUILD_MEMBERS:
         return False, "该公会已满员", _guild_summary(target_guild)
     if not target_guild.add_join_request(name, reason):
@@ -434,10 +459,12 @@ def api_request_join_guild_as_player(
     notify = getattr(self, "_notify_join_request_admins", None)
     if callable(notify):
         notify(target_guild, name)
-    return True, f"申请已提交至 {target_guild.name} 的申请队列", _guild_summary(target_guild)
+    return True, f"申请已提交至 {
+        target_guild.name} 的申请队列", _guild_summary(target_guild)
 
 
-def api_leave_guild_as_player(self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_leave_guild_as_player(
+        self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     """Leave the current guild as a normal member."""
     guilds = _load_guilds(self)
     name, guild, member, err = _find_player_context(self, player_name, guilds)
@@ -453,7 +480,8 @@ def api_leave_guild_as_player(self, player_name: str) -> tuple[bool, str, Option
     return True, f"已退出公会 {guild.name}", _guild_summary(guild)
 
 
-def api_disband_owned_guild_as_player(self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_disband_owned_guild_as_player(
+        self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     """Disband the player's own guild, only when the player is the owner."""
     guilds = _load_guilds(self)
     name, guild, member, err = _find_player_context(self, player_name, guilds)
@@ -473,7 +501,7 @@ def api_disband_owned_guild_as_player(self, player_name: str) -> tuple[bool, str
         return False, "保存公会数据失败", None
     for member_name in online_members:
         self.game_ctrl.sendcmd(
-            f'/tellraw {member_name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r公会 §e{guild_name}§r 已被解散"}}]}}'
+            f'/tellraw {member_name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r公会 §e{guild_name}§r 已被解散"}}]}}'  # noqa: E501
         )
     return True, f"已解散公会 {guild_name}", summary
 
@@ -483,7 +511,7 @@ def api_set_announcement_as_player(
     player_name: str,
     announcement: str,
 ) -> tuple[bool, str, Optional[dict[str, Any]]]:
-    """Set the current guild announcement through normal guild permission checks."""
+    """Set the current guild announcement through normal guild permission checks."""  # noqa: E501
     text = str(announcement or "").strip()
     is_valid, error_msg = InputValidator.validate_announcement(text)
     if not is_valid:
@@ -504,7 +532,7 @@ def api_set_announcement_as_player(
     for member_item in guild.members:
         if member_item.name in getattr(self.game_ctrl, "allplayers", []):
             self.game_ctrl.sendcmd(
-                f'/tellraw {member_item.name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r公告已更新，输入 .公会 公告 查看"}}]}}'
+                f'/tellraw {member_item.name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r公告已更新，输入 .公会 公告 查看"}}]}}'  # noqa: E501
             )
     return True, "公告已更新", _guild_summary(guild)
 
@@ -536,8 +564,9 @@ def api_join_guild_task_as_player(
     return True, f"已参与任务：{task.name}", _task_summary(task)
 
 
-def api_return_to_guild_base_as_player(self, player_name: str) -> tuple[bool, str]:
-    """Teleport the player to their guild base after normal permission checks."""
+def api_return_to_guild_base_as_player(
+        self, player_name: str) -> tuple[bool, str]:
+    """Teleport the player to their guild base after normal permission checks."""  # noqa: E501
     guilds = _load_guilds(self)
     name, guild, member, err = _find_player_context(self, player_name, guilds)
     if guild is None or member is None:
@@ -553,11 +582,13 @@ def api_return_to_guild_base_as_player(self, player_name: str) -> tuple[bool, st
     if not guild.base:
         return False, f"公会 {guild.name} 尚未设置据点"
     base = guild.base
-    self.game_ctrl.sendwocmd(f"tp {name} {float(base.x)} {float(base.y)} {float(base.z)}")
+    self.game_ctrl.sendwocmd(
+        f"tp {name} {float(base.x)} {float(base.y)} {float(base.z)}")
     return True, f"已传送到公会 {guild.name} 据点"
 
 
-def api_force_disband_guild(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str]:
+def api_force_disband_guild(self, guild_query: str,
+                            actor: str = "QQ管理") -> tuple[bool, str]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -569,7 +600,8 @@ def api_force_disband_guild(self, guild_query: str, actor: str = "QQ管理") -> 
     return True, f"已强制解散公会 {name}"
 
 
-def api_rename_guild(self, guild_query: str, new_name: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_rename_guild(self, guild_query: str, new_name: str,
+                     actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:  # noqa: E501
     new_name = str(new_name or "").strip()
     if not new_name:
         return False, "新公会名不能为空", None
@@ -584,13 +616,23 @@ def api_rename_guild(self, guild_query: str, new_name: str, actor: str = "QQ管�
     old_name = guild.name
     guild.name = new_name
     guild.add_log(f"{_actor(actor)} 将公会名从 {old_name} 修改为 {new_name}")
-    guild.add_audit_log("guild_rename", _actor(actor), target=old_name, detail=new_name)
+    guild.add_audit_log(
+        "guild_rename",
+        _actor(actor),
+        target=old_name,
+        detail=new_name)
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已修改公会名称：{old_name} -> {new_name}", _guild_summary(guild)
 
 
-def api_set_guild_level(self, guild_query: str, level: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_level(self,
+                        guild_query: str,
+                        level: int,
+                        actor: str = "QQ管理") -> tuple[bool,
+                                                      str,
+                                                      Optional[dict[str,
+                                                                    Any]]]:
     ok, err, parsed = _to_int(level, "公会等级", 1)
     if not ok:
         return False, err, None
@@ -601,13 +643,17 @@ def api_set_guild_level(self, guild_query: str, level: int, actor: str = "QQ管�
     old = guild.level
     guild.level = parsed
     guild.add_log(f"{_actor(actor)} 将公会等级从 {old} 修改为 {parsed}")
-    guild.add_audit_log("guild_set_level", _actor(actor), detail=f"{old}->{parsed}")
+    guild.add_audit_log(
+        "guild_set_level",
+        _actor(actor),
+        detail=f"{old}->{parsed}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已设置 {guild.name} 等级为 {parsed}", _guild_summary(guild)
 
 
-def api_set_guild_exp(self, guild_query: str, exp: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_exp(self, guild_query: str, exp: int,
+                      actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:  # noqa: E501
     ok, err, parsed = _to_int(exp, "公会经验", 0)
     if not ok:
         return False, err, None
@@ -619,14 +665,25 @@ def api_set_guild_exp(self, guild_query: str, exp: int, actor: str = "QQ管理")
     guild.exp = parsed
     level_ups = _apply_level_ups(guild)
     guild.add_log(f"{_actor(actor)} 将公会经验从 {old} 修改为 {parsed}")
-    guild.add_audit_log("guild_set_exp", _actor(actor), detail=f"{old}->{parsed}")
+    guild.add_audit_log(
+        "guild_set_exp",
+        _actor(actor),
+        detail=f"{old}->{parsed}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     suffix = f"，触发升级到 {level_ups[-1]} 级" if level_ups else ""
-    return True, f"已设置 {guild.name} 经验为 {guild.exp}{suffix}", _guild_summary(guild)
+    return True, f"已设置 {
+        guild.name} 经验为 {
+        guild.exp}{suffix}", _guild_summary(guild)
 
 
-def api_transfer_guild_owner(self, guild_query: str, new_owner: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_transfer_guild_owner(self,
+                             guild_query: str,
+                             new_owner: str,
+                             actor: str = "QQ管理") -> tuple[bool,
+                                                           str,
+                                                           Optional[dict[str,
+                                                                         Any]]]:  # noqa: E501
     target_name = str(new_owner or "").strip()
     if not target_name:
         return False, "新会长不能为空", None
@@ -636,7 +693,10 @@ def api_transfer_guild_owner(self, guild_query: str, new_owner: str, actor: str 
         return False, err, None
     target = guild.get_member(target_name)
     if target is None:
-        target = GuildMember(name=target_name, rank=GuildRank.MEMBER, join_time=_now())
+        target = GuildMember(
+            name=target_name,
+            rank=GuildRank.MEMBER,
+            join_time=_now())
         guild.members.append(target)
     for member in guild.members:
         if member.rank == GuildRank.OWNER and member.name != target_name:
@@ -645,13 +705,20 @@ def api_transfer_guild_owner(self, guild_query: str, new_owner: str, actor: str 
     old_owner = guild.owner
     guild.owner = target.name
     guild.add_log(f"{_actor(actor)} 强制将会长从 {old_owner} 转让给 {target.name}")
-    guild.add_audit_log("guild_force_transfer_owner", _actor(actor), target=target.name, detail=old_owner)
+    guild.add_audit_log("guild_force_transfer_owner", _actor(actor),
+                        target=target.name, detail=old_owner)
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已将 {guild.name} 会长转让给 {target.name}", _guild_summary(guild)
 
 
-def api_force_join_guild(self, guild_query: str, player_name: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_force_join_guild(self,
+                         guild_query: str,
+                         player_name: str,
+                         actor: str = "QQ管理") -> tuple[bool,
+                                                       str,
+                                                       Optional[dict[str,
+                                                                     Any]]]:
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空", None
@@ -661,20 +728,30 @@ def api_force_join_guild(self, guild_query: str, player_name: str, actor: str = 
         return False, err, None
     old_guild, _ = _find_player_guild(self, name, guilds)
     if old_guild and old_guild.guild_id == target_guild.guild_id:
-        return True, f"{name} 已在公会 {target_guild.name}", _guild_summary(target_guild)
+        return True, f"{name} 已在公会 {
+            target_guild.name}", _guild_summary(target_guild)
     if old_guild:
-        old_guild.members = [member for member in old_guild.members if member.name != name]
+        old_guild.members = [
+            member for member in old_guild.members if member.name != name]
         old_guild.add_log(f"{_actor(actor)} 强制移出 {name}")
-        old_guild.add_audit_log("guild_force_leave", _actor(actor), target=name, detail=target_guild.name)
-    target_guild.members.append(GuildMember(name=name, rank=GuildRank.MEMBER, join_time=_now()))
+        old_guild.add_audit_log("guild_force_leave", _actor(
+            actor), target=name, detail=target_guild.name)
+    target_guild.members.append(GuildMember(
+        name=name, rank=GuildRank.MEMBER, join_time=_now()))
     target_guild.add_log(f"{_actor(actor)} 强制加入成员 {name}")
     target_guild.add_audit_log("guild_force_join", _actor(actor), target=name)
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已将 {name} 加入公会 {target_guild.name}", _guild_summary(target_guild)
+    return True, f"已将 {name} 加入公会 {
+        target_guild.name}", _guild_summary(target_guild)
 
 
-def api_force_leave_guild(self, player_name: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_force_leave_guild(self,
+                          player_name: str,
+                          actor: str = "QQ管理") -> tuple[bool,
+                                                        str,
+                                                        Optional[dict[str,
+                                                                      Any]]]:
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空", None
@@ -689,7 +766,8 @@ def api_force_leave_guild(self, player_name: str, actor: str = "QQ管理") -> tu
         if not _save_guilds(self, guilds):
             return False, "保存公会数据失败", None
         return True, f"已移除 {name}，公会 {old_name} 已无成员并被解散", None
-    if guild.owner == name or not any(member.rank == GuildRank.OWNER for member in guild.members):
+    if guild.owner == name or not any(
+            member.rank == GuildRank.OWNER for member in guild.members):
         new_owner = guild.members[0]
         new_owner.rank = GuildRank.OWNER
         guild.owner = new_owner.name
@@ -700,11 +778,23 @@ def api_force_leave_guild(self, player_name: str, actor: str = "QQ管理") -> tu
     return True, f"已将 {name} 移出公会 {guild.name}", _guild_summary(guild)
 
 
-def api_force_kick_member(self, player_name: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_force_kick_member(self,
+                          player_name: str,
+                          actor: str = "QQ管理") -> tuple[bool,
+                                                        str,
+                                                        Optional[dict[str,
+                                                                      Any]]]:
     return api_force_leave_guild(self, player_name, actor)
 
 
-def api_set_guild_frozen(self, guild_query: str, frozen: bool, reason: str = "", actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_frozen(self,
+                         guild_query: str,
+                         frozen: bool,
+                         reason: str = "",
+                         actor: str = "QQ管理") -> tuple[bool,
+                                                       str,
+                                                       Optional[dict[str,
+                                                                     Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -715,21 +805,30 @@ def api_set_guild_frozen(self, guild_query: str, frozen: bool, reason: str = "",
     settings["frozen_at"] = _now() if frozen else 0
     action = "冻结" if frozen else "解冻"
     guild.add_log(f"{_actor(actor)} {action}了公会")
-    guild.add_audit_log("guild_freeze" if frozen else "guild_unfreeze", _actor(actor), detail=str(reason or ""))
+    guild.add_audit_log("guild_freeze" if frozen else "guild_unfreeze",
+                        _actor(actor), detail=str(reason or ""))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已{action}公会 {guild.name}", _guild_summary(guild)
 
 
-def api_get_guild_vault(self, guild_query: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:
+def api_get_guild_vault(
+        self, guild_query: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:  # noqa: E501
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
-    data = [_vault_item_summary(item, index) for index, item in enumerate(guild.vault_items, start=1)]
+    data = [_vault_item_summary(item, index)
+            for index, item in enumerate(guild.vault_items, start=1)]
     return True, f"{guild.name} 仓库共有 {len(data)} 件上架物品", data
 
 
-def api_backup_guild_vault(self, guild_query: str, label: str = "", actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_backup_guild_vault(self,
+                           guild_query: str,
+                           label: str = "",
+                           actor: str = "QQ管理") -> tuple[bool,
+                                                         str,
+                                                         Optional[dict[str,
+                                                                       Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -750,10 +849,18 @@ def api_backup_guild_vault(self, guild_query: str, label: str = "", actor: str =
     guild.add_audit_log("vault_backup", _actor(actor), detail=str(label or ""))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已备份 {guild.name} 仓库，当前保留 {len(settings['vault_backups'])} 份", backup
+    return True, f"已备份 {
+        guild.name} 仓库，当前保留 {
+        len(
+            settings['vault_backups'])} 份", backup
 
 
-def api_clear_guild_vault(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_clear_guild_vault(self,
+                          guild_query: str,
+                          actor: str = "QQ管理") -> tuple[bool,
+                                                        str,
+                                                        Optional[dict[str,
+                                                                      Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -764,13 +871,23 @@ def api_clear_guild_vault(self, guild_query: str, actor: str = "QQ管理") -> tu
     removed = len(guild.vault_items)
     guild.vault_items = []
     guild.add_log(f"{_actor(actor)} 清空了公会仓库")
-    guild.add_audit_log("vault_clear", _actor(actor), detail=f"removed={removed}")
+    guild.add_audit_log(
+        "vault_clear",
+        _actor(actor),
+        detail=f"removed={removed}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已清空 {guild.name} 仓库，共删除 {removed} 件物品", _guild_summary(guild)
+    return True, f"已清空 {
+        guild.name} 仓库，共删除 {removed} 件物品", _guild_summary(guild)
 
 
-def api_delete_guild_vault_item(self, guild_query: str, index: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_delete_guild_vault_item(self,
+                                guild_query: str,
+                                index: int,
+                                actor: str = "QQ管理") -> tuple[bool,
+                                                              str,
+                                                              Optional[dict[str,  # noqa: E501
+                                                                            Any]]]:  # noqa: E501
     ok, err, parsed = _to_int(index, "仓库序号", 1)
     if not ok:
         return False, err, None
@@ -782,15 +899,28 @@ def api_delete_guild_vault_item(self, guild_query: str, index: int, actor: str =
     if zero_index >= len(guild.vault_items):
         return False, f"仓库序号超出范围：{parsed}", None
     item = guild.vault_items.pop(zero_index)
-    guild.add_vault_trade_log("admin_delete", item, _actor(actor), detail="管理员删除")
-    guild.add_audit_log("vault_item_delete", _actor(actor), target=item.seller, detail=item.item_id)
+    guild.add_vault_trade_log(
+        "admin_delete",
+        item,
+        _actor(actor),
+        detail="管理员删除")
+    guild.add_audit_log("vault_item_delete", _actor(
+        actor), target=item.seller, detail=item.item_id)
     guild.add_log(f"{_actor(actor)} 删除了仓库物品 {item.item_id} x{item.count}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已删除 {guild.name} 仓库第 {parsed} 件物品", _vault_item_summary(item, parsed)
+    return True, f"已删除 {
+        guild.name} 仓库第 {parsed} 件物品", _vault_item_summary(
+        item, parsed)
 
 
-def api_rollback_guild_vault(self, guild_query: str, backup_index: int = 1, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_rollback_guild_vault(self,
+                             guild_query: str,
+                             backup_index: int = 1,
+                             actor: str = "QQ管理") -> tuple[bool,
+                                                           str,
+                                                           Optional[dict[str,
+                                                                         Any]]]:  # noqa: E501
     ok, err, parsed = _to_int(backup_index, "备份序号", 1)
     if not ok:
         return False, err, None
@@ -820,38 +950,43 @@ def api_rollback_guild_vault(self, guild_query: str, backup_index: int = 1, acto
     }
 
 
-def api_export_guild_vault(self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_export_guild_vault(
+        self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
     data = {
-        "guild": _guild_summary(guild),
-        "vault_items": [_vault_item_summary(item, index) for index, item in enumerate(guild.vault_items, start=1)],
-        "vault_trade_logs": [log.to_dict() for log in guild.vault_trade_logs],
-    }
+        "guild": _guild_summary(guild), "vault_items": [
+            _vault_item_summary(
+                item, index) for index, item in enumerate(
+                guild.vault_items, start=1)], "vault_trade_logs": [
+                    log.to_dict() for log in guild.vault_trade_logs], }
     data["json"] = json.dumps(data, ensure_ascii=False, indent=2)
     return True, f"已导出 {guild.name} 仓库数据", data
 
 
-def _make_task_from_template(template: dict[str, Any], prefix: str = "auto") -> GuildTask:
+def _make_task_from_template(
+        template: dict[str, Any], prefix: str = "auto") -> GuildTask:
     now = _now()
-    deadline_seconds = int(getattr(Config, "GUILD_TASK_CONFIG", {}).get("自动任务默认有效期秒", 172800))
+    deadline_seconds = int(getattr(Config, "GUILD_TASK_CONFIG",
+                           {}).get("自动任务默认有效期秒", 172800))
     return GuildTask(
-        task_id=f"{prefix}-{uuid.uuid4().hex[:8]}",
-        name=str(template.get("name", "公会任务"))[:20],
-        description=str(template.get("description", ""))[:100],
+        task_id=f"{prefix} -{uuid.uuid4().hex[: 8]} ",
+        name=str(template.get("name", "公会任务"))[: 20],
+        description=str(template.get("description", ""))[: 100],
         task_type=str(template.get("task_type", "trade")),
         target=str(template.get("target", "trade_count")),
         target_count=max(1, int(template.get("target_count", 1))),
         current_count=max(0, int(template.get("current_count", 0))),
         reward_exp=max(0, int(template.get("reward_exp", 0))),
-        reward_contribution=max(0, int(template.get("reward_contribution", 0))),
-        create_time=now,
-        deadline=now + deadline_seconds if deadline_seconds > 0 else 0,
-    )
+        reward_contribution=max(
+            0, int(template.get("reward_contribution", 0))),
+        create_time=now, deadline=now + deadline_seconds
+        if deadline_seconds > 0 else 0,)
 
 
-def api_refresh_guild_tasks(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, list[dict[str, Any]]]:
+def api_refresh_guild_tasks(
+        self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, list[dict[str, Any]]]:  # noqa: E501
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -859,20 +994,31 @@ def api_refresh_guild_tasks(self, guild_query: str, actor: str = "QQ管理") -> 
     templates = getattr(Config, "GUILD_TASK_CONFIG", {}).get("自动任务模板列表", [])
     if not templates:
         return False, "没有配置自动任务模板", []
-    active_keys = {(task.name, task.task_type, task.target) for task in guild.tasks if not task.completed}
+    active_keys = {(task.name, task.task_type, task.target)
+                   for task in guild.tasks if not task.completed}
     created: list[GuildTask] = []
     for template in templates:
-        key = (template.get("name"), template.get("task_type"), template.get("target"))
+        key = (
+            template.get("name"),
+            template.get("task_type"),
+            template.get("target"))
         if key in active_keys:
             continue
         task = _make_task_from_template(template)
         guild.tasks.append(task)
         created.append(task)
     guild.add_log(f"{_actor(actor)} 刷新了公会任务，新增 {len(created)} 个")
-    guild.add_audit_log("task_refresh", _actor(actor), detail=str(len(created)))
+    guild.add_audit_log(
+        "task_refresh",
+        _actor(actor),
+        detail=str(
+            len(created)))
     if created and not _save_guilds(self, guilds):
         return False, "保存公会数据失败", []
-    return True, f"已为 {guild.name} 刷新任务，新增 {len(created)} 个", [_task_summary(task) for task in created]
+    return True, f"已为 {
+        guild.name} 刷新任务，新增 {
+        len(created)} 个", [
+            _task_summary(task) for task in created]
 
 
 def api_create_global_task(
@@ -914,13 +1060,20 @@ def api_create_global_task(
         )
         guild.tasks.append(task)
         guild.add_log(f"{_actor(actor)} 创建了全服任务 {task.name}")
-        created.append({"guild_id": guild.guild_id, "guild_name": guild.name, "task": _task_summary(task)})
+        created.append({"guild_id": guild.guild_id,
+                       "guild_name": guild.name, "task": _task_summary(task)})
     if created and not _save_guilds(self, guilds):
         return False, "保存公会数据失败", []
     return True, f"已向 {len(created)} 个公会创建全服任务", created
 
 
-def api_delete_guild_task(self, guild_query: str, task_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_delete_guild_task(self,
+                          guild_query: str,
+                          task_query: str,
+                          actor: str = "QQ管理") -> tuple[bool,
+                                                        str,
+                                                        Optional[dict[str,
+                                                                      Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -928,7 +1081,8 @@ def api_delete_guild_task(self, guild_query: str, task_query: str, actor: str = 
     task, err = _find_task(guild, task_query)
     if task is None:
         return False, err, None
-    guild.tasks = [item for item in guild.tasks if item.task_id != task.task_id]
+    guild.tasks = [
+        item for item in guild.tasks if item.task_id != task.task_id]
     guild.add_log(f"{_actor(actor)} 删除了任务 {task.name}")
     guild.add_audit_log("task_delete", _actor(actor), detail=task.name)
     if not _save_guilds(self, guilds):
@@ -936,7 +1090,13 @@ def api_delete_guild_task(self, guild_query: str, task_query: str, actor: str = 
     return True, f"已删除任务 {task.name}", _task_summary(task)
 
 
-def api_reset_guild_task_progress(self, guild_query: str, task_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_reset_guild_task_progress(self,
+                                  guild_query: str,
+                                  task_query: str,
+                                  actor: str = "QQ管理") -> tuple[bool,
+                                                                str,
+                                                                Optional[dict[str,  # noqa: E501
+                                                                              Any]]]:  # noqa: E501
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -954,7 +1114,13 @@ def api_reset_guild_task_progress(self, guild_query: str, task_query: str, actor
     return True, f"已重置任务 {task.name}", _task_summary(task)
 
 
-def api_force_complete_guild_task(self, guild_query: str, task_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_force_complete_guild_task(self,
+                                  guild_query: str,
+                                  task_query: str,
+                                  actor: str = "QQ管理") -> tuple[bool,
+                                                                str,
+                                                                Optional[dict[str,  # noqa: E501
+                                                                              Any]]]:  # noqa: E501
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -971,7 +1137,8 @@ def api_force_complete_guild_task(self, guild_query: str, task_query: str, actor
     return True, f"已强制完成任务 {task.name}", _task_summary(task)
 
 
-def api_teleport_player_to_guild_base(self, player_name: str, guild_query: str | None = None) -> tuple[bool, str]:
+def api_teleport_player_to_guild_base(
+        self, player_name: str, guild_query: str | None = None) -> tuple[bool, str]:  # noqa: E501
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空"
@@ -987,11 +1154,17 @@ def api_teleport_player_to_guild_base(self, player_name: str, guild_query: str |
     if not guild.base:
         return False, f"公会 {guild.name} 尚未设置据点"
     base = guild.base
-    self.game_ctrl.sendwocmd(f"tp {name} {float(base.x)} {float(base.y)} {float(base.z)}")
+    self.game_ctrl.sendwocmd(
+        f"tp {name} {float(base.x)} {float(base.y)} {float(base.z)}")
     return True, f"已传送 {name} 到公会 {guild.name} 据点"
 
 
-def api_delete_guild_base(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_delete_guild_base(self,
+                          guild_query: str,
+                          actor: str = "QQ管理") -> tuple[bool,
+                                                        str,
+                                                        Optional[dict[str,
+                                                                      Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1004,7 +1177,16 @@ def api_delete_guild_base(self, guild_query: str, actor: str = "QQ管理") -> tu
     return True, f"已删除 {guild.name} 据点", _guild_summary(guild)
 
 
-def api_set_guild_base(self, guild_query: str, dimension: int, x: float, y: float, z: float, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_base(self,
+                       guild_query: str,
+                       dimension: int,
+                       x: float,
+                       y: float,
+                       z: float,
+                       actor: str = "QQ管理") -> tuple[bool,
+                                                     str,
+                                                     Optional[dict[str,
+                                                                   Any]]]:
     ok, err, dim = _to_int(dimension, "维度")
     if not ok:
         return False, err, None
@@ -1018,15 +1200,26 @@ def api_set_guild_base(self, guild_query: str, dimension: int, x: float, y: floa
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
         return False, err, None
-    guild.base = GuildBase(dim, coord_values[0], coord_values[1], coord_values[2])
+    guild.base = GuildBase(
+        dim,
+        coord_values[0],
+        coord_values[1],
+        coord_values[2])
     guild.add_log(f"{_actor(actor)} 修改了公会据点")
-    guild.add_audit_log("base_set", _actor(actor), detail=f"{dim},{coord_values}")
+    guild.add_audit_log("base_set", _actor(
+        actor), detail=f"{dim},{coord_values}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已设置 {guild.name} 据点", _guild_summary(guild)
 
 
-def api_set_guild_base_locked(self, guild_query: str, locked: bool, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_base_locked(self,
+                              guild_query: str,
+                              locked: bool,
+                              actor: str = "QQ管理") -> tuple[bool,
+                                                            str,
+                                                            Optional[dict[str,
+                                                                          Any]]]:  # noqa: E501
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1034,13 +1227,20 @@ def api_set_guild_base_locked(self, guild_query: str, locked: bool, actor: str =
     _ensure_settings(guild)["base_locked"] = bool(locked)
     action = "锁定" if locked else "解锁"
     guild.add_log(f"{_actor(actor)} {action}了公会据点")
-    guild.add_audit_log("base_lock" if locked else "base_unlock", _actor(actor))
+    guild.add_audit_log(
+        "base_lock" if locked else "base_unlock",
+        _actor(actor))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已{action} {guild.name} 据点", _guild_summary(guild)
 
 
-def api_clear_guild_effects(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_clear_guild_effects(self,
+                            guild_query: str,
+                            actor: str = "QQ管理") -> tuple[bool,
+                                                          str,
+                                                          Optional[dict[str,
+                                                                        Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1053,7 +1253,14 @@ def api_clear_guild_effects(self, guild_query: str, actor: str = "QQ管理") -> 
     return True, f"已清空 {guild.name} 效果", _guild_summary(guild)
 
 
-def api_set_guild_effect(self, guild_query: str, effect_key: str, level: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_effect(self,
+                         guild_query: str,
+                         effect_key: str,
+                         level: int,
+                         actor: str = "QQ管理") -> tuple[bool,
+                                                       str,
+                                                       Optional[dict[str,
+                                                                     Any]]]:
     key = str(effect_key or "").strip()
     if key not in Config.EFFECTS_CONFIG:
         names = {
@@ -1076,13 +1283,23 @@ def api_set_guild_effect(self, guild_query: str, effect_key: str, level: int, ac
     else:
         guild.purchased_effects[key] = parsed_level
     guild.add_log(f"{_actor(actor)} 设置效果 {key} 为 {parsed_level} 级")
-    guild.add_audit_log("effect_set", _actor(actor), detail=f"{key}={parsed_level}")
+    guild.add_audit_log(
+        "effect_set",
+        _actor(actor),
+        detail=f"{key}={parsed_level}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已设置 {guild.name} 效果 {key} 为 {parsed_level} 级", _guild_summary(guild)
+    return True, f"已设置 {
+        guild.name} 效果 {key} 为 {parsed_level} 级", _guild_summary(guild)
 
 
-def api_add_guild_funds(self, guild_query: str, amount: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_add_guild_funds(self,
+                        guild_query: str,
+                        amount: int,
+                        actor: str = "QQ管理") -> tuple[bool,
+                                                      str,
+                                                      Optional[dict[str,
+                                                                    Any]]]:
     ok, err, parsed = _to_int(amount, "资金数量")
     if not ok:
         return False, err, None
@@ -1096,10 +1313,18 @@ def api_add_guild_funds(self, guild_query: str, amount: int, actor: str = "QQ管
     guild.add_audit_log("funds_add", _actor(actor), detail=str(parsed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已调整 {guild.name} 资金，当前 {settings['funds']}", _guild_summary(guild)
+    return True, f"已调整 {
+        guild.name} 资金，当前 {
+        settings['funds']}", _guild_summary(guild)
 
 
-def api_set_guild_funds(self, guild_query: str, amount: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_funds(self,
+                        guild_query: str,
+                        amount: int,
+                        actor: str = "QQ管理") -> tuple[bool,
+                                                      str,
+                                                      Optional[dict[str,
+                                                                    Any]]]:
     ok, err, parsed = _to_int(amount, "资金余额", 0)
     if not ok:
         return False, err, None
@@ -1115,7 +1340,13 @@ def api_set_guild_funds(self, guild_query: str, amount: int, actor: str = "QQ管
     return True, f"已设置 {guild.name} 资金为 {parsed}", _guild_summary(guild)
 
 
-def api_add_member_contribution(self, player_name: str, amount: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_add_member_contribution(self,
+                                player_name: str,
+                                amount: int,
+                                actor: str = "QQ管理") -> tuple[bool,
+                                                              str,
+                                                              Optional[dict[str,  # noqa: E501
+                                                                            Any]]]:  # noqa: E501
     ok, err, parsed = _to_int(amount, "贡献值")
     if not ok:
         return False, err, None
@@ -1129,13 +1360,22 @@ def api_add_member_contribution(self, player_name: str, amount: int, actor: str 
     member.contribution += parsed
     guild.stats.total_contribution += max(0, parsed)
     guild.add_log(f"{_actor(actor)} 调整 {member.name} 贡献 {parsed:+d}")
-    guild.add_audit_log("member_contribution_add", _actor(actor), target=member.name, detail=str(parsed))
+    guild.add_audit_log("member_contribution_add", _actor(actor),
+                        target=member.name, detail=str(parsed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已调整 {member.name} 贡献，当前 {member.contribution}", _member_summary(member)
+    return True, f"已调整 {
+        member.name} 贡献，当前 {
+        member.contribution}", _member_summary(member)
 
 
-def api_set_member_contribution(self, player_name: str, amount: int, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_member_contribution(self,
+                                player_name: str,
+                                amount: int,
+                                actor: str = "QQ管理") -> tuple[bool,
+                                                              str,
+                                                              Optional[dict[str,  # noqa: E501
+                                                                            Any]]]:  # noqa: E501
     ok, err, parsed = _to_int(amount, "贡献值", 0)
     if not ok:
         return False, err, None
@@ -1149,13 +1389,19 @@ def api_set_member_contribution(self, player_name: str, amount: int, actor: str 
     old = member.contribution
     member.contribution = parsed
     guild.add_log(f"{_actor(actor)} 将 {member.name} 贡献从 {old} 设置为 {parsed}")
-    guild.add_audit_log("member_contribution_set", _actor(actor), target=member.name, detail=f"{old}->{parsed}")
+    guild.add_audit_log("member_contribution_set", _actor(
+        actor), target=member.name, detail=f"{old}->{parsed}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     return True, f"已设置 {member.name} 贡献为 {parsed}", _member_summary(member)
 
 
-def api_reset_guild_contributions(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_reset_guild_contributions(self,
+                                  guild_query: str,
+                                  actor: str = "QQ管理") -> tuple[bool,
+                                                                str,
+                                                                Optional[dict[str,  # noqa: E501
+                                                                              Any]]]:  # noqa: E501
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1170,7 +1416,12 @@ def api_reset_guild_contributions(self, guild_query: str, actor: str = "QQ管理
     return True, f"已重置 {guild.name} 所有成员贡献", _guild_summary(guild)
 
 
-def api_reset_market_prices(self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_reset_market_prices(self,
+                            guild_query: str,
+                            actor: str = "QQ管理") -> tuple[bool,
+                                                          str,
+                                                          Optional[dict[str,
+                                                                        Any]]]:
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1178,13 +1429,18 @@ def api_reset_market_prices(self, guild_query: str, actor: str = "QQ管理") -> 
     removed = len(guild.custom_item_values)
     guild.custom_item_values = {}
     guild.add_log(f"{_actor(actor)} 重置了市场价格")
-    guild.add_audit_log("market_price_reset", _actor(actor), detail=str(removed))
+    guild.add_audit_log(
+        "market_price_reset",
+        _actor(actor),
+        detail=str(removed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已重置 {guild.name} 市场价格，删除 {removed} 条自定义价格", _guild_summary(guild)
+    return True, f"已重置 {
+        guild.name} 市场价格，删除 {removed} 条自定义价格", _guild_summary(guild)
 
 
-def api_get_guild_logs(self, guild_query: str, limit: int = 20) -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_get_guild_logs(self, guild_query: str,
+                       limit: int = 20) -> tuple[bool, str, Optional[dict[str, Any]]]:  # noqa: E501
     ok, _err, parsed_limit = _to_int(limit, "日志数量", 1)
     if not ok:
         parsed_limit = 20
@@ -1193,12 +1449,17 @@ def api_get_guild_logs(self, guild_query: str, limit: int = 20) -> tuple[bool, s
         return False, err, None
     return True, "查询成功", {
         "logs": guild.logs[-parsed_limit:],
-        "audit_logs": [log.to_dict() for log in guild.audit_logs[-parsed_limit:]],
-        "vault_trade_logs": [log.to_dict() for log in guild.vault_trade_logs[-parsed_limit:]],
+        "audit_logs": [log.to_dict() for log in guild.audit_logs[-parsed_limit:]],  # noqa: E501
+        "vault_trade_logs": [log.to_dict() for log in guild.vault_trade_logs[-parsed_limit:]],  # noqa: E501
     }
 
 
-def api_get_abnormal_trades(self, guild_query: str | None = None, ratio: float = 3.0) -> tuple[bool, str, list[dict[str, Any]]]:
+def api_get_abnormal_trades(self,
+                            guild_query: str | None = None,
+                            ratio: float = 3.0) -> tuple[bool,
+                                                         str,
+                                                         list[dict[str,
+                                                                   Any]]]:
     try:
         threshold = float(ratio)
     except (TypeError, ValueError):
@@ -1215,7 +1476,8 @@ def api_get_abnormal_trades(self, guild_query: str | None = None, ratio: float =
     results = []
     for guild in target_guilds:
         for log in guild.vault_trade_logs:
-            suggested = guild.get_item_value(log.item_id) * max(1, int(log.count or 1))
+            suggested = guild.get_item_value(
+                log.item_id) * max(1, int(log.count or 1))
             if suggested > 0 and log.price >= suggested * threshold:
                 data = log.to_dict()
                 data["guild_id"] = guild.guild_id
@@ -1227,14 +1489,19 @@ def api_get_abnormal_trades(self, guild_query: str | None = None, ratio: float =
     return True, f"共 {len(results)} 条异常交易记录", results
 
 
-def api_get_donation_rankings(self, guild_query: str | None = None, limit: int = 10) -> tuple[bool, str, list[dict[str, Any]]]:
+def api_get_donation_rankings(self,
+                              guild_query: str | None = None,
+                              limit: int = 10) -> tuple[bool,
+                                                        str,
+                                                        list[dict[str,
+                                                                  Any]]]:
     ok, _err, parsed_limit = _to_int(limit, "排行数量", 1)
     if not ok:
         parsed_limit = 10
     guilds = _load_guilds(self)
     records = []
     for guild in guilds.values():
-        if guild_query and guild.name != guild_query and guild.guild_id != guild_query:
+        if guild_query and guild.name != guild_query and guild.guild_id != guild_query:  # noqa: E501
             continue
         for member in guild.members:
             records.append({
@@ -1245,10 +1512,11 @@ def api_get_donation_rankings(self, guild_query: str | None = None, limit: int =
                 "contribution": member.contribution,
             })
     records.sort(key=lambda item: int(item["contribution"]), reverse=True)
-    return True, f"贡献排行前 {min(parsed_limit, len(records))} 名", records[:parsed_limit]
+    return True, f"贡献排行前 {min(parsed_limit, len(records))} 名", records[:parsed_limit]  # noqa: E501
 
 
-def api_get_guild_rankings(self, sort_by: str = "level", limit: int = 10) -> tuple[bool, str, list[dict[str, Any]]]:
+def api_get_guild_rankings(self, sort_by: str = "level",
+                           limit: int = 10) -> tuple[bool, str, list[dict[str, Any]]]:  # noqa: E501
     """返回适合外部插件消费的公会排行榜数据。"""
     raw_sort_by = str(sort_by or "level").strip()
     sort_key = {
@@ -1293,14 +1561,17 @@ def api_backup_guild_data(self) -> tuple[bool, str, Optional[str]]:
     data_dir = os.path.dirname(self.guilds_file)
     backup_dir = os.path.join(data_dir, "公会数据备份")
     os.makedirs(backup_dir, exist_ok=True)
-    backup_path = os.path.join(backup_dir, f"公会数据文件-api-{time.strftime('%Y%m%d-%H%M%S')}.json")
+    backup_path = os.path.join(
+        backup_dir, f"公会数据文件-api-{time.strftime('%Y%m%d-%H%M%S')}.json")
     shutil.copy2(self.guilds_file, backup_path)
     return True, "公会数据备份已创建", backup_path
 
 
-def api_repair_guild_data(self, actor: str = "QQ管理") -> tuple[bool, str, dict[str, Any]]:
+def api_repair_guild_data(
+        self, actor: str = "QQ管理") -> tuple[bool, str, dict[str, Any]]:
     guilds = _load_guilds(self)
-    fixed = {"guild_id": 0, "level": 0, "exp": 0, "owner": 0, "vault": 0, "removed_empty": 0}
+    fixed = {"guild_id": 0, "level": 0, "exp": 0,
+             "owner": 0, "vault": 0, "removed_empty": 0}
     for outer_id in list(guilds.keys()):
         guild = guilds[outer_id]
         if not guild.members:
@@ -1316,7 +1587,8 @@ def api_repair_guild_data(self, actor: str = "QQ管理") -> tuple[bool, str, dic
         if not isinstance(guild.exp, (int, float)) or guild.exp < 0:
             guild.exp = 0
             fixed["exp"] += 1
-        owners = [member for member in guild.members if member.rank == GuildRank.OWNER]
+        owners = [member for member in guild.members
+                  if member.rank == GuildRank.OWNER]
         if len(owners) != 1:
             preferred = guild.get_member(guild.owner) or guild.members[0]
             for member in guild.members:
@@ -1329,7 +1601,8 @@ def api_repair_guild_data(self, actor: str = "QQ管理") -> tuple[bool, str, dic
             fixed["vault"] += 1
         if not isinstance(guild.stats, GuildStats):
             guild.stats = GuildStats()
-        guild.add_audit_log("data_repair", _actor(actor), detail=json.dumps(fixed, ensure_ascii=False))
+        guild.add_audit_log("data_repair", _actor(
+            actor), detail=json.dumps(fixed, ensure_ascii=False))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", fixed
     return True, "公会数据修复完成", fixed
@@ -1338,10 +1611,14 @@ def api_repair_guild_data(self, actor: str = "QQ管理") -> tuple[bool, str, dic
 def api_get_guild_statistics(self) -> tuple[bool, str, dict[str, Any]]:
     guilds = _load_guilds(self)
     total_members = sum(len(guild.members) for guild in guilds.values())
-    total_vault_items = sum(len(guild.vault_items) for guild in guilds.values())
+    total_vault_items = sum(len(guild.vault_items)
+                            for guild in guilds.values())
     total_tasks = sum(len(guild.tasks) for guild in guilds.values())
-    active_tasks = sum(len([task for task in guild.tasks if not task.completed]) for guild in guilds.values())
-    frozen_count = sum(1 for guild in guilds.values() if _ensure_settings(guild).get("frozen", False))
+    active_tasks = sum(
+        len([task for task in guild.tasks if not task.completed])
+        for guild in guilds.values())
+    frozen_count = sum(1 for guild in guilds.values()
+                       if _ensure_settings(guild).get("frozen", False))
     data = {
         "guild_count": len(guilds),
         "member_count": total_members,
@@ -1393,14 +1670,21 @@ def api_start_guild_activity(
         "actor": _actor(actor),
     }
     self._guild_runtime_events[activity_key] = event
-    return True, f"已开启 {activity_key} 活动 {seconds} 秒，倍率 {parsed_multiplier}", copy.deepcopy(event)
+    return True, f"已开启 {activity_key} 活动 {seconds} 秒，倍率 {parsed_multiplier}", copy.deepcopy(  # noqa: E501
+        event)
 
 
 def api_stop_guild_activity(self, activity: str) -> tuple[bool, str]:
     activity_key = str(activity or "").strip().lower()
-    aliases = {"经验": "exp", "双倍经验": "exp", "贡献": "contribution", "双倍贡献": "contribution", "争霸": "contest", "公会争霸": "contest"}
+    aliases = {"经验": "exp", "双倍经验": "exp", "贡献": "contribution",
+               "双倍贡献": "contribution", "争霸": "contest", "公会争霸": "contest"}
     activity_key = aliases.get(activity_key, activity_key)
-    removed = getattr(self, "_guild_runtime_events", {}).pop(activity_key, None)
+    removed = getattr(
+        self,
+        "_guild_runtime_events",
+        {}).pop(
+        activity_key,
+        None)
     if removed is None:
         return False, f"活动未开启：{activity}"
     return True, f"已停止活动 {activity_key}"
@@ -1416,7 +1700,8 @@ def api_get_guild_activity_status(self) -> tuple[bool, str, dict[str, Any]]:
             events.pop(key, None)
             continue
         active[key] = copy.deepcopy(event)
-        active[key]["remaining_seconds"] = max(0, int(expires_at - now)) if expires_at > 0 else 0
+        active[key]["remaining_seconds"] = max(
+            0, int(expires_at - now)) if expires_at > 0 else 0
     return True, f"当前 {len(active)} 个活动运行中", active
 
 
@@ -1445,24 +1730,29 @@ def api_settle_guild_ranking_rewards(
         settings = _ensure_settings(latest)
         settings["funds"] = int(settings.get("funds", 0) or 0) + funds
         latest.add_log(f"{_actor(actor)} 发放排行榜奖励：经验 {exp}，资金 {funds}")
-        latest.add_audit_log("ranking_reward", _actor(actor), detail=f"{sort_by}:{score}")
-        rewarded.append({"guild_id": latest.guild_id, "guild_name": latest.name, "score": score})
+        latest.add_audit_log("ranking_reward", _actor(actor),
+                             detail=f"{sort_by}:{score}")
+        rewarded.append({"guild_id": latest.guild_id,
+                        "guild_name": latest.name, "score": score})
     if rewarded and not _save_guilds(self, guilds):
         return False, "保存公会数据失败", []
     return True, f"已结算 {len(rewarded)} 个公会的排行榜奖励", rewarded
 
 
-def api_broadcast_guild_announcement(self, message: str, actor: str = "QQ管理") -> tuple[bool, str]:
+def api_broadcast_guild_announcement(
+        self, message: str, actor: str = "QQ管理") -> tuple[bool, str]:
     text = str(message or "").strip()
     if not text:
         return False, "公告内容不能为空"
-    payload = json.dumps({"rawtext": [{"text": f"§l§a公会公告 §d>> §r{text}"}]}, ensure_ascii=False)
+    payload = json.dumps(
+        {"rawtext": [{"text": f"§l§a公会公告 §d>> §r{text}"}]}, ensure_ascii=False)
     self.game_ctrl.sendcmd(f"/tellraw @a {payload}")
     fmts.print_inf(f"{_actor(actor)} 发布公会全服公告：{text}")
     return True, "全服公告已发送"
 
 
-def _get_guild_rankings(self, sort_by: str = "level") -> list[tuple[GuildData, Any]]:
+def _get_guild_rankings(
+        self, sort_by: str = "level") -> list[tuple[GuildData, Any]]:
     return self.get_guild_rankings(sort_by)
 
 

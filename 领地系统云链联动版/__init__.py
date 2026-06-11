@@ -9,7 +9,7 @@ import math
 import shutil
 import uuid
 from typing import Dict, List, Optional, Tuple, Any
-from tooldelta import Plugin, cfg, fmts, Player, Chat, plugin_entry, utils, game_utils
+from tooldelta import Plugin, cfg, fmts, Player, Chat, plugin_entry, utils, game_utils  # noqa: E501
 
 from .config import (
     CONFIG_FILE_DIR,
@@ -39,6 +39,7 @@ LEGACY_PLUGIN_NAME = "领地系统"
 class ConsoleMenuExit(Exception):
     pass
 
+
 class LandPlugin(Plugin):
     name = PLUGIN_NAME
     author = "小石潭记qwq"
@@ -54,16 +55,19 @@ class LandPlugin(Plugin):
         self._cfg_std = cfg.auto_to_std(self._cfg_default)
         self.make_data_path()
         self._migrate_legacy_data_path()
-        self.no_create_regions_file = self.format_data_path(NO_CREATE_REGIONS_FILE)
+        self.no_create_regions_file = self.format_data_path(
+            NO_CREATE_REGIONS_FILE)
         self.cfg = self._load_config(self._cfg_default, self._cfg_std)
         self.data_file = self.format_data_path(str(self.cfg["数据文件"]))
         self._apply_runtime_config_fields(reload_data_file=False)
         self.no_create_regions_raw = self._load_no_create_regions()
-        self.no_create_regions = self._normalize_no_create_regions(self.no_create_regions_raw)
+        self.no_create_regions = self._normalize_no_create_regions(
+            self.no_create_regions_raw)
 
         # 数据
         self.lands: Dict[str, LandData] = {}      # land_id -> LandData
-        self.player_land_cache: Dict[str, List[str]] = {}  # xuid -> list of land_id
+        # xuid -> list of land_id
+        self.player_land_cache: Dict[str, List[str]] = {}
         self.xuid_getter = None
 
         self.coords: Dict[str, Tuple[float, float, float]] = {}
@@ -88,8 +92,10 @@ class LandPlugin(Plugin):
         )
 
         # 控制台测试指令
-        self.frame.add_console_cmd_trigger(["领地云链测试", "领地测试"], "[玩家]", "测试领地系统云链联动版", self.console_test)
-        self.frame.add_console_cmd_trigger(["领地系统云链联动版", "领地系统"], None, "打开领地系统云链联动版控制台管理菜单", self.console_manage)
+        self.frame.add_console_cmd_trigger(
+            ["领地云链测试", "领地测试"], "[玩家]", "测试领地系统云链联动版", self.console_test)
+        self.frame.add_console_cmd_trigger(
+            ["领地系统云链联动版", "领地系统"], None, "打开领地系统云链联动版控制台管理菜单", self.console_manage)  # noqa: E501
 
     def on_preload(self):
         self.xuid_getter = self.GetPluginAPI("XUID获取", (0, 0, 7))
@@ -109,15 +115,22 @@ class LandPlugin(Plugin):
     def _ui_title(title: str) -> str:
         return f"§l§d❐§f 『§6领地系统云链联动版§f』 §b{title}"
 
-    def _ui_menu(self, title: str, options: List[str], hints: Optional[List[str]] = None) -> str:
+    def _ui_menu(self,
+                 title: str,
+                 options: List[str],
+                 hints: Optional[List[str]] = None) -> str:
         lines = [self._ui_border(), self._ui_title(title)]
-        lines.extend(f"§l§b[ §e{i}§b ] §r§e{option}" for i, option in enumerate(options, 1))
+        lines.extend(f"§l§b[ §e{i}§b ] §r§e{option}" for i,
+                     option in enumerate(options, 1))
         lines.append(self._ui_border())
         for hint in hints or []:
             lines.append(f"§a❀ §b{hint}")
         return "\n".join(lines)
 
-    def _ui_card(self, title: str, lines: List[str], hints: Optional[List[str]] = None) -> str:
+    def _ui_card(self,
+                 title: str,
+                 lines: List[str],
+                 hints: Optional[List[str]] = None) -> str:
         body = [self._ui_border(), self._ui_title(title)]
         body.extend(f"§a❀ §b{line}" for line in lines)
         body.append(self._ui_border())
@@ -171,7 +184,8 @@ class LandPlugin(Plugin):
                     if key not in result:
                         result[key] = copy.deepcopy(value)
             return result
-        return copy.deepcopy(raw) if raw is not None else copy.deepcopy(default)
+        return copy.deepcopy(
+            raw) if raw is not None else copy.deepcopy(default)
 
     @staticmethod
     def _trim_fixed_keys(raw: Any, default: Dict[str, Any]) -> Dict[str, Any]:
@@ -216,7 +230,11 @@ class LandPlugin(Plugin):
         return result if result >= 0 else fallback
 
     @staticmethod
-    def _normalize_config_str(value: Any, fallback: str, *, allow_empty: bool = False) -> str:
+    def _normalize_config_str(
+            value: Any,
+            fallback: str,
+            *,
+            allow_empty: bool = False) -> str:
         if value is None:
             return fallback
         text = str(value)
@@ -241,7 +259,8 @@ class LandPlugin(Plugin):
 
         result: List[str] = []
         for item in candidates:
-            text = cls._normalize_config_str(item, "", allow_empty=True).strip()
+            text = cls._normalize_config_str(
+                item, "", allow_empty=True).strip()
             if text and text not in result:
                 result.append(text)
         if result or allow_empty:
@@ -249,7 +268,8 @@ class LandPlugin(Plugin):
         return copy.deepcopy(fallback)
 
     @classmethod
-    def _normalize_runtime_config(cls, raw_cfg: Any, default_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_runtime_config(
+            cls, raw_cfg: Any, default_cfg: Dict[str, Any]) -> Dict[str, Any]:
         merged_cfg = cls._merge_config_with_default(raw_cfg, default_cfg)
         normalized = cls._trim_fixed_keys(merged_cfg, default_cfg)
 
@@ -262,7 +282,7 @@ class LandPlugin(Plugin):
             dynamic.get(DYNAMIC_LOAD_ENABLED_KEY),
             dynamic_default[DYNAMIC_LOAD_ENABLED_KEY],
         )
-        dynamic[DYNAMIC_LOAD_INTERVAL_KEY] = cls._normalize_config_positive_int(
+        dynamic[DYNAMIC_LOAD_INTERVAL_KEY] = cls._normalize_config_positive_int(  # noqa: E501
             dynamic.get(DYNAMIC_LOAD_INTERVAL_KEY),
             dynamic_default[DYNAMIC_LOAD_INTERVAL_KEY],
         )
@@ -304,7 +324,8 @@ class LandPlugin(Plugin):
         )
         return normalized
 
-    def _load_config(self, default_cfg: Dict[str, Any], cfg_std: Any) -> Dict[str, Any]:
+    def _load_config(
+            self, default_cfg: Dict[str, Any], cfg_std: Any) -> Dict[str, Any]:
         try:
             raw_cfg, _ = cfg.get_plugin_config_and_version(
                 self.name,
@@ -379,7 +400,8 @@ class LandPlugin(Plugin):
 
     def refresh_config_file_state(self):
         self._config_file_state = self.file_state(self.config_file_path())
-        self._no_create_regions_file_state = self.file_state(self.no_create_regions_file)
+        self._no_create_regions_file_state = self.file_state(
+            self.no_create_regions_file)
 
     def is_dynamic_config_reload_enabled(self) -> bool:
         settings = self.cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
@@ -392,7 +414,8 @@ class LandPlugin(Plugin):
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         try:
-            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY, DYNAMIC_LOAD_DEFAULT_INTERVAL))
+            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY,
+                           DYNAMIC_LOAD_DEFAULT_INTERVAL))
         except (TypeError, ValueError):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
         return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
@@ -417,7 +440,8 @@ class LandPlugin(Plugin):
                 self.refresh_config_file_state()
                 continue
             current_config_state = self.file_state(self.config_file_path())
-            current_regions_state = self.file_state(self.no_create_regions_file)
+            current_regions_state = self.file_state(
+                self.no_create_regions_file)
             if (
                 current_config_state == self._config_file_state
                 and current_regions_state == self._no_create_regions_file_state
@@ -471,14 +495,19 @@ class LandPlugin(Plugin):
         self._save_no_create_regions(regions)
         return regions
 
-    def _save_no_create_regions(self, regions: Optional[List[Dict[str, Any]]] = None):
+    def _save_no_create_regions(
+            self, regions: Optional[List[Dict[str, Any]]] = None):
         data = self.no_create_regions_raw if regions is None else regions
-        os.makedirs(os.path.dirname(self.no_create_regions_file), exist_ok=True)
+        os.makedirs(
+            os.path.dirname(
+                self.no_create_regions_file),
+            exist_ok=True)
         with open(self.no_create_regions_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def _reload_no_create_regions(self):
-        self.no_create_regions = self._normalize_no_create_regions(self.no_create_regions_raw)
+        self.no_create_regions = self._normalize_no_create_regions(
+            self.no_create_regions_raw)
 
     @staticmethod
     def _as_float_pos(raw: Any) -> Optional[Tuple[float, float, float]]:
@@ -513,7 +542,7 @@ class LandPlugin(Plugin):
                     "中心": center,
                     "半径": radius,
                 })
-            elif region_type in ("方形", "矩形", "长方形", "square", "box", "立方体", "长方体"):
+            elif region_type in ("方形", "矩形", "长方形", "square", "box", "立方体", "长方体"):  # noqa: E501
                 start = self._as_float_pos(item.get("起点"))
                 end = self._as_float_pos(item.get("终点"))
                 if start is None or end is None:
@@ -541,22 +570,33 @@ class LandPlugin(Plugin):
         shape = LandData.normalize_shape(shape)
         box_bounds = None
         if shape == "方形":
-            box_bounds = bounds_from_center_size(center, LandData.normalize_size(size, radius))
+            box_bounds = bounds_from_center_size(
+                center, LandData.normalize_size(size, radius))
         x, y, z = center
         for region in self.no_create_regions:
             if shape == "方形" and box_bounds is not None:
                 if region["类型"] == "圆形":
-                    if sphere_intersects_box(region["中心"], region["半径"], box_bounds[0], box_bounds[1]):
+                    if sphere_intersects_box(
+                            region["中心"],
+                            region["半径"],
+                            box_bounds[0],
+                            box_bounds[1]):
                         return region["名称"]
                 elif region["类型"] == "方形":
-                    if boxes_intersect(box_bounds[0], box_bounds[1], region["起点"], region["终点"]):
+                    if boxes_intersect(
+                            box_bounds[0],
+                            box_bounds[1],
+                            region["起点"],
+                            region["终点"]):
                         return region["名称"]
             elif region["类型"] == "圆形":
                 rx, ry, rz = region["中心"]
-                if math.sqrt((x - rx) ** 2 + (y - ry) ** 2 + (z - rz) ** 2) <= radius + region["半径"]:
+                if math.sqrt((x - rx) ** 2 + (y - ry) ** 2 +
+                             (z - rz) ** 2) <= radius + region["半径"]:
                     return region["名称"]
             elif region["类型"] == "方形":
-                if sphere_intersects_box(center, radius, region["起点"], region["终点"]):
+                if sphere_intersects_box(
+                        center, radius, region["起点"], region["终点"]):
                     return region["名称"]
         return None
 
@@ -564,7 +604,10 @@ class LandPlugin(Plugin):
     def _is_exit_input(text: str) -> bool:
         return text.strip().lower() in (".", "。", "q", "quit", "退出")
 
-    def _wait_menu_input(self, player: Player, timeout: int = 60) -> Optional[str]:
+    def _wait_menu_input(
+            self,
+            player: Player,
+            timeout: int = 60) -> Optional[str]:
         msg = game_utils.waitMsg(player.name, timeout)
         if msg is None:
             player.show(self._error("回复超时，已退出菜单"))
@@ -575,7 +618,12 @@ class LandPlugin(Plugin):
             return None
         return msg
 
-    def _select_menu(self, player: Player, title: str, options: List[str], timeout: int = 60) -> Optional[int]:
+    def _select_menu(
+            self,
+            player: Player,
+            title: str,
+            options: List[str],
+            timeout: int = 60) -> Optional[int]:
         while True:
             hints = [
                 f"输入 §e[1-{len(options)}]§b 之间的数字以选择功能",
@@ -595,16 +643,23 @@ class LandPlugin(Plugin):
                 continue
             return choice
 
-    def _prompt_text(self, player: Player, title: str, prompt: str, timeout: int = 60) -> Optional[str]:
+    def _prompt_text(
+            self,
+            player: Player,
+            title: str,
+            prompt: str,
+            timeout: int = 60) -> Optional[str]:
         player.show(self._ui_card(title, [prompt], ["输入 §c.§b 退出"]))
         return self._wait_menu_input(player, timeout)
 
-    def _parse_box_size_input(self, raw: str) -> Tuple[Optional[Tuple[int, int, int]], Optional[str]]:
+    def _parse_box_size_input(
+            self, raw: str) -> Tuple[Optional[Tuple[int, int, int]], Optional[str]]:  # noqa: E501
         parts = raw.replace(",", " ").replace("，", " ").split()
         if len(parts) != 3:
             return None, "格式错误，需要输入 长 高 宽 三个整数"
         try:
-            length, height, width = (int(parts[0]), int(parts[1]), int(parts[2]))
+            length, height, width = (
+                int(parts[0]), int(parts[1]), int(parts[2]))
         except ValueError:
             return None, "长、高、宽必须为整数"
         if length <= 0 or height <= 0 or width <= 0:
@@ -617,9 +672,15 @@ class LandPlugin(Plugin):
             return None, f"宽不能超过 {self.max_width}"
         return (length, height, width), None
 
-    def _get_xuid_by_name(self, playername: str, allow_offline: bool = False) -> Optional[str]:
+    def _get_xuid_by_name(
+            self,
+            playername: str,
+            allow_offline: bool = False) -> Optional[str]:
         try:
-            return str(self.xuid_getter.get_xuid_by_name(playername, allow_offline=allow_offline))
+            return str(
+                self.xuid_getter.get_xuid_by_name(
+                    playername,
+                    allow_offline=allow_offline))
         except Exception as err:
             self.print_war(f"无法获取玩家 {playername} 的 XUID: {err}")
             return None
@@ -630,20 +691,25 @@ class LandPlugin(Plugin):
             return str(xuid)
         return self._get_xuid_by_name(player.name)
 
-    def _make_member(self, playername: str, rank: LandRank, allow_offline: bool = False) -> Optional[LandMember]:
+    def _make_member(self, playername: str, rank: LandRank,
+                     allow_offline: bool = False) -> Optional[LandMember]:
         xuid = self._get_xuid_by_name(playername, allow_offline=allow_offline)
         if xuid is None:
             return None
         return LandMember(name=playername, xuid=xuid, rank=rank)
 
-    def _select_land(self, player: Player, title: str, lands: List[LandData]) -> Optional[LandData]:
+    def _select_land(
+            self,
+            player: Player,
+            title: str,
+            lands: List[LandData]) -> Optional[LandData]:
         if not lands:
             player.show(self._error("没有可选择的领地"))
             return None
         choice = self._select_menu(
             player,
             title,
-            [f"{land.name} §7- 领主: {land.owner}, {land.range_text()}" for land in lands],
+            [f"{land.name} §7- 领主: {land.owner}, {land.range_text()}" for land in lands],  # noqa: E501
         )
         if choice is None:
             return None
@@ -674,11 +740,16 @@ class LandPlugin(Plugin):
             return None
         if query in self.lands:
             return self.lands[query]
-        return next((land for land in self.lands.values() if land.name == query), None)
+        return next((land for land in self.lands.values()
+                    if land.name == query), None)
 
     def _migrate_legacy_data_path(self):
-        legacy_path = os.path.join(os.path.dirname(self.data_path), LEGACY_PLUGIN_NAME)
-        if not os.path.isdir(legacy_path) or os.path.abspath(legacy_path) == os.path.abspath(self.data_path):
+        legacy_path = os.path.join(
+            os.path.dirname(
+                self.data_path),
+            LEGACY_PLUGIN_NAME)
+        if not os.path.isdir(legacy_path) or os.path.abspath(
+                legacy_path) == os.path.abspath(self.data_path):
             return
         os.makedirs(self.data_path, exist_ok=True)
         for filename in ("领地数据.json", "不可创建领地区域.json"):
@@ -741,7 +812,8 @@ class LandPlugin(Plugin):
             fmts.print_err(f"保存数据失败: {e}")
 
     # ---------- 坐标获取 ----------
-    def _get_player_coord(self, player: str) -> Optional[Tuple[float, float, float]]:
+    def _get_player_coord(
+            self, player: str) -> Optional[Tuple[float, float, float]]:
         try:
             pos_dict = game_utils.getPos(player)
             if pos_dict and "position" in pos_dict:
@@ -757,15 +829,16 @@ class LandPlugin(Plugin):
                     msg = out.Message
                     nums = re.findall(r"[-+]?\d*\.?\d+[df]?", msg)
                     if len(nums) >= 3:
-                        x = float(nums[0].replace('d','').replace('f',''))
-                        y = float(nums[1].replace('d','').replace('f',''))
-                        z = float(nums[2].replace('d','').replace('f',''))
+                        x = float(nums[0].replace('d', '').replace('f', ''))
+                        y = float(nums[1].replace('d', '').replace('f', ''))
+                        z = float(nums[2].replace('d', '').replace('f', ''))
                         return (x, y, z)
         except Exception:
             pass
         return None
 
-    def _manual_coord(self, player: Player) -> Optional[Tuple[float, float, float]]:
+    def _manual_coord(
+            self, player: Player) -> Optional[Tuple[float, float, float]]:
         player.show(self._ui_card(
             "手动坐标输入",
             [
@@ -793,7 +866,11 @@ class LandPlugin(Plugin):
             return None
 
     # ---------- 领地查找辅助 ----------
-    def _find_land_at(self, pos: Tuple[float, float, float], dimension: int = 0) -> Optional[LandData]:
+    def _find_land_at(self,
+                      pos: Tuple[float,
+                                 float,
+                                 float],
+                      dimension: int = 0) -> Optional[LandData]:
         x, y, z = pos
         for land in self.lands.values():
             if land.dimension != dimension:
@@ -842,7 +919,10 @@ class LandPlugin(Plugin):
             players = dict(self.coords)
 
         now = time.time()
-        expired = [p for p, t in self.recent_tp.items() if now - t > self.tp_cooldown]
+        expired = [
+            p for p,
+            t in self.recent_tp.items() if now -
+            t > self.tp_cooldown]
         for p in expired:
             del self.recent_tp[p]
 
@@ -862,7 +942,8 @@ class LandPlugin(Plugin):
                     continue
                 self._tp_random(name, x, y, z)
                 self.recent_tp[xuid] = now
-                self.game_ctrl.say_to(name, self._error(f"你闯入了 {in_land.owner} 的领地，已被传送离开"))
+                self.game_ctrl.say_to(name, self._error(
+                    f"你闯入了 {in_land.owner} 的领地，已被传送离开"))
             else:
                 for land in self.lands.values():
                     if land.dimension != 0:
@@ -872,11 +953,12 @@ class LandPlugin(Plugin):
                         if land.get_member(xuid):
                             continue
                         self.game_ctrl.sendwocmd(f"/gamemode adventure {name}")
-                        self.game_ctrl.say_to(name, self._warn(f"你正在靠近 {land.owner} 的领地，请勿进入"))
+                        self.game_ctrl.say_to(name, self._warn(
+                            f"你正在靠近 {land.owner} 的领地，请勿进入"))
                         break
 
     def _tp_random(self, player: str, x: float, y: float, z: float):
-        angle = random.uniform(0, 2*math.pi)
+        angle = random.uniform(0, 2 * math.pi)
         dist = random.uniform(10, self.tp_radius)
         nx = x + dist * math.cos(angle)
         nz = z + dist * math.sin(angle)
@@ -889,7 +971,9 @@ class LandPlugin(Plugin):
         try:
             x, y, z = land.center
             self._remove_entity(land)
-            cmd = f"summon area_effect_cloud {x} {y} {z} {{Duration:2147483647,WaitTime:2147483647,Tags:[\"land_{land.land_id}\"]}}"
+            cmd = f"summon area_effect_cloud {x} {y} {z} {
+                Duration:2147483647,WaitTime:2147483647,Tags:[\"land_{
+                    land.land_id}\"]} "
             self.game_ctrl.sendwocmd(cmd)
         except Exception:
             pass
@@ -953,7 +1037,8 @@ class LandPlugin(Plugin):
         if shape_choice is None:
             return
         if shape_choice == 1:
-            radius = self._prompt_text(player, "创建圆形领地", f"请输入领地半径，范围 1~{self.max_radius}")
+            radius = self._prompt_text(
+                player, "创建圆形领地", f"请输入领地半径，范围 1~{self.max_radius}")
             if radius is None:
                 return
             self._create(player, [name, "圆形", radius])
@@ -961,7 +1046,10 @@ class LandPlugin(Plugin):
             size_text = self._prompt_text(
                 player,
                 "创建方形领地",
-                f"请输入 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}",
+                f"请输入 长 高 宽，最大 {
+                    self.max_length} {
+                    self.max_height} {
+                    self.max_width}",
             )
             if size_text is None:
                 return
@@ -969,14 +1057,20 @@ class LandPlugin(Plugin):
             if size is None:
                 player.show(self._error(err or "方形领地尺寸无效"))
                 return
-            self._create(player, [name, "方形", str(size[0]), str(size[1]), str(size[2])])
+            self._create(
+                player, [
+                    name, "方形", str(
+                        size[0]), str(
+                        size[1]), str(
+                        size[2])])
 
     def _menu_delete(self, player: Player):
         player_xuid = self._get_player_xuid(player)
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
             return
-        owned = [land for land in self.lands.values() if land.owner_xuid == player_xuid]
+        owned = [land for land in self.lands.values(
+        ) if land.owner_xuid == player_xuid]
         land = self._select_land(player, "删除领地", owned)
         if land is None:
             return
@@ -997,7 +1091,8 @@ class LandPlugin(Plugin):
             if player_xuid is None:
                 player.show(self._error("无法获取你的 XUID"))
                 return
-            lands = [land for land in self.lands.values() if land.owner_xuid == player_xuid]
+            lands = [land for land in self.lands.values() if land.owner_xuid ==
+                     player_xuid]
             land = self._select_land(player, "我的领地", lands)
             if land:
                 self._info(player, [land.name])
@@ -1040,7 +1135,8 @@ class LandPlugin(Plugin):
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
             return
-        lands = [land for land in self.lands.values() if land.has_permission(player_xuid, "tp")]
+        lands = [land for land in self.lands.values(
+        ) if land.has_permission(player_xuid, "tp")]
         land = self._select_land(player, "传送到领地", lands)
         if land is None:
             return
@@ -1048,7 +1144,8 @@ class LandPlugin(Plugin):
 
     def _create(self, player: Player, args: List[str]):
         if len(args) < 2:
-            player.show(self._error(f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入创建菜单"))
+            player.show(self._error(
+                f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入创建菜单"))
             return
         name = args[0]
         shape_arg = str(args[1]).strip().lower()
@@ -1066,7 +1163,8 @@ class LandPlugin(Plugin):
                 return
             radius = box_radius_for_size(size)
         else:
-            radius_arg = args[2] if len(args) >= 3 and explicit_circle else args[1]
+            radius_arg = args[2] if len(
+                args) >= 3 and explicit_circle else args[1]
             try:
                 radius = int(radius_arg)
             except ValueError:
@@ -1080,9 +1178,15 @@ class LandPlugin(Plugin):
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
             return
-        owned = [l for l in self.lands.values() if l.owner_xuid == player_xuid]
+        owned = [
+            land_item for land_item in self.lands.values()
+            if land_item.owner_xuid == player_xuid
+        ]
         if len(owned) >= self.max_lands_per_player:
-            player.show(self._error(f"你最多只能拥有 {self.max_lands_per_player} 个领地"))
+            player.show(
+                self._error(
+                    f"你最多只能拥有 {
+                        self.max_lands_per_player} 个领地"))
             return
 
         pos = self._get_player_coord(player.name)
@@ -1093,13 +1197,17 @@ class LandPlugin(Plugin):
                 return
         x, y, z = pos
 
-        overlap = self._get_land_candidate_overlap_reason((x, y, z), radius, shape, size)
+        overlap = self._get_land_candidate_overlap_reason(
+            (x, y, z), radius, shape, size)
         if overlap:
             player.show(self._error(overlap))
             return
 
         land_id = str(uuid.uuid4())
-        member = LandMember(name=player.name, xuid=player_xuid, rank=LandRank.OWNER)
+        member = LandMember(
+            name=player.name,
+            xuid=player_xuid,
+            rank=LandRank.OWNER)
         land = LandData(
             land_id=land_id,
             name=name,
@@ -1122,20 +1230,26 @@ class LandPlugin(Plugin):
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
             return
-        owned = [l for l in self.lands.values() if l.owner_xuid == player_xuid]
+        owned = [
+            land_item for land_item in self.lands.values()
+            if land_item.owner_xuid == player_xuid
+        ]
         if not owned:
             player.show(self._error("你没有拥有任何领地"))
             return
 
         if args:
             name = args[0]
-            land = next((l for l in owned if l.name == name), None)
+            land = next(
+                (land_item for land_item in owned if land_item.name == name),
+                None,
+            )
             if not land:
                 player.show(self._error(f"你没有名为 '{name}' 的领地"))
                 return
         else:
             if len(owned) > 1:
-                names = "、".join(l.name for l in owned)
+                names = "、".join(land_item.name for land_item in owned)
                 player.show(self._error(f"你拥有多个领地，请指定名称：{names}"))
                 return
             land = owned[0]
@@ -1151,7 +1265,13 @@ class LandPlugin(Plugin):
         land = None
         if args:
             name = args[0]
-            land = next((l for l in self.lands.values() if l.name == name), None)
+            land = next(
+                (
+                    land_item for land_item in self.lands.values()
+                    if land_item.name == name
+                ),
+                None,
+            )
             if not land:
                 player.show(self._error(f"领地 '{name}' 不存在"))
                 return
@@ -1176,7 +1296,8 @@ class LandPlugin(Plugin):
 
     def _member(self, player: Player, args: List[str]):
         if len(args) < 1:
-            player.show(self._error(f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入成员管理菜单"))
+            player.show(self._error(
+                f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入成员管理菜单"))
             return
         sub = args[0].lower()
         if sub == "列表":
@@ -1188,14 +1309,16 @@ class LandPlugin(Plugin):
             return
 
         if len(args) < 2:
-            player.show(self._error(f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入成员管理菜单"))
+            player.show(self._error(
+                f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入成员管理菜单"))
             return
         target = args[1]
         player_xuid = self._get_player_xuid(player)
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
             return
-        target_member = self._make_member(target, LandRank.MEMBER, allow_offline=True)
+        target_member = self._make_member(
+            target, LandRank.MEMBER, allow_offline=True)
         if target_member is None:
             player.show(self._error(f"无法获取 {target} 的 XUID"))
             return
@@ -1224,7 +1347,8 @@ class LandPlugin(Plugin):
             if not land.can_manage_member(player_xuid, target_member.xuid):
                 player.show(self._error("你不能移除该成员"))
                 return
-            land.members = [m for m in land.members if m.xuid != target_member.xuid]
+            land.members = [
+                m for m in land.members if m.xuid != target_member.xuid]
             self._remove_player_land(target_member.xuid, land.land_id)
             self._save_data()
             player.show(self._success(f"已将 {target} 移除成员"))
@@ -1233,7 +1357,8 @@ class LandPlugin(Plugin):
 
     def _admin(self, player: Player, args: List[str]):
         if len(args) < 2:
-            player.show(self._error(f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入管理员管理菜单"))
+            player.show(self._error(
+                f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入管理员管理菜单"))
             return
         sub = args[0].lower()
         target = args[1]
@@ -1281,7 +1406,13 @@ class LandPlugin(Plugin):
         land = None
         if args:
             name = args[0]
-            land = next((l for l in self.lands.values() if l.name == name), None)
+            land = next(
+                (
+                    land_item for land_item in self.lands.values()
+                    if land_item.name == name
+                ),
+                None,
+            )
             if not land:
                 player.show(self._error(f"领地 '{name}' 不存在"))
                 return
@@ -1292,7 +1423,10 @@ class LandPlugin(Plugin):
                 if player_xuid is None:
                     player.show(self._error("无法获取你的 XUID"))
                     return
-                owned = [l for l in self.lands.values() if l.owner_xuid == player_xuid]
+                owned = [
+                    land_item for land_item in self.lands.values()
+                    if land_item.owner_xuid == player_xuid
+                ]
                 if owned:
                     land = owned[0]
                 else:
@@ -1308,7 +1442,7 @@ class LandPlugin(Plugin):
             return
 
         cx, cy, cz = land.center
-        self.game_ctrl.sendwocmd(f"/tp {player.name} {cx} {cy+1} {cz}")
+        self.game_ctrl.sendwocmd(f"/tp {player.name} {cx} {cy + 1} {cz}")
         player.show(self._success(f"已传送到领地 '{land.name}'"))
 
     def _list(self, player: Player):
@@ -1336,7 +1470,8 @@ class LandPlugin(Plugin):
             lines.append("当前位置：不在任何领地内")
 
         if self.lands:
-            lines.append("所有领地：" + "、".join(f"{land.name}({land.owner})" for land in self.lands.values()))
+            lines.append(
+                "所有领地：" + "、".join(f"{land.name}({land.owner})" for land in self.lands.values()))  # noqa: E501
         else:
             lines.append("所有领地：无")
         player.show(self._ui_card("测试信息", lines))
@@ -1356,7 +1491,8 @@ class LandPlugin(Plugin):
         lands = [self._land_summary(land) for land in self.lands.values()]
         return True, f"共 {len(lands)} 个领地", lands
 
-    def api_get_land(self, land_query: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    def api_get_land(
+            self, land_query: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:  # noqa: E501
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1378,13 +1514,20 @@ class LandPlugin(Plugin):
             return False, "领地主人和领地名称不能为空", None
         if self._find_land_by_name_or_id(name):
             return False, f"领地 '{name}' 已存在", None
-        owner_member = self._make_member(owner, LandRank.OWNER, allow_offline=True)
+        owner_member = self._make_member(
+            owner, LandRank.OWNER, allow_offline=True)
         if owner_member is None:
             return False, f"无法获取 {owner} 的 XUID", None
-        if len([land for land in self.lands.values() if land.owner_xuid == owner_member.xuid]) >= self.max_lands_per_player:
-            return False, f"{owner} 已达到最大领地数量 {self.max_lands_per_player}", None
+        if len([land for land in self.lands.values() if land.owner_xuid ==
+               owner_member.xuid]) >= self.max_lands_per_player:
+            return False, f"{owner} 已达到最大领地数量 {
+                self.max_lands_per_player}", None
         try:
-            center_tuple = (float(center[0]), float(center[1]), float(center[2]))
+            center_tuple = (
+                float(
+                    center[0]), float(
+                    center[1]), float(
+                    center[2]))
         except (TypeError, ValueError, IndexError):
             return False, "中心坐标无效", None
 
@@ -1436,7 +1579,8 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         self._spawn_entity(land)
-        return True, f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}", self._land_summary(land)
+        return True, f"已新增玩家 {owner} 的领地 '{name}'，{
+            land.range_text()}", self._land_summary(land)
 
     def api_delete_land(self, land_query: str) -> Tuple[bool, str, None]:
         land = self._find_land_by_name_or_id(land_query)
@@ -1448,12 +1592,20 @@ class LandPlugin(Plugin):
         self._save_data()
         return True, f"已删除领地 '{land.name}'", None
 
-    def api_add_member(self, land_query: str, player_name: str, rank: str = "member") -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    def api_add_member(self,
+                       land_query: str,
+                       player_name: str,
+                       rank: str = "member") -> Tuple[bool,
+                                                      str,
+                                                      Optional[Dict[str,
+                                                                    Any]]]:
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
-        target_rank = LandRank.ADMIN if str(rank).lower() in ("admin", "管理员", "管理") else LandRank.MEMBER
-        member = self._make_member(player_name, target_rank, allow_offline=True)
+        target_rank = LandRank.ADMIN if str(rank).lower() in (
+            "admin", "管理员", "管理") else LandRank.MEMBER
+        member = self._make_member(
+            player_name, target_rank, allow_offline=True)
         if member is None:
             return False, f"无法获取 {player_name} 的 XUID", None
         old_member = land.get_member(member.xuid)
@@ -1467,7 +1619,8 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 添加为领地 '{land.name}' 的{role_name}", self._land_summary(land)
+        return True, f"已将 {player_name} 添加为领地 '{
+            land.name}' 的{role_name}", self._land_summary(land)
 
     def api_set_member_rank(
         self,
@@ -1478,22 +1631,30 @@ class LandPlugin(Plugin):
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
-        target_rank = LandRank.ADMIN if str(rank).lower() in ("admin", "管理员", "管理") else LandRank.MEMBER
+        target_rank = LandRank.ADMIN if str(rank).lower() in (
+            "admin", "管理员", "管理") else LandRank.MEMBER
         target_xuid = self._get_xuid_by_name(player_name, allow_offline=True)
         if target_xuid is None:
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if member is None:
-            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
+            return False, f"{player_name} 不在领地 '{
+                land.name}' 中", self._land_summary(land)
         if member.rank == LandRank.OWNER:
             return False, "所有者不能修改身份", self._land_summary(land)
         member.name = player_name
         member.rank = target_rank
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 设为领地 '{land.name}' 的{role_name}", self._land_summary(land)
+        return True, f"已将 {player_name} 设为领地 '{
+            land.name}' 的{role_name}", self._land_summary(land)
 
-    def api_remove_member(self, land_query: str, player_name: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    def api_remove_member(self,
+                          land_query: str,
+                          player_name: str) -> Tuple[bool,
+                                                     str,
+                                                     Optional[Dict[str,
+                                                                   Any]]]:
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1502,19 +1663,23 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if not member:
-            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
+            return False, f"{player_name} 不在领地 '{
+                land.name}' 中", self._land_summary(land)
         if member.rank == LandRank.OWNER:
             return False, "不能删除领地所有者，请先转移所有者", self._land_summary(land)
         land.members = [m for m in land.members if m.xuid != target_xuid]
         self._rebuild_player_land_cache()
         self._save_data()
-        return True, f"已从领地 '{land.name}' 移除 {player_name}", self._land_summary(land)
+        return True, f"已从领地 '{
+            land.name}' 移除 {player_name}", self._land_summary(land)
 
-    def api_transfer_owner(self, land_query: str, owner: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    def api_transfer_owner(
+            self, land_query: str, owner: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:  # noqa: E501
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
-        owner_member_data = self._make_member(owner, LandRank.OWNER, allow_offline=True)
+        owner_member_data = self._make_member(
+            owner, LandRank.OWNER, allow_offline=True)
         if owner_member_data is None:
             return False, f"无法获取 {owner} 的 XUID", None
         land.owner = owner
@@ -1530,7 +1695,8 @@ class LandPlugin(Plugin):
             land.members.append(owner_member_data)
         self._rebuild_player_land_cache()
         self._save_data()
-        return True, f"已修改领地 '{land.name}' 所有者为 {owner}", self._land_summary(land)
+        return True, f"已修改领地 '{
+            land.name}' 所有者为 {owner}", self._land_summary(land)
 
     def api_update_land_center(
         self,
@@ -1541,10 +1707,15 @@ class LandPlugin(Plugin):
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
         try:
-            center_tuple = (float(center[0]), float(center[1]), float(center[2]))
+            center_tuple = (
+                float(
+                    center[0]), float(
+                    center[1]), float(
+                    center[2]))
         except (TypeError, ValueError, IndexError):
             return False, "中心坐标无效", self._land_summary(land)
-        overlap = self._get_land_edit_overlap_reason(land, center_tuple, land.radius)
+        overlap = self._get_land_edit_overlap_reason(
+            land, center_tuple, land.radius)
         if overlap:
             return False, overlap, self._land_summary(land)
         land.center = center_tuple
@@ -1566,13 +1737,17 @@ class LandPlugin(Plugin):
                 return False, "方形领地需要提供 长 高 宽", self._land_summary(land)
             normalized_size = LandData.normalize_size(size, land.radius)
             if normalized_size[0] > self.max_length:
-                return False, f"长不能超过 {self.max_length}", self._land_summary(land)
+                return False, f"长不能超过 {
+                    self.max_length}", self._land_summary(land)
             if normalized_size[1] > self.max_height:
-                return False, f"高不能超过 {self.max_height}", self._land_summary(land)
+                return False, f"高不能超过 {
+                    self.max_height}", self._land_summary(land)
             if normalized_size[2] > self.max_width:
-                return False, f"宽不能超过 {self.max_width}", self._land_summary(land)
+                return False, f"宽不能超过 {
+                    self.max_width}", self._land_summary(land)
             land_radius = box_radius_for_size(normalized_size)
-            overlap = self._get_land_edit_overlap_reason(land, land.center, land_radius, "方形", normalized_size)
+            overlap = self._get_land_edit_overlap_reason(
+                land, land.center, land_radius, "方形", normalized_size)
             if overlap:
                 return False, overlap, self._land_summary(land)
             land.size = normalized_size
@@ -1583,20 +1758,25 @@ class LandPlugin(Plugin):
             except (TypeError, ValueError):
                 return False, "半径必须为整数", self._land_summary(land)
             if land_radius <= 0 or land_radius > self.max_radius:
-                return False, f"半径必须在 1~{self.max_radius} 之间", self._land_summary(land)
-            overlap = self._get_land_edit_overlap_reason(land, land.center, land_radius, "圆形", None)
+                return False, f"半径必须在 1~{
+                    self.max_radius} 之间", self._land_summary(land)
+            overlap = self._get_land_edit_overlap_reason(
+                land, land.center, land_radius, "圆形", None)
             if overlap:
                 return False, overlap, self._land_summary(land)
             land.radius = land_radius
             land.size = None
         self._save_data()
-        return True, f"已修改领地 '{land.name}' 范围为 {land.range_text()}", self._land_summary(land)
+        return True, f"已修改领地 '{
+            land.name}' 范围为 {
+            land.range_text()}", self._land_summary(land)
 
     def _console_print(self, text: str):
         fmts.print_inf(text)
 
     def _console_prompt(self, prompt: str) -> Optional[str]:
-        value = input(fmts.fmt_info(f"§a❀ §b{prompt} §7(输入 . 退出整个领地系统云链联动版管理菜单): ")).strip()
+        value = input(fmts.fmt_info(
+            f"§a❀ §b{prompt} §7(输入 . 退出整个领地系统云链联动版管理菜单): ")).strip()
         if self._is_exit_input(value):
             raise ConsoleMenuExit
         return value
@@ -1606,7 +1786,7 @@ class LandPlugin(Plugin):
             self._console_print(self._ui_menu(
                 title,
                 options,
-                [f"输入 §e[1-{len(options)}]§b 之间的数字以选择", "输入 §c.§b 退出整个领地系统云链联动版管理菜单"],
+                [f"输入 §e[1-{len(options)}]§b 之间的数字以选择", "输入 §c.§b 退出整个领地系统云链联动版管理菜单"],  # noqa: E501
             ))
             value = self._console_prompt("请输入序号")
             if value is None:
@@ -1651,14 +1831,15 @@ class LandPlugin(Plugin):
             fmts.print_err(self._error("坐标必须是数字"))
             return None
 
-    def _console_select_land(self, title: str, lands: Optional[List[LandData]] = None) -> Optional[LandData]:
+    def _console_select_land(
+            self, title: str, lands: Optional[List[LandData]] = None) -> Optional[LandData]:  # noqa: E501
         lands = list(self.lands.values()) if lands is None else lands
         if not lands:
             fmts.print_err(self._error("暂无可选择的领地"))
             return None
         choice = self._console_select(
             title,
-            [f"{land.name} - 领主: {land.owner}, {land.range_text()}" for land in lands],
+            [f"{land.name} - 领主: {land.owner}, {land.range_text()}" for land in lands],  # noqa: E501
         )
         if choice is None:
             return None
@@ -1700,14 +1881,24 @@ class LandPlugin(Plugin):
             if center is None or radius is None or radius <= 0:
                 fmts.print_err(self._error("区域参数无效"))
                 return
-            region = {"名称": name, "启用": True, "类型": "圆形", "中心": center, "半径": radius}
+            region = {
+                "名称": name,
+                "启用": True,
+                "类型": "圆形",
+                "中心": center,
+                "半径": radius}
         else:
             start = self._console_prompt_pos("请输入方形区域起点")
             end = self._console_prompt_pos("请输入方形区域终点")
             if start is None or end is None:
                 fmts.print_err(self._error("区域参数无效"))
                 return
-            region = {"名称": name, "启用": True, "类型": "方形", "起点": start, "终点": end}
+            region = {
+                "名称": name,
+                "启用": True,
+                "类型": "方形",
+                "起点": start,
+                "终点": end}
         self.no_create_regions_raw.append(region)
         self._save_no_create_regions()
         self._reload_no_create_regions()
@@ -1720,7 +1911,8 @@ class LandPlugin(Plugin):
         choice = self._console_select(
             "删除不可创建区域",
             [
-                f"{region.get('名称', f'区域{i}')} - {region.get('类型', '未知')} - {'启用' if region.get('启用', True) else '禁用'}"
+                f"{region.get('名称', f'区域{i}')} - {region.get('类型', '未知')
+                                                  } - {'启用' if region.get('启用', True) else '禁用'}"  # noqa: E501
                 for i, region in enumerate(self.no_create_regions_raw, 1)
             ],
         )
@@ -1729,30 +1921,41 @@ class LandPlugin(Plugin):
         region = self.no_create_regions_raw.pop(choice - 1)
         self._save_no_create_regions()
         self._reload_no_create_regions()
-        fmts.print_suc(self._success(f"已删除不可创建领地区域 '{region.get('名称', choice)}'"))
+        fmts.print_suc(
+            self._success(
+                f"已删除不可创建领地区域 '{
+                    region.get(
+                        '名称',
+                        choice)}'"))
 
     def _console_add_land(self):
         owner = self._console_prompt("请输入领地主人玩家名")
         name = self._console_prompt("请输入领地名称")
         center = self._console_prompt_pos("请输入领地中心坐标")
         shape_choice = self._console_select("请选择领地类型", ["圆形领地", "方形领地"])
-        if owner is None or name is None or center is None or shape_choice is None:
+        if owner is None or name is None or center is None or shape_choice is None:  # noqa: E501
             return
-        owner_member = self._make_member(owner, LandRank.OWNER, allow_offline=True)
+        owner_member = self._make_member(
+            owner, LandRank.OWNER, allow_offline=True)
         if owner_member is None:
             fmts.print_err(self._error(f"无法获取 {owner} 的 XUID"))
             return
         shape = "圆形"
         size = None
         if shape_choice == 1:
-            radius = self._console_prompt_int(f"请输入领地半径，范围 1~{self.max_radius}")
+            radius = self._console_prompt_int(
+                f"请输入领地半径，范围 1~{self.max_radius}")
             if radius is None:
                 return
             if radius <= 0 or radius > self.max_radius:
                 fmts.print_err(self._error(f"半径必须在 1~{self.max_radius} 之间"))
                 return
         else:
-            size_text = self._console_prompt(f"请输入方形领地 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
+            size_text = self._console_prompt(
+                f"请输入方形领地 长 高 宽，最大 {
+                    self.max_length} {
+                    self.max_height} {
+                    self.max_width}")
             if size_text is None:
                 return
             size, err = self._parse_box_size_input(size_text)
@@ -1761,7 +1964,8 @@ class LandPlugin(Plugin):
                 return
             shape = "方形"
             radius = box_radius_for_size(size)
-        overlap = self._get_land_candidate_overlap_reason(tuple(center), radius, shape, size)
+        overlap = self._get_land_candidate_overlap_reason(
+            tuple(center), radius, shape, size)
         if overlap:
             fmts.print_err(self._error(overlap))
             return
@@ -1781,7 +1985,10 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         self._spawn_entity(land)
-        fmts.print_suc(self._success(f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}"))
+        fmts.print_suc(
+            self._success(
+                f"已新增玩家 {owner} 的领地 '{name}'，{
+                    land.range_text()}"))
 
     def _console_delete_land(self):
         land = self._console_select_land("删除玩家领地")
@@ -1843,7 +2050,8 @@ class LandPlugin(Plugin):
                 target = self._console_prompt("请输入要添加的玩家名")
                 if not target:
                     continue
-                member = self._make_member(target, LandRank.MEMBER, allow_offline=True)
+                member = self._make_member(
+                    target, LandRank.MEMBER, allow_offline=True)
                 if member is None:
                     fmts.print_err(self._error(f"无法获取 {target} 的 XUID"))
                     continue
@@ -1858,7 +2066,8 @@ class LandPlugin(Plugin):
                 target = self._console_prompt("请输入要删除的玩家名")
                 if not target:
                     continue
-                target_xuid = self._get_xuid_by_name(target, allow_offline=True)
+                target_xuid = self._get_xuid_by_name(
+                    target, allow_offline=True)
                 if target_xuid is None:
                     fmts.print_err(self._error(f"无法获取 {target} 的 XUID"))
                     continue
@@ -1869,12 +2078,14 @@ class LandPlugin(Plugin):
                 if member.rank == LandRank.OWNER:
                     fmts.print_err(self._error("不能在用户管理中删除所有者，请先转移所有者"))
                     continue
-                land.members = [m for m in land.members if m.xuid != target_xuid]
+                land.members = [
+                    m for m in land.members if m.xuid != target_xuid]
                 self._rebuild_player_land_cache()
                 self._save_data()
                 fmts.print_suc(self._success(f"已删除用户 {target}"))
             elif choice == 3:
-                users = [f"{m.name}({m.rank.display_name})" for m in land.members]
+                users = [
+                    f"{m.name}({m.rank.display_name})" for m in land.members]
                 fmts.print_inf(self._ui_card(
                     f"用户列表 - {land.name}",
                     [", ".join(users) if users else "无用户"],
@@ -1892,7 +2103,8 @@ class LandPlugin(Plugin):
                 target = self._console_prompt("请输入要设为管理人员的玩家名")
                 if not target:
                     continue
-                target_xuid = self._get_xuid_by_name(target, allow_offline=True)
+                target_xuid = self._get_xuid_by_name(
+                    target, allow_offline=True)
                 if target_xuid is None:
                     fmts.print_err(self._error(f"无法获取 {target} 的 XUID"))
                     continue
@@ -1904,7 +2116,11 @@ class LandPlugin(Plugin):
                     member.name = target
                     member.rank = LandRank.ADMIN
                 else:
-                    land.members.append(LandMember(target, target_xuid, LandRank.ADMIN))
+                    land.members.append(
+                        LandMember(
+                            target,
+                            target_xuid,
+                            LandRank.ADMIN))
                 self._rebuild_player_land_cache()
                 self._save_data()
                 fmts.print_suc(self._success(f"已将 {target} 设为管理人员"))
@@ -1912,7 +2128,8 @@ class LandPlugin(Plugin):
                 target = self._console_prompt("请输入要删除管理权限的玩家名")
                 if not target:
                     continue
-                target_xuid = self._get_xuid_by_name(target, allow_offline=True)
+                target_xuid = self._get_xuid_by_name(
+                    target, allow_offline=True)
                 if target_xuid is None:
                     fmts.print_err(self._error(f"无法获取 {target} 的 XUID"))
                     continue
@@ -1925,7 +2142,8 @@ class LandPlugin(Plugin):
                 self._save_data()
                 fmts.print_suc(self._success(f"已删除 {target} 的管理权限"))
             elif choice == 3:
-                admins = [m.name for m in land.members if m.rank == LandRank.ADMIN]
+                admins = [
+                    m.name for m in land.members if m.rank == LandRank.ADMIN]
                 fmts.print_inf(self._ui_card(
                     f"管理人员 - {land.name}",
                     [", ".join(admins) if admins else "暂无管理人员"],
@@ -1943,7 +2161,8 @@ class LandPlugin(Plugin):
                 owner = self._console_prompt("请输入新所有者玩家名")
                 if not owner:
                     continue
-                owner_member_data = self._make_member(owner, LandRank.OWNER, allow_offline=True)
+                owner_member_data = self._make_member(
+                    owner, LandRank.OWNER, allow_offline=True)
                 if owner_member_data is None:
                     fmts.print_err(self._error(f"无法获取 {owner} 的 XUID"))
                     continue
@@ -1962,7 +2181,8 @@ class LandPlugin(Plugin):
                 self._save_data()
                 fmts.print_suc(self._success(f"已修改所有者为 {owner}"))
             elif choice == 2:
-                fmts.print_inf(self._ui_card(f"所有者 - {land.name}", [land.owner]))
+                fmts.print_inf(self._ui_card(
+                    f"所有者 - {land.name}", [land.owner]))
 
     def _console_manage_land_center(self, land: LandData):
         while True:
@@ -1977,14 +2197,16 @@ class LandPlugin(Plugin):
                 if center is None:
                     continue
                 center_tuple = tuple(center)
-                overlap = self._get_land_edit_overlap_reason(land, center_tuple, land.radius)
+                overlap = self._get_land_edit_overlap_reason(
+                    land, center_tuple, land.radius)
                 if overlap:
                     fmts.print_err(self._error(overlap))
                     continue
                 land.center = center_tuple
                 self._save_data()
                 self._spawn_entity(land)
-                fmts.print_suc(self._success(f"已修改领地中心点为 {center[0]}, {center[1]}, {center[2]}"))
+                fmts.print_suc(self._success(
+                    f"已修改领地中心点为 {center[0]}, {center[1]}, {center[2]}"))
             elif choice == 2:
                 fmts.print_inf(self._ui_card(
                     f"领地中心点 - {land.name}",
@@ -1993,7 +2215,11 @@ class LandPlugin(Plugin):
 
     def _console_manage_land_radius(self, land: LandData):
         while True:
-            options = ["修改方形长高宽", "查看方形长高宽"] if land.is_box() else ["修改范围半径", "查看范围半径"]
+            options = [
+                "修改方形长高宽",
+                "查看方形长高宽"] if land.is_box() else [
+                "修改范围半径",
+                "查看范围半径"]
             choice = self._console_select(
                 f"管理领地范围 - {land.name}",
                 options,
@@ -2002,7 +2228,11 @@ class LandPlugin(Plugin):
                 return
             if choice == 1:
                 if land.is_box():
-                    size_text = self._console_prompt(f"请输入新的 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
+                    size_text = self._console_prompt(
+                        f"请输入新的 长 高 宽，最大 {
+                            self.max_length} {
+                            self.max_height} {
+                            self.max_width}")
                     if size_text is None:
                         continue
                     size, err = self._parse_box_size_input(size_text)
@@ -2010,7 +2240,8 @@ class LandPlugin(Plugin):
                         fmts.print_err(self._error(err or "方形领地尺寸无效"))
                         continue
                     radius = box_radius_for_size(size)
-                    overlap = self._get_land_edit_overlap_reason(land, land.center, radius, "方形", size)
+                    overlap = self._get_land_edit_overlap_reason(
+                        land, land.center, radius, "方形", size)
                     if overlap:
                         fmts.print_err(self._error(overlap))
                         continue
@@ -2018,15 +2249,21 @@ class LandPlugin(Plugin):
                     land.size = size
                     land.radius = radius
                     self._save_data()
-                    fmts.print_suc(self._success(f"已修改方形领地范围为 长:{size[0]}, 高:{size[1]}, 宽:{size[2]}"))
+                    fmts.print_suc(self._success(
+                        f"已修改方形领地范围为 长:{size[0]}, 高:{size[1]}, 宽:{size[2]}"))
                 else:
-                    radius = self._console_prompt_int(f"请输入新范围半径，范围 1~{self.max_radius}")
+                    radius = self._console_prompt_int(
+                        f"请输入新范围半径，范围 1~{self.max_radius}")
                     if radius is None:
                         continue
                     if radius <= 0 or radius > self.max_radius:
-                        fmts.print_err(self._error(f"半径必须在 1~{self.max_radius} 之间"))
+                        fmts.print_err(
+                            self._error(
+                                f"半径必须在 1~{
+                                    self.max_radius} 之间"))
                         continue
-                    overlap = self._get_land_edit_overlap_reason(land, land.center, radius, "圆形", None)
+                    overlap = self._get_land_edit_overlap_reason(
+                        land, land.center, radius, "圆形", None)
                     if overlap:
                         fmts.print_err(self._error(overlap))
                         continue
@@ -2036,7 +2273,8 @@ class LandPlugin(Plugin):
                     self._save_data()
                     fmts.print_suc(self._success(f"已修改领地范围半径为 {radius}"))
             elif choice == 2:
-                fmts.print_inf(self._ui_card(f"领地范围 - {land.name}", [land.range_text()]))
+                fmts.print_inf(self._ui_card(
+                    f"领地范围 - {land.name}", [land.range_text()]))
 
     def _get_land_candidate_overlap_reason(
         self,
@@ -2047,7 +2285,8 @@ class LandPlugin(Plugin):
         dimension: int = 0,
         skip_land_id: Optional[str] = None,
     ) -> Optional[str]:
-        blocked_region = self._get_no_create_overlap_reason(center, radius, shape, size)
+        blocked_region = self._get_no_create_overlap_reason(
+            center, radius, shape, size)
         if blocked_region:
             return f"领地不能与不可创建区域 '{blocked_region}' 重叠"
         for other in self.lands.values():
@@ -2084,10 +2323,14 @@ class LandPlugin(Plugin):
             target = args[0]
             pos = self._get_player_coord(target)
             if pos:
-                fmts.print_inf(self._ui_card("控制台测试", [f"玩家 {target} 坐标：{pos}"]))
+                fmts.print_inf(
+                    self._ui_card(
+                        "控制台测试", [
+                            f"玩家 {target} 坐标：{pos}"]))
             else:
                 fmts.print_err(self._error("无法获取坐标"))
         else:
             fmts.print_inf(self._notice("用法: 领地测试 <玩家名>"))
+
 
 entry = plugin_entry(LandPlugin, "领地系统云链联动版", (0, 1, 18))

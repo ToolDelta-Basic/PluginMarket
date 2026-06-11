@@ -48,9 +48,11 @@ except ImportError:
         datalen = len(data_value)
         int_data_value = int.from_bytes(data_value, native_byteorder)
         int_mask_value = int.from_bytes(
-            mask_value * (datalen // 4) + mask_value[: datalen % 4], native_byteorder
-        )
-        return (int_data_value ^ int_mask_value).to_bytes(datalen, native_byteorder)
+            mask_value * (datalen // 4) + mask_value[: datalen % 4],
+            native_byteorder)
+        return (
+            int_data_value ^ int_mask_value).to_bytes(
+            datalen, native_byteorder)
 
 
 __all__ = [
@@ -199,7 +201,8 @@ class ABNF:
 
             code = 256 * int(self.data[0]) + int(self.data[1])
             if not self._is_valid_close_status(code):
-                raise WebSocketProtocolException(f"Invalid close opcode {code!r}")
+                raise WebSocketProtocolException(
+                    f"Invalid close opcode {code!r}")
 
     @staticmethod
     def _is_valid_close_status(code: int) -> bool:
@@ -211,7 +214,8 @@ class ABNF:
         return f"fin={self.fin} opcode={self.opcode} data={self.data}"
 
     @staticmethod
-    def create_frame(data: Union[bytes, str], opcode: int, fin: int = 1) -> "ABNF":
+    def create_frame(data: Union[bytes, str],
+                     opcode: int, fin: int = 1) -> "ABNF":
         """
         Create frame to send text, binary and other data.
 
@@ -233,7 +237,14 @@ class ABNF:
 
     def format(self) -> bytes:
         """Format this object to the byte sequence sent to the server."""
-        if any(x not in (0, 1) for x in [self.fin, self.rsv1, self.rsv2, self.rsv3]):
+        if any(
+            x not in (
+                0,
+                1) for x in [
+                self.fin,
+                self.rsv1,
+                self.rsv2,
+                self.rsv3]):
             raise ValueError("not 0 or 1")
         if self.opcode not in ABNF.OPCODES:
             raise ValueError("Invalid OPCODE")
@@ -249,7 +260,8 @@ class ABNF:
             | self.opcode
         ).encode("latin-1")
         if length < ABNF.LENGTH_7:
-            frame_header += chr(self.mask_value << 7 | length).encode("latin-1")
+            frame_header += chr(self.mask_value << 7 |
+                                length).encode("latin-1")
         elif length < ABNF.LENGTH_16:
             frame_header += chr(self.mask_value << 7 | 0x7E).encode("latin-1")
             frame_header += struct.pack("!H", length)
@@ -306,7 +318,7 @@ class frame_buffer:
     def __init__(
         self, recv_fn: Callable[[int], int], skip_utf8_validation: bool
     ) -> None:
-        """Initialize a frame buffer backed by the provided receive function."""
+        """Initialize a frame buffer backed by the provided receive function."""  # noqa: E501
         self.recv = recv_fn
         self.skip_utf8_validation = skip_utf8_validation
         self.header: Optional[tuple] = None
@@ -432,7 +444,10 @@ class frame_buffer:
 class continuous_frame:
     """Collect fragmented frames until a full logical message is available."""
 
-    def __init__(self, fire_cont_frame: bool, skip_utf8_validation: bool) -> None:
+    def __init__(
+            self,
+            fire_cont_frame: bool,
+            skip_utf8_validation: bool) -> None:
         """Initialize continuation-frame assembly state."""
         self.fire_cont_frame = fire_cont_frame
         self.skip_utf8_validation = skip_utf8_validation
@@ -476,5 +491,6 @@ class continuous_frame:
             and not self.skip_utf8_validation
             and not validate_utf8(frame.data)
         ):
-            raise WebSocketPayloadException(f"cannot decode: {repr(frame.data)}")
+            raise WebSocketPayloadException(
+                f"cannot decode: {repr(frame.data)}")
         return data[0], frame
