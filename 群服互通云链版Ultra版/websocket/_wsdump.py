@@ -73,9 +73,13 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the websocket dump utility."""
     parser = argparse.ArgumentParser(description="WebSocket Simple Dump Tool")
     parser.add_argument(
-        "url", metavar="ws_url", help="websocket url. ex. ws://echo.websocket.events/"
-    )
-    parser.add_argument("-p", "--proxy", help="proxy url. ex. http://127.0.0.1:8080")
+        "url",
+        metavar="ws_url",
+        help="websocket url. ex. ws://echo.websocket.events/")
+    parser.add_argument(
+        "-p",
+        "--proxy",
+        help="proxy url. ex. http://127.0.0.1:8080")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -90,7 +94,11 @@ def parse_args() -> argparse.Namespace:
         "-n", "--nocert", action="store_true", help="Ignore invalid SSL cert"
     )
     parser.add_argument("-r", "--raw", action="store_true", help="raw output")
-    parser.add_argument("-s", "--subprotocols", nargs="*", help="Set subprotocols")
+    parser.add_argument(
+        "-s",
+        "--subprotocols",
+        nargs="*",
+        help="Set subprotocols")
     parser.add_argument("-o", "--origin", help="Set origin")
     parser.add_argument(
         "--eof-wait",
@@ -102,7 +110,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--timings", action="store_true", help="Print timings in seconds"
     )
-    parser.add_argument("--headers", help="Set custom headers. Use ',' as separator")
+    parser.add_argument(
+        "--headers",
+        help="Set custom headers. Use ',' as separator")
 
     return parser.parse_args()
 
@@ -205,11 +215,11 @@ def main() -> None:  # skipcq: PY-R1000
         while True:
             opcode, data = recv()
             msg = None
-            if opcode == websocket.ABNF.OPCODE_TEXT and isinstance(data, bytes):
+            if opcode == websocket.ABNF.OPCODE_TEXT and isinstance(
+                    data, bytes):
                 data = str(data, "utf-8")
-            if (
-                isinstance(data, bytes) and len(data) > 2 and data[:2] == b"\037\213"
-            ):  # gzip magick
+            if (isinstance(data, bytes) and len(data) >
+                    2 and data[:2] == b"\037\213"):  # gzip magick
                 try:
                     data = "[gzip] " + str(gzip.decompress(data), "utf-8")
                 except Exception:

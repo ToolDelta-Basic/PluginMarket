@@ -1,8 +1,19 @@
+"""Whitelist and operator-status checker plugin."""
+
+import copy
+import os
 import time
+import threading
 from typing import Any
 
 from tooldelta import Player, Plugin, cfg, fmts, game_utils, plugin_entry, utils
-from tooldelta.internal.launch_cli import FrameNeOmgAccessPoint
+
+
+CONFIG_FILE_DIR = "插件配置文件"
+DYNAMIC_LOAD_SETTINGS_KEY = "动态载入设置"
+DYNAMIC_LOAD_ENABLED_KEY = "是否启用动态载入配置文件（仅用于本插件）"
+DYNAMIC_LOAD_INTERVAL_KEY = "动态载入检测时间间隔（单位：秒）"
+DYNAMIC_LOAD_DEFAULT_INTERVAL = 5
 
 
 class WhitelistAndOpCheck(Plugin):
@@ -10,10 +21,14 @@ class WhitelistAndOpCheck(Plugin):
 
     name = "白名单&管理员检测云链联动版"
     author = "猫七街"
-    version = (1, 1, 2)
+    version = (1, 1, 4)
     description = "白名单与管理员状态检测，并向其他插件暴露可复用的管理 API。"
 
     DEFAULT_CFG = {
+        DYNAMIC_LOAD_SETTINGS_KEY: {
+            DYNAMIC_LOAD_ENABLED_KEY: True,
+            DYNAMIC_LOAD_INTERVAL_KEY: DYNAMIC_LOAD_DEFAULT_INTERVAL,
+        },
         "检查时间（秒）": 60.0,
         "白名单": {
             "开启状态": False,
@@ -28,6 +43,10 @@ class WhitelistAndOpCheck(Plugin):
     }
 
     STD_CFG = {
+        DYNAMIC_LOAD_SETTINGS_KEY: {
+            DYNAMIC_LOAD_ENABLED_KEY: bool,
+            DYNAMIC_LOAD_INTERVAL_KEY: cfg.PInt,
+        },
         "检查时间（秒）": float,
         "白名单": {"开启状态": bool, "踢出提示词": str, "白名单玩家": {}},
         "管理员检测": {"开启状态": bool, "提示词": str, "管理员列表": {}},
@@ -37,30 +56,168 @@ class WhitelistAndOpCheck(Plugin):
         """初始化运行时状态并注册插件生命周期回调。"""
         super().__init__(frame)
         self.get_xuid = None
-        self.neomega = None
         self.bot_name = ""
+        self._stop_event = threading.Event()
+        self._config_file_state = None
         self._cfg = self.load_config()
+        self.refresh_config_file_state()
+        self.config_thread = utils.createThread(
+            self.config_reload_task,
+            usage="白名单&管理员检测配置热更新任务",
+        )
 
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         self.ListenPlayerJoin(self.on_player_join)
+        self.ListenFrameExit(self.on_frame_exit)
 
     @classmethod
     def merge_with_default(cls, raw: Any, default: Any):
         """递归合并用户配置和默认配置。"""
         if isinstance(default, dict):
             result = {
-                key: cls.merge_with_default(None, value)
+                key: cls.merge_with_default(
+                    raw.get(key) if isinstance(raw, dict) else None,
+                    value,
+                )
                 for key, value in default.items()
             }
             if isinstance(raw, dict):
                 for key, value in raw.items():
-                    if key in result:
-                        result[key] = cls.merge_with_default(value, result[key])
-                    else:
-                        result[key] = value
+                    if key not in result:
+                        result[key] = copy.deepcopy(value)
             return result
-        return raw if raw is not None else default
+        return copy.deepcopy(
+            raw) if raw is not None else copy.deepcopy(default)
+
+    @staticmethod
+    def trim_fixed_keys(raw: Any, default: dict[str, Any]) -> dict[str, Any]:
+        raw = raw if isinstance(raw, dict) else {}
+        return {
+            key: copy.deepcopy(raw.get(key, value))
+            for key, value in default.items()
+        }
+
+    @staticmethod
+    def normalize_bool(value: Any, fallback: bool) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            text = value.strip().lower()
+            if text in ("true", "1", "yes", "y", "on", "启用", "是", "真"):
+                return True
+            if text in ("false", "0", "no", "n", "off", "禁用", "否", "假"):
+                return False
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return bool(value)
+        return bool(fallback)
+
+    @staticmethod
+    def normalize_positive_int(value: Any, fallback: int) -> int:
+        if isinstance(value, bool):
+            return fallback
+        try:
+            result = int(value)
+        except (TypeError, ValueError):
+            return fallback
+        return result if result > 0 else fallback
+
+    @staticmethod
+    def normalize_positive_float(value: Any, fallback: float) -> float:
+        if isinstance(value, bool):
+            return fallback
+        try:
+            result = float(value)
+        except (TypeError, ValueError):
+            return fallback
+        return result if result > 0 else fallback
+
+    @staticmethod
+    def normalize_str(
+            value: Any,
+            fallback: str,
+            *,
+            allow_empty: bool = False) -> str:
+        if value is None:
+            return fallback
+        text = str(value)
+        if text or allow_empty:
+            return text
+        return fallback
+
+    @classmethod
+    def normalize_player_mapping(
+            cls, raw: Any, fallback: dict[str, str]) -> dict[str, str]:
+        source = raw if isinstance(raw, dict) else fallback
+        result: dict[str, str] = {}
+        for xuid, player_name in source.items():
+            xuid_text = str(xuid).strip()
+            if not xuid_text:
+                continue
+            result[xuid_text] = cls.normalize_str(
+                player_name, "", allow_empty=True)
+        return result
+
+    @classmethod
+    def normalize_config(cls, raw_cfg: Any) -> dict[str, Any]:
+        merged_cfg = cls.merge_with_default(raw_cfg, cls.DEFAULT_CFG)
+        normalized = cls.trim_fixed_keys(merged_cfg, cls.DEFAULT_CFG)
+
+        dynamic_default = cls.DEFAULT_CFG[DYNAMIC_LOAD_SETTINGS_KEY]
+        dynamic = cls.trim_fixed_keys(
+            normalized.get(DYNAMIC_LOAD_SETTINGS_KEY),
+            dynamic_default,
+        )
+        dynamic[DYNAMIC_LOAD_ENABLED_KEY] = cls.normalize_bool(
+            dynamic.get(DYNAMIC_LOAD_ENABLED_KEY),
+            dynamic_default[DYNAMIC_LOAD_ENABLED_KEY],
+        )
+        dynamic[DYNAMIC_LOAD_INTERVAL_KEY] = cls.normalize_positive_int(
+            dynamic.get(DYNAMIC_LOAD_INTERVAL_KEY),
+            dynamic_default[DYNAMIC_LOAD_INTERVAL_KEY],
+        )
+        normalized[DYNAMIC_LOAD_SETTINGS_KEY] = dynamic
+
+        normalized["检查时间（秒）"] = cls.normalize_positive_float(
+            normalized.get("检查时间（秒）"),
+            cls.DEFAULT_CFG["检查时间（秒）"],
+        )
+
+        whitelist_default = cls.DEFAULT_CFG["白名单"]
+        whitelist = cls.trim_fixed_keys(
+            normalized.get("白名单"), whitelist_default)
+        whitelist["开启状态"] = cls.normalize_bool(
+            whitelist.get("开启状态"),
+            whitelist_default["开启状态"],
+        )
+        whitelist["踢出提示词"] = cls.normalize_str(
+            whitelist.get("踢出提示词"),
+            whitelist_default["踢出提示词"],
+        )
+        whitelist["白名单玩家"] = cls.normalize_player_mapping(
+            whitelist.get("白名单玩家"),
+            whitelist_default["白名单玩家"],
+        )
+        normalized["白名单"] = whitelist
+
+        admin_default = cls.DEFAULT_CFG["管理员检测"]
+        admin_check = cls.trim_fixed_keys(
+            normalized.get("管理员检测"), admin_default)
+        admin_check["开启状态"] = cls.normalize_bool(
+            admin_check.get("开启状态"),
+            admin_default["开启状态"],
+        )
+        admin_check["提示词"] = cls.normalize_str(
+            admin_check.get("提示词"),
+            admin_default["提示词"],
+        )
+        admin_check["管理员列表"] = cls.normalize_player_mapping(
+            admin_check.get("管理员列表"),
+            admin_default["管理员列表"],
+        )
+        normalized["管理员检测"] = admin_check
+
+        return normalized
 
     def load_config(self) -> dict[str, Any]:
         """读取配置文件并做结构校验，失败时退回默认值。"""
@@ -71,17 +228,85 @@ class WhitelistAndOpCheck(Plugin):
                 self.DEFAULT_CFG,
                 self.version,
             )
-            merged_cfg = self.merge_with_default(raw_cfg, self.DEFAULT_CFG)
+            merged_cfg = self.normalize_config(raw_cfg)
             cfg.check_auto(self.STD_CFG, merged_cfg)
         except Exception as err:
             fmts.print_err(f"加载配置文件出错: {err}")
-            merged_cfg = self.merge_with_default({}, self.DEFAULT_CFG)
+            merged_cfg = self.normalize_config({})
+            cfg.check_auto(self.STD_CFG, merged_cfg)
         cfg.upgrade_plugin_config(self.name, merged_cfg, self.version)
         return merged_cfg
+
+    def apply_runtime_config(self, config_items: dict[str, Any]) -> None:
+        """Replace runtime config with already parsed config-center data."""
+        merged_cfg = self.normalize_config(config_items)
+        cfg.check_auto(self.STD_CFG, merged_cfg)
+        self._cfg = merged_cfg
+        self.refresh_config_file_state()
 
     def save_cfg(self):
         """把当前内存中的配置写回插件配置文件。"""
         cfg.upgrade_plugin_config(self.name, self._cfg, self.version)
+        self.refresh_config_file_state()
+
+    def config_file_path(self) -> str:
+        return os.path.join(CONFIG_FILE_DIR, f"{self.name}.json")
+
+    @staticmethod
+    def file_state(path: str) -> tuple[int, int] | None:
+        try:
+            stat = os.stat(path)
+        except OSError:
+            return None
+        return stat.st_mtime_ns, stat.st_size
+
+    def refresh_config_file_state(self):
+        self._config_file_state = self.file_state(self.config_file_path())
+
+    def is_dynamic_config_reload_enabled(self) -> bool:
+        settings = self._cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
+        if not isinstance(settings, dict):
+            return True
+        return bool(settings.get(DYNAMIC_LOAD_ENABLED_KEY, True))
+
+    def dynamic_config_reload_interval(self) -> int:
+        settings = self._cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
+        if not isinstance(settings, dict):
+            return DYNAMIC_LOAD_DEFAULT_INTERVAL
+        try:
+            interval = int(settings.get(DYNAMIC_LOAD_INTERVAL_KEY,
+                           DYNAMIC_LOAD_DEFAULT_INTERVAL))
+        except (TypeError, ValueError):
+            return DYNAMIC_LOAD_DEFAULT_INTERVAL
+        return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
+
+    def reload_runtime_config(self, announce: bool = False):
+        self._cfg = self.load_config()
+        self.refresh_config_file_state()
+        if announce:
+            fmts.print_suc(f"{self.name} 配置文件已热更新")
+
+    def config_reload_task(self):
+        while not self._stop_event.wait(self.dynamic_config_reload_interval()):
+            if not self.is_dynamic_config_reload_enabled():
+                self.refresh_config_file_state()
+                continue
+            current_state = self.file_state(self.config_file_path())
+            if current_state == self._config_file_state:
+                continue
+            try:
+                self.reload_runtime_config(announce=True)
+            except Exception as err:
+                self._config_file_state = current_state
+                fmts.print_err(f"{self.name} 配置文件热更新失败: {err}")
+
+    def api_reload_checker_config(
+            self) -> tuple[bool, str, dict[str, int | float | bool]]:
+        try:
+            self.reload_runtime_config(announce=False)
+        except Exception as err:
+            return False, f"白名单&管理员检测配置重载失败: {err}", self.get_runtime_status()
+        return True, "白名单&管理员检测配置已重载", self.get_runtime_status()
 
     def on_preload(self):
         """在 preload 阶段获取 XUID 查询前置插件。"""
@@ -89,27 +314,40 @@ class WhitelistAndOpCheck(Plugin):
 
     def on_active(self):
         """在插件激活后挂载控制台入口并启动周期检测。"""
-        self.neomega = self.require_neomega()
-        self.bot_name = self.neomega.get_bot_basic_info().BotName
+        self.bot_name = self.resolve_bot_name()
         self.frame.add_console_cmd_trigger(
             ["白名单"],
             None,
             "在控制台修改白名单（需要玩家先登录一次服务器）",
             self.console_manage_whitelist,
         )
-        self.frame.add_console_cmd_trigger(
-            ["OP操作"],
-            None,
-            "在控制台修改服务器 OP（需要玩家先登录一次服务器）",
-            self.console_manage_admins,
-        )
         self.start_periodic_check()
 
-    def require_neomega(self):
-        """要求当前启动器具备 NeOmega 能力，否则直接拒绝继续运行。"""
-        if isinstance(self.frame.launcher, FrameNeOmgAccessPoint):
-            return self.frame.launcher.omega
-        raise ValueError("此启动框架无法使用 NeOmega API")
+    def on_frame_exit(self, _):
+        self._stop_event.set()
+
+    def resolve_bot_name(self) -> str:
+        """尽量用通用 ToolDelta 能力识别机器人名，避免绑定 NeOmega 接入点。"""
+        bot_name = getattr(self.game_ctrl, "bot_name", "")
+        if bot_name:
+            return bot_name
+
+        get_bot_name = getattr(self.frame.launcher, "get_bot_name", None)
+        if callable(get_bot_name):
+            try:
+                bot_name = get_bot_name()
+            except Exception:
+                bot_name = ""
+            if bot_name:
+                return bot_name
+
+        omega = getattr(self.frame.launcher, "omega", None)
+        if omega is None:
+            return ""
+        try:
+            return getattr(omega.get_bot_basic_info(), "BotName", "") or ""
+        except Exception:
+            return ""
 
     def on_player_join(self, player: Player):
         """玩家进服时按当前配置执行白名单和管理员状态检查。"""
@@ -269,7 +507,7 @@ class WhitelistAndOpCheck(Plugin):
 
     def console_manage_whitelist(self, _args: list[str]):
         """打开控制台白名单管理菜单。"""
-        self.console_manage_player_mapping(
+        self.console_manage_whitelist_mapping(
             title="白名单",
             add_action=self.add_whitelist_player,
             remove_action=self.remove_whitelist_player,
@@ -277,17 +515,7 @@ class WhitelistAndOpCheck(Plugin):
             remove_prompt="请输入要移除的玩家昵称：",
         )
 
-    def console_manage_admins(self, _args: list[str]):
-        """打开控制台服务器管理员管理菜单。"""
-        self.console_manage_player_mapping(
-            title="服务器管理员",
-            add_action=self.add_admin_player,
-            remove_action=self.remove_admin_player,
-            add_prompt="请输入要添加的玩家昵称：",
-            remove_prompt="请输入要移除的玩家昵称：",
-        )
-
-    def console_manage_player_mapping(
+    def console_manage_whitelist_mapping(
         self,
         title: str,
         add_action,
@@ -295,7 +523,7 @@ class WhitelistAndOpCheck(Plugin):
         add_prompt: str,
         remove_prompt: str,
     ):
-        """复用同一套控制台交互来管理白名单和管理员列表。"""
+        """控制台白名单增删交互。"""
         option_add = f"添加{title}"
         option_remove = f"移除{title}"
         while True:
@@ -330,8 +558,7 @@ class WhitelistAndOpCheck(Plugin):
     @utils.thread_func("循环检测白名单和管理员")
     def start_periodic_check(self):
         """按配置周期轮询在线玩家，补做白名单和管理员状态校验。"""
-        while True:
-            time.sleep(float(self._cfg["检查时间（秒）"]))
+        while not self._stop_event.wait(float(self._cfg["检查时间（秒）"])):
             for player in self.frame.get_players().getAllPlayers():
                 if self._is_bot_player(player.name):
                     continue

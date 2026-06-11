@@ -1,3 +1,5 @@
+"""Orion System integration helpers for Ultra."""
+
 import os
 import re
 
@@ -67,15 +69,13 @@ class QQLinkerOrionMixin:
     ):
         """按 Orion 风格打印一张控制台信息卡片。"""
         card = (
-            self.console_menu_header(title)
-            + "\n"
-            + self.console_menu_footer(
+            self.console_menu_header(title) +
+            "\n" +
+            self.console_menu_footer(
                 page_label,
                 "\n".join(
-                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines
-                ),
-            )
-        )
+                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines),
+            ))
         {
             "info": fmts.print_inf,
             "success": fmts.print_suc,
@@ -86,7 +86,10 @@ class QQLinkerOrionMixin:
     def require_orion(self):
         """返回可用的 Orion 实例，不可用时抛出明确异常。"""
         if self.orion is None:
-            raise RuntimeError("Orion_System 插件不可用")
+            raise RuntimeError("相关插件未安装：Orion_System")
+        enabled = self._extract_plugin_enabled_flag(self.orion)
+        if not enabled and enabled is not None:
+            raise RuntimeError("相关插件未启用")
         return self.orion
 
     def reply_to_qq(self, group_id: int, qqid: int, text: str):
@@ -109,8 +112,13 @@ class QQLinkerOrionMixin:
         - 直接给参数：适合熟悉命令的管理人员
         - 不给参数：转到交互式菜单
         """
-        if not self.is_group_admin(group_id, sender):
-            self.reply_to_qq(group_id, sender, "你没有权限执行此指令")
+        if not self._can_use_group_permission(group_id, sender, "封禁/解封玩家权限"):
+            self._reply_menu_permission_denied(group_id, sender)
+            return
+        if self.orion is None:
+            self.reply_to_qq(group_id, sender, "相关插件未安装：Orion_System")
+            return
+        if not self.ensure_linked_plugin_enabled(self.orion, group_id, sender):
             return
         if args == []:
             self.qq_orion_ban_menu(group_id, sender)
@@ -123,8 +131,13 @@ class QQLinkerOrionMixin:
 
     def on_qq_orion_unban(self, group_id: int, sender: int, args: list[str]):
         """群聊侧的 Orion 解封入口。"""
-        if not self.is_group_admin(group_id, sender):
-            self.reply_to_qq(group_id, sender, "你没有权限执行此指令")
+        if not self._can_use_group_permission(group_id, sender, "封禁/解封玩家权限"):
+            self._reply_menu_permission_denied(group_id, sender)
+            return
+        if self.orion is None:
+            self.reply_to_qq(group_id, sender, "相关插件未安装：Orion_System")
+            return
+        if not self.ensure_linked_plugin_enabled(self.orion, group_id, sender):
             return
         if args == []:
             self.qq_orion_unban_menu(group_id, sender)
@@ -132,9 +145,17 @@ class QQLinkerOrionMixin:
         ok, msg = self.orion_unban_player(args[0])
         self.reply_result(group_id, sender, ok, msg)
 
-    def qq_prompt(self, group_id: int, qqid: int, text: str, timeout: int = 60):
+    def qq_prompt(
+            self,
+            group_id: int,
+            qqid: int,
+            text: str,
+            timeout: int = 60):
         """发送一段提示文本，并等待同群同 QQ 的下一条回复。"""
-        self.sendmsg(group_id, f"[CQ:at,qq={qqid}] {text}", do_remove_cq_code=False)
+        self.sendmsg(
+            group_id,
+            f"[CQ:at,qq={qqid}] {text}",
+            do_remove_cq_code=False)
         resp = self.waitMsg(qqid, timeout=timeout, group_id=group_id)
         if isinstance(resp, str):
             return resp.strip()
@@ -145,8 +166,15 @@ class QQLinkerOrionMixin:
         """返回 Orion 菜单统一使用的装饰边框。"""
         return "✧✦〓〓〓〓〓〓〓〓〓〓〓✦✧"
 
-    def orion_ui_menu(self, subtitle: str, options: list[str], hints: list[str]):
+    def orion_ui_menu(
+        self,
+        subtitle: str,
+        options: list[str],
+        hints: list[str],
+        group_id: int | None = None,
+    ):
         """生成 Orion 风格的普通菜单文本。"""
+        hints = self.normalize_menu_control_hints(hints, group_id)
         parts = [self.orion_ui_border(), f"❐ 『Orion System 猎户座』 {subtitle}"]
         parts.extend([f"[ {i + 1} ] {text}" for i, text in enumerate(options)])
         parts.append(self.orion_ui_border())
@@ -159,8 +187,10 @@ class QQLinkerOrionMixin:
         subtitle: str,
         options: list[str],
         hints: list[str],
+        group_id: int | None = None,
     ):
         """生成插件内部复用的菜单文本。"""
+        hints = self.normalize_menu_control_hints(hints, group_id)
         parts = [self.orion_ui_border(), f"❐ 『{system_name}』 {subtitle}"]
         parts.extend([f"[ {i + 1} ] {text}" for i, text in enumerate(options)])
         parts.append(self.orion_ui_border())
@@ -175,6 +205,7 @@ class QQLinkerOrionMixin:
         total_pages: int,
         select_hint: str,
         search_hint: str | None = None,
+        group_id: int | None = None,
     ):
         """生成带分页和搜索提示的列表菜单文本。"""
         parts = [self.orion_ui_border(), f"❐ 『Orion System 猎户座』 {subtitle}"]
@@ -187,7 +218,7 @@ class QQLinkerOrionMixin:
         parts.append("❀ 输入 - 转到上一页")
         parts.append("❀ 输入 + 转到下一页")
         parts.append("❀ 输入 正整数+页 转到对应页")
-        parts.append("❀ 输入 . 退出")
+        parts.append(f"❀ {self.menu_exit_hint(group_id)}")
         return "\n".join(parts)
 
     def get_orion_items_per_page(self, group_id: int):
@@ -256,7 +287,8 @@ class QQLinkerOrionMixin:
         """读取历史玩家名称到 xuid 的映射数据。"""
         path = os.path.join("插件数据文件", "前置-玩家XUID获取", "xuids.json")
         try:
-            return self.orion.utils.disk_read_need_exists(path) if self.orion else {}
+            return self.orion.utils.disk_read_need_exists(
+                path) if self.orion else {}
         except Exception:
             return {}
 
@@ -289,8 +321,9 @@ class QQLinkerOrionMixin:
         )
         output_lines = [
             item["display"]
-            for item in matched_items[start_index - 1 : end_index]
+            for item in matched_items[start_index - 1: end_index]
         ]
+        displayed_count = len(output_lines)
         self.sendmsg(
             group_id,
             f"[CQ:at,qq={qqid}] "
@@ -299,8 +332,13 @@ class QQLinkerOrionMixin:
                 output_lines,
                 page,
                 total_pages,
-                select_hint.format(start_index=start_index, end_index=end_index),
+                select_hint.format(
+                    start_index=start_index,
+                    end_index=end_index,
+                    displayed_count=displayed_count,
+                ),
                 search_hint,
+                group_id,
             ),
             do_remove_cq_code=False,
         )
@@ -327,7 +365,7 @@ class QQLinkerOrionMixin:
             return "exit", None
 
         user_input = user_input.strip()
-        if user_input.lower() in ("q", ".", "。"):
+        if self.is_menu_exit_input(user_input, group_id):
             self.sendmsg(
                 group_id,
                 f"[CQ:at,qq={qqid}] ❀ 已退出菜单",
@@ -437,8 +475,9 @@ class QQLinkerOrionMixin:
                 continue
             if action == "retry":
                 continue
-            if action == "choice" and value in range(start_index, end_index + 1):
-                return matched_items[value - 1]
+            displayed_count = end_index - start_index + 1
+            if action == "choice" and value in range(1, displayed_count + 1):
+                return matched_items[start_index + value - 2]
             self.sendmsg(
                 group_id,
                 f"[CQ:at,qq={qqid}] ❀ 您的输入有误",
@@ -473,7 +512,7 @@ class QQLinkerOrionMixin:
                 if search == "" or search in xuid or search in name
             ],
             "找不到您输入的 xuid 或玩家名称",
-            "[{start_index}-{end_index}] 之间的数字以选择 对应玩家",
+            "[1-{displayed_count}] 之间的数字以选择 对应玩家",
             "xuid、玩家名称或玩家部分名称 可尝试搜索",
             allow_search=allow_search,
         )
@@ -507,7 +546,7 @@ class QQLinkerOrionMixin:
                 or search in self.format_device_history(player_info)
             ],
             "找不到您输入的设备号或玩家名称",
-            "[{start_index}-{end_index}] 之间的数字以选择 对应设备号",
+            "[1-{displayed_count}] 之间的数字以选择 对应设备号",
             "设备号、玩家名称或玩家部分名称 可尝试搜索",
         )
         if selected is None:
@@ -525,15 +564,17 @@ class QQLinkerOrionMixin:
                 "输入 0年0月5日6时7分8秒 表示对应时长",
                 "输入 . 退出",
             ],
+            group_id,
         )
         user_input = self.qq_prompt(group_id, qqid, prompt, timeout=120)
         if user_input is None:
             self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return None
-        if user_input.lower() in ("q", ".", "。"):
+        if self.is_menu_exit_input(user_input, group_id):
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return None
-        ban_time = self.orion.utils.ban_time_format(user_input) if self.orion else 0
+        ban_time = self.orion.utils.ban_time_format(
+            user_input) if self.orion else 0
         if ban_time == 0:
             self.reply_to_qq(group_id, qqid, "❀ 您输入的封禁时间有误")
             return None
@@ -552,13 +593,14 @@ class QQLinkerOrionMixin:
                     "直接回车使用默认原因“群聊管理员封禁”",
                     "输入 . 退出",
                 ],
+                group_id,
             ),
             timeout=120,
         )
         if user_input is None:
             self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return None
-        if user_input.lower() in ("q", ".", "。"):
+        if self.is_menu_exit_input(user_input, group_id):
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return None
         return user_input or "群聊管理员封禁"
@@ -609,7 +651,11 @@ class QQLinkerOrionMixin:
         self.reply_to_qq(group_id, qqid, "❀ 您的输入有误")
         return None
 
-    def _apply_selected_orion_ban(self, group_id: int, qqid: int, ban_target: dict):
+    def _apply_selected_orion_ban(
+            self,
+            group_id: int,
+            qqid: int,
+            ban_target: dict):
         """把封禁时间和封禁原因的通用交互流程复用到所有封禁模式。"""
         ban_time = self.qq_get_orion_ban_time(group_id, qqid)
         if ban_time is None:
@@ -639,8 +685,13 @@ class QQLinkerOrionMixin:
 
     def qq_orion_ban_menu(self, group_id: int, qqid: int):
         """交互式 Orion 封禁菜单。"""
+        if not self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
+            self._reply_menu_permission_denied(group_id, qqid)
+            return
         if self.orion is None:
-            self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
+            self.reply_to_qq(group_id, qqid, "相关插件未安装：Orion_System")
+            return
+        if not self.ensure_linked_plugin_enabled(self.orion, group_id, qqid):
             return
         choice = self.qq_prompt(
             group_id,
@@ -649,13 +700,14 @@ class QQLinkerOrionMixin:
                 "封禁管理系统",
                 ["根据在线玩家名称和xuid封禁", "根据历史玩家名称和xuid封禁", "根据设备号封禁"],
                 ["输入 [1-3] 之间的数字以选择 封禁模式", "输入 . 退出"],
+                group_id,
             ),
             timeout=120,
         )
         if choice is None:
             self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
-        if choice.lower() in ("q", ".", "。"):
+        if self.is_menu_exit_input(choice, group_id):
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         ban_target = self._select_orion_ban_target(group_id, qqid, choice)
@@ -665,8 +717,13 @@ class QQLinkerOrionMixin:
 
     def qq_orion_unban_menu(self, group_id: int, qqid: int):
         """交互式 Orion 解封菜单。"""
+        if not self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
+            self._reply_menu_permission_denied(group_id, qqid)
+            return
         if self.orion is None:
-            self.reply_to_qq(group_id, qqid, "未检测到 Orion_System 插件")
+            self.reply_to_qq(group_id, qqid, "相关插件未安装：Orion_System")
+            return
+        if not self.ensure_linked_plugin_enabled(self.orion, group_id, qqid):
             return
         choice = self.qq_prompt(
             group_id,
@@ -675,13 +732,14 @@ class QQLinkerOrionMixin:
                 "解封管理系统",
                 ["根据玩家名称和xuid解封", "根据设备号解封"],
                 ["输入 [1-2] 之间的数字以选择 解封模式", "输入 . 退出"],
+                group_id,
             ),
             timeout=120,
         )
         if choice is None:
             self.reply_to_qq(group_id, qqid, "❀ 回复超时！ 已退出菜单")
             return
-        if choice.lower() in ("q", ".", "。"):
+        if self.is_menu_exit_input(choice, group_id):
             self.reply_to_qq(group_id, qqid, "❀ 已退出菜单")
             return
         if choice == "1":
@@ -692,9 +750,7 @@ class QQLinkerOrionMixin:
                     xuid = xuid_json.replace(".json", "")
                     try:
                         xuid_data[xuid] = self.orion.xuid_getter.get_name_by_xuid(
-                            xuid,
-                            True,
-                        )
+                            xuid, True, )
                     except Exception:
                         xuid_data[xuid] = xuid
             xuid, player_name = self.qq_select_orion_xuid(
@@ -710,7 +766,9 @@ class QQLinkerOrionMixin:
             self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "2":
-            device_dir = f"{self.orion.data_path}/{self.orion.config_mgr.device_id_dir}"
+            device_dir = f"{
+                self.orion.data_path}/{
+                self.orion.config_mgr.device_id_dir}"
             player_data = self.build_device_history_data()
             device_data: dict[str, dict[str, list[str]]] = {}
             if os.path.isdir(device_dir):
@@ -733,7 +791,7 @@ class QQLinkerOrionMixin:
     def resolve_orion_target(self, target: str):
         """把群里的输入尽量解析成稳定的 `(xuid, 玩家名)` 组合。"""
         if self.orion is None:
-            return None, None, "未检测到 Orion_System 插件"
+            return None, None, "相关插件未安装：Orion_System"
         if not hasattr(self.orion, "xuid_getter"):
             return None, None, "Orion 插件尚未完成初始化"
 
@@ -741,13 +799,15 @@ class QQLinkerOrionMixin:
         try:
             xuid = self.orion.xuid_getter.get_xuid_by_name(target, True)
             try:
-                player_name = self.orion.xuid_getter.get_name_by_xuid(xuid, True)
+                player_name = self.orion.xuid_getter.get_name_by_xuid(
+                    xuid, True)
             except Exception:
                 player_name = target
         except Exception:
             xuid = target
             try:
-                player_name = self.orion.xuid_getter.get_name_by_xuid(xuid, True)
+                player_name = self.orion.xuid_getter.get_name_by_xuid(
+                    xuid, True)
             except Exception:
                 player_name = target
 
@@ -795,7 +855,7 @@ class QQLinkerOrionMixin:
                 ban_time,
                 timestamp_now,
             )
-            if timestamp_end is False or date_end is False:
+            if not timestamp_end and timestamp_end is not None:
                 return False, f"玩家 {player_name} 已经是永久封禁"
             orion.utils.disk_write(
                 path,
@@ -832,7 +892,7 @@ class QQLinkerOrionMixin:
                 ban_time,
                 timestamp_now,
             )
-            if timestamp_end is False or date_end is False:
+            if not timestamp_end and timestamp_end is not None:
                 return False, f"设备号 {device_id} 已经是永久封禁"
             orion.utils.disk_write(
                 path,
@@ -878,121 +938,3 @@ class QQLinkerOrionMixin:
             return False, f"设备号 {device_id} 当前不在 Orion 的设备号封禁列表中"
         os.remove(path)
         return True, f"已通过 Orion 解封设备号 {device_id}"
-
-    def _prompt_console_group_id(self):
-        """在控制台里选择要操作的目标群。"""
-        while True:
-            group_input = input(
-                fmts.fmt_info("§a❀ §b请输入群序号，输入 q 退出: ")
-            ).strip().lower()
-            if group_input == "q":
-                self.print_console_error("已退出QQ群管理员管理菜单")
-                return None
-            group_index = utils.try_int(group_input)
-            if group_index is None or group_index not in range(
-                1,
-                len(self.group_order) + 1,
-            ):
-                self.print_console_error("群序号无效")
-                continue
-            return self.group_order[group_index - 1]
-
-    def _prompt_console_remove_flag(self):
-        """在控制台里选择是添加还是删除管理员。"""
-        while True:
-            action_input = self.prompt_console_input(
-                "群服互通 控制台管理",
-                "选择操作",
-                ["输入 1 添加管理员", "输入 2 删除管理员", "输入 q 退出菜单"],
-                "请输入操作类型 (1=添加, 2=删除, q=退出): ",
-            ).lower()
-            if action_input == "q":
-                self.print_console_error("已退出QQ群管理员管理菜单")
-                return None
-            if action_input in ("1", "2"):
-                return action_input == "2"
-            self.print_console_error("操作类型无效")
-
-    def _prompt_console_super_flag(self):
-        """在控制台里选择普通管理员还是超级管理员。"""
-        while True:
-            role_input = self.prompt_console_input(
-                "群服互通 控制台管理",
-                "选择角色",
-                ["输入 1 普通管理员", "输入 2 超级管理员", "输入 q 退出菜单"],
-                "请输入角色类型 (1=普通管理员, 2=超级管理员, q=退出): ",
-            ).lower()
-            if role_input == "q":
-                self.print_console_error("已退出QQ群管理员管理菜单")
-                return None
-            if role_input in ("1", "2"):
-                return role_input == "2"
-            self.print_console_error("角色类型无效")
-
-    def _prompt_console_qqid(self, is_remove: bool):
-        """在控制台里读取要增删的 QQ 号。"""
-        while True:
-            qq_input = self.prompt_console_input(
-                "群服互通 控制台管理",
-                "输入 QQ",
-                [
-                    f"请输入要{'删除' if is_remove else '添加'}的 QQ 号",
-                    "输入 q 退出菜单",
-                ],
-                f"请输入要{'删除' if is_remove else '添加'}的QQ号，输入 q 退出: ",
-            ).lower()
-            if qq_input == "q":
-                self.print_console_error("已退出QQ群管理员管理菜单")
-                return None
-            qqid = utils.try_int(qq_input)
-            if qqid is None or qqid <= 0:
-                self.print_console_error("QQ号无效")
-                continue
-            return qqid
-
-    def on_console_add_qq_op(self, _args: list[str]):
-        """控制台侧管理群管理员，主要给服主离线处理配置时使用。"""
-        if not self.group_order:
-            self.print_console_error("当前没有配置任何群聊")
-            return
-        summary_lines = []
-        for index, group_id in enumerate(self.group_order, start=1):
-            state = self.read_group_state(group_id)
-            summary_lines.append(
-                f"[ {index} ] 群 {group_id}"
-                f" - 管理员:{len(state['admins'])}"
-                f" / 超级管理员:{len(state['super_admins'])}"
-            )
-        summary_lines.extend(
-            [
-                "输入群序号继续操作",
-                "输入 q 退出菜单",
-            ]
-        )
-        self.print_console_card(
-            "群服互通 控制台管理",
-            "OPQQ",
-            summary_lines,
-            level="info",
-        )
-        target_group = self._prompt_console_group_id()
-        if target_group is None:
-            return
-        is_remove = self._prompt_console_remove_flag()
-        if is_remove is None:
-            return
-        is_super = self._prompt_console_super_flag()
-        if is_super is None:
-            return
-        qqid = self._prompt_console_qqid(is_remove)
-        if qqid is None:
-            return
-
-        if is_remove:
-            ok, msg = self.remove_group_role(target_group, qqid, is_super=is_super)
-        else:
-            ok, msg = self.add_group_role(target_group, qqid, is_super=is_super)
-        if ok:
-            self.print_console_success(f"群 {target_group}: {msg}")
-        else:
-            self.print_console_error(f"群 {target_group}: {msg}")

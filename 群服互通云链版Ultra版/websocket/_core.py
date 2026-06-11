@@ -102,7 +102,8 @@ class WebSocket:
         self.get_mask_key = get_mask_key
         # These buffer over the build-up of a single frame.
         self.frame_buffer = frame_buffer(self._recv, skip_utf8_validation)
-        self.cont_frame = continuous_frame(fire_cont_frame, skip_utf8_validation)
+        self.cont_frame = continuous_frame(
+            fire_cont_frame, skip_utf8_validation)
 
         if enable_multithread:
             self.lock = threading.Lock()
@@ -250,12 +251,12 @@ class WebSocket:
             Pre-initialized stream socket.
         """
         self.sock_opt.timeout = options.get("timeout", self.sock_opt.timeout)
-        self.sock, addrs = connect(
-            url, self.sock_opt, proxy_info(**options), options.pop("socket", None)
-        )
+        self.sock, addrs = connect(url, self.sock_opt, proxy_info(
+            **options), options.pop("socket", None))
 
         try:
-            self.handshake_response = handshake(self.sock, url, *addrs, **options)
+            self.handshake_response = handshake(
+                self.sock, url, *addrs, **options)
             for _ in range(options.pop("redirect_limit", 3)):
                 if self.handshake_response.status in SUPPORTED_REDIRECT_STATUSES:
                     url = self.handshake_response.headers["location"]
@@ -276,7 +277,8 @@ class WebSocket:
                 self.sock = None
             raise
 
-    def send(self, payload: Union[bytes, str], opcode: int = ABNF.OPCODE_TEXT) -> int:
+    def send(self, payload: Union[bytes, str],
+             opcode: int = ABNF.OPCODE_TEXT) -> int:
         """
         Send the data as string.
 
@@ -452,7 +454,8 @@ class WebSocket:
                     if len(frame.data) < 126:
                         self.pong(frame.data)
                     else:
-                        raise WebSocketProtocolException("Ping message is too long")
+                        raise WebSocketProtocolException(
+                            "Ping message is too long")
                 if control_frame:
                     return frame.opcode, frame
 
@@ -476,7 +479,11 @@ class WebSocket:
         self.connected = False
         self.send(struct.pack("!H", status) + reason, ABNF.OPCODE_CLOSE)
 
-    def close(self, status: int = STATUS_NORMAL, reason: bytes = b"", timeout: int = 3):
+    def close(
+            self,
+            status: int = STATUS_NORMAL,
+            reason: bytes = b"",
+            timeout: int = 3):
         """
         Close Websocket object
 
