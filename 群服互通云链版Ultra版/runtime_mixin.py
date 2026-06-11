@@ -1,5 +1,6 @@
 import json
 import time
+from copy import deepcopy
 from typing import Any
 
 try:
@@ -159,6 +160,209 @@ class QQLinkerRuntimeMixin:
             return f"ws://127.0.0.1:{self._manual_launch_port}"
         return self.cfg["云链设置"]["地址"]
 
+    def api_get_status(self) -> dict[str, Any]:
+        """Return a compact runtime status snapshot for external plugins."""
+        try:
+            websocket_target = self._get_websocket_target()
+        except Exception:
+            websocket_target = ""
+        return {
+            "available": bool(self.available),
+            "ws_initialized": self.ws is not None,
+            "websocket_target": websocket_target,
+            "manual_launch": bool(self._manual_launch),
+            "manual_launch_port": int(self._manual_launch_port),
+            "reloaded": bool(self.reloaded),
+            "reconnect_delay": self._ws_reconnect_delay,
+            "session_id": int(self._ws_session_id),
+            "linked_groups": list(self.group_order),
+            "default_group": self.linked_group,
+        }
+
+    def api_get_online_players(self) -> list[str]:
+        """Return a copy of current online player names."""
+        game_ctrl = getattr(self, "game_ctrl", None)
+        if game_ctrl is None:
+            return []
+        raw_players = getattr(game_ctrl, "allplayers", [])
+        try:
+            players = list(raw_players)
+        except TypeError:
+            return []
+        result: list[str] = []
+        for player in players:
+            name = getattr(player, "name", player)
+            name = str(name).strip()
+            if name:
+                result.append(name)
+        return result
+
+    def api_is_player_online(
+        self,
+        player_name: str,
+        ignore_case: bool = False,
+    ) -> bool:
+        """Return whether a player name is currently online."""
+        name = str(player_name).strip()
+        if not name:
+            return False
+        players = self.api_get_online_players()
+        if ignore_case:
+            name = name.lower()
+            return any(player.lower() == name for player in players)
+        return name in players
+
+    def api_execute_game_cmd(self, command: str) -> tuple[bool, str]:
+        """Execute an MC command and return a stable result tuple."""
+        cmd = str(command).strip()
+        if not cmd:
+            return False, "MC指令不能为空"
+        if getattr(self, "game_ctrl", None) is None:
+            return False, "游戏控制器不可用"
+        try:
+            result = self.execute_cmd_and_get_zhcn_cb(cmd)
+        except Exception as err:
+            return False, f"MC指令执行失败: {err}"
+        message = "\n".join(result) if isinstance(result, list) else str(result)
+        fail_markers = (
+            "指令执行失败",
+            "未知的 MC 指令",
+            "执行出现问题",
+            "超时",
+        )
+        return not any(marker in message for marker in fail_markers), message
+
+    def api_get_game_to_group_targets(
+        self,
+        enabled_only: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Return game-to-group forwarding rules for configured groups."""
+        targets: list[dict[str, Any]] = []
+        for group_id in self.group_order:
+            group_cfg = self.group_cfgs.get(group_id)
+            if group_cfg is None:
+                continue
+            game_to_group = group_cfg["游戏到群"]
+            enabled = bool(game_to_group["是否启用"])
+            if enabled_only and not enabled:
+                continue
+            targets.append(
+                {
+                    "group_id": group_id,
+                    "enabled": enabled,
+                    "format": str(game_to_group["转发格式"]),
+                    "required_prefixes": list(
+                        game_to_group["仅转发以下符号开头的消息(列表为空则全部转发)"]
+                    ),
+                    "blocked_prefixes": list(game_to_group["屏蔽以下字符串开头的消息"]),
+                    "forward_player_events": bool(game_to_group["转发玩家进退提示"]),
+                    "config": deepcopy(group_cfg),
+                }
+            )
+        return targets
+
+    def api_should_forward_game_message(
+        self,
+        group_id: int | str,
+        message: str,
+    ) -> tuple[bool, str] | None:
+        """Preview whether a game chat message would be forwarded to a group."""
+        try:
+            gid = int(str(group_id).strip())
+        except (TypeError, ValueError):
+            return None
+        group_cfg = self.group_cfgs.get(gid)
+        if group_cfg is None:
+            return None
+        msg = str(message)
+        if not group_cfg["游戏到群"]["是否启用"]:
+            return False, msg
+        return self.should_forward_game_message(msg, group_cfg)
+
+    def reload_websocket_connection(self):
+        """让云链连接按当前配置重新建立。"""
+        self.reloaded = True
+        self._ws_reconnect_delay = None
+        self.available = False
+        self._ws_session_id += 1
+        ws_obj = self.ws
+        if ws_obj is not None:
+            try:
+                ws_obj.close()
+            except Exception as err:
+                self._print_cloud_status(
+                    "群服互通 云链连接",
+                    "重载",
+                    [f"关闭旧连接失败: {err}", "将继续尝试使用新配置连接"],
+                    level="warn",
+                )
+        self.ws = None
+        if not self._manual_launch:
+            self.connect_to_websocket()
+
+    def api_reload_websocket(self) -> tuple[bool, str]:
+        """Request the cloud WebSocket connection to reload."""
+        try:
+            self.reload_websocket_connection()
+        except Exception as err:
+            return False, f"云链重载失败: {err}"
+        return True, "已请求云链重载"
+
+    def _get_message_listener_store(self):
+        """Return the raw group message listener registry."""
+        if not hasattr(self, "_message_listeners") or not isinstance(
+            self._message_listeners, dict
+        ):
+            self._message_listeners = {}
+        return self._message_listeners
+
+    def api_register_message_listener(self, name: str, listener) -> tuple[bool, str]:
+        """Register a raw group message listener callback."""
+        listener_name = str(name).strip()
+        if not listener_name:
+            return False, "监听器名称不能为空"
+        if not callable(listener):
+            return False, "监听器必须是可调用对象"
+        listeners = self._get_message_listener_store()
+        if listener_name in listeners:
+            return False, "监听器已存在"
+        listeners[listener_name] = listener
+        return True, "已注册原始群消息监听器"
+
+    def api_unregister_message_listener(self, name: str) -> tuple[bool, str]:
+        """Unregister a raw group message listener callback."""
+        listener_name = str(name).strip()
+        if not listener_name:
+            return False, "监听器名称不能为空"
+        listeners = self._get_message_listener_store()
+        if listener_name not in listeners:
+            return False, "监听器不存在"
+        del listeners[listener_name]
+        return True, "已注销原始群消息监听器"
+
+    def api_get_message_listeners(self) -> list[dict[str, Any]]:
+        """Return metadata for registered raw group message listeners."""
+        return [
+            {"name": name, "callable": callable(listener)}
+            for name, listener in self._get_message_listener_store().items()
+        ]
+
+    def _stop_when_message_listener_handled(self, data: dict[str, Any]) -> bool:
+        """Run registered raw message listeners; truthy return stops processing."""
+        for name, listener in list(self._get_message_listener_store().items()):
+            try:
+                if listener(deepcopy(data)):
+                    return True
+            except Exception as err:
+                if hasattr(self, "_print_cloud_status"):
+                    self._print_cloud_status(
+                        "群服互通 原始消息监听",
+                        "监听器异常",
+                        [f"{name}: {err}"],
+                        level="warn",
+                    )
+        return False
+
     @utils.thread_func("云链群服消息广播进程")
     def broadcast(self, data):
         """把原始群消息广播给主动注册的其他插件。"""
@@ -206,6 +410,8 @@ class QQLinkerRuntimeMixin:
             return True
         if data.get("post_type") != "message" or data.get("message_type") != "group":
             return True
+        if self._stop_when_message_listener_handled(data):
+            return True
         self.broadcast(data)
         return False
 
@@ -237,11 +443,13 @@ class QQLinkerRuntimeMixin:
     def _consume_waiting_reply(self, group_id: int, user_id: int, msg: str) -> bool:
         """把当前消息投递给等待输入的菜单回调。"""
         wait_key = (group_id, user_id)
-        if wait_key in self.waitmsg_cbs:
-            self.waitmsg_cbs[wait_key](msg)
+        cb = self.waitmsg_cbs.pop(wait_key, None)
+        if cb is not None:
+            cb(msg)
             return True
-        if user_id in self.waitmsg_cbs:
-            self.waitmsg_cbs[user_id](msg)
+        cb = self.waitmsg_cbs.pop(user_id, None)
+        if cb is not None:
+            cb(msg)
             return True
         return False
 
@@ -273,6 +481,16 @@ class QQLinkerRuntimeMixin:
             return
         if user_id in group_cfg["群到游戏"]["屏蔽的QQ号"]:
             return
+        trans_chars = group_cfg["群到游戏"]["仅转发以下符号开头的消息(列表为空则全部转发)"]
+        if trans_chars:
+            matched_prefix = None
+            for prefix in trans_chars:
+                if msg.startswith(prefix):
+                    matched_prefix = prefix
+                    break
+            if matched_prefix is None:
+                return
+            msg = msg[len(matched_prefix) :]
 
         if group_cfg["群到游戏"]["替换花里胡哨的昵称"]:
             nickname = remove_color(nickname)
@@ -320,10 +538,36 @@ class QQLinkerRuntimeMixin:
         getter, setter = utils.create_result_cb(str)
         key: int | tuple[int, int] = qqid if group_id is None else (group_id, qqid)
         self.waitmsg_cbs[key] = setter
-        result = getter(timeout)
-        if key in self.waitmsg_cbs:
-            del self.waitmsg_cbs[key]
-        return result
+        try:
+            return getter(timeout)
+        finally:
+            if self.waitmsg_cbs.get(key) is setter:
+                del self.waitmsg_cbs[key]
+
+    def api_wait_group_msg(
+        self,
+        qqid: int | str,
+        timeout: int = 60,
+        group_id: int | str | None = None,
+    ) -> str | None:
+        """Wait for one QQ member's next group message."""
+        try:
+            qid = int(str(qqid).strip())
+        except (TypeError, ValueError):
+            return None
+        if qid <= 0:
+            return None
+        gid = None
+        if group_id is not None:
+            try:
+                gid = int(str(group_id).strip())
+            except (TypeError, ValueError):
+                return None
+        try:
+            wait_seconds = max(0, int(timeout))
+        except (TypeError, ValueError):
+            wait_seconds = 60
+        return self.waitMsg(qid, wait_seconds, gid)
 
     def on_ws_close(self, _ws, _, _2, session_id: int):
         """连接关闭时按当前状态决定是否自动重连。"""
@@ -361,6 +605,9 @@ class QQLinkerRuntimeMixin:
 
     def on_player_message(self, chat: Chat):
         """按各群配置把游戏聊天消息转发到对应群聊。"""
+        if self.consume_game_binding_code(chat):
+            return True
+
         player = chat.player.name
         msg = chat.msg
         if not self.ws:
@@ -398,27 +645,65 @@ class QQLinkerRuntimeMixin:
 
     def _handle_exact_trigger(self, group_id: int, qqid: int, clean_msg: str) -> bool:
         """处理帮助、管理员菜单、背包查询等完全匹配型触发词。"""
+        if self._handle_binding_trigger(group_id, qqid, clean_msg):
+            return True
         if clean_msg in self.get_group_help_triggers(group_id):
             self.on_qq_help(group_id, qqid, [])
             return True
         if clean_msg in self.get_group_admin_menu_triggers(group_id):
+            if not self._has_any_group_permission(
+                group_id,
+                qqid,
+                ("QQ普通管理员菜单权限", "QQ超级管理员菜单权限"),
+            ):
+                self._reply_permission_denied(group_id, qqid)
+                return True
             self.qq_admin_menu(group_id, qqid)
             return True
+        if clean_msg in self.get_group_config_menu_triggers(group_id):
+            return self._run_permission_action(
+                group_id,
+                qqid,
+                "配置配置文件权限",
+                lambda: self.qq_config_center_menu(group_id, qqid),
+            )
         if clean_msg in self.get_group_player_list_triggers(group_id):
+            if not self._has_group_permission(group_id, qqid, "查看玩家人数权限"):
+                self._reply_permission_denied(group_id, qqid)
+                return True
             self.on_qq_player_list(group_id, qqid, [])
             return True
         if clean_msg in self.get_group_inventory_menu_triggers(group_id):
-            return self._run_admin_only_action(
+            return self._run_permission_action(
                 group_id,
                 qqid,
+                "查询背包权限",
                 lambda: self.qq_inventory_menu(group_id, qqid),
             )
         if clean_msg in self.get_group_checker_menu_triggers(group_id):
-            return self._run_admin_only_action(
+            return self._run_permission_action(
                 group_id,
                 qqid,
+                "白名单&管理员检测权限",
                 lambda: self.qq_checker_menu(group_id, qqid),
             )
+        if clean_msg in self.get_group_task_menu_triggers(group_id):
+            return self._run_permission_action(
+                group_id,
+                qqid,
+                "任务系统权限",
+                lambda: self.qq_task_system_menu(group_id, qqid),
+            )
+        if clean_msg in self.get_group_land_menu_triggers(group_id):
+            return self._run_permission_action(
+                group_id,
+                qqid,
+                "领地系统权限",
+                lambda: self.qq_land_system_menu(group_id, qqid),
+            )
+        if clean_msg in self.get_group_guild_menu_triggers(group_id):
+            self.qq_guild_entry_menu(group_id, qqid)
+            return True
         return False
 
     def _handle_prefixed_command(
@@ -433,8 +718,8 @@ class QQLinkerRuntimeMixin:
             return False
 
         args = clean_msg.removeprefix(cmd_prefix).strip().split()
-        if not self.is_group_admin(group_id, qqid):
-            self._reply_to_qq(group_id, qqid, "你没有权限执行此指令")
+        if not self._has_group_permission(group_id, qqid, "发送指令权限"):
+            self._reply_permission_denied(group_id, qqid)
             return True
         if len(args) == 0:
             self._reply_to_qq(group_id, qqid, f"参数错误，格式：{cmd_prefix}[指令]")
@@ -485,8 +770,8 @@ class QQLinkerRuntimeMixin:
             if not clean_msg.startswith(trigger):
                 continue
             args = clean_msg.removeprefix(trigger).strip().split()
-            if not self.is_group_admin(group_id, qqid):
-                self._reply_to_qq(group_id, qqid, "你没有权限执行此指令")
+            if not self._has_group_permission(group_id, qqid, "封禁/解封玩家权限"):
+                self._reply_permission_denied(group_id, qqid)
                 return True
             if not args_validator(args):
                 self._reply_to_qq(group_id, qqid, f"参数错误，格式：{trigger} {args_hint}")
@@ -541,6 +826,36 @@ class QQLinkerRuntimeMixin:
         """统一处理外部触发器参数不足时的回复。"""
         suffix = f" {argument_hint}" if argument_hint else ""
         self._reply_to_qq(group_id, qqid, f"参数错误，格式：{trigger}{suffix}")
+
+    def _has_group_permission(self, group_id: int, qqid: int, permission_name: str) -> bool:
+        if hasattr(self, "has_group_permission"):
+            return self.has_group_permission(group_id, qqid, permission_name)
+        return self.is_group_admin(group_id, qqid)
+
+    def _has_any_group_permission(
+        self,
+        group_id: int,
+        qqid: int,
+        permission_names: tuple[str, ...],
+    ) -> bool:
+        return any(
+            self._has_group_permission(group_id, qqid, permission_name)
+            for permission_name in permission_names
+        )
+
+    def _run_permission_action(
+        self,
+        group_id: int,
+        qqid: int,
+        permission_name: str,
+        action,
+    ) -> bool:
+        """执行按配置权限控制的动作。"""
+        if not self._has_group_permission(group_id, qqid, permission_name):
+            self._reply_permission_denied(group_id, qqid)
+            return True
+        action()
+        return True
 
     def _run_admin_only_action(self, group_id: int, qqid: int, action) -> bool:
         """执行仅群管理员可用的动作。"""
@@ -599,3 +914,67 @@ class QQLinkerRuntimeMixin:
             "params": {"group_id": group, "message": msg},
         }
         self.ws.send(json.dumps(payload))
+
+    def api_send_group_msg(
+        self,
+        group_id: int | str,
+        message: str,
+        remove_cq_code: bool = True,
+    ) -> tuple[bool, str]:
+        """Send a QQ group message and return a stable result tuple."""
+        try:
+            gid = int(str(group_id).strip())
+        except (TypeError, ValueError):
+            return False, "群号无效"
+        if gid <= 0:
+            return False, "群号无效"
+        if self.ws is None:
+            return False, "WebSocket 尚未初始化"
+        if not self.available:
+            return False, "云链当前未连接"
+        try:
+            self.sendmsg(gid, str(message), do_remove_cq_code=bool(remove_cq_code))
+        except Exception as err:
+            return False, f"发送群消息失败: {err}"
+        return True, "已发送群消息"
+
+    def api_reply_group_member(
+        self,
+        group_id: int | str,
+        qqid: int | str,
+        message: str,
+    ) -> tuple[bool, str]:
+        """Reply to a QQ group member with an at-mention."""
+        try:
+            qid = int(str(qqid).strip())
+        except (TypeError, ValueError):
+            return False, "QQ号无效"
+        if qid <= 0:
+            return False, "QQ号无效"
+        return self.api_send_group_msg(
+            group_id,
+            f"[CQ:at,qq={qid}] {message}",
+            remove_cq_code=False,
+        )
+
+    def api_send_private_msg(
+        self,
+        qqid: int | str,
+        message: str,
+    ) -> tuple[bool, str]:
+        """Send a private QQ message and return a stable result tuple."""
+        try:
+            qid = int(str(qqid).strip())
+        except (TypeError, ValueError):
+            return False, "QQ号无效"
+        if qid <= 0:
+            return False, "QQ号无效"
+        if self.ws is None:
+            return False, "WebSocket 尚未初始化"
+        if not self.available:
+            return False, "云链当前未连接"
+        try:
+            self.send_private_msg(qid, str(message))
+        except Exception as err:
+            return False, f"发送私信失败: {err}"
+        return True, "已发送私信"

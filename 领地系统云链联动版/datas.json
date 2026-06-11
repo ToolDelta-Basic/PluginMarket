@@ -1,0 +1,11 @@
+{
+    "author": "小石潭记qwq",
+    "version": "0.1.18",
+    "description": "领地系统云链联动版，支持创建圆形/方形领地、成员管理、自动防护、传送、配置热载入与外部插件 API 调用",
+    "limit_launcher": null,
+    "pre-plugins": {
+        "XUID获取": "0.0.7"
+    },
+    "plugin-type": "classic",
+    "plugin-id": "领地系统云链联动版"
+}
