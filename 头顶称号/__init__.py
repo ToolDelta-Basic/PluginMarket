@@ -710,14 +710,21 @@ class BelownameTitlePlugin(Plugin):
         return changed
 
     def _get_or_create_player_data(self, player_name: str) -> dict[str, Any]:
+        """Return one mutable player record, creating a blank record on demand."""
         pdata = self.player_data.get(player_name)
         if pdata is None:
             pdata = {"current_title": ""}
             self.player_data[player_name] = pdata
+            return pdata
         self._normalize_player_record(player_name)
-        return self.player_data[player_name]
+        pdata = self.player_data.get(player_name)
+        if pdata is None:
+            pdata = {"current_title": ""}
+            self.player_data[player_name] = pdata
+        return pdata
 
     def _rebuild_objective_cache(self):
+        """Rebuild the in-memory set of scoreboard objectives managed by this plugin."""
         self.managed_objectives = {
             self._objective_name(title)
             for pdata in self.player_data.values()
@@ -727,14 +734,17 @@ class BelownameTitlePlugin(Plugin):
         self.managed_objectives.add(self._objective_name(self._blank_title()))
 
     def _blank_title(self) -> str:
+        """Return the configured placeholder text for players without a title."""
         return str(self.cfg["无称号显示文本"])
 
     @staticmethod
     def _objective_name(title: str) -> str:
-        digest = hashlib.md5(title.encode("utf-8")).hexdigest()[:10]
+        """Build a deterministic scoreboard objective name for one title string."""
+        digest = hashlib.sha256(title.encode("utf-8")).hexdigest()[:10]
         return f"tdt_{digest}"
 
     def _ensure_objective(self, title: str) -> str:
+        """Create the scoreboard objective for a title and return its internal name."""
         objective = self._objective_name(title)
         self.managed_objectives.add(objective)
         self.game_ctrl.sendwocmd(
@@ -743,6 +753,7 @@ class BelownameTitlePlugin(Plugin):
         return objective
 
     def _cleanup_objective_if_unused(self, title: str):
+        """Remove a title objective after the last player stops using that title."""
         if not title.strip():
             return
         for pdata in self.player_data.values():
@@ -761,6 +772,7 @@ class BelownameTitlePlugin(Plugin):
         *,
         actor_label: str,
     ):
+        """Remove one equipped title from a player and clean up unused scoreboards."""
         if not title:
             reply("§c称号名字不能为空")
             return
@@ -770,7 +782,6 @@ class BelownameTitlePlugin(Plugin):
             reply(f"§e{actor_label}没有称号: {title}")
             self._cleanup_objective_if_unused(title)
             return
-        old_title = current_title
         pdata["current_title"] = ""
         self._normalize_player_record(player_name)
         self.save_player_data()
@@ -780,15 +791,20 @@ class BelownameTitlePlugin(Plugin):
 
     @staticmethod
     def _quote(text: str) -> str:
+        """Quote a raw string for safe embedding inside a Minecraft command."""
         return json.dumps(text, ensure_ascii=False)
 
-    def _selector(self, player_name: str) -> str:
-        return f"@a[name={self._quote(player_name)}]"
+    @staticmethod
+    def _selector(player_name: str) -> str:
+        """Build a selector that targets exactly one player by name."""
+        return f"@a[name={BelownameTitlePlugin._quote(player_name)}]"
 
     def _online_names(self) -> list[str]:
+        """Return the current list of online player names from the game controller."""
         return [player.name for player in self.game_ctrl.players.getAllPlayers()]
 
     def _refresh_player(self, player_name: str, full_cleanup: bool = False):
+        """Refresh one player's equipped title display and clear stale objectives."""
         if player_name not in self._online_names():
             return
         pdata = self.player_data.get(player_name)
@@ -944,13 +960,17 @@ class BelownameTitlePlugin(Plugin):
 
         return reply
 
-    def _console_reply(self):
+    @staticmethod
+    def _console_reply():
+        """Return a console reply callback that prints through the plugin logger."""
         def reply(msg: str):
-            self.print_inf(msg)
+            utils.Print.print_inf(msg)
 
         return reply
 
-    def _config_schema(self) -> dict[str, Any]:
+    @staticmethod
+    def _config_schema() -> dict[str, Any]:
+        """Return the plugin configuration schema used for config validation."""
         return {
             "聊天命令前缀": str,
             "购买称号价格": int,
@@ -966,7 +986,9 @@ class BelownameTitlePlugin(Plugin):
             "进服后延迟刷新秒": float,
         }
 
-    def _default_config(self) -> dict[str, Any]:
+    @staticmethod
+    def _default_config() -> dict[str, Any]:
+        """Return the default plugin configuration values."""
         return {
             "聊天命令前缀": ".",
             "购买称号价格": 500,
