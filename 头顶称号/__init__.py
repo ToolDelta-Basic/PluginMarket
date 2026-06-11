@@ -159,14 +159,16 @@ class BelownameTitlePlugin(Plugin):
             return
         self._send_player_help(reply)
 
-    def _send_player_help(self, reply: Callable[[str], None]):
+    @staticmethod
+    def _send_player_help(reply: Callable[[str], None]):
         """Send the available player title commands to the caller."""
         reply("§a.购买称号 <称号名字> §7- 花费金币购买称号")
         reply("§a.更改称号 <称号名字> §7- 花费金币替换自己当前称号")
         reply("§a.移除称号 §7- 删除自己当前称号")
         reply("§a.我的称号 §7- 查看自己当前使用的称号")
 
-    def _send_console_help(self, reply: Callable[[str], None]):
+    @staticmethod
+    def _send_console_help(reply: Callable[[str], None]):
         """Send the available console title commands to the caller."""
         reply("§a称号 新增 <玩家名> <称号名字> §7- 给玩家新增并设为当前称号")
         reply("§a称号 删除 <玩家名> <称号名字> §7- 删除玩家的指定称号")
@@ -875,7 +877,7 @@ class BelownameTitlePlugin(Plugin):
             self._restore_list_objective()
 
     def refresh_all(self, full_cleanup: bool = False):
-        """Refresh all online titled players while avoiding concurrent full refreshes."""
+        """Refresh online titled players without overlapping full refresh passes."""
         if not self.refresh_lock.acquire(blocking=False):
             return
         try:
