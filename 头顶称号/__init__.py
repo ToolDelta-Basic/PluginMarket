@@ -345,6 +345,7 @@ class BelownameTitlePlugin(Plugin):
         reply(f"§a已将玩家 {matched} 当前称号切换为: §f{title}")
 
     def _handle_console_select(self, args: list[str], reply: Callable[[str], None]):
+        """Handle a numbered selection for pending fuzzy console matches."""
         pending = self.pending_console_selection
         if pending is None:
             reply("§e当前没有待确认的模糊匹配结果")
@@ -383,6 +384,7 @@ class BelownameTitlePlugin(Plugin):
         title: str,
         reply: Callable[[str], None],
     ) -> str | None:
+        """Resolve a console player target, falling back to indexed fuzzy selection."""
         self.pending_console_selection = None
         exact = self._find_single_player(keyword, None)
         if exact is not None:
@@ -403,6 +405,7 @@ class BelownameTitlePlugin(Plugin):
         return None
 
     def _find_player_candidates(self, keyword: str) -> list[str]:
+        """Return fuzzy player-name matches from online and stored player names."""
         return sorted(
             [
                 name
@@ -411,8 +414,9 @@ class BelownameTitlePlugin(Plugin):
             ],
             key=lambda item: (len(item), item),
         )
-    
+
     def _handle_console_list(self, reply: Callable[[str], None]):
+        """List every stored player and their currently equipped title."""
         if not self.player_data:
             reply("§e当前没有任何称号数据")
             return
@@ -422,6 +426,7 @@ class BelownameTitlePlugin(Plugin):
             reply(f"§f{player_name} §7-> 当前: §r{current}")
 
     def _register_chatbar_menu(self):
+        """Register player-facing title commands into the chatbar menu plugin."""
         if self.chatbar_registered:
             return
         chatbar = self.GetPluginAPI("聊天栏菜单", force=False)
@@ -434,17 +439,21 @@ class BelownameTitlePlugin(Plugin):
             return
 
         def buy_trigger(player: Player, args: tuple):
+            """Purchase and equip a title from the chatbar menu trigger."""
             title = " ".join(str(item) for item in args).strip()
             self._buy_title(player, title, self._player_reply(player))
 
         def switch_trigger(player: Player, args: tuple):
+            """Switch the caller's title from the chatbar menu trigger."""
             title = " ".join(str(item) for item in args).strip()
             self._switch_own_title(player, title, self._player_reply(player), cost=True)
 
         def remove_trigger(player: Player, _args: tuple):
+            """Remove the caller's current title from the chatbar menu trigger."""
             self._remove_own_title(player, self._player_reply(player))
 
         def list_trigger(player: Player, _args: tuple):
+            """Show the caller's current title from the chatbar menu trigger."""
             self._show_player_titles(player.name, self._player_reply(player))
 
         chatbar.add_new_trigger(
@@ -478,6 +487,7 @@ class BelownameTitlePlugin(Plugin):
         self.chatbar_registered = True
 
     def _ensure_chatbar_plugin(self):
+        """Download the required chatbar dependency when it is not installed."""
         chatbar = self.GetPluginAPI("聊天栏菜单", force=False)
         if chatbar is not None:
             return
@@ -732,7 +742,8 @@ class BelownameTitlePlugin(Plugin):
         self._cleanup_objective_if_unused(title)
         reply(f"§a已删除{actor_label}的称号: §f{title}")
 
-    def _quote(self, text: str) -> str:
+    @staticmethod
+    def _quote(text: str) -> str:
         return json.dumps(text, ensure_ascii=False)
 
     def _selector(self, player_name: str) -> str:
