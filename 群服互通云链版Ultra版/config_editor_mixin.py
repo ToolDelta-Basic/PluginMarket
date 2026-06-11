@@ -20,6 +20,7 @@ class QQLinkerConfigEditorMixin:
     CONFIG_BACK = object()
 
     def get_group_config_menu_triggers(self, group_id: int):
+        """Return group config menu triggers data."""
         group_cfg = self.group_cfgs.get(group_id)
         if not group_cfg:
             return list(self.CONFIG_MENU_TRIGGERS)
@@ -39,15 +40,18 @@ class QQLinkerConfigEditorMixin:
         self._config_center_menu({"mode": "console"})
 
     def _config_group_id(self, ctx: dict[str, Any]) -> int | None:
+        """Implement the config group id operation."""
         return int(ctx["group_id"]) if ctx.get(
             "mode") == "qq" and "group_id" in ctx else None
 
     def _config_exit_hint(
             self, ctx: dict[str, Any], action: str = "退出") -> str:
+        """Implement the config exit hint operation."""
         return self.menu_exit_hint(self._config_group_id(ctx), action)
 
     def _config_back_hint(
             self, ctx: dict[str, Any], action: str = "返回上级菜单") -> str:
+        """Implement the config back hint operation."""
         return self.menu_back_hint(self._config_group_id(ctx), action)
 
     def _config_normalize_control_hints(
@@ -55,6 +59,7 @@ class QQLinkerConfigEditorMixin:
         ctx: dict[str, Any],
         hints: list[str],
     ) -> list[str]:
+        """Implement the config normalize control hints operation."""
         normalized: list[str] = []
         for hint in hints:
             if hint == "输入 . 退出":
@@ -70,6 +75,7 @@ class QQLinkerConfigEditorMixin:
         return normalized
 
     def _config_center_menu(self, ctx: dict[str, Any]):
+        """Implement the config center menu operation."""
         while True:
             options = [
                 "模式1：整文件修改配置",
@@ -97,6 +103,7 @@ class QQLinkerConfigEditorMixin:
                 continue
 
     def _config_file_mode_menu(self, ctx: dict[str, Any]):
+        """Implement the config file mode menu operation."""
         while True:
             choice = self._config_prompt(
                 ctx,
@@ -122,6 +129,7 @@ class QQLinkerConfigEditorMixin:
             self._config_error(ctx, "输入有误")
 
     def _config_file_select_menu(self, ctx: dict[str, Any]):
+        """Implement the config file select menu operation."""
         page = 1
         while True:
             files = self._discover_config_files()
@@ -189,6 +197,7 @@ class QQLinkerConfigEditorMixin:
 
     def _edit_config_file_whole(
             self, ctx: dict[str, Any], item: dict[str, str]):
+        """Implement the edit config file whole operation."""
         try:
             with open(item["path"], "r", encoding="utf-8-sig") as file:
                 content = file.read()
@@ -273,6 +282,7 @@ class QQLinkerConfigEditorMixin:
         config_name: str,
         content: str,
     ) -> str:
+        """Implement the config whole file prompt text operation."""
         parts = [
             self.orion_ui_border(),
             f"❐ 『群服互通云链版Ultra版』 整文件修改 / {config_name}",
@@ -286,6 +296,7 @@ class QQLinkerConfigEditorMixin:
         return "\n".join(parts)
 
     def _config_restore_backup_menu(self, ctx: dict[str, Any]):
+        """Implement the config restore backup menu operation."""
         while True:
             backups = self._load_config_backup_index()
             backups = [item for item in backups if os.path.isfile(
@@ -323,6 +334,7 @@ class QQLinkerConfigEditorMixin:
 
     def _restore_config_backup(
             self, ctx: dict[str, Any], backup: dict[str, str]):
+        """Implement the restore config backup operation."""
         current_item = {
             "name": backup["config_name"],
             "path": backup["original_path"],
@@ -348,6 +360,7 @@ class QQLinkerConfigEditorMixin:
         self._config_success(ctx, f"已还原备份 {backup['id']}。{apply_msg}")
 
     def _discover_config_files(self) -> list[dict[str, str]]:
+        """Implement the discover config files operation."""
         cfg_dir = os.path.abspath(self.CONFIG_FILE_DIR)
         if not os.path.isdir(cfg_dir):
             return []
@@ -367,16 +380,19 @@ class QQLinkerConfigEditorMixin:
         return files
 
     def _config_backup_root(self) -> str:
+        """Implement the config backup root operation."""
         path = self.format_data_path(self.CONFIG_BACKUP_DIR)
         os.makedirs(path, exist_ok=True)
         return path
 
     def _config_backup_index_path(self) -> str:
+        """Implement the config backup index path operation."""
         return os.path.join(
             self._config_backup_root(),
             self.CONFIG_BACKUP_INDEX)
 
     def _load_config_backup_index(self) -> list[dict[str, str]]:
+        """Load config backup index data."""
         path = self._config_backup_index_path()
         if not os.path.isfile(path):
             return []
@@ -390,6 +406,7 @@ class QQLinkerConfigEditorMixin:
         return [item for item in data if isinstance(item, dict)]
 
     def _save_config_backup_index(self, backups: list[dict[str, str]]):
+        """Save config backup index data."""
         path = self._config_backup_index_path()
         with open(path, "w", encoding="utf-8") as file:
             json.dump(backups[-100:], file, ensure_ascii=False, indent=2)
@@ -400,6 +417,7 @@ class QQLinkerConfigEditorMixin:
         item: dict[str, str],
         reason: str = "replace-before",
     ) -> dict[str, str]:
+        """Implement the backup config file operation."""
         if not self._is_safe_config_path(item["path"]):
             raise ValueError("配置文件路径不在允许的插件配置目录内")
         created_at = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -426,10 +444,12 @@ class QQLinkerConfigEditorMixin:
 
     @staticmethod
     def _safe_backup_name(name: str) -> str:
+        """Implement the safe backup name operation."""
         return "".join(ch if ch.isalnum() or ch in ("-", "_")
                        else "_" for ch in name) or "config"
 
     def _read_console_config_json_text(self, ctx: dict[str, Any]):
+        """Implement the read console config json text operation."""
         lines: list[str] = []
         while True:
             prompt = "请输入完整配置 JSON: " if not lines else "继续输入 JSON: "
@@ -454,6 +474,7 @@ class QQLinkerConfigEditorMixin:
 
     @staticmethod
     def _normalize_config_json_text(raw: str) -> str:
+        """Normalize config json text values."""
         text = raw.strip()
         if not text.startswith("```") or not text.endswith("```"):
             return text
@@ -467,6 +488,7 @@ class QQLinkerConfigEditorMixin:
     @staticmethod
     def _config_file_shape_matches(
             original: Any, new_config: dict[str, Any]) -> bool:
+        """Implement the config file shape matches operation."""
         if not isinstance(original, dict):
             return True
         if isinstance(original.get("配置项"), dict):
@@ -474,6 +496,7 @@ class QQLinkerConfigEditorMixin:
         return True
 
     def _is_safe_config_path(self, path: str) -> bool:
+        """Implement the is safe config path operation."""
         cfg_dir = os.path.abspath(self.CONFIG_FILE_DIR)
         target = os.path.abspath(path)
         try:
@@ -484,6 +507,7 @@ class QQLinkerConfigEditorMixin:
             return False
 
     def _is_safe_backup_path(self, path: str) -> bool:
+        """Implement the is safe backup path operation."""
         backup_root = os.path.abspath(self._config_backup_root())
         target = os.path.abspath(path)
         try:
@@ -494,6 +518,7 @@ class QQLinkerConfigEditorMixin:
 
     @staticmethod
     def _extract_config_items(full_config: dict[str, Any]) -> dict[str, Any]:
+        """Implement the extract config items operation."""
         config_items = full_config.get("配置项")
         if isinstance(config_items, dict):
             return config_items
@@ -501,6 +526,7 @@ class QQLinkerConfigEditorMixin:
 
     def _apply_runtime_config_file(
             self, item: dict[str, str], full_config: dict[str, Any]) -> str:
+        """Implement the apply runtime config file operation."""
         config_name = item["name"]
         config_items = self._extract_config_items(full_config)
         try:
@@ -556,6 +582,7 @@ class QQLinkerConfigEditorMixin:
         hints: list[str],
         allow_back: bool = False,
     ):
+        """Implement the config prompt operation."""
         hints = self._config_normalize_control_hints(ctx, hints)
         if ctx["mode"] == "qq":
             text = self.plugin_ui_menu(
@@ -586,6 +613,7 @@ class QQLinkerConfigEditorMixin:
         return result
 
     def _config_input_result(self, ctx: dict[str, Any], result: Any):
+        """Implement the config input result operation."""
         if result is None:
             self._config_error(ctx, "回复超时，已退出菜单")
             return self.CONFIG_EXIT
@@ -599,12 +627,14 @@ class QQLinkerConfigEditorMixin:
         return text
 
     def _config_success(self, ctx: dict[str, Any], message: str):
+        """Implement the config success operation."""
         if ctx["mode"] == "qq":
             self._reply_to_qq(ctx["group_id"], ctx["qqid"], f"❀ {message}")
         else:
             self.print_console_success(message)
 
     def _config_error(self, ctx: dict[str, Any], message: str):
+        """Implement the config error operation."""
         if ctx["mode"] == "qq":
             self._reply_to_qq(ctx["group_id"], ctx["qqid"], f"❀ {message}")
         else:

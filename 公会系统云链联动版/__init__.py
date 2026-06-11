@@ -62,6 +62,7 @@ class GuildPlugin(Plugin):
             config_reload_task, args=(self,), usage="公会配置热更新任务")
 
     def _plugin_enabled(self) -> bool:
+        """Implement the plugin enabled operation."""
         return bool(getattr(self, "config", {}).get(PLUGIN_ENABLED_KEY, False))
 
     def get_config_file_state(self):
@@ -85,6 +86,7 @@ class GuildPlugin(Plugin):
         return self._stop_event.wait(seconds)
 
     def on_def(self):
+        """Implement the on def operation."""
         if not self._plugin_enabled():
             return
 
@@ -99,12 +101,15 @@ class GuildPlugin(Plugin):
             self.xuidm: XUIDGetter
 
     def ui_callback(self, callback):
+        """Implement the ui callback operation."""
         def wrapped(player, args):
+            """Implement the wrapped operation."""
             return callback(wrap_player(player), args)
 
         return wrapped
 
     def _guild_menu_commands(self) -> list[str]:
+        """Implement the guild menu commands operation."""
         raw_triggers = getattr(Config, "GUILD_MENU_TRIGGER", ["公会"])
         if isinstance(raw_triggers, str):
             raw_triggers = [raw_triggers]
@@ -119,6 +124,7 @@ class GuildPlugin(Plugin):
         return commands or ["公会"]
 
     def _find_guild_menu_chatbar_entry(self):
+        """Implement the find guild menu chatbar entry operation."""
         entry = getattr(self, "_guild_menu_chatbar_entry", None)
         if entry is not None:
             return entry
@@ -153,6 +159,7 @@ class GuildPlugin(Plugin):
         entry.triggers = commands
 
     def on_inject(self):
+        """Implement the on inject operation."""
         if not self._plugin_enabled():
             return
 
@@ -222,6 +229,7 @@ class GuildPlugin(Plugin):
         self.ListenPacket(PacketIDS.IDPlayerAction, self.on_player_action)
 
     def on_player_join(self, player: Player):
+        """Implement the on player join operation."""
         if not self._plugin_enabled():
             return
 
@@ -232,6 +240,7 @@ class GuildPlugin(Plugin):
             player.name, force=True, command_delay=0)
 
     def on_frame_exit(self, _: FrameExit):
+        """Implement the on frame exit operation."""
         self._stop_event.set()
         try:
             if not self.guild_manager.flush_dirty_guilds():

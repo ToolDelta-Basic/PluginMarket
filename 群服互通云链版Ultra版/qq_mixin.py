@@ -43,6 +43,7 @@ class QQLinkerQQMixin:
         qqid: int,
         permission_name: str,
     ) -> bool:
+        """Implement the can use group permission operation."""
         if hasattr(self, "_has_group_permission"):
             return self._has_group_permission(group_id, qqid, permission_name)
         return self.has_group_permission(group_id, qqid, permission_name)
@@ -53,12 +54,14 @@ class QQLinkerQQMixin:
         qqid: int,
         permission_names: tuple[str, ...],
     ) -> bool:
+        """Implement the can use any group permission operation."""
         return any(
             self._can_use_group_permission(group_id, qqid, permission_name)
             for permission_name in permission_names
         )
 
     def _reply_menu_permission_denied(self, group_id: int, qqid: int):
+        """Implement the reply menu permission denied operation."""
         if hasattr(self, "_reply_permission_denied"):
             self._reply_permission_denied(group_id, qqid)
             return
@@ -70,6 +73,7 @@ class QQLinkerQQMixin:
         qqid: int,
         permission_name: str,
     ) -> bool:
+        """Implement the ensure group permission operation."""
         if self._can_use_group_permission(group_id, qqid, permission_name):
             return True
         self._reply_menu_permission_denied(group_id, qqid)
@@ -85,11 +89,13 @@ class QQLinkerQQMixin:
         label: str,
         action,
     ):
+        """Implement the append permission action operation."""
         if self._can_use_group_permission(group_id, qqid, permission_name):
             options.append(label)
             actions.append(action)
 
     def _has_help_admin_actions(self, group_id: int, qqid: int) -> bool:
+        """Implement the has help admin actions operation."""
         permission_names = [
             "QQ普通管理员菜单权限",
             "QQ超级管理员菜单权限",
@@ -171,9 +177,11 @@ class QQLinkerQQMixin:
         self.qq_help_main_menu(group_id, sender)
 
     def _is_menu_exit(self, user_input: str, group_id: int | None = None):
+        """Implement the is menu exit operation."""
         return self.is_menu_exit_input(user_input, group_id)
 
     def _is_menu_back(self, user_input: str, group_id: int | None = None):
+        """Implement the is menu back operation."""
         return self.is_menu_back_input(user_input, group_id)
 
     def _prompt_help_menu(
@@ -185,6 +193,7 @@ class QQLinkerQQMixin:
         hints: list[str],
         allow_back: bool = False,
     ):
+        """Implement the prompt help menu operation."""
         choice = self.qq_prompt(
             group_id,
             qqid,
@@ -213,6 +222,7 @@ class QQLinkerQQMixin:
             qqid: int,
             choice: str,
             count: int):
+        """Implement the parse help choice operation."""
         selected = self.parse_displayed_menu_choice(choice, count)
         if selected is None:
             self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
@@ -227,6 +237,7 @@ class QQLinkerQQMixin:
         actions: list[Any],
         per_page: int,
     ):
+        """Implement the prompt paginated help actions operation."""
         if len(options) != len(actions):
             self._reply_to_qq(group_id, qqid, "❀ 菜单配置错误")
             return None
@@ -741,6 +752,7 @@ class QQLinkerQQMixin:
         self.on_qq_execute_cmd(group_id, qqid, command.split())
 
     def qq_help_show_basic_reference(self, group_id: int, qqid: int):
+        """Handle the qq help show basic reference QQ menu operation."""
         options = [
             f"{' / '.join(self.get_group_help_triggers(group_id))} - 打开帮助菜单",
         ]
@@ -766,6 +778,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_help_show_admin_reference(self, group_id: int, qqid: int):
+        """Handle the qq help show admin reference QQ menu operation."""
         cmd_prefix = self.get_group_cmd_prefix(group_id)
         options = []
         if self._can_use_group_permission(group_id, qqid, "发送指令权限"):
@@ -829,6 +842,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_help_show_integration_reference(self, group_id: int, qqid: int):
+        """Handle the qq help show integration reference QQ menu operation."""
         options = []
         if self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
             options.extend(
@@ -1046,6 +1060,7 @@ class QQLinkerQQMixin:
             do_remove_cq_code=False)
 
     def ensure_task_system(self, group_id: int, sender: int):
+        """Implement the ensure task system operation."""
         if self.task_system is None:
             self._reply_to_qq(group_id, sender, "相关插件未安装：任务系统云链联动版")
             return False
@@ -1054,6 +1069,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _format_task_time(timestamp: int):
+        """Implement the format task time operation."""
         try:
             return time.strftime(
                 "%Y-%m-%d %H:%M:%S",
@@ -1063,6 +1079,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _format_task_label(task_info: dict[str, Any]):
+        """Implement the format task label operation."""
         show_name = str(task_info.get("show_name", "")).strip()
         tag_name = str(task_info.get("tag_name", "")).strip()
         if not show_name or show_name == tag_name:
@@ -1070,6 +1087,7 @@ class QQLinkerQQMixin:
         return f"{show_name} ({tag_name})"
 
     def _format_task_menu_item(self, task_info: dict[str, Any], status: str):
+        """Implement the format task menu item operation."""
         label = self._format_task_label(task_info)
         lines = [f"{status} {label}"]
         description = str(task_info.get("description", "")).strip()
@@ -1086,6 +1104,7 @@ class QQLinkerQQMixin:
 
     def _format_task_progress_text(
             self, progress: dict[str, Any], group_id: int):
+        """Implement the format task progress text operation."""
         in_progress = progress.get("in_progress", [])
         completed = progress.get("completed", [])
         options = []
@@ -1113,6 +1132,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_task_system_menu(self, group_id: int, qqid: int):
+        """Handle the qq task system menu QQ menu operation."""
         if not self._can_use_group_permission(group_id, qqid, "任务系统权限"):
             self._reply_menu_permission_denied(group_id, qqid)
             return
@@ -1165,6 +1185,7 @@ class QQLinkerQQMixin:
         self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
 
     def qq_select_online_player(self, group_id: int, qqid: int, subtitle: str):
+        """Handle the qq select online player QQ menu operation."""
         online_names = list(self.game_ctrl.allplayers)
         if not online_names:
             self._reply_to_qq(group_id, qqid, "当前没有在线玩家")
@@ -1225,6 +1246,7 @@ class QQLinkerQQMixin:
             return page_names[choice - 1]
 
     def qq_select_task_from_catalog(self, group_id: int, qqid: int):
+        """Handle the qq select task from catalog QQ menu operation."""
         quests = self.task_system.list_available_quests()
         if not quests:
             self._reply_to_qq(group_id, qqid, "任务系统中暂无可用任务")
@@ -1295,6 +1317,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq select in progress task QQ menu operation."""
         ok, result = self.task_system.get_online_player_task_progress(
             player_name)
         if not ok:
@@ -1331,6 +1354,7 @@ class QQLinkerQQMixin:
         return in_progress[choice - 1]["tag_name"]
 
     def on_qq_task_progress(self, group_id: int, sender: int, args: list[str]):
+        """Implement the on qq task progress operation."""
         if not self._can_use_group_permission(group_id, sender, "任务系统权限"):
             self._reply_menu_permission_denied(group_id, sender)
             return
@@ -1347,6 +1371,7 @@ class QQLinkerQQMixin:
         )
 
     def on_qq_task_add(self, group_id: int, sender: int, args: list[str]):
+        """Implement the on qq task add operation."""
         if not self._can_use_group_permission(group_id, sender, "任务系统权限"):
             self._reply_menu_permission_denied(group_id, sender)
             return
@@ -1359,6 +1384,7 @@ class QQLinkerQQMixin:
         self._reply_result(group_id, sender, ok, msg)
 
     def on_qq_task_finish(self, group_id: int, sender: int, args: list[str]):
+        """Implement the on qq task finish operation."""
         if not self._can_use_group_permission(group_id, sender, "任务系统权限"):
             self._reply_menu_permission_denied(group_id, sender)
             return
@@ -1381,6 +1407,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _guild_actor(group_id: int, qqid: int):
+        """Implement the guild actor operation."""
         return f"QQ群{group_id}:{qqid}"
 
     def _qq_guild_prompt(
@@ -1391,6 +1418,7 @@ class QQLinkerQQMixin:
         options: list[str],
         hints: list[str],
     ):
+        """Implement the qq guild prompt operation."""
         return self.qq_prompt(
             group_id,
             qqid,
@@ -1412,6 +1440,7 @@ class QQLinkerQQMixin:
         prompt: str,
         allow_empty: bool = False,
     ):
+        """Implement the qq guild prompt text operation."""
         value = self._qq_guild_prompt(
             group_id, qqid, subtitle, [], [
                 prompt, "输入 . 退出"])
@@ -1434,6 +1463,7 @@ class QQLinkerQQMixin:
         subtitle: str,
         prompt: str,
     ):
+        """Implement the qq guild prompt optional query operation."""
         value = self._qq_guild_prompt_text(
             group_id, qqid, subtitle, prompt, allow_empty=True)
         if value is None:
@@ -1451,6 +1481,7 @@ class QQLinkerQQMixin:
         minimum: int | None = None,
         default: int | None = None,
     ):
+        """Implement the qq guild prompt int operation."""
         hints = [prompt, "输入 . 退出"]
         if default is not None:
             hints.insert(1, f"输入 默认 使用 {default}")
@@ -1479,6 +1510,7 @@ class QQLinkerQQMixin:
             qqid: int,
             subtitle: str,
             detail: str):
+        """Implement the qq guild confirm operation."""
         choice = self._qq_guild_prompt(
             group_id,
             qqid,
@@ -1499,6 +1531,7 @@ class QQLinkerQQMixin:
         return True
 
     def _reply_guild_api_result(self, group_id: int, qqid: int, result):
+        """Implement the reply guild api result operation."""
         if not isinstance(result, tuple) or not result:
             self._reply_to_qq(group_id, qqid, "公会系统接口返回异常")
             return
@@ -1512,6 +1545,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _format_guild_base(base: dict[str, Any] | None):
+        """Implement the format guild base operation."""
         if not base:
             return "未设置"
         return f"{
@@ -1530,6 +1564,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _format_guild_line(item: dict[str, Any], index: int):
+        """Implement the format guild line operation."""
         frozen = " 冻结" if item.get("frozen") else ""
         return (
             f"{index}. {item.get('name', '<未知>')} Lv.{item.get('level', 0)} "
@@ -1538,6 +1573,7 @@ class QQLinkerQQMixin:
         )
 
     def _format_guild_summary(self, guild: dict[str, Any], group_id: int):
+        """Implement the format guild summary operation."""
         effects = guild.get("purchased_effects", {})
         effect_text = "无"
         if isinstance(effects, dict) and effects:
@@ -1575,6 +1611,7 @@ class QQLinkerQQMixin:
         lines: list[str],
         hints: list[str] | None = None,
     ):
+        """Implement the reply guild lines operation."""
         self._reply_to_qq(
             group_id,
             qqid,
@@ -1596,6 +1633,7 @@ class QQLinkerQQMixin:
         actions: list[Any],
         allow_back: bool = False,
     ):
+        """Implement the qq guild run menu operation."""
         if len(options) != len(actions):
             self._reply_to_qq(group_id, qqid, "❀ 菜单配置错误")
             return None
@@ -1686,6 +1724,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Implement the qq guild player state operation."""
         result = self.guild_system.api_get_player_guild_menu_state(player_name)
         if not isinstance(result, tuple) or len(result) < 3:
             self._reply_to_qq(group_id, qqid, "公会系统接口返回异常")
@@ -1788,6 +1827,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player show self QQ menu operation."""
         state = self._qq_guild_player_state(group_id, qqid, player_name)
         if state is None:
             return
@@ -1821,6 +1861,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player show members QQ menu operation."""
         state = self._qq_guild_player_state(group_id, qqid, player_name)
         if state is None:
             return
@@ -1853,6 +1894,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player show logs QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_own_guild_logs(
             player_name, 20)
         if not ok or not data:
@@ -1873,6 +1915,7 @@ class QQLinkerQQMixin:
 
     def qq_guild_player_show_announcement(
             self, group_id: int, qqid: int, player_name: str):
+        """Handle the qq guild player show announcement QQ menu operation."""
         state = self._qq_guild_player_state(group_id, qqid, player_name)
         if state is None:
             return
@@ -1890,6 +1933,7 @@ class QQLinkerQQMixin:
 
     def qq_guild_player_set_announcement(
             self, group_id: int, qqid: int, player_name: str):
+        """Handle the qq guild player set announcement QQ menu operation."""
         text = self._qq_guild_prompt_text(
             group_id, qqid, "设置公会公告", "请输入新的公告内容（不超过200字符）")
         if text is None:
@@ -1903,6 +1947,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player show vault QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_own_guild_vault(player_name)
         if not ok or data is None:
             self._reply_result(group_id, qqid, False, msg)
@@ -1922,6 +1967,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player show tasks QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_own_guild_tasks(player_name)
         if not ok or data is None:
             self._reply_result(group_id, qqid, False, msg)
@@ -1950,6 +1996,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player join task QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_own_guild_tasks(player_name)
         if not ok or data is None:
             self._reply_result(group_id, qqid, False, msg)
@@ -1994,6 +2041,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player return base QQ menu operation."""
         self._reply_guild_api_result(
             group_id,
             qqid,
@@ -2005,6 +2053,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player request join QQ menu operation."""
         guild = self._qq_guild_prompt_text(
             group_id, qqid, "申请加入公会", "请输入公会名称或ID")
         if guild is None:
@@ -2032,6 +2081,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player leave QQ menu operation."""
         if not self._qq_guild_confirm(
                 group_id, qqid, "退出公会", f"{player_name} 将退出当前公会"):
             return
@@ -2046,6 +2096,7 @@ class QQLinkerQQMixin:
             group_id: int,
             qqid: int,
             player_name: str):
+        """Handle the qq guild player disband QQ menu operation."""
         if not self._qq_guild_confirm(
             group_id,
             qqid,
@@ -2084,6 +2135,7 @@ class QQLinkerQQMixin:
             return
 
     def qq_guild_query_menu(self, group_id: int, qqid: int):
+        """Handle the qq guild query menu QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "公会系统权限"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -2120,6 +2172,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_member_manage_menu(self, group_id: int, qqid: int):
+        """Handle the qq guild member manage menu QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "公会系统权限"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -2166,6 +2219,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_vault_effect_menu(self, group_id: int, qqid: int):
+        """Handle the qq guild vault effect menu QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "公会系统权限"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -2198,6 +2252,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_task_base_menu(self, group_id: int, qqid: int):
+        """Handle the qq guild task base menu QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "公会系统权限"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -2234,6 +2289,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_data_activity_menu(self, group_id: int, qqid: int):
+        """Handle the qq guild data activity menu QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "公会系统权限"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -2263,6 +2319,7 @@ class QQLinkerQQMixin:
             allow_back=True,)
 
     def qq_guild_list(self, group_id: int, qqid: int):
+        """Handle the qq guild list QQ menu operation."""
         ok, msg, guilds = self.guild_system.api_list_guilds()
         if not ok:
             self._reply_result(group_id, qqid, False, msg)
@@ -2272,6 +2329,7 @@ class QQLinkerQQMixin:
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无公会"])
 
     def qq_guild_show_info(self, group_id: int, qqid: int):
+        """Handle the qq guild show info QQ menu operation."""
         query = self._qq_guild_prompt_text(
             group_id, qqid, "查看公会信息", "请输入公会名称或ID")
         if query is None:
@@ -2281,6 +2339,7 @@ class QQLinkerQQMixin:
             data, group_id) if ok and data else msg)
 
     def qq_guild_show_members(self, group_id: int, qqid: int):
+        """Handle the qq guild show members QQ menu operation."""
         query = self._qq_guild_prompt_text(
             group_id, qqid, "查看公会成员", "请输入公会名称或ID")
         if query is None:
@@ -2304,6 +2363,7 @@ class QQLinkerQQMixin:
                     len(members)} 名成员"])
 
     def qq_guild_show_vault(self, group_id: int, qqid: int):
+        """Handle the qq guild show vault QQ menu operation."""
         query = self._qq_guild_prompt_text(
             group_id, qqid, "查看公会仓库", "请输入公会名称或ID")
         if query is None:
@@ -2323,6 +2383,7 @@ class QQLinkerQQMixin:
         self._reply_guild_lines(group_id, qqid, msg, lines or ["仓库为空"])
 
     def qq_guild_show_logs(self, group_id: int, qqid: int):
+        """Handle the qq guild show logs QQ menu operation."""
         query = self._qq_guild_prompt_text(
             group_id, qqid, "查看公会日志", "请输入公会名称或ID")
         if query is None:
@@ -2343,6 +2404,7 @@ class QQLinkerQQMixin:
             logs or ["暂无日志"])
 
     def qq_guild_show_player_record(self, group_id: int, qqid: int):
+        """Handle the qq guild show player record QQ menu operation."""
         player_name = self._qq_guild_prompt_text(
             group_id, qqid, "查询玩家公会记录", "请输入玩家名")
         if player_name is None:
@@ -2367,6 +2429,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_show_statistics(self, group_id: int, qqid: int):
+        """Handle the qq guild show statistics QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_guild_statistics()
         if not ok:
             self._reply_result(group_id, qqid, False, msg)
@@ -2386,6 +2449,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_show_rankings(self, group_id: int, qqid: int):
+        """Handle the qq guild show rankings QQ menu operation."""
         sort_choice = self._qq_guild_prompt(
             group_id,
             qqid,
@@ -2426,6 +2490,7 @@ class QQLinkerQQMixin:
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无排行"])
 
     def qq_guild_show_donation_rankings(self, group_id: int, qqid: int):
+        """Handle the qq guild show donation rankings QQ menu operation."""
         query = self._qq_guild_prompt_optional_query(
             group_id, qqid, "查看贡献排行", "请输入公会名/ID，输入 全部 查看全服")
         if query is None:
@@ -2452,6 +2517,7 @@ class QQLinkerQQMixin:
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无排行"])
 
     def qq_guild_show_abnormal_trades(self, group_id: int, qqid: int):
+        """Handle the qq guild show abnormal trades QQ menu operation."""
         query = self._qq_guild_prompt_optional_query(
             group_id, qqid, "查看异常交易", "请输入公会名/ID，输入 全部 查看全服")
         if query is None:
@@ -2472,10 +2538,12 @@ class QQLinkerQQMixin:
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无异常交易"])
 
     def _qq_guild_prompt_guild(self, group_id: int, qqid: int, subtitle: str):
+        """Implement the qq guild prompt guild operation."""
         return self._qq_guild_prompt_text(
             group_id, qqid, subtitle, "请输入公会名称或ID")
 
     def qq_guild_force_disband(self, group_id: int, qqid: int):
+        """Handle the qq guild force disband QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "强制解散公会")
         if guild is None:
             return
@@ -2488,6 +2556,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_rename(self, group_id: int, qqid: int):
+        """Handle the qq guild rename QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "修改公会名称")
         if guild is None:
             return
@@ -2501,6 +2570,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_level(self, group_id: int, qqid: int):
+        """Handle the qq guild set level QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "设置公会等级")
         if guild is None:
             return
@@ -2514,6 +2584,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_exp(self, group_id: int, qqid: int):
+        """Handle the qq guild set exp QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "设置公会经验")
         if guild is None:
             return
@@ -2527,6 +2598,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_transfer_owner(self, group_id: int, qqid: int):
+        """Handle the qq guild transfer owner QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "转让公会会长")
         if guild is None:
             return
@@ -2540,6 +2612,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_force_join(self, group_id: int, qqid: int):
+        """Handle the qq guild force join QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "强制玩家加入公会")
         if guild is None:
             return
@@ -2553,6 +2626,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_force_leave(self, group_id: int, qqid: int):
+        """Handle the qq guild force leave QQ menu operation."""
         player = self._qq_guild_prompt_text(
             group_id, qqid, "强制玩家退出公会", "请输入玩家名")
         if player is None:
@@ -2569,6 +2643,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_frozen(self, group_id: int, qqid: int, frozen: bool):
+        """Handle the qq guild set frozen QQ menu operation."""
         title = "冻结公会" if frozen else "解冻公会"
         guild = self._qq_guild_prompt_guild(group_id, qqid, title)
         if guild is None:
@@ -2587,6 +2662,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_add_funds(self, group_id: int, qqid: int):
+        """Handle the qq guild add funds QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "调整公会资金")
         if guild is None:
             return
@@ -2600,6 +2676,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_funds(self, group_id: int, qqid: int):
+        """Handle the qq guild set funds QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "设置公会资金")
         if guild is None:
             return
@@ -2613,6 +2690,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_add_member_contribution(self, group_id: int, qqid: int):
+        """Handle the qq guild add member contribution QQ menu operation."""
         player = self._qq_guild_prompt_text(group_id, qqid, "调整成员贡献", "请输入玩家名")
         if player is None:
             return
@@ -2626,6 +2704,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_member_contribution(self, group_id: int, qqid: int):
+        """Handle the qq guild set member contribution QQ menu operation."""
         player = self._qq_guild_prompt_text(group_id, qqid, "设置成员贡献", "请输入玩家名")
         if player is None:
             return
@@ -2639,6 +2718,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_reset_contributions(self, group_id: int, qqid: int):
+        """Handle the qq guild reset contributions QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "清空公会贡献")
         if guild is None:
             return
@@ -2655,6 +2735,7 @@ class QQLinkerQQMixin:
                     qqid)))
 
     def qq_guild_broadcast_announcement(self, group_id: int, qqid: int):
+        """Handle the qq guild broadcast announcement QQ menu operation."""
         message = self._qq_guild_prompt_text(
             group_id, qqid, "发送全服公会公告", "请输入公告内容")
         if message is None:
@@ -2669,6 +2750,7 @@ class QQLinkerQQMixin:
                     qqid)))
 
     def qq_guild_backup_vault(self, group_id: int, qqid: int):
+        """Handle the qq guild backup vault QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "备份公会仓库")
         if guild is None:
             return
@@ -2678,6 +2760,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_clear_vault(self, group_id: int, qqid: int):
+        """Handle the qq guild clear vault QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "清空公会仓库")
         if guild is None:
             return
@@ -2690,6 +2773,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_delete_vault_item(self, group_id: int, qqid: int):
+        """Handle the qq guild delete vault item QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "删除仓库物品")
         if guild is None:
             return
@@ -2703,6 +2787,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_rollback_vault(self, group_id: int, qqid: int):
+        """Handle the qq guild rollback vault QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "回滚仓库备份")
         if guild is None:
             return
@@ -2722,6 +2807,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_export_vault(self, group_id: int, qqid: int):
+        """Handle the qq guild export vault QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "导出仓库数据")
         if guild is None:
             return
@@ -2739,6 +2825,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_reset_market_prices(self, group_id: int, qqid: int):
+        """Handle the qq guild reset market prices QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "重置市场价格")
         if guild is None:
             return
@@ -2748,6 +2835,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_clear_effects(self, group_id: int, qqid: int):
+        """Handle the qq guild clear effects QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "清空公会效果")
         if guild is None:
             return
@@ -2757,6 +2845,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_effect(self, group_id: int, qqid: int):
+        """Handle the qq guild set effect QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "设置公会效果")
         if guild is None:
             return
@@ -2774,6 +2863,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_refresh_tasks(self, group_id: int, qqid: int):
+        """Handle the qq guild refresh tasks QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "刷新公会任务")
         if guild is None:
             return
@@ -2783,6 +2873,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_create_global_task(self, group_id: int, qqid: int):
+        """Handle the qq guild create global task QQ menu operation."""
         name = self._qq_guild_prompt_text(group_id, qqid, "创建全服任务", "请输入任务名称")
         if name is None:
             return
@@ -2833,6 +2924,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_guild_delete_task(self, group_id: int, qqid: int):
+        """Handle the qq guild delete task QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "删除公会任务")
         if guild is None:
             return
@@ -2846,6 +2938,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_reset_task(self, group_id: int, qqid: int):
+        """Handle the qq guild reset task QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "重置任务进度")
         if guild is None:
             return
@@ -2859,6 +2952,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_complete_task(self, group_id: int, qqid: int):
+        """Handle the qq guild complete task QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "强制完成任务")
         if guild is None:
             return
@@ -2872,6 +2966,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_teleport_base(self, group_id: int, qqid: int):
+        """Handle the qq guild teleport base QQ menu operation."""
         player = self._qq_guild_prompt_text(
             group_id, qqid, "传送玩家到公会据点", "请输入玩家名")
         if player is None:
@@ -2888,6 +2983,7 @@ class QQLinkerQQMixin:
                 guild or None))
 
     def qq_guild_delete_base(self, group_id: int, qqid: int):
+        """Handle the qq guild delete base QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "删除公会据点")
         if guild is None:
             return
@@ -2897,6 +2993,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_base(self, group_id: int, qqid: int):
+        """Handle the qq guild set base QQ menu operation."""
         guild = self._qq_guild_prompt_guild(group_id, qqid, "设置公会据点")
         if guild is None:
             return
@@ -2919,6 +3016,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_set_base_locked(self, group_id: int, qqid: int, locked: bool):
+        """Handle the qq guild set base locked QQ menu operation."""
         title = "锁定公会据点" if locked else "解锁公会据点"
         guild = self._qq_guild_prompt_guild(group_id, qqid, title)
         if guild is None:
@@ -2929,6 +3027,7 @@ class QQLinkerQQMixin:
                     group_id, qqid)))
 
     def qq_guild_show_activity_status(self, group_id: int, qqid: int):
+        """Handle the qq guild show activity status QQ menu operation."""
         ok, msg, data = self.guild_system.api_get_guild_activity_status()
         if not ok:
             self._reply_result(group_id, qqid, False, msg)
@@ -2954,6 +3053,7 @@ class QQLinkerQQMixin:
             qqid: int,
             activity: str,
             multiplier: float):
+        """Handle the qq guild start activity QQ menu operation."""
         duration = self._qq_guild_prompt_int(
             group_id, qqid, "开启公会活动", "请输入持续秒数", minimum=1, default=3600)
         if duration is None:
@@ -2970,6 +3070,7 @@ class QQLinkerQQMixin:
                     qqid)))
 
     def qq_guild_stop_activity(self, group_id: int, qqid: int):
+        """Handle the qq guild stop activity QQ menu operation."""
         choice = self._qq_guild_prompt(
             group_id,
             qqid,
@@ -2996,6 +3097,7 @@ class QQLinkerQQMixin:
             self.guild_system.api_stop_guild_activity(activity))
 
     def qq_guild_settle_rewards(self, group_id: int, qqid: int):
+        """Handle the qq guild settle rewards QQ menu operation."""
         sort_by = self._qq_guild_prompt_text(
             group_id, qqid, "结算排行奖励",
             "请输入排行类型：level/members/contribution/activity")
@@ -3034,6 +3136,7 @@ class QQLinkerQQMixin:
             self.land_system, group_id, sender)
 
     def _format_land_summary(self, land: dict[str, Any], group_id: int):
+        """Implement the format land summary operation."""
         center = land.get("center", (0, 0, 0))
         admins = "、".join(land.get("admins", [])) or "无"
         members = "、".join(land.get("members", [])) or "无"
@@ -3059,6 +3162,7 @@ class QQLinkerQQMixin:
         options: list[str],
         hints: list[str],
     ):
+        """Implement the qq land prompt operation."""
         return self.qq_prompt(
             group_id,
             qqid,
@@ -3144,6 +3248,7 @@ class QQLinkerQQMixin:
         handler(group_id, qqid)
 
     def qq_land_list(self, group_id: int, qqid: int):
+        """Handle the qq land list QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         if not self.ensure_land_system(group_id, qqid):
@@ -3224,6 +3329,7 @@ class QQLinkerQQMixin:
             qqid: int,
             subtitle: str,
             prompt: str):
+        """Implement the qq land prompt text operation."""
         value = self._qq_land_prompt(
             group_id, qqid, subtitle, [], [
                 prompt, "输入 . 退出"])
@@ -3237,6 +3343,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _parse_land_pos(raw: str):
+        """Implement the parse land pos operation."""
         parts = raw.replace(",", " ").replace("，", " ").split()
         if len(parts) != 3:
             return None
@@ -3247,6 +3354,7 @@ class QQLinkerQQMixin:
 
     @staticmethod
     def _parse_land_size(raw: str):
+        """Implement the parse land size operation."""
         parts = raw.replace(",", " ").replace("，", " ").split()
         if len(parts) != 3:
             return None
@@ -3259,6 +3367,7 @@ class QQLinkerQQMixin:
         return size
 
     def qq_land_show_info(self, group_id: int, qqid: int):
+        """Handle the qq land show info QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         query = self._qq_land_prompt_text(group_id, qqid, "查看领地信息", "请输入领地名称")
@@ -3272,6 +3381,7 @@ class QQLinkerQQMixin:
         )
 
     def qq_land_add(self, group_id: int, qqid: int):
+        """Handle the qq land add QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         owner = self._qq_land_prompt_text(
@@ -3331,6 +3441,7 @@ class QQLinkerQQMixin:
         self._reply_result(group_id, qqid, ok, msg)
 
     def qq_land_delete(self, group_id: int, qqid: int):
+        """Handle the qq land delete QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         query = self._qq_land_prompt_text(group_id, qqid, "删除玩家领地", "请输入领地名称")
@@ -3345,6 +3456,7 @@ class QQLinkerQQMixin:
             qqid: int,
             is_add: bool,
             rank: str):
+        """Handle the qq land member action QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         title = "添加" if is_add else "移除"
@@ -3369,6 +3481,7 @@ class QQLinkerQQMixin:
         self._reply_result(group_id, qqid, ok, msg)
 
     def qq_land_transfer_owner(self, group_id: int, qqid: int):
+        """Handle the qq land transfer owner QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         query = self._qq_land_prompt_text(group_id, qqid, "修改领地所有者", "请输入领地名称")
@@ -3382,6 +3495,7 @@ class QQLinkerQQMixin:
         self._reply_result(group_id, qqid, ok, msg)
 
     def qq_land_update_center(self, group_id: int, qqid: int):
+        """Handle the qq land update center QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         query = self._qq_land_prompt_text(group_id, qqid, "修改领地中心点", "请输入领地名称")
@@ -3399,6 +3513,7 @@ class QQLinkerQQMixin:
         self._reply_result(group_id, qqid, ok, msg)
 
     def qq_land_update_range(self, group_id: int, qqid: int):
+        """Handle the qq land update range QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return
         query = self._qq_land_prompt_text(group_id, qqid, "修改领地范围", "请输入领地名称")

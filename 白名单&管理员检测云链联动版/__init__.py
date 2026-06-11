@@ -92,6 +92,7 @@ class WhitelistAndOpCheck(Plugin):
 
     @staticmethod
     def trim_fixed_keys(raw: Any, default: dict[str, Any]) -> dict[str, Any]:
+        """Implement the trim fixed keys operation."""
         raw = raw if isinstance(raw, dict) else {}
         return {
             key: copy.deepcopy(raw.get(key, value))
@@ -100,6 +101,7 @@ class WhitelistAndOpCheck(Plugin):
 
     @staticmethod
     def normalize_bool(value: Any, fallback: bool) -> bool:
+        """Implement the normalize bool operation."""
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
@@ -114,6 +116,7 @@ class WhitelistAndOpCheck(Plugin):
 
     @staticmethod
     def normalize_positive_int(value: Any, fallback: int) -> int:
+        """Implement the normalize positive int operation."""
         if isinstance(value, bool):
             return fallback
         try:
@@ -124,6 +127,7 @@ class WhitelistAndOpCheck(Plugin):
 
     @staticmethod
     def normalize_positive_float(value: Any, fallback: float) -> float:
+        """Implement the normalize positive float operation."""
         if isinstance(value, bool):
             return fallback
         try:
@@ -138,6 +142,7 @@ class WhitelistAndOpCheck(Plugin):
             fallback: str,
             *,
             allow_empty: bool = False) -> str:
+        """Implement the normalize str operation."""
         if value is None:
             return fallback
         text = str(value)
@@ -148,6 +153,7 @@ class WhitelistAndOpCheck(Plugin):
     @classmethod
     def normalize_player_mapping(
             cls, raw: Any, fallback: dict[str, str]) -> dict[str, str]:
+        """Implement the normalize player mapping operation."""
         source = raw if isinstance(raw, dict) else fallback
         result: dict[str, str] = {}
         for xuid, player_name in source.items():
@@ -160,6 +166,7 @@ class WhitelistAndOpCheck(Plugin):
 
     @classmethod
     def normalize_config(cls, raw_cfg: Any) -> dict[str, Any]:
+        """Implement the normalize config operation."""
         merged_cfg = cls.merge_with_default(raw_cfg, cls.DEFAULT_CFG)
         normalized = cls.trim_fixed_keys(merged_cfg, cls.DEFAULT_CFG)
 
@@ -250,10 +257,12 @@ class WhitelistAndOpCheck(Plugin):
         self.refresh_config_file_state()
 
     def config_file_path(self) -> str:
+        """Implement the config file path operation."""
         return os.path.join(CONFIG_FILE_DIR, f"{self.name}.json")
 
     @staticmethod
     def file_state(path: str) -> tuple[int, int] | None:
+        """Implement the file state operation."""
         try:
             stat = os.stat(path)
         except OSError:
@@ -261,15 +270,18 @@ class WhitelistAndOpCheck(Plugin):
         return stat.st_mtime_ns, stat.st_size
 
     def refresh_config_file_state(self):
+        """Implement the refresh config file state operation."""
         self._config_file_state = self.file_state(self.config_file_path())
 
     def is_dynamic_config_reload_enabled(self) -> bool:
+        """Implement the is dynamic config reload enabled operation."""
         settings = self._cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return True
         return bool(settings.get(DYNAMIC_LOAD_ENABLED_KEY, True))
 
     def dynamic_config_reload_interval(self) -> int:
+        """Implement the dynamic config reload interval operation."""
         settings = self._cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
@@ -281,12 +293,14 @@ class WhitelistAndOpCheck(Plugin):
         return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
 
     def reload_runtime_config(self, announce: bool = False):
+        """Implement the reload runtime config operation."""
         self._cfg = self.load_config()
         self.refresh_config_file_state()
         if announce:
             fmts.print_suc(f"{self.name} 配置文件已热更新")
 
     def config_reload_task(self):
+        """Implement the config reload task operation."""
         while not self._stop_event.wait(self.dynamic_config_reload_interval()):
             if not self.is_dynamic_config_reload_enabled():
                 self.refresh_config_file_state()
@@ -302,6 +316,7 @@ class WhitelistAndOpCheck(Plugin):
 
     def api_reload_checker_config(
             self) -> tuple[bool, str, dict[str, int | float | bool]]:
+        """Expose the api reload checker config API operation."""
         try:
             self.reload_runtime_config(announce=False)
         except Exception as err:
@@ -324,6 +339,7 @@ class WhitelistAndOpCheck(Plugin):
         self.start_periodic_check()
 
     def on_frame_exit(self, _):
+        """Implement the on frame exit operation."""
         self._stop_event.set()
 
     def resolve_bot_name(self) -> str:

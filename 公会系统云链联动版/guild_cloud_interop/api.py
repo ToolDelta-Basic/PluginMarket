@@ -7,7 +7,6 @@ import re
 import shutil
 import time
 import uuid
-from datetime import datetime
 from typing import Any, Optional
 
 from tooldelta import fmts
@@ -158,7 +157,7 @@ def _find_task(guild: GuildData,
     if not query:
         return None, "任务不能为空"
     for task in guild.tasks:
-        if task.task_id == query or task.name == query:
+        if query in (task.task_id, task.name):
             return task, ""
     query_lower = query.casefold()
     matched = [
@@ -254,7 +253,7 @@ def _activity_multiplier(self, key: str) -> float:
     if not isinstance(event, dict):
         return 1.0
     expires_at = float(event.get("expires_at", 0) or 0)
-    if expires_at > 0 and expires_at <= _now():
+    if 0 < expires_at <= _now():
         getattr(self, "_guild_runtime_events", {}).pop(key, None)
         return 1.0
     try:
@@ -332,12 +331,12 @@ def api_get_player_record(
     records = [
         log.to_dict()
         for log in guild.audit_logs
-        if log.actor == member.name or log.target == member.name
+        if member.name in (log.actor, log.target)
     ]
     vault_records = [
         log.to_dict()
         for log in guild.vault_trade_logs
-        if log.actor == member.name or log.seller == member.name or log.buyer == member.name
+        if member.name in (log.actor, log.seller, log.buyer)
     ]
     return True, "查询成功", {
         "guild": _guild_summary(guild),
@@ -483,7 +482,7 @@ def api_disband_owned_guild_as_player(
         self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
     """Disband the player's own guild, only when the player is the owner."""
     guilds = _load_guilds(self)
-    name, guild, member, err = _find_player_context(self, player_name, guilds)
+    _, guild, member, err = _find_player_context(self, player_name, guilds)
     if guild is None or member is None:
         return False, err, None
     if member.rank != GuildRank.OWNER:
@@ -1696,7 +1695,7 @@ def api_get_guild_activity_status(self) -> tuple[bool, str, dict[str, Any]]:
     active = {}
     for key, event in list(events.items()):
         expires_at = float(event.get("expires_at", 0) or 0)
-        if expires_at > 0 and expires_at <= now:
+        if 0 < expires_at <= now:
             events.pop(key, None)
             continue
         active[key] = copy.deepcopy(event)

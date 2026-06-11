@@ -42,16 +42,19 @@ CREATE_GUILD_PROMPT_FALLBACKS = {
 
 
 def render_prompt(template: str, **values: Any) -> str:
+    """Implement the render prompt operation."""
     for key, value in values.items():
         template = template.replace("{" + key + "}", str(value))
     return template
 
 
 def render_create_guild_prompt(key: str, **values: Any) -> str:
+    """Implement the render create guild prompt operation."""
     return render_config_prompt(key, **values)
 
 
 def render_config_prompt(key: str, **values: Any) -> str:
+    """Implement the render config prompt operation."""
     prompt_config = getattr(Config, "PROMPT_CONFIG", {})
     fallback = CREATE_GUILD_PROMPT_FALLBACKS.get(key, "")
     template = fallback

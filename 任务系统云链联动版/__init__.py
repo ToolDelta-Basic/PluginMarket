@@ -154,6 +154,7 @@ class TaskSystemCloudInterop(Plugin):
 
     @classmethod
     def _merge_config_with_default(cls, raw: Any, default: Any):
+        """Implement the merge config with default operation."""
         if isinstance(default, dict):
             result = {
                 key: cls._merge_config_with_default(
@@ -172,6 +173,7 @@ class TaskSystemCloudInterop(Plugin):
 
     @staticmethod
     def _trim_fixed_keys(raw: Any, default: dict[str, Any]) -> dict[str, Any]:
+        """Implement the trim fixed keys operation."""
         raw = raw if isinstance(raw, dict) else {}
         return {
             key: copy.deepcopy(raw.get(key, value))
@@ -180,6 +182,7 @@ class TaskSystemCloudInterop(Plugin):
 
     @staticmethod
     def _normalize_bool(value: Any, fallback: bool) -> bool:
+        """Normalize bool values."""
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
@@ -194,6 +197,7 @@ class TaskSystemCloudInterop(Plugin):
 
     @staticmethod
     def _normalize_positive_int(value: Any, fallback: int) -> int:
+        """Normalize positive int values."""
         if isinstance(value, bool):
             return fallback
         try:
@@ -208,6 +212,7 @@ class TaskSystemCloudInterop(Plugin):
             fallback: str,
             *,
             allow_empty: bool = False) -> str:
+        """Normalize str values."""
         if value is None:
             return fallback
         text = str(value)
@@ -223,6 +228,7 @@ class TaskSystemCloudInterop(Plugin):
         *,
         allow_empty: bool = False,
     ) -> list[str]:
+        """Normalize string list values."""
         if isinstance(value, str):
             candidates = [value]
         elif isinstance(value, list):
@@ -245,6 +251,7 @@ class TaskSystemCloudInterop(Plugin):
         value: Any,
         fallback: dict[str, str],
     ) -> dict[str, str]:
+        """Normalize format config values."""
         value = value if isinstance(value, dict) else {}
         return {
             "格式": cls._normalize_str(
@@ -260,6 +267,7 @@ class TaskSystemCloudInterop(Plugin):
         raw_cfg: Any,
         default_cfg: dict[str, Any],
     ) -> dict[str, Any]:
+        """Normalize runtime config values."""
         merged_cfg = cls._merge_config_with_default(raw_cfg, default_cfg)
         normalized = cls._trim_fixed_keys(merged_cfg, default_cfg)
 
@@ -314,6 +322,7 @@ class TaskSystemCloudInterop(Plugin):
         return normalized
 
     def load_runtime_config(self, announce: bool = False):
+        """Load runtime config data."""
         try:
             raw_cfg, _ = config.get_plugin_config_and_version(
                 self.name, {}, self._cfg_default, self.version
@@ -331,6 +340,7 @@ class TaskSystemCloudInterop(Plugin):
             fmts.print_suc(f"{self.name} 主配置文件已热更新")
 
     def load_quest_configs(self, announce: bool = False):
+        """Load quest configs data."""
         quests: dict[str, Quest] = {}
         total_quest_files = 0
         for cfg_quest_dir in os.listdir(self.QUEST_PATH):
@@ -391,10 +401,12 @@ class TaskSystemCloudInterop(Plugin):
             )
 
     def config_file_path(self) -> str:
+        """Implement the config file path operation."""
         return os.path.join(CONFIG_FILE_DIR, f"{self.name}.json")
 
     @staticmethod
     def file_state(path: str) -> tuple[int, int] | None:
+        """Implement the file state operation."""
         try:
             stat = os.stat(path)
         except OSError:
@@ -402,6 +414,7 @@ class TaskSystemCloudInterop(Plugin):
         return stat.st_mtime_ns, stat.st_size
 
     def quest_config_state(self) -> tuple[tuple[str, tuple[int, int]], ...]:
+        """Implement the quest config state operation."""
         states: list[tuple[str, tuple[int, int]]] = []
         for root, _dirs, files in os.walk(self.QUEST_PATH):
             for filename in files:
@@ -416,16 +429,19 @@ class TaskSystemCloudInterop(Plugin):
         return tuple(sorted(states))
 
     def refresh_config_file_state(self):
+        """Implement the refresh config file state operation."""
         self._config_file_state = self.file_state(self.config_file_path())
         self._quest_config_state = self.quest_config_state()
 
     def is_dynamic_config_reload_enabled(self) -> bool:
+        """Implement the is dynamic config reload enabled operation."""
         settings = self.cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return True
         return bool(settings.get(DYNAMIC_LOAD_ENABLED_KEY, True))
 
     def dynamic_config_reload_interval(self) -> int:
+        """Implement the dynamic config reload interval operation."""
         settings = self.cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
@@ -437,6 +453,7 @@ class TaskSystemCloudInterop(Plugin):
         return interval if interval > 0 else DYNAMIC_LOAD_DEFAULT_INTERVAL
 
     def config_reload_task(self):
+        """Implement the config reload task operation."""
         while not self._config_reload_stop.wait(
                 self.dynamic_config_reload_interval()):
             if not self.is_dynamic_config_reload_enabled():
@@ -461,6 +478,7 @@ class TaskSystemCloudInterop(Plugin):
                 fmts.print_err(f"{self.name} 配置文件热更新失败: {err}")
 
     def api_reload_task_config(self) -> tuple[bool, str]:
+        """Expose the api reload task config API operation."""
         try:
             self.load_runtime_config(announce=False)
             self.load_quest_configs(announce=False)
@@ -484,15 +502,18 @@ class TaskSystemCloudInterop(Plugin):
         return self.quests.get(tag_name)
 
     def get_online_player(self, player_name: str) -> Player | None:
+        """Return online player data."""
         return self.frame.get_players().getPlayerByName(player_name)
 
     @staticmethod
     def get_quest_label(quest: Quest) -> str:
+        """Return quest label data."""
         if quest.show_name == quest.tag_name:
             return quest.tag_name
         return f"{quest.show_name} ({quest.tag_name})"
 
     def find_quest(self, quest_query: str) -> tuple[Quest | None, str]:
+        """Implement the find quest operation."""
         quest_query = quest_query.strip()
         if not quest_query:
             return None, "任务标识不能为空"
@@ -526,6 +547,7 @@ class TaskSystemCloudInterop(Plugin):
         return None, f"任务不存在：{quest_query}"
 
     def can_add_quest(self, player: Player, quest: Quest) -> tuple[bool, str]:
+        """Implement the can add quest operation."""
         quests = self.read_quests(player)
         if quest in quests:
             return False, "当前任务正在进行中，无法重复领取"
@@ -548,6 +570,7 @@ class TaskSystemCloudInterop(Plugin):
     def get_online_player_task_progress(
         self, player_name: str
     ) -> tuple[bool, dict | str]:
+        """Return online player task progress data."""
         player = self.get_online_player(player_name)
         if player is None:
             return False, f"玩家不在线或不存在：{player_name}"
@@ -585,6 +608,7 @@ class TaskSystemCloudInterop(Plugin):
     def add_quest_to_online_player(
         self, player_name: str, quest_query: str
     ) -> tuple[bool, str]:
+        """Implement the add quest to online player operation."""
         player = self.get_online_player(player_name)
         if player is None:
             return False, f"玩家不在线或不存在：{player_name}"
@@ -601,6 +625,7 @@ class TaskSystemCloudInterop(Plugin):
     def finish_quest_for_online_player(
         self, player_name: str, quest_query: str
     ) -> tuple[bool, str]:
+        """Implement the finish quest for online player operation."""
         player = self.get_online_player(player_name)
         if player is None:
             return False, f"玩家不在线或不存在：{player_name}"
@@ -614,6 +639,7 @@ class TaskSystemCloudInterop(Plugin):
         return True, f"已为玩家 {player.name} 完成任务：{self.get_quest_label(quest)}"
 
     def list_available_quests(self) -> list[dict[str, str]]:
+        """Implement the list available quests operation."""
         quests = sorted(self.quests.values(), key=lambda item: item.tag_name)
         return [
             {
@@ -660,6 +686,7 @@ class TaskSystemCloudInterop(Plugin):
         return True
 
     def is_quest_in_progress(self, player: Player, quest: Quest) -> bool:
+        """Implement the is quest in progress operation."""
         o = self.read_player_quest_data(player)
         return quest.tag_name in o["in_quests"]
 
@@ -767,6 +794,7 @@ class TaskSystemCloudInterop(Plugin):
     # -------------
 
     def on_def(self):
+        """Implement the on def operation."""
         self.interper = self.GetPluginAPI("ZBasic", (0, 0, 1), False)
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
@@ -782,19 +810,24 @@ class TaskSystemCloudInterop(Plugin):
         self.cb2bot.regist_message_cb("quest.start", self.on_quest_start)
 
     def show_succ(self, player: Player, msg):
+        """Implement the show succ operation."""
         player.show(f"§7<§a§o√§r§7> §a{msg}")
 
     def show_warn(self, player: Player, msg):
+        """Implement the show warn operation."""
         player.show(f"§7<§6§o!§r§7> §6{msg}")
 
     def show_fail(self, player: Player, msg):
+        """Implement the show fail operation."""
         player.show(f"§7<§c§o!§r§7> §c{msg}")
 
     def show_inf(self, player: Player, msg):
+        """Implement the show inf operation."""
         player.show(f"§7<§f§o!§r§7> §f{msg}")
 
     @utils.thread_func("任务的游戏初始化")
     def on_inject(self):
+        """Implement the on inject operation."""
         self.cmp_scripts = {}
         self.chatbar.add_new_trigger(
             [".rw", ".任务"],
@@ -814,9 +847,11 @@ class TaskSystemCloudInterop(Plugin):
 
     @utils.thread_func("初始化玩家剧情任务数据")
     def on_player_join(self, player: Player):
+        """Implement the on player join operation."""
         self.init_player(player)
 
     def on_quest_ok(self, args: list[str]):
+        """Implement the on quest ok operation."""
         target_name, quest_name = args
         quest = self.get_quest(quest_name)
         target = self.frame.get_players().getPlayerByName(target_name)
@@ -832,6 +867,7 @@ class TaskSystemCloudInterop(Plugin):
             self.finish_quest(target, quest)
 
     def on_quest_start(self, args: list[str]):
+        """Implement the on quest start operation."""
         target_name, quest_name = args
         quest = self.get_quest(quest_name)
         target = self.frame.get_players().getPlayerByName(target_name)
@@ -842,6 +878,7 @@ class TaskSystemCloudInterop(Plugin):
             self.add_quest(target, quest)
 
     def init_player(self, player: Player):
+        """Implement the init player operation."""
         quest_path = self.get_player_quest_data_path(player)
         if not os.path.isfile(quest_path):
             self.write_player_quest_data(player, self.init_quest_file())
@@ -849,14 +886,17 @@ class TaskSystemCloudInterop(Plugin):
             self.read_player_quest_data(player)
 
     def init_quest_file(self):
+        """Implement the init quest file operation."""
         return {"in_quests": [], "quests_ok": {}}
 
     def get_player_quest_data_path(self, player: Player) -> str:
+        """Return player quest data path data."""
         path = os.path.join(self.QUEST_DATA_PATH, player.xuid + ".json")
         self.quest_data_paths.add(path)
         return path
 
     def read_player_quest_data(self, player: Player) -> dict:
+        """Implement the read player quest data operation."""
         data = self.tmpjson.load_and_read(
             self.get_player_quest_data_path(player),
             need_file_exists=False,
@@ -871,11 +911,13 @@ class TaskSystemCloudInterop(Plugin):
         return data
 
     def write_player_quest_data(self, player: Player, data: dict):
+        """Implement the write player quest data operation."""
         path = self.get_player_quest_data_path(player)
         self.tmpjson.load_and_write(path, data, need_file_exists=False)
         self.tmpjson.flush(path)
 
     def on_frame_exit(self, _):
+        """Implement the on frame exit operation."""
         self._config_reload_stop.set()
         for path in tuple(self.quest_data_paths):
             try:
@@ -884,6 +926,7 @@ class TaskSystemCloudInterop(Plugin):
                 pass
 
     def read_quests(self, player: Player) -> list[Quest]:
+        """Implement the read quests operation."""
         o = self.read_player_quest_data(player)
         output = []
         o = o or {"in_quests": []}
@@ -892,6 +935,7 @@ class TaskSystemCloudInterop(Plugin):
         return output
 
     def read_quests_finished(self, player: Player) -> dict[Quest, int]:
+        """Implement the read quests finished operation."""
         o = self.read_player_quest_data(player)
         output = {}
         for k, v in o["quests_ok"].items():
@@ -904,6 +948,7 @@ class TaskSystemCloudInterop(Plugin):
     def force_add_quest_menu(self, player: Player, args: tuple):
         # with utils.ChatbarLock(player, lambda _:
         # print(utils.chatbar_lock_list)):
+        """Implement the force add quest menu operation."""
         (quest_tagname,) = args
         if (quest := self.get_quest(quest_tagname)) is None:
             player.show("§c任务标签名不存在")
@@ -929,6 +974,7 @@ class TaskSystemCloudInterop(Plugin):
     @utils.thread_func("列出任务列表")
     def list_player_quests(self, player: Player):
         # with utils.ChatbarLock(player):
+        """Implement the list player quests operation."""
         player_quests = self.read_quests(player)
         if not player_quests:
             self.show_fail(player, "你没有正在进行的任务")
@@ -990,6 +1036,7 @@ class TaskSystemCloudInterop(Plugin):
                 self.finish_quest(player, getting_quest)
 
     def sec_to_timer(self, timesec: int, fmt: str):
+        """Implement the sec to timer operation."""
         days, left = divmod(timesec, 86400)
         hrs, left = divmod(left, 3600)
         mins, secs = divmod(left, 60)

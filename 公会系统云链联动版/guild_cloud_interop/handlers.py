@@ -6,7 +6,14 @@ import uuid
 from datetime import datetime
 
 from tooldelta import Player, game_utils, fmts
-from guild_cloud_interop.models import GuildData, GuildMember, GuildTask, GuildBase, GuildRank, VaultItem
+from guild_cloud_interop.models import (
+    GuildBase,
+    GuildData,
+    GuildMember,
+    GuildRank,
+    GuildTask,
+    VaultItem,
+)
 from guild_cloud_interop.config import Config
 from guild_cloud_interop.prompts import render_config_prompt, render_create_guild_prompt
 from guild_cloud_interop.ui import ORION_BORDER, TITLE_PREFIX, format_page_footer
@@ -24,8 +31,6 @@ def _handle_effect(self, player: Player) -> bool:
     if not guild.has_permission(player.name, "effect_buy"):
         player.show("§l§a公会 §d>> §r你没有购买公会效果权限")
         return True
-
-    level = guild.level
 
     # 显示可选效果
     player.show("§l§a公会 §d>> §r可用效果列表:")
@@ -659,8 +664,6 @@ def _handle_create_task(self, player: Player, guild: GuildData) -> bool:
         player.show(f"§c经验奖励必须在0-{max_exp_reward}之间")
         return True
 
-    # 创建任务
-    import uuid
     task_id = uuid.uuid4().hex[:8]
     new_task = GuildTask(
         task_id=task_id,
@@ -720,7 +723,7 @@ def _handle_generate_auto_tasks(
         if not task.completed and task.task_id.startswith("auto-")
     ]
     max_active = int(task_config.get("自动任务最大同时存在数量", 6))
-    if max_active > 0 and len(active_auto_tasks) >= max_active:
+    if len(active_auto_tasks) >= max_active > 0:
         player.show(f"§l§a公会任务 §d>> §r自动任务数量已达上限 {max_active}")
         return True
 
@@ -1096,13 +1099,12 @@ def _handle_set_rank(self, player: Player) -> bool:
         "3": GuildRank.MEMBER}
 
     new_rank = rank_map.get(rank_choice)
-    if new_rank:
-        if self.guild_manager.set_member_rank(
-                guild, target_member.name, new_rank):
-            player.show(
-                f"§l§a公会 §d>> §r已将 {
-                    target_member.name} 的职位设置为 {
-                    new_rank.display_name}")
+    if new_rank and self.guild_manager.set_member_rank(
+            guild, target_member.name, new_rank):
+        player.show(
+            f"§l§a公会 §d>> §r已将 {
+                target_member.name} 的职位设置为 {
+                new_rank.display_name}")
 
     return True
 
@@ -1501,7 +1503,7 @@ def _handle_vault_sell(self, player: Player, guild: GuildData) -> bool:
             {}).get(
             "单次出售最大数量",
             64))
-    if max_sell_count > 0 and count > max_sell_count:
+    if count > max_sell_count > 0:
         player.show(f"§l§a公会仓库 §d>> §r单次最多出售 {max_sell_count} 个")
         return True
 

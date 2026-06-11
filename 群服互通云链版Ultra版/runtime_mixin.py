@@ -853,6 +853,7 @@ class QQLinkerRuntimeMixin:
             group_id: int,
             qqid: int,
             permission_name: str) -> bool:
+        """Implement the has group permission operation."""
         if hasattr(self, "has_group_permission"):
             return self.has_group_permission(group_id, qqid, permission_name)
         return self.is_group_admin(group_id, qqid)
@@ -863,6 +864,7 @@ class QQLinkerRuntimeMixin:
         qqid: int,
         permission_names: tuple[str, ...],
     ) -> bool:
+        """Implement the has any group permission operation."""
         return any(
             self._has_group_permission(group_id, qqid, permission_name)
             for permission_name in permission_names

@@ -15,6 +15,7 @@ def sphere_intersects_box(
         radius: float,
         min_pos: Position,
         max_pos: Position) -> bool:
+    """Implement the sphere intersects box operation."""
     distance_sq = 0.0
     for i in range(3):
         if center[i] < min_pos[i]:
@@ -29,10 +30,12 @@ def boxes_intersect(
         max_a: Position,
         min_b: Position,
         max_b: Position) -> bool:
+    """Implement the boxes intersect operation."""
     return all(min_a[i] <= max_b[i] and max_a[i] >= min_b[i] for i in range(3))
 
 
 def box_distance(pos: Position, min_pos: Position, max_pos: Position) -> float:
+    """Implement the box distance operation."""
     distance_sq = 0.0
     for i in range(3):
         if pos[i] < min_pos[i]:
@@ -44,6 +47,7 @@ def box_distance(pos: Position, min_pos: Position, max_pos: Position) -> float:
 
 def bounds_from_center_size(
         center: Position, size: Tuple[int, int, int]) -> Bounds:
+    """Implement the bounds from center size operation."""
     length, height, width = size
     cx, cy, cz = center
     half = (length / 2, height / 2, width / 2)
@@ -54,6 +58,7 @@ def bounds_from_center_size(
 
 
 def distance_to_land(pos: Position, land: LandData) -> float:
+    """Implement the distance to land operation."""
     if land.is_box():
         min_pos, max_pos = land.get_bounds()
         return box_distance(pos, min_pos, max_pos)
@@ -70,6 +75,7 @@ def land_overlaps_candidate(
     shape: str,
     size: Optional[Tuple[int, int, int]] = None,
 ) -> bool:
+    """Implement the land overlaps candidate operation."""
     shape = LandData.normalize_shape(shape)
     if shape == "方形":
         candidate_bounds = bounds_from_center_size(
@@ -95,4 +101,5 @@ def land_overlaps_candidate(
 
 
 def box_radius_for_size(size: Tuple[int, int, int]) -> int:
+    """Implement the box radius for size operation."""
     return max(1, math.ceil(max(size) / 2))

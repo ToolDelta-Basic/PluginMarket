@@ -15,6 +15,7 @@ from guild_cloud_interop.ui import format_page_footer, format_panel
 
 
 def _format_template(template: str, **values: Any) -> str:
+    """Implement the format template operation."""
     result = str(template)
     for key, value in values.items():
         result = result.replace("{" + key + "}", str(value))
@@ -22,12 +23,14 @@ def _format_template(template: str, **values: Any) -> str:
 
 
 def _menu_config() -> dict[str, Any]:
+    """Implement the menu config operation."""
     config = getattr(Config, "MENU_CONFIG", {})
     return config if isinstance(config, dict) else {}
 
 
 def _menu_item(group: str, key: str, fallback_name: str,
                fallback_desc: str) -> tuple[str, str]:
+    """Implement the menu item operation."""
     menu_config = _menu_config()
     group_config = menu_config.get(group, {})
     item_config = group_config.get(
@@ -44,6 +47,7 @@ def _menu_item(group: str, key: str, fallback_name: str,
 
 
 def _menu_item_name(group: str, key: str, fallback_name: str) -> str:
+    """Implement the menu item name operation."""
     return _menu_item(group, key, fallback_name, "")[0]
 
 
@@ -402,11 +406,13 @@ def on_chat_packet(self, packet):
 
 
 def _should_stop(self) -> bool:
+    """Implement the should stop operation."""
     stop_event = getattr(self, "_stop_event", None)
     return bool(stop_event and stop_event.is_set())
 
 
 def _wait_or_stopped(self, seconds: float) -> bool:
+    """Implement the wait or stopped operation."""
     stop_event = getattr(self, "_stop_event", None)
     if stop_event is None:
         time.sleep(seconds)
@@ -485,6 +491,7 @@ def _refresh_online_effects(
         self,
         online_players: List[str],
         guilds: Optional[dict] = None) -> int:
+    """Implement the refresh online effects operation."""
     if not Config.GUILD_FUNCTION_EFFECT:
         return 0
 

@@ -60,21 +60,25 @@ class OrionPlayerView:
         return getattr(self._player, name)
 
     def show(self, text):
+        """Implement the show operation."""
         for chunk in split_chat_chunks(format_message(str(text))):
             self._player.show(chunk)
 
 
 def wrap_player(player):
+    """Implement the wrap player operation."""
     if isinstance(player, OrionPlayerView):
         return player
     return OrionPlayerView(player)
 
 
 def strip_reset(text: str) -> str:
+    """Implement the strip reset operation."""
     return text.replace("§r", "")
 
 
 def normalize_inline(text: str) -> str:
+    """Implement the normalize inline operation."""
     text = strip_reset(text)
     text = text.replace("§l§a公会仓库 §d>> ", "")
     text = text.replace("§l§a公会任务 §d>> ", "")
@@ -88,6 +92,7 @@ def normalize_inline(text: str) -> str:
 
 
 def classify_prefix(text: str) -> str:
+    """Implement the classify prefix operation."""
     if "错误" in text or "失败" in text or "无效" in text or "不足" in text or "权限不足" in text:
         return ERROR_PREFIX
     if "警告" in text or "超时" in text or "已满" in text or "不存在" in text or "未找到" in text:
@@ -98,6 +103,7 @@ def classify_prefix(text: str) -> str:
 
 
 def format_option(line: str) -> str | None:
+    """Implement the format option operation."""
     clean = normalize_inline(line)
 
     match = re.match(r"^(?:§[0-9a-frlomnk])*([0-9]+)[.．、]\s*(.*)$", clean)
@@ -121,12 +127,14 @@ def format_option(line: str) -> str | None:
 
 
 def format_title(title: str) -> str:
+    """Implement the format title operation."""
     title = normalize_inline(title)
     title = title.replace("§a", "§6").replace("§c", "§c")
     return f"{ORION_BORDER}\n{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d\n{ORION_BORDER}"
 
 
 def format_message(text: str) -> str:
+    """Implement the format message operation."""
     lines = str(text).splitlines()
     rendered: list[str] = []
 
@@ -190,6 +198,7 @@ def format_panel(
     footer: str = "",
     lines: Iterable[str] = (),
 ) -> str:
+    """Implement the format panel operation."""
     output = [
         ORION_BORDER,
         f"{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d",
@@ -215,6 +224,7 @@ def format_page_footer(
         start: int,
         end: int,
         allow_selection: bool) -> str:
+    """Implement the format page footer operation."""
     lines = [
         ORION_BORDER,
         f"§l§a[ §e-§a ] §b上页§r§f▶ §7{page}/{total_pages} §f◀§l§b下页 §a[ §e+ §a]",

@@ -12,10 +12,12 @@ from guild_cloud_interop.matchers import ItemNameMatcher
 
 
 def get_config_path(plugin_name: str) -> str:
+    """Return config path data."""
     return os.path.join(CONFIG_FILE_DIR, f"{plugin_name}.json")
 
 
 def get_file_state(path: str) -> tuple[int, int] | None:
+    """Return file state data."""
     try:
         stat = os.stat(path)
     except OSError:
@@ -24,11 +26,13 @@ def get_file_state(path: str) -> tuple[int, int] | None:
 
 
 def refresh_config_file_state(plugin: Any) -> None:
+    """Implement the refresh config file state operation."""
     config_path = get_config_path(plugin.name)
     plugin.set_config_file_state(get_file_state(config_path))
 
 
 def apply_runtime_config(plugin: Any, *, announce: bool = False) -> None:
+    """Implement the apply runtime config operation."""
     plugin.config = Config.load(plugin.name, plugin.version)
 
     guild_manager = getattr(plugin, "guild_manager", None)
@@ -48,6 +52,7 @@ def apply_runtime_config(plugin: Any, *, announce: bool = False) -> None:
 
 
 def config_reload_task(plugin: Any) -> None:
+    """Implement the config reload task operation."""
     config_path = get_config_path(plugin.name)
     plugin.set_config_file_state(get_file_state(config_path))
 

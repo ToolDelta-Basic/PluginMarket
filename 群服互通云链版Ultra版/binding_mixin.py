@@ -17,6 +17,7 @@ class QQLinkerBindingMixin:
     BINDING_TIMEOUT_MINUTES_DEFAULT = 10
 
     def init_binding_state(self):
+        """Implement the init binding state operation."""
         self.binding_data_path = self.format_data_path("QQ绑定数据.json")
         self.pending_bindings: dict[str, dict[str, Any]] = {}
         self.pending_binding_timers: dict[str, threading.Timer] = {}
@@ -25,13 +26,16 @@ class QQLinkerBindingMixin:
 
     @staticmethod
     def _binding_default_data() -> dict[str, dict[str, Any]]:
+        """Implement the binding default data operation."""
         return {"qq_to_xuids": {}, "xuid_to_qqs": {}, "xuid_names": {}}
 
     def _ensure_binding_data(self):
+        """Implement the ensure binding data operation."""
         data = self.read_binding_data()
         self.save_binding_data(data)
 
     def read_binding_data(self) -> dict[str, dict[str, Any]]:
+        """Implement the read binding data operation."""
         if not os.path.isfile(self.binding_data_path):
             return self._binding_default_data()
         try:
@@ -57,6 +61,7 @@ class QQLinkerBindingMixin:
 
     @staticmethod
     def _normalize_binding_map(raw: Any) -> dict[str, list[str]]:
+        """Normalize binding map values."""
         result: dict[str, list[str]] = {}
         if not isinstance(raw, dict):
             return result
@@ -75,11 +80,13 @@ class QQLinkerBindingMixin:
         return result
 
     def save_binding_data(self, data: dict[str, dict[str, Any]]):
+        """Save binding data data."""
         with open(self.binding_data_path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2)
 
     @staticmethod
     def _binding_qq_key(qqid: int | str) -> str:
+        """Implement the binding qq key operation."""
         text = str(qqid).strip()
         if not text:
             return ""
@@ -91,10 +98,12 @@ class QQLinkerBindingMixin:
 
     @staticmethod
     def _binding_xuid_key(xuid: str) -> str:
+        """Implement the binding xuid key operation."""
         return str(xuid).strip()
 
     @staticmethod
     def _binding_qq_values(values: list[str]) -> list[int]:
+        """Implement the binding qq values operation."""
         result: list[int] = []
         for value in values:
             try:
@@ -106,6 +115,7 @@ class QQLinkerBindingMixin:
         return result
 
     def _binding_api_group_id(self, group_id: int | None = None) -> int:
+        """Implement the binding api group id operation."""
         if group_id is not None:
             return int(group_id)
         return int(self.linked_group or 0)
@@ -348,6 +358,7 @@ class QQLinkerBindingMixin:
         qq_key: str,
         xuid: str,
     ) -> bool:
+        """Implement the remove binding relation operation."""
         changed = False
         qq_xuids = data["qq_to_xuids"].get(qq_key, [])
         if xuid in qq_xuids:
@@ -370,6 +381,7 @@ class QQLinkerBindingMixin:
         return changed
 
     def _cleanup_pending_bindings(self):
+        """Implement the cleanup pending bindings operation."""
         now = time.time()
         with self.pending_bindings_lock:
             expired_codes = [
@@ -383,6 +395,7 @@ class QQLinkerBindingMixin:
                 self._send_binding_timeout_notice(pending)
 
     def _new_binding_code(self) -> str:
+        """Implement the new binding code operation."""
         self._cleanup_pending_bindings()
         with self.pending_bindings_lock:
             for _ in range(20):
@@ -392,6 +405,7 @@ class QQLinkerBindingMixin:
         raise RuntimeError("无法生成唯一绑定验证码")
 
     def _remove_pending_bindings_by_qq(self, group_id: int, qqid: int):
+        """Implement the remove pending bindings by qq operation."""
         with self.pending_bindings_lock:
             codes = [
                 code
@@ -402,6 +416,7 @@ class QQLinkerBindingMixin:
             self._pop_pending_binding(code)
 
     def _pop_pending_binding(self, code: str, cancel_timer: bool = True):
+        """Implement the pop pending binding operation."""
         with self.pending_bindings_lock:
             pending = self.pending_bindings.pop(code, None)
             timer = self.pending_binding_timers.pop(code, None)
@@ -410,6 +425,7 @@ class QQLinkerBindingMixin:
         return pending
 
     def _schedule_binding_timeout(self, code: str, timeout_seconds: int):
+        """Implement the schedule binding timeout operation."""
         timer = threading.Timer(
             timeout_seconds, self._handle_binding_timeout, args=(code,))
         timer.daemon = True
@@ -418,11 +434,13 @@ class QQLinkerBindingMixin:
         timer.start()
 
     def _handle_binding_timeout(self, code: str):
+        """Handle the binding timeout workflow."""
         pending = self._pop_pending_binding(code, cancel_timer=False)
         if pending is not None:
             self._send_binding_timeout_notice(pending)
 
     def _send_binding_timeout_notice(self, pending: dict[str, Any]):
+        """Implement the send binding timeout notice operation."""
         group_id = int(pending["group_id"])
         qqid = int(pending["qqid"])
         timeout_text = self._binding_text(
@@ -436,6 +454,7 @@ class QQLinkerBindingMixin:
             self.print_console_warn(f"绑定超时提示发送失败: {err}")
 
     def cleanup_binding_state(self):
+        """Implement the cleanup binding state operation."""
         with self.pending_bindings_lock:
             timers = list(self.pending_binding_timers.values())
             self.pending_binding_timers.clear()
@@ -444,20 +463,24 @@ class QQLinkerBindingMixin:
             timer.cancel()
 
     def _binding_cfg(self) -> dict[str, Any]:
+        """Implement the binding cfg operation."""
         cfg = self.cfg.get("绑定设置", {})
         if isinstance(cfg, dict):
             return cfg
         return self.binding_default()
 
     def _binding_enabled(self, group_id: int) -> bool:
+        """Implement the binding enabled operation."""
         return bool(self._binding_cfg().get("是否开启QQ号与游戏ID绑定功能", False))
 
     def _binding_text(self, group_id: int, key: str, fallback: str) -> str:
+        """Implement the binding text operation."""
         value = self._binding_cfg().get(key, fallback)
         text = str(value).strip()
         return text or fallback
 
     def _binding_reject_text(self, group_id: int) -> str:
+        """Implement the binding reject text operation."""
         return self._binding_text(
             group_id,
             "拒绝绑定提示文本（仅在“是否允许单QQ号可绑定多游戏ID”为否时生效）",
@@ -465,6 +488,7 @@ class QQLinkerBindingMixin:
         )
 
     def _binding_timeout_minutes(self, group_id: int) -> int:
+        """Implement the binding timeout minutes operation."""
         return self._normalize_positive_int(
             self._binding_cfg().get(
                 "绑定超时时间（单位：分钟）",
@@ -478,6 +502,7 @@ class QQLinkerBindingMixin:
             text: str,
             code: str,
             timeout_minutes: int) -> str:
+        """Implement the render binding text operation."""
         return (
             text
             .replace("{auth_code}", code)
@@ -485,15 +510,18 @@ class QQLinkerBindingMixin:
         )
 
     def _qq_has_bound_xuid(self, qqid: int) -> bool:
+        """Implement the qq has bound xuid operation."""
         data = self.read_binding_data()
         return bool(data["qq_to_xuids"].get(str(qqid)))
 
     def get_group_binding_triggers(self, group_id: int) -> list[str]:
+        """Return group binding triggers data."""
         raw = self._binding_cfg().get("绑定触发词", ["绑定"])
         return self.normalize_string_triggers(raw, ["绑定"])
 
     def _start_binding_request(
             self, group_id: int, qqid: int) -> tuple[bool, str]:
+        """Implement the start binding request operation."""
         if not self._binding_enabled(group_id):
             return False, "QQ绑定功能当前已关闭"
 
@@ -548,6 +576,7 @@ class QQLinkerBindingMixin:
             group_id: int,
             qqid: int,
             clean_msg: str) -> bool:
+        """Handle the binding trigger workflow."""
         if not self._binding_enabled(group_id):
             return False
         if clean_msg not in self.get_group_binding_triggers(group_id):
@@ -577,6 +606,7 @@ class QQLinkerBindingMixin:
         self.ws.send(json.dumps(payload))
 
     def consume_game_binding_code(self, chat) -> bool:
+        """Implement the consume game binding code operation."""
         msg = str(chat.msg).strip()
         if len(msg) != 6 or not msg.isdigit():
             return False
@@ -637,6 +667,7 @@ class QQLinkerBindingMixin:
             qqid: int,
             xuid: str,
             player_name: str):
+        """Implement the bind qq to xuid operation."""
         cfg = self._binding_cfg()
         allow_multi_xuid = bool(cfg.get("是否允许单QQ号可绑定多游戏ID", False))
         allow_multi_qq = bool(cfg.get("是否允许单游戏ID可绑定多QQ号", False))

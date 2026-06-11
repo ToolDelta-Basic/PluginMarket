@@ -74,6 +74,7 @@ class GuildBase:
     z: float
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "dimension": self.dimension,
             "x": self.x,
@@ -91,6 +92,7 @@ class VaultItem:
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "item_id": self.item_id,
             "count": self.count,
@@ -101,6 +103,7 @@ class VaultItem:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             item_id=data["item_id"],
             count=data["count"],
@@ -120,6 +123,7 @@ class GuildMember:
     last_online: float = field(default_factory=time.time)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "name": self.name,
             "rank": self.rank.value,
@@ -130,6 +134,7 @@ class GuildMember:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             name=data["name"],
             rank=GuildRank(data.get("rank", "member")),
@@ -151,6 +156,7 @@ class GuildJoinRequest:
     result_reason: str = ""
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "player_name": self.player_name,
             "reason": self.reason,
@@ -163,6 +169,7 @@ class GuildJoinRequest:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             player_name=data["player_name"],
             reason=data.get("reason", ""),
@@ -188,6 +195,7 @@ class VaultTradeLog:
     detail: str = ""
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "action": self.action,
             "item_id": self.item_id,
@@ -202,6 +210,7 @@ class VaultTradeLog:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             action=data["action"],
             item_id=data["item_id"],
@@ -226,6 +235,7 @@ class GuildAuditLog:
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "action": self.action,
             "actor": self.actor,
@@ -237,6 +247,7 @@ class GuildAuditLog:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             action=data["action"],
             actor=data.get("actor", ""),
@@ -265,6 +276,7 @@ class GuildTask:
     participants: List[str] = field(default_factory=list)  # 参与者列表
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "task_id": self.task_id,
             "name": self.name,
@@ -283,6 +295,7 @@ class GuildTask:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             task_id=data["task_id"],
             name=data["name"],
@@ -310,6 +323,7 @@ class GuildStats:
     level_up_history: List[Tuple[float, int]] = field(default_factory=list)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "total_contribution": self.total_contribution,
             "total_trades": self.total_trades,
@@ -320,6 +334,7 @@ class GuildStats:
 
     @classmethod
     def from_dict(cls, data):
+        """Implement the from dict operation."""
         return cls(
             total_contribution=data.get("total_contribution", 0),
             total_trades=data.get("total_trades", 0),
@@ -610,6 +625,7 @@ class GuildData:
         return item
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "guild_id": self.guild_id,
             "name": self.name,
@@ -641,6 +657,7 @@ class GuildData:
 
     @classmethod
     def from_dict(cls, data, outer_key=None):
+        """Implement the from dict operation."""
         base = None
         try:
             if data.get("base") and isinstance(data["base"], dict):

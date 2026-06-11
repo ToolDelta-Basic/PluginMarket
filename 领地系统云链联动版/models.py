@@ -32,6 +32,7 @@ class LandMember:
     join_time: float = field(default_factory=time.time)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "name": self.name,
             "xuid": self.xuid,
@@ -41,6 +42,7 @@ class LandMember:
 
     @classmethod
     def from_dict(cls, d):
+        """Implement the from dict operation."""
         return cls(
             name=d["name"],
             xuid=str(d["xuid"]),
@@ -66,6 +68,7 @@ class LandData:
     create_time: float = field(default_factory=time.time)
 
     def to_dict(self):
+        """Implement the to dict operation."""
         return {
             "land_id": self.land_id,
             "name": self.name,
@@ -82,6 +85,7 @@ class LandData:
 
     @classmethod
     def from_dict(cls, d):
+        """Implement the from dict operation."""
         members = [LandMember.from_dict(m) for m in d.get("members", [])]
         shape = cls.normalize_shape(d.get("shape", "圆形"))
         radius = d["radius"]
@@ -104,6 +108,7 @@ class LandData:
 
     @staticmethod
     def normalize_shape(raw: Any) -> str:
+        """Implement the normalize shape operation."""
         shape = str(raw or "圆形").strip().lower()
         if shape in (
             "方形",
@@ -120,6 +125,7 @@ class LandData:
     @staticmethod
     def normalize_size(
             raw: Any, fallback_radius: int = 1) -> Tuple[int, int, int]:
+        """Implement the normalize size operation."""
         if isinstance(raw, (list, tuple)) and len(raw) == 3:
             try:
                 length = max(1, int(raw[0]))
@@ -132,13 +138,16 @@ class LandData:
         return (fallback, fallback, fallback)
 
     def is_box(self) -> bool:
+        """Implement the is box operation."""
         return self.normalize_shape(self.shape) == "方形"
 
     def get_size(self) -> Tuple[int, int, int]:
+        """Return size data."""
         return self.normalize_size(self.size, self.radius)
 
     def get_bounds(self) -> Tuple[Tuple[float,
                                         float, float], Tuple[float, float, float]]:
+        """Return bounds data."""
         length, height, width = self.get_size()
         cx, cy, cz = self.center
         half = (length / 2, height / 2, width / 2)
@@ -148,6 +157,7 @@ class LandData:
         )
 
     def contains_pos(self, pos: Tuple[float, float, float]) -> bool:
+        """Implement the contains pos operation."""
         x, y, z = pos
         if self.is_box():
             min_pos, max_pos = self.get_bounds()
@@ -157,12 +167,14 @@ class LandData:
             (z - cz) ** 2 <= self.radius ** 2
 
     def range_text(self) -> str:
+        """Implement the range text operation."""
         if self.is_box():
             length, height, width = self.get_size()
             return f"方形 长:{length}, 高:{height}, 宽:{width}"
         return f"圆形 半径:{self.radius}"
 
     def get_member(self, xuid: str) -> Optional[LandMember]:
+        """Return member data."""
         xuid = str(xuid)
         for member in self.members:
             if member.xuid == xuid:
@@ -170,6 +182,7 @@ class LandData:
         return None
 
     def has_permission(self, xuid: str, perm: str) -> bool:
+        """Implement the has permission operation."""
         member = self.get_member(xuid)
         if not member:
             return False
@@ -182,6 +195,7 @@ class LandData:
         return False
 
     def can_manage_member(self, manager_xuid: str, target_xuid: str) -> bool:
+        """Implement the can manage member operation."""
         manager = self.get_member(manager_xuid)
         target = self.get_member(target_xuid)
         if not manager or not target:

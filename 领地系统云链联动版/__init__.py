@@ -104,27 +104,33 @@ class LandPlugin(Plugin):
             ["领地系统云链联动版", "领地系统"], None, "打开领地系统云链联动版控制台管理菜单", self.console_manage)
 
     def on_preload(self):
+        """Implement the on preload operation."""
         self.xuid_getter = self.GetPluginAPI("XUID获取", (0, 0, 7))
 
     def on_active(self):
+        """Implement the on active operation."""
         if self.enabled:
             self._start_detection()
 
     def on_frame_exit(self, _):
+        """Implement the on frame exit operation."""
         self._stop_event.set()
 
     @staticmethod
     def _ui_border() -> str:
+        """Implement the ui border operation."""
         return "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
 
     @staticmethod
     def _ui_title(title: str) -> str:
+        """Implement the ui title operation."""
         return f"§l§d❐§f 『§6领地系统云链联动版§f』 §b{title}"
 
     def _ui_menu(self,
                  title: str,
                  options: List[str],
                  hints: Optional[List[str]] = None) -> str:
+        """Implement the ui menu operation."""
         lines = [self._ui_border(), self._ui_title(title)]
         lines.extend(f"§l§b[ §e{i}§b ] §r§e{option}" for i,
                      option in enumerate(options, 1))
@@ -137,6 +143,7 @@ class LandPlugin(Plugin):
                  title: str,
                  lines: List[str],
                  hints: Optional[List[str]] = None) -> str:
+        """Implement the ui card operation."""
         body = [self._ui_border(), self._ui_title(title)]
         body.extend(f"§a❀ §b{line}" for line in lines)
         body.append(self._ui_border())
@@ -146,22 +153,27 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _success(text: str) -> str:
+        """Implement the success operation."""
         return f"§a❀ §b{text}"
 
     @staticmethod
     def _error(text: str) -> str:
+        """Implement the error operation."""
         return f"§c❀ §e{text}"
 
     @staticmethod
     def _warn(text: str) -> str:
+        """Implement the warn operation."""
         return f"§6❀ §e{text}"
 
     @staticmethod
     def _notice(text: str) -> str:
+        """Implement the notice operation."""
         return f"§a❀ §b{text}"
 
     @staticmethod
     def _normalize_wake_words(raw: Any) -> List[str]:
+        """Normalize wake words values."""
         if isinstance(raw, str):
             words = [raw]
         elif isinstance(raw, list):
@@ -177,6 +189,7 @@ class LandPlugin(Plugin):
 
     @classmethod
     def _merge_config_with_default(cls, raw: Any, default: Any):
+        """Implement the merge config with default operation."""
         if isinstance(default, dict):
             result = {
                 key: cls._merge_config_with_default(
@@ -195,6 +208,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _trim_fixed_keys(raw: Any, default: Dict[str, Any]) -> Dict[str, Any]:
+        """Implement the trim fixed keys operation."""
         raw = raw if isinstance(raw, dict) else {}
         return {
             key: copy.deepcopy(raw.get(key, value))
@@ -203,6 +217,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _normalize_config_bool(value: Any, fallback: bool) -> bool:
+        """Normalize config bool values."""
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
@@ -217,6 +232,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _normalize_config_positive_int(value: Any, fallback: int) -> int:
+        """Normalize config positive int values."""
         if isinstance(value, bool):
             return fallback
         try:
@@ -227,6 +243,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _normalize_config_non_negative_int(value: Any, fallback: int) -> int:
+        """Normalize config non negative int values."""
         if isinstance(value, bool):
             return fallback
         try:
@@ -241,6 +258,7 @@ class LandPlugin(Plugin):
             fallback: str,
             *,
             allow_empty: bool = False) -> str:
+        """Normalize config str values."""
         if value is None:
             return fallback
         text = str(value)
@@ -256,6 +274,7 @@ class LandPlugin(Plugin):
         *,
         allow_empty: bool = False,
     ) -> List[str]:
+        """Normalize config string list values."""
         if isinstance(value, str):
             candidates = [value]
         elif isinstance(value, list):
@@ -276,6 +295,7 @@ class LandPlugin(Plugin):
     @classmethod
     def _normalize_runtime_config(
             cls, raw_cfg: Any, default_cfg: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize runtime config values."""
         merged_cfg = cls._merge_config_with_default(raw_cfg, default_cfg)
         normalized = cls._trim_fixed_keys(merged_cfg, default_cfg)
 
@@ -332,6 +352,7 @@ class LandPlugin(Plugin):
 
     def _load_config(
             self, default_cfg: Dict[str, Any], cfg_std: Any) -> Dict[str, Any]:
+        """Load config data."""
         try:
             raw_cfg, _ = cfg.get_plugin_config_and_version(
                 self.name,
@@ -349,6 +370,7 @@ class LandPlugin(Plugin):
         return merged_cfg
 
     def _apply_runtime_config_fields(self, reload_data_file: bool = False):
+        """Implement the apply runtime config fields operation."""
         self.enabled = bool(self.cfg["是否启用"])
         self.wake_words = self._normalize_wake_words(self.cfg["唤醒词"])
         new_data_file = self.format_data_path(str(self.cfg["数据文件"]))
@@ -371,6 +393,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _positive_int(value: Any, fallback: int) -> int:
+        """Implement the positive int operation."""
         try:
             result = int(value)
         except (TypeError, ValueError):
@@ -379,6 +402,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _positive_float(value: Any, fallback: float) -> float:
+        """Implement the positive float operation."""
         try:
             result = float(value)
         except (TypeError, ValueError):
@@ -387,6 +411,7 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _non_negative_float(value: Any, fallback: float) -> float:
+        """Implement the non negative float operation."""
         try:
             result = float(value)
         except (TypeError, ValueError):
@@ -394,10 +419,12 @@ class LandPlugin(Plugin):
         return result if result >= 0 else fallback
 
     def config_file_path(self) -> str:
+        """Implement the config file path operation."""
         return os.path.join(CONFIG_FILE_DIR, f"{self.name}.json")
 
     @staticmethod
     def file_state(path: str) -> tuple[int, int] | None:
+        """Implement the file state operation."""
         try:
             stat = os.stat(path)
         except OSError:
@@ -405,17 +432,20 @@ class LandPlugin(Plugin):
         return stat.st_mtime_ns, stat.st_size
 
     def refresh_config_file_state(self):
+        """Implement the refresh config file state operation."""
         self._config_file_state = self.file_state(self.config_file_path())
         self._no_create_regions_file_state = self.file_state(
             self.no_create_regions_file)
 
     def is_dynamic_config_reload_enabled(self) -> bool:
+        """Implement the is dynamic config reload enabled operation."""
         settings = self.cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return True
         return bool(settings.get(DYNAMIC_LOAD_ENABLED_KEY, True))
 
     def dynamic_config_reload_interval(self) -> int:
+        """Implement the dynamic config reload interval operation."""
         settings = self.cfg.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT_INTERVAL
@@ -437,6 +467,7 @@ class LandPlugin(Plugin):
         self.refresh_config_file_state()
 
     def reload_runtime_config(self, announce: bool = False):
+        """Implement the reload runtime config operation."""
         self.cfg = self._load_config(self._cfg_default, self._cfg_std)
         self._apply_runtime_config_fields(reload_data_file=True)
         if self.enabled:
@@ -445,12 +476,14 @@ class LandPlugin(Plugin):
             fmts.print_suc(f"{self.name} 配置文件已热更新")
 
     def reload_no_create_regions_config(self, announce: bool = False):
+        """Implement the reload no create regions config operation."""
         self.no_create_regions_raw = self._load_no_create_regions()
         self._reload_no_create_regions()
         if announce:
             fmts.print_suc(f"{self.name} 不可创建领地区域配置已热更新")
 
     def config_reload_task(self):
+        """Implement the config reload task operation."""
         while not self._stop_event.wait(self.dynamic_config_reload_interval()):
             if not self.is_dynamic_config_reload_enabled():
                 self.refresh_config_file_state()
@@ -475,6 +508,7 @@ class LandPlugin(Plugin):
                 fmts.print_err(f"{self.name} 配置文件热更新失败: {err}")
 
     def api_reload_land_config(self) -> Tuple[bool, str, Dict[str, Any]]:
+        """Expose the api reload land config API operation."""
         try:
             self.reload_runtime_config(announce=False)
             self.reload_no_create_regions_config(announce=False)
@@ -484,6 +518,7 @@ class LandPlugin(Plugin):
         return True, "领地系统配置已重载", self.api_get_runtime_status()
 
     def api_get_runtime_status(self) -> Dict[str, Any]:
+        """Expose the api get runtime status API operation."""
         return {
             "enabled": self.enabled,
             "wake_words": list(self.wake_words),
@@ -496,6 +531,7 @@ class LandPlugin(Plugin):
         }
 
     def _load_no_create_regions(self) -> List[Dict[str, Any]]:
+        """Load no create regions data."""
         if not os.path.exists(self.no_create_regions_file):
             regions = default_no_create_regions()
             self._save_no_create_regions(regions)
@@ -513,6 +549,7 @@ class LandPlugin(Plugin):
 
     def _save_no_create_regions(
             self, regions: Optional[List[Dict[str, Any]]] = None):
+        """Save no create regions data."""
         data = self.no_create_regions_raw if regions is None else regions
         os.makedirs(
             os.path.dirname(
@@ -522,11 +559,13 @@ class LandPlugin(Plugin):
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def _reload_no_create_regions(self):
+        """Implement the reload no create regions operation."""
         self.no_create_regions = self._normalize_no_create_regions(
             self.no_create_regions_raw)
 
     @staticmethod
     def _as_float_pos(raw: Any) -> Optional[Tuple[float, float, float]]:
+        """Implement the as float pos operation."""
         if not isinstance(raw, list) or len(raw) != 3:
             return None
         try:
@@ -535,6 +574,7 @@ class LandPlugin(Plugin):
             return None
 
     def _normalize_no_create_regions(self, raw: Any) -> List[Dict[str, Any]]:
+        """Normalize no create regions values."""
         regions: List[Dict[str, Any]] = []
         if not isinstance(raw, list):
             return regions
@@ -583,6 +623,7 @@ class LandPlugin(Plugin):
         shape: str = "圆形",
         size: Optional[Tuple[int, int, int]] = None,
     ) -> Optional[str]:
+        """Return no create overlap reason data."""
         shape = LandData.normalize_shape(shape)
         box_bounds = None
         if shape == "方形":
@@ -618,12 +659,14 @@ class LandPlugin(Plugin):
 
     @staticmethod
     def _is_exit_input(text: str) -> bool:
+        """Implement the is exit input operation."""
         return text.strip().lower() in (".", "。", "q", "quit", "退出")
 
     def _wait_menu_input(
             self,
             player: Player,
             timeout: int = 60) -> Optional[str]:
+        """Implement the wait menu input operation."""
         msg = game_utils.waitMsg(player.name, timeout)
         if msg is None:
             player.show(self._error("回复超时，已退出菜单"))
@@ -640,6 +683,7 @@ class LandPlugin(Plugin):
             title: str,
             options: List[str],
             timeout: int = 60) -> Optional[int]:
+        """Implement the select menu operation."""
         while True:
             hints = [
                 f"输入 §e[1-{len(options)}]§b 之间的数字以选择功能",
@@ -665,11 +709,13 @@ class LandPlugin(Plugin):
             title: str,
             prompt: str,
             timeout: int = 60) -> Optional[str]:
+        """Implement the prompt text operation."""
         player.show(self._ui_card(title, [prompt], ["输入 §c.§b 退出"]))
         return self._wait_menu_input(player, timeout)
 
     def _parse_box_size_input(
             self, raw: str) -> Tuple[Optional[Tuple[int, int, int]], Optional[str]]:
+        """Implement the parse box size input operation."""
         parts = raw.replace(",", " ").replace("，", " ").split()
         if len(parts) != 3:
             return None, "格式错误，需要输入 长 高 宽 三个整数"
@@ -692,6 +738,7 @@ class LandPlugin(Plugin):
             self,
             playername: str,
             allow_offline: bool = False) -> Optional[str]:
+        """Return xuid by name data."""
         try:
             return str(
                 self.xuid_getter.get_xuid_by_name(
@@ -702,6 +749,7 @@ class LandPlugin(Plugin):
             return None
 
     def _get_player_xuid(self, player: Player) -> Optional[str]:
+        """Return player xuid data."""
         xuid = getattr(player, "xuid", None)
         if xuid:
             return str(xuid)
@@ -709,6 +757,7 @@ class LandPlugin(Plugin):
 
     def _make_member(self, playername: str, rank: LandRank,
                      allow_offline: bool = False) -> Optional[LandMember]:
+        """Implement the make member operation."""
         xuid = self._get_xuid_by_name(playername, allow_offline=allow_offline)
         if xuid is None:
             return None
@@ -719,6 +768,7 @@ class LandPlugin(Plugin):
             player: Player,
             title: str,
             lands: List[LandData]) -> Optional[LandData]:
+        """Implement the select land operation."""
         if not lands:
             player.show(self._error("没有可选择的领地"))
             return None
@@ -732,6 +782,7 @@ class LandPlugin(Plugin):
         return lands[choice - 1]
 
     def _land_summary(self, land: LandData) -> Dict[str, Any]:
+        """Implement the land summary operation."""
         admins = [m.name for m in land.members if m.rank == LandRank.ADMIN]
         members = [m.name for m in land.members if m.rank == LandRank.MEMBER]
         return {
@@ -751,6 +802,7 @@ class LandPlugin(Plugin):
         }
 
     def _find_land_by_name_or_id(self, query: str) -> Optional[LandData]:
+        """Implement the find land by name or id operation."""
         query = str(query).strip()
         if not query:
             return None
@@ -760,6 +812,7 @@ class LandPlugin(Plugin):
                     if land.name == query), None)
 
     def _migrate_legacy_data_path(self):
+        """Implement the migrate legacy data path operation."""
         legacy_path = os.path.join(
             os.path.dirname(
                 self.data_path),
@@ -778,16 +831,19 @@ class LandPlugin(Plugin):
                     self.print_war(f"迁移旧版领地系统数据文件 {filename} 失败: {err}")
 
     def _ensure_dirs(self):
+        """Implement the ensure dirs operation."""
         os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
 
     # ---------- 玩家-领地 缓存维护 ----------
     def _add_player_land(self, xuid: str, land_id: str):
+        """Implement the add player land operation."""
         if xuid not in self.player_land_cache:
             self.player_land_cache[xuid] = []
         if land_id not in self.player_land_cache[xuid]:
             self.player_land_cache[xuid].append(land_id)
 
     def _remove_player_land(self, xuid: str, land_id: str):
+        """Implement the remove player land operation."""
         if xuid in self.player_land_cache:
             lst = self.player_land_cache[xuid]
             if land_id in lst:
@@ -796,6 +852,7 @@ class LandPlugin(Plugin):
                 del self.player_land_cache[xuid]
 
     def _rebuild_player_land_cache(self):
+        """Implement the rebuild player land cache operation."""
         self.player_land_cache.clear()
         for land_id, land in self.lands.items():
             for member in land.members:
@@ -803,6 +860,7 @@ class LandPlugin(Plugin):
 
     # ---------- 数据加载/保存 ----------
     def _load_data(self):
+        """Load data data."""
         try:
             if os.path.exists(self.data_file):
                 with open(self.data_file, "r", encoding="utf-8") as f:
@@ -820,6 +878,7 @@ class LandPlugin(Plugin):
             fmts.print_err(f"加载数据失败: {e}")
 
     def _save_data(self):
+        """Save data data."""
         try:
             raw = {lid: land.to_dict() for lid, land in self.lands.items()}
             with open(self.data_file, "w", encoding="utf-8") as f:
@@ -830,6 +889,7 @@ class LandPlugin(Plugin):
     # ---------- 坐标获取 ----------
     def _get_player_coord(
             self, player: str) -> Optional[Tuple[float, float, float]]:
+        """Return player coord data."""
         try:
             pos_dict = game_utils.getPos(player)
             if pos_dict and "position" in pos_dict:
@@ -855,6 +915,7 @@ class LandPlugin(Plugin):
 
     def _manual_coord(
             self, player: Player) -> Optional[Tuple[float, float, float]]:
+        """Implement the manual coord operation."""
         player.show(self._ui_card(
             "手动坐标输入",
             [
@@ -887,6 +948,7 @@ class LandPlugin(Plugin):
                                  float,
                                  float],
                       dimension: int = 0) -> Optional[LandData]:
+        """Implement the find land at operation."""
         x, y, z = pos
         for land in self.lands.values():
             if land.dimension != dimension:
@@ -896,6 +958,7 @@ class LandPlugin(Plugin):
         return None
 
     def _find_land_at_player(self, player: str) -> Optional[LandData]:
+        """Implement the find land at player operation."""
         pos = self._get_player_coord(player)
         if pos:
             return self._find_land_at(pos)
@@ -903,11 +966,13 @@ class LandPlugin(Plugin):
 
     # ---------- 检测线程 ----------
     def _start_detection(self):
+        """Implement the start detection operation."""
         if self._detection_started:
             return
         self._detection_started = True
 
         def loop():
+            """Implement the loop operation."""
             while not self._stop_event.wait(self.check_interval):
                 try:
                     self._update_coords()
@@ -917,6 +982,7 @@ class LandPlugin(Plugin):
         threading.Thread(target=loop, daemon=True).start()
 
     def _update_coords(self):
+        """Implement the update coords operation."""
         if not self.enabled:
             return
         players = self.game_ctrl.allplayers
@@ -929,6 +995,7 @@ class LandPlugin(Plugin):
             self.coords = new_coords
 
     def _check_lands(self):
+        """Implement the check lands operation."""
         if not self.enabled:
             return
         with self.coords_lock:
@@ -974,6 +1041,7 @@ class LandPlugin(Plugin):
                         break
 
     def _tp_random(self, player: str, x: float, y: float, z: float):
+        """Implement the tp random operation."""
         angle = random.uniform(0, 2 * math.pi)
         dist = random.uniform(10, self.tp_radius)
         nx = x + dist * math.cos(angle)
@@ -984,6 +1052,7 @@ class LandPlugin(Plugin):
 
     # ---------- 实体标记（可选） ----------
     def _spawn_entity(self, land: LandData):
+        """Implement the spawn entity operation."""
         try:
             x, y, z = land.center
             self._remove_entity(land)
@@ -995,6 +1064,7 @@ class LandPlugin(Plugin):
             pass
 
     def _remove_entity(self, land: LandData):
+        """Implement the remove entity operation."""
         try:
             cmd = f"kill @e[type=area_effect_cloud,tag=land_{land.land_id}]"
             self.game_ctrl.sendwocmd(cmd)
@@ -1003,6 +1073,7 @@ class LandPlugin(Plugin):
 
     # ---------- 命令处理 ----------
     def on_chat(self, chat: Chat):
+        """Implement the on chat operation."""
         if not self.enabled:
             return
         msg = chat.msg.strip()
@@ -1011,6 +1082,7 @@ class LandPlugin(Plugin):
         self._main_menu(chat.player)
 
     def _main_menu(self, player: Player):
+        """Implement the main menu operation."""
         choice = self._select_menu(
             player,
             "功能菜单",
@@ -1046,6 +1118,7 @@ class LandPlugin(Plugin):
             self._test(player)
 
     def _menu_create(self, player: Player):
+        """Implement the menu create operation."""
         name = self._prompt_text(player, "创建领地", "请输入领地名称")
         if name is None:
             return
@@ -1081,6 +1154,7 @@ class LandPlugin(Plugin):
                         size[2])])
 
     def _menu_delete(self, player: Player):
+        """Implement the menu delete operation."""
         player_xuid = self._get_player_xuid(player)
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
@@ -1093,6 +1167,7 @@ class LandPlugin(Plugin):
         self._delete(player, [land.name])
 
     def _menu_info(self, player: Player):
+        """Implement the menu info operation."""
         choice = self._select_menu(
             player,
             "查看领地信息",
@@ -1122,6 +1197,7 @@ class LandPlugin(Plugin):
                 self._info(player, [name])
 
     def _menu_member(self, player: Player):
+        """Implement the menu member operation."""
         choice = self._select_menu(player, "成员管理", ["添加成员", "移除成员", "查看成员列表"])
         if choice is None:
             return
@@ -1138,6 +1214,7 @@ class LandPlugin(Plugin):
         self._member(player, [["添加", "移除"][choice - 1], target])
 
     def _menu_admin(self, player: Player):
+        """Implement the menu admin operation."""
         choice = self._select_menu(player, "管理员管理", ["添加管理员", "移除管理员"])
         if choice is None:
             return
@@ -1147,6 +1224,7 @@ class LandPlugin(Plugin):
         self._admin(player, [["添加", "移除"][choice - 1], target])
 
     def _menu_tp(self, player: Player):
+        """Implement the menu tp operation."""
         player_xuid = self._get_player_xuid(player)
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
@@ -1159,6 +1237,7 @@ class LandPlugin(Plugin):
         self._tp(player, [land.name])
 
     def _create(self, player: Player, args: List[str]):
+        """Implement the create operation."""
         if len(args) < 2:
             player.show(self._error(
                 f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入创建菜单"))
@@ -1242,6 +1321,7 @@ class LandPlugin(Plugin):
         self._spawn_entity(land)
 
     def _delete(self, player: Player, args: List[str]):
+        """Implement the delete operation."""
         player_xuid = self._get_player_xuid(player)
         if player_xuid is None:
             player.show(self._error("无法获取你的 XUID"))
@@ -1278,6 +1358,7 @@ class LandPlugin(Plugin):
         player.show(self._success(f"已删除领地 '{land.name}'"))
 
     def _info(self, player: Player, args: List[str]):
+        """Implement the info operation."""
         land = None
         if args:
             name = args[0]
@@ -1311,6 +1392,7 @@ class LandPlugin(Plugin):
         ))
 
     def _member(self, player: Player, args: List[str]):
+        """Implement the member operation."""
         if len(args) < 1:
             player.show(self._error(
                 f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入成员管理菜单"))
@@ -1372,6 +1454,7 @@ class LandPlugin(Plugin):
             player.show(self._error("未知子命令"))
 
     def _admin(self, player: Player, args: List[str]):
+        """Implement the admin operation."""
         if len(args) < 2:
             player.show(self._error(
                 f"请直接输入唤醒词 {' / '.join(self.wake_words)} 进入管理员管理菜单"))
@@ -1419,6 +1502,7 @@ class LandPlugin(Plugin):
             player.show(self._error("未知子命令"))
 
     def _tp(self, player: Player, args: List[str]):
+        """Implement the tp operation."""
         land = None
         if args:
             name = args[0]
@@ -1462,6 +1546,7 @@ class LandPlugin(Plugin):
         player.show(self._success(f"已传送到领地 '{land.name}'"))
 
     def _list(self, player: Player):
+        """Implement the list operation."""
         if not self.lands:
             player.show(self._error("暂无任何领地"))
             return
@@ -1472,6 +1557,7 @@ class LandPlugin(Plugin):
         player.show(self._ui_menu("领地列表", options, [f"共 {len(options)} 个领地"]))
 
     def _test(self, player: Player):
+        """Implement the test operation."""
         pos = self._get_player_coord(player.name)
         lines = []
         if pos:
@@ -1493,22 +1579,26 @@ class LandPlugin(Plugin):
         player.show(self._ui_card("测试信息", lines))
 
     def on_player_join(self, player: Player):
+        """Implement the on player join operation."""
         if not self.enabled:
             return
         pass
 
     def on_player_leave(self, player: Player):
+        """Implement the on player leave operation."""
         if not self.enabled:
             return
         pass
 
     # ---------- 外部插件 API ----------
     def api_list_lands(self) -> Tuple[bool, str, List[Dict[str, Any]]]:
+        """Expose the api list lands API operation."""
         lands = [self._land_summary(land) for land in self.lands.values()]
         return True, f"共 {len(lands)} 个领地", lands
 
     def api_get_land(
             self, land_query: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api get land API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1524,6 +1614,7 @@ class LandPlugin(Plugin):
         size: Optional[Tuple[int, int, int]] = None,
         dimension: int = 0,
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api add land API operation."""
         owner = str(owner).strip()
         name = str(name).strip()
         if not owner or not name:
@@ -1599,6 +1690,7 @@ class LandPlugin(Plugin):
             land.range_text()}", self._land_summary(land)
 
     def api_delete_land(self, land_query: str) -> Tuple[bool, str, None]:
+        """Expose the api delete land API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1615,6 +1707,7 @@ class LandPlugin(Plugin):
                                                       str,
                                                       Optional[Dict[str,
                                                                     Any]]]:
+        """Expose the api add member API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1644,6 +1737,7 @@ class LandPlugin(Plugin):
         player_name: str,
         rank: str,
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api set member rank API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1671,6 +1765,7 @@ class LandPlugin(Plugin):
                                                      str,
                                                      Optional[Dict[str,
                                                                    Any]]]:
+        """Expose the api remove member API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1691,6 +1786,7 @@ class LandPlugin(Plugin):
 
     def api_transfer_owner(
             self, land_query: str, owner: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api transfer owner API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1719,6 +1815,7 @@ class LandPlugin(Plugin):
         land_query: str,
         center: Tuple[float, float, float],
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api update land center API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1745,6 +1842,7 @@ class LandPlugin(Plugin):
         radius: Optional[int] = None,
         size: Optional[Tuple[int, int, int]] = None,
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Expose the api update land range API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
             return False, f"领地 '{land_query}' 不存在", None
@@ -1788,9 +1886,11 @@ class LandPlugin(Plugin):
             land.range_text()}", self._land_summary(land)
 
     def _console_print(self, text: str):
+        """Implement the console print operation."""
         fmts.print_inf(text)
 
     def _console_prompt(self, prompt: str) -> Optional[str]:
+        """Implement the console prompt operation."""
         value = input(fmts.fmt_info(
             f"§a❀ §b{prompt} §7(输入 . 退出整个领地系统云链联动版管理菜单): ")).strip()
         if self._is_exit_input(value):
@@ -1798,6 +1898,7 @@ class LandPlugin(Plugin):
         return value
 
     def _console_select(self, title: str, options: List[str]) -> Optional[int]:
+        """Implement the console select operation."""
         while True:
             self._console_print(self._ui_menu(
                 title,
@@ -1814,6 +1915,7 @@ class LandPlugin(Plugin):
             return choice
 
     def _console_prompt_float(self, prompt: str) -> Optional[float]:
+        """Implement the console prompt float operation."""
         value = self._console_prompt(prompt)
         if value is None:
             return None
@@ -1824,6 +1926,7 @@ class LandPlugin(Plugin):
             return None
 
     def _console_prompt_int(self, prompt: str) -> Optional[int]:
+        """Implement the console prompt int operation."""
         value = self._console_prompt(prompt)
         if value is None:
             return None
@@ -1834,6 +1937,7 @@ class LandPlugin(Plugin):
             return None
 
     def _console_prompt_pos(self, prompt: str) -> Optional[List[float]]:
+        """Implement the console prompt pos operation."""
         value = self._console_prompt(f"{prompt}，格式 x y z")
         if value is None:
             return None
@@ -1849,6 +1953,7 @@ class LandPlugin(Plugin):
 
     def _console_select_land(
             self, title: str, lands: Optional[List[LandData]] = None) -> Optional[LandData]:
+        """Implement the console select land operation."""
         lands = list(self.lands.values()) if lands is None else lands
         if not lands:
             fmts.print_err(self._error("暂无可选择的领地"))
@@ -1862,6 +1967,7 @@ class LandPlugin(Plugin):
         return lands[choice - 1]
 
     def console_manage(self, _args: List[str]):
+        """Implement the console manage operation."""
         try:
             while True:
                 choice = self._console_select(
@@ -1885,6 +1991,7 @@ class LandPlugin(Plugin):
             fmts.print_inf(self._success("已退出领地系统云链联动版管理菜单"))
 
     def _console_add_no_create_region(self):
+        """Implement the console add no create region operation."""
         name = self._console_prompt("请输入区域名称")
         if name is None:
             return
@@ -1921,6 +2028,7 @@ class LandPlugin(Plugin):
         fmts.print_suc(self._success(f"已新增不可创建领地区域 '{name}'"))
 
     def _console_delete_no_create_region(self):
+        """Implement the console delete no create region operation."""
         if not self.no_create_regions_raw:
             fmts.print_err(self._error("暂无不可创建领地区域"))
             return
@@ -1945,6 +2053,7 @@ class LandPlugin(Plugin):
                         choice)}'"))
 
     def _console_add_land(self):
+        """Implement the console add land operation."""
         owner = self._console_prompt("请输入领地主人玩家名")
         name = self._console_prompt("请输入领地名称")
         center = self._console_prompt_pos("请输入领地中心坐标")
@@ -2007,6 +2116,7 @@ class LandPlugin(Plugin):
                     land.range_text()}"))
 
     def _console_delete_land(self):
+        """Implement the console delete land operation."""
         land = self._console_select_land("删除玩家领地")
         if land is None:
             return
@@ -2017,6 +2127,7 @@ class LandPlugin(Plugin):
         fmts.print_suc(self._success(f"已删除领地 '{land.name}'"))
 
     def _console_manage_land(self):
+        """Implement the console manage land operation."""
         land = self._console_select_land("管理玩家领地")
         if land is None:
             return
@@ -2041,6 +2152,7 @@ class LandPlugin(Plugin):
                 self._console_show_land_info(land)
 
     def _console_show_land_info(self, land: LandData):
+        """Implement the console show land info operation."""
         admins = [m.name for m in land.members if m.rank == LandRank.ADMIN]
         members = [m.name for m in land.members if m.rank == LandRank.MEMBER]
         fmts.print_inf(self._ui_card(
@@ -2055,6 +2167,7 @@ class LandPlugin(Plugin):
         ))
 
     def _console_manage_land_users(self, land: LandData):
+        """Implement the console manage land users operation."""
         while True:
             choice = self._console_select(
                 f"管理用户 - {land.name}",
@@ -2108,6 +2221,7 @@ class LandPlugin(Plugin):
                 ))
 
     def _console_manage_land_admins(self, land: LandData):
+        """Implement the console manage land admins operation."""
         while True:
             choice = self._console_select(
                 f"管理管理人员 - {land.name}",
@@ -2166,6 +2280,7 @@ class LandPlugin(Plugin):
                 ))
 
     def _console_manage_land_owner(self, land: LandData):
+        """Implement the console manage land owner operation."""
         while True:
             choice = self._console_select(
                 f"管理所有者 - {land.name}",
@@ -2201,6 +2316,7 @@ class LandPlugin(Plugin):
                     f"所有者 - {land.name}", [land.owner]))
 
     def _console_manage_land_center(self, land: LandData):
+        """Implement the console manage land center operation."""
         while True:
             choice = self._console_select(
                 f"管理领地中心点 - {land.name}",
@@ -2230,6 +2346,7 @@ class LandPlugin(Plugin):
                 ))
 
     def _console_manage_land_radius(self, land: LandData):
+        """Implement the console manage land radius operation."""
         while True:
             options = [
                 "修改方形长高宽",
@@ -2301,6 +2418,7 @@ class LandPlugin(Plugin):
         dimension: int = 0,
         skip_land_id: Optional[str] = None,
     ) -> Optional[str]:
+        """Return land candidate overlap reason data."""
         blocked_region = self._get_no_create_overlap_reason(
             center, radius, shape, size)
         if blocked_region:
@@ -2320,6 +2438,7 @@ class LandPlugin(Plugin):
         shape: Optional[str] = None,
         size: Optional[Tuple[int, int, int]] = None,
     ) -> Optional[str]:
+        """Return land edit overlap reason data."""
         edit_shape = shape or land.shape
         edit_size = size if size is not None else land.size
         return self._get_land_candidate_overlap_reason(
@@ -2332,6 +2451,7 @@ class LandPlugin(Plugin):
         )
 
     def console_test(self, args: List[str]):
+        """Implement the console test operation."""
         if not self.enabled:
             fmts.print_war(self._warn("领地系统云链联动版当前已在配置中禁用"))
             return

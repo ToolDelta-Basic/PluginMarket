@@ -814,6 +814,7 @@ DYNAMIC_LOAD_DEFAULT = {
 
 
 def _merge_config(raw: Any, default: Any) -> Any:
+    """Implement the merge config operation."""
     if isinstance(default, dict):
         merged = {
             key: _merge_config(raw.get(key) if isinstance(raw, dict) else None, value)
@@ -831,6 +832,7 @@ def _merge_config(raw: Any, default: Any) -> Any:
 
 
 def _normalize_bool(value: Any, fallback: bool) -> bool:
+    """Normalize bool values."""
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
@@ -849,6 +851,7 @@ def _normalize_str(
         fallback: str,
         *,
         allow_empty: bool = False) -> str:
+    """Normalize str values."""
     if value is None:
         return fallback
     text = str(value).strip()
@@ -858,6 +861,7 @@ def _normalize_str(
 
 
 def _normalize_number(value: Any, fallback: int | float) -> int | float:
+    """Normalize number values."""
     if isinstance(value, bool):
         return fallback
     if isinstance(value, (int, float)):
@@ -872,6 +876,7 @@ def _normalize_number(value: Any, fallback: int | float) -> int | float:
 
 
 def _normalize_positive_int(value: Any, fallback: int) -> int:
+    """Normalize positive int values."""
     if isinstance(value, bool):
         return fallback
     try:
@@ -882,6 +887,7 @@ def _normalize_positive_int(value: Any, fallback: int) -> int:
 
 
 def _normalize_non_negative_int(value: Any, fallback: int) -> int:
+    """Normalize non negative int values."""
     if isinstance(value, bool):
         return fallback
     try:
@@ -896,6 +902,7 @@ def _normalize_string_list(
         fallback: list[str],
         *,
         allow_empty: bool = False) -> list[str]:
+    """Normalize string list values."""
     if isinstance(value, str):
         candidates = [value]
     elif isinstance(value, list):
@@ -917,6 +924,7 @@ def _normalize_string_list(
 
 def _normalize_any_key_dict(
         raw: Any, fallback: dict[str, Any], value_normalizer) -> dict[str, Any]:
+    """Normalize any key dict values."""
     source = raw if isinstance(raw, dict) else fallback
     default_values = fallback if isinstance(fallback, dict) else {}
     result: dict[str, Any] = {}
@@ -931,6 +939,7 @@ def _normalize_any_key_dict(
 
 def _normalize_menu_items(
         raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+    """Normalize menu items values."""
     source = _merge_config(raw, fallback)
     result: dict[str, Any] = {}
     for key, item_fallback in fallback.items():
@@ -951,6 +960,7 @@ def _normalize_menu_items(
 
 def _trim_fixed_keys(raw: dict[str, Any],
                      default: dict[str, Any]) -> dict[str, Any]:
+    """Implement the trim fixed keys operation."""
     return {
         key: raw.get(key, copy.deepcopy(value))
         for key, value in default.items()
@@ -959,6 +969,7 @@ def _trim_fixed_keys(raw: dict[str, Any],
 
 def _normalize_market_config(
         raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+    """Normalize market config values."""
     raw = raw if isinstance(raw, dict) else {}
     result = copy.deepcopy(fallback)
     bool_keys = (
@@ -992,6 +1003,7 @@ def _normalize_market_config(
 
 def _normalize_effects_config(
         raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+    """Normalize effects config values."""
     source = raw if isinstance(raw, dict) else fallback
     default_effect = next(iter(fallback.values())) if fallback else {}
     result: dict[str, Any] = {}
@@ -1023,6 +1035,7 @@ def _normalize_effects_config(
 
 def _normalize_permissions(
         raw: Any, fallback: dict[str, Any]) -> dict[str, Any]:
+    """Normalize permissions values."""
     source = raw if isinstance(raw, dict) else fallback
     default_role = next(iter(fallback.values())) if fallback else {}
     result: dict[str, dict[str, bool]] = {}
@@ -1040,6 +1053,7 @@ def _normalize_permissions(
 
 def _normalize_task_templates(
         raw: Any, fallback: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalize task templates values."""
     source = raw if isinstance(raw, list) else fallback
     default_template = fallback[0] if fallback else {}
     result: list[dict[str, Any]] = []
@@ -1078,6 +1092,7 @@ def _normalize_task_templates(
 
 
 def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
+    """Normalize grouped config values."""
     default = DEFAULT_CONFIG
     config = _merge_config(raw, default)
     config = {key: copy.deepcopy(config[key]) for key in default}
@@ -1527,6 +1542,7 @@ def grouped_config_std() -> dict[str, Any]:
 
 
 def _int_keyed_dict(raw: Any) -> Any:
+    """Implement the int keyed dict operation."""
     if not isinstance(raw, dict):
         return raw
 
@@ -1541,11 +1557,13 @@ def _int_keyed_dict(raw: Any) -> Any:
 
 
 def _require_current_config_format(raw_config: Any) -> None:
+    """Implement the require current config format operation."""
     if not isinstance(raw_config, dict):
         raise ValueError("配置项必须是对象")
 
 
 def _normalize_effect_runtime_config(raw: Any) -> Any:
+    """Normalize effect runtime config values."""
     effects = copy.deepcopy(raw)
     if not isinstance(effects, dict):
         return effects
@@ -1560,6 +1578,7 @@ def _normalize_effect_runtime_config(raw: Any) -> Any:
 
 
 def _build_runtime_config(grouped_config: dict[str, Any]) -> dict[str, Any]:
+    """Implement the build runtime config operation."""
     base = grouped_config["基础配置"]
     features = grouped_config["功能开关"]
     guild = grouped_config["公会配置"]
@@ -1614,6 +1633,7 @@ def _build_runtime_config(grouped_config: dict[str, Any]) -> dict[str, Any]:
 
 def _set_config_attributes(
         config_cls: type, normalized_config: dict[str, Any]) -> None:
+    """Set config attributes data."""
     for attr_name in REMOVED_CONFIG_ATTRIBUTES:
         if hasattr(config_cls, attr_name):
             delattr(config_cls, attr_name)
@@ -1632,10 +1652,12 @@ class Config:
 
     @classmethod
     def grouped_config_std(cls) -> dict[str, Any]:
+        """Implement the grouped config std operation."""
         return grouped_config_std()
 
     @classmethod
     def is_dynamic_load_enabled(cls) -> bool:
+        """Implement the is dynamic load enabled operation."""
         settings = cls._grouped_config.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return DYNAMIC_LOAD_DEFAULT[DYNAMIC_LOAD_ENABLED_KEY]
@@ -1646,6 +1668,7 @@ class Config:
 
     @classmethod
     def dynamic_load_interval(cls) -> int:
+        """Implement the dynamic load interval operation."""
         settings = cls._grouped_config.get(DYNAMIC_LOAD_SETTINGS_KEY, {})
         if not isinstance(settings, dict):
             return RUNTIME_CONFIG_RELOAD_INTERVAL
@@ -1663,6 +1686,7 @@ class Config:
                             int,
                             int]) -> dict[str,
                                           Any]:
+        """Load load data."""
         default_config = copy.deepcopy(DEFAULT_CONFIG)
 
         try:

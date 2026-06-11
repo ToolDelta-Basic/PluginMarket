@@ -305,6 +305,7 @@ class QQLinkerConfigMixin:
 
     @staticmethod
     def _normalize_bool(value: Any, fallback: bool) -> bool:
+        """Normalize bool values."""
         if isinstance(value, bool):
             return value
         return fallback
@@ -487,9 +488,11 @@ class QQLinkerConfigMixin:
         )
 
     def _legacy_group_state_dir(self) -> str:
+        """Implement the legacy group state dir operation."""
         return self.format_data_path(self.LEGACY_GROUP_STATE_DIR_NAME)
 
     def _read_legacy_group_state_file(self, path: str) -> dict[str, list[int]]:
+        """Implement the read legacy group state file operation."""
         if not os.path.isfile(path):
             return {"admins": [], "super_admins": []}
         try:
@@ -508,6 +511,7 @@ class QQLinkerConfigMixin:
 
     def _merge_permission_item(
             self, next_item: dict[str, bool], raw_item: Any):
+        """Implement the merge permission item operation."""
         if not isinstance(raw_item, dict):
             return
         for key, fallback in list(next_item.items()):
@@ -701,6 +705,7 @@ class QQLinkerConfigMixin:
             return fallback
 
     def _legacy_group_state_files(self) -> list[tuple[int, str]]:
+        """Implement the legacy group state files operation."""
         legacy_dir = self._legacy_group_state_dir()
         try:
             names = os.listdir(legacy_dir)
@@ -721,6 +726,7 @@ class QQLinkerConfigMixin:
 
     @staticmethod
     def _append_unique_ints(target: list[int], values: list[int]) -> bool:
+        """Implement the append unique ints operation."""
         changed = False
         for value in values:
             if value not in target:
@@ -1006,6 +1012,7 @@ class QQLinkerConfigMixin:
 
     @staticmethod
     def _extract_config_items(full_config: Any) -> Any:
+        """Implement the extract config items operation."""
         if isinstance(
                 full_config,
                 dict) and isinstance(
@@ -1022,6 +1029,7 @@ class QQLinkerConfigMixin:
 
     def _permission_cfg_for_group(
             self, group_id: int) -> dict[str, Any] | None:
+        """Implement the permission cfg for group operation."""
         group_cfg = getattr(self, "group_cfgs", {}).get(group_id)
         if not isinstance(group_cfg, dict):
             return None
@@ -1165,6 +1173,7 @@ class QQLinkerConfigMixin:
 
     @staticmethod
     def _api_int_value(value: Any):
+        """Implement the api int value operation."""
         try:
             return int(str(value).strip())
         except (TypeError, ValueError):
@@ -1500,12 +1509,14 @@ class QQLinkerConfigMixin:
         )
 
     def menu_exit_hint(self, group_id: int | None = None, action: str = "退出"):
+        """Implement the menu exit hint operation."""
         return f"输入 {' / '.join(self.get_group_menu_exit_triggers(group_id))} {action}"
 
     def menu_back_hint(
             self,
             group_id: int | None = None,
             action: str = "返回上级菜单"):
+        """Implement the menu back hint operation."""
         return f"输入 {' / '.join(self.get_group_menu_back_triggers(group_id))} {action}"
 
     def normalize_menu_control_hints(

@@ -10,6 +10,7 @@ DYNAMIC_LOAD_DEFAULT_INTERVAL = 5
 
 
 def default_config() -> Dict[str, Any]:
+    """Implement the default config operation."""
     return {
         DYNAMIC_LOAD_SETTINGS_KEY: {
             DYNAMIC_LOAD_ENABLED_KEY: True,
@@ -31,6 +32,7 @@ def default_config() -> Dict[str, Any]:
 
 
 def default_no_create_regions() -> List[Dict[str, Any]]:
+    """Implement the default no create regions operation."""
     return [
         {
             "名称": "主城保护范围",
