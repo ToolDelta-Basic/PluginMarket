@@ -25,7 +25,7 @@ from typing import Optional, Union
 
 # websocket modules
 from ._abnf import ABNF, STATUS_NORMAL, continuous_frame, frame_buffer
-from ._exceptions import WebSocketProtocolException, WebSocketConnectionClosedException
+from ._exceptions import WebSocketProtocolException, WebSocketConnectionClosedException  # noqa: E501
 from ._handshake import SUPPORTED_REDIRECT_STATUSES, handshake
 from ._http import connect, proxy_info
 from ._logging import debug, error, trace, isEnabledForError, isEnabledForTrace
@@ -102,7 +102,8 @@ class WebSocket:
         self.get_mask_key = get_mask_key
         # These buffer over the build-up of a single frame.
         self.frame_buffer = frame_buffer(self._recv, skip_utf8_validation)
-        self.cont_frame = continuous_frame(fire_cont_frame, skip_utf8_validation)
+        self.cont_frame = continuous_frame(
+            fire_cont_frame, skip_utf8_validation)
 
         if enable_multithread:
             self.lock = threading.Lock()
@@ -162,7 +163,7 @@ class WebSocket:
         Parameters
         ----------
         timeout: int or float
-            timeout time (in seconds). This value could be either float/integer.
+            timeout time (in seconds). This value could be either float/integer.  # noqa: E501
         """
         self.sock_opt.timeout = timeout
         if self.sock:
@@ -230,7 +231,7 @@ class WebSocket:
             Custom host header string.
         timeout: int or float
             Socket timeout time. This value is an integer or float.
-            If you set None for this value, it means "use default_timeout value"
+            If you set None for this value, it means "use default_timeout value"  # noqa: E501
         http_proxy_host: str
             HTTP proxy host name.
         http_proxy_port: str or int
@@ -250,14 +251,14 @@ class WebSocket:
             Pre-initialized stream socket.
         """
         self.sock_opt.timeout = options.get("timeout", self.sock_opt.timeout)
-        self.sock, addrs = connect(
-            url, self.sock_opt, proxy_info(**options), options.pop("socket", None)
-        )
+        self.sock, addrs = connect(url, self.sock_opt, proxy_info(
+            **options), options.pop("socket", None))
 
         try:
-            self.handshake_response = handshake(self.sock, url, *addrs, **options)
+            self.handshake_response = handshake(
+                self.sock, url, *addrs, **options)
             for _ in range(options.pop("redirect_limit", 3)):
-                if self.handshake_response.status in SUPPORTED_REDIRECT_STATUSES:
+                if self.handshake_response.status in SUPPORTED_REDIRECT_STATUSES:  # noqa: E501
                     url = self.handshake_response.headers["location"]
                     self.sock.close()
                     self.sock, addrs = connect(
@@ -276,7 +277,8 @@ class WebSocket:
                 self.sock = None
             raise
 
-    def send(self, payload: Union[bytes, str], opcode: int = ABNF.OPCODE_TEXT) -> int:
+    def send(self, payload: Union[bytes, str],
+             opcode: int = ABNF.OPCODE_TEXT) -> int:
         """
         Send the data as string.
 
@@ -452,7 +454,8 @@ class WebSocket:
                     if len(frame.data) < 126:
                         self.pong(frame.data)
                     else:
-                        raise WebSocketProtocolException("Ping message is too long")
+                        raise WebSocketProtocolException(
+                            "Ping message is too long")
                 if control_frame:
                     return frame.opcode, frame
 
@@ -476,7 +479,11 @@ class WebSocket:
         self.connected = False
         self.send(struct.pack("!H", status) + reason, ABNF.OPCODE_CLOSE)
 
-    def close(self, status: int = STATUS_NORMAL, reason: bytes = b"", timeout: int = 3):
+    def close(
+            self,
+            status: int = STATUS_NORMAL,
+            reason: bytes = b"",
+            timeout: int = 3):
         """
         Close Websocket object
 
@@ -591,7 +598,7 @@ def create_connection(url: str, timeout=None, class_=WebSocket, **options):
     http_no_proxy: list
         Whitelisted host names that don't use the proxy.
     http_proxy_auth: tuple
-        HTTP proxy auth information. tuple of username and password. Default is None.
+        HTTP proxy auth information. tuple of username and password. Default is None.  # noqa: E501
     http_proxy_timeout: int or float
         HTTP proxy timeout, default is 60 sec as per python-socks.
     enable_multithread: bool
@@ -600,7 +607,7 @@ def create_connection(url: str, timeout=None, class_=WebSocket, **options):
         Number of redirects to follow.
     sockopt: tuple
         Values for socket.setsockopt.
-        sockopt must be a tuple and each element is an argument of sock.setsockopt.
+        sockopt must be a tuple and each element is an argument of sock.setsockopt.  # noqa: E501
     sslopt: dict
         Optional dict object for ssl socket options. See FAQ for details.
     subprotocols: list

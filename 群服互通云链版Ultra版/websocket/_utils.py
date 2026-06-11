@@ -18,7 +18,11 @@ limitations under the License.
 """
 
 from typing import Union
-__all__ = ["NoLock", "validate_utf8", "extract_err_message", "extract_error_code"]
+__all__ = [
+    "NoLock",
+    "validate_utf8",
+    "extract_err_message",
+    "extract_error_code"]
 
 
 class NoLock:
@@ -426,8 +430,10 @@ except ImportError:
         tp = _UTF8D[ch]
 
         codep = (
-            (ch & 0x3F) | (codep << 6) if (state != _UTF8_ACCEPT) else (0xFF >> tp) & ch
-        )
+            (ch & 0x3F) | (
+                codep << 6) if (
+                state != _UTF8_ACCEPT) else (
+                0xFF >> tp) & ch)
         state = _UTF8D[256 + state + tp]
 
         return state, codep
@@ -458,7 +464,8 @@ def extract_err_message(exception: Exception) -> Union[str, None]:
 
 
 def extract_error_code(exception: Exception) -> Union[int, None]:
-    """Return the integer error code stored in ``exception.args`` if present."""
+    """Return the integer error code stored in ``exception.args`` if present."""  # noqa: E501
     if exception.args and len(exception.args) > 1:
-        return exception.args[0] if isinstance(exception.args[0], int) else None
+        return exception.args[0] if isinstance(
+            exception.args[0], int) else None
     return None

@@ -107,9 +107,13 @@ def _is_address_in_network(ip: str, net: str) -> bool:
 def _is_no_proxy_host(hostname: str, no_proxy: Optional[list]) -> bool:
     """Return whether ``hostname`` should bypass proxy settings."""
     if not no_proxy:
-        if v := os.environ.get("no_proxy", os.environ.get("NO_PROXY", "")).replace(
-            " ", ""
-        ):
+        if v := os.environ.get(
+            "no_proxy",
+            os.environ.get(
+                "NO_PROXY",
+                "")).replace(
+            " ",
+                ""):
             no_proxy = v.split(",")
     if not no_proxy:
         no_proxy = DEFAULT_NO_PROXY_HOST
@@ -155,26 +159,31 @@ def get_proxy_info(
     no_proxy: list
         Whitelisted host names that don't use the proxy.
     proxy_auth: tuple
-        HTTP proxy auth information. Tuple of username and password. Default is None.
+        HTTP proxy auth information. Tuple of username and password. Default is None.  # noqa: E501
     proxy_type: str
         Specify the proxy protocol
         (http, socks4, socks4a, socks5, socks5h). Default is "http".
-        Use socks4a or socks5h if you want to send DNS requests through the proxy.
+        Use socks4a or socks5h if you want to send DNS requests through the proxy.  # noqa: E501
     """
     if _is_no_proxy_host(hostname, no_proxy):
         return None, 0, None
 
     if proxy_host:
         if not proxy_port:
-            raise WebSocketProxyException("Cannot use port 0 when proxy_host specified")
+            raise WebSocketProxyException(
+                "Cannot use port 0 when proxy_host specified")
         port = proxy_port
         auth = proxy_auth
         return proxy_host, port, auth
 
     env_key = "https_proxy" if is_secure else "http_proxy"
-    value = os.environ.get(env_key, os.environ.get(env_key.upper(), "")).replace(
-        " ", ""
-    )
+    value = os.environ.get(
+        env_key,
+        os.environ.get(
+            env_key.upper(),
+            "")).replace(
+        " ",
+        "")
     if value:
         proxy = urlparse(value)
         auth = (

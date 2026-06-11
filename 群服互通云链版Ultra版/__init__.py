@@ -6,11 +6,12 @@
 3. 把真正的配置、QQ 菜单、Orion 联动、WebSocket 运行逻辑交给拆分后的模块。
 """
 
-import os
 import threading
 
 from tooldelta import Plugin, cfg, fmts, plugin_entry
 
+from .binding_mixin import QQLinkerBindingMixin
+from .config_editor_mixin import QQLinkerConfigEditorMixin
 from .config_mixin import QQLinkerConfigMixin
 from .message_utils import QQMsgTrigger
 from .orion_mixin import QQLinkerOrionMixin
@@ -20,6 +21,8 @@ from .runtime_mixin import QQLinkerRuntimeMixin
 
 # 入口类只负责装配 mixin 和生命周期注册，具体业务逻辑拆在各模块里。
 class QQLinker(
+    QQLinkerConfigEditorMixin,
+    QQLinkerBindingMixin,
     QQLinkerQQMixin,
     QQLinkerOrionMixin,
     QQLinkerRuntimeMixin,
@@ -28,7 +31,7 @@ class QQLinker(
 ):
     """群服互通云链版 Ultra 的插件入口类。"""
 
-    version = (1, 0, 0)
+    version = (2, 0, 0)
     name = "群服互通云链版Ultra版"
     author = "大庆油田 / 小六神"
     description = "提供多群独立管理的群服互通、QQ群管理员体系和 Orion 联动封禁功能"
@@ -82,15 +85,13 @@ class QQLinker(
     ):
         """按 Orion 风格打印一张控制台信息卡片。"""
         card = (
-            self.console_menu_header(title)
-            + "\n"
-            + self.console_menu_footer(
+            self.console_menu_header(title) +
+            "\n" +
+            self.console_menu_footer(
                 page_label,
                 "\n".join(
-                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines
-                ),
-            )
-        )
+                    i if i.startswith("§") else f"§a❀ §b{i}" for i in body_lines),  # noqa: E501
+            ))
         {
             "info": fmts.print_inf,
             "success": fmts.print_suc,
@@ -106,8 +107,6 @@ class QQLinker(
         """
         super().__init__(frame)
         self.make_data_path()
-        self.group_state_dir = self.format_data_path("群聊权限数据")
-        os.makedirs(self.group_state_dir, exist_ok=True)
 
         # 运行时状态集中放在入口类上，方便多个 mixin 共享同一份上下文。
         self.ws = None
@@ -115,18 +114,24 @@ class QQLinker(
         self.available = False
         self.triggers: list[QQMsgTrigger] = []
         self.waitmsg_cbs = {}
+        self._message_listeners = {}
         self.plugin = []
         self._manual_launch = False
         self._manual_launch_port = -1
         self.tps_calc = None
         self.orion = None
         self.whitelist_checker = None
+        self.task_system = None
+        self.land_system = None
+        self.guild_system = None
         self._ws_runner_lock = threading.Lock()
         self._ws_runner_active = False
         self._ws_session_id = 0
         self._ws_reconnect_delay = None
+        self._runtime_config_reload_stop = threading.Event()
+        self._runtime_config_reload_thread = None
 
-        # 配置只在启动时加载和归一化一次，后续 mixin 统一读 self.cfg。
+        # 启动时先加载并归一化配置；后续文件变化由后台线程热应用到 self.cfg。
         raw_cfg, _ = cfg.get_plugin_config_and_version(
             self.name,
             {},
@@ -140,12 +145,16 @@ class QQLinker(
         self.group_cfgs = {}
         self.group_order = []
         self.reload_group_configs()
+        self.persist_runtime_config()
+        self.refresh_runtime_config_file_state()
+        self.init_binding_state()
 
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
         self.ListenPlayerJoin(self.on_player_join)
         self.ListenPlayerLeave(self.on_player_leave)
         self.ListenChat(self.on_player_message)
+        self.ListenFrameExit(self.on_frame_exit)
 
     def on_def(self):
         """
@@ -155,7 +164,12 @@ class QQLinker(
         """
         self.tps_calc = self.GetPluginAPI("tps计算器", (0, 0, 1), False)
         self.orion = self.GetPluginAPI("Orion_System", force=False)
-        self.whitelist_checker = self.GetPluginAPI("白名单&管理员检测云链联动版", force=False)
+        self.whitelist_checker = self.GetPluginAPI(
+            "白名单&管理员检测云链联动版", force=False)
+        self.task_system = self.GetPluginAPI("任务系统云链联动版", force=False)
+        self.land_system = self.GetPluginAPI("领地系统云链联动版", (0, 1, 17), False)
+        self.guild_system = self.GetPluginAPI(
+            "guild-cloud-interop", (0, 1, 7), False)
 
     def on_inject(self):
         """
@@ -171,6 +185,32 @@ class QQLinker(
         if not self._manual_launch:
             self.connect_to_websocket()
         self.init_basic_triggers()
+        self.start_runtime_config_reload_task()
+
+    def on_frame_exit(self, _):
+        """框架退出时清理后台任务和绑定验证码计时器。"""
+        self._runtime_config_reload_stop.set()
+        self.cleanup_binding_state()
+
+    def start_runtime_config_reload_task(self):
+        """启动配置文件热更新轮询线程。"""
+        thread = self._runtime_config_reload_thread
+        if thread is not None and thread.is_alive():
+            return
+        self._runtime_config_reload_stop.clear()
+        self._runtime_config_reload_thread = threading.Thread(
+            target=self.runtime_config_reload_loop,
+            name=f"{self.name}配置热更新线程",
+            daemon=True,
+        )
+        self._runtime_config_reload_thread.start()
+
+    def runtime_config_reload_loop(self):
+        """轮询配置文件状态，检测到外部修改时热应用。"""
+        while not self._runtime_config_reload_stop.wait(
+            self.runtime_config_reload_interval()
+        ):
+            self.check_runtime_config_file_update()
 
     def init_basic_triggers(self):
         """注册给控制台使用的少量入口命令。"""
@@ -181,11 +221,15 @@ class QQLinker(
             self.on_sendmsg_test,
         )
         self.frame.add_console_cmd_trigger(
-            ["OPQQ"],
+            ["Q配置", "群服配置", "配置中心"],
             None,
-            "进入QQ群管理员增删菜单",
-            self.on_console_add_qq_op,
+            "进入群服互通及联动插件配置中心",
+            self.on_console_config_center,
         )
 
 
-entry = plugin_entry(QQLinker, "群服互通")
+entry = plugin_entry(
+    QQLinker,
+    ["群服互通云链版Ultra版", "QQLinkerUltraAPI"],
+    (2, 0, 0),
+)

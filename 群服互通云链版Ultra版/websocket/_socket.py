@@ -91,7 +91,7 @@ def getdefaulttimeout() -> Union[int, float, None]:
 
 
 def recv(sock: socket.socket, bufsize: int) -> bytes:
-    """Receive up to ``bufsize`` bytes from the socket with timeout handling."""
+    """Receive up to ``bufsize`` bytes from the socket with timeout handling."""  # noqa: E501
     if not sock:
         raise WebSocketConnectionClosedException("socket is already closed.")
 
@@ -131,7 +131,8 @@ def recv(sock: socket.socket, bufsize: int) -> bytes:
         raise
 
     if not bytes_:
-        raise WebSocketConnectionClosedException("Connection to remote host was lost.")
+        raise WebSocketConnectionClosedException(
+            "Connection to remote host was lost.")
 
     return bytes_
 
