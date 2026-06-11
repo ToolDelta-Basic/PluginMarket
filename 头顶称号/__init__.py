@@ -13,6 +13,8 @@ from tooldelta.plugin_load.classic_plugin import Plugin, plugin_entry
 
 
 class BelownameTitlePlugin(Plugin):
+    """Manage purchasable belowname titles and console administration."""
+
     name = "头顶称号"
     version = (0, 2, 0)
     author = "南Nan"
@@ -45,6 +47,8 @@ class BelownameTitlePlugin(Plugin):
         self.ListenFrameExit(self.on_frame_exit)
 
     def on_preload(self):
+        """Load config, player data, and console command registration."""
+
         self.cfg, _ = self.get_config_and_version(
             self._config_schema(),
             self._default_config(),
@@ -55,6 +59,8 @@ class BelownameTitlePlugin(Plugin):
         self._register_console_commands()
 
     def on_active(self):
+        """Initialize dependencies and start title refresh after activation."""
+
         self._ensure_chatbar_plugin()
         self._register_chatbar_menu()
         self._validate_scoreboard_exists_or_raise()
@@ -65,6 +71,8 @@ class BelownameTitlePlugin(Plugin):
         self.refresh_all_later(1.0, True)
 
     def on_player_join(self, player: Player):
+        """Initialize a joining player's score state and delayed title refresh."""
+
         self._ensure_player_default_score(player.name)
         self.refresh_player_later(
             player.name,
@@ -73,10 +81,13 @@ class BelownameTitlePlugin(Plugin):
         )
 
     def on_frame_exit(self, _evt: FrameExit):
+        """Stop background refresh work when the frame exits."""
+
         self.stop_event.set()
-        return None
 
     def on_chat(self, chat: Chat):
+        """Handle player chat commands when the chatbar menu is unavailable."""
+
         if self.chatbar_registered:
             return False
         prefix = str(self.cfg["聊天命令前缀"])
@@ -88,6 +99,8 @@ class BelownameTitlePlugin(Plugin):
         return True
 
     def _register_console_commands(self):
+        """Register the console entrypoint in the question-mark help menu."""
+
         if self.console_registered:
             return
         self.frame.add_console_cmd_trigger(
