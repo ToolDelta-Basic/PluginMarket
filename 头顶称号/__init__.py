@@ -48,7 +48,6 @@ class BelownameTitlePlugin(Plugin):
 
     def on_preload(self):
         """Load config, player data, and console command registration."""
-
         self.cfg, _ = self.get_config_and_version(
             self._config_schema(),
             self._default_config(),
@@ -60,7 +59,6 @@ class BelownameTitlePlugin(Plugin):
 
     def on_active(self):
         """Initialize dependencies and start title refresh after activation."""
-
         self._ensure_chatbar_plugin()
         self._register_chatbar_menu()
         self._validate_scoreboard_exists_or_raise()
@@ -72,7 +70,6 @@ class BelownameTitlePlugin(Plugin):
 
     def on_player_join(self, player: Player):
         """Initialize a joining player's score state and delayed title refresh."""
-
         self._ensure_player_default_score(player.name)
         self.refresh_player_later(
             player.name,
@@ -82,12 +79,10 @@ class BelownameTitlePlugin(Plugin):
 
     def on_frame_exit(self, _evt: FrameExit):
         """Stop background refresh work when the frame exits."""
-
         self.stop_event.set()
 
     def on_chat(self, chat: Chat):
         """Handle player chat commands when the chatbar menu is unavailable."""
-
         if self.chatbar_registered:
             return False
         prefix = str(self.cfg["聊天命令前缀"])
@@ -100,7 +95,6 @@ class BelownameTitlePlugin(Plugin):
 
     def _register_console_commands(self):
         """Register the console entrypoint in the question-mark help menu."""
-
         if self.console_registered:
             return
         self.frame.add_console_cmd_trigger(
@@ -112,6 +106,7 @@ class BelownameTitlePlugin(Plugin):
         self.console_registered = True
 
     def on_console_command(self, args: list[str]):
+        """Dispatch console subcommands for title administration."""
         reply = self._console_reply()
         if not args:
             self._send_console_help(reply)
@@ -135,6 +130,7 @@ class BelownameTitlePlugin(Plugin):
         self._send_console_help(reply)
 
     def _handle_player_command(self, player: Player, args: list[str]):
+        """Dispatch player chat commands for title purchase and switching."""
         reply = self._player_reply(player)
         if not args:
             self._send_player_help(reply)
