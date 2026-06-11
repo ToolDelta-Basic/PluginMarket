@@ -78,6 +78,10 @@ class GuardianConfig:
     max_violations_before_kill: int = MAX_VIOLATIONS_BEFORE_KILL
     max_violations_before_ban: int = MAX_VIOLATIONS_BEFORE_BAN
 
+    # 命令调用频率限制（独立于通用频率检查）
+    max_commands_per_minute: int = 30          # 每分钟最多命令调用次数
+    enforce_command_rate: bool = True          # 是否强制执行命令频率限制
+
     blacklist_path: str = "data/resource_blacklist.json"
 
 
@@ -135,6 +139,9 @@ class ResourceGuardian:
         # 消息发送计数器: module_name → {"hour": hour_int, "count": N}
         self._msg_counters: Dict[str, Dict[str, int]] = {}
 
+        # 命令调用时间戳: module_name → list[float]（1分钟滑动窗口）
+        self._command_timestamps: Dict[str, list] = {}
+
         # 黑名单持久化
         self._blacklist: Set[str] = set()
         self._load_blacklist()
@@ -171,6 +178,7 @@ class ResourceGuardian:
         self._profiles.pop(module_name, None)
         self._freq_windows.pop(module_name, None)
         self._msg_counters.pop(module_name, None)
+        self._command_timestamps.pop(module_name, None)
 
     def is_banned(self, module_name: str) -> bool:
         """检查模块是否在黑名单中。"""
@@ -280,6 +288,49 @@ class ResourceGuardian:
                 module_name, uid, count, int(self.config.freq_window),
             )
 
+        return True
+
+    async def check_command_rate(self, module_name: str) -> bool:
+        """检查模块在最近1分钟内的命令调用次数。
+
+        独立于通用 check_rate，专门用于命令路由的频率限制。
+        基于自我维护的 _command_timestamps 滑动窗口。
+
+        Returns:
+            True 允许执行，False 超过 max_commands_per_minute 限制。
+        """
+        if not self.config.enforce_command_rate:
+            return True
+
+        now = time.monotonic()
+
+        # 获取或初始化该模块的时间戳列表
+        if module_name not in self._command_timestamps:
+            self._command_timestamps[module_name] = []
+
+        timestamps = self._command_timestamps[module_name]
+
+        # 清理 1 分钟窗口外的过期时间戳
+        cutoff = now - 60.0
+        while timestamps and timestamps[0] < cutoff:
+            timestamps.pop(0)
+
+        count = len(timestamps)
+
+        if count >= self.config.max_commands_per_minute:
+            _log.warning(
+                "模块 '%s' 命令调用频率超限 (%d次/分钟, 上限 %d)，已拒绝",
+                module_name, count, self.config.max_commands_per_minute,
+            )
+            # 记录违规
+            await self._handle_violation(
+                module_name, 0, ResourceViolation.CALL_RATE,
+                f"命令调用频率超限 ({count}次/分钟, 上限 {self.config.max_commands_per_minute})",
+            )
+            return False
+
+        # 记录本次调用时间戳
+        timestamps.append(now)
         return True
 
     async def check_msg_send(self, uid: int, module_name: str = "") -> bool:

@@ -129,25 +129,48 @@ def json_safe_str(value: str) -> str:
 def contains_homoglyphs(
     text: str,
     dangerous_prefixes: Optional[Set[str]] = None,
+    threshold: float = 0.3,
 ) -> bool:
     """检测文本中是否包含 Unicode 同形字（混淆攻击）。
 
-    检查文本在规范化后是否匹配危险前缀，防御以 Cyrillic/Greek
-    同形字绕过 "." / "。" 等命令前缀检测。
+    全量扫描文本中的每个字符，统计同形字（Cyrillic/Greek 等
+    看起来像 ASCII 的 Unicode 字符）占比。当同形字比例超过阈值时
+    返回 True。同时检查首字符是否匹配危险前缀。
 
     Args:
         text: 待检测的文本。
         dangerous_prefixes: 禁止的前缀集合（ASCII 形式），
                            默认检查 ".", "。", "!", "#", "/"。
+        threshold: 同形字字符占比阈值（默认 0.3）。
 
     Returns:
-        True 表示检测到潜在的同形字前缀绕过。
+        True 表示检测到潜在的同形字攻击。
     """
     if not text:
         return False
     if dangerous_prefixes is None:
         dangerous_prefixes = {".", "。", "!", "#", "/"}
-    # 尝试将文本转为 ASCII 兼容形式
+
+    # ── 全量扫描: 统计同形字字符占比 ──
+    total_chars = 0
+    homoglyph_count = 0
+    for ch in text:
+        cp = ord(ch)
+        # 跳过空白和控制字符，不计入总数
+        if cp < 32:
+            continue
+        cat = unicodedata.category(ch)
+        if cat in ("Zs", "Zl", "Zp", "Cc", "Cf"):
+            continue
+        total_chars += 1
+        if cp in _HOMOGLYPH_MAP:
+            homoglyph_count += 1
+
+    # 如果同形字占比超过阈值，视为攻击
+    if total_chars > 0 and (homoglyph_count / total_chars) > threshold:
+        return True
+
+    # ── 首字符危险前缀检测（保留原逻辑）──
     normalized = unicodedata.normalize("NFKD", text)
     ascii_first_char = ""
     for ch in normalized:

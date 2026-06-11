@@ -646,7 +646,7 @@ def test_config_type_validation():
         cm.register_section("测试", {"数量": 10}, caller_uid=0)
         cm.load()
         # 自动修复：str "不是数字" 无法转为 int → 回退默认值 10
-        assert cm.get("测试.数量") == 10
+        assert cm.get("测试.数量", requester_uid=0) == 10
 
 
 def test_ban_store_persistence():
@@ -954,7 +954,7 @@ def test_config_hotreload():
         cm = ConfigManager(fp, data_dir=tmp)
         cm.register_section("test", {"val": 0}, caller_uid=0)
         cm.load()
-        assert cm.get("test.val") == 1
+        assert cm.get("test.val", requester_uid=0) == 1
         # 修改文件（直接改迁移后的文件）
         time.sleep(0.1)
         mod_file = os.path.join(tmp, "配置", "模块", "test.json")
@@ -962,7 +962,7 @@ def test_config_hotreload():
             json.dump({"test": {"val": 42}}, f)
         ok = cm.reload()
         assert ok
-        assert cm.get("test.val") == 42
+        assert cm.get("test.val", requester_uid=0) == 42
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
@@ -1497,7 +1497,7 @@ def test_config_tiered_access():
         assert cm.set("AI助手.温度", 999, requester_uid=UID_NOBODY) is False
         # daemon 可写
         assert cm.set("AI助手.温度", 0.8, requester_uid=UID_DAEMON) is True
-        assert cm.get("AI助手.温度") == 0.8
+        assert cm.get("AI助手.温度", requester_uid=0) == 0.8
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
@@ -1932,7 +1932,7 @@ def test_stress_tester_report_generation():
         host._modules = [mod]
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         assert os.path.isfile(report_path), f"报告文件应存在: {report_path}"
@@ -1983,7 +1983,7 @@ def test_stress_tester_skips_kernel_modules():
         host._modules = [mod_k, mod_u]
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         with open(report_path, "r") as f:
@@ -2010,7 +2010,7 @@ def test_stress_tester_empty_modules():
         host._modules = []
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         assert os.path.isfile(report_path)
@@ -2037,7 +2037,7 @@ def test_stress_tester_get_last_report():
         host._modules = []
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report = tester.get_last_report()
         assert report is not None

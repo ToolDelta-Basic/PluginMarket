@@ -13,7 +13,7 @@ import asyncio
 import logging
 from typing import Any
 
-from qqlinker_framework.core.ipc.protocol import (
+from .protocol import (
     ERR_DISCONNECTED,
     ERR_TIMEOUT,
     IPCError,

@@ -19,6 +19,8 @@ import os
 import re
 from datetime import datetime
 
+from ...core.kernel.decorators import exec_exposed
+
 from ...core.module import Module
 from ...core.kernel.decorators import command
 from ...core.kernel.audit import audit_log, AuditLevel
@@ -98,7 +100,8 @@ class ConfigRepairModule(Module):
         """权限: uid≤100 或管理员。"""
         return _check_uid_auth(ctx, self.services, self._uid_lookup)
 
-    @command("配置修复", argument_hint="<群号>", description="修复指定群的子配置", min_uid=200)
+    @exec_exposed
+    @command(".配置修复", argument_hint="<群号>", description="修复指定群的子配置", min_uid=200)
     async def _cmd_repair(self, ctx):
         if not self._check_auth(ctx):
             await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")
@@ -155,7 +158,8 @@ class ConfigRepairModule(Module):
             _log.error("[config_repair] 修复群 %d 失败: %s", group_id, e)
             await ctx.reply(f"❌ 修复失败: {e}")
 
-    @command("配置状态", argument_hint="", description="查看所有群子配置状态", min_uid=200)
+    @exec_exposed
+    @command(".配置状态", argument_hint="", description="查看所有群子配置状态", min_uid=200)
     async def _cmd_status(self, ctx):
         if not self._check_auth(ctx):
             await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")
@@ -190,7 +194,8 @@ class ConfigRepairModule(Module):
 
         await ctx.reply("\n".join(lines))
 
-    @command("配置预览", argument_hint="<群号> <节名>", description="预览某群某节配置", min_uid=200)
+    @exec_exposed
+    @command(".配置预览", argument_hint="<群号> <节名>", description="预览某群某节配置", min_uid=200)
     async def _cmd_preview(self, ctx):
         if not self._check_auth(ctx):
             await ctx.reply("🔒 权限不足。需要 UID≤100 或管理员权限。")

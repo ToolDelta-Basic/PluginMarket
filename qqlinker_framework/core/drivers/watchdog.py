@@ -73,12 +73,17 @@ class EventLoopWatchdog:
         self._watchdog_thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._stopped = False
+        self._heartbeat_task: Optional[asyncio.Task] = None
 
         # ── 假死检测状态 ──
         self._consecutive_timeouts: int = 0
         self._last_timeout_at: float = 0.0
         self._degradation_applied: bool = False
         self._frozen_count: int = 0
+
+        # ── 模块级超时检测 ──
+        self._module_last_active: dict[str, float] = {}
+        self._module_timeout_seconds: float = 60.0
 
         # ── 监控统计 ──
         self._total_checks: int = 0
@@ -93,6 +98,39 @@ class EventLoopWatchdog:
     def update_heartbeat(self) -> None:
         """更新事件循环心跳时间戳（由事件循环协程调用）。"""
         self._last_event_loop_heartbeat = time.time()
+
+    # ═══════════════════════════════════════════════════════════
+    # 模块级超时检测
+    # ═══════════════════════════════════════════════════════════
+
+    def update_module_activity(self, module_name: str) -> None:
+        """记录模块的最后活跃时间。
+
+        模块每次完成一轮处理（如一条消息、一次定时任务）后
+        应调用此方法更新时间戳。
+
+        Args:
+            module_name: 模块名称。
+        """
+        self._module_last_active[module_name] = time.time()
+
+    def _check_module_timeouts(self, now: float) -> None:
+        """检查是否有模块超过超时阈值未更新且仍在加载列表中。
+
+        超时的模块记录 ERROR 日志，不会自动触发降级。
+
+        Args:
+            now: 当前时间戳。
+        """
+        if not self._module_last_active:
+            return
+        for mod_name, last_ts in list(self._module_last_active.items()):
+            elapsed = now - last_ts
+            if elapsed > self._module_timeout_seconds:
+                _log.error(
+                    "⏰ 模块 '%s' 超时: %.1fs 未更新活跃状态 (阈值: %.1fs)",
+                    mod_name, elapsed, self._module_timeout_seconds,
+                )
 
     async def _heartbeat_loop(self) -> None:
         """事件循环内心跳协程: 每 N 秒更新时间戳。"""
@@ -141,6 +179,9 @@ class EventLoopWatchdog:
                     elapsed, self._consecutive_timeouts,
                 )
 
+                # ── 模块级超时检测 ──
+                self._check_module_timeouts(now)
+
                 if (self._consecutive_timeouts >= MAX_CONSECUTIVE_TIMEOUTS
                         and not self._degradation_applied):
                     self._handle_frozen()
@@ -179,6 +220,9 @@ class EventLoopWatchdog:
             "🧊 事件循环假死 (第 %d 次), 连续 %d 次超时。执行紧急降级...",
             self._frozen_count, self._consecutive_timeouts,
         )
+
+        # ── 模块级超时检测（假死时也检查一次）──
+        self._check_module_timeouts(time.time())
 
         # ── 降级: 停用非核心服务 ──
         if self._degradation is not None:
@@ -220,7 +264,7 @@ class EventLoopWatchdog:
 
         # 启动事件循环内心跳协程
         self.update_heartbeat()  # 初始心跳
-        self._loop.create_task(self._heartbeat_loop())
+        self._heartbeat_task = self._loop.create_task(self._heartbeat_loop())
 
         # 启动独立监控线程
         if self._watchdog_thread is None or not self._watchdog_thread.is_alive():
@@ -242,6 +286,14 @@ class EventLoopWatchdog:
             return
         self._stopped = True
         self._stop_event.set()
+
+        # 取消心跳协程，防止 pending task
+        if self._heartbeat_task and not self._heartbeat_task.done():
+            self._heartbeat_task.cancel()
+            try:
+                await self._heartbeat_task
+            except asyncio.CancelledError:
+                pass
 
         # 清理假死标记文件
         try:

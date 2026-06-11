@@ -67,6 +67,9 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         self.event_bus = None
         self.main_loop = None
 
+        # v1.4.3: IPC 客户端（薄壳模式下使用）
+        self._ipc_client = None
+
     # ── 依赖注入 ────────────────────────────────────────────
 
     def set_ws_client(self, ws_client: WsClient):
@@ -76,6 +79,10 @@ class ToolDeltaAdapter(IFrameworkAdapter):
     def set_config_mgr(self, config_mgr):
         """设置配置管理器。"""
         self._config_mgr = config_mgr
+
+    def set_ipc_client(self, ipc_client):
+        """v1.4.3: 注入 IPC 客户端（薄壳模式下使用）。"""
+        self._ipc_client = ipc_client
 
     @property
     def is_active(self) -> bool:

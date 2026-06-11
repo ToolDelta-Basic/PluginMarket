@@ -17,80 +17,36 @@ import traceback
 
 # ═══════════════════════════════════════════════════════════════
 # 第一道防线：文件完整性检查
-# 在任何 import 框架模块之前执行，防止因文件缺失导致宿主崩溃
 # ═══════════════════════════════════════════════════════════════
 
 _skip_integrity = os.environ.get("QQLINKER_SKIP_INTEGRITY", "0") == "1"
 
-# 内联完整性检查（避免循环导入）
 def _bootstrap_integrity_check():
-    """启动前检查关键文件是否存在。"""
     if _skip_integrity:
         return
-
     _framework_base = os.path.dirname(os.path.abspath(__file__))
-
-    # 关键文件清单 (相对路径 → 描述)
     _fatal_files = {
         "core/host.py":            "框架核心调度器",
         "core/module.py":          "模块基类",
         "core/kernel/bus.py":          "事件总线",
         "core/kernel/services.py":     "服务容器",
-        "core/kernel/events.py":       "事件定义",
-        "core/kernel/defguard.py":     "防御层",
-        "core/kernel/error_hints.py":  "错误提示库",
-        "core/drivers/routing.py":     "命令路由",
         "managers/config_mgr.py":  "配置管理器",
         "managers/module_mgr.py":  "模块管理器",
-        "managers/command_mgr.py": "命令管理器",
-        "managers/message_mgr.py": "消息管理器",
         "adapters/base.py":        "适配器基类",
     }
-
     missing = []
     for rel, desc in _fatal_files.items():
         if not os.path.isfile(os.path.join(_framework_base, rel)):
             missing.append((rel, desc))
-
     if not missing:
         return
-
-    msg_lines = [
-        "",
-        "╔══════════════════════════════════════════════════════════╗",
-        "║  ❌ 群服互通框架 启动失败                                ║",
-        "╠══════════════════════════════════════════════════════════╣",
-        "║  关键文件缺失，框架无法继续运行。                       ║",
-        "╠══════════════════════════════════════════════════════════╣",
-    ]
-    for i, (rel, desc) in enumerate(missing[:10], 1):
-        msg_lines.append(f"║  {i}. {rel}")
-        msg_lines.append(f"║     ── {desc}")
-    if len(missing) > 10:
-        msg_lines.append(f"║  ... 及其他 {len(missing) - 10} 个文件")
-    msg_lines.extend([
-        "╠══════════════════════════════════════════════════════════╣",
-        "║  可能的原因：                                          ║",
-        "║  ① 安装包不完整或被损坏                                ║",
-        "║  ② 文件被手动删除或移动                                ║",
-        "║  ③ 解压/部署时出错                                     ║",
-        "╠══════════════════════════════════════════════════════════╣",
-        "║  建议重新下载并安装完整的框架包。                      ║",
-        f"║  框架位置: {_framework_base[:48]}",
-        "╚══════════════════════════════════════════════════════════╝",
-        "",
-        "💡 如需跳过此检查（不推荐），设置环境变量:",
-        "   export QQLINKER_SKIP_INTEGRITY=1",
-        "",
-    ])
-    print("\n".join(msg_lines), file=sys.stderr)
+    print(f"\n❌ 关键文件缺失: {missing[0][0]}", file=sys.stderr)
     sys.exit(1)
 
-# 立即执行检查
 _bootstrap_integrity_check()
 
 # ═══════════════════════════════════════════════════════════════
-# 现在安全加载框架
+# 检测 ToolDelta 环境
 # ═══════════════════════════════════════════════════════════════
 
 try:
@@ -98,84 +54,33 @@ try:
     HAS_TOOLDELTA = True
 except ImportError:
     HAS_TOOLDELTA = False
-
     class Plugin:
-        """ToolDelta 插件基类桩，用于非 ToolDelta 环境。
-
-        完整实现了 ToolDelta Plugin 的生命周期监听接口桩。
-        """
-
         name: str = ""
         version: tuple = (0, 0, 0)
         author: str = ""
         description: str = ""
-
         def __init__(self, frame=None):
             self.frame = frame
             self.game_ctrl = None
             self.data_path = "."
-
-        # ── 生命周期监听 ──
-
-        def ListenPreload(self, func, priority=0):
-            """注册预加载回调（桩）。"""
-
-        def ListenActive(self, func, priority=0):
-            """注册激活回调。"""
-
-        def ListenPlayerJoin(self, func, priority=0):
-            """注册玩家加入回调。"""
-
-        def ListenPlayerPreJoin(self, func, priority=0):
-            """注册玩家预加入回调。"""
-
-        def ListenPlayerLeave(self, func, priority=0):
-            """注册玩家离开回调。"""
-
-        def ListenChat(self, func, priority=0):
-            """注册聊天回调。"""
-
-        def ListenFrameExit(self, func, priority=0):
-            """注册框架退出回调。"""
-
-        def ListenPacket(self, pk_id, func, priority=0):
-            """注册字典数据包监听。"""
-
-        def ListenBytesPacket(self, pk_id, func, priority=0):
-            """注册二进制数据包监听。"""
-
-        def ListenInternalBroadcast(self, name, func, priority=0):
-            """注册内部广播监听。"""
-
-        # ── 跨插件 API ──
-
+        def ListenPreload(self, func, priority=0): pass
+        def ListenActive(self, func, priority=0): pass
+        def ListenPlayerJoin(self, func, priority=0): pass
+        def ListenPlayerPreJoin(self, func, priority=0): pass
+        def ListenPlayerLeave(self, func, priority=0): pass
+        def ListenChat(self, func, priority=0): pass
+        def ListenFrameExit(self, func, priority=0): pass
+        def ListenPacket(self, pk_id, func, priority=0): pass
+        def ListenBytesPacket(self, pk_id, func, priority=0): pass
+        def ListenInternalBroadcast(self, name, func, priority=0): pass
         @staticmethod
-        def GetPluginAPI(api_name, min_version=(0, 0, 0), force=True):
-            """获取前置插件 API 实例。"""
-            return None
-
+        def GetPluginAPI(api_name, min_version=(0, 0, 0), force=True): return None
         @staticmethod
-        def BroadcastEvent(evt):
-            """广播内部事件。"""
-            return []
-
-        def get_typecheck_plugin_api(self, api_cls):
-            """TYPE_CHECKING 辅助（桩）。"""
-            raise NotImplementedError
-
-    def plugin_entry(cls, *args, **kwargs):
-        """ToolDelta 插件入口标记。
-
-        支持三种形式:
-          plugin_entry(PluginClass)
-          plugin_entry(PluginClass, "api-name", (0, 0, 1))
-          plugin_entry(PluginClass, ["api-a", "api-b"], (0, 0, 1))
-        """
-        return cls
-
+        def BroadcastEvent(evt): return []
+        def get_typecheck_plugin_api(self, api_cls): raise NotImplementedError
+    def plugin_entry(cls, *args, **kwargs): return cls
     ToolDelta = None
 
-# noqa: E402 (delayed import required — ToolDeltaPlugin stub must precede FrameworkHost import)
 from .core.host import FrameworkHost
 from .core.kernel.containment import (
     plugin_wrapper,
@@ -185,41 +90,9 @@ from .core.kernel.containment import (
 from .adapters.tooldelta_adapter import ToolDeltaAdapter
 
 
-# ── 依赖解析 ────────────────────────────────────────────────
-
-def _load_pre_plugin_deps(data_dir: str) -> dict:
-    """从 datas.json 加载前置插件依赖声明。"""
-    # 优先用框架根目录下的 datas.json（__file__ 定位）
-    datas_path = os.path.join(os.path.dirname(__file__), "datas.json")
-    if not os.path.exists(datas_path):
-        # 兼容旧路径
-        alt = os.path.join(data_dir, "..", "datas.json")
-        if os.path.exists(alt):
-            datas_path = alt
-        else:
-            return {}
-    try:
-        with open(datas_path, encoding="utf-8") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
-    pre_plugins = data.get("pre-plugins", {})
-    if not isinstance(pre_plugins, dict):
-        return {}
-    result = {}
-    for api_name, ver_str in pre_plugins.items():
-        if ver_str in ("any", "*", ""):
-            result[api_name] = (0, 0, 0)
-        else:
-            try:
-                parts = tuple(int(x) for x in str(ver_str).split("."))
-                result[api_name] = parts if len(parts) == 3 else (0, 0, 0)
-            except ValueError:
-                result[api_name] = (0, 0, 0)
-    return result
-
-
-# ── 插件主类 ────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# 插件主类
+# ═══════════════════════════════════════════════════════════════
 
 class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
@@ -245,41 +118,29 @@ class QQLinkerFrameworkPlugin(Plugin):
         data_dir = str(self.data_path)
         self._adapter = ToolDeltaAdapter(self)
 
-        pre_deps = _load_pre_plugin_deps(data_dir)
+        # 前置插件依赖
+        pre_deps = self._load_pre_plugin_deps(data_dir)
         if pre_deps:
-            logging.getLogger(__name__).info(
-                "检测到 %d 个前置插件依赖，正在注册...", len(pre_deps)
-            )
             for api_name, min_ver in pre_deps.items():
-                registered = self._adapter.register_pre_plugin_api(
-                    api_name, min_ver
-                )
+                registered = self._adapter.register_pre_plugin_api(api_name, min_ver)
                 if not registered:
                     logging.getLogger(__name__).warning(
                         "⚠ 前置插件 '%s' (>= v%s) 不可用", api_name,
-                        ".".join(str(x) for x in min_ver)
-                    )
+                        ".".join(str(x) for x in min_ver))
 
         self._host = FrameworkHost(self._adapter, data_path=data_dir)
 
-        # 通过公共方法访问前置插件 API，避免直接访问受保护成员
         pre_apis = self._adapter.get_pre_plugin_apis()
         if pre_apis:
             for api_name, api_inst in pre_apis.items():
                 svc_name = f"pre_api.{api_name}"
                 self._host.services.register(svc_name, api_inst, uid=400,
                                               _caller="qqlinker_framework.__init__")
-                logging.getLogger(__name__).info(
-                    "前置插件 API '%s' 已暴露为服务 '%s'", api_name, svc_name
-                )
 
-        pkg_mgr = self._host.package_mgr
-        pkg_mgr.register_requirements({
-            "websocket-client": "websocket",
-        })
-
+        self._host.package_mgr.register_requirements({"websocket-client": "websocket"})
         self._host.register_modules_from_package("qqlinker_framework.modules")
         self._host.register_external_modules()
+
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 
     @plugin_wrapper
@@ -287,64 +148,55 @@ class QQLinkerFrameworkPlugin(Plugin):
         """游戏连接就绪后启动框架线程。"""
         logging.getLogger(__name__).info("游戏连接已就绪，启动框架...")
         if not self._host:
-            logging.getLogger(__name__).error("框架主机未初始化")
             return
 
-        # 检查依赖，缺失时提醒用户手动安装
         pkg_mgr = self._host.package_mgr
         missing = pkg_mgr.check_missing()
         if missing:
             logging.getLogger(__name__).warning(
-                "⚠ 缺失依赖: %s。请在控制台执行 qqdeps install 自动安装，"
-                "或手动执行: pip install %s",
-                ", ".join(missing.keys()),
-                " ".join(missing.keys()),
-            )
+                "⚠ 缺失依赖: %s。请在控制台执行 qqdeps install 自动安装",
+                ", ".join(missing.keys()))
 
         if self._adapter:
             self._adapter.handle_active()
         self._framework_thread = threading.Thread(
-            target=self._run_framework, daemon=True
-        )
+            target=self._run_framework, daemon=True)
         self._framework_thread.start()
 
     @plugin_wrapper
     def _run_framework(self):
-        """在独立线程中创建事件循环并运行框架。
-
-        此方法是框架运行的最后防线——任何未捕获异常都不会传播到 ToolDelta。
-        """
+        """在独立线程中创建事件循环并运行框架。"""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         reset_failure_count()
         try:
             self._loop.run_until_complete(self._host.start())
-            # 注册安全卸载回调
             register_shutdown_callback(self._safe_shutdown)
             self._loop.run_forever()
         except asyncio.CancelledError:
-            logging.getLogger(__name__).info("框架事件循环收到取消信号")
+            pass
         except Exception as e:
             logging.getLogger(__name__).critical(
-                "⚠ 框架运行异常，正在安全退出。ToolDelta 不受影响。错误: %s\n%s",
-                e, traceback.format_exc(),
-            )
+                "⚠ 框架运行异常: %s\n%s", e, traceback.format_exc())
             trigger_safe_shutdown()
         finally:
             self._safe_shutdown()
 
     def _safe_shutdown(self):
-        """安全关闭框架，确保资源释放。此方法本身也受保护。"""
+        """安全关闭框架。"""
         try:
             if self._loop and self._host and not self._loop.is_closed():
-                asyncio.run_coroutine_threadsafe(
-                    self._host.stop(), self._loop
-                )
-                self._loop.call_soon_threadsafe(self._loop.stop)
-        except Exception as e:
-            logging.getLogger(__name__).error(
-                "框架关闭异常（不影响 ToolDelta）: %s", e
-            )
+                future = asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
+                try:
+                    future.result(timeout=30)
+                except Exception:
+                    pass
+                try:
+                    self._loop.call_soon_threadsafe(self._loop.stop)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         finally:
             try:
                 if self._loop and not self._loop.is_closed():
@@ -354,12 +206,43 @@ class QQLinkerFrameworkPlugin(Plugin):
 
     @plugin_wrapper
     def on_def(self, _frame_exit=None):
-        """插件卸载时停止框架和事件循环（ToolDelta 传入 FrameExit 对象，忽略）。"""
+        """插件卸载时停止框架。"""
         if self._loop and self._host:
-            asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
-            self._loop.call_soon_threadsafe(self._loop.stop)
+            future = asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
+            try:
+                future.result(timeout=30)
+            except Exception:
+                pass
+            try:
+                self._loop.call_soon_threadsafe(self._loop.stop)
+            except Exception:
+                pass
         if self._framework_thread and self._framework_thread.is_alive():
             self._framework_thread.join(timeout=5)
+
+    @staticmethod
+    def _load_pre_plugin_deps(data_dir: str) -> dict:
+        """从 datas.json 加载前置插件依赖。"""
+        datas_path = os.path.join(os.path.dirname(__file__), "datas.json")
+        if not os.path.exists(datas_path):
+            return {}
+        try:
+            with open(datas_path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            return {}
+        pre_plugins = data.get("pre-plugins", {})
+        result = {}
+        for api_name, ver_str in (pre_plugins if isinstance(pre_plugins, dict) else {}).items():
+            if ver_str in ("any", "*", ""):
+                result[api_name] = (0, 0, 0)
+            else:
+                try:
+                    parts = tuple(int(x) for x in str(ver_str).split("."))
+                    result[api_name] = parts if len(parts) == 3 else (0, 0, 0)
+                except ValueError:
+                    result[api_name] = (0, 0, 0)
+        return result
 
 
 entry = plugin_entry(QQLinkerFrameworkPlugin)
@@ -370,7 +253,6 @@ entry = plugin_entry(QQLinkerFrameworkPlugin)
 # ═══════════════════════════════════════════════════════════════
 
 def _main():
-    """测试模式入口函数（供 __main__.py 和 __init__.py 共用）。"""
     args = sys.argv[1:]
     if "--test" in args or "-t" in args:
         from .testing.runner import run_all_tests
@@ -381,13 +263,11 @@ def _main():
         start_mock_cli(start_framework=True)
     elif "--backup" in args:
         from .testing.cli import backup_data
-        # 支持 --backup [output_path]
         idx = args.index("--backup")
         output = args[idx + 1] if idx + 1 < len(args) and not args[idx + 1].startswith("--") else None
         backup_data(data_dir=".", output=output)
     elif "--restore" in args:
         from .testing.cli import restore_data
-        # --restore <backup_file> [data_dir]
         idx = args.index("--restore")
         if idx + 1 >= len(args) or args[idx + 1].startswith("--"):
             print("用法: python -m qqlinker_framework --restore <备份文件> [数据目录]")

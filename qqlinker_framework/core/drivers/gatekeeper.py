@@ -32,6 +32,26 @@ from ..kernel.services import (
 _log = logging.getLogger(__name__)
 
 
+def _bridge_module_call(host, module_name: str, method_name: str, args: list):
+    """Gatekeeper 安全的模块间方法调用。
+
+    仅允许调用标记了 @exec_exposed 的方法，防止任意代码执行。
+    """
+    try:
+        from ..kernel.decorators import is_exec_exposed
+    except ImportError:
+        is_exec_exposed = lambda m: True
+    mod = host.module_mgr._loaded_modules.get(module_name)
+    if mod is None:
+        raise ValueError(f"模块 '{module_name}' 未加载")
+    method = getattr(mod, method_name, None)
+    if method is None or not callable(method):
+        raise ValueError(f"方法 '{method_name}' 不存在于模块 '{module_name}'")
+    if not is_exec_exposed(method):
+        raise PermissionError(f"方法 '{method_name}' 未标记 @exec_exposed")
+    return method(*args) if args else method()
+
+
 # ── UID 等级映射（从 services.py 导入统一常量）────────────────
 def _uid_tier(uid: int) -> str:
     """将 uid/tier 映射到权限层名称（委托 services.tier_label）。"""
@@ -318,6 +338,26 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
             lambda name, args: tool.execute(name, args),
             min_tier="app", readonly=False,
             description="执行已注册的工具",
+        )
+
+    # ── 模块间通信 (v1.4.3) ──────────────────────────────────
+    try:
+        host = bridge._get_service("_host")
+    except Exception:
+        host = None
+
+    if host is not None:
+        bridge.register(
+            "模块.已加载",
+            lambda name: host.module_mgr._loaded_modules.get(name) is not None,
+            min_tier="app", readonly=True,
+            description="检查指定模块是否已加载（模块名 → bool）",
+        )
+        bridge.register(
+            "模块.调用",
+            lambda name, method, args=None: _bridge_module_call(host, name, method, args or []),
+            min_tier="daemon", readonly=False,
+            description="调用已加载模块的公开方法（模块名, 方法名, 参数）",
         )
 
     _log.info(

@@ -36,12 +36,23 @@ class EventBridge:
         dedup,
         main_loop_getter: Callable[[], Optional[asyncio.AbstractEventLoop]],
         adapter,
+        session_tracker=None,
     ):
         self.event_bus = event_bus
         self.config_mgr = config_mgr
         self.dedup = dedup
         self.main_loop_getter = main_loop_getter
         self.adapter = adapter
+        self._session_tracker = session_tracker
+
+    def _is_user_interactive(self, user_id) -> bool:
+        """检查用户是否处于交互式会话（豁免去重）。"""
+        if self._session_tracker is None:
+            return False
+        try:
+            return self._session_tracker.is_active(int(user_id))
+        except Exception:
+            return False
 
     # ── 游戏侧 → 事件总线 ──
 
@@ -99,6 +110,10 @@ class EventBridge:
         # ── Layer 1: 翻页导航字符 — 永不拦截 ──
         if stripped in ("+", "-", "q", "Q"):
             pass  # 直接跳过一切去重
+
+        # ── Layer 1.5: 交互式会话中的用户 — 跳过短文本去重 ──
+        elif len(stripped) <= 5 and self._is_user_interactive(data.get("user_id", 0)):
+            pass  # 交互式会话豁免去重
 
         # ── Layer 2: 命令消息 — 短 TTL 专用去重 (5s) ──
         elif stripped.startswith("."):

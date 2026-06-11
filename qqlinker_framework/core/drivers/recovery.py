@@ -118,6 +118,8 @@ class RecoveryEngine:
             os.makedirs(os.path.dirname(key_path), exist_ok=True)
             with open(key_path, "wb") as f:
                 f.write(key)
+            # 确保密钥文件仅 owner 可读写（IPC 权限加固）
+            os.chmod(key_path, 0o600)
             _log.info("已生成检查点签名密钥")
         except OSError as e:
             _log.warning("无法持久化检查点密钥: %s，本次启动期间检查点签名有效", e)

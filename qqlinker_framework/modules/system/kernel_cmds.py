@@ -8,7 +8,7 @@ CMD 会话是轮询式的管理控制台：
  3. .exit / .quit 退出，或 300s 无输入自动超时
 
 内置命令:
- .kill — 杀死/卸载模块
+ .kill — 杀死/卸载模块（v7: 持久化写入注册表）
  .grant — 提升模块级别
  .revoke — 降级模块到 nobody
  .ulist — 列出所有模块
@@ -19,6 +19,7 @@ CMD 会话是轮询式的管理控制台：
 ═══════════════════════════════════════════════════════════════════════════
 """
 import asyncio
+import inspect
 import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -84,7 +85,7 @@ class CmdSession:
     def _touch(self) -> None:
         self._last_activity = time.monotonic()
 
-    def handle(self, text: str) -> str:
+    async def handle(self, text: str) -> str:
         self._touch()
         if self.state == SessionState.EXITED:
             return "CMD 会话已退出。重新进入请发送 .cmd"
@@ -94,12 +95,12 @@ class CmdSession:
         if not cmd_name:
             return "空命令。输入 .help 查看可用命令。"
         try:
-            return self._dispatch(cmd_name, params)
+            return await self._dispatch(cmd_name, params)
         except Exception as e:
             _log.exception("CMD 命令 '.%s' 执行异常", cmd_name)
             return f"✗ 命令执行异常: {e}"
 
-    def _dispatch(self, cmd: str, params: Dict[str, str]) -> str:
+    async def _dispatch(self, cmd: str, params: Dict[str, str]) -> str:
         handlers = {
             "kill": self._cmd_kill, "grant": self._cmd_grant,
             "revoke": self._cmd_revoke, "ulist": self._cmd_ulist,
@@ -109,9 +110,17 @@ class CmdSession:
         handler = handlers.get(cmd)
         if handler is None:
             return f"未知命令: .{cmd}\n输入 .help 查看可用命令列表。"
-        return handler(params)
+        result = handler(params)
+        if inspect.iscoroutine(result):
+            result = await result
+        return result
 
-    def _cmd_kill(self, params):
+    async def _cmd_kill(self, params):
+        """卸载模块并持久化写入注册表（改为禁用状态）。
+
+        v7: 不仅从内存卸载，还会写入模块注册表 JSON，
+        确保框架重启后模块不会被重新加载。
+        """
         target_name = params.get("name", "")
         mode = params.get("mode", "graceful").lower()
         confirm = params.get("confirm", "").lower()
@@ -126,9 +135,25 @@ class CmdSession:
             uid = getattr(mod, 'uid', '?')
             return f"⚠️ 即将{self._mode_label(mode)}模块:\n 名称: {target_name}\n UID: {uid}\n 模式: {mode}\n\n此操作不可撤销！确认请追加: --confirm yes"
         try:
-            ok = self.host.module_mgr.unload_module(target_name)
-            return f"✓ 模块 '{target_name}' 已卸载" if ok else f"✗ 卸载失败"
+            # v7: 先持久化写入注册表（设为禁用）
+            registry = getattr(self.host.module_mgr, 'registry', None)
+            if registry is not None:
+                registry.set_enabled(target_name, False)
+                _log.info(
+                    "注册表: 模块 '%s' 已标记为禁用 (由 .kill 命令)",
+                    target_name,
+                )
+            # 从内存卸载
+            ok = await self.host.module_mgr.unload_module(target_name)
+            if ok:
+                return (
+                    f"✓ 模块 '{target_name}' 已卸载并禁用"
+                    if registry
+                    else f"✓ 模块 '{target_name}' 已卸载"
+                )
+            return f"✗ 卸载失败"
         except Exception as e:
+            _log.exception(".kill 命令异常")
             return f"✗ 异常: {e}"
 
     def _cmd_grant(self, params):
@@ -296,7 +321,7 @@ class KernelCMDsModule(Module):
             del self._sessions[event.user_id]
             await self.message.send_group(event.group_id, "CMD 会话已超时自动关闭。")
             return
-        reply = session.handle(event.message)
+        reply = await session.handle(event.message)
         event.handled = True
         await self.message.send_group(event.group_id, reply)
         if session.state == SessionState.EXITED:

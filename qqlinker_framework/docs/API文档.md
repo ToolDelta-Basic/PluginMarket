@@ -1,8 +1,10 @@
 API 参考文档
 
-版本 1.0.0
+版本 1.4.3
 
-本文档描述框架中对外开放的核心服务、管理器、事件以及模块开发所需的全部接口。所有示例均基于 Python 3.10+ 及框架 1.0.0。
+本文档描述框架中对外开放的核心服务、管理器、事件以及模块开发所需的全部接口。所有示例均基于 Python 3.10+ 及框架 1.4.3。
+
+v1.4.3 新增: ModuleRegistry（模块注册表）、IPC 服务（进程间通信）、文件热监控。
 
 ---
 
@@ -317,3 +319,79 @@ PlayerJoinEvent player_name
 PlayerLeaveEvent player_name
 AIResponseEvent user_id, group_id, reply, media, should_forward_to_game
 SystemStartEvent / SystemStopEvent 框架生命周期
+
+---
+
+12. 模块注册表 ModuleRegistry (v1.4.3+)
+
+位置：core/drivers/registry.py
+
+模块注册表是模块加载的**唯一权威来源**。采用允则（allowlist）逻辑：只有注册表中明确标记 `"启用": true` 的模块才会被加载。
+
+持久化文件：`数据/模块注册表.json`
+
+方法（线程安全，主进程和 IPC Worker 均可调用）：
+
+ModuleRegistry.is_enabled(module_name: str) -> bool
+
+· 查询模块是否启用。不在注册表中的模块返回 False。
+
+ModuleRegistry.set_enabled(module_name: str, enabled: bool) -> bool
+
+· 设置模块启用状态，立即持久化到磁盘。
+· 返回 True 表示状态已变更。
+
+ModuleRegistry.auto_register(module_names: list[str]) -> set[str]
+
+· 自动注册新发现的模块（默认启用）。已在注册表中的模块不受影响。
+· 返回本次新注册的模块名集合。
+
+ModuleRegistry.get_all_enabled() -> set[str]
+
+· 返回所有已启用模块名集合。
+
+ModuleRegistry.get_all_entries() -> dict[str, dict]
+
+· 返回注册表完整快照。
+
+ModuleRegistry.stats() -> dict
+
+· 返回统计信息：{"总模块数": int, "已启用": int, "已禁用": int}
+
+---
+
+13. IPC 进程间通信 (v1.4.3+)
+
+位置：core/ipc/
+
+IPC（Inter-Process Communication）通过 Unix socket 实现主进程与 Worker 子进程的安全隔离通信。
+
+IPCClient.call(method: str, params: dict, timeout: float = 10.0) -> Any
+
+· 发送请求并等待响应，超时抛出 IPCError。
+
+IPCClient.notify(event: str, data: dict) -> None
+
+· 发送推送事件（不等待响应）。
+
+Worker 子进程注册的服务方法：
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| registry.set_enabled | {module_name, enabled} | 设置模块启用状态 |
+| registry.is_enabled | {module_name} | 查询模块是否启用 |
+| registry.get_all | {} | 获取全部注册表条目 |
+| registry.auto_register | {module_names: [str]} | 自动注册新模块 |
+| registry.stats | {} | 注册表统计信息 |
+| registry.get_entry | {module_name} | 获取单个注册表条目 |
+| registry.remove_entry | {module_name} | 删除注册表条目 |
+| module.reload | {module_name} | 请求重载模块 |
+| module.unload | {module_name} | 请求卸载模块 |
+
+架构：
+```
+┌──────────────┐  Unix socket   ┌──────────────┐
+│  主进程      │ ◄────────────── │  Worker子进程 │
+│  (事件循环)  │                │  (注册表+监控) │
+└──────────────┘                └──────────────┘
+```

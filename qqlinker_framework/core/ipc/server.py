@@ -13,7 +13,7 @@ import logging
 import os
 from typing import Any, Callable, Awaitable
 
-from qqlinker_framework.core.ipc.protocol import (
+from .protocol import (
     ERR_INTERNAL,
     ERR_METHOD_NOT_FOUND,
     IPCError,

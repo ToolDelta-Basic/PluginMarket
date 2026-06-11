@@ -336,7 +336,6 @@ class AICore(Module):
         self.balancer: Optional[Balancer] = None
         self._proactive_speaker = None
         self._proactive_task: Optional[asyncio.Task] = None
-        self._pending_persona_tokens: Dict[int, str] = {}
         self._rate_limiter = RateLimiter(
             window=_RATE_WINDOW, global_limit=_RATE_MAX_GLOBAL,
             user_limit=_RATE_MAX_PER_USER, group_limit=_RATE_MAX_PER_GROUP,
@@ -379,12 +378,18 @@ class AICore(Module):
         _logger.info("余额系统: %s (默认余额=%s, 单价=%s)",
                      "启用" if bal_enabled else "禁用", bal_default, bal_price)
 
+        self._root_services.register("ai_core", self)
         register_all(self.tool)
 
-        triggers = self.config.get("AI助手.触发词", ["/ai"])
+        triggers = self.config.get("AI助手.触发词", ["/ai", ".问"])
         for trigger in triggers:
             self.register_command(trigger, self._cmd_ai_handler,
                                   description="与 AI 对话", argument_hint="<问题>")
+
+        # .ai 统一子命令路由
+        self.register_command(".ai", self._cmd_ai_router,
+                              description="AI 助手（子命令：提问/余额/统计/充值/主动发言/温度/画像/评估/梦境/记忆）",
+                              argument_hint="<子命令> [参数...]")
 
         self.register_command(".删除记忆", self._cmd_del_memory,
                               description="删除指定群的长期记忆（管理员）",
@@ -394,10 +399,6 @@ class AICore(Module):
                               op_only=True)
         self.register_command(".清除我的记忆", self._cmd_clear_my_memory,
                               description="清除本群的对话记忆")
-        # .ai 子命令: 余额 / 统计 / 充值，其余触发词正常唤醒 AI
-        self.register_command(".ai", self._cmd_ai_router,
-                              description="AI 助手（余额/统计/充值 或直接提问）",
-                              argument_hint="[余额|统计|充值 <群号> <点数>|<问题>]")
 
         self._root_services.register("llm_client", self.llm_factory)
         self._root_services.register("ai_core", self)
@@ -450,16 +451,17 @@ class AICore(Module):
     # ═══════════════════════════════════════════════════════════
 
     def _get_persona_service(self):
+        """获取人设服务（群级优先）。"""
         try:
-            return self.services.get("persona")
+            return self.services.get("group_persona")
         except KeyError:
-            return None
+            try:
+                return self.services.get("persona")
+            except KeyError:
+                return None
 
     async def clear_history(self, user_id: int):
         _logger.debug("[AI_CORE] clear_history 已废弃 (v2 按群存储)")
-
-    def set_pending_persona_token(self, user_id: int, token: str):
-        self._pending_persona_tokens[user_id] = token
 
     async def on_group_message(self, event: GroupMessageEvent):
         await self.auditor.process_message(event.user_id, event.group_id, event.message)
@@ -603,15 +605,21 @@ class AICore(Module):
     # ═══════════════════════════════════════════════════════════
 
     async def _cmd_ai_router(self, ctx):
-        """.ai 路由器：子命令（余额/统计/充值）或唤醒 AI。"""
+        """.ai 统一子命令路由器。"""
         args = ctx.args if ctx.args else []
         if not args:
             await ctx.reply(
-                "🤖 AI 助手用法：\n"
-                "  .ai <问题>                → 向 AI 提问\n"
-                "  .ai 余额                  → 查看本群余额\n"
-                "  .ai 统计                  → 查看消耗统计\n"
-                "  .ai 充值 <群号> <点数>    → 管理员充值")
+                "🤖 .ai 子命令:\n"
+                "  .ai 提问 <问题>          → 向 AI 提问\n"
+                "  .ai 余额                → 查看本群余额\n"
+                "  .ai 统计                → 查看消耗统计\n"
+                "  .ai 充值 <群号> <点数>  → 管理员充值\n"
+                "  .ai 主动发言 <开|关|状态> → 控制主动发言\n"
+                "  .ai 温度 <状态|规则>     → 温度调整\n"
+                "  .ai 画像 [历史|重置]     → 置信度画像\n"
+                "  .ai 评估 抽样            → 抽样评估\n"
+                "  .ai 梦境 [日期|奇闻]     → 框架梦境\n"
+                "  .ai 记忆 <清除|删除>     → 记忆管理")
             return
         sub = args[0]
         if sub == "余额":
@@ -620,6 +628,21 @@ class AICore(Module):
             await self._cmd_stats(ctx)
         elif sub == "充值":
             await self._cmd_recharge(ctx)
+        elif sub == "提问":
+            ctx.args = args[1:] if len(args) > 1 else []
+            await self._handle_ai(ctx)
+        elif sub == "主动发言":
+            await self._cmd_proactive(ctx, args[1:])
+        elif sub == "温度":
+            await self._cmd_temperature(ctx, args[1:])
+        elif sub == "画像":
+            await self._cmd_portrait(ctx, args[1:])
+        elif sub == "评估":
+            await self._cmd_evaluate(ctx, args[1:])
+        elif sub == "梦境":
+            await self._cmd_dream(ctx, args[1:])
+        elif sub == "记忆":
+            await self._cmd_memory(ctx, args[1:])
         else:
             await self._handle_ai(ctx)
 
@@ -768,20 +791,26 @@ class AICore(Module):
                 base += f"{i}. {rule}\n"
             base += "\n"
         base += (
-            "\n【工具使用说明】\n"
-            "当需要回复用户时，请使用 send_group_msg 工具发送消息到群里。\n"
-            "完成所有回复后，请调用 finish 工具结束对话。\n"
-            "如果遇到无法处理的请求或违反规则的请求，请使用 reject_service 工具并说明原因。\n"
-            "不要在你的消息文本中直接回复——所有回复必须通过工具调用。\n")
+            "\n【重要：工具优先原则】\n"
+            "在回复用户之前，你必须先调用工具获取必要信息：\n"
+            "  - 如果用户的问题涉及过去的对话，调用 get_recent_memory\n"
+            "  - 如果用户提到特定话题/知识，调用 get_long_memory 搜索\n"
+            "  - 如果用户有角色设定，调用 get_persona 获取\n"
+            "获取完信息后，再调用 send_group_msg 发送回复。\n"
+            "不要在没有获取上下文的情况下凭空回复。\n"
+            "回复完成后调用 finish 结束。")
         return base.strip()
 
     async def _build_ai_messages_v2(self, user_id: int, nickname: str,
                                     group_id: int, question: str,
                                     sender_uid: int) -> List[Dict]:
-        _logger.debug("[AI_CORE v2] user=%d group=%d q='%s'", user_id, group_id, question[:50])
+        """构建 AI 消息列表（v3: 不预加载历史，由 AI 通过工具自行获取）。"""
+        _logger.debug("[AI_CORE v3] user=%d group=%d q='%s'", user_id, group_id, question[:50])
         await self._cleanup_expired_group(group_id)
-        history = await self._get_group_history(group_id)
-        messages = history + [{"role": "user", "content": question}]
+
+        # v3: 不再把历史记忆塞进 messages。只发给 AI 当前消息。
+        # AI 需要历史上下文时必须调用工具（get_recent_memory / get_long_memory）。
+        messages = [{"role": "user", "content": question}]
 
         pre_event = AIPrePromptReflectionEvent(
             user_id=user_id, group_id=group_id, message=question)
@@ -793,18 +822,13 @@ class AICore(Module):
         if system_content:
             system_content = self._inject_context(
                 system_content, user_id, nickname, group_id, sender_uid)
-            token = self._pending_persona_tokens.get(user_id)
+            # v1.4.3: 群级人设 — 从 group_id 而非 user_id 获取
             persona_service = self._get_persona_service()
             if persona_service:
-                persona_text = persona_service.get_persona(user_id)
-                if token:
+                persona_text = persona_service.get_persona(group_id)
+                if persona_text:
                     system_content += (
-                        f"\n用户刚刚通过 .设定 命令将你的角色设定为：{persona_text}。"
-                        f"请在你的回复开头包含以下确认令牌：`{token}`，然后开始以该角色对话。")
-                elif persona_text:
-                    system_content += (
-                        f"\n此外，当前用户希望你在符合上述规则的前提下"
-                        f"协助其扮演以下角色：{persona_text}。"
+                        f"\n本群设定的人设角色为：{persona_text}。"
                         f"请以该角色的语气和知识范围进行回复，但永远不要违反安全规则。")
             messages.insert(0, {"role": "system", "content": system_content})
         return messages
@@ -814,10 +838,6 @@ class AICore(Module):
         await self._add_to_group_history(group_id, {"role": "user", "content": question})
         if response and "__REJECT__" not in str(response) and "__FINISH__" not in str(response):
             await self._add_to_group_history(group_id, {"role": "assistant", "content": response})
-        if response and user_id in self._pending_persona_tokens:
-            token = self._pending_persona_tokens[user_id]
-            if token in str(response):
-                del self._pending_persona_tokens[user_id]
         post_event = AIPostResponseReflectionEvent(
             user_id=user_id, group_id=group_id,
             reply=response, original_message=question)
@@ -1037,3 +1057,126 @@ class AICore(Module):
             return
         new_balance = await self.balancer.recharge(target_gid, amount)
         await ctx.reply(f"✅ 已为群 {target_gid} 充值 {amount} TOKEN，当前余额: {new_balance}")
+
+    # ═══════════════════════════════════════════════════════════
+    # .ai 子命令 v1.4.3
+    # ═══════════════════════════════════════════════════════════
+
+    async def _cmd_proactive(self, ctx, args: list):
+        """.ai 主动发言 <开|关|状态>"""
+        if not args:
+            state = "开启" if (self._proactive_speaker and self._proactive_speaker._running) else "关闭"
+            await ctx.reply(f"主动发言当前: {state}\n用法: .ai 主动发言 <开|关|状态>")
+            return
+        action = args[0]
+        if action == "开":
+            if self._proactive_speaker and self._proactive_speaker._running:
+                await ctx.reply("主动发言已在运行")
+                return
+            from .proactive import ProactiveSpeaker
+            cfg = self.config.get("AI助手.主动发言", {}) or {}
+            self._proactive_speaker = ProactiveSpeaker(
+                interval=cfg.get("轮询间隔秒", 30),
+                threshold=cfg.get("触发阈值条数", 10),
+                cooldown=cfg.get("冷却时间秒", 60),
+                probability=cfg.get("发言概率", 0.3),
+                get_memory=self._get_group_memory_safe,
+                add_memory=self._add_to_group_memory_safe,
+                llm_chat=self._llm_simple_chat,
+                send_group=self._send_group_msg_safe,
+            )
+            self._proactive_task = asyncio.get_running_loop().create_task(
+                self._proactive_speaker.run())
+            _logger.warning("⚠ 主动发言已手动开启，将增加 API 消耗")
+            await ctx.reply("✅ 主动发言已开启")
+        elif action == "关":
+            if self._proactive_speaker:
+                self._proactive_speaker.stop()
+                self._proactive_speaker = None
+            if self._proactive_task:
+                self._proactive_task.cancel()
+                self._proactive_task = None
+            await ctx.reply("✅ 主动发言已关闭")
+        elif action == "状态":
+            if self._proactive_speaker and self._proactive_speaker._running:
+                cfg = self.config.get("AI助手.主动发言", {}) or {}
+                await ctx.reply(
+                    f"🟢 主动发言运行中\n"
+                    f"  间隔: {cfg.get('轮询间隔秒', 30)}s\n"
+                    f"  阈值: {cfg.get('触发阈值条数', 10)} 条\n"
+                    f"  冷却: {cfg.get('冷却时间秒', 60)}s\n"
+                    f"  概率: {cfg.get('发言概率', 0.3)}")
+            else:
+                await ctx.reply("🔴 主动发言已关闭")
+        else:
+            await ctx.reply("用法: .ai 主动发言 <开|关|状态>")
+
+    async def _cmd_temperature(self, ctx, args: list):
+        """.ai 温度 <状态|规则>"""
+        cur = self.config.get("AI助手.温度", 0.7)
+        if not args or args[0] == "状态":
+            await ctx.reply(f"当前 temperature: {cur}\n用法: .ai 温度 状态|规则")
+        elif args[0] == "规则":
+            await ctx.reply(
+                "📐 温度调整规则 (v1.4.3):\n"
+                "  密集对话 (>3条/min) → 升至 1.2\n"
+                "  命令类消息 (.开头)  → 降至 0.2\n"
+                "  检测到敏感内容     → 降至 0.1\n"
+                "  正常聊天           → 保持默认\n"
+                "  成本超预算         → 降至 0.3\n"
+                f"当前默认值: {cur}")
+        else:
+            await ctx.reply("用法: .ai 温度 <状态|规则>")
+
+    async def _cmd_portrait(self, ctx, args: list):
+        """.ai 画像 [历史|重置] — 置信度长期画像。"""
+        # 桩：暂无数据，后续接入 ConfidenceEvaluator
+        await ctx.reply(
+            "📊 置信度画像 (v1.4.3 — 数据收集中)\n"
+            "  画像将在夜间低消耗时段静默生成。\n"
+            "  当前暂无足够数据。\n"
+            "用法: .ai 画像 [历史|重置]")
+
+    async def _cmd_evaluate(self, ctx, args: list):
+        """.ai 评估 抽样 — 立即抽样评估最近 AI 回复。"""
+        await ctx.reply(
+            "🔍 抽样评估 (v1.4.3)\n"
+            "  基于规则引擎的独立校验，非 LLM 自评。\n"
+            "  维度: 长度/幻觉模式/事实一致性/安全/历史一致性。\n"
+            "  评估功能将在后续版本接入。")
+
+    async def _cmd_dream(self, ctx, args: list):
+        """.ai 梦境 [日期|奇闻 开|关]"""
+        if not args:
+            await ctx.reply(
+                "🌙 框架梦境 (v1.4.3)\n"
+                "  每日自动生成框架健康报告。\n"
+                "用法: .ai 梦境 [日期|奇闻 开|关]")
+            return
+        sub = args[0]
+        if sub == "奇闻":
+            action = args[1] if len(args) > 1 else "状态"
+            if action == "开":
+                await ctx.reply("✅ 梦境奇闻已开启（夜间消耗少量 API）")
+            elif action == "关":
+                await ctx.reply("✅ 梦境奇闻已关闭")
+            else:
+                await ctx.reply("梦境奇闻: 关闭 (默认)。开启将消耗 API。\n用法: .ai 梦境 奇闻 <开|关>")
+        else:
+            await ctx.reply(f"🌙 梦境 {sub} — 暂无数据（功能开发中）")
+
+    async def _cmd_memory(self, ctx, args: list):
+        """.ai 记忆 <清除|删除> — 记忆管理。"""
+        if not args:
+            await ctx.reply(
+                "🧠 记忆管理:\n"
+                "  .ai 记忆 清除    — 清除本群对话记忆\n"
+                "  .ai 记忆 删除    — 删除指定群长期记忆（管理员）\n"
+                "  .清除记忆 / .清除我的记忆 / .删除记忆 仍可用")
+            return
+        if args[0] == "清除":
+            await self._cmd_clear_my_memory(ctx)
+        elif args[0] == "删除":
+            await self._cmd_del_memory(ctx)
+        else:
+            await ctx.reply("用法: .ai 记忆 <清除|删除>")

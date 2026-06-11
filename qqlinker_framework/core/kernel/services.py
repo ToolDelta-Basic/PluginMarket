@@ -321,3 +321,46 @@ class ServiceContainer:
             for name, tier in self._service_tiers.items()
             if self._tier == TIER_KERNEL or self._tier <= tier
         }
+
+
+# ═══════════════════════════════════════════════════════════════
+# v1.4.3: 交互式会话追踪器
+# ═══════════════════════════════════════════════════════════════
+
+class InteractiveSessionTracker:
+    """追踪哪些用户处于交互式会话中。
+
+    处于交互式会话中的用户，消息去重机制应放宽，
+    避免 '1' / '2' / '是' / '否' 等短输入被拦截。
+
+    用法:
+      tracker = InteractiveSessionTracker()
+      tracker.enter(user_id, group_id, session_type="rule_create")
+      ... 用户输入 ...
+      tracker.leave(user_id)
+      tracker.is_active(user_id) → bool
+    """
+
+    def __init__(self):
+        self._sessions: Dict[str, dict] = {}
+
+    def enter(self, user_id: int, group_id: int = 0, session_type: str = ""):
+        """用户进入交互式会话。"""
+        key = str(user_id)
+        self._sessions[key] = {
+            "user_id": user_id,
+            "group_id": group_id,
+            "type": session_type,
+        }
+
+    def leave(self, user_id: int):
+        """用户退出交互式会话。"""
+        self._sessions.pop(str(user_id), None)
+
+    def is_active(self, user_id: int) -> bool:
+        """用户是否处于交互式会话中。"""
+        return str(user_id) in self._sessions
+
+    def active_users(self) -> list:
+        """所有交互式会话中的用户 ID 列表。"""
+        return [int(k) for k in self._sessions]

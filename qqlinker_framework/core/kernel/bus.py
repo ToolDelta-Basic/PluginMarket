@@ -12,6 +12,7 @@ from .error_hints import hint
 
 _recursion_depth: ContextVar[int] = ContextVar('event_recursion_depth', default=0)
 MAX_EVENT_DEPTH = 10
+HANDLER_TIMEOUT_SECONDS = 30.0
 
 # 不可变处理器元组类型 (priority, handler)
 Subscriber = Tuple[int, Callable]
@@ -98,15 +99,27 @@ class EventBus:
                 handlers = self._subscribers.get(event_type, ())
                 # handlers 是 tuple，不可变，安全解锁后直接遍历
             for _, handler in handlers:
+                handler_name = getattr(handler, '__name__', repr(handler))
                 try:
                     if asyncio.iscoroutinefunction(handler):
-                        await handler(event)
+                        await asyncio.wait_for(
+                            handler(event),
+                            timeout=HANDLER_TIMEOUT_SECONDS,
+                        )
                     else:
                         handler(event)
+                except asyncio.TimeoutError:
+                    logging.getLogger(__name__).error(
+                        "事件处理超时 %s/%s (超时阈值=%s秒)，已取消。%s",
+                        event_type,
+                        handler_name,
+                        HANDLER_TIMEOUT_SECONDS,
+                        hint.get("EVENT_HANDLER_TIMEOUT", ""),
+                    )
                 except Exception as e:
                     logging.getLogger(__name__).error(
-                        "事件处理异常 %s: %s。%s\n%s",
-                        event_type, e,
+                        "事件处理异常 %s/%s: %s。%s\n%s",
+                        event_type, handler_name, e,
                         hint["EVENT_HANDLER_FAILED"],
                         traceback.format_exc(),
                     )

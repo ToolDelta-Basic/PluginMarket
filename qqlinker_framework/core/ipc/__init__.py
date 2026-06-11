@@ -7,9 +7,9 @@
     IPCError   — IPC 协议异常
 """
 
-from qqlinker_framework.core.ipc.protocol import IPCError, REGISTRY
-from qqlinker_framework.core.ipc.client import IPCClient
-from qqlinker_framework.core.ipc.server import IPCServer
-from qqlinker_framework.core.ipc.pool import WorkerPool
+from .protocol import IPCError, REGISTRY
+from .client import IPCClient
+from .server import IPCServer
+from .pool import WorkerPool
 
 __all__ = ["IPCClient", "IPCServer", "WorkerPool", "IPCError", "REGISTRY"]

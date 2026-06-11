@@ -340,6 +340,15 @@ class CommandRouter:
                 guardian = await self._get_guardian()
 
                 if guardian:
+                    # v5: 命令调用频率检查（每分钟上限）
+                    if guardian.config.enabled:
+                        cmd_rate_ok = await guardian.check_command_rate(module_name)
+                        if not cmd_rate_ok:
+                            await ctx.reply(
+                                "⏳ 该模块调用过于频繁，请稍后再试"
+                            )
+                            event.handled = True
+                            return True
                     # 频率检查
                     rate_ok = await guardian.check_rate(module_name, user_uid)
                     if not rate_ok:

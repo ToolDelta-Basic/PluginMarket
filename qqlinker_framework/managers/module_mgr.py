@@ -2,6 +2,9 @@
 """模块管理器 – 注册、约定执行、依赖排序、生命周期调度及热插拔
 
 v1.2 — 新增启动依赖检查（服务存在性 + 循环依赖检测）
+v7.0 — 注册表允则机制: 模块加载唯一权威来源 = 模块注册表 JSON
+       只有注册表中明确标记"启用"的模块才运行，
+       新发现的模块默认写入注册表并自动启用
 """
 import asyncio
 import inspect
@@ -11,6 +14,7 @@ from typing import Type, List, Optional, Set, Dict
 from ..core.module import Module
 from ..core.kernel.error_hints import hint
 from ..core.kernel.prioritized_lock import PrioritizedLock
+from ..core.drivers.registry import ModuleRegistry
 
 # ── 递归深度防护 ──────────────────────────────────────────
 _module_mgr_depth: contextvars.ContextVar[int] = contextvars.ContextVar(
@@ -28,7 +32,7 @@ class ModuleManager:
       - 获取超时保护（默认 5s）
     """
 
-    def __init__(self, host):
+    def __init__(self, host, registry: ModuleRegistry = None):
         self.host = host
         self.services = host.services
         self.event_bus = host.event_bus
@@ -37,6 +41,8 @@ class ModuleManager:
         self._lock = PrioritizedLock(name="module_mgr")
         # 读路径上的轻量级保护
         self._read_lock = asyncio.Lock()
+        # v7: 模块注册表 — 允则逻辑的唯一权威来源
+        self.registry = registry
 
     def _check_depth(self) -> None:
         """递归深度检查，超限抛出 RecursionError。"""
@@ -121,19 +127,21 @@ class ModuleManager:
         dep_graph: Dict[str, Set[str]] = {}
         name_map: Dict[str, Module] = {}
 
+        # 先完整构建 name_map，再构建依赖图
         for mod in mods:
             name = getattr(mod, 'name', mod.__class__.__name__)
             name_map[name] = mod
-            deps: Set[str] = set()
+            dep_graph[name] = set()
+
+        for mod in mods:
+            name = getattr(mod, 'name', mod.__class__.__name__)
             for srv_name in getattr(mod, 'required_services', []):
                 # 服务名可能与模块名相同（如 "message", "command"）
-                # 也检查 dependencies 属性
                 if srv_name in name_map:
-                    deps.add(srv_name)
+                    dep_graph[name].add(srv_name)
             for dep_name in getattr(mod, 'dependencies', []):
                 if dep_name in name_map:
-                    deps.add(dep_name)
-            dep_graph[name] = deps
+                    dep_graph[name].add(dep_name)
 
         # DFS 检测环
         WHITE, GRAY, BLACK = 0, 1, 2
@@ -178,46 +186,44 @@ class ModuleManager:
         return list(cycle_nodes)
 
     # ═══════════════════════════════════════════════════════════
-    # v6: 模块加载策略 (白名单/黑名单)
+    # v7: 注册表允则机制 — 模块加载唯一权威来源
     # ═══════════════════════════════════════════════════════════
+    # 不再使用旧的 白名单/黑名单 配置项。
+    # 改用 模块注册表 JSON 作为允则来源：
+    #   - 注册表中明确标记 "启用": true → 允许加载
+    #   - 注册表中标记 "启用": false 或不在注册表中 → 拒绝加载
+    #   - 扫描到新模块时自动注册并默认启用
 
-    SECTION = "模块管理"
+    def _is_module_loadable(self, name: str) -> bool:
+        """判断模块是否应该被加载（v7: 注册表允则）。
 
-    def _get_module_load_policy(self) -> tuple[set, set, str]:
-        """从配置读取模块加载策略。
+        只有注册表中明确标记 "启用": true 的模块才允许加载。
+        注册表为空时降级为全部加载（首次启动/文件损坏兜底）。
+        """
+        if self.registry is None:
+            return True
+        # 注册表为空 → 降级全部加载
+        if not self.registry.get_all_entries():
+            return True
+        return self.registry.is_enabled(name)
+
+    def _auto_register_new_modules(self, module_names: list) -> Set[str]:
+        """自动注册新发现的模块到注册表（默认启用）。
 
         Returns:
-            (enabled_set, disabled_set, load_mode)
-            load_mode: "黑名单" 或 "白名单"
+            本次新注册的模块名集合。
         """
-        try:
-            cfg = self.services.get("config")
-            mgr = cfg.get(self.SECTION, {})
-            if not isinstance(mgr, dict):
-                return set(), set(), "黑名单"
-            enabled = set(mgr.get("启用模块", []))
-            disabled = set(mgr.get("禁用模块", []))
-            mode = mgr.get("模式", "黑名单")
-            return enabled, disabled, mode
-        except Exception:
-            return set(), set(), "黑名单"
-
-    def _is_module_loadable(self, name: str, enabled: set, disabled: set, mode: str) -> bool:
-        """判断模块是否应该被加载。
-
-        白名单模式: 只在启用列表中的才加载
-        黑名单模式: 在禁用列表中的跳过
-        空配置: 全部加载
-        """
-        if mode == "白名单":
-            if not enabled:
-                # 白名单为空 → 不加载任何模块（保守策略）
-                return False
-            return name in enabled
-        # 黑名单模式（默认）
-        if disabled and name in disabled:
-            return False
-        return True
+        if self.registry is None:
+            return set()
+        result = self.registry.auto_register(module_names)
+        # 防御：如果注册表为空且刚追加了新模块，确保文件写盘
+        all_enabled = self.registry.get_all_enabled()
+        if not all_enabled and module_names:
+            # 注册表为空 → 降级为全部加载（可能是文件写入失败）
+            _log = logging.getLogger(__name__)
+            _log.warning("注册表为空，降级为全部加载 (%d 个模块)", len(module_names))
+            self.registry.auto_register(module_names)
+        return result
 
     # ═══════════════════════════════════════════════════════════
     # 批量初始化
@@ -231,8 +237,12 @@ class ModuleManager:
         logger = logging.getLogger(__name__)
         modules: List[Module] = []
 
-        # ── v6: 模块加载白名单/黑名单预筛选 ──
-        enabled_set, disabled_set, load_mode = self._get_module_load_policy()
+        # ── v7: 注册表允则 — 自动注册新发现的模块 ──
+        all_module_names = [
+            getattr(cls, 'name', cls.__name__)
+            for cls in self._module_classes
+        ]
+        self._auto_register_new_modules(all_module_names)
 
         # Phase 1: 实例化 + 装饰器扫描 + 依赖声明
         self._check_depth()
@@ -248,9 +258,11 @@ class ModuleManager:
                         hint["MODULE_INSTANTIATE_FAILED"],
                     )
                     continue
-                # ── v6: 白名单/黑名单过滤 ──
-                if not self._is_module_loadable(mod.name, enabled_set, disabled_set, load_mode):
-                    logger.info("模块 '%s' 被 '%s' 策略过滤，跳过加载", mod.name, load_mode)
+                # ── v7: 注册表允则检查 ──
+                if not self._is_module_loadable(mod.name):
+                    logger.info(
+                        "模块 '%s' 未在注册表中启用，跳过加载", mod.name
+                    )
                     continue
                 # ── v1.2: 启动依赖检查 ──
                 ok, missing, _ = self.validate_dependencies(mod)
@@ -358,11 +370,11 @@ class ModuleManager:
                         mod.name, e, hint["MODULE_START_FAILED"],
                     )
                     self._set_module_health(mod.name, "degraded", str(e))
-                    # ── v5: 级联隔离 ── 单个 on_start 失败不卸载，标记为 degraded
-                    # （模块可能在 on_init 中已注册命令/工具且在 on_start 后仍可用）
+                    await self._rollback_module(mod)
+                    # ── v5: 级联隔离 ── 单个 on_start 失败，回滚模块资源
+                    # （本次任务要求在 on_start 异常时主动回滚模块）
                     if degradation:
                         degradation.on_module_fail(mod.name, f"on_start: {e}", e)
-                    # 仍然保留在 loaded_modules 中（degraded 状态）
         finally:
             self._release_lock()
 
@@ -392,7 +404,7 @@ class ModuleManager:
         return True
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
-        """热加载一个新的模块类（带优先级锁 + 递归深度防护 + v6 白名单/黑名单）。"""
+        """热加载一个新的模块类（带优先级锁 + 递归深度防护 + v7 注册表允则）。"""
         logger = logging.getLogger(__name__)
         self._check_depth()
         try:
@@ -405,10 +417,11 @@ class ModuleManager:
             )
             return None
 
-        # ── v6: 热加载也做白名单/黑名单检查 ──
-        enabled_set, disabled_set, load_mode = self._get_module_load_policy()
-        if not self._is_module_loadable(temp_mod.name, enabled_set, disabled_set, load_mode):
-            logger.info("模块 '%s' 被 '%s' 策略过滤，拒绝热加载", temp_mod.name, load_mode)
+        # ── v7: 注册表允则检查 ──
+        if not self._is_module_loadable(temp_mod.name):
+            logger.info(
+                "模块 '%s' 未在注册表中启用，拒绝热加载", temp_mod.name
+            )
             return None
 
         await self._acquire_lock(uid=100, timeout=10.0)

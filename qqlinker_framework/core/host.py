@@ -1,8 +1,10 @@
-"""FrameworkHost - 框架核心调度器 (v10)
+"""FrameworkHost - 框架核心调度器 (v11)
 
 职责: 组装服务/管理器/模块、控制生命周期、提供模块热插拔 API。
 非职责: 事件桥接 → core/event_bridge.py
         控制台命令 → managers/console.py
+
+v11 — 集成模块注册表 + IPC 子进程 + 文件热监控
 """
 import asyncio
 import logging
@@ -17,6 +19,7 @@ from .kernel.services import (
     TIER_SERVICE,
     TIER_APP,
     UID_NOBODY,
+    InteractiveSessionTracker,
 )
 from .kernel.bus import EventBus
 from .module import Module
@@ -91,6 +94,8 @@ class FrameworkHost:
             "recovery": True,
             "event_bridge": True,
             "gatekeeper": True,
+            "ipc": True,       # v11: IPC Service + Worker Pool
+            "registry": True,   # v11: 模块注册表（允则权威来源）
         }
         self.package_mgr = PackageManager()
         self.command_mgr = CommandManager()
@@ -121,6 +126,11 @@ class FrameworkHost:
                                _caller="qqlinker_framework.core.host")
         # UID 查询函数（所有模块可读，仅查询不修改）
         self.services.register("uid_lookup", self._lookup_uid, uid=TIER_APP,
+                               is_factory=False,
+                               _caller="qqlinker_framework.core.host")
+        # v1.4.3: 交互式会话追踪器
+        self._session_tracker = InteractiveSessionTracker()
+        self.services.register("session_tracker", self._session_tracker, uid=TIER_APP,
                                is_factory=False,
                                _caller="qqlinker_framework.core.host")
         # FrameworkHost 自身注册为 _host 服务（供 kernel_auth .exec 等使用）
@@ -155,6 +165,11 @@ class FrameworkHost:
 
         # ── 事件循环看门狗（v5: 假死检测 + 降级恢复）──
         self._watchdog: Optional[EventLoopWatchdog] = None
+
+        # ── v11: 模块注册表 + IPC（延迟到 _post_start_init）──
+        self._registry: Optional[object] = None
+        self._ipc_server: Optional[object] = None
+        self._ipc_pool: Optional[object] = None
 
         self._modules: List[Module] = []
         self._router = None
@@ -218,6 +233,12 @@ class FrameworkHost:
 
         self._ensure_log_handlers()
         self.package_mgr.set_target_dir(os.path.join(self.data_path, "第三方库"))
+
+        # v1.4.3: 模块注册表（同步加载，纯文件IO，毫秒级）
+        from .drivers.registry import ModuleRegistry
+        self._registry = ModuleRegistry(self.data_path)
+        self.module_mgr.registry = self._registry
+        logger.info("模块注册表已加载: %s", self._registry.stats())
 
         # 控制台命令
         self.console.register_all()
@@ -353,6 +374,7 @@ class FrameworkHost:
             dedup=dedup,
             main_loop_getter=lambda: self._main_loop,
             adapter=self.adapter,
+            session_tracker=self._session_tracker,
         )
 
         # 模块市场（可选，仅通过 services 访问，不存 self 引用）
@@ -619,6 +641,10 @@ class FrameworkHost:
 
         logger.info("框架启动完成")
 
+        # v1.4.3: 注册表已在 start() 中同步加载，此处无延迟初始化
+        # IPC Server/WorkerPool 暂不启动（ToolDelta 环境下不稳定）
+        # 如需启用: 设置环境变量 QQLINKER_ENABLE_IPC=1
+
     def _bridge_game_events(self):
         """绑定游戏侧回调到事件桥接（防重复）。"""
         if self._game_events_bridged:
@@ -712,12 +738,79 @@ class FrameworkHost:
         except Exception as e:
             logger.error("资源守护者卸载模块 '%s' 失败: %s", module_name, e)
 
+    # ═══════════════════════════════════════════════════════════
+    # v11: IPC 服务 + Worker Pool（需 QQLINKER_ENABLE_IPC=1）
+    # ═══════════════════════════════════════════════════════════
+
+    async def _start_ipc(self) -> None:
+        """启动 IPC 服务端和 Worker 子进程池。
+
+        启动顺序:
+          1. IPCServer — 监听 Unix socket
+          2. WorkerPool — 启动 worker 子进程（含文件监控）
+
+        Worker 子进程通过 Unix socket 与主进程通信，
+        负责: 注册表操作、文件监控、AI 推理等非内核任务。
+        """
+        logger = logging.getLogger(__name__)
+
+        # 确保 socket 目录存在
+        os.makedirs(os.path.dirname(self._ipc_socket_path), exist_ok=True)
+
+        # 1. 启动 IPC Server
+        self._ipc_server = IPCServer(self._ipc_socket_path)
+
+        # 注册主进程侧处理器:
+        # worker 通过 IPC 发来的重载/卸载请求在主事件循环中执行
+        async def _handle_module_reload(params: dict):
+            name = params.get("module_name", "")
+            if name:
+                ok = await self.reload_module(name)
+                return {"ok": ok, "module_name": name}
+            return {"ok": False, "error": "missing module_name"}
+
+        async def _handle_module_unload(params: dict):
+            name = params.get("module_name", "")
+            if name:
+                ok = await self.unload_module(name)
+                return {"ok": ok, "module_name": name}
+            return {"ok": False, "error": "missing module_name"}
+
+        self._ipc_server.register("module.reload_exec", _handle_module_reload)
+        self._ipc_server.register("module.unload_exec", _handle_module_unload)
+
+        await self._ipc_server.start()
+        logger.info("IPC 服务已启动: %s", self._ipc_socket_path)
+
+        # 2. 启动 Worker Pool（含文件监控 worker）
+        #    延迟启动，等待主进程事件循环稳定
+        self._ipc_pool = WorkerPool(self._ipc_socket_path, count=1)
+        import sys
+        _pkg_name = __package__ or "qqlinker_framework"
+        self._ipc_pool._worker_cmd = [
+            sys.executable, "-m", f"{_pkg_name}.core.ipc.worker",
+            self._ipc_socket_path,
+            "--data-path", self.data_path,
+        ]
+        # 延迟 2s 启动 Worker，确保主循环稳定
+        asyncio.create_task(self._delayed_start_workers())
+
+    async def _delayed_start_workers(self) -> None:
+        """延迟启动 Worker 子进程，避免干扰主循环初始化。"""
+        await asyncio.sleep(2)
+        logger = logging.getLogger(__name__)
+        try:
+            await self._ipc_pool.start_all()
+            logger.info("Worker Pool 已启动 (%d worker)", self._ipc_pool._count)
+        except Exception as e:
+            logger.error("Worker Pool 启动失败（不影响主框架）: %s", e)
+
     async def stop(self):
         """优雅停止框架。幂等——可被多次调用。"""
         logger = logging.getLogger(__name__)
         from .kernel.events import SystemStopEvent
         try:
-            await self.event_bus.publish(SystemStopEvent())
+            await self.event_bus.publish(SystemStopEvent(), caller_uid=0)
         except Exception as e:
             logger.debug("发布停止事件时异常: %s", e)
         for mod in self._modules:
@@ -759,6 +852,17 @@ class FrameworkHost:
                 await self._watchdog.stop()
             except Exception as e:
                 logger.debug("停止看门狗时异常: %s", e)
+        # ── v11: 停止 IPC ──
+        if self._ipc_pool:
+            try:
+                await self._ipc_pool.stop_all()
+            except Exception as e:
+                logger.debug("停止 WorkerPool 时异常: %s", e)
+        if self._ipc_server:
+            try:
+                await self._ipc_server.stop()
+            except Exception as e:
+                logger.debug("停止 IPCServer 时异常: %s", e)
         self.recovery.mark_clean_exit()
         self.recovery.clean_shutdown()
         market_server = self.services.try_get("market_server")
@@ -809,7 +913,7 @@ class FrameworkHost:
     def _on_config_reloaded(self):
         """配置热重载后，安全广播 ConfigReloadEvent。
 
-        从 watcher 线程调用，通过 run_coroutine_threadsafe 投递到主循环。
+        也从 watcher 线程调用，通过 run_coroutine_threadsafe 投递到主循环。
 
         Fix 3: 0.5s 防抖窗口 — config_mgr 和 group_config_mgr 两个 watcher
         可能短时间内同时触发，去重后只广播一次 ConfigReloadEvent。
@@ -821,6 +925,11 @@ class FrameworkHost:
             if now - self._last_config_reload_ts < 0.5:
                 return  # 防抖：静默跳过
         self._last_config_reload_ts = now
+
+        # v1.4.3: 同时重载模块注册表（注册表是独立文件，不在 ConfigManager 管理范围内）
+        if hasattr(self, '_registry') and self._registry is not None:
+            self._registry.reload()
+
         asyncio.run_coroutine_threadsafe(
             self.event_bus.publish(ConfigReloadEvent(), caller_uid=0),
             self._main_loop,
