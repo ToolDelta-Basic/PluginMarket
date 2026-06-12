@@ -19,6 +19,7 @@ CLEANUP_INTERVAL = 60  # 后台清理间隔（秒）
 
 
 class HelpModule(Module):
+    background = True
     """提供 .帮助 命令，分页列出所有可用命令及其描述。
 
     v2.1 改进:

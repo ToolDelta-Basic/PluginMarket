@@ -387,7 +387,7 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
             and getattr(attr, "name", None)
         ):
             # 外部模块 uid: 优先从持久化授权文件读取，否则默认 400
-            from ..managers.config_mgr import UID_NB as _NB
+            from qqlinker_framework.管理 import UID_NB as _NB
             declared_uid = getattr(attr, "uid", 400)
             # 尝试从授权记录读取持久化的有效 uid
             effective_uid = _load_external_uid_persisted(

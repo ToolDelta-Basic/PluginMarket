@@ -30,8 +30,8 @@ def _bootstrap_integrity_check():
         "core/module.py":          "模块基类",
         "core/kernel/bus.py":          "事件总线",
         "core/kernel/services.py":     "服务容器",
-        "managers/config_mgr.py":  "配置管理器",
-        "managers/module_mgr.py":  "模块管理器",
+        "管理/config_mgr.py":  "配置管理器",
+        "管理/source_mgr.py":  "加载源管理器",
         "adapters/base.py":        "适配器基类",
     }
     missing = []
@@ -130,6 +130,10 @@ class QQLinkerFrameworkPlugin(Plugin):
 
         self._host = FrameworkHost(self._adapter, data_path=data_dir)
 
+        # 注册框架软重启服务（memory_guard 等模块通过 services.get("framework_restart") 调用）
+        self._host.services.register("framework_restart", self.soft_restart, uid=100,
+                                      _caller="qqlinker_framework.__init__")
+
         pre_apis = self._adapter.get_pre_plugin_apis()
         if pre_apis:
             for api_name, api_inst in pre_apis.items():
@@ -203,6 +207,98 @@ class QQLinkerFrameworkPlugin(Plugin):
                     self._loop.close()
             except Exception:
                 pass
+
+    async def soft_restart(self, reason: str = "") -> bool:
+        """框架级软重启 — 停止旧线程 + 事件循环，重新创建并启动。
+
+        不会杀死进程，不会中断 Minecraft/OneBot 连接。
+        重启期间框架不可用约 5-15 秒。
+
+        Returns:
+            True 如果重启成功。
+        """
+        logger = logging.getLogger(__name__)
+        logger.warning("🔄 框架软重启触发 (原因: %s)", reason or "手动")
+        result = False
+        try:
+            # 1. 停止旧框架
+            old_loop = self._loop
+            old_host = self._host
+            if old_loop and old_host and not old_loop.is_closed():
+                logger.info("停止旧框架...")
+                try:
+                    future = asyncio.run_coroutine_threadsafe(old_host.stop(), old_loop)
+                    future.result(timeout=30)
+                except Exception:
+                    pass
+                try:
+                    old_loop.call_soon_threadsafe(old_loop.stop)
+                except Exception:
+                    pass
+
+            # 2. 等待旧线程结束
+            if self._framework_thread and self._framework_thread.is_alive():
+                self._framework_thread.join(timeout=10)
+                if self._framework_thread.is_alive():
+                    logger.warning("旧框架线程未在 10 秒内停止，继续重启")
+
+            # 3. 关闭旧事件循环
+            if old_loop and not old_loop.is_closed():
+                try:
+                    old_loop.close()
+                except Exception:
+                    pass
+
+            # 4. 重置状态
+            self._loop = None
+            self._host = None
+            self._framework_thread = None
+
+            # 5. 回收内存
+            import gc
+            gc.collect()
+
+            # 6. 重新创建 host（保留 adapter + data_path）
+            from .core.host import FrameworkHost
+            data_dir = str(self.data_path)
+
+            # 保留旧 adapter 引用
+            old_adapter = self._adapter
+            self._adapter = ToolDeltaAdapter(self)
+            # 复制状态
+            if old_adapter and hasattr(old_adapter, '_pre_apis'):
+                self._adapter._pre_apis = getattr(old_adapter, '_pre_apis', {})
+
+            self._host = FrameworkHost(self._adapter, data_path=data_dir)
+
+            pre_apis = self._adapter.get_pre_plugin_apis()
+            if pre_apis:
+                for api_name, api_inst in pre_apis.items():
+                    svc_name = f"pre_api.{api_name}"
+                    self._host.services.register(svc_name, api_inst, uid=400,
+                                                  _caller="qqlinker_framework.__init__.soft_restart")
+
+            self._host.package_mgr.register_requirements({"websocket-client": "websocket"})
+            self._host.register_modules_from_package("qqlinker_framework.modules")
+            self._host.register_external_modules()
+
+            # 7. 重新启动框架线程
+            logger.info("启动新框架线程...")
+            self._framework_thread = threading.Thread(
+                target=self._run_framework, daemon=True)
+            self._framework_thread.start()
+
+            # 8. 等待新框架就绪
+            await asyncio.sleep(5)
+            logger.info("✅ 框架软重启完成")
+            result = True
+
+        except Exception as e:
+            logger.critical("框架软重启失败: %s\n%s", e, traceback.format_exc())
+            # 如果出错了仍尝试通过 containment 机制触发安全关闭
+            trigger_safe_shutdown()
+
+        return result
 
     @plugin_wrapper
     def on_def(self, _frame_exit=None):

@@ -21,7 +21,7 @@ from .safety import (
 _QUERY_MAX_LENGTH = 500
 
 
-def register_tools(tool_manager):
+def register_tools(tool_manager, **kwargs):
     """注册 web_search 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:

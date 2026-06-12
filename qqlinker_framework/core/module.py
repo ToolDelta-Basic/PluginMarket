@@ -324,6 +324,7 @@ class Module(ABC):
     db_collections: List[str] = []
     enabled: bool = True
     default_cooldown: float = 0.0
+    background: bool = False  # True = 预加载常驻，False = 仅扫描装饰器，按需懒加载
 
     # ── 框架内部 ──
     _conventions_applied: bool = False

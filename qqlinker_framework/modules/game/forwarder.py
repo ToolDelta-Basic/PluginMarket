@@ -6,6 +6,7 @@
 """
 import asyncio
 import hashlib
+import logging
 from ...core.module import Module
 from ...core.kernel.events import (
     GameChatEvent,
@@ -18,6 +19,7 @@ from ...services.dedup import LayeredDedup
 
 
 class GameForwarder(Module):
+    background = True
     """负责游戏聊天与QQ群消息的双向转发，以及加入/离开提示。"""
 
     name = "game_forwarder"

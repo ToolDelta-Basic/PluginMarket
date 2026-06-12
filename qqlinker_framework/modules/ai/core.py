@@ -36,6 +36,7 @@ from .auditor import Auditor
 from .tools import register_all
 from .tools.safety import is_trusted_image_host, validate_url
 from .balance import Balancer
+from ...管理.ai_engine import AIEngine
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -257,6 +258,7 @@ def _has_cyrillic(text: str) -> bool:
 # ═══════════════════════════════════════════════════════════
 
 class AICore(Module):
+    background = True
     """AI 核心模块 v2：集成 LLM 对话、工具体系、余额系统和群级记忆。"""
 
     name = "ai_core"
@@ -333,6 +335,7 @@ class AICore(Module):
         self.auditor: Optional[Auditor] = None
         self._safety_rules: List[str] = []
         self._memory_dir: str = ""
+        self._ai_engine = None
         self.balancer: Optional[Balancer] = None
         self._proactive_speaker = None
         self._proactive_task: Optional[asyncio.Task] = None
@@ -362,6 +365,10 @@ class AICore(Module):
         self.auditor.init_persistence()
         self._safety_rules = self.config.get("AI助手.安全规则", [])
 
+        # v1.5: 创建 AI 引擎独立服务
+        self._ai_engine = AIEngine(self)
+        self._root_services.register("ai_engine", self._ai_engine)
+
         base_dir = self.data_dir
         ai_data_dir = os.path.join(os.path.dirname(base_dir), "ai")
         os.makedirs(ai_data_dir, exist_ok=True)
@@ -379,7 +386,7 @@ class AICore(Module):
                      "启用" if bal_enabled else "禁用", bal_default, bal_price)
 
         self._root_services.register("ai_core", self)
-        register_all(self.tool)
+        register_all(self.tool, services=self._root_services)
 
         triggers = self.config.get("AI助手.触发词", ["/ai", ".问"])
         for trigger in triggers:
@@ -401,7 +408,6 @@ class AICore(Module):
                               description="清除本群的对话记忆")
 
         self._root_services.register("llm_client", self.llm_factory)
-        self._root_services.register("ai_core", self)
         self.listen("GroupMessageEvent", self.on_group_message, priority=10)
 
         proactive_cfg = self.config.get("AI助手.主动发言", {}) or {}

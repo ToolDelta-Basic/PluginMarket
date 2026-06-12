@@ -14,7 +14,7 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-def register_tools(tool_manager):
+def register_tools(tool_manager, services=None):
     """注册记忆相关工具到 ToolManager。
 
     工具通过闭包访问 AICore 实例，在 AI 工具调用时动态获取数据，
@@ -22,10 +22,19 @@ def register_tools(tool_manager):
 
     Args:
         tool_manager: ToolManager 实例。
+        services: 根服务容器（v1.5: 显式传入，避免 tool_manager._root_services 后门）
     """
-    # 获取 AICore 引用
+    # v1.5: 通过传入的 services 参数获取 ai_core，不再钻 tool_manager._root_services 后门
+    # 兼容旧调用方式：services 为 None 时回退到 _root_services
+    if services is None:
+        try:
+            services = tool_manager._root_services
+        except AttributeError:
+            _log.warning("记忆工具: 无法获取服务容器，跳过注册")
+            return
+
+    # 获取 AICore 引用（ai_engine 注册后也可通过 services.get("ai_engine") 获取）
     try:
-        services = tool_manager._root_services
         ai_core = services.get("ai_core")
     except (KeyError, AttributeError):
         _log.warning("记忆工具: 无法获取 ai_core 服务，跳过注册")

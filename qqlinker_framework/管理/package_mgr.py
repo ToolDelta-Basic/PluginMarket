@@ -8,7 +8,7 @@ import shutil
 import os
 from typing import Dict, List, Optional, Tuple
 
-from ..core.kernel.error_hints import hint
+from qqlinker_framework.core.kernel.error_hints import hint
 
 
 class PackageManager:

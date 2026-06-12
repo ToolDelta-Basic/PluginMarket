@@ -31,7 +31,7 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from ..core.kernel.error_hints import hint
+from qqlinker_framework.core.kernel.error_hints import hint
 
 _log = logging.getLogger(__name__)
 
@@ -917,72 +917,4 @@ def _repair_json(filepath: str):
     except OSError:
         pass
 
-    return data
-
-def _repair_json(filepath: str):
-    """智能修复损坏的 JSON 配置文件并写回。"""
-    import re as _re, shutil, os as _os
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            raw = f.read()
-    except OSError:
-        return None
-    original = raw
-    repaired = False
-    # 1. 移除注释行
-    lines = raw.split('\n')
-    cleaned = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith('#') or stripped.startswith('//'):
-            repaired = True
-            continue
-        cleaned.append(line)
-    raw = '\n'.join(cleaned)
-    # 2. Python bool → JSON bool
-    for py_val, json_val in [('True', 'true'), ('False', 'false'), ('None', 'null')]:
-        if py_val in raw:
-            raw = raw.replace(py_val, json_val)
-            repaired = True
-    # 3. 移除尾逗号
-    raw = _re.sub(r',(\s*[}\]])', r'\1', raw)
-    if raw != raw:  # always check
-        pass
-    # 3b: check if changed
-    if not repaired:
-        raw2 = _re.sub(r',(\s*[}\]])', r'\1', original)
-        if raw2 != original:
-            raw = raw2
-            repaired = True
-    # 4. 补全未闭合括号
-    brace_count = raw.count('{') - raw.count('}')
-    bracket_count = raw.count('[') - raw.count(']')
-    if brace_count > 0:
-        raw = raw.rstrip() + '\n' + '}' * brace_count
-        repaired = True
-    if bracket_count > 0:
-        raw = raw.rstrip() + '\n' + ']' * bracket_count
-        repaired = True
-    if not repaired:
-        return None
-    try:
-        import json as _json
-        data = _json.loads(raw)
-    except (_json.JSONDecodeError, ValueError):
-        _log.warning("JSON 智能修复失败: %s", filepath)
-        return None
-    if not isinstance(data, dict):
-        return None
-    backup = filepath + '.bak'
-    try:
-        shutil.copy2(filepath, backup)
-    except OSError:
-        pass
-    try:
-        import json as _json2
-        with open(filepath, 'w', encoding='utf-8') as f:
-            _json2.dump(data, f, ensure_ascii=False, indent=2)
-        _log.info("JSON 智能修复成功: %s (原 %d bytes)", _os.path.basename(filepath), len(original))
-    except OSError:
-        pass
     return data

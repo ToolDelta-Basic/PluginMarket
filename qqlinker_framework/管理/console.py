@@ -8,7 +8,7 @@ import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..core.host import FrameworkHost
+    from qqlinker_framework.core.host import FrameworkHost
 
 _log = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class ConsoleCommands:
         host = self.host
 
         if action == "list":
-            from ..core.drivers.autodiscover import list_external_modules
+            from qqlinker_framework.core.drivers.autodiscover import list_external_modules
             mods = list_external_modules(host.data_path)
             if not mods:
                 print("暂无已安装的外部模块")
@@ -78,7 +78,7 @@ class ConsoleCommands:
                 print("用法: qqdeps module add <URL | 模块名>")
                 return
             target = args[2]
-            from ..core.drivers.autodiscover import download_module
+            from qqlinker_framework.core.drivers.autodiscover import download_module
             if target.startswith("http://") or target.startswith("https://"):
                 print(f"正在从 {target} 下载模块...")
                 name = download_module(target, host.data_path)
@@ -98,7 +98,7 @@ class ConsoleCommands:
             if len(args) < 3:
                 print("用法: qqdeps module remove <模块名>")
                 return
-            from ..core.drivers.autodiscover import remove_external_module
+            from qqlinker_framework.core.drivers.autodiscover import remove_external_module
             if remove_external_module(args[2], host.data_path):
                 print(f"✅ 模块 '{args[2]}' 已删除")
             else:

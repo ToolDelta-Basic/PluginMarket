@@ -80,7 +80,7 @@ async def _fetch_via_scrapling(url: str, address: str, token: str,
         return f"抓取异常：{str(e)}"
 
 
-def register_tools(tool_manager):
+def register_tools(tool_manager, **kwargs):
     """注册 web_scraper 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:

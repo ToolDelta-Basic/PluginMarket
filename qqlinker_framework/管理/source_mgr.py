@@ -1,20 +1,30 @@
 # pylint: disable=protected-access
-"""模块管理器 – 注册、约定执行、依赖排序、生命周期调度及热插拔
+"""加载源管理器 – 统一管理所有扫描/发现/加载/注册入口
+
+从 ModuleManager 重构而来 (v8.0):
+  - 统一模块发现: discover_from_package / discover_from_files
+  - 统一工具扫描: scan_tool_directory / register_tool / get_ai_tools / get_admin_tools
+  - 统一工作流扫描: scan_workflow_directory / register_workflow / get_workflows
+  - 统一配置注册: register_config_section
+  - 统一包管理: install_package / list_packages
+  - 保留模块注册表（允则）
 
 v1.2 — 新增启动依赖检查（服务存在性 + 循环依赖检测）
 v7.0 — 注册表允则机制: 模块加载唯一权威来源 = 模块注册表 JSON
        只有注册表中明确标记"启用"的模块才运行，
        新发现的模块默认写入注册表并自动启用
+v8.0 — 重构为 SourceManager，统一所有加载源
 """
 import asyncio
 import inspect
 import logging
+import os as _os
 import contextvars
 from typing import Type, List, Optional, Set, Dict
-from ..core.module import Module
-from ..core.kernel.error_hints import hint
-from ..core.kernel.prioritized_lock import PrioritizedLock
-from ..core.drivers.registry import ModuleRegistry
+from qqlinker_framework.core.module import Module
+from qqlinker_framework.core.kernel.error_hints import hint
+from qqlinker_framework.core.kernel.prioritized_lock import PrioritizedLock
+from qqlinker_framework.core.drivers.registry import ModuleRegistry
 
 # ── 递归深度防护 ──────────────────────────────────────────
 _module_mgr_depth: contextvars.ContextVar[int] = contextvars.ContextVar(
@@ -23,33 +33,52 @@ _module_mgr_depth: contextvars.ContextVar[int] = contextvars.ContextVar(
 MAX_MODULE_MGR_DEPTH = 10
 
 
-class ModuleManager:
-    """负责模块的注册、约定执行、依赖排序、生命周期调度及热插拔。
+class SourceManager:
+    """加载源管理器 — 统一管理所有扫描/发现/加载/注册入口。
+
+    职责（代替原先分散在 ~20 处的扫描/加载/注册入口）:
+      - 模块发现与三阶段加载
+      - 工具扫描与注册（AI 工具 + 管理工具）
+      - 工作流扫描与注册
+      - 配置节注册
+      - 包管理与依赖安装
+      - 模块注册表（允则权威来源）
 
     v1.1: 使用 PrioritizedLock 替代 asyncio.Lock，支持:
       - 优先级供给（UID 越小越优先获得锁）
       - 递归深度防护（深度 > 10 时拒绝操作）
       - 获取超时保护（默认 5s）
+    v8.0: 从 ModuleManager 重构为 SourceManager
     """
 
-    def __init__(self, host, registry: ModuleRegistry = None):
+    def __init__(self, host,
+                 registry: ModuleRegistry = None,
+                 tool_mgr=None,
+                 admin_tool_mgr=None,
+                 package_mgr=None):
         self.host = host
         self.services = host.services
         self.event_bus = host.event_bus
         self._module_classes: List[Type[Module]] = []
         self._loaded_modules: dict[str, Module] = {}
-        self._lock = PrioritizedLock(name="module_mgr")
+        self._lock = PrioritizedLock(name="source_mgr")
         # 读路径上的轻量级保护
         self._read_lock = asyncio.Lock()
         # v7: 模块注册表 — 允则逻辑的唯一权威来源
-        self.registry = registry
+        self._registry = registry
+        # v8: 注入子管理器引用
+        self._tool_mgr = tool_mgr
+        self._admin_tool_mgr = admin_tool_mgr
+        self._package_mgr = package_mgr
+        # v8: 懒加载模块类注册表（background=False 的模块）
+        self._lazy_classes: dict[str, Type[Module]] = {}
 
     def _check_depth(self) -> None:
         """递归深度检查，超限抛出 RecursionError。"""
         depth = _module_mgr_depth.get()
         if depth >= MAX_MODULE_MGR_DEPTH:
             raise RecursionError(
-                f"ModuleManager 递归深度超限 ({depth} >= {MAX_MODULE_MGR_DEPTH})。"
+                f"SourceManager 递归深度超限 ({depth} >= {MAX_MODULE_MGR_DEPTH})。"
                 f"{hint.get('UNEXPECTED_ERROR', '')}"
             )
 
@@ -71,10 +100,15 @@ class ModuleManager:
         self._lock.release()
         _module_mgr_depth.set(max(0, _module_mgr_depth.get() - 1))
 
-    def register(self, module_cls: Type[Module]):
-        """注册模块类，若已存在则跳过。"""
+    def register_module(self, module_cls: Type[Module]):
+        """注册模块类，若已存在则跳过（public API）。"""
         if module_cls not in self._module_classes:
             self._module_classes.append(module_cls)
+
+    # 保留 register() 作为别名（向后兼容）
+    def register(self, module_cls: Type[Module]):
+        """注册模块类（向后兼容别名，等同于 register_module）。"""
+        return self.register_module(module_cls)
 
     # ═══════════════════════════════════════════════════════════
     # v1.2: 启动依赖检查
@@ -245,6 +279,7 @@ class ModuleManager:
         self._auto_register_new_modules(all_module_names)
 
         # Phase 1: 实例化 + 装饰器扫描 + 依赖声明
+        # v8: 分流 — background=True 完整初始化，False 仅扫描装饰器注册命令后丢弃
         self._check_depth()
         await self._acquire_lock(uid=0, timeout=30.0)
         try:
@@ -275,13 +310,32 @@ class ModuleManager:
                     continue
 
                 self._scan_all_decorators(mod)
-                modules.append(mod)
-                self._loaded_modules[mod.name] = mod
-                # 注册模块间依赖关系（用于拓扑排序）
-                for dep_name in mod.required_services:
-                    self.services.register_dependency(mod.name, dep_name)
 
-            # ── v1.2: 循环依赖检测 ──
+                # ── v8: 懒加载分流 ──
+                if getattr(cls, 'background', False):
+                    # 预加载：完整初始化
+                    modules.append(mod)
+                    self._loaded_modules[mod.name] = mod
+                    for dep_name in mod.required_services:
+                        self.services.register_dependency(mod.name, dep_name)
+                    logger.debug("模块 '%s' 预加载（background=True）", mod.name)
+                else:
+                    # 懒加载：装饰器已扫描。把命令注册到全局 CommandManager，
+                    # callback 用闭包包装——首次调用时自动激活模块。
+                    for trigger, cmd_info in mod._commands.items():
+                        lazy_info = dict(cmd_info)
+                        method_name = cmd_info["callback"].__name__
+                        lazy_info["method"] = method_name
+                        lazy_info["callback"] = self._make_lazy_callback(
+                            mod.name, cls, method_name, trigger
+                        )
+                        self.host.command_mgr.register(**lazy_info)
+                    # 仅保留类引用，消息到达时通过 _lazy_classes 恢复
+                    self._lazy_classes[mod.name] = cls
+                    logger.debug("模块 '%s' 懒加载（%d 条命令已注册，按需激活）",
+                                 mod.name, len(mod._commands))
+
+            # ── v1.2: 循环依赖检测（仅预加载模块） ──
             circular = self.check_circular_dependencies(modules)
             if circular:
                 logger.warning(
@@ -395,6 +449,11 @@ class ModuleManager:
         finally:
             self._release_lock()
         if not mod:
+            # ── v8: 懒加载模块可能只在 _lazy_classes 中 ──
+            lazy_cls = self._lazy_classes.pop(module_name, None)
+            if lazy_cls:
+                logger.info("懒加载模块 '%s' 已注销（未激活）", module_name)
+                return True
             logger.warning("卸载模块失败：'%s' 未加载", module_name)
             return False
 
@@ -402,6 +461,57 @@ class ModuleManager:
         await self._rollback_module(mod)
         logger.info("模块 '%s' 卸载成功", module_name)
         return True
+
+    def _make_lazy_callback(self, module_name: str, cls, method_name: str, trigger: str):
+        """创建懒加载命令的 callback 闭包。
+
+        首次调用时自动激活模块，然后路由到真正的命令方法。
+        后续调用直接走已激活模块（callback 会被 command_mgr 自动更新）。
+        """
+        async def _lazy_handler(ctx):
+            mod = self._loaded_modules.get(module_name)
+            if mod is None:
+                # 首次调用：激活模块
+                mod = await self._activate_lazy_module(module_name)
+                if mod is None:
+                    await ctx.reply(
+                        f"⚠️ 模块 '{module_name}' 激活失败，请稍后再试或联系管理员。"
+                    )
+                    return
+                # 激活成功后，用真正的 callback 替换 command_mgr 中的闭包
+                cmd_info = self.host.command_mgr.find_command(trigger)
+                if cmd_info:
+                    method = getattr(mod, method_name, None)
+                    if method:
+                        cmd_info["callback"] = method
+                        cmd_info["module"] = mod
+            # 执行真正的命令方法
+            method = getattr(mod, method_name, None)
+            if method:
+                await method(ctx)
+            else:
+                await ctx.reply(
+                    f"⚠️ 模块 '{module_name}' 方法 '{method_name}' 未找到"
+                )
+        return _lazy_handler
+
+    async def _activate_lazy_module(self, module_name: str) -> Optional[Module]:
+        """激活一个懒加载模块（background=False，首次 .命令 触发时调用）。
+
+        从 _lazy_classes 中取出类 → 实例化 → on_init → on_start → 返回。
+        如果模块已激活或不存在，返回 None。
+        """
+        logger = logging.getLogger(__name__)
+        cls = self._lazy_classes.pop(module_name, None)
+        if cls is None:
+            # 可能已经在 loaded_modules 中（热加载激活了）
+            return self._loaded_modules.get(module_name)
+
+        logger.info("激活懒加载模块: '%s'", module_name)
+        mod = await self.load_module(cls)
+        if mod is not None:
+            logger.info("模块 '%s' 懒加载激活成功", module_name)
+        return mod
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
         """热加载一个新的模块类（带优先级锁 + 递归深度防护 + v7 注册表允则）。"""
@@ -558,7 +668,7 @@ class ModuleManager:
                 info = method._event_info
                 event_type = info.get('event_type', '')
                 # ── 二次校验: 非 root 模块事件白名单 ──
-                from ..core.module import _ALLOWED_EVENTS_FOR_MODULE
+                from qqlinker_framework.core.module import _ALLOWED_EVENTS_FOR_MODULE
                 if mod.uid > 0 and event_type not in _ALLOWED_EVENTS_FOR_MODULE:
                     logger.warning(
                         "模块 '%s' (uid=%d) 装饰器声明订阅受限事件 '%s'，已拒绝",
@@ -579,7 +689,7 @@ class ModuleManager:
                     continue
                 mod.tools.append(method._tool_info)
             if hasattr(method, '_schedule_info'):
-                from ..core.module import ScheduledTask
+                from qqlinker_framework.core.module import ScheduledTask
                 info = method._schedule_info
                 mod.scheduled.append(ScheduledTask(
                     name=info['name'],
@@ -594,6 +704,169 @@ class ModuleManager:
     def get_loaded_modules(self) -> List[str]:
         """返回所有已加载模块的名称列表。"""
         return list(self._loaded_modules.keys())
+
+    # ═══════════════════════════════════════════════════════════
+    # v8: 统一扫描 / 发现入口
+    # ═══════════════════════════════════════════════════════════
+
+    @property
+    def registry(self):
+        """模块注册表（允则权威来源）。"""
+        return self._registry
+
+    @registry.setter
+    def registry(self, value):
+        self._registry = value
+
+    # ── 模块扫描 ──
+
+    def discover_from_package(self, package_name: str = "qqlinker_framework.modules"):
+        """从 Python 包自动发现并注册模块。"""
+        from qqlinker_framework.core.drivers.autodiscover import (
+            discover_modules as _discover_from_pkg,
+            sort_by_dependencies,
+        )
+        logger = logging.getLogger(__name__)
+        classes = _discover_from_pkg(package_name)
+        if not classes:
+            logger.warning("未发现任何模块")
+            return
+        for cls in sort_by_dependencies(classes):
+            self.register_module(cls)
+        logger.info(
+            "从 '%s' 自动发现并注册了 %d 个模块", package_name, len(classes))
+
+    def discover_from_files(self, data_path: str):
+        """从外部目录扫描并注册模块。"""
+        from qqlinker_framework.core.drivers.autodiscover import (
+            discover_from_files,
+            sort_by_dependencies,
+        )
+        logger = logging.getLogger(__name__)
+        classes = discover_from_files(data_path)
+        if not classes:
+            logger.debug("未发现外部模块")
+            return
+        for cls in sort_by_dependencies(classes):
+            self.register_module(cls)
+        logger.info(
+            "从外部目录发现并注册了 %d 个模块", len(classes))
+
+    # ── 工具扫描 ──
+
+    def scan_tool_directory(self, directory_path: str, tool_type: Optional[str] = None) -> int:
+        """扫描指定目录下所有 JSON 文件，注册工具。
+
+        Args:
+            directory_path: 要扫描的目录路径。
+            tool_type: 过滤工具类型（'ai' / 'admin'），None 加载全部。
+        Returns:
+            成功注册的工具数量。
+        """
+        if self._tool_mgr is None:
+            logging.getLogger(__name__).warning("ToolManager 未注入，跳过工具扫描")
+            return 0
+        return self._tool_mgr.scan_directory(directory_path, tool_type)
+
+    def register_tool(self, tool_def: dict) -> bool:
+        """注册一个工具（通过 ToolManager）。"""
+        if self._tool_mgr is None:
+            logging.getLogger(__name__).warning("ToolManager 未注入，无法注册工具")
+            return False
+        return self._tool_mgr.register_tool(tool_def)
+
+    def get_ai_tools(self) -> list:
+        """获取所有 AI 类型工具。"""
+        if self._tool_mgr is None:
+            return []
+        return self._tool_mgr.get_ai_tools()
+
+    def get_admin_tools(self) -> list:
+        """获取所有管理类型工具。"""
+        if self._tool_mgr is None:
+            return []
+        return self._tool_mgr.get_admin_tools()
+
+    def init_tool_scanner(self, data_dir: str) -> None:
+        """一次性扫描 AI + 管理工具目录。
+
+        扫描顺序:
+          1. 数据/工具/AI工具/ — AI function calling 工具
+          2. 数据/工具/管理工具/ — 管理编排工具
+        """
+        logger = logging.getLogger(__name__)
+        if self._tool_mgr is None:
+            logger.warning("ToolManager 未注入，跳过工具扫描")
+            return
+
+        ai_dir = _os.path.join(data_dir, "工具", "AI工具")
+        admin_dir = _os.path.join(data_dir, "工具", "管理工具")
+
+        ai_count = 0
+        admin_count = 0
+        if _os.path.isdir(ai_dir):
+            ai_count = self._tool_mgr.scan_directory(ai_dir, tool_type="ai")
+        if _os.path.isdir(admin_dir):
+            admin_count = self._tool_mgr.scan_directory(admin_dir, tool_type="admin")
+
+        logger.info("工具扫描完成: AI=%d, 管理=%d", ai_count, admin_count)
+
+    # ── 工作流扫描 ──
+
+    def scan_workflow_directory(self, path: str) -> int:
+        """扫描指定目录下的 JSON 工作流定义。"""
+        if self._admin_tool_mgr is None:
+            logging.getLogger(__name__).warning("AdminToolManager 未注入，跳过工作流扫描")
+            return 0
+        # 设置扫描目录并触发扫描
+        self._admin_tool_mgr._json_scan_dir = path
+        _os.makedirs(path, exist_ok=True)
+        return self._admin_tool_mgr._scan_json_workflows()
+
+    def register_workflow(self, name: str, steps: list, **kwargs) -> any:
+        """注册一个工作流。"""
+        if self._admin_tool_mgr is None:
+            logging.getLogger(__name__).warning("AdminToolManager 未注入，无法注册工作流")
+            return None
+        return self._admin_tool_mgr.register_workflow(name=name, steps=steps, **kwargs)
+
+    def get_workflows(self, caller_uid: int = 400) -> list:
+        """获取所有已注册的工作流。"""
+        if self._admin_tool_mgr is None:
+            return []
+        return self._admin_tool_mgr.list_workflows(caller_uid=caller_uid)
+
+    def init_workflow_scanner(self, data_dir: str) -> None:
+        """一次性扫描工作流目录（数据/管理工具/）。"""
+        if self._admin_tool_mgr is None:
+            logging.getLogger(__name__).warning("AdminToolManager 未注入，跳过工作流扫描")
+            return
+        wf_dir = _os.path.join(data_dir, "管理工具")
+        _os.makedirs(wf_dir, exist_ok=True)
+        count = self._admin_tool_mgr._scan_json_workflows()
+        logging.getLogger(__name__).info("工作流扫描完成: %d 个", count)
+
+    # ── 配置注册表 ──
+
+    def register_config_section(self, name: str, defaults: dict):
+        """注册一个配置节（通过 host.config_mgr）。"""
+        self.host.config_mgr.register_section(name, defaults, caller_uid=0)
+
+    # ── 包管理 ──
+
+    def install_package(self, name: str, version: str = None) -> bool:
+        """安装一个 Python 包。"""
+        if self._package_mgr is None:
+            logging.getLogger(__name__).warning("PackageManager 未注入，无法安装包")
+            return False
+        self._package_mgr.register_requirement(name)
+        return self._package_mgr.install_packages([name])
+
+    def list_packages(self) -> list:
+        """列出所有注册的依赖包。"""
+        if self._package_mgr is None:
+            return []
+        return list(self._package_mgr._requirements.keys())
 
     # ═══════════════════════════════════════════════════════════
     # v5: 模块健康状态追踪（级联故障隔离）

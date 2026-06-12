@@ -1,0 +1,28 @@
+{
+  "name": "群服互通状态查询",
+  "description": "查看群服互通连接状态、在线玩家数、QQ群活跃情况",
+  "require_confirm": false,
+  "min_tier": "app",
+  "fail_strategy": "stop_on_error",
+  "steps": [
+    {
+      "description": "查询游戏内在线玩家",
+      "module": "adapter",
+      "method": "run_command",
+      "args": {"command": "list"},
+      "timeout": 5
+    },
+    {
+      "description": "查询框架运行状态",
+      "module": "kernel_cmds",
+      "method": "get_status",
+      "args": {}
+    },
+    {
+      "description": "发送状态到当前群",
+      "module": "message",
+      "method": "send_group_msg",
+      "args": {"msg": "📊 群服互通状态：\n游戏在线：见上方\n框架运行中"}
+    }
+  ]
+}

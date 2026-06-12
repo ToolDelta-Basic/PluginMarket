@@ -21,7 +21,7 @@ _TEXT_MAX_LENGTH = 500
 _logger = logging.getLogger(__name__)
 
 
-def register_tools(tool_manager):
+def register_tools(tool_manager, **kwargs):
     """注册 siliconflow_tts 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:

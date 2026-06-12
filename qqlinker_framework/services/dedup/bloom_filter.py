@@ -75,7 +75,8 @@ class BloomFilter:
 
                 capacity = info_dict.get("Capacity", _DEFAULT_CAPACITY)
                 size = info_dict.get("Number of items inserted", 0)
-                num_filters = info_dict.get("Number of filters", 1)
+                # _num_filters 保留供将来使用（变种过滤器数统计）
+                _ = info_dict.get("Number of filters", 1)
 
                 # 估计假阳性率：p ≈ (1 - e^(-k*n/m))^k
                 # 简化：使用负载因子估计

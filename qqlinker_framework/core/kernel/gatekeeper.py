@@ -262,7 +262,7 @@ class GatekeeperProxy:
         自动使用模块自身的 caller_uid，保证权限约束。
         """
         _audit(self, "set_config", target=key,
-               detail=f"value_changed" if value is not None else "value_cleared",
+               detail="value_changed" if value is not None else "value_cleared",
                level="WARNING")
         if self._config is None:
             _log.warning("Gatekeeper: config 服务不可用，无法写入 '%s'", key)

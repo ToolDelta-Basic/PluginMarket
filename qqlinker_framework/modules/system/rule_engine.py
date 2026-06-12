@@ -38,7 +38,6 @@ from typing import Any, Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command, listen
-from ...core.kernel.events import GroupMessageEvent
 from ...core.kernel.services import UID_NOBODY
 
 _log = logging.getLogger(__name__)
@@ -345,7 +344,7 @@ class RuleEngineModule(Module):
                 self._leave_session(user_id)
                 await self.message.send_group(event.group_id, "已取消创建")
                 return
-            await self._handle_create_step(event, session, text)
+            await self._handle_create_step(event, session, text, uid)
             return
 
         # 规则匹配
@@ -383,7 +382,7 @@ class RuleEngineModule(Module):
         except Exception as e:
             _log.error("规则匹配异常: %s", e)
 
-    async def _handle_create_step(self, event, session: dict, text: str):
+    async def _handle_create_step(self, event, session: dict, text: str, uid: str):
         step = session["step"]
         data = session["data"]
         gid = session["group_id"]
@@ -499,7 +498,7 @@ class RuleEngineModule(Module):
                 json.dump({'rules': rules}, f, ensure_ascii=False, indent=2)
             os.replace(tmp, path)
         except Exception as e:
-            _logger.error("保存规则失败: %s", e)
+            _log.error("保存规则失败: %s", e)
 
     def _rules_path(self, group_id: int) -> str:
         """规则文件路径：存储于 data_dir 根目录的 rules/ 下。"""
@@ -520,10 +519,10 @@ class RuleEngineModule(Module):
     def _route_command(self, cmd_text: str, user_id: int, group_id: int):
         """伪造用户消息走命令路由。在 asyncio 事件循环中异步执行。"""
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
         except RuntimeError:
             return
-        from ...core.kernel.events import GroupMessageEvent
+        from ...core.kernel.events import GroupMessageEvent  # noqa: F811
         fake_event = GroupMessageEvent(
             user_id=user_id,
             group_id=group_id,

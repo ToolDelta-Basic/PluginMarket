@@ -25,6 +25,7 @@ DEFAULT_DANGEROUS_ARGS = (
 
 
 class GameAdmin(Module):
+    background = True
     """游戏管理模块：.在线 查看在线玩家，.指令/.执行 执行游戏指令。"""
 
     name = "game_admin"

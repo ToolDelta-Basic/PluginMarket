@@ -25,7 +25,7 @@
 import inspect
 import logging
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 _log = logging.getLogger(__name__)
 
@@ -209,6 +209,7 @@ class ServiceContainer:
         uid: int = TIER_SERVICE,
         is_factory: Optional[bool] = None,
         _caller: str = "",
+        description: str = "",
     ):
         """注册服务实例或工厂函数。
 
@@ -218,6 +219,7 @@ class ServiceContainer:
             uid: 该服务的等级（数值越小权限越高）。
             is_factory: None=自动检测, True=强制工厂, False=强制服务实例。
             _caller: 内部用，调用方的模块路径（用于防提权校验）。
+            description: 服务描述（文档用途，不参与逻辑）。
         """
         if name in self._services or name in self._factories:
             _log.warning("服务 '%s' 已注册，将被覆盖", name)
@@ -296,6 +298,10 @@ class ServiceContainer:
         该方法保留作为兼容接口。
         """
         _log.debug("依赖注册（无操作）: '%s' -> '%s'", dependent, service_name)
+
+    def unregister_dependency(self, service_name: str, dependent: str) -> None:
+        """注销模块对服务的依赖关系（兼容接口）。"""
+        pass
 
     def resolve_order(self) -> list:
         """返回模块解析顺序（按 tier 从低到高排序）。

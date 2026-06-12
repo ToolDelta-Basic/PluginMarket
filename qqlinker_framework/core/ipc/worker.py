@@ -21,7 +21,7 @@ from typing import Optional
 from .server import IPCServer
 from .protocol import ERR_INTERNAL, IPCError
 from ..drivers.registry import ModuleRegistry
-from ..drivers.file_watcher import file_watcher_main
+from qqlinker_framework.管理 import file_watcher_main
 
 logger = logging.getLogger("worker")
 
@@ -30,7 +30,6 @@ _registry: Optional[ModuleRegistry] = None
 
 
 def _get_registry() -> ModuleRegistry:
-    global _registry
     if _registry is None:
         raise IPCError(ERR_INTERNAL, "注册表未初始化（缺少 --data-path 参数）")
     return _registry

@@ -23,24 +23,19 @@ from .kernel.services import (
 )
 from .kernel.bus import EventBus
 from .module import Module
-from .drivers.routing import CommandRouter
+from qqlinker_framework.管理 import CommandRouter
 from .drivers.event_bridge import EventBridge
-from .drivers.autodiscover import (
-    discover_modules as discover_from_package,
-    discover_from_files,
-    sort_by_dependencies,
-)
 
-from ..managers.config_mgr import ConfigManager
-from ..managers.group_config_mgr import GroupConfigManager
-from ..managers.group_filter import GroupModuleFilter
-from ..core.drivers.recovery import RecoveryEngine
-from ..managers.package_mgr import PackageManager
-from ..managers.module_mgr import ModuleManager
-from ..managers.command_mgr import CommandManager
-from ..managers.message_mgr import MessageManager
-from ..managers.tool_mgr import ToolManager
-from ..managers.console import ConsoleCommands
+from qqlinker_framework.管理 import ConfigManager
+from qqlinker_framework.管理 import GroupConfigManager
+from qqlinker_framework.管理 import GroupModuleFilter
+from qqlinker_framework.管理 import RecoveryEngine
+from qqlinker_framework.管理 import PackageManager
+from qqlinker_framework.管理 import SourceManager
+from qqlinker_framework.管理 import CommandManager
+from qqlinker_framework.管理 import MessageManager
+from qqlinker_framework.管理 import ToolManager
+from qqlinker_framework.管理 import ConsoleCommands
 
 from ..adapters.base import IFrameworkAdapter
 from ..services.ws_client import WsClient, _get_websocket
@@ -52,6 +47,7 @@ from ..services.market_server import (
 )
 from .kernel.error_hints import hint
 from .drivers.gatekeeper import GatekeeperBridge, register_default_capabilities
+from qqlinker_framework.管理 import NetworkManager, NetworkConfig
 from .kernel.events import ConfigReloadEvent
 from .kernel.resource_guardian import ResourceGuardian, GuardianConfig
 from .kernel.degradation import GracefulDegradation
@@ -118,7 +114,12 @@ class FrameworkHost:
         self.services.register("adapter", adapter, uid=TIER_SERVICE,
                                _caller="qqlinker_framework.core.host")
 
-        self.module_mgr = ModuleManager(self)
+        # v8: SourceManager 注入子管理器引用，统一所有扫描/发现/加载入口
+        self.module_mgr = SourceManager(
+            self,
+            tool_mgr=self.tool_mgr,
+            package_mgr=self.package_mgr,
+        )
         self.message_mgr = MessageManager(adapter)
         self.services.register("message", self.message_mgr, uid=TIER_APP,
                                _caller="qqlinker_framework.core.host")
@@ -184,26 +185,12 @@ class FrameworkHost:
     def register_modules_from_package(
         self, package_name: str = "qqlinker_framework.modules"
     ):
-        """从 Python 包自动发现并注册模块。"""
-        classes = discover_from_package(package_name)
-        if not classes:
-            logging.getLogger(__name__).warning("未发现任何模块")
-            return
-        for cls in sort_by_dependencies(classes):
-            self.module_mgr.register(cls)
-        logging.getLogger(__name__).info(
-            "从 '%s' 自动发现并注册了 %d 个模块", package_name, len(classes))
+        """从 Python 包自动发现并注册模块（委托给 SourceManager）。"""
+        self.module_mgr.discover_from_package(package_name)
 
     def register_external_modules(self):
-        """从外部目录扫描并注册模块。"""
-        classes = discover_from_files(self.data_path)
-        if not classes:
-            logging.getLogger(__name__).debug("未发现外部模块")
-            return
-        for cls in sort_by_dependencies(classes):
-            self.module_mgr.register(cls)
-        logging.getLogger(__name__).info(
-            "从外部目录发现并注册了 %d 个模块", len(classes))
+        """从外部目录扫描并注册模块（委托给 SourceManager）。"""
+        self.module_mgr.discover_from_files(self.data_path)
 
     # ── 生命周期 ──
 
@@ -487,7 +474,7 @@ class FrameworkHost:
                     self.robot_registry.register(name, ws_client, linked_groups)
                     # 为每个机器人创建独立 MessageManager（用于队列深度查询）
                     if name not in self._msg_mgrs:
-                        from ..managers.message_mgr import MessageManager
+                        from qqlinker_framework.管理 import MessageManager
                         mgr = MessageManager(self.adapter)
                         mgr._queue = __import__('asyncio').PriorityQueue()
                         self._msg_mgrs[name] = mgr
@@ -517,6 +504,19 @@ class FrameworkHost:
 
         # 群级模块过滤器
         self.group_filter = GroupModuleFilter(self.group_config_mgr)
+        # ── 网络连接管理器 ─────────────────────────────────
+        self._network_mgr = NetworkManager(
+            NetworkConfig(
+                connect_timeout=self.config_mgr.get("网络传输.连接超时秒", 10, requester_uid=0),
+                total_timeout=self.config_mgr.get("网络传输.读超时秒", 30, requester_uid=0),
+                tls_verify=self.config_mgr.get("网络传输.TLS验证模式", "enabled", requester_uid=0),
+                pool_size=self.config_mgr.get("网络传输.连接池大小", 5, requester_uid=0),
+                pool_per_host=self.config_mgr.get("网络传输.每主机最大连接", 10, requester_uid=0),
+            )
+        )
+        self.services.register("network", self._network_mgr, uid=TIER_SERVICE,
+                               description="统一网络连接管理器（HTTP/WS/重试/熔断）")
+
         self.services.register("group_filter", self.group_filter, uid=TIER_DAEMON,
                                _caller="qqlinker_framework.core.host")
 
@@ -536,11 +536,24 @@ class FrameworkHost:
             loaded_modules=self.module_mgr._loaded_modules,
             uid_lookup=self._lookup_uid,
             audit_trail=self.audit_trail,
+            source_mgr=self.module_mgr,
         )
         self.event_bus.subscribe("GroupMessageEvent", self._router.handle_message)
 
         # 注册内核 .审计 命令
         self._register_audit_command()
+
+        # ── 管理工具编排器 ──（在模块加载前注册，模块可引用）
+        from qqlinker_framework.管理 import AdminToolManager
+        self._admin_tool_mgr = AdminToolManager(self.services)
+        self._admin_tool_mgr.init_with_services()
+        self.services.register("admin_tool", self._admin_tool_mgr, uid=TIER_DAEMON,
+                               _caller="qqlinker_framework.core.host")
+        # v8: 将 admin_tool_mgr 注入 SourceManager，统一管理
+        self.module_mgr._admin_tool_mgr = self._admin_tool_mgr
+
+        # ── v8: 工作流扫描（工具扫描由 AICore.on_init 中的 register_all 完成）──
+        self.module_mgr.init_workflow_scanner(self.data_path)
 
         # 加载所有模块
         self._modules = await self.module_mgr.initialize_all()
@@ -559,7 +572,7 @@ class FrameworkHost:
         # ── 能力安全桥梁 ──（在所有服务和模块就绪后注册白名单方法）
         register_default_capabilities(self.gatekeeper)
         # 注册新的多层配置桥接
-        from ..managers.config_mgr import register_config_bridge
+        from qqlinker_framework.管理 import register_config_bridge
         register_config_bridge(self.gatekeeper, self.config_mgr)
 
         # 模块加载完毕后，传播新增字段到所有群子配置
@@ -754,11 +767,18 @@ class FrameworkHost:
         """
         logger = logging.getLogger(__name__)
 
+        try:
+            from .ipc.server import IPCServer
+            from .ipc.pool import WorkerPool
+        except ImportError:
+            logger.warning("IPC 模块不可用，跳过 IPC 服务启动")
+            return
+
         # 确保 socket 目录存在
         os.makedirs(os.path.dirname(self._ipc_socket_path), exist_ok=True)
 
         # 1. 启动 IPC Server
-        self._ipc_server = IPCServer(self._ipc_socket_path)
+        self._ipc_server = IPCServer(self._ipc_socket_path)  # noqa: F821 (imported in try block above)
 
         # 注册主进程侧处理器:
         # worker 通过 IPC 发来的重载/卸载请求在主事件循环中执行
@@ -784,7 +804,7 @@ class FrameworkHost:
 
         # 2. 启动 Worker Pool（含文件监控 worker）
         #    延迟启动，等待主进程事件循环稳定
-        self._ipc_pool = WorkerPool(self._ipc_socket_path, count=1)
+        self._ipc_pool = WorkerPool(self._ipc_socket_path, count=1)  # noqa: F821 (imported in try block above)
         import sys
         _pkg_name = __package__ or "qqlinker_framework"
         self._ipc_pool._worker_cmd = [

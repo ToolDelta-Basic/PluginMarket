@@ -7,7 +7,7 @@ import asyncio
 import time
 import logging
 from typing import Dict, List, Optional
-from ...managers.command_mgr import CommandManager
+from qqlinker_framework.管理 import CommandManager
 from ...core.kernel.error_hints import hint
 from ..kernel.context import CommandContext
 from ..kernel.audit_trail import AuditTrail

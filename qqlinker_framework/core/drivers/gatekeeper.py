@@ -326,6 +326,46 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
             description="向 QQ 用户发送私聊消息",
         )
 
+    # ── AI 引擎桥梁 (v1.5) ──────────────────────────────────
+    # 其他模块通过 bridge.call("ai.chat", ...) 调用 AI
+    try:
+        ai_engine = bridge._get_service("ai_engine")
+    except Exception:
+        ai_engine = None
+
+    if ai_engine is not None:
+        bridge.register(
+            "ai.chat",
+            lambda messages, tools=None, max_rounds=5,
+                   tool_executor=None, caller_uid=400, uid=0:
+                ai_engine.chat(
+                    messages=messages, tools=tools,
+                    max_rounds=max_rounds,
+                    tool_executor=tool_executor,
+                    caller_uid=caller_uid),
+            min_tier="app", readonly=False,
+            description="调用 AI 对话接口（支持工具调用循环）",
+        )
+        bridge.register(
+            "ai.chat_with_tools",
+            lambda messages, tools, max_rounds=5,
+                   tool_executor=None, caller_uid=400, uid=0:
+                ai_engine.chat(
+                    messages=messages, tools=tools,
+                    max_rounds=max_rounds,
+                    tool_executor=tool_executor,
+                    caller_uid=caller_uid),
+            min_tier="app", readonly=False,
+            description="调用 AI 对话接口（显式传入工具列表）",
+        )
+        bridge.register(
+            "ai.chat_simple",
+            lambda messages, uid=0:
+                ai_engine.chat_simple(messages=messages),
+            min_tier="app", readonly=False,
+            description="调用 AI 简单对话（无工具调用）",
+        )
+
     # ── tool ──────────────────────────────────────────────────
     try:
         tool = bridge._get_service("tool")
@@ -338,6 +378,66 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
             lambda name, args: tool.execute(name, args),
             min_tier="app", readonly=False,
             description="执行已注册的工具",
+        )
+
+    # ── 网络连接管理器桥梁 (v1.5) ──────────────────────────
+    try:
+        network = bridge._get_service("network")
+    except Exception:
+        network = None
+
+    if network is not None:
+        bridge.register(
+            "网络.GET",
+            lambda url, headers=None, timeout=None, uid=0:
+                network.http_get(url, headers=headers, timeout=timeout),
+            min_tier="app", readonly=True,
+            description="通过统一网络管理器发起 HTTP GET（含重试/熔断）",
+        )
+        bridge.register(
+            "网络.POST",
+            lambda url, data=None, json_body=None, headers=None, timeout=None, uid=0:
+                network.http_post(url, data=data, json=json_body, headers=headers, timeout=timeout),
+            min_tier="app", readonly=False,
+            description="通过统一网络管理器发起 HTTP POST（含重试/熔断）",
+        )
+        bridge.register(
+            "网络.健康检查",
+            lambda url, timeout=5, uid=0:
+                network.health_check(url, timeout=timeout),
+            min_tier="app", readonly=True,
+            description="检查远端服务是否可达",
+        )
+
+    # ── 管理工具桥梁 (v1.5) ────────────────────────────────
+    try:
+        admin_tool = bridge._get_service("admin_tool")
+    except Exception:
+        admin_tool = None
+
+    if admin_tool is not None:
+        bridge.register(
+            "管理工具.列出工作流",
+            lambda uid=0: admin_tool.list_workflows(),
+            min_tier="app", readonly=True,
+            description="列出所有已注册的管理工具工作流",
+        )
+        bridge.register(
+            "管理工具.获取工作流",
+            lambda name, uid=0: admin_tool.get_workflow(name),
+            min_tier="app", readonly=True,
+            description="获取指定工作流的详细信息",
+        )
+        bridge.register(
+            "管理工具.执行工作流",
+            lambda name, ctx_data, bypass_confirm=False, caller_uid=400, uid=0:
+                admin_tool.execute_workflow(
+                    name, ctx_data,
+                    bypass_confirm=bypass_confirm,
+                    caller_uid=caller_uid,
+                ),
+            min_tier="daemon", readonly=False,
+            description="执行一个管理工具工作流（组合调用 @exec_exposed 方法）",
         )
 
     # ── 模块间通信 (v1.4.3) ──────────────────────────────────
@@ -361,10 +461,13 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
         )
 
     _log.info(
-        "bridge 已注册 %d 个方法 (%d config + %d adapter + %d message + %d tool)",
+        "bridge 已注册 %d 个方法 (%d config + %d game + %d qq + %d tool + %d ai + %d network + %d admin)",
         len(bridge._methods),
         sum(1 for m in bridge._methods if m.startswith("config.")),
         sum(1 for m in bridge._methods if m.startswith("game.")),
         sum(1 for m in bridge._methods if m.startswith("qq.")),
         sum(1 for m in bridge._methods if m.startswith("tool.")),
+        sum(1 for m in bridge._methods if m.startswith("ai.")),
+        sum(1 for m in bridge._methods if m.startswith("网络.")),
+        sum(1 for m in bridge._methods if m.startswith("管理工具.")),
     )

@@ -26,7 +26,7 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, Callable, Optional
 
-from ..core.kernel.error_hints import hint
+from qqlinker_framework.core.kernel.error_hints import hint
 from .config_mgr import ConfigManager
 
 _log = logging.getLogger(__name__)

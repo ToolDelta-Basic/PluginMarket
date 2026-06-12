@@ -44,6 +44,7 @@ def is_exec_exposed(method) -> bool:
 
 
 class KernelAuthModule(Module):
+    background = True
     """内核级授权模块。uid=0，仅 root 用户可触发。"""
 
     name = "kernel_auth"
@@ -235,7 +236,7 @@ class KernelAuthModule(Module):
                 sender=str(ctx.user_id),
                 action="exec_blocked_not_exposed",
                 target=f"{mod_name}.{method_name}",
-                detail=f"方法未标记 @exec_exposed",
+                detail="方法未标记 @exec_exposed",
                 level=AuditLevel.WARNING,
                 group_id=ctx.group_id,
             )

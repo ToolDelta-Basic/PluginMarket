@@ -151,7 +151,7 @@ class CmdSession:
                     if registry
                     else f"✓ 模块 '{target_name}' 已卸载"
                 )
-            return f"✗ 卸载失败"
+            return "✗ 卸载失败"
         except Exception as e:
             _log.exception(".kill 命令异常")
             return f"✗ 异常: {e}"
@@ -282,6 +282,7 @@ class CmdSession:
 # ── 模块定义 ─────────────────────────────────────────────
 
 class KernelCMDsModule(Module):
+    background = True
     """CMD 交互式命令会话模块"""
 
     name = "kernel_cmds"

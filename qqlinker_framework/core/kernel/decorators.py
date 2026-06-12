@@ -3,9 +3,21 @@
 from typing import Any, Callable
 
 
-# ── exec_exposed 重导出 ──
-# 定义在 modules/system/kernel_auth.py 中，为了方便外部导入在此重导出。
-# 实际使用时可以直接: from qqlinker_framework.modules.system.kernel_auth import exec_exposed
+# ── @exec_exposed 装饰器 ───────────────────────────────────
+
+def exec_exposed(func):
+    """标记方法可通过 .exec 命令调用。
+
+    只有标记了此装饰器的方法才能被 root 通过 .exec 调用。
+    攻击面限制在明确标记为安全的公开方法上。
+    """
+    func._exec_exposed = True
+    return func
+
+
+def is_exec_exposed(method) -> bool:
+    """检查方法是否标记了 @exec_exposed。"""
+    return getattr(method, '_exec_exposed', False)
 
 
 def command(

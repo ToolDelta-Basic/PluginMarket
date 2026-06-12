@@ -85,7 +85,7 @@ class AuditTrail:
             self._current_fp = self._get_log_path(today)
             # 确保文件存在
             if not os.path.exists(self._current_fp):
-                with open(self._current_fp, "a", encoding="utf-8") as f:
+                with open(self._current_fp, "a", encoding="utf-8") as _:
                     pass
             # 日期切换时清理过期文件
             self._cleanup_old_files()

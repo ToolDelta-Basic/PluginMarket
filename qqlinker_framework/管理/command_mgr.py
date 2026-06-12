@@ -21,11 +21,17 @@ class CommandManager:
         cooldown: float = 0.0,
         min_uid: int = 400,
         plugin_name: str = "core",
+        method: str = "",
     ):
-        """注册一条命令。"""
+        """注册一条命令。
+
+        Args:
+            method: 懒加载时保存的方法名（callback 为 None 时使用，激活后通过 method 恢复回调）。
+        """
         info = {
             "trigger": trigger,
             "callback": callback,
+            "method": method or "",
             "type": cmd_type,
             "description": description,
             "op_only": op_only,

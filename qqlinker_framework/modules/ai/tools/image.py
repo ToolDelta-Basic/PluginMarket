@@ -19,7 +19,7 @@ _PROMPT_MAX_LENGTH = 500
 _logger = logging.getLogger(__name__)
 
 
-def register_tools(tool_manager):
+def register_tools(tool_manager, **kwargs):
     """注册 generate_image 工具。"""
 
     async def handler(params: dict, _context: dict, config: dict) -> str:

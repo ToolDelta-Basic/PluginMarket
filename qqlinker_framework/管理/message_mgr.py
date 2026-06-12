@@ -8,7 +8,7 @@ import logging
 from enum import IntEnum
 from typing import Optional
 
-from ..core.kernel.error_hints import hint
+from qqlinker_framework.core.kernel.error_hints import hint
 
 # 单条消息发送超时（秒）
 DISPATCH_TIMEOUT = 5.0
