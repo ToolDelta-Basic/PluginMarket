@@ -104,7 +104,10 @@ class TaskSystemCloudInterop(Plugin):
                     "§7在15s内输入§f任务前的序号§r§7可以提交此任务 §f其他§7以退出",
                 ],
                 "接到新任务时执行的指令": [
-                    "/execute as @a[name=[玩家名]] at @s run playsound note.pling @s ~~~ 1 1.4",
+                    (
+                        "/execute as @a[name=[玩家名]] at @s run playsound "
+                        "note.pling @s ~~~ 1 1.4"
+                    ),
                     (
                         '/tellraw @a[name=[玩家名]] '
                         '{"rawtext":[{"text":"§d▶ §e收到新任务 §f[任务显示名]\n'
@@ -339,7 +342,7 @@ class TaskSystemCloudInterop(Plugin):
         if announce:
             fmts.print_suc(f"{self.name} 主配置文件已热更新")
 
-    def load_quest_configs(self, announce: bool = False):
+    def load_quest_configs(self, announce: bool = False):  # skipcq: PY-R1000
         """Load quest configs data."""
         quests: dict[str, Quest] = {}
         total_quest_files = 0
@@ -690,7 +693,7 @@ class TaskSystemCloudInterop(Plugin):
         o = self.read_player_quest_data(player)
         return quest.tag_name in o["in_quests"]
 
-    def detect_quest(
+    def detect_quest(  # skipcq: PY-R1000
         self, player: Player, quest: Quest, allow_command_block: bool = False
     ) -> tuple[bool, str]:
         """

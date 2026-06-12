@@ -1,5 +1,7 @@
 """Interactive guild menu handlers."""
 
+# pylint: disable=protected-access
+
 import json
 import time
 import uuid
@@ -20,7 +22,7 @@ from guild_cloud_interop.ui import ORION_BORDER, TITLE_PREFIX, format_page_foote
 from guild_cloud_interop.validators import InputValidator
 
 
-def _handle_effect(self, player: Player) -> bool:
+def _handle_effect(self, player: Player) -> bool:  # skipcq: PY-R1000
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
         player.show("§l§a公会 §d>> §r你尚未加入任何公会")
@@ -142,7 +144,9 @@ def _handle_rankings(self, player: Player) -> bool:
         rankings = self.get_guild_rankings("level")
         title = "公会等级排行榜"
 
-        def formatter(i, data): return (
+        def formatter(i, data):
+            """Format one menu item for display."""
+            return (
             f"§e{i}. §r{data[0].name} §7Lv.{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 成员: §a{len(data[0].members)}\n"
         )
@@ -150,7 +154,9 @@ def _handle_rankings(self, player: Player) -> bool:
         rankings = self.get_guild_rankings("members")
         title = "公会成员数排行榜"
 
-        def formatter(i, data): return (
+        def formatter(i, data):
+            """Format one menu item for display."""
+            return (
             f"§e{i}. §r{data[0].name} §7成员: §a{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
         )
@@ -158,7 +164,9 @@ def _handle_rankings(self, player: Player) -> bool:
         rankings = self.get_guild_rankings("contribution")
         title = "公会贡献度排行榜"
 
-        def formatter(i, data): return (
+        def formatter(i, data):
+            """Format one menu item for display."""
+            return (
             f"§e{i}. §r{data[0].name} §7贡献: §b{data[1]}\n"
             f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
         )
@@ -166,9 +174,9 @@ def _handle_rankings(self, player: Player) -> bool:
         rankings = self.get_guild_rankings("activity")
         title = "公会活跃度排行榜"
 
-        def formatter(
-            i,
-            data): return (
+        def formatter(i, data):
+            """Format one menu item for display."""
+            return (
             f"§e{i}. §r{
                 data[0].name}\n" f"   §7会长: §f{
                 data[0].owner} §7| 最近活跃: §a{
@@ -257,6 +265,7 @@ def _handle_view_members(self, player: Player) -> bool:
     )
 
     def formatter(i, member: GuildMember):
+        """Format one menu item for display."""
         online = member.name in self.game_ctrl.allplayers
         online_status = "§a在线" if online else "§7离线"
         days_since_join = (time.time() - member.join_time) / 86400
@@ -363,7 +372,7 @@ def _handle_announcement(self, player: Player) -> bool:
     return True
 
 
-def _handle_tasks(self, player: Player) -> bool:
+def _handle_tasks(self, player: Player) -> bool:  # skipcq: PY-R1000
     """处理公会任务系统"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
@@ -445,6 +454,7 @@ def _handle_view_tasks(self, player: Player, guild: GuildData) -> bool:
         return True
 
     def formatter(i, task: GuildTask):
+        """Format one menu item for display."""
         status = "§a已完成" if task.completed else f"§e进行中 ({
             task.current_count}/{
             task.target_count})"
@@ -481,6 +491,7 @@ def _handle_join_task(self, player: Player, guild: GuildData) -> bool:
         return True
 
     def formatter(i, task: GuildTask):
+        """Format one menu item for display."""
         status = f"§e进行中 ({task.current_count}/{task.target_count})"
         is_participant = player.name in task.participants
         participant_status = " §a[已参与]" if is_participant else " §7[未参与]"
@@ -519,7 +530,11 @@ def _handle_join_task(self, player: Player, guild: GuildData) -> bool:
     return True
 
 
-def _handle_create_task(self, player: Player, guild: GuildData) -> bool:
+def _handle_create_task(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """创建新任务"""
     if not (
         guild.has_permission(
@@ -784,7 +799,11 @@ def _handle_generate_auto_tasks(
     return True
 
 
-def _handle_manage_tasks(self, player: Player, guild: GuildData) -> bool:
+def _handle_manage_tasks(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """管理任务"""
     can_manage_legacy = guild.has_permission(player.name, "task_manage")
     can_delete = guild.has_permission(
@@ -812,6 +831,7 @@ def _handle_manage_tasks(self, player: Player, guild: GuildData) -> bool:
         # 删除任务
 
         def formatter(i, task: GuildTask):
+            """Format one menu item for display."""
             status = "§a已完成" if task.completed else "§e进行中"
             return f"§e{i}. §f{
                 task.name} [{status}§f]\n   §7{
@@ -845,6 +865,7 @@ def _handle_manage_tasks(self, player: Player, guild: GuildData) -> bool:
             return True
 
         def formatter(i, task: GuildTask):
+            """Format one menu item for display."""
             return f"§e{i}. §f{
                 task.name} §7({
                 task.current_count}/{
@@ -945,7 +966,11 @@ def _notify_join_request_admins(
             )
 
 
-def _handle_join_request_queue(self, player: Player, guild: GuildData) -> bool:
+def _handle_join_request_queue(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """处理加入申请队列"""
     if not guild.has_permission(player.name, "join_queue"):
         player.show("§l§a公会 §d>> §r你没有处理申请队列权限")
@@ -957,6 +982,7 @@ def _handle_join_request_queue(self, player: Player, guild: GuildData) -> bool:
         return True
 
     def formatter(i, request):
+        """Format one menu item for display."""
         age = self._format_time_duration(time.time() - request.create_time)
         reason = request.reason or "无"
         return (
@@ -1044,7 +1070,10 @@ def _handle_join_request_queue(self, player: Player, guild: GuildData) -> bool:
         "批准后通知全体在线成员",
             True):
         for member in latest_guild.members:
-            if member.name in self.game_ctrl.allplayers and member.name != selected.player_name:
+            if (
+                member.name in self.game_ctrl.allplayers
+                and member.name != selected.player_name
+            ):
                 message = f"§l§a公会 §d>> §r§e{selected.player_name}§r 加入了公会"
                 self.game_ctrl.sendcmd(
                     f'/tellraw {member.name} {{"rawtext":[{{"text":"{message}"}}]}}'
@@ -1072,7 +1101,9 @@ def _handle_set_rank(self, player: Player) -> bool:
         player.show("§l§a公会 §d>> §r没有可管理的成员")
         return True
 
-    def formatter(i, m): return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
+    def formatter(i, m):
+        """Format one menu item for display."""
+        return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
     idx = self._paginate_display(
         player,
         manageable_members,
@@ -1195,7 +1226,7 @@ def _handle_donation(self, player: Player) -> bool:
     return True
 
 
-def _handle_vault(self, player: Player) -> bool:
+def _handle_vault(self, player: Player) -> bool:  # skipcq: PY-R1000
     """处理公会仓库"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
@@ -1284,6 +1315,7 @@ def _handle_vault_view(self, player: Player, guild: GuildData) -> bool:
 
     def formatter(i, item: VaultItem):
         # 获取物品显示名称
+        """Format one menu item for display."""
         item_name = self._get_item_display_name(item.item_id)
         time_str = datetime.fromtimestamp(
             item.timestamp).strftime("%m-%d %H:%M")
@@ -1295,7 +1327,11 @@ def _handle_vault_view(self, player: Player, guild: GuildData) -> bool:
     return True
 
 
-def _handle_vault_buy(self, player: Player, guild: GuildData) -> bool:
+def _handle_vault_buy(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """购买仓库物品"""
     if not guild.has_permission(player.name, "vault_buy"):
         player.show("§l§a公会仓库 §d>> §r你没有购买仓库物品权限")
@@ -1310,6 +1346,7 @@ def _handle_vault_buy(self, player: Player, guild: GuildData) -> bool:
         return True
 
     def formatter(i, item: VaultItem):
+        """Format one menu item for display."""
         item_name = self._get_item_display_name(item.item_id)
         time_str = datetime.fromtimestamp(
             item.timestamp).strftime("%m-%d %H:%M")
@@ -1440,7 +1477,11 @@ def _handle_vault_buy(self, player: Player, guild: GuildData) -> bool:
     return True
 
 
-def _handle_vault_sell(self, player: Player, guild: GuildData) -> bool:
+def _handle_vault_sell(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """出售物品到仓库"""
     if not guild.has_permission(player.name, "vault_sell"):
         player.show("§l§a公会仓库 §d>> §r你没有出售仓库物品权限")
@@ -1611,6 +1652,7 @@ def _handle_vault_logs(self, player: Player, guild: GuildData) -> bool:
     }
 
     def formatter(i, log):
+        """Format one menu item for display."""
         item_name = self._get_item_display_name(log.item_id)
         time_str = datetime.fromtimestamp(
             log.timestamp).strftime("%m-%d %H:%M")
@@ -1634,7 +1676,11 @@ def _handle_vault_logs(self, player: Player, guild: GuildData) -> bool:
     return True
 
 
-def _handle_vault_cancel(self, player: Player, guild: GuildData) -> bool:
+def _handle_vault_cancel(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """撤回仓库上架物品"""
     vault_config = getattr(Config, "GUILD_VAULT_CONFIG", {})
     if not vault_config.get("启用撤回出售", True):
@@ -1658,6 +1704,7 @@ def _handle_vault_cancel(self, player: Player, guild: GuildData) -> bool:
         return True
 
     def formatter(i, data):
+        """Format one menu item for display."""
         _index, item = data
         item_name = self._get_item_display_name(item.item_id)
         time_str = datetime.fromtimestamp(
@@ -1730,7 +1777,10 @@ def _handle_vault_cancel(self, player: Player, guild: GuildData) -> bool:
     player.show(
         f"§l§a公会仓库 §d>> §r已撤回 §f{selected_name} §7x{
             removed_item.count}")
-    if removed_item.seller != player.name and removed_item.seller in self.game_ctrl.allplayers:
+    if (
+        removed_item.seller != player.name
+        and removed_item.seller in self.game_ctrl.allplayers
+    ):
         message = (
             f"§l§a公会仓库 §d>> §r你上架的 {selected_name} "
             f"x{removed_item.count} 已被 {player.name} 撤回"
@@ -1742,7 +1792,11 @@ def _handle_vault_cancel(self, player: Player, guild: GuildData) -> bool:
     return True
 
 
-def _handle_vault_settings(self, player: Player, guild: GuildData) -> bool:
+def _handle_vault_settings(  # skipcq: PY-R1000
+    self,
+    player: Player,
+    guild: GuildData,
+) -> bool:
     """设置物品价值"""
     if not guild.has_permission(player.name, "vault_settings"):
         player.show("§l§a公会仓库 §d>> §r你没有设置仓库物品价值权限")
@@ -1909,7 +1963,9 @@ def _handle_list_guilds(self, player: Player) -> bool:
     # 按等级和成员数排序
     guilds.sort(key=lambda g: (g.level, len(g.members)), reverse=True)
 
-    def formatter(i, g): return (
+    def formatter(i, g):
+        """Format one menu item for display."""
+        return (
         f"§e{i}. §r{g.name} §7Lv.{g.level}\n"
         f"   §7会长: §f{g.owner} §7| 成员: §a{len(g.members)}/{Config.MAX_GUILD_MEMBERS}\n"
     )
@@ -1973,7 +2029,9 @@ def _handle_join_guild(self, player: Player) -> bool:
     if len(matched_guilds) == 1:
         target_guild = matched_guilds[0]
     else:
-        def formatter(i, g): return f"{i}. {g.name} (会长:{g.owner})\n"
+        def formatter(i, g):
+            """Format one menu item for display."""
+            return f"{i}. {g.name} (会长:{g.owner})\n"
         idx = self._paginate_display(
             player, matched_guilds, "选择公会", formatter, True)
         if idx is None:
@@ -2032,6 +2090,7 @@ def _handle_leave_guild(self, player: Player) -> bool:
 
 def _handle_dissolve_guild(self, player: Player, player_xuid: str) -> bool:
     """处理解散公会"""
+    _ = player_xuid
     guild = self.guild_manager.get_guild_by_player(player.name)
     member = guild.get_member(player.name) if guild else None
 
@@ -2081,7 +2140,9 @@ def _handle_kick_member(self, player: Player) -> bool:
         player.show("§l§a公会 §d>> §r没有可踢出的成员")
         return True
 
-    def formatter(i, m): return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
+    def formatter(i, m):
+        """Format one menu item for display."""
+        return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
     idx = self._paginate_display(
         player,
         kickable_members,
@@ -2097,7 +2158,8 @@ def _handle_kick_member(self, player: Player) -> bool:
         # 通知被踢玩家
         if target.name in self.game_ctrl.allplayers:
             self.game_ctrl.sendcmd(
-                f'/tellraw {target.name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r你已被踢出公会"}}]}}'
+                f'/tellraw {target.name} '
+                '{"rawtext":[{"text":"§l§a公会 §d>> §r你已被踢出公会"}]}'
             )
 
     return True
@@ -2320,7 +2382,9 @@ def _handle_transfer_ownership(self, player: Player) -> bool:
         player.show("§l§a公会 §d>> §r没有其他成员")
         return True
 
-    def formatter(i, m): return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
+    def formatter(i, m):
+        """Format one menu item for display."""
+        return f"§e{i}. {m.rank.display_name} §f{m.name}\n"
     idx = self._paginate_display(
         player, other_members, "选择新会长", formatter, True)
 
@@ -2363,7 +2427,8 @@ def _handle_transfer_ownership(self, player: Player) -> bool:
     # 通知新会长
     if latest_new_owner.name in self.game_ctrl.allplayers:
         self.game_ctrl.sendcmd(
-            f'/tellraw {latest_new_owner.name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r你已成为公会会长！"}}]}}'
+            f'/tellraw {latest_new_owner.name} '
+            '{"rawtext":[{"text":"§l§a公会 §d>> §r你已成为公会会长！"}]}'
         )
 
     return True

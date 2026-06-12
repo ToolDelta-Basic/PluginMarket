@@ -85,6 +85,7 @@ class Dispatcher(DispatcherBase):
         check_callback: Callable,
     ) -> None:
         """Poll the socket and invoke callbacks while the app keeps running."""
+        _ = sock
         sel = selectors.DefaultSelector()
         sel.register(self.app.sock.sock, selectors.EVENT_READ)
         try:
@@ -256,6 +257,7 @@ class WebSocketApp:
         prepared_socket: socket
             Pre-initialized stream socket.
         """
+        _ = keep_running
         self.url = url
         self.header = header if header is not None else []
         self.cookie = cookie

@@ -775,7 +775,10 @@ class LandPlugin(Plugin):
         choice = self._select_menu(
             player,
             title,
-            [f"{land.name} §7- 领主: {land.owner}, {land.range_text()}" for land in lands],
+            [
+                f"{land.name} §7- 领主: {land.owner}, {land.range_text()}"
+                for land in lands
+            ],
         )
         if choice is None:
             return None
@@ -1236,7 +1239,7 @@ class LandPlugin(Plugin):
             return
         self._tp(player, [land.name])
 
-    def _create(self, player: Player, args: List[str]):
+    def _create(self, player: Player, args: List[str]):  # skipcq: PY-R1000
         """Implement the create operation."""
         if len(args) < 2:
             player.show(self._error(
@@ -1573,19 +1576,25 @@ class LandPlugin(Plugin):
 
         if self.lands:
             lines.append(
-                "所有领地：" + "、".join(f"{land.name}({land.owner})" for land in self.lands.values()))
+                "所有领地："
+                + "、".join(
+                    f"{land.name}({land.owner})" for land in self.lands.values()
+                )
+            )
         else:
             lines.append("所有领地：无")
         player.show(self._ui_card("测试信息", lines))
 
     def on_player_join(self, player: Player):
         """Implement the on player join operation."""
+        _ = player
         if not self.enabled:
             return
         pass
 
     def on_player_leave(self, player: Player):
         """Implement the on player leave operation."""
+        _ = player
         if not self.enabled:
             return
         pass
@@ -1604,7 +1613,7 @@ class LandPlugin(Plugin):
             return False, f"领地 '{land_query}' 不存在", None
         return True, "查询成功", self._land_summary(land)
 
-    def api_add_land(
+    def api_add_land(  # skipcq: PY-R1000
         self,
         owner: str,
         name: str,
@@ -1785,7 +1794,10 @@ class LandPlugin(Plugin):
             land.name}' 移除 {player_name}", self._land_summary(land)
 
     def api_transfer_owner(
-            self, land_query: str, owner: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        self,
+        land_query: str,
+        owner: str,
+    ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
         """Expose the api transfer owner API operation."""
         land = self._find_land_by_name_or_id(land_query)
         if land is None:
@@ -1952,7 +1964,10 @@ class LandPlugin(Plugin):
             return None
 
     def _console_select_land(
-            self, title: str, lands: Optional[List[LandData]] = None) -> Optional[LandData]:
+        self,
+        title: str,
+        lands: Optional[List[LandData]] = None,
+    ) -> Optional[LandData]:
         """Implement the console select land operation."""
         lands = list(self.lands.values()) if lands is None else lands
         if not lands:
@@ -2035,8 +2050,11 @@ class LandPlugin(Plugin):
         choice = self._console_select(
             "删除不可创建区域",
             [
-                f"{region.get('名称', f'区域{i}')} - {region.get('类型', '未知')
-                                                  } - {'启用' if region.get('启用', True) else '禁用'}"
+                (
+                    f"{region.get('名称', f'区域{i}')} - "
+                    f"{region.get('类型', '未知')} - "
+                    f"{'启用' if region.get('启用', True) else '禁用'}"
+                )
                 for i, region in enumerate(self.no_create_regions_raw, 1)
             ],
         )

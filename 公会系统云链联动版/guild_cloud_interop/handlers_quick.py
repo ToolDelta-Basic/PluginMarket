@@ -1,5 +1,7 @@
 """Quick command handlers for common guild operations."""
 
+# pylint: disable=protected-access
+
 import json
 
 from tooldelta import Player, game_utils, fmts
@@ -66,7 +68,7 @@ def quick_create_guild(self, player: Player, args: tuple):
     return True
 
 
-def quick_join_guild(self, player: Player, args: tuple):
+def quick_join_guild(self, player: Player, args: tuple):  # skipcq: PY-R1000
     """快捷加入公会"""
     if self.guild_manager.get_guild_by_player(player.name):
         player.show("§l§a公会 §d>> §r你已经加入了一个公会")
@@ -149,7 +151,10 @@ def quick_join_guild(self, player: Player, args: tuple):
             )
             # 通知其他在线成员
             for member in target_guild.members:
-                if member.name in self.game_ctrl.allplayers and member.name != player.name:
+                if (
+                    member.name in self.game_ctrl.allplayers
+                    and member.name != player.name
+                ):
                     message = f"§l§a公会 §d>> §r§e{player.name}§r 加入了公会"
                     self.game_ctrl.sendcmd(
                         f'/tellraw {member.name} {{"rawtext":[{{"text":"{message}"}}]}}'
@@ -164,12 +169,14 @@ def quick_join_guild(self, player: Player, args: tuple):
 
 def quick_view_guild(self, player: Player, args: tuple):
     """快捷查看公会信息"""
+    _ = args
     self._handle_view_guild(player)
     return True
 
 
 def quick_view_members(self, player: Player, args: tuple):
     """快捷查看成员列表"""
+    _ = args
     self._handle_view_members(player)
     return True
 
@@ -314,6 +321,7 @@ def quick_donate(self, player: Player, args: tuple):
 
 def quick_announcement(self, player: Player, args: tuple):
     """快捷查看/设置公告"""
+    _ = args
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
         player.show("§l§a公会 §d>> §r你尚未加入任何公会")
@@ -363,6 +371,7 @@ def quick_announcement(self, player: Player, args: tuple):
 
 def quick_vault_menu(self, player: Player, args: tuple):
     """快捷仓库菜单"""
+    _ = args
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
         player.show("§l§a公会 §d>> §r你尚未加入任何公会")
@@ -374,7 +383,7 @@ def quick_vault_menu(self, player: Player, args: tuple):
     return self._handle_vault(player)
 
 
-def quick_vault_sell(self, player: Player, args: tuple):
+def quick_vault_sell(self, player: Player, args: tuple):  # skipcq: PY-R1000
     """快速出售物品到仓库"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:

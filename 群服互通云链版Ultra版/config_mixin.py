@@ -136,7 +136,9 @@ class QQLinkerConfigMixin:
                 "替换花里胡哨的昵称": True,
                 "替换花里胡哨的消息": True,
             },
-            QQLinkerConfigMixin.PERMISSION_SETTINGS_KEY: QQLinkerConfigMixin.permission_default(),
+            QQLinkerConfigMixin.PERMISSION_SETTINGS_KEY: (
+                QQLinkerConfigMixin.permission_default()
+            ),
             "指令设置": {
                 "发送指令前缀": "/",
                 "帮助菜单唤醒词": ["help", "帮助"],
@@ -799,7 +801,7 @@ class QQLinkerConfigMixin:
             return False
         return True
 
-    def migrate_config(self, raw_cfg: Any):
+    def migrate_config(self, raw_cfg: Any):  # skipcq: PY-R1000
         """把整个插件配置迁到最新版本。
 
         历史上这个插件经历过“单群结构”和“多群结构”两个阶段，
@@ -823,7 +825,9 @@ class QQLinkerConfigMixin:
                 )
             )
             default_interval = dynamic_settings[self.DYNAMIC_LOAD_INTERVAL_KEY]
-            dynamic_settings[self.DYNAMIC_LOAD_INTERVAL_KEY] = self._normalize_positive_int(
+            dynamic_settings[
+                self.DYNAMIC_LOAD_INTERVAL_KEY
+            ] = self._normalize_positive_int(
                 dynamic_load_cfg.get(
                     self.DYNAMIC_LOAD_INTERVAL_KEY,
                     default_interval,

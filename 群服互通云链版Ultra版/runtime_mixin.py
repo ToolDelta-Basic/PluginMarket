@@ -131,11 +131,23 @@ class QQLinkerRuntimeMixin:
                     level="info",
                 )
                 session_id = self._start_ws_session()
+
+                def _on_message(ws_obj, message, sid=session_id):
+                    return self.on_ws_message(ws_obj, message, sid) and None
+
+                def _on_error(ws_obj, error, sid=session_id):
+                    return self.on_ws_error(ws_obj, error, sid)
+
+                def _on_close(ws_obj, code, reason, sid=session_id):
+                    return self.on_ws_close(ws_obj, code, reason, sid)
+
                 ws_app = websocket.WebSocketApp(
-                    target, header, on_message=lambda a, b, sid=session_id: self.on_ws_message(
-                        a, b, sid) and None, on_error=lambda a, b, sid=session_id: self.on_ws_error(
-                        a, b, sid), on_close=lambda a, b, c, sid=session_id: self.on_ws_close(
-                        a, b, c, sid), )
+                    target,
+                    header,
+                    on_message=_on_message,
+                    on_error=_on_error,
+                    on_close=_on_close,
+                )
                 ws_app.on_open = lambda ws_obj, sid=session_id: self.on_ws_open(
                     ws_obj, sid)
                 self.ws = ws_app

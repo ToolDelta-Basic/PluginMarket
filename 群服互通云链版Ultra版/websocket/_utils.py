@@ -34,6 +34,7 @@ class NoLock:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the no-op context manager."""
+        _ = (exc_type, exc_value, traceback)
         return None
 
 

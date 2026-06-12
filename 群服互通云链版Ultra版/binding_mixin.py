@@ -471,10 +471,12 @@ class QQLinkerBindingMixin:
 
     def _binding_enabled(self, group_id: int) -> bool:
         """Implement the binding enabled operation."""
+        _ = group_id
         return bool(self._binding_cfg().get("是否开启QQ号与游戏ID绑定功能", False))
 
     def _binding_text(self, group_id: int, key: str, fallback: str) -> str:
         """Implement the binding text operation."""
+        _ = group_id
         value = self._binding_cfg().get(key, fallback)
         text = str(value).strip()
         return text or fallback
@@ -489,6 +491,7 @@ class QQLinkerBindingMixin:
 
     def _binding_timeout_minutes(self, group_id: int) -> int:
         """Implement the binding timeout minutes operation."""
+        _ = group_id
         return self._normalize_positive_int(
             self._binding_cfg().get(
                 "绑定超时时间（单位：分钟）",
@@ -516,6 +519,7 @@ class QQLinkerBindingMixin:
 
     def get_group_binding_triggers(self, group_id: int) -> list[str]:
         """Return group binding triggers data."""
+        _ = group_id
         raw = self._binding_cfg().get("绑定触发词", ["绑定"])
         return self.normalize_string_triggers(raw, ["绑定"])
 

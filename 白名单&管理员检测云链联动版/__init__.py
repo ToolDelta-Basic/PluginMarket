@@ -499,6 +499,7 @@ class WhitelistAndOpCheck(Plugin):
 
     def enforce_whitelist(self, player_name: str, player_xuid: str):
         """对白名单未命中的玩家执行踢出。"""
+        _ = player_name
         if player_xuid in self._cfg["白名单"]["白名单玩家"]:
             return
         self.game_ctrl.sendwocmd(

@@ -715,7 +715,11 @@ class QQLinkerOrionMixin:
             return
         self._apply_selected_orion_ban(group_id, qqid, ban_target)
 
-    def qq_orion_unban_menu(self, group_id: int, qqid: int):
+    def qq_orion_unban_menu(  # skipcq: PY-R1000
+        self,
+        group_id: int,
+        qqid: int,
+    ):
         """交互式 Orion 解封菜单。"""
         if not self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
             self._reply_menu_permission_denied(group_id, qqid)
@@ -932,6 +936,7 @@ class QQLinkerOrionMixin:
         player_info: dict[str, list[str]],
     ):
         """删除 Orion 中某个设备号的封禁记录。"""
+        _ = player_info
         orion = self.require_orion()
         path = f"{orion.data_path}/{orion.config_mgr.device_id_dir}/{device_id}.json"
         if not os.path.exists(path):

@@ -91,7 +91,7 @@ def normalize_inline(text: str) -> str:
     return text.strip()
 
 
-def classify_prefix(text: str) -> str:
+def classify_prefix(text: str) -> str:  # skipcq: PY-R1000
     """Implement the classify prefix operation."""
     if "错误" in text or "失败" in text or "无效" in text or "不足" in text or "权限不足" in text:
         return ERROR_PREFIX
@@ -130,10 +130,14 @@ def format_title(title: str) -> str:
     """Implement the format title operation."""
     title = normalize_inline(title)
     title = title.replace("§a", "§6").replace("§c", "§c")
-    return f"{ORION_BORDER}\n{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d\n{ORION_BORDER}"
+    return (
+        f"{ORION_BORDER}\n"
+        f"{TITLE_PREFIX} 『§6公会系统 §d云链联动版§f』 §b{title}§d\n"
+        f"{ORION_BORDER}"
+    )
 
 
-def format_message(text: str) -> str:
+def format_message(text: str) -> str:  # skipcq: PY-R1000
     """Implement the format message operation."""
     lines = str(text).splitlines()
     rendered: list[str] = []

@@ -1,5 +1,7 @@
 """Public QQ and plugin API operations for guild cloud interop."""
 
+# pylint: disable=protected-access
+
 import copy
 import json
 import os
@@ -106,7 +108,10 @@ def _find_guild(
     fuzzy = [
         guild
         for guild in guild_map.values()
-        if query_lower in guild.name.casefold() or query_lower in guild.guild_id.casefold()
+        if (
+            query_lower in guild.name.casefold()
+            or query_lower in guild.guild_id.casefold()
+        )
     ]
     if len(fuzzy) == 1:
         return fuzzy[0], ""
@@ -264,6 +269,7 @@ def _activity_multiplier(self, key: str) -> float:
 
 
 def guild_get_activity_multiplier(self, key: str) -> float:
+    """Return guild get activity multiplier."""
     return _activity_multiplier(self, key)
 
 
@@ -272,6 +278,7 @@ def guild_apply_reward_multipliers(
     exp: int | float = 0,
     contribution: int | float = 0,
 ) -> tuple[int, int]:
+    """Apply guild apply reward multipliers."""
     exp_out = int(float(exp) * _activity_multiplier(self, "exp"))
     contribution_out = int(float(contribution) *
                            _activity_multiplier(self, "contribution"))
@@ -279,6 +286,7 @@ def guild_apply_reward_multipliers(
 
 
 def guild_is_frozen(self, guild: GuildData | None) -> bool:
+    """Return whether frozen."""
     if guild is None:
         return False
     settings = getattr(guild, "settings", {})
@@ -286,6 +294,7 @@ def guild_is_frozen(self, guild: GuildData | None) -> bool:
 
 
 def guild_frozen_message(self, guild: GuildData | None) -> str:
+    """Run guild frozen message."""
     if guild is None:
         return "公会已冻结"
     settings = getattr(guild, "settings", {})
@@ -297,10 +306,12 @@ def guild_frozen_message(self, guild: GuildData | None) -> str:
 
 
 def show_guild_frozen(self, player, guild: GuildData | None) -> None:
+    """Show guild frozen."""
     player.show(f"§l§a公会 §d>> §c{self.guild_frozen_message(guild)}")
 
 
 def api_list_guilds(self) -> tuple[bool, str, list[dict[str, Any]]]:
+    """Return api list guilds."""
     guilds = _load_guilds(self)
     data = [_guild_summary(guild) for guild in guilds.values()]
     data.sort(key=lambda item: (-int(item["level"]), -
@@ -310,6 +321,7 @@ def api_list_guilds(self) -> tuple[bool, str, list[dict[str, Any]]]:
 
 def api_get_guild(
         self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Return api get guild."""
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
@@ -321,6 +333,7 @@ def api_get_guild(
 
 def api_get_player_record(
         self, player_name: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Return api get player record."""
     guilds = _load_guilds(self)
     guild, err = _find_player_guild(self, player_name, guilds)
     if guild is None:
@@ -498,8 +511,9 @@ def api_disband_owned_guild_as_player(
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     for member_name in online_members:
+        message = f"§l§a公会 §d>> §r公会 §e{guild_name}§r 已被解散"
         self.game_ctrl.sendcmd(
-            f'/tellraw {member_name} {{"rawtext":[{{"text":"§l§a公会 §d>> §r公会 §e{guild_name}§r 已被解散"}}]}}'
+            f'/tellraw {member_name} {{"rawtext":[{{"text":"{message}"}}]}}'
         )
     return True, f"已解散公会 {guild_name}", summary
 
@@ -588,6 +602,8 @@ def api_return_to_guild_base_as_player(
 
 def api_force_disband_guild(self, guild_query: str,
                             actor: str = "QQ管理") -> tuple[bool, str]:
+    """Force api force disband guild."""
+    _ = actor
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -601,6 +617,7 @@ def api_force_disband_guild(self, guild_query: str,
 
 def api_rename_guild(self, guild_query: str, new_name: str,
                      actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Run api rename guild."""
     new_name = str(new_name or "").strip()
     if not new_name:
         return False, "新公会名不能为空", None
@@ -632,6 +649,7 @@ def api_set_guild_level(self,
                                                       str,
                                                       Optional[dict[str,
                                                                     Any]]]:
+    """Update api set guild level."""
     ok, err, parsed = _to_int(level, "公会等级", 1)
     if not ok:
         return False, err, None
@@ -651,8 +669,13 @@ def api_set_guild_level(self,
     return True, f"已设置 {guild.name} 等级为 {parsed}", _guild_summary(guild)
 
 
-def api_set_guild_exp(self, guild_query: str, exp: int,
-                      actor: str = "QQ管理") -> tuple[bool, str, Optional[dict[str, Any]]]:
+def api_set_guild_exp(
+    self,
+    guild_query: str,
+    exp: int,
+    actor: str = "QQ管理",
+) -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Update api set guild exp."""
     ok, err, parsed = _to_int(exp, "公会经验", 0)
     if not ok:
         return False, err, None
@@ -683,6 +706,7 @@ def api_transfer_guild_owner(self,
                                                            str,
                                                            Optional[dict[str,
                                                                          Any]]]:
+    """Run api transfer guild owner."""
     target_name = str(new_owner or "").strip()
     if not target_name:
         return False, "新会长不能为空", None
@@ -718,6 +742,7 @@ def api_force_join_guild(self,
                                                        str,
                                                        Optional[dict[str,
                                                                      Any]]]:
+    """Force api force join guild."""
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空", None
@@ -751,6 +776,7 @@ def api_force_leave_guild(self,
                                                         str,
                                                         Optional[dict[str,
                                                                       Any]]]:
+    """Force api force leave guild."""
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空", None
@@ -783,6 +809,7 @@ def api_force_kick_member(self,
                                                         str,
                                                         Optional[dict[str,
                                                                       Any]]]:
+    """Force api force kick member."""
     return api_force_leave_guild(self, player_name, actor)
 
 
@@ -794,6 +821,7 @@ def api_set_guild_frozen(self,
                                                        str,
                                                        Optional[dict[str,
                                                                      Any]]]:
+    """Update api set guild frozen."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -813,6 +841,7 @@ def api_set_guild_frozen(self,
 
 def api_get_guild_vault(
         self, guild_query: str) -> tuple[bool, str, Optional[list[dict[str, Any]]]]:
+    """Return api get guild vault."""
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
@@ -828,6 +857,7 @@ def api_backup_guild_vault(self,
                                                          str,
                                                          Optional[dict[str,
                                                                        Any]]]:
+    """Back up api backup guild vault."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -860,6 +890,7 @@ def api_clear_guild_vault(self,
                                                         str,
                                                         Optional[dict[str,
                                                                       Any]]]:
+    """Clear api clear guild vault."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -887,6 +918,7 @@ def api_delete_guild_vault_item(self,
                                                               str,
                                                               Optional[dict[str,
                                                                             Any]]]:
+    """Delete api delete guild vault item."""
     ok, err, parsed = _to_int(index, "仓库序号", 1)
     if not ok:
         return False, err, None
@@ -920,6 +952,7 @@ def api_rollback_guild_vault(self,
                                                            str,
                                                            Optional[dict[str,
                                                                          Any]]]:
+    """Run api rollback guild vault."""
     ok, err, parsed = _to_int(backup_index, "备份序号", 1)
     if not ok:
         return False, err, None
@@ -951,6 +984,7 @@ def api_rollback_guild_vault(self,
 
 def api_export_guild_vault(
         self, guild_query: str) -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Export api export guild vault."""
     guild, err = _find_guild(self, guild_query)
     if guild is None:
         return False, err, None
@@ -985,7 +1019,11 @@ def _make_task_from_template(
 
 
 def api_refresh_guild_tasks(
-        self, guild_query: str, actor: str = "QQ管理") -> tuple[bool, str, list[dict[str, Any]]]:
+    self,
+    guild_query: str,
+    actor: str = "QQ管理",
+) -> tuple[bool, str, list[dict[str, Any]]]:
+    """Run api refresh guild tasks."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1032,6 +1070,7 @@ def api_create_global_task(
     deadline_seconds: int = 0,
     actor: str = "QQ管理",
 ) -> tuple[bool, str, list[dict[str, Any]]]:
+    """Create api create global task."""
     task_name = str(name or "").strip()
     if not task_name:
         return False, "任务名称不能为空", []
@@ -1073,6 +1112,7 @@ def api_delete_guild_task(self,
                                                         str,
                                                         Optional[dict[str,
                                                                       Any]]]:
+    """Delete api delete guild task."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1096,6 +1136,7 @@ def api_reset_guild_task_progress(self,
                                                                 str,
                                                                 Optional[dict[str,
                                                                               Any]]]:
+    """Reset api reset guild task progress."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1120,6 +1161,7 @@ def api_force_complete_guild_task(self,
                                                                 str,
                                                                 Optional[dict[str,
                                                                               Any]]]:
+    """Force api force complete guild task."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1138,6 +1180,7 @@ def api_force_complete_guild_task(self,
 
 def api_teleport_player_to_guild_base(
         self, player_name: str, guild_query: str | None = None) -> tuple[bool, str]:
+    """Run api teleport player to guild base."""
     name = str(player_name or "").strip()
     if not name:
         return False, "玩家名不能为空"
@@ -1164,6 +1207,7 @@ def api_delete_guild_base(self,
                                                         str,
                                                         Optional[dict[str,
                                                                       Any]]]:
+    """Delete api delete guild base."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1186,6 +1230,7 @@ def api_set_guild_base(self,
                                                      str,
                                                      Optional[dict[str,
                                                                    Any]]]:
+    """Update api set guild base."""
     ok, err, dim = _to_int(dimension, "维度")
     if not ok:
         return False, err, None
@@ -1219,6 +1264,7 @@ def api_set_guild_base_locked(self,
                                                             str,
                                                             Optional[dict[str,
                                                                           Any]]]:
+    """Update api set guild base locked."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1240,6 +1286,7 @@ def api_clear_guild_effects(self,
                                                           str,
                                                           Optional[dict[str,
                                                                         Any]]]:
+    """Clear api clear guild effects."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1260,6 +1307,7 @@ def api_set_guild_effect(self,
                                                        str,
                                                        Optional[dict[str,
                                                                      Any]]]:
+    """Update api set guild effect."""
     key = str(effect_key or "").strip()
     if key not in Config.EFFECTS_CONFIG:
         names = {
@@ -1299,6 +1347,7 @@ def api_add_guild_funds(self,
                                                       str,
                                                       Optional[dict[str,
                                                                     Any]]]:
+    """Add api add guild funds."""
     ok, err, parsed = _to_int(amount, "资金数量")
     if not ok:
         return False, err, None
@@ -1324,6 +1373,7 @@ def api_set_guild_funds(self,
                                                       str,
                                                       Optional[dict[str,
                                                                     Any]]]:
+    """Update api set guild funds."""
     ok, err, parsed = _to_int(amount, "资金余额", 0)
     if not ok:
         return False, err, None
@@ -1346,6 +1396,7 @@ def api_add_member_contribution(self,
                                                               str,
                                                               Optional[dict[str,
                                                                             Any]]]:
+    """Add api add member contribution."""
     ok, err, parsed = _to_int(amount, "贡献值")
     if not ok:
         return False, err, None
@@ -1375,6 +1426,7 @@ def api_set_member_contribution(self,
                                                               str,
                                                               Optional[dict[str,
                                                                             Any]]]:
+    """Update api set member contribution."""
     ok, err, parsed = _to_int(amount, "贡献值", 0)
     if not ok:
         return False, err, None
@@ -1401,6 +1453,7 @@ def api_reset_guild_contributions(self,
                                                                 str,
                                                                 Optional[dict[str,
                                                                               Any]]]:
+    """Reset api reset guild contributions."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1421,6 +1474,7 @@ def api_reset_market_prices(self,
                                                           str,
                                                           Optional[dict[str,
                                                                         Any]]]:
+    """Reset api reset market prices."""
     guilds = _load_guilds(self)
     guild, err = _find_guild(self, guild_query, guilds)
     if guild is None:
@@ -1440,6 +1494,7 @@ def api_reset_market_prices(self,
 
 def api_get_guild_logs(self, guild_query: str,
                        limit: int = 20) -> tuple[bool, str, Optional[dict[str, Any]]]:
+    """Return api get guild logs."""
     ok, _err, parsed_limit = _to_int(limit, "日志数量", 1)
     if not ok:
         parsed_limit = 20
@@ -1449,7 +1504,9 @@ def api_get_guild_logs(self, guild_query: str,
     return True, "查询成功", {
         "logs": guild.logs[-parsed_limit:],
         "audit_logs": [log.to_dict() for log in guild.audit_logs[-parsed_limit:]],
-        "vault_trade_logs": [log.to_dict() for log in guild.vault_trade_logs[-parsed_limit:]],
+        "vault_trade_logs": [
+            log.to_dict() for log in guild.vault_trade_logs[-parsed_limit:]
+        ],
     }
 
 
@@ -1459,6 +1516,7 @@ def api_get_abnormal_trades(self,
                                                          str,
                                                          list[dict[str,
                                                                    Any]]]:
+    """Return api get abnormal trades."""
     try:
         threshold = float(ratio)
     except (TypeError, ValueError):
@@ -1494,6 +1552,7 @@ def api_get_donation_rankings(self,
                                                         str,
                                                         list[dict[str,
                                                                   Any]]]:
+    """Return api get donation rankings."""
     ok, _err, parsed_limit = _to_int(limit, "排行数量", 1)
     if not ok:
         parsed_limit = 10
@@ -1543,11 +1602,13 @@ def api_get_guild_rankings(self, sort_by: str = "level",
 
 
 def api_reload_guild_config(self) -> tuple[bool, str, dict[str, Any]]:
+    """Reload api reload guild config."""
     self.config = Config.load(self.name, self.version)
     return True, "公会系统配置已重新加载", copy.deepcopy(self.config)
 
 
 def api_save_guild_data(self) -> tuple[bool, str]:
+    """Save api save guild data."""
     guilds = _load_guilds(self)
     if not _save_guilds(self, guilds, force=True):
         return False, "保存公会数据失败"
@@ -1555,6 +1616,7 @@ def api_save_guild_data(self) -> tuple[bool, str]:
 
 
 def api_backup_guild_data(self) -> tuple[bool, str, Optional[str]]:
+    """Back up api backup guild data."""
     if not os.path.exists(self.guilds_file):
         return False, "公会数据文件不存在", None
     data_dir = os.path.dirname(self.guilds_file)
@@ -1568,6 +1630,7 @@ def api_backup_guild_data(self) -> tuple[bool, str, Optional[str]]:
 
 def api_repair_guild_data(
         self, actor: str = "QQ管理") -> tuple[bool, str, dict[str, Any]]:
+    """Repair api repair guild data."""
     guilds = _load_guilds(self)
     fixed = {"guild_id": 0, "level": 0, "exp": 0,
              "owner": 0, "vault": 0, "removed_empty": 0}
@@ -1608,6 +1671,7 @@ def api_repair_guild_data(
 
 
 def api_get_guild_statistics(self) -> tuple[bool, str, dict[str, Any]]:
+    """Return api get guild statistics."""
     guilds = _load_guilds(self)
     total_members = sum(len(guild.members) for guild in guilds.values())
     total_vault_items = sum(len(guild.vault_items)
@@ -1637,6 +1701,7 @@ def api_start_guild_activity(
     multiplier: float = 2.0,
     actor: str = "QQ管理",
 ) -> tuple[bool, str, dict[str, Any]]:
+    """Start api start guild activity."""
     activity_key = str(activity or "").strip().lower()
     aliases = {
         "双倍经验": "exp",
@@ -1669,11 +1734,15 @@ def api_start_guild_activity(
         "actor": _actor(actor),
     }
     self._guild_runtime_events[activity_key] = event
-    return True, f"已开启 {activity_key} 活动 {seconds} 秒，倍率 {parsed_multiplier}", copy.deepcopy(
-        event)
+    return (
+        True,
+        f"已开启 {activity_key} 活动 {seconds} 秒，倍率 {parsed_multiplier}",
+        copy.deepcopy(event),
+    )
 
 
 def api_stop_guild_activity(self, activity: str) -> tuple[bool, str]:
+    """Stop api stop guild activity."""
     activity_key = str(activity or "").strip().lower()
     aliases = {"经验": "exp", "双倍经验": "exp", "贡献": "contribution",
                "双倍贡献": "contribution", "争霸": "contest", "公会争霸": "contest"}
@@ -1690,6 +1759,7 @@ def api_stop_guild_activity(self, activity: str) -> tuple[bool, str]:
 
 
 def api_get_guild_activity_status(self) -> tuple[bool, str, dict[str, Any]]:
+    """Return api get guild activity status."""
     events = getattr(self, "_guild_runtime_events", {})
     now = _now()
     active = {}
@@ -1712,6 +1782,7 @@ def api_settle_guild_ranking_rewards(
     reward_funds: int = 0,
     actor: str = "QQ管理",
 ) -> tuple[bool, str, list[dict[str, Any]]]:
+    """Update api settle guild ranking rewards."""
     ok, err, parsed_top = _to_int(top, "排行数量", 1)
     if not ok:
         return False, err, []
@@ -1740,6 +1811,7 @@ def api_settle_guild_ranking_rewards(
 
 def api_broadcast_guild_announcement(
         self, message: str, actor: str = "QQ管理") -> tuple[bool, str]:
+    """Broadcast api broadcast guild announcement."""
     text = str(message or "").strip()
     if not text:
         return False, "公告内容不能为空"

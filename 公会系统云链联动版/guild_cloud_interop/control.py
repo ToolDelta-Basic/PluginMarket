@@ -158,7 +158,10 @@ class GuildManager:
             current_time = time.time()
 
             # 如果不是强制保存且距离上次保存时间不足，则延迟保存
-            if not force and current_time - self._last_save_time < Config.BATCH_SAVE_INTERVAL:
+            if (
+                not force
+                and current_time - self._last_save_time < Config.BATCH_SAVE_INTERVAL
+            ):
                 self._dirty_guilds.update(guilds.keys())
                 return True
 

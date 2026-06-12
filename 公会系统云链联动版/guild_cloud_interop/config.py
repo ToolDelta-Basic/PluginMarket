@@ -371,7 +371,10 @@ DEFAULT_CONFIG_JSON = r'''{
                   "创建公会取消提示词":  "§c❀ §r已取消创建公会",
                   "创建公会输入名称提示词":  "§a❀ §r请输入公会名字:\n§a❀ §r要求: 2-20个字符，不能包含特殊符号",
                   "创建公会名称无效提示词":  "§c❀ §r{error}",
-                  "创建公会二次余额不足提示词":  "§c❀ §r当前 §b{scoreboard}§r 余额不足，需要 §e{consume}§r，当前 §f{balance}",
+                  "创建公会二次余额不足提示词": (
+                      "§c❀ §r当前 §b{scoreboard}§r 余额不足，需要 "
+                      "§e{consume}§r，当前 §f{balance}"
+                  ),
                   "创建公会成功提示词":  "§a❀ §r已创建公会 §e{guild}",
                   "创建公会全服公告提示词":  "§a❀ §r§e{player}§r 创建了公会 §e{guild}§r！",
                   "创建公会名称已存在提示词":  "§c❀ §r该公会名已存在",
@@ -1012,7 +1015,10 @@ def _normalize_effects_config(
             effect_cfg = {}
         default = fallback.get(str(effect_id), default_effect)
         result[str(effect_id)] = {
-            "name": _normalize_str(effect_cfg.get("name"), default.get("name", str(effect_id))),
+            "name": _normalize_str(
+                effect_cfg.get("name"),
+                default.get("name", str(effect_id)),
+            ),
             "levels": _normalize_any_key_dict(
                 effect_cfg.get("levels"),
                 default.get("levels", {}),
@@ -1091,7 +1097,9 @@ def _normalize_task_templates(
     return result or copy.deepcopy(fallback)
 
 
-def _normalize_grouped_config(raw: dict[str, Any]) -> dict[str, Any]:
+def _normalize_grouped_config(  # skipcq: PY-R1000
+    raw: dict[str, Any],
+) -> dict[str, Any]:
     """Normalize grouped config values."""
     default = DEFAULT_CONFIG
     config = _merge_config(raw, default)

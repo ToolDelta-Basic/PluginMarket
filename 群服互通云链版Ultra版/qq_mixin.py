@@ -116,7 +116,7 @@ class QQLinkerQQMixin:
         )
 
     @staticmethod
-    def _extract_plugin_enabled_flag(plugin: Any):
+    def _extract_plugin_enabled_flag(plugin: Any):  # skipcq: PY-R1000
         """读取联动插件明确暴露的整体启用状态；缺少该项时返回 None。"""
         for method_name in ("_plugin_enabled", "is_plugin_enabled"):
             method = getattr(plugin, method_name, None)
@@ -607,7 +607,11 @@ class QQLinkerQQMixin:
                 continue
             self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
 
-    def qq_help_build_all_reference_lines(self, group_id: int, qqid: int):
+    def qq_help_build_all_reference_lines(  # skipcq: PY-R1000
+        self,
+        group_id: int,
+        qqid: int,
+    ):
         """按运行时触发分发入口整理全部命令触发词说明。"""
         cmd_prefix = self.get_group_cmd_prefix(group_id)
         lines = [
@@ -618,13 +622,19 @@ class QQLinkerQQMixin:
         ):
             lines.append(
                 f"{' / '.join(self.get_group_player_list_triggers(group_id))} - 查看玩家列表"
-            )
+        )
         lines.append(
-            f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - 公会系统菜单（普通成员需绑定游戏账号；管理员进入管理菜单）"
+            (
+                f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
+                "公会系统菜单（普通成员需绑定游戏账号；管理员进入管理菜单）"
+            )
         )
         if self._can_use_group_permission(group_id, qqid, "查询背包权限"):
             lines.append(
-                f"{' / '.join(self.get_group_inventory_menu_triggers(group_id))} - 查询在线玩家背包"
+                (
+                    f"{' / '.join(self.get_group_inventory_menu_triggers(group_id))} - "
+                    "查询在线玩家背包"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "发送指令权限"):
             lines.append(f"{cmd_prefix}[指令] - 向租赁服发送指令")
@@ -634,7 +644,10 @@ class QQLinkerQQMixin:
             ("QQ普通管理员菜单权限", "QQ超级管理员菜单权限"),
         ):
             lines.append(
-                f"{' / '.join(self.get_group_admin_menu_triggers(group_id))} - QQ群管理员管理菜单"
+                (
+                    f"{' / '.join(self.get_group_admin_menu_triggers(group_id))} - "
+                    "QQ群管理员管理菜单"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "配置配置文件权限"):
             lines.append(
@@ -655,7 +668,10 @@ class QQLinkerQQMixin:
             )
         if self._can_use_group_permission(group_id, qqid, "白名单&管理员检测权限"):
             lines.append(
-                f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - 白名单&管理员检测管理菜单"
+                (
+                    f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - "
+                    "白名单&管理员检测管理菜单"
+                )
             )
         if self.task_system is not None and self._can_use_group_permission(
             group_id,
@@ -667,11 +683,17 @@ class QQLinkerQQMixin:
             )
         if self._can_use_group_permission(group_id, qqid, "领地系统权限"):
             lines.append(
-                f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - 领地系统云链联动版管理菜单"
+                (
+                    f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - "
+                    "领地系统云链联动版管理菜单"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "公会系统权限"):
             lines.append(
-                f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - 公会系统管理菜单（管理员）"
+                (
+                    f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
+                    "公会系统管理菜单（管理员）"
+                )
             )
         for trigger in self.triggers:
             if trigger.op_only and not self.is_group_admin(group_id, qqid):
@@ -761,9 +783,12 @@ class QQLinkerQQMixin:
         ):
             options.append(
                 f"{' / '.join(self.get_group_player_list_triggers(group_id))} - 查看玩家列表"
-            )
+        )
         options.append(
-            f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - 公会系统菜单（需绑定游戏账号）"
+            (
+                f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
+                "公会系统菜单（需绑定游戏账号）"
+            )
         )
         self._reply_to_qq(
             group_id,
@@ -789,7 +814,10 @@ class QQLinkerQQMixin:
             ("QQ普通管理员菜单权限", "QQ超级管理员菜单权限"),
         ):
             options.append(
-                f"{' / '.join(self.get_group_admin_menu_triggers(group_id))} - QQ群管理员管理菜单"
+                (
+                    f"{' / '.join(self.get_group_admin_menu_triggers(group_id))} - "
+                    "QQ群管理员管理菜单"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "配置配置文件权限"):
             options.append(
@@ -797,18 +825,30 @@ class QQLinkerQQMixin:
             )
         if self._can_use_group_permission(group_id, qqid, "查询背包权限"):
             options.append(
-                f"{' / '.join(self.get_group_inventory_menu_triggers(group_id))} - 查询在线玩家背包"
+                (
+                    f"{' / '.join(self.get_group_inventory_menu_triggers(group_id))} - "
+                    "查询在线玩家背包"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
+            orion_ban_triggers = " / ".join(
+                self.get_group_orion_ban_triggers(group_id)
+            )
+            orion_unban_triggers = " / ".join(
+                self.get_group_orion_unban_triggers(group_id)
+            )
             options.extend(
                 [
-                    f"{' / '.join(self.get_group_orion_ban_triggers(group_id))} - Orion QQ 封禁菜单",
-                    f"{' / '.join(self.get_group_orion_unban_triggers(group_id))} - Orion QQ 解封菜单",
+                    f"{orion_ban_triggers} - Orion QQ 封禁菜单",
+                    f"{orion_unban_triggers} - Orion QQ 解封菜单",
                 ]
             )
         if self._can_use_group_permission(group_id, qqid, "白名单&管理员检测权限"):
             options.append(
-                f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - 白名单&管理员检测管理菜单"
+                (
+                    f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - "
+                    "白名单&管理员检测管理菜单"
+                )
             )
         if self.task_system is not None and self._can_use_group_permission(
             group_id,
@@ -820,11 +860,17 @@ class QQLinkerQQMixin:
             )
         if self._can_use_group_permission(group_id, qqid, "领地系统权限"):
             options.append(
-                f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - 领地系统云链联动版管理菜单"
+                (
+                    f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - "
+                    "领地系统云链联动版管理菜单"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "公会系统权限"):
             options.append(
-                f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - 公会系统管理菜单（管理员）"
+                (
+                    f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
+                    "公会系统管理菜单（管理员）"
+                )
             )
         if not options:
             self._reply_to_qq(group_id, qqid, "当前没有可展示的管理功能触发词")
@@ -845,15 +891,24 @@ class QQLinkerQQMixin:
         """Handle the qq help show integration reference QQ menu operation."""
         options = []
         if self._can_use_group_permission(group_id, qqid, "封禁/解封玩家权限"):
+            orion_ban_triggers = " / ".join(
+                self.get_group_orion_ban_triggers(group_id)
+            )
+            orion_unban_triggers = " / ".join(
+                self.get_group_orion_unban_triggers(group_id)
+            )
             options.extend(
                 [
-                    f"{' / '.join(self.get_group_orion_ban_triggers(group_id))} - Orion QQ 封禁菜单",
-                    f"{' / '.join(self.get_group_orion_unban_triggers(group_id))} - Orion QQ 解封菜单",
+                    f"{orion_ban_triggers} - Orion QQ 封禁菜单",
+                    f"{orion_unban_triggers} - Orion QQ 解封菜单",
                 ]
             )
         if self._can_use_group_permission(group_id, qqid, "白名单&管理员检测权限"):
             options.append(
-                f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - 白名单&管理员检测管理菜单"
+                (
+                    f"{' / '.join(self.get_group_checker_menu_triggers(group_id))} - "
+                    "白名单&管理员检测管理菜单"
+                )
             )
         if self.task_system is not None and self._can_use_group_permission(
             group_id,
@@ -865,11 +920,17 @@ class QQLinkerQQMixin:
             )
         if self._can_use_group_permission(group_id, qqid, "领地系统权限"):
             options.append(
-                f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - 领地系统云链联动版管理菜单"
+                (
+                    f"{' / '.join(self.get_group_land_menu_triggers(group_id))} - "
+                    "领地系统云链联动版管理菜单"
+                )
             )
         if self._can_use_group_permission(group_id, qqid, "公会系统权限"):
             options.append(
-                f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - 公会系统菜单（普通成员需绑定；管理员进入管理菜单）"
+                (
+                    f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
+                    "公会系统菜单（普通成员需绑定；管理员进入管理菜单）"
+                )
             )
         if not options:
             self._reply_to_qq(group_id, qqid, "当前没有可展示的联动系统触发词")
@@ -1594,7 +1655,10 @@ class QQLinkerQQMixin:
                 f"据点锁定：{'是' if guild.get('base_locked') else '否'}",
                 f"冻结：{'是' if guild.get('frozen') else '否'}",
                 f"冻结原因：{guild.get('frozen_reason') or '无'}",
-                f"活跃/完成任务：{guild.get('active_tasks', 0)} / {guild.get('completed_tasks', 0)}",
+                (
+                    f"活跃/完成任务：{guild.get('active_tasks', 0)} / "
+                    f"{guild.get('completed_tasks', 0)}"
+                ),
                 f"总贡献：{guild.get('total_contribution', 0)}",
                 f"效果：{effect_text}",
                 f"公告：{guild.get('announcement') or '无'}",
@@ -1811,11 +1875,13 @@ class QQLinkerQQMixin:
                 subtitle = f"玩家菜单 - {player_name} | 未加入公会"
                 options = ["查看公会列表", "申请加入公会", "查看公会排行", "查看贡献排行"]
                 actions = [
-                    lambda: self.qq_guild_list(
-                        group_id, qqid), lambda: self.qq_guild_player_request_join(
-                        group_id, qqid, player_name), lambda: self.qq_guild_show_rankings(
-                        group_id, qqid), lambda: self.qq_guild_show_donation_rankings(
-                        group_id, qqid), ]
+                    lambda: self.qq_guild_list(group_id, qqid),
+                    lambda: self.qq_guild_player_request_join(
+                        group_id, qqid, player_name
+                    ),
+                    lambda: self.qq_guild_show_rankings(group_id, qqid),
+                    lambda: self.qq_guild_show_donation_rankings(group_id, qqid),
+                ]
             result = self._qq_guild_run_menu(
                 group_id, qqid, subtitle, options, actions)
             if result == "back":
@@ -2006,7 +2072,10 @@ class QQLinkerQQMixin:
             self._reply_to_qq(group_id, qqid, "暂无可参与的任务")
             return
         options = [
-            f"{task.get('name', '<未知任务>')} ({task.get('current_count', 0)}/{task.get('target_count', 0)})"
+            (
+                f"{task.get('name', '<未知任务>')} "
+                f"({task.get('current_count', 0)}/{task.get('target_count', 0)})"
+            )
             for task in active_tasks[:20]
         ]
         choice = self._qq_guild_prompt(

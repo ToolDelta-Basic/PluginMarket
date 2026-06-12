@@ -26,6 +26,7 @@ class DataTransaction:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        _ = exc_tb
         if exc_type is not None or not self.success:
             self.rollback()
             fmts.print_err(f"事务回滚：{exc_val if exc_val else '操作失败'}")

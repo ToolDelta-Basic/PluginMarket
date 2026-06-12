@@ -1,5 +1,7 @@
 """Shared guild runtime and gameplay logic."""
 
+# pylint: disable=protected-access
+
 import os
 import time
 from typing import List, Optional, Tuple, Any
@@ -152,6 +154,7 @@ def _show_menu(
 
 def guild_update_data(self, args: list[str]):
     """更新过去的数据，确保所有公会都有 guild_id，且与外层 id 一致"""
+    _ = args
     updated = False
 
     # 使用统一接口加载所有公会数据
@@ -176,6 +179,7 @@ def guild_update_data(self, args: list[str]):
 
 def guild_menu_cb(self, player: Player, args: tuple):
     """公会菜单回调函数 - 增强版本"""
+    _ = args
     player_xuid = self.xuidm.get_xuid_by_name(player.name, allow_offline=True)
 
     # 强制刷新缓存以确保数据最新
@@ -221,7 +225,9 @@ def guild_menu_cb(self, player: Player, args: tuple):
 
     # 基础菜单项（总是存在）
     handlers = {
-        _menu_item_name("基础功能", "创建", "创建"): lambda: self._handle_create_guild(player, player_xuid),
+        _menu_item_name("基础功能", "创建", "创建"): (
+            lambda: self._handle_create_guild(player, player_xuid)
+        ),
         _menu_item_name("基础功能", "列表", "列表"): lambda: self._handle_list_guilds(player),
         _menu_item_name("基础功能", "查看", "查看"): lambda: self._handle_view_guild(player),
         _menu_item_name("基础功能", "成员", "成员"): lambda: self._handle_view_members(player),
@@ -229,8 +235,12 @@ def guild_menu_cb(self, player: Player, args: tuple):
         _menu_item_name("基础功能", "公告", "公告"): lambda: self._handle_announcement(player),
         _menu_item_name("基础功能", "加入", "加入"): lambda: self._handle_join_guild(player),
         _menu_item_name("基础功能", "退出", "退出"): lambda: self._handle_leave_guild(player),
-        _menu_item_name("基础功能", "管理", "管理"): lambda: self._handle_manage_members(player),
-        _menu_item_name("基础功能", "解散", "解散"): lambda: self._handle_dissolve_guild(player, player_xuid),
+        _menu_item_name("基础功能", "管理", "管理"): (
+            lambda: self._handle_manage_members(player)
+        ),
+        _menu_item_name("基础功能", "解散", "解散"): (
+            lambda: self._handle_dissolve_guild(player, player_xuid)
+        ),
     }
 
     # 追加可选功能项
@@ -290,6 +300,7 @@ def _has_inventory_space(
         item_id: str,
         count: int) -> bool:
     """检查玩家背包是否有足够空间"""
+    _ = (player, item_id, count)
     return True
 
 
@@ -420,7 +431,7 @@ def _wait_or_stopped(self, seconds: float) -> bool:
     return stop_event.wait(seconds)
 
 
-def _apply_guild_effects_to_player(
+def _apply_guild_effects_to_player(  # skipcq: PY-R1000
     self,
     player_name: str,
     guild: Optional[GuildData] = None,
@@ -602,6 +613,7 @@ def update_online_task(self):
 
 def on_player_action(self, packet):
     """监听玩家行为，用于任务进度跟踪"""
+    _ = packet
     try:
         # TODO 等待具体的数据包格式
         pass
@@ -700,7 +712,10 @@ def get_guild_rankings(
 
 
 def get_member_rankings(
-        self, guild_id: str, sort_by: str = "contribution") -> List[Tuple[GuildMember, Any]]:
+    self,
+    guild_id: str,
+    sort_by: str = "contribution",
+) -> List[Tuple[GuildMember, Any]]:
     """获取公会成员排行榜"""
     guilds = self.guild_manager.load_guilds()
     guild = guilds.get(guild_id)
@@ -774,7 +789,7 @@ def _paginate_display(
                 player.show(render_config_prompt("通用分页无效选择提示词"))
 
 
-def custom_vault_sell(self, player: Player, args: tuple):
+def custom_vault_sell(self, player: Player, args: tuple):  # skipcq: PY-R1000
     """自定义价格出售物品到仓库"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
@@ -887,6 +902,7 @@ def custom_vault_sell(self, player: Player, args: tuple):
 
 def show_item_list(self, player: Player, args: tuple):
     """显示支持的物品名称列表"""
+    _ = args
     player.show("§r========== §a支持的物品名称§r ==========")
     player.show("§7以下是系统支持的物品名称，您可以在各种功能中使用:")
     player.show("")
@@ -984,6 +1000,7 @@ def admin_clear_guild_data(self, player: Player, args: tuple):
 
 def debug_guild_menu(self, player: Player, args: tuple):
     """调试公会菜单显示问题"""
+    _ = args
     player.show("§l§c公会菜单调试信息§r")
     player.show("=" * 40)
 
@@ -1048,6 +1065,7 @@ def debug_guild_menu(self, player: Player, args: tuple):
 
 def debug_base_function(self, player: Player, args: tuple):
     """调试据点功能问题"""
+    _ = args
     player.show("§l§c据点功能调试信息§r")
     player.show("=" * 50)
 

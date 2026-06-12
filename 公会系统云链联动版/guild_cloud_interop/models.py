@@ -23,6 +23,7 @@ class GuildRank(Enum):
 
     @property
     def display_name(self):
+        """Return the display name."""
         return {
             "owner": "§c会长",
             "deputy": "§6副会长",
@@ -32,6 +33,7 @@ class GuildRank(Enum):
 
     @property
     def config_key(self):
+        """Return the config key."""
         return {
             "owner": "会长",
             "deputy": "副会长",
@@ -427,7 +429,10 @@ class GuildData:
             request
             for request in self.join_requests
             if request.status == "pending"
-            and (expire_seconds <= 0 or current_time - request.create_time <= expire_seconds)
+            and (
+                expire_seconds <= 0
+                or current_time - request.create_time <= expire_seconds
+            )
         ]
 
     def add_join_request(
@@ -656,7 +661,7 @@ class GuildData:
         }
 
     @classmethod
-    def from_dict(cls, data, outer_key=None):
+    def from_dict(cls, data, outer_key=None):  # skipcq: PY-R1000
         """Implement the from dict operation."""
         base = None
         try:

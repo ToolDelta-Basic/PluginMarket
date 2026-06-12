@@ -15,6 +15,7 @@ class LandRank(Enum):
 
     @property
     def display_name(self):
+        """Return the display name."""
         return {
             "owner": "§c领主",
             "admin": "§6管理员",

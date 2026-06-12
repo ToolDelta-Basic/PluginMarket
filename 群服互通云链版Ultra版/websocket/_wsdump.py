@@ -60,6 +60,7 @@ class VAction(argparse.Action):
         option_string: str = None,
     ) -> None:
         """Normalize verbose values from integers or repeated ``v`` flags."""
+        _ = (parser, option_string)
         if values is None:
             values = "1"
         try:
@@ -210,7 +211,7 @@ def main() -> None:  # skipcq: PY-R1000
 
         return frame.opcode, frame.data
 
-    def recv_ws() -> None:
+    def recv_ws() -> None:  # skipcq: PY-R1000
         """Continuously read websocket messages and print them to the console."""
         while True:
             opcode, data = recv()

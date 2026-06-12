@@ -195,7 +195,7 @@ class QQLinkerConfigEditorMixin:
             if result is self.CONFIG_EXIT:
                 return self.CONFIG_EXIT
 
-    def _edit_config_file_whole(
+    def _edit_config_file_whole(  # skipcq: PY-R1000
             self, ctx: dict[str, Any], item: dict[str, str]):
         """Implement the edit config file whole operation."""
         try:
@@ -511,8 +511,10 @@ class QQLinkerConfigEditorMixin:
         backup_root = os.path.abspath(self._config_backup_root())
         target = os.path.abspath(path)
         try:
-            return os.path.commonpath(
-                [backup_root, target]) == backup_root and target.lower().endswith(".json")
+            return (
+                os.path.commonpath([backup_root, target]) == backup_root
+                and target.lower().endswith(".json")
+            )
         except ValueError:
             return False
 
@@ -524,7 +526,7 @@ class QQLinkerConfigEditorMixin:
             return config_items
         return full_config
 
-    def _apply_runtime_config_file(
+    def _apply_runtime_config_file(  # skipcq: PY-R1000
             self, item: dict[str, str], full_config: dict[str, Any]) -> str:
         """Implement the apply runtime config file operation."""
         config_name = item["name"]
