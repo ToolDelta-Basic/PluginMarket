@@ -576,6 +576,7 @@ class QQLinkerBindingMixin:
                 code,
                 timeout_minutes,
             ),
+            group_id=group_id,
         )
         return True, "绑定验证码已发送"
 
@@ -595,8 +596,17 @@ class QQLinkerBindingMixin:
             self._reply_to_qq(group_id, qqid, message)
         return True
 
-    def send_private_msg(self, qqid: int, msg: str):
-        """向指定 QQ 发送私信。"""
+    def send_private_msg(
+            self,
+            qqid: int,
+            msg: str,
+            group_id: int | None = None):
+        """向指定 QQ 发送私信。
+
+        当传入 group_id 时，按“群临时会话”下发私信。这样即使机器人没有
+        把对方加为好友，也能把消息送达（OneBot 通过共同所在的群发起临时会话）。
+        不传 group_id 时退回普通好友私信，行为与旧版本一致。
+        """
         if self.ws is None:
             raise RuntimeError("WebSocket 尚未初始化")
         if not self.available:
@@ -607,9 +617,12 @@ class QQLinkerBindingMixin:
                 level="warn",
             )
             return
+        params: dict[str, Any] = {"user_id": qqid, "message": msg}
+        if group_id is not None:
+            params["group_id"] = group_id
         payload = {
             "action": "send_private_msg",
-            "params": {"user_id": qqid, "message": msg},
+            "params": params,
         }
         self.ws.send(json.dumps(payload))
 
