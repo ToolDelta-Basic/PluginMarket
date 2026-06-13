@@ -1000,7 +1000,7 @@ class QQLinkerRuntimeMixin:
         return self.api_send_group_msg(
             group_id,
             f"[CQ:at,qq={qid}] {message}",
-            remove_cq_code=False,
+            strip_cq_code=False,
         )
 
     def api_send_private_msg(

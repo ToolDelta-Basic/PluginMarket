@@ -153,9 +153,10 @@ class GuildPlugin(Plugin):
         chatbar_triggers = getattr(chatbar, "chatbar_triggers", None)
         if not isinstance(chatbar_triggers, list):
             return None
+        triggers = list(chatbar_triggers)
 
         callback = getattr(self, "_guild_menu_callback", None)
-        for candidate in chatbar_triggers:
+        for candidate in triggers:
             if getattr(candidate, "usage", None) != "公会系统指令":
                 continue
             if callback is not None and getattr(

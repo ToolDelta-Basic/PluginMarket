@@ -179,7 +179,8 @@ def _handle_rankings(self, player: Player) -> bool:
             """Format one menu item for display."""
             return (
                 f"§e{i}. §r{data[0].name}\n"
-                f"   §7会长: §f{data[0].owner} §7| 最近活跃: §a{self._format_time_ago(data[1])}\n"
+                f"   §7会长: §f{data[0].owner} "
+                f"§7| 最近活跃: §a{self._format_time_ago(data[1])}\n"
             )
     else:
         player.show("§c无效选项")
@@ -1967,7 +1968,8 @@ def _handle_list_guilds(self, player: Player) -> bool:
         """Format one menu item for display."""
         return (
             f"§e{i}. §r{g.name} §7Lv.{g.level}\n"
-            f"   §7会长: §f{g.owner} §7| 成员: §a{len(g.members)}/{Config.MAX_GUILD_MEMBERS}\n"
+            f"   §7会长: §f{g.owner} "
+            f"§7| 成员: §a{len(g.members)}/{Config.MAX_GUILD_MEMBERS}\n"
         )
 
     page = 1
