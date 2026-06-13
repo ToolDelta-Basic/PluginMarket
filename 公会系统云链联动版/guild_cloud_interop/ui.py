@@ -113,15 +113,11 @@ def format_option(line: str) -> str | None:
     match = re.match(
         r"^(?:§[0-9a-frlomnk])*●\s*(.+?)(?:\s*§7[-—]\s*|\s+-\s+)(.+)$", clean)
     if match:
-        return f"§l§b[ §e-§b ] §r§e{
-            match.group(1).strip()} §7- §f{
-            match.group(2).strip()}"
+        return f"§l§b[ §e-§b ] §r§e{match.group(1).strip()} §7- §f{match.group(2).strip()}"
 
     match = re.match(r"^([^\s]+)\s+§7[-—]\s*(.+)$", clean)
     if match:
-        return f"§l§b[ §e-§b ] §r§e{
-            match.group(1).strip()} §7- §f{
-            match.group(2).strip()}"
+        return f"§l§b[ §e-§b ] §r§e{match.group(1).strip()} §7- §f{match.group(2).strip()}"
 
     return None
 

@@ -698,8 +698,7 @@ class QQLinkerQQMixin:
             if trigger.op_only and not self.is_group_admin(group_id, qqid):
                 continue
             trigger_text = " / ".join(trigger.triggers)
-            argument_hint = f" {
-                trigger.argument_hint}" if trigger.argument_hint else ""
+            argument_hint = f" {trigger.argument_hint}" if trigger.argument_hint else ""
             permission_hint = "（管理员）" if trigger.op_only else ""
             lines.append(
                 f"外部｜{trigger_text}{argument_hint} - {trigger.usage}{permission_hint}"
@@ -1608,19 +1607,7 @@ class QQLinkerQQMixin:
         """Implement the format guild base operation."""
         if not base:
             return "未设置"
-        return f"{
-            base.get(
-                'dimension',
-                0)} ({
-            base.get(
-                'x',
-                0):.1f}, {
-                    base.get(
-                        'y',
-                        0):.1f}, {
-                            base.get(
-                                'z',
-                                0):.1f})"
+        return f"{base.get('dimension',0)} ({base.get('x',0):.1f}, {base.get('y',0):.1f}, {base.get('z',0):.1f})"
 
     @staticmethod
     def _format_guild_line(item: dict[str, Any], index: int):
@@ -1948,11 +1935,8 @@ class QQLinkerQQMixin:
             contribution = member.get("contribution", 0)
             lines.append(f"{index}. {rank} {name} 贡献 {contribution}")
         self._reply_guild_lines(
-            group_id, qqid, f"{
-                data.get(
-                    'name', guild_id)} 成员", lines or ["暂无成员"], [
-                f"共 {
-                    len(members)} 名成员"])
+            group_id, qqid, f"{data.get('name', guild_id)} 成员", lines or ["暂无成员"], [
+                f"共 {len(members)} 名成员"])
 
     def qq_guild_player_show_logs(
             self,
@@ -2039,21 +2023,11 @@ class QQLinkerQQMixin:
             return
         lines = []
         for index, task in enumerate(data[:30], start=1):
-            status = "已完成" if task.get("completed") else f"进行中 {task.get(
-                'current_count', 0)} /{task.get('target_count', 0)} "
+            status = "已完成" if task.get("completed") else f"进行中 {task.get('current_count', 0)} /{task.get('target_count', 0)} "
             joined = " 已参与" if player_name in task.get(
                 "participants", []) else ""
             lines.append(
-                f"{index}. {
-                    task.get(
-                        'name',
-                        '<未知任务>')} [{status}{joined}] 奖励 {
-                    task.get(
-                        'reward_contribution',
-                        0)}贡献/{
-                    task.get(
-                        'reward_exp',
-                        0)}经验")
+                f"{index}. {task.get('name','<未知任务>')} [{status}{joined}] 奖励 {task.get('reward_contribution',0)}贡献/{task.get('reward_exp',0)}经验")
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无任务"])
 
     def qq_guild_player_join_task(
@@ -2424,11 +2398,8 @@ class QQLinkerQQMixin:
             contribution = member.get("contribution", 0)
             lines.append(f"{index}. {rank} {name} 贡献 {contribution}")
         self._reply_guild_lines(
-            group_id, qqid, f"{
-                data.get(
-                    'name', query)} 成员", lines or ["暂无成员"], [
-                f"共 {
-                    len(members)} 名成员"])
+            group_id, qqid, f"{data.get('name', query)} 成员", lines or ["暂无成员"], [
+                f"共 {len(members)} 名成员"])
 
     def qq_guild_show_vault(self, group_id: int, qqid: int):
         """Handle the qq guild show vault QQ menu operation."""
@@ -2546,15 +2517,7 @@ class QQLinkerQQMixin:
             self._reply_result(group_id, qqid, False, msg)
             return
         lines = [
-            f"{
-                item.get(
-                    'rank', index)}. {
-                item.get(
-                    'name', '<未知>')} 分值 {
-                        item.get(
-                            'score', 0)} 会长 {
-                                item.get(
-                                    'owner', '<未知>')}" for index, item in enumerate(
+            f"{item.get('rank', index)}. {item.get('name', '<未知>')} 分值 {item.get('score', 0)} 会长 {item.get('owner', '<未知>')}" for index, item in enumerate(
                                         data, start=1)]
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无排行"])
 
@@ -2570,16 +2533,7 @@ class QQLinkerQQMixin:
             self._reply_result(group_id, qqid, False, msg)
             return
         lines = [
-            f"{index}. {
-                item.get(
-                    'player_name',
-                    '<未知>')} {
-                item.get(
-                    'guild_name',
-                    '<未知>')} 贡献 {
-                        item.get(
-                            'contribution',
-                            0)}" for index,
+            f"{index}. {item.get('player_name','<未知>')} {item.get('guild_name','<未知>')} 贡献 {item.get('contribution',0)}" for index,
             item in enumerate(
                 data,
                 start=1)]
@@ -3104,16 +3058,7 @@ class QQLinkerQQMixin:
         lines = []
         for key, event in data.items():
             lines.append(
-                f"{key}: 倍率 {
-                    event.get(
-                        'multiplier',
-                        1)} 剩余 {
-                    event.get(
-                        'remaining_seconds',
-                        0)} 秒 发起 {
-                    event.get(
-                        'actor',
-                        '<未知>')}")
+                f"{key}: 倍率 {event.get('multiplier',1)} 剩余 {event.get('remaining_seconds',0)} 秒 发起 {event.get('actor','<未知>')}")
         self._reply_guild_lines(group_id, qqid, msg, lines or ["暂无活动"])
 
     def qq_guild_start_activity(

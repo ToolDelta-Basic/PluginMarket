@@ -770,9 +770,7 @@ class QQLinkerOrionMixin:
             self.reply_result(group_id, qqid, ok, msg)
             return
         if choice == "2":
-            device_dir = f"{
-                self.orion.data_path}/{
-                self.orion.config_mgr.device_id_dir}"
+            device_dir = f"{self.orion.data_path}/{self.orion.config_mgr.device_id_dir}"
             player_data = self.build_device_history_data()
             device_data: dict[str, dict[str, list[str]]] = {}
             if os.path.isdir(device_dir):

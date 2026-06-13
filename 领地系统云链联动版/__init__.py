@@ -46,7 +46,7 @@ class LandPlugin(Plugin):
     """ToolDelta plugin entrypoint for land protection cloud interop."""
 
     name = PLUGIN_NAME
-    author = "小石潭记qwq"
+    author = "小石潭记qwq/小六神"
     version = (0, 1, 18)
 
     def __init__(self, frame):
@@ -1142,10 +1142,7 @@ class LandPlugin(Plugin):
             size_text = self._prompt_text(
                 player,
                 "创建方形领地",
-                f"请输入 长 高 宽，最大 {
-                    self.max_length} {
-                    self.max_height} {
-                    self.max_width}",
+                f"请输入 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}",
             )
             if size_text is None:
                 return
@@ -1287,8 +1284,7 @@ class LandPlugin(Plugin):
         if len(owned) >= self.max_lands_per_player:
             player.show(
                 self._error(
-                    f"你最多只能拥有 {
-                        self.max_lands_per_player} 个领地"))
+                    f"你最多只能拥有 {self.max_lands_per_player} 个领地"))
             return
 
         pos = self._get_player_coord(player.name)
@@ -1640,8 +1636,7 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {owner} 的 XUID", None
         if len([land for land in self.lands.values() if land.owner_xuid ==
                owner_member.xuid]) >= self.max_lands_per_player:
-            return False, f"{owner} 已达到最大领地数量 {
-                self.max_lands_per_player}", None
+            return False, f"{owner} 已达到最大领地数量 {self.max_lands_per_player}", None
         try:
             center_tuple = (
                 float(
@@ -1699,8 +1694,7 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         self._spawn_entity(land)
-        return True, f"已新增玩家 {owner} 的领地 '{name}'，{
-            land.range_text()}", self._land_summary(land)
+        return True, f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}", self._land_summary(land)
 
     def api_delete_land(self, land_query: str) -> Tuple[bool, str, None]:
         """Expose the api delete land API operation."""
@@ -1741,8 +1735,7 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 添加为领地 '{
-            land.name}' 的{role_name}", self._land_summary(land)
+        return True, f"已将 {player_name} 添加为领地 '{land.name}' 的{role_name}", self._land_summary(land)
 
     def api_set_member_rank(
         self,
@@ -1761,16 +1754,14 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if member is None:
-            return False, f"{player_name} 不在领地 '{
-                land.name}' 中", self._land_summary(land)
+            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
         if member.rank == LandRank.OWNER:
             return False, "所有者不能修改身份", self._land_summary(land)
         member.name = player_name
         member.rank = target_rank
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 设为领地 '{
-            land.name}' 的{role_name}", self._land_summary(land)
+        return True, f"已将 {player_name} 设为领地 '{land.name}' 的{role_name}", self._land_summary(land)
 
     def api_remove_member(self,
                           land_query: str,
@@ -1787,15 +1778,13 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if not member:
-            return False, f"{player_name} 不在领地 '{
-                land.name}' 中", self._land_summary(land)
+            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
         if member.rank == LandRank.OWNER:
             return False, "不能删除领地所有者，请先转移所有者", self._land_summary(land)
         land.members = [m for m in land.members if m.xuid != target_xuid]
         self._rebuild_player_land_cache()
         self._save_data()
-        return True, f"已从领地 '{
-            land.name}' 移除 {player_name}", self._land_summary(land)
+        return True, f"已从领地 '{land.name}' 移除 {player_name}", self._land_summary(land)
 
     def api_transfer_owner(
         self,
@@ -1823,8 +1812,7 @@ class LandPlugin(Plugin):
             land.members.append(owner_member_data)
         self._rebuild_player_land_cache()
         self._save_data()
-        return True, f"已修改领地 '{
-            land.name}' 所有者为 {owner}", self._land_summary(land)
+        return True, f"已修改领地 '{land.name}' 所有者为 {owner}", self._land_summary(land)
 
     def api_update_land_center(
         self,
@@ -1867,14 +1855,11 @@ class LandPlugin(Plugin):
                 return False, "方形领地需要提供 长 高 宽", self._land_summary(land)
             normalized_size = LandData.normalize_size(size, land.radius)
             if normalized_size[0] > self.max_length:
-                return False, f"长不能超过 {
-                    self.max_length}", self._land_summary(land)
+                return False, f"长不能超过 {self.max_length}", self._land_summary(land)
             if normalized_size[1] > self.max_height:
-                return False, f"高不能超过 {
-                    self.max_height}", self._land_summary(land)
+                return False, f"高不能超过 {self.max_height}", self._land_summary(land)
             if normalized_size[2] > self.max_width:
-                return False, f"宽不能超过 {
-                    self.max_width}", self._land_summary(land)
+                return False, f"宽不能超过 {self.max_width}", self._land_summary(land)
             land_radius = box_radius_for_size(normalized_size)
             overlap = self._get_land_edit_overlap_reason(
                 land, land.center, land_radius, "方形", normalized_size)
@@ -1888,8 +1873,7 @@ class LandPlugin(Plugin):
             except (TypeError, ValueError):
                 return False, "半径必须为整数", self._land_summary(land)
             if land_radius <= 0 or land_radius > self.max_radius:
-                return False, f"半径必须在 1~{
-                    self.max_radius} 之间", self._land_summary(land)
+                return False, f"半径必须在 1~{self.max_radius} 之间", self._land_summary(land)
             overlap = self._get_land_edit_overlap_reason(
                 land, land.center, land_radius, "圆形", None)
             if overlap:
@@ -1897,9 +1881,7 @@ class LandPlugin(Plugin):
             land.radius = land_radius
             land.size = None
         self._save_data()
-        return True, f"已修改领地 '{
-            land.name}' 范围为 {
-            land.range_text()}", self._land_summary(land)
+        return True, f"已修改领地 '{land.name}' 范围为 {land.range_text()}", self._land_summary(land)
 
     def _console_print(self, text: str):
         """Implement the console print operation."""
@@ -2070,10 +2052,7 @@ class LandPlugin(Plugin):
         self._reload_no_create_regions()
         fmts.print_suc(
             self._success(
-                f"已删除不可创建领地区域 '{
-                    region.get(
-                        '名称',
-                        choice)}'"))
+                f"已删除不可创建领地区域 '{region.get('名称',choice)}'"))
 
     def _console_add_land(self):
         """Implement the console add land operation."""
@@ -2100,10 +2079,7 @@ class LandPlugin(Plugin):
                 return
         else:
             size_text = self._console_prompt(
-                f"请输入方形领地 长 高 宽，最大 {
-                    self.max_length} {
-                    self.max_height} {
-                    self.max_width}")
+                f"请输入方形领地 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
             if size_text is None:
                 return
             size, err = self._parse_box_size_input(size_text)
@@ -2135,8 +2111,7 @@ class LandPlugin(Plugin):
         self._spawn_entity(land)
         fmts.print_suc(
             self._success(
-                f"已新增玩家 {owner} 的领地 '{name}'，{
-                    land.range_text()}"))
+                f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}"))
 
     def _console_delete_land(self):
         """Implement the console delete land operation."""
@@ -2385,10 +2360,7 @@ class LandPlugin(Plugin):
             if choice == 1:
                 if land.is_box():
                     size_text = self._console_prompt(
-                        f"请输入新的 长 高 宽，最大 {
-                            self.max_length} {
-                            self.max_height} {
-                            self.max_width}")
+                        f"请输入新的 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
                     if size_text is None:
                         continue
                     size, err = self._parse_box_size_input(size_text)
@@ -2415,8 +2387,7 @@ class LandPlugin(Plugin):
                     if radius <= 0 or radius > self.max_radius:
                         fmts.print_err(
                             self._error(
-                                f"半径必须在 1~{
-                                    self.max_radius} 之间"))
+                                f"半径必须在 1~{self.max_radius} 之间"))
                         continue
                     overlap = self._get_land_edit_overlap_reason(
                         land, land.center, radius, "圆形", None)

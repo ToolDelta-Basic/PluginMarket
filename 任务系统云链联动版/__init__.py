@@ -65,7 +65,7 @@ class TaskSystemCloudInterop(Plugin):
     """ToolDelta plugin that manages cloud-linked quest workflows."""
 
     name = "任务系统云链联动版"
-    author = "SuperScript"
+    author = "SuperScript & 小六神"
     version = (0, 0, 5)
 
     def __init__(self, frame):

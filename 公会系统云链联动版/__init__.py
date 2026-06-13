@@ -48,7 +48,7 @@ class GuildPlugin(Plugin):
     """ToolDelta plugin entrypoint for guild cloud interop."""
 
     name = "公会系统云链联动版"
-    author = "星林 & 夏至"
+    author = "星林 & 夏至 & 小六神"
     version = (0, 1, 7)
 
     def __init__(self, frame: ToolDelta):

@@ -475,14 +475,12 @@ def api_request_join_guild_as_player(
     guilds = _load_guilds(self)
     current_guild, _ = _find_player_guild(self, name, guilds)
     if current_guild is not None:
-        return False, f"你已经加入了公会 {
-            current_guild.name}", _guild_summary(current_guild)
+        return False, f"你已经加入了公会 {current_guild.name}", _guild_summary(current_guild)
     target_guild, err = _find_guild(self, guild_query, guilds)
     if target_guild is None:
         return False, err, None
     if _ensure_settings(target_guild).get("frozen", False):
-        return False, f"公会 {
-            target_guild.name} 已被冻结，暂不能提交申请", _guild_summary(target_guild)
+        return False, f"公会 {target_guild.name} 已被冻结，暂不能提交申请", _guild_summary(target_guild)
     if len(target_guild.members) >= Config.MAX_GUILD_MEMBERS:
         return False, "该公会已满员", _guild_summary(target_guild)
     if not target_guild.add_join_request(name, reason):
@@ -492,8 +490,7 @@ def api_request_join_guild_as_player(
     notify = getattr(self, "_notify_join_request_admins", None)
     if callable(notify):
         notify(target_guild, name)
-    return True, f"申请已提交至 {
-        target_guild.name} 的申请队列", _guild_summary(target_guild)
+    return True, f"申请已提交至 {target_guild.name} 的申请队列", _guild_summary(target_guild)
 
 
 def api_leave_guild_as_player(
@@ -716,9 +713,7 @@ def api_set_guild_exp(
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
     suffix = f"，触发升级到 {level_ups[-1]} 级" if level_ups else ""
-    return True, f"已设置 {
-        guild.name} 经验为 {
-        guild.exp}{suffix}", _guild_summary(guild)
+    return True, f"已设置 {guild.name} 经验为 {guild.exp}{suffix}", _guild_summary(guild)
 
 
 def api_transfer_guild_owner(self,
@@ -774,8 +769,7 @@ def api_force_join_guild(self,
         return False, err, None
     old_guild, _ = _find_player_guild(self, name, guilds)
     if old_guild and old_guild.guild_id == target_guild.guild_id:
-        return True, f"{name} 已在公会 {
-            target_guild.name}", _guild_summary(target_guild)
+        return True, f"{name} 已在公会 {target_guild.name}", _guild_summary(target_guild)
     if old_guild:
         old_guild.members = [
             member for member in old_guild.members if member.name != name]
@@ -788,8 +782,7 @@ def api_force_join_guild(self,
     target_guild.add_audit_log("guild_force_join", _actor(actor), target=name)
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已将 {name} 加入公会 {
-        target_guild.name}", _guild_summary(target_guild)
+    return True, f"已将 {name} 加入公会 {target_guild.name}", _guild_summary(target_guild)
 
 
 def api_force_leave_guild(self,
@@ -900,10 +893,7 @@ def api_backup_guild_vault(self,
     guild.add_audit_log("vault_backup", _actor(actor), detail=str(label or ""))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已备份 {
-        guild.name} 仓库，当前保留 {
-        len(
-            settings['vault_backups'])} 份", backup
+    return True, f"已备份 {guild.name} 仓库，当前保留 {len(settings['vault_backups'])} 份", backup
 
 
 def api_clear_guild_vault(self,
@@ -929,8 +919,7 @@ def api_clear_guild_vault(self,
         detail=f"removed={removed}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已清空 {
-        guild.name} 仓库，共删除 {removed} 件物品", _guild_summary(guild)
+    return True, f"已清空 {guild.name} 仓库，共删除 {removed} 件物品", _guild_summary(guild)
 
 
 def api_delete_guild_vault_item(self,
@@ -962,8 +951,7 @@ def api_delete_guild_vault_item(self,
     guild.add_log(f"{_actor(actor)} 删除了仓库物品 {item.item_id} x{item.count}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已删除 {
-        guild.name} 仓库第 {parsed} 件物品", _vault_item_summary(
+    return True, f"已删除 {guild.name} 仓库第 {parsed} 件物品", _vault_item_summary(
         item, parsed)
 
 
@@ -1075,9 +1063,7 @@ def api_refresh_guild_tasks(
             len(created)))
     if created and not _save_guilds(self, guilds):
         return False, "保存公会数据失败", []
-    return True, f"已为 {
-        guild.name} 刷新任务，新增 {
-        len(created)} 个", [
+    return True, f"已为 {guild.name} 刷新任务，新增 {len(created)} 个", [
             _task_summary(task) for task in created]
 
 
@@ -1359,8 +1345,7 @@ def api_set_guild_effect(self,
         detail=f"{key}={parsed_level}")
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已设置 {
-        guild.name} 效果 {key} 为 {parsed_level} 级", _guild_summary(guild)
+    return True, f"已设置 {guild.name} 效果 {key} 为 {parsed_level} 级", _guild_summary(guild)
 
 
 def api_add_guild_funds(self,
@@ -1384,9 +1369,7 @@ def api_add_guild_funds(self,
     guild.add_audit_log("funds_add", _actor(actor), detail=str(parsed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已调整 {
-        guild.name} 资金，当前 {
-        settings['funds']}", _guild_summary(guild)
+    return True, f"已调整 {guild.name} 资金，当前 {settings['funds']}", _guild_summary(guild)
 
 
 def api_set_guild_funds(self,
@@ -1437,9 +1420,7 @@ def api_add_member_contribution(self,
                         target=member.name, detail=str(parsed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已调整 {
-        member.name} 贡献，当前 {
-        member.contribution}", _member_summary(member)
+    return True, f"已调整 {member.name} 贡献，当前 {member.contribution}", _member_summary(member)
 
 
 def api_set_member_contribution(self,
@@ -1511,8 +1492,7 @@ def api_reset_market_prices(self,
         detail=str(removed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已重置 {
-        guild.name} 市场价格，删除 {removed} 条自定义价格", _guild_summary(guild)
+    return True, f"已重置 {guild.name} 市场价格，删除 {removed} 条自定义价格", _guild_summary(guild)
 
 
 def api_get_guild_logs(self, guild_query: str,

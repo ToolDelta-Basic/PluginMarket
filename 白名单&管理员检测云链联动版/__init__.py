@@ -19,7 +19,7 @@ class WhitelistAndOpCheck(Plugin):
     """负责白名单与 OP 状态校验，并对外暴露管理接口。"""
 
     name = "白名单&管理员检测云链联动版"
-    author = "猫七街"
+    author = "猫七街 & 小六神"
     version = (1, 1, 4)
     description = "白名单与管理员状态检测，并向其他插件暴露可复用的管理 API。"
 

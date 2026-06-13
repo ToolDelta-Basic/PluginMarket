@@ -85,10 +85,7 @@ def _show_menu(  # skipcq: PY-R1000
     # 调试日志
     if guild:
         fmts.print_inf(
-            f"菜单显示 - 玩家: {
-                player.name}, 公会: {
-                guild.name}, 成员职位: {
-                member.rank.value if member else 'None'}, 是否会长: {is_owner}")
+            f"菜单显示 - 玩家: {player.name}, 公会: {guild.name}, 成员职位: {member.rank.value if member else 'None'}, 是否会长: {is_owner}")
 
     menu_config = getattr(self, "_guild_menu_config_override", None) or _menu_config()
     base_items = [
@@ -325,10 +322,7 @@ def _handle_base_menu(self, player: Player) -> bool:
         dim_name = Config.DIMENSION_NAMES.get(
             base.dimension, f"维度{base.dimension}")
         player.show(
-            f"§7当前据点: §f{dim_name} ({
-                base.x:.1f}, {
-                base.y:.1f}, {
-                base.z:.1f})")
+            f"§7当前据点: §f{dim_name} ({base.x:.1f}, {base.y:.1f}, {base.z:.1f})")
         if can_return:
             player.show("§e1. §f传送到据点")
     else:
@@ -386,8 +380,7 @@ def _send_guild_message(self, guild: GuildData, sender: str, message: str):
         return
 
     # 构建消息
-    chat_msg = f"§d✧§b[公会]§d✦ {
-        member.rank.display_name} §e{sender}§7: §f{message}"
+    chat_msg = f"§d✧§b[公会]§d✦ {member.rank.display_name} §e{sender}§7: §f{message}"
 
     # 发送给所有在线的公会成员
     for member in guild.members:
@@ -474,8 +467,7 @@ def _apply_guild_effects_to_player(  # skipcq: PY-R1000
             amplifier = max(int(raw_level) - 1, 0)
         except (TypeError, ValueError):
             fmts.print_err(
-                f"公会 {
-                    guild.name} 的效果 {effect_name} 等级无效: {raw_level}")
+                f"公会 {guild.name} 的效果 {effect_name} 等级无效: {raw_level}")
             continue
 
         cache_key = (player_name, effect_name)
@@ -1103,13 +1095,7 @@ def debug_base_function(self, player: Player, args: tuple):
             player.show(f"  维度: §f{base.dimension}")
             player.show(f"  坐标: §f({base.x}, {base.y}, {base.z})")
             player.show(
-                f"  坐标类型: §f{
-                    type(
-                        base.x).__name__}, {
-                    type(
-                        base.y).__name__}, {
-                    type(
-                        base.z).__name__}")
+                f"  坐标类型: §f{type(base.x).__name__}, {type(base.y).__name__}, {type(base.z).__name__}")
 
             # 验证坐标有效性
             try:

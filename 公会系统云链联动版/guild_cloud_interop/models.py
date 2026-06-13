@@ -496,8 +496,7 @@ class GuildData:
             request.handle_time = current_time
             request.result_reason = result_reason
             self.add_log(
-                f"{handler} {
-                    '批准' if approved else '拒绝'}了 {player_name} 的加入申请")
+                f"{handler} {'批准' if approved else '拒绝'}了 {player_name} 的加入申请")
             self.add_audit_log(
                 "join_request_approve" if approved else "join_request_reject",
                 handler,
@@ -632,10 +631,7 @@ class GuildData:
         self.add_audit_log("vault_cancel", actor, target=item.seller,
                            detail=item.item_id, now=now)
         self.add_log(
-            f"{actor} 撤回了 {
-                item.seller} 上架的 {
-                item.item_id} x{
-                item.count}")
+            f"{actor} 撤回了 {item.seller} 上架的 {item.item_id} x{item.count}")
         return item
 
     def to_dict(self):

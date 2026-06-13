@@ -1,5 +1,5 @@
 {
-  "author": "任务系统",
+  "author": "SuperScript & 小六神",
   "version": "0.0.5",
   "plugin-type": "classic",
   "description": "为租赁服添加一套自定义的任务（云链互通版），支持配置文件与任务文件热载入。",

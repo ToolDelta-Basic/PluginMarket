@@ -135,9 +135,9 @@ class QQLinkerConfigEditorMixin:
         while True:
             files = self._discover_config_files()
             if not files:
+                config_dir = self.CONFIG_FILE_DIR
                 self._config_error(
-                    ctx, f"未找到 {
-                        self.CONFIG_FILE_DIR}/*.json 配置文件")
+                    ctx, f"未找到 {config_dir}/*.json 配置文件")
                 return self.CONFIG_BACK
             per_page = self.get_group_config_file_items_per_page(
                 self._config_group_id(ctx))
