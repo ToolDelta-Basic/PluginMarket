@@ -1,6 +1,5 @@
 """QQ group menu and command handlers for Ultra."""
 
-import re
 import time
 from typing import Any
 
@@ -228,7 +227,7 @@ class QQLinkerQQMixin:
             self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
         return selected
 
-    def _prompt_paginated_help_actions(
+    def _prompt_paginated_help_actions(  # skipcq: PY-R1000
         self,
         group_id: int,
         qqid: int,
@@ -622,7 +621,7 @@ class QQLinkerQQMixin:
         ):
             lines.append(
                 f"{' / '.join(self.get_group_player_list_triggers(group_id))} - 查看玩家列表"
-        )
+            )
         lines.append(
             (
                 f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
@@ -783,7 +782,7 @@ class QQLinkerQQMixin:
         ):
             options.append(
                 f"{' / '.join(self.get_group_player_list_triggers(group_id))} - 查看玩家列表"
-        )
+            )
         options.append(
             (
                 f"{' / '.join(self.get_group_guild_menu_triggers(group_id))} - "
@@ -1799,7 +1798,7 @@ class QQLinkerQQMixin:
             return None
         return state
 
-    def qq_guild_player_menu(self, group_id: int, qqid: int):
+    def qq_guild_player_menu(self, group_id: int, qqid: int):  # skipcq: PY-R1000
         """普通群成员可使用的公会菜单，要求 QQ 已绑定游戏账号。"""
         if not self.ensure_guild_system(group_id, qqid):
             return
@@ -2465,7 +2464,8 @@ class QQLinkerQQMixin:
         if not ok or not data:
             self._reply_result(group_id, qqid, False, msg)
             return
-        logs = [str(item) for item in data.get("logs", [])[-limit:]]
+        logs = [str(item) for item in data.get("logs", [])]
+        logs = logs[-int(limit):]
         self._reply_guild_lines(
             group_id,
             qqid,
@@ -3316,7 +3316,7 @@ class QQLinkerQQMixin:
             return
         handler(group_id, qqid)
 
-    def qq_land_list(self, group_id: int, qqid: int):
+    def qq_land_list(self, group_id: int, qqid: int):  # skipcq: PY-R1000
         """Handle the qq land list QQ menu operation."""
         if not self._ensure_group_permission(group_id, qqid, "领地系统权限"):
             return

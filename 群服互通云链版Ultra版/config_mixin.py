@@ -1067,7 +1067,6 @@ class QQLinkerConfigMixin:
         permission_cfg = self._permission_cfg_for_group(group_id)
         if permission_cfg is None:
             return
-        owner_qq = self.get_group_owner_qq(group_id)
         normalized = {
             "admins": self.normalize_int_list(
                 state.get(

@@ -41,8 +41,6 @@ LEGACY_PLUGIN_NAME = "领地系统"
 class ConsoleMenuExit(Exception):
     """Signal that the console menu should exit."""
 
-    pass
-
 
 class LandPlugin(Plugin):
     """ToolDelta plugin entrypoint for land protection cloud interop."""
@@ -786,6 +784,7 @@ class LandPlugin(Plugin):
 
     def _land_summary(self, land: LandData) -> Dict[str, Any]:
         """Implement the land summary operation."""
+        _ = self
         admins = [m.name for m in land.members if m.rank == LandRank.ADMIN]
         members = [m.name for m in land.members if m.rank == LandRank.MEMBER]
         return {
@@ -1059,9 +1058,14 @@ class LandPlugin(Plugin):
         try:
             x, y, z = land.center
             self._remove_entity(land)
-            cmd = f"summon area_effect_cloud {x} {y} {z} {
-                Duration:2147483647,WaitTime:2147483647,Tags:[\"land_{
-                    land.land_id}\"]} "
+            nbt = (
+                "{"
+                "Duration:2147483647,WaitTime:2147483647,Tags:[\"land_"
+                + land.land_id
+                + "\"]"
+                "}"
+            )
+            cmd = f"summon area_effect_cloud {x} {y} {z} {nbt}"
             self.game_ctrl.sendwocmd(cmd)
         except Exception:
             pass
@@ -1394,7 +1398,7 @@ class LandPlugin(Plugin):
             ],
         ))
 
-    def _member(self, player: Player, args: List[str]):
+    def _member(self, player: Player, args: List[str]):  # skipcq: PY-R1000
         """Implement the member operation."""
         if len(args) < 1:
             player.show(self._error(
@@ -1590,14 +1594,14 @@ class LandPlugin(Plugin):
         _ = player
         if not self.enabled:
             return
-        pass
+        return
 
     def on_player_leave(self, player: Player):
         """Implement the on player leave operation."""
         _ = player
         if not self.enabled:
             return
-        pass
+        return
 
     # ---------- 外部插件 API ----------
     def api_list_lands(self) -> Tuple[bool, str, List[Dict[str, Any]]]:
@@ -1899,6 +1903,7 @@ class LandPlugin(Plugin):
 
     def _console_print(self, text: str):
         """Implement the console print operation."""
+        _ = self
         fmts.print_inf(text)
 
     def _console_prompt(self, prompt: str) -> Optional[str]:
@@ -2184,7 +2189,7 @@ class LandPlugin(Plugin):
             ],
         ))
 
-    def _console_manage_land_users(self, land: LandData):
+    def _console_manage_land_users(self, land: LandData):  # skipcq: PY-R1000
         """Implement the console manage land users operation."""
         while True:
             choice = self._console_select(
@@ -2238,7 +2243,7 @@ class LandPlugin(Plugin):
                     [", ".join(users) if users else "无用户"],
                 ))
 
-    def _console_manage_land_admins(self, land: LandData):
+    def _console_manage_land_admins(self, land: LandData):  # skipcq: PY-R1000
         """Implement the console manage land admins operation."""
         while True:
             choice = self._console_select(

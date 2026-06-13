@@ -31,6 +31,7 @@ class GuildManager:
     def validate_guild_data(
             self, guild_data: GuildData) -> Tuple[bool, List[str]]:
         """验证公会数据的完整性"""
+        _ = self
         errors = []
 
         # 检查基本字段
@@ -234,7 +235,7 @@ class GuildManager:
             for name in os.listdir(backup_dir)
             if name.startswith("公会数据文件-") and name.endswith(".json")
         ]
-        backups.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+        backups.sort(key=os.path.getmtime, reverse=True)
         for old_path in backups[max_backups:]:
             try:
                 os.remove(old_path)

@@ -133,12 +133,15 @@ class QQLinkerRuntimeMixin:
                 session_id = self._start_ws_session()
 
                 def _on_message(ws_obj, message, sid=session_id):
+                    """Forward websocket messages to the active session handler."""
                     return self.on_ws_message(ws_obj, message, sid) and None
 
                 def _on_error(ws_obj, error, sid=session_id):
+                    """Forward websocket errors to the active session handler."""
                     return self.on_ws_error(ws_obj, error, sid)
 
                 def _on_close(ws_obj, code, reason, sid=session_id):
+                    """Forward websocket close events to the active session handler."""
                     return self.on_ws_close(ws_obj, code, reason, sid)
 
                 ws_app = websocket.WebSocketApp(
@@ -634,7 +637,7 @@ class QQLinkerRuntimeMixin:
         player = chat.player.name
         msg = chat.msg
         if not self.ws:
-            return
+            return False
         for group_id, group_cfg in self.iter_game_to_group_targets():
             can_send, filtered_msg = self.should_forward_game_message(
                 msg, group_cfg)
@@ -647,6 +650,7 @@ class QQLinkerRuntimeMixin:
                     group_cfg["游戏到群"]["转发格式"],
                 ),
             )
+        return False
 
     def execute_triggers(self, group_id: int, qqid: int, msg: str):
         """对一条群消息做内置命令和外挂命令的统一分发。"""
@@ -958,7 +962,7 @@ class QQLinkerRuntimeMixin:
         self,
         group_id: int | str,
         message: str,
-        remove_cq_code: bool = True,
+        strip_cq_code: bool = True,
     ) -> tuple[bool, str]:
         """Send a QQ group message and return a stable result tuple."""
         try:
@@ -975,7 +979,7 @@ class QQLinkerRuntimeMixin:
             self.sendmsg(
                 gid,
                 str(message),
-                do_remove_cq_code=bool(remove_cq_code))
+                do_remove_cq_code=bool(strip_cq_code))
         except Exception as err:
             return False, f"发送群消息失败: {err}"
         return True, "已发送群消息"

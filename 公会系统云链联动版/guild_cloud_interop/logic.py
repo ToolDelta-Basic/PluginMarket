@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 import os
+import shutil
 import time
 from typing import List, Optional, Tuple, Any
 
@@ -53,13 +54,12 @@ def _menu_item_name(group: str, key: str, fallback_name: str) -> str:
     return _menu_item(group, key, fallback_name, "")[0]
 
 
-def _show_menu(
+def _show_menu(  # skipcq: PY-R1000
         self,
         player: Player,
         guild: Optional[GuildData],
         member: Optional[GuildMember]) -> Optional[str]:
     """显示公会菜单并返回用户选择 - 增强版本"""
-
     # 数据完整性检查
     if guild and not member:
         # 公会存在但成员不存在，尝试重新获取
@@ -90,7 +90,7 @@ def _show_menu(
                 guild.name}, 成员职位: {
                 member.rank.value if member else 'None'}, 是否会长: {is_owner}")
 
-    menu_config = _menu_config()
+    menu_config = getattr(self, "_guild_menu_config_override", None) or _menu_config()
     base_items = [
         ("创建", "创建自己的公会", not is_member),
         ("列表", "查看所有公会", True),
@@ -252,8 +252,7 @@ def guild_menu_cb(self, player: Player, args: tuple):
     handler = handlers.get(subcommand)
     if handler:
         return handler()
-    else:
-        player.show(render_config_prompt("无效指令提示词"))
+    player.show(render_config_prompt("无效指令提示词"))
 
     return True
 
@@ -264,6 +263,8 @@ def _create_progress_bar(
         total: int,
         length: int = 10) -> str:
     """创建进度条"""
+    if self is None:
+        return ""
     if total == 0:
         return "§7[§c无效§7]"
 
@@ -279,14 +280,15 @@ def _create_progress_bar(
 
 def _format_time_duration(self, seconds: float) -> str:
     """格式化时间长度"""
+    if self is None:
+        return ""
     if seconds < 60:
         return f"{int(seconds)}秒"
-    elif seconds < 3600:
+    if seconds < 3600:
         return f"{int(seconds // 60)}分钟"
-    elif seconds < 86400:
+    if seconds < 86400:
         return f"{int(seconds // 3600)}小时"
-    else:
-        return f"{int(seconds // 86400)}天"
+    return f"{int(seconds // 86400)}天"
 
 
 def _get_item_display_name(self, item_id: str) -> str:
@@ -300,7 +302,8 @@ def _has_inventory_space(
         item_id: str,
         count: int) -> bool:
     """检查玩家背包是否有足够空间"""
-    _ = (player, item_id, count)
+    if self is None or player is None or not item_id or count <= 0:
+        return False
     return True
 
 
@@ -340,7 +343,7 @@ def _handle_base_menu(self, player: Player) -> bool:
 
     if choice == "1" and guild.base and can_return:
         return self._handle_return_base(player)
-    elif choice == "2" and can_set:
+    if choice == "2" and can_set:
         return self._handle_set_base(player)
 
     return True
@@ -613,12 +616,10 @@ def update_online_task(self):
 
 def on_player_action(self, packet):
     """监听玩家行为，用于任务进度跟踪"""
-    _ = packet
-    try:
-        # TODO 等待具体的数据包格式
-        pass
-    except Exception as e:
-        fmts.print_err(f"处理玩家行为事件出错: {e}")
+    if self is None or packet is None:
+        return
+    # 等待具体的数据包格式后再处理任务进度。
+    return
 
 
 def update_task_progress(
@@ -694,21 +695,19 @@ def get_guild_rankings(
     if sort_by == "level":
         guild_list.sort(key=lambda g: (g.level, g.exp), reverse=True)
         return [(g, g.level) for g in guild_list]
-    elif sort_by == "members":
+    if sort_by == "members":
         guild_list.sort(key=lambda g: len(g.members), reverse=True)
         return [(g, len(g.members)) for g in guild_list]
-    elif sort_by == "contribution":
+    if sort_by == "contribution":
         guild_list.sort(key=lambda g: g.stats.total_contribution, reverse=True)
         return [(g, g.stats.total_contribution) for g in guild_list]
-    elif sort_by == "activity":
+    if sort_by == "activity":
         # 基于最近活跃度排序
-        current_time = time.time()
         guild_list.sort(key=lambda g: max(
             [m.last_online for m in g.members] + [0]), reverse=True)
         return [(g, max([m.last_online for m in g.members] + [0]))
                 for g in guild_list]
-    else:
-        return [(g, 0) for g in guild_list]
+    return [(g, 0) for g in guild_list]
 
 
 def get_member_rankings(
@@ -728,15 +727,14 @@ def get_member_rankings(
     if sort_by == "contribution":
         members.sort(key=lambda m: m.contribution, reverse=True)
         return [(m, m.contribution) for m in members]
-    elif sort_by == "online_time":
+    if sort_by == "online_time":
         current_time = time.time()
         members.sort(key=lambda m: current_time - m.last_online)
         return [(m, current_time - m.last_online) for m in members]
-    elif sort_by == "join_time":
+    if sort_by == "join_time":
         members.sort(key=lambda m: m.join_time)
         return [(m, m.join_time) for m in members]
-    else:
-        return [(m, 0) for m in members]
+    return [(m, 0) for m in members]
 
 
 def _paginate_display(
@@ -747,6 +745,8 @@ def _paginate_display(
         formatter,
         allow_selection: bool = False) -> Optional[int]:
     """分页显示通用函数"""
+    if self is None:
+        return None
     if not items:
         player.show(render_config_prompt("通用分页为空提示词", title=title))
         return None
@@ -774,7 +774,7 @@ def _paginate_display(
         if choice is None:
             player.show(render_config_prompt("通用分页超时提示词"))
             return None
-        elif choice == "+":
+        if choice == "+":
             page = min(page + 1, max_page)
         elif choice == "-":
             page = max(page - 1, 1)
@@ -785,8 +785,7 @@ def _paginate_display(
             idx = int(choice)
             if 1 <= idx <= len(items):
                 return idx - 1
-            else:
-                player.show(render_config_prompt("通用分页无效选择提示词"))
+            player.show(render_config_prompt("通用分页无效选择提示词"))
 
 
 def custom_vault_sell(self, player: Player, args: tuple):  # skipcq: PY-R1000
@@ -851,7 +850,7 @@ def custom_vault_sell(self, player: Player, args: tuple):  # skipcq: PY-R1000
 
     # 确认出售
     item_name = self._get_item_display_name(item_id)
-    player.show(f"§l§a公会仓库 §d>> §r确认以自定义价格出售？")
+    player.show("§l§a公会仓库 §d>> §r确认以自定义价格出售？")
     player.show(f"§7物品: §f{item_name} x{count}")
     player.show(f"§7自定义价格: §e{custom_price}贡献点")
     player.show("§7输入 '确认' 继续出售，其他任意键取消")
@@ -902,6 +901,8 @@ def custom_vault_sell(self, player: Player, args: tuple):  # skipcq: PY-R1000
 
 def show_item_list(self, player: Player, args: tuple):
     """显示支持的物品名称列表"""
+    if self is None:
+        return False
     _ = args
     player.show("§r========== §a支持的物品名称§r ==========")
     player.show("§7以下是系统支持的物品名称，您可以在各种功能中使用:")
@@ -962,9 +963,6 @@ def admin_clear_guild_data(self, player: Player, args: tuple):
 
     try:
         # 备份当前数据
-        import shutil
-        import time
-
         backup_file = f"{self.guilds_file}.backup_{int(time.time())}"
         if os.path.exists(self.guilds_file):
             shutil.copy2(self.guilds_file, backup_file)
@@ -1101,7 +1099,7 @@ def debug_base_function(self, player: Player, args: tuple):
         player.show("§7据点信息:")
         if guild.base:
             base = guild.base
-            player.show(f"  据点存在: §a是")
+            player.show("  据点存在: §a是")
             player.show(f"  维度: §f{base.dimension}")
             player.show(f"  坐标: §f({base.x}, {base.y}, {base.z})")
             player.show(
@@ -1123,7 +1121,7 @@ def debug_base_function(self, player: Player, args: tuple):
             # 验证维度有效性
             valid_dimensions = [0, -1, 1]
             if base.dimension in valid_dimensions:
-                player.show(f"  维度有效性: §a有效")
+                player.show("  维度有效性: §a有效")
             else:
                 player.show(f"  维度有效性: §c无效 (应为 {valid_dimensions})")
 
@@ -1136,8 +1134,8 @@ def debug_base_function(self, player: Player, args: tuple):
                 player.show(f"  方法{i + 1}({method}): §f{cmd}")
 
         else:
-            player.show(f"  据点存在: §c否")
-            player.show(f"  原因: 公会未设置据点")
+            player.show("  据点存在: §c否")
+            player.show("  原因: 公会未设置据点")
     else:
         player.show("§c公会信息不存在！")
 

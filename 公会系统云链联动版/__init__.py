@@ -1,7 +1,7 @@
 """Guild cloud interop ToolDelta plugin entrypoint."""
 
 from threading import Event
-from typing import Dict
+from typing import Dict, TYPE_CHECKING as PY_TYPE_CHECKING
 
 from tooldelta import (
     FrameExit,
@@ -27,6 +27,10 @@ from guild_cloud_interop.config_watcher import (
     refresh_config_file_state,
 )
 from guild_cloud_interop.ui import wrap_player
+
+if PY_TYPE_CHECKING:
+    from 前置_聊天栏菜单 import ChatbarMenu
+    from 前置_玩家XUID获取 import XUIDGetter
 
 
 def _normalize_chatbar_trigger(trigger: object, fallback: str = "公会") -> str:
@@ -59,6 +63,9 @@ class GuildPlugin(Plugin):
         self._guild_menu_callback = None
         self._guild_menu_chatbar_entry = None
         self._guild_runtime_events = {}
+        self._config_file_state = None
+        self.chatbar = None
+        self.xuidm = None
         self.item_matcher = ItemNameMatcher()
         self.ListenPreload(self.on_def)
         self.ListenActive(self.on_inject)
@@ -105,14 +112,14 @@ class GuildPlugin(Plugin):
         self.xuidm = self.GetPluginAPI("XUID获取")
 
         if TYPE_CHECKING:
-            from 前置_聊天栏菜单 import ChatbarMenu
-            from 前置_玩家XUID获取 import XUIDGetter
-
-            self.chatbar: ChatbarMenu
-            self.xuidm: XUIDGetter
+            self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
+            self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
 
     def ui_callback(self, callback):
         """Implement the ui callback operation."""
+        if self is None:
+            return callback
+
         def wrapped(player, args):
             """Implement the wrapped operation."""
             return callback(wrap_player(player), args)
@@ -121,6 +128,8 @@ class GuildPlugin(Plugin):
 
     def _guild_menu_commands(self) -> list[str]:
         """Implement the guild menu commands operation."""
+        if self is None:
+            return ["公会"]
         raw_triggers = getattr(Config, "GUILD_MENU_TRIGGER", ["公会"])
         if isinstance(raw_triggers, str):
             raw_triggers = [raw_triggers]
@@ -136,9 +145,9 @@ class GuildPlugin(Plugin):
 
     def _find_guild_menu_chatbar_entry(self):
         """Implement the find guild menu chatbar entry operation."""
-        entry = getattr(self, "_guild_menu_chatbar_entry", None)
-        if entry is not None:
-            return entry
+        chatbar_entry = getattr(self, "_guild_menu_chatbar_entry", None)
+        if chatbar_entry is not None:
+            return chatbar_entry
 
         chatbar = getattr(self, "chatbar", None)
         chatbar_triggers = getattr(chatbar, "chatbar_triggers", None)
@@ -158,16 +167,16 @@ class GuildPlugin(Plugin):
 
     def sync_runtime_config_bindings(self):
         """Apply hot-reloaded config values that are registered outside Config."""
-        entry = self._find_guild_menu_chatbar_entry()
-        if entry is None:
+        chatbar_entry = self._find_guild_menu_chatbar_entry()
+        if chatbar_entry is None:
             return
 
         commands = self._guild_menu_commands()
-        current_commands = list(getattr(entry, "triggers", []))
+        current_commands = list(getattr(chatbar_entry, "triggers", []))
         if current_commands == commands:
             return
 
-        entry.triggers = commands
+        chatbar_entry.triggers = commands
 
     def on_inject(self):
         """Implement the on inject operation."""

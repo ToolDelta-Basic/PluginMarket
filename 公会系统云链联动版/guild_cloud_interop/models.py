@@ -70,6 +70,7 @@ PERMISSION_CONFIG_KEYS = {
 @dataclass
 class GuildBase:
     """公会据点信息"""
+
     dimension: int
     x: float
     y: float
@@ -87,6 +88,7 @@ class GuildBase:
 @dataclass
 class VaultItem:
     """仓库物品信息"""
+
     item_id: str
     count: int
     price: int  # 贡献点价格
@@ -118,6 +120,7 @@ class VaultItem:
 @dataclass
 class GuildMember:
     """公会成员信息"""
+
     name: str
     rank: GuildRank
     join_time: float
@@ -149,6 +152,7 @@ class GuildMember:
 @dataclass
 class GuildJoinRequest:
     """公会加入申请记录"""
+
     player_name: str
     reason: str = ""
     create_time: float = field(default_factory=time.time)
@@ -186,6 +190,7 @@ class GuildJoinRequest:
 @dataclass
 class VaultTradeLog:
     """公会仓库交易日志"""
+
     action: str
     item_id: str
     count: int
@@ -229,6 +234,7 @@ class VaultTradeLog:
 @dataclass
 class GuildAuditLog:
     """公会审计日志"""
+
     action: str
     actor: str
     target: str = ""
@@ -263,6 +269,7 @@ class GuildAuditLog:
 @dataclass
 class GuildTask:
     """公会任务"""
+
     task_id: str
     name: str
     description: str
@@ -318,6 +325,7 @@ class GuildTask:
 @dataclass
 class GuildStats:
     """公会统计数据"""
+
     total_contribution: int = 0
     total_trades: int = 0
     total_online_time: int = 0
@@ -349,6 +357,7 @@ class GuildStats:
 @dataclass
 class GuildData:
     """公会完整数据"""
+
     guild_id: str
     name: str
     owner: str
@@ -403,7 +412,7 @@ class GuildData:
                 {}).get(
                 "审计日志保留数量",
                 200))
-        if max_logs > 0 and len(self.audit_logs) > max_logs:
+        if 0 < max_logs < len(self.audit_logs):
             self.audit_logs = self.audit_logs[-max_logs:]
 
     def get_member(self, name: str) -> Optional[GuildMember]:
@@ -454,9 +463,9 @@ class GuildData:
                 return False
 
         max_pending = int(join_config.get("每个公会最多待处理申请数", 30))
-        if max_pending > 0 and len(
+        if 0 < max_pending <= len(
             self.pending_join_requests(
-                now=current_time)) >= max_pending:
+                now=current_time)):
             return False
 
         self.join_requests.append(GuildJoinRequest(
@@ -605,7 +614,7 @@ class GuildData:
                 {}).get(
                 "交易日志保留数量",
                 120))
-        if max_logs > 0 and len(self.vault_trade_logs) > max_logs:
+        if 0 < max_logs < len(self.vault_trade_logs):
             self.vault_trade_logs = self.vault_trade_logs[-max_logs:]
 
     def cancel_vault_item(

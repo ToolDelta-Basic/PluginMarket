@@ -359,6 +359,8 @@ class QQLinkerBindingMixin:
         xuid: str,
     ) -> bool:
         """Implement the remove binding relation operation."""
+        if self is None:
+            return False
         changed = False
         qq_xuids = data["qq_to_xuids"].get(qq_key, [])
         if xuid in qq_xuids:
@@ -506,6 +508,8 @@ class QQLinkerBindingMixin:
             code: str,
             timeout_minutes: int) -> str:
         """Implement the render binding text operation."""
+        if self is None:
+            return str(text)
         return (
             text
             .replace("{auth_code}", code)

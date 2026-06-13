@@ -30,20 +30,24 @@ COLOR_CODE_RE = re.compile(r"§.")
 
 
 def _plain(text: object) -> str:
+    """Return text without Minecraft color codes."""
     return COLOR_CODE_RE.sub("", str(text))
 
 
 def _now() -> float:
+    """Return the current unix timestamp."""
     return time.time()
 
 
 def _actor(actor: str | None) -> str:
+    """Return a normalized actor label."""
     text = str(actor or "").strip()
     return text or "QQ管理"
 
 
 def _to_int(value: object, field_name: str, minimum: int |
             None = None) -> tuple[bool, str, int]:
+    """Parse an integer API argument."""
     try:
         parsed = int(str(value).strip())
     except (TypeError, ValueError):
@@ -54,6 +58,7 @@ def _to_int(value: object, field_name: str, minimum: int |
 
 
 def _to_float(value: object, field_name: str) -> tuple[bool, str, float]:
+    """Parse a float API argument."""
     try:
         return True, "", float(str(value).strip())
     except (TypeError, ValueError):
@@ -61,12 +66,14 @@ def _to_float(value: object, field_name: str) -> tuple[bool, str, float]:
 
 
 def _ensure_settings(guild: GuildData) -> dict[str, Any]:
+    """Ensure guild settings are stored as a dictionary."""
     if not isinstance(guild.settings, dict):
         guild.settings = {}
     return guild.settings
 
 
 def _rebuild_player_cache(self, guilds: dict[str, GuildData]) -> None:
+    """Rebuild the guild player cache."""
     self.guild_manager.rebuild_player_cache(guilds)
 
 
@@ -74,6 +81,7 @@ def _save_guilds(self,
                  guilds: dict[str,
                               GuildData],
                  force: bool = True) -> bool:
+    """Save guild data and refresh the manager cache."""
     _rebuild_player_cache(self, guilds)
     ok = self.guild_manager.save_guilds(guilds, force=force)
     if ok:
@@ -82,14 +90,16 @@ def _save_guilds(self,
 
 
 def _load_guilds(self) -> dict[str, GuildData]:
+    """Load guild data with a fresh cache read."""
     return self.guild_manager.load_guilds(force_reload=True)
 
 
-def _find_guild(
+def _find_guild(  # skipcq: PY-R1000
     self,
     guild_query: object,
     guilds: Optional[dict[str, GuildData]] = None,
 ) -> tuple[Optional[GuildData], str]:
+    """Find a guild by ID, exact name, or fuzzy text."""
     query = str(guild_query or "").strip()
     if not query:
         return None, "公会不能为空"
@@ -128,6 +138,7 @@ def _find_player_guild(
     player_name: object,
     guilds: Optional[dict[str, GuildData]] = None,
 ) -> tuple[Optional[GuildData], str]:
+    """Find the guild that contains a player."""
     name = str(player_name or "").strip()
     if not name:
         return None, "玩家名不能为空"
@@ -144,6 +155,7 @@ def _find_player_context(
     player_name: object,
     guilds: Optional[dict[str, GuildData]] = None,
 ) -> tuple[str, Optional[GuildData], Optional[GuildMember], str]:
+    """Return normalized player, guild, member, and error context."""
     name = str(player_name or "").strip()
     if not name:
         return "", None, None, "玩家名不能为空"
@@ -158,6 +170,7 @@ def _find_player_context(
 
 def _find_task(guild: GuildData,
                task_query: object) -> tuple[Optional[GuildTask], str]:
+    """Find a guild task by ID, exact name, or fuzzy text."""
     query = str(task_query or "").strip()
     if not query:
         return None, "任务不能为空"
@@ -180,6 +193,7 @@ def _find_task(guild: GuildData,
 
 
 def _member_summary(member: GuildMember) -> dict[str, Any]:
+    """Build a serializable member summary."""
     return {
         "name": member.name,
         "rank": member.rank.value,
@@ -191,6 +205,7 @@ def _member_summary(member: GuildMember) -> dict[str, Any]:
 
 
 def _base_summary(base: GuildBase | None) -> dict[str, Any] | None:
+    """Build a serializable base summary."""
     if base is None:
         return None
     return {
@@ -203,6 +218,7 @@ def _base_summary(base: GuildBase | None) -> dict[str, Any] | None:
 
 def _vault_item_summary(item: VaultItem, index: int |
                         None = None) -> dict[str, Any]:
+    """Build a serializable vault item summary."""
     data = item.to_dict()
     if index is not None:
         data["index"] = index
@@ -210,10 +226,12 @@ def _vault_item_summary(item: VaultItem, index: int |
 
 
 def _task_summary(task: GuildTask) -> dict[str, Any]:
+    """Build a serializable task summary."""
     return task.to_dict()
 
 
 def _guild_summary(guild: GuildData) -> dict[str, Any]:
+    """Build a serializable guild summary."""
     settings = _ensure_settings(guild)
     return {
         "guild_id": guild.guild_id,
@@ -240,6 +258,7 @@ def _guild_summary(guild: GuildData) -> dict[str, Any]:
 
 
 def _apply_level_ups(guild: GuildData) -> list[int]:
+    """Apply pending guild level ups and return gained levels."""
     level_ups: list[int] = []
     next_level = guild.level + 1
     required = Config.GUILD_LEVEL_EXP.get(next_level)
@@ -254,6 +273,7 @@ def _apply_level_ups(guild: GuildData) -> list[int]:
 
 
 def _activity_multiplier(self, key: str) -> float:
+    """Return an active guild event multiplier."""
     event = getattr(self, "_guild_runtime_events", {}).get(key)
     if not isinstance(event, dict):
         return 1.0
@@ -287,6 +307,7 @@ def guild_apply_reward_multipliers(
 
 def guild_is_frozen(self, guild: GuildData | None) -> bool:
     """Return whether frozen."""
+    _ = self
     if guild is None:
         return False
     settings = getattr(guild, "settings", {})
@@ -295,6 +316,7 @@ def guild_is_frozen(self, guild: GuildData | None) -> bool:
 
 def guild_frozen_message(self, guild: GuildData | None) -> str:
     """Run guild frozen message."""
+    _ = self
     if guild is None:
         return "公会已冻结"
     settings = getattr(guild, "settings", {})
@@ -1000,6 +1022,7 @@ def api_export_guild_vault(
 
 def _make_task_from_template(
         template: dict[str, Any], prefix: str = "auto") -> GuildTask:
+    """Create a guild task from a configured template."""
     now = _now()
     deadline_seconds = int(getattr(Config, "GUILD_TASK_CONFIG",
                            {}).get("自动任务默认有效期秒", 172800))
@@ -1628,7 +1651,7 @@ def api_backup_guild_data(self) -> tuple[bool, str, Optional[str]]:
     return True, "公会数据备份已创建", backup_path
 
 
-def api_repair_guild_data(
+def api_repair_guild_data(  # skipcq: PY-R1000
         self, actor: str = "QQ管理") -> tuple[bool, str, dict[str, Any]]:
     """Repair api repair guild data."""
     guilds = _load_guilds(self)
@@ -1824,6 +1847,7 @@ def api_broadcast_guild_announcement(
 
 def _get_guild_rankings(
         self, sort_by: str = "level") -> list[tuple[GuildData, Any]]:
+    """Return guild rankings using the runtime implementation."""
     return self.get_guild_rankings(sort_by)
 
 

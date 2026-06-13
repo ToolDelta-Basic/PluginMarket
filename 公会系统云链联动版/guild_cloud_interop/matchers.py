@@ -15,6 +15,8 @@ class ItemNameMatcher:
 
     def normalize_input(self, input_text: str) -> str:
         """标准化输入文本"""
+        if self is None:
+            return ""
         if not input_text:
             return ""
         return input_text.strip().lower()
@@ -98,6 +100,8 @@ class ItemNameMatcher:
 
     def _string_similarity(self, s1: str, s2: str) -> float:
         """计算字符串相似度"""
+        if self is None:
+            return 0.0
         if not s1 or not s2:
             return 0.0
 

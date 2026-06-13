@@ -23,6 +23,7 @@ from guild_cloud_interop.validators import InputValidator
 
 
 def _handle_effect(self, player: Player) -> bool:  # skipcq: PY-R1000
+    """Handle guild effect purchases."""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:
         player.show("§l§a公会 §d>> §r你尚未加入任何公会")
@@ -147,9 +148,9 @@ def _handle_rankings(self, player: Player) -> bool:
         def formatter(i, data):
             """Format one menu item for display."""
             return (
-            f"§e{i}. §r{data[0].name} §7Lv.{data[1]}\n"
-            f"   §7会长: §f{data[0].owner} §7| 成员: §a{len(data[0].members)}\n"
-        )
+                f"§e{i}. §r{data[0].name} §7Lv.{data[1]}\n"
+                f"   §7会长: §f{data[0].owner} §7| 成员: §a{len(data[0].members)}\n"
+            )
     elif choice == "2":
         rankings = self.get_guild_rankings("members")
         title = "公会成员数排行榜"
@@ -157,9 +158,9 @@ def _handle_rankings(self, player: Player) -> bool:
         def formatter(i, data):
             """Format one menu item for display."""
             return (
-            f"§e{i}. §r{data[0].name} §7成员: §a{data[1]}\n"
-            f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
-        )
+                f"§e{i}. §r{data[0].name} §7成员: §a{data[1]}\n"
+                f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
+            )
     elif choice == "3":
         rankings = self.get_guild_rankings("contribution")
         title = "公会贡献度排行榜"
@@ -167,9 +168,9 @@ def _handle_rankings(self, player: Player) -> bool:
         def formatter(i, data):
             """Format one menu item for display."""
             return (
-            f"§e{i}. §r{data[0].name} §7贡献: §b{data[1]}\n"
-            f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
-        )
+                f"§e{i}. §r{data[0].name} §7贡献: §b{data[1]}\n"
+                f"   §7会长: §f{data[0].owner} §7| 等级: §e{data[0].level}\n"
+            )
     elif choice == "4":
         rankings = self.get_guild_rankings("activity")
         title = "公会活跃度排行榜"
@@ -177,11 +178,9 @@ def _handle_rankings(self, player: Player) -> bool:
         def formatter(i, data):
             """Format one menu item for display."""
             return (
-            f"§e{i}. §r{
-                data[0].name}\n" f"   §7会长: §f{
-                data[0].owner} §7| 最近活跃: §a{
-                    self._format_time_ago(
-                        data[1])}\n")
+                f"§e{i}. §r{data[0].name}\n"
+                f"   §7会长: §f{data[0].owner} §7| 最近活跃: §a{self._format_time_ago(data[1])}\n"
+            )
     else:
         player.show("§c无效选项")
         return True
@@ -196,6 +195,8 @@ def _handle_rankings(self, player: Player) -> bool:
 
 def _format_time_ago(self, timestamp: float) -> str:
     """格式化时间差显示"""
+    if self is None:
+        return "从未"
     if timestamp == 0:
         return "从未"
 
@@ -204,12 +205,11 @@ def _format_time_ago(self, timestamp: float) -> str:
 
     if diff < 60:
         return "刚刚"
-    elif diff < 3600:
+    if diff < 3600:
         return f"{int(diff // 60)}分钟前"
-    elif diff < 86400:
+    if diff < 86400:
         return f"{int(diff // 3600)}小时前"
-    else:
-        return f"{int(diff // 86400)}天前"
+    return f"{int(diff // 86400)}天前"
 
 
 def _handle_view_guild(self, player: Player) -> bool:
@@ -703,7 +703,7 @@ def _handle_create_task(  # skipcq: PY-R1000
     return True
 
 
-def _handle_generate_auto_tasks(
+def _handle_generate_auto_tasks(  # skipcq: PY-R1000
         self,
         player: Player,
         guild: GuildData) -> bool:
@@ -900,7 +900,7 @@ def _handle_manage_tasks(  # skipcq: PY-R1000
     return True
 
 
-def _handle_manage_members(self, player: Player) -> bool:
+def _handle_manage_members(self, player: Player) -> bool:  # skipcq: PY-R1000
     """管理公会成员"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     member = guild.get_member(player.name) if guild else None
@@ -928,11 +928,11 @@ def _handle_manage_members(self, player: Player) -> bool:
 
     if choice == "1" and guild.has_permission(player.name, "kick"):
         return self._handle_kick_member(player)
-    elif choice == "2" and guild.has_permission(player.name, "set_rank"):
+    if choice == "2" and guild.has_permission(player.name, "set_rank"):
         return self._handle_set_rank(player)
-    elif choice == "3" and guild.has_permission(player.name, "transfer_owner"):
+    if choice == "3" and guild.has_permission(player.name, "transfer_owner"):
         return self._handle_transfer_ownership(player)
-    elif choice == "4" and guild.has_permission(player.name, "join_queue"):
+    if choice == "4" and guild.has_permission(player.name, "join_queue"):
         return self._handle_join_request_queue(player, guild)
 
     return True
@@ -1966,9 +1966,9 @@ def _handle_list_guilds(self, player: Player) -> bool:
     def formatter(i, g):
         """Format one menu item for display."""
         return (
-        f"§e{i}. §r{g.name} §7Lv.{g.level}\n"
-        f"   §7会长: §f{g.owner} §7| 成员: §a{len(g.members)}/{Config.MAX_GUILD_MEMBERS}\n"
-    )
+            f"§e{i}. §r{g.name} §7Lv.{g.level}\n"
+            f"   §7会长: §f{g.owner} §7| 成员: §a{len(g.members)}/{Config.MAX_GUILD_MEMBERS}\n"
+        )
 
     page = 1
     max_page = (len(guilds) + Config.ITEMS_PER_PAGE -

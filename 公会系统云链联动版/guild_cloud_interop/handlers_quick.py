@@ -93,7 +93,7 @@ def quick_join_guild(self, player: Player, args: tuple):  # skipcq: PY-R1000
     if len(matched_guilds) == 1:
         target_guild = matched_guilds[0]
     else:
-        player.show(f"§l§a公会 §d>> §r找到多个匹配的公会，请选择:")
+        player.show("§l§a公会 §d>> §r找到多个匹配的公会，请选择:")
         for i, guild in enumerate(matched_guilds, 1):
             player.show(f"§e{i}. §f{guild.name} §7(会长: {guild.owner})")
 
@@ -198,7 +198,7 @@ def quick_base_action(self, player: Player, args: tuple):
             player.show("§l§a公会 §d>> §r公会尚未设置据点，请先设置")
             return True
         return self._handle_return_base(player)
-    elif action == "set":
+    if action == "set":
         # 检查权限 - 只有会长可以设置据点
         member = guild.get_member(player.name)
         if not member or member.rank != GuildRank.OWNER:
@@ -207,34 +207,34 @@ def quick_base_action(self, player: Player, args: tuple):
                         (member.rank.display_name if member else "无"))
             return True
         return self._handle_set_base(player)
-    else:
-        # 显示据点信息
-        member = guild.get_member(player.name)
-        is_owner = member and member.rank == GuildRank.OWNER
 
-        if guild.base:
-            base = guild.base
-            dim_name = Config.DIMENSION_NAMES.get(
-                base.dimension, f"维度{base.dimension}")
-            player.show(
-                f"§l§a公会据点§r\n§7位置: §f{dim_name} ({
-                    base.x:.1f}, {
-                    base.y:.1f}, {
-                    base.z:.1f})")
-            player.show("§7使用 §f.公会据点 tp §7传送到据点")
-            if is_owner:
-                player.show("§7使用 §f.公会据点 set §7重新设置据点")
+    # 显示据点信息
+    member = guild.get_member(player.name)
+    is_owner = member and member.rank == GuildRank.OWNER
+
+    if guild.base:
+        base = guild.base
+        dim_name = Config.DIMENSION_NAMES.get(
+            base.dimension, f"维度{base.dimension}")
+        player.show(
+            f"§l§a公会据点§r\n§7位置: §f{dim_name} ({
+                base.x:.1f}, {
+                base.y:.1f}, {
+                base.z:.1f})")
+        player.show("§7使用 §f.公会据点 tp §7传送到据点")
+        if is_owner:
+            player.show("§7使用 §f.公会据点 set §7重新设置据点")
+    else:
+        player.show("§l§a公会 §d>> §r公会尚未设置据点")
+        if is_owner:
+            player.show("§7使用 §f公会据点 set §7设置据点")
         else:
-            player.show("§l§a公会 §d>> §r公会尚未设置据点")
-            if is_owner:
-                player.show("§7使用 §f公会据点 set §7设置据点")
-            else:
-                player.show("§7只有会长才能设置据点")
+            player.show("§7只有会长才能设置据点")
 
     return True
 
 
-def quick_donate(self, player: Player, args: tuple):
+def quick_donate(self, player: Player, args: tuple):  # skipcq: PY-R1000
     """快捷捐献物品"""
     guild = self.guild_manager.get_guild_by_player(player.name)
     if not guild:

@@ -41,6 +41,7 @@ class QQLinkerConfigEditorMixin:
 
     def _config_group_id(self, ctx: dict[str, Any]) -> int | None:
         """Implement the config group id operation."""
+        _ = self
         return int(ctx["group_id"]) if ctx.get(
             "mode") == "qq" and "group_id" in ctx else None
 
@@ -115,7 +116,7 @@ class QQLinkerConfigEditorMixin:
             if choice is self.CONFIG_EXIT:
                 return self.CONFIG_EXIT
             if choice is self.CONFIG_BACK:
-                return
+                return self.CONFIG_BACK
             if choice == "1":
                 result = self._config_file_select_menu(ctx)
                 if result is self.CONFIG_EXIT:
@@ -137,7 +138,7 @@ class QQLinkerConfigEditorMixin:
                 self._config_error(
                     ctx, f"未找到 {
                         self.CONFIG_FILE_DIR}/*.json 配置文件")
-                return
+                return self.CONFIG_BACK
             per_page = self.get_group_config_file_items_per_page(
                 self._config_group_id(ctx))
             total_pages, start_index, end_index = self.simple_paginate(
@@ -166,7 +167,7 @@ class QQLinkerConfigEditorMixin:
             if choice is self.CONFIG_EXIT:
                 return self.CONFIG_EXIT
             if choice is self.CONFIG_BACK:
-                return
+                return self.CONFIG_BACK
             if choice == "+":
                 if page < total_pages:
                     page += 1
@@ -198,12 +199,13 @@ class QQLinkerConfigEditorMixin:
     def _edit_config_file_whole(  # skipcq: PY-R1000
             self, ctx: dict[str, Any], item: dict[str, str]):
         """Implement the edit config file whole operation."""
+        item_path = item["path"]
         try:
-            with open(item["path"], "r", encoding="utf-8-sig") as file:
+            with open(item_path, "r", encoding="utf-8-sig") as file:
                 content = file.read()
         except Exception as err:
             self._config_error(ctx, f"读取配置文件失败: {err}")
-            return
+            return self.CONFIG_BACK
         try:
             original_config = json.loads(content)
         except json.JSONDecodeError:
@@ -243,38 +245,39 @@ class QQLinkerConfigEditorMixin:
         if raw is self.CONFIG_EXIT:
             return self.CONFIG_EXIT
         if raw is self.CONFIG_BACK:
-            return
+            return self.CONFIG_BACK
 
         try:
             parsed = json.loads(self._normalize_config_json_text(str(raw)))
         except json.JSONDecodeError as err:
             self._config_error(ctx, f"JSON 格式错误，未替换配置文件: {err}")
-            return
+            return self.CONFIG_BACK
 
         if not isinstance(parsed, dict):
             self._config_error(ctx, "配置文件根节点必须是 JSON 对象，未替换配置文件")
-            return
+            return self.CONFIG_BACK
         if not self._config_file_shape_matches(original_config, parsed):
             self._config_error(ctx, "请发送完整配置文件，不能只发送配置项内容")
-            return
+            return self.CONFIG_BACK
 
         try:
-            if not self._is_safe_config_path(item["path"]):
+            if not self._is_safe_config_path(item_path):
                 self._config_error(ctx, "配置文件路径不在允许的插件配置目录内")
-                return
+                return self.CONFIG_BACK
             backup = self._backup_config_file(item)
-            with open(item["path"], "w", encoding="utf-8") as file:
+            with open(item_path, "w", encoding="utf-8") as file:
                 json.dump(parsed, file, ensure_ascii=False, indent=4)
                 file.write("\n")
         except Exception as err:
             self._config_error(ctx, f"替换配置文件失败: {err}")
-            return
+            return self.CONFIG_BACK
 
         apply_msg = self._apply_runtime_config_file(item, parsed)
         self._config_success(
             ctx,
             f"配置文件已替换，备份编号 {backup['id']}。{apply_msg}",
         )
+        return self.CONFIG_BACK
 
     def _config_whole_file_prompt_text(
         self,
@@ -303,7 +306,7 @@ class QQLinkerConfigEditorMixin:
                 item.get("backup_path", ""))]
             if not backups:
                 self._config_error(ctx, "暂无可还原的配置文件备份")
-                return
+                return self.CONFIG_BACK
             backups = list(reversed(backups[-30:]))
             options = [
                 f"{item['id']} / {item['config_name']} / {item.get('created_at', '')}"
@@ -324,13 +327,13 @@ class QQLinkerConfigEditorMixin:
             if choice is self.CONFIG_EXIT:
                 return self.CONFIG_EXIT
             if choice is self.CONFIG_BACK:
-                return
+                return self.CONFIG_BACK
             selected = self.parse_displayed_menu_choice(choice, len(backups))
             if selected is None:
                 self._config_error(ctx, "输入有误")
                 continue
             self._restore_config_backup(ctx, backups[selected - 1])
-            return
+            return self.CONFIG_BACK
 
     def _restore_config_backup(
             self, ctx: dict[str, Any], backup: dict[str, str]):
