@@ -225,7 +225,8 @@ def _handle_view_guild(self, player: Player) -> bool:
     required_exp = Config.GUILD_LEVEL_EXP.get(level + 1, "MAX")
 
     msg = f"§l§a{guild.name}§r §7(ID: {guild.guild_id[:8]}...)\n"
-    msg += f"§7创建时间: §f{datetime.fromtimestamp(guild.create_time).strftime('%Y-%m-%d')}\n"
+    create_date = datetime.fromtimestamp(guild.create_time).strftime("%Y-%m-%d")
+    msg += f"§7创建时间: §f{create_date}\n"
     msg += f"§7会长: §e{guild.owner}\n"
     msg += f"§7等级: §e{level} §7经验: §b{exp}/{required_exp}\n"
     msg += f"§7成员: §a{len(guild.members)}/{Config.MAX_GUILD_MEMBERS}\n"
@@ -448,7 +449,9 @@ def _handle_view_tasks(self, player: Player, guild: GuildData) -> bool:
 
     def formatter(i, task: GuildTask):
         """Format one menu item for display."""
-        status = "§a已完成" if task.completed else f"§e进行中 ({task.current_count}/{task.target_count})"
+        status = (
+            "§a已完成" if task.completed
+            else f"§e进行中 ({task.current_count}/{task.target_count})")
         progress_bar = self._create_progress_bar(
             task.current_count, task.target_count)
 
@@ -487,7 +490,10 @@ def _handle_join_task(self, player: Player, guild: GuildData) -> bool:
         participant_status = " §a[已参与]" if is_participant else " §7[未参与]"
 
         return (
-            f"§e{i}. §f{task.name} [{status}§f]{participant_status}\n" f"   §7{task.description}\n" f"   §7奖励: §b{task.reward_contribution}贡献点 §7+ §e{task.reward_exp}经验\n")
+            f"§e{i}. §f{task.name} [{status}§f]{participant_status}\n"
+            f"   §7{task.description}\n"
+            f"   §7奖励: §b{task.reward_contribution}贡献点 "
+            f"§7+ §e{task.reward_exp}经验\n")
 
     idx = self._paginate_display(
         player, active_tasks, "选择参与任务", formatter, True)
@@ -849,7 +855,10 @@ def _handle_manage_tasks(  # skipcq: PY-R1000
 
         def formatter(i, task: GuildTask):
             """Format one menu item for display."""
-            return f"§e{i}. §f{task.name} §7({task.current_count}/{task.target_count})\n   §7{task.description}\n"
+            return (
+                f"§e{i}. §f{task.name} "
+                f"§7({task.current_count}/{task.target_count})\n"
+                f"   §7{task.description}\n")
 
         idx = self._paginate_display(
             player, active_tasks, "选择完成任务", formatter, True)
@@ -1685,7 +1694,9 @@ def _handle_vault_cancel(  # skipcq: PY-R1000
         time_str = datetime.fromtimestamp(
             item.timestamp).strftime("%m-%d %H:%M")
         return (
-            f"§e{i}. §f{item_name} §7x{item.count}\n" f"   §7价格: §e{item.price}贡献点 §7| 卖家: §a{item.seller} §7| 时间: §f{time_str}\n")
+            f"§e{i}. §f{item_name} §7x{item.count}\n"
+            f"   §7价格: §e{item.price}贡献点 §7| 卖家: §a{item.seller} "
+            f"§7| 时间: §f{time_str}\n")
 
     idx = self._paginate_display(
         player,
@@ -1891,7 +1902,8 @@ def _handle_create_guild(self, player: Player, player_xuid: str) -> bool:
 
     # 扣除配置的计分板积分并创建公会
     self.game_ctrl.sendwocmd(
-        f"scoreboard players remove {player.name} {Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
+        f"scoreboard players remove {player.name} "
+        f"{Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
 
     if self.guild_manager.create_guild(player_xuid, player.name, guild_name):
         player.show(render_create_guild_prompt(
@@ -1909,7 +1921,8 @@ def _handle_create_guild(self, player: Player, player_xuid: str) -> bool:
         player.show(render_create_guild_prompt(
             "创建公会名称已存在提示词", guild=guild_name, player=player.name))
         self.game_ctrl.sendwocmd(
-            f"scoreboard players add {player.name} {Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
+            f"scoreboard players add {player.name} "
+            f"{Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
 
     return True
 
@@ -2203,7 +2216,8 @@ def _handle_set_base(self, player: Player) -> bool:
         if guild_id in check_guilds and check_guilds[guild_id].base:
             check_base = check_guilds[guild_id].base
             fmts.print_inf(
-                f"据点设置成功: 公会={guild.name}, 维度={check_base.dimension}, 坐标=({check_base.x}, {check_base.y}, {check_base.z})")
+                f"据点设置成功: 公会={guild.name}, 维度={check_base.dimension}, "
+                f"坐标=({check_base.x}, {check_base.y}, {check_base.z})")
             player.show(f"§l§a公会 §d>> §r据点已设置为 ({x:.1f}, {y:.1f}, {z:.1f})")
         else:
             player.show("§l§a公会 §d>> §r据点设置可能失败，请重试")

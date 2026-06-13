@@ -48,7 +48,8 @@ class GuildManager:
         owners = [m for m in guild_data.members if m.rank == GuildRank.OWNER]
         if len(owners) != 1:
             errors.append(
-                f"公会应该有且仅有一个会长，当前有{len(owners)}个 Err:event.check.data.owner_length_LMAX")
+                f"公会应该有且仅有一个会长，当前有{len(owners)}个 "
+                "Err:event.check.data.owner_length_LMAX")
 
         # 检查成员数量
         if len(guild_data.members) > Config.MAX_GUILD_MEMBERS:

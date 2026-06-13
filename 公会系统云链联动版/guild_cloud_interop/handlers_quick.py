@@ -39,7 +39,8 @@ def quick_create_guild(self, player: Player, args: tuple):
 
     # 扣除钻石并创建公会
     self.game_ctrl.sendwocmd(
-        f"scoreboard players remove {player.name} {Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
+        f"scoreboard players remove {player.name} "
+        f"{Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
 
     if self.guild_manager.create_guild(player_xuid, player.name, guild_name):
         player.show(render_create_guild_prompt(
@@ -57,7 +58,8 @@ def quick_create_guild(self, player: Player, args: tuple):
         player.show(render_create_guild_prompt(
             "创建公会名称已存在提示词", guild=guild_name, player=player.name))
         self.game_ctrl.sendwocmd(
-            f"scoreboard players add {player.name} {Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
+            f"scoreboard players add {player.name} "
+            f"{Config.GUILD_SCOREBOARD} {Config.GUILD_CREATION_COST}")
 
     return True
 
@@ -211,7 +213,8 @@ def quick_base_action(self, player: Player, args: tuple):
         dim_name = Config.DIMENSION_NAMES.get(
             base.dimension, f"维度{base.dimension}")
         player.show(
-            f"§l§a公会据点§r\n§7位置: §f{dim_name} ({base.x:.1f}, {base.y:.1f}, {base.z:.1f})")
+            f"§l§a公会据点§r\n§7位置: §f{dim_name} "
+            f"({base.x:.1f}, {base.y:.1f}, {base.z:.1f})")
         player.show("§7使用 §f.公会据点 tp §7传送到据点")
         if is_owner:
             player.show("§7使用 §f.公会据点 set §7重新设置据点")

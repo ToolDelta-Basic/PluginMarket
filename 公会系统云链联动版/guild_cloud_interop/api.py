@@ -480,7 +480,11 @@ def api_request_join_guild_as_player(
     if target_guild is None:
         return False, err, None
     if _ensure_settings(target_guild).get("frozen", False):
-        return False, f"公会 {target_guild.name} 已被冻结，暂不能提交申请", _guild_summary(target_guild)
+        return (
+            False,
+            f"公会 {target_guild.name} 已被冻结，暂不能提交申请",
+            _guild_summary(target_guild),
+        )
     if len(target_guild.members) >= Config.MAX_GUILD_MEMBERS:
         return False, "该公会已满员", _guild_summary(target_guild)
     if not target_guild.add_join_request(name, reason):
@@ -1420,7 +1424,11 @@ def api_add_member_contribution(self,
                         target=member.name, detail=str(parsed))
     if not _save_guilds(self, guilds):
         return False, "保存公会数据失败", None
-    return True, f"已调整 {member.name} 贡献，当前 {member.contribution}", _member_summary(member)
+    return (
+        True,
+        f"已调整 {member.name} 贡献，当前 {member.contribution}",
+        _member_summary(member),
+    )
 
 
 def api_set_member_contribution(self,

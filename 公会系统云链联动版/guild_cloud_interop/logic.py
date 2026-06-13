@@ -85,7 +85,9 @@ def _show_menu(  # skipcq: PY-R1000
     # 调试日志
     if guild:
         fmts.print_inf(
-            f"菜单显示 - 玩家: {player.name}, 公会: {guild.name}, 成员职位: {member.rank.value if member else 'None'}, 是否会长: {is_owner}")
+            f"菜单显示 - 玩家: {player.name}, 公会: {guild.name}, "
+            f"成员职位: {member.rank.value if member else 'None'}, "
+            f"是否会长: {is_owner}")
 
     menu_config = getattr(self, "_guild_menu_config_override", None) or _menu_config()
     base_items = [
@@ -1095,7 +1097,8 @@ def debug_base_function(self, player: Player, args: tuple):
             player.show(f"  维度: §f{base.dimension}")
             player.show(f"  坐标: §f({base.x}, {base.y}, {base.z})")
             player.show(
-                f"  坐标类型: §f{type(base.x).__name__}, {type(base.y).__name__}, {type(base.z).__name__}")
+                f"  坐标类型: §f{type(base.x).__name__}, "
+                f"{type(base.y).__name__}, {type(base.z).__name__}")
 
             # 验证坐标有效性
             try:

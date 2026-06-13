@@ -15,7 +15,8 @@ from tooldelta import cfg, fmts
 
 PLUGIN_ENABLED_KEY = "是否启用插件"
 
-DEFAULT_CONFIG_JSON = r'''{
+DEFAULT_CONFIG_JSON = (
+    r'''{
     "配置版本":  "0.1.7",
     "动态载入设置":  {
                    "是否启用动态载入配置文件（仅用于本插件）":  true,
@@ -357,13 +358,19 @@ DEFAULT_CONFIG_JSON = r'''{
                   "已有公会提示词":  "§c❀ §r你已经有公会了",
                   "快捷创建缺少名称提示词":  "§a❀ §r请输入公会名称，例如: 公会创建 我的公会",
                   "快捷创建名称长度无效提示词":  "§c❀ §r公会名必须在2-16个字符之间",
-                  "创建公会余额不足提示词":  "§c❀ §r创建公会需要 §e{consume}§r 点 §b{scoreboard}§r 计分板积分\n§c❀ §r当前余额: §f{balance}",
-                  "创建公会提示词":  "§a❀ §r创建公会将消耗 §e{consume} §b{scoreboard} \n§a❀ §r当前余额: §f{balance}\n§a❀ §r输入 §a确认§7 继续创建，输入 §cq§7 取消",
-                  "创建公会回复超时提示词":  "§c❀ §r回复超时，已取消创建公会",
+'''
+    r'''                  "创建公会余额不足提示词":  "§c❀ §r创建公会需要 '''
+    r'''§e{consume}§r 点 §b{scoreboard}§r 计分板积分\n§c❀ §r当前余额: §f{balance}",
+'''
+    r'''                  "创建公会提示词":  "§a❀ §r创建公会将消耗 §e{consume} '''
+    r'''§b{scoreboard} \n§a❀ §r当前余额: §f{balance}\n§a❀ §r输入 §a确认§7 继续创建，输入 §cq§7 取消",
+'''
+    r'''                  "创建公会回复超时提示词":  "§c❀ §r回复超时，已取消创建公会",
                   "创建公会取消提示词":  "§c❀ §r已取消创建公会",
                   "创建公会输入名称提示词":  "§a❀ §r请输入公会名字:\n§a❀ §r要求: 2-20个字符，不能包含特殊符号",
                   "创建公会名称无效提示词":  "§c❀ §r{error}",
-                  "创建公会二次余额不足提示词": "§c❀ §r当前 §b{scoreboard}§r 余额不足，需要 §e{consume}§r，当前 §f{balance}",
+                  "创建公会二次余额不足提示词": "§c❀ §r当前 §b{scoreboard}§r '''
+    r'''余额不足，需要 §e{consume}§r，当前 §f{balance}",
                   "创建公会成功提示词":  "§a❀ §r已创建公会 §e{guild}",
                   "创建公会全服公告提示词":  "§a❀ §r§e{player}§r 创建了公会 §e{guild}§r！",
                   "创建公会名称已存在提示词":  "§c❀ §r该公会名已存在",
@@ -743,6 +750,7 @@ DEFAULT_CONFIG_JSON = r'''{
                           }
              }
 }'''
+)
 DEFAULT_CONFIG: dict[str, Any] = json.loads(DEFAULT_CONFIG_JSON)
 
 LEVEL_EXP_CONFIG_KEY = "公会各等级升级所需经验"

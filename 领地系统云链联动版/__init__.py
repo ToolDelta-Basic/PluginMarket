@@ -1694,7 +1694,11 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         self._spawn_entity(land)
-        return True, f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}", self._land_summary(land)
+        return (
+            True,
+            f"已新增玩家 {owner} 的领地 '{name}'，{land.range_text()}",
+            self._land_summary(land),
+        )
 
     def api_delete_land(self, land_query: str) -> Tuple[bool, str, None]:
         """Expose the api delete land API operation."""
@@ -1735,7 +1739,11 @@ class LandPlugin(Plugin):
         self._rebuild_player_land_cache()
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 添加为领地 '{land.name}' 的{role_name}", self._land_summary(land)
+        return (
+            True,
+            f"已将 {player_name} 添加为领地 '{land.name}' 的{role_name}",
+            self._land_summary(land),
+        )
 
     def api_set_member_rank(
         self,
@@ -1754,14 +1762,22 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if member is None:
-            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
+            return (
+                False,
+                f"{player_name} 不在领地 '{land.name}' 中",
+                self._land_summary(land),
+            )
         if member.rank == LandRank.OWNER:
             return False, "所有者不能修改身份", self._land_summary(land)
         member.name = player_name
         member.rank = target_rank
         self._save_data()
         role_name = "管理员" if target_rank == LandRank.ADMIN else "成员"
-        return True, f"已将 {player_name} 设为领地 '{land.name}' 的{role_name}", self._land_summary(land)
+        return (
+            True,
+            f"已将 {player_name} 设为领地 '{land.name}' 的{role_name}",
+            self._land_summary(land),
+        )
 
     def api_remove_member(self,
                           land_query: str,
@@ -1778,7 +1794,11 @@ class LandPlugin(Plugin):
             return False, f"无法获取 {player_name} 的 XUID", None
         member = land.get_member(target_xuid)
         if not member:
-            return False, f"{player_name} 不在领地 '{land.name}' 中", self._land_summary(land)
+            return (
+                False,
+                f"{player_name} 不在领地 '{land.name}' 中",
+                self._land_summary(land),
+            )
         if member.rank == LandRank.OWNER:
             return False, "不能删除领地所有者，请先转移所有者", self._land_summary(land)
         land.members = [m for m in land.members if m.xuid != target_xuid]
@@ -1881,7 +1901,11 @@ class LandPlugin(Plugin):
             land.radius = land_radius
             land.size = None
         self._save_data()
-        return True, f"已修改领地 '{land.name}' 范围为 {land.range_text()}", self._land_summary(land)
+        return (
+            True,
+            f"已修改领地 '{land.name}' 范围为 {land.range_text()}",
+            self._land_summary(land),
+        )
 
     def _console_print(self, text: str):
         """Implement the console print operation."""
@@ -2052,7 +2076,7 @@ class LandPlugin(Plugin):
         self._reload_no_create_regions()
         fmts.print_suc(
             self._success(
-                f"已删除不可创建领地区域 '{region.get('名称',choice)}'"))
+                f"已删除不可创建领地区域 '{region.get('名称', choice)}'"))
 
     def _console_add_land(self):
         """Implement the console add land operation."""
@@ -2079,7 +2103,8 @@ class LandPlugin(Plugin):
                 return
         else:
             size_text = self._console_prompt(
-                f"请输入方形领地 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
+                f"请输入方形领地 长 高 宽，最大 {self.max_length} "
+                f"{self.max_height} {self.max_width}")
             if size_text is None:
                 return
             size, err = self._parse_box_size_input(size_text)
@@ -2360,7 +2385,8 @@ class LandPlugin(Plugin):
             if choice == 1:
                 if land.is_box():
                     size_text = self._console_prompt(
-                        f"请输入新的 长 高 宽，最大 {self.max_length} {self.max_height} {self.max_width}")
+                        f"请输入新的 长 高 宽，最大 {self.max_length} "
+                        f"{self.max_height} {self.max_width}")
                     if size_text is None:
                         continue
                     size, err = self._parse_box_size_input(size_text)
