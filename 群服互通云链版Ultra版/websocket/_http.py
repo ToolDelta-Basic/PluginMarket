@@ -154,7 +154,8 @@ def connect(url: str, options, proxy, prepared_socket):
         hostname, port_from_url, is_secure, proxy
     )
     if not addrinfo_list:
-        raise WebSocketException(f"Host not found.: {hostname}:{port_from_url}")
+        raise WebSocketException(
+            f"Host not found.: {hostname}:{port_from_url}")
 
     sock = None
     try:
@@ -247,11 +248,18 @@ def _open_socket(addrinfo_list, sockopt, timeout):
     return sock
 
 
-def _wrap_sni_socket(sock: socket.socket, sslopt: dict, hostname, _check_hostname):
+def _wrap_sni_socket(
+        sock: socket.socket,
+        sslopt: dict,
+        hostname,
+        _check_hostname):
     """Wrap a plain socket with TLS/SNI using the provided SSL options."""
     context = sslopt.get("context")
     if not context:
-        context = ssl.SSLContext(sslopt.get("ssl_version", ssl.PROTOCOL_TLS_CLIENT))
+        context = ssl.SSLContext(
+            sslopt.get(
+                "ssl_version",
+                ssl.PROTOCOL_TLS_CLIENT))
         # Non-default contexts need keylog_filename set manually to honor
         # SSLKEYLOGFILE.
         # For more details see also:
@@ -281,9 +289,11 @@ def _wrap_sni_socket(sock: socket.socket, sslopt: dict, hostname, _check_hostnam
         # See:
         # https://github.com/liris/websocket-client/commit/
         # b96a2e8fa765753e82eea531adb19716b52ca3ca#commitcomment-10803153
-        if sslopt.get("cert_reqs", ssl.CERT_NONE) == ssl.CERT_NONE and not sslopt.get(
-            "check_hostname", False
-        ):
+        if sslopt.get(
+                "cert_reqs",
+                ssl.CERT_NONE) == ssl.CERT_NONE and not sslopt.get(
+                "check_hostname",
+                False):
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         else:
@@ -345,7 +355,9 @@ def _tunnel(sock: socket.socket, host, port: int, auth) -> socket.socket:
         auth_str = auth[0]
         if auth[1]:
             auth_str += f":{auth[1]}"
-        encoded_str = base64encode(auth_str.encode()).strip().decode().replace("\n", "")
+        encoded_str = base64encode(
+            auth_str.encode()).strip().decode().replace(
+            "\n", "")
         connect_header += f"Proxy-Authorization: Basic {encoded_str}\r\n"
     connect_header += "\r\n"
     dump("request header", connect_header)
@@ -358,7 +370,8 @@ def _tunnel(sock: socket.socket, host, port: int, auth) -> socket.socket:
         raise WebSocketProxyException(str(e))
 
     if status != 200:
-        raise WebSocketProxyException(f"failed CONNECT via proxy status: {status}")
+        raise WebSocketProxyException(
+            f"failed CONNECT via proxy status: {status}")
 
     return sock
 
@@ -387,7 +400,8 @@ def read_headers(sock: socket.socket) -> tuple:
                 raise WebSocketException("Invalid header")
             key, value = kv
             if key.lower() == "set-cookie" and headers.get("set-cookie"):
-                headers["set-cookie"] = headers.get("set-cookie") + "; " + value.strip()
+                headers["set-cookie"] = headers.get(
+                    "set-cookie") + "; " + value.strip()
             else:
                 headers[key.lower()] = value.strip()
 
