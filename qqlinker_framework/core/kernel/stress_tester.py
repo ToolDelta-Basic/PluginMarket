@@ -273,6 +273,7 @@ class StressTester:
     def _make_empty_ctx(trigger: str) -> object:
         """构造一个空的命令上下文对象。"""
         class _EmptyCtx:
+            """空命令上下文对象，用于压力测试。"""
             user_id = 0
             group_id = 0
             message = ""
@@ -292,6 +293,7 @@ class StressTester:
     def _make_empty_event(event_type: str) -> object:
         """构造模拟事件对象。"""
         class _EmptyEvent:
+            """空事件对象，用于压力测试。"""
             user_id = 0
             group_id = 0
             message = ""

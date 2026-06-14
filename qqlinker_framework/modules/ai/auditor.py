@@ -165,8 +165,9 @@ class Auditor:
         except (KeyError, AttributeError):
             return False
 
+    @staticmethod
     def _llm_confirm_violation(
-        self, user_id: int, text: str,
+        user_id: int, text: str,
     ) -> bool:
         """调用 audit LLM 确认是否真的违规。
 

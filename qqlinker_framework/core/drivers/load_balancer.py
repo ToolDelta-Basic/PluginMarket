@@ -29,8 +29,8 @@ class LoadBalancer:
         self._latency_stats: Dict[str, dict] = {}
         self._lock = __import__('threading').Lock()
 
+    @staticmethod
     def select_robot(
-        self,
         group_id: int,
         robots: Dict[str, dict],
         message_mgrs: Dict[str, object],
@@ -123,7 +123,7 @@ class HashRouter:
     机器人下线 → 重新 hash 到剩余的。
     """
 
-    def __init__(self):
+    def __init__(self):  # noqa: PYL-R0201
         pass
 
     @staticmethod

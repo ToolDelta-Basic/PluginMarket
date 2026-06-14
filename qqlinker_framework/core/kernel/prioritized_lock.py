@@ -136,10 +136,12 @@ class PrioritizedLock:
 
     @property
     def locked(self) -> bool:
+        """检查是否已锁定。"""
         return self._locked
 
     @property
     def waiters_count(self) -> int:
+        """当前等待者数量。"""
         return len(self._waiters)
 
 

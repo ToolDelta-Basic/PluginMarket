@@ -35,6 +35,7 @@ def _json_depth(obj, _current=0):
 
 
 class CircuitState(enum.Enum):
+    """熔断器状态枚举。"""
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"

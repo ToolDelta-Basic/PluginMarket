@@ -41,29 +41,36 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
 
     @property
     def modules_dir(self) -> str:
+        """模块目录路径。"""
         return self.market_conf.get("modules_dir", "")
 
     @property
     def upload_token(self) -> str:
+        """上传令牌。"""
         return self.market_conf.get("upload_token", "")
 
     @property
     def whitelist(self) -> set:
+        """模块白名单。"""
         return self.market_conf.get("whitelist", set())
 
     @property
     def sign_secret(self) -> str:
+        """签名密钥。"""
         return self.market_conf.get("sign_secret", "")
 
     @property
     def strict_sign(self) -> bool:
+        """是否严格验证签名。"""
         return self.market_conf.get("strict_sign", False)
 
     @property
     def per_page(self) -> int:
+        """每页模块数。"""
         return self.market_conf.get("per_page", 20)
 
     def log_message(self, format, *args):
+        """自定义日志格式。"""
         _log.debug("%s %s", self.command, format % args)
 
     def _is_authenticated(self) -> bool:
@@ -77,6 +84,7 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
     # ── 路由 ──
 
     def do_GET(self):
+        """处理 GET 请求。"""
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
@@ -107,6 +115,7 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
         self.send_error(404)
 
     def do_POST(self):
+        """处理 POST 请求。"""
         if self.path.startswith("/modules/upload"):
             self._handle_upload()
         else:
@@ -317,7 +326,8 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
         rate_map[client_ip] = hits
         return True
 
-    def _check_zip_safety(self, content: bytes) -> bool:
+    @staticmethod
+    def _check_zip_safety(content: bytes) -> bool:
         """检查 zip 文件内容是否安全（ZipSlip 防护 + 内容检查）。
 
         拒绝：

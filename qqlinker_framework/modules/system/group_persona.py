@@ -29,16 +29,19 @@ class GroupPersonaService:
             json.dump(self._personas, f, ensure_ascii=False, indent=2)
 
     def get_persona(self, group_id: int) -> str:
+        """获取群聊人格配置。"""
         val = self._personas.get(str(group_id), "")
         _logger.debug("[GroupPersona] 读取人设 group_id=%d -> '%s'", group_id, val)
         return val
 
     def set_persona(self, group_id: int, persona: str):
+        """设置群聊人格配置。"""
         _logger.debug("[GroupPersona] 写入人设 group_id=%d -> '%s'", group_id, persona)
         self._personas[str(group_id)] = persona
         self._save()
 
     def clear_persona(self, group_id: int):
+        """清除群聊人格配置。"""
         _logger.debug("[GroupPersona] 清除人设 group_id=%d", group_id)
         self._personas.pop(str(group_id), None)
         self._save()
@@ -54,6 +57,7 @@ class GroupPersonaModule(Module):
     required_services = ["config", "message"]
 
     def create_exports(self) -> dict:
+        """创建模块导出。"""
         data_dir = self.data_dir
         persona_service = GroupPersonaService(data_dir)
         return {"group_persona": persona_service}

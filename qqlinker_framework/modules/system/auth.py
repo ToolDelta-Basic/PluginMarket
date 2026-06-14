@@ -48,6 +48,7 @@ def persist_user_uid(config, services, user_id: int, new_uid: int):
 
 
 class AuthModule(Module):
+    """认证模块。"""
     background = True
     """UID 身份认证与提权申请模块。"""
 

@@ -47,6 +47,7 @@ async def _check_ws(address: str, timeout: float = 3.0) -> Tuple[bool, str]:
 
 
 class ConfigRouter(Module):
+    """配置路由模块。"""
     background = True
     name = "config_router"
     tier = 100

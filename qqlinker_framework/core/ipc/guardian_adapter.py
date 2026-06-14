@@ -7,6 +7,10 @@
  所有对外操作（发消息、发游戏指令等）通过 Guardian 推送到 IPC 连接，
  由 ToolDelta 端的薄壳实际执行。
 
+ IPC 版本协商:
+   客户端连接后通过 IPC 发送 HELLO，GuardianAdapter 接收后回复 HELLO_ACK。
+   协商的能力决定哪些操作可以通过 IPC 推送到薄壳。
+
  方向:
    模块 → host.services.adapter.send_group_msg(...)
         → GuardianAdapter._push_to_shell("send_group_msg", ...)
@@ -15,6 +19,11 @@
 """
 import logging
 from typing import TYPE_CHECKING
+
+from .protocol import (
+    IPC_VERSION, DEFAULT_CAPABILITIES,
+    is_hello, make_hello_ack,
+)
 
 if TYPE_CHECKING:
     from .guardian import Guardian
@@ -28,6 +37,51 @@ class GuardianAdapter:
     def __init__(self, guardian: "Guardian"):
         self._guardian = guardian
         self._console_commands = {}
+        # ── v1.5: IPC 版本协商 ──
+        self._client_version: int | None = None
+        self._client_capabilities: list = []
+        self._version_negotiated = False
+
+    def handle_hello(self, params: dict) -> dict:
+        """处理客户端 HELLO 握手，回复 HELLO_ACK。
+
+        由 IPCServer 在连接建立后调用。
+        记录客户端版本和能力，不因版本不匹配而拒绝连接。
+
+        Args:
+            params: HELLO 消息体 {"version": int, "capabilities": [...]}
+        Returns:
+            HELLO_ACK 响应
+        """
+        client_version = params.get("version", 0)
+        client_caps = params.get("capabilities", [])
+        self._client_version = client_version
+        self._client_capabilities = client_caps
+        self._version_negotiated = True
+
+        if client_version != IPC_VERSION:
+            _log.warning(
+                "IPC 版本不匹配: 客户端 v%d, 服务端 v%d。降级运行。",
+                client_version, IPC_VERSION,
+            )
+        else:
+            _log.info(
+                "IPC 版本协商完成: v%d, 客户端能力=%s",
+                client_version, client_caps,
+            )
+
+        return make_hello_ack(
+            version=IPC_VERSION,
+            capabilities=DEFAULT_CAPABILITIES,
+        )
+
+    def get_client_version(self) -> int | None:
+        """返回客户端的 IPC 版本号。"""
+        return self._client_version
+
+    def get_client_capabilities(self) -> list:
+        """返回客户端声明的能力列表。"""
+        return list(self._client_capabilities)
 
     # ── 消息发送（通过 IPC 推回薄壳）──
 
@@ -59,16 +113,20 @@ class GuardianAdapter:
 
     # ── 回调注册（守护进程内无需真实绑定，由薄壳转发事件）──
 
-    def listen_game_chat(self, handler):
+    def listen_game_chat(self, handler):  # noqa: PYL-R0201
+        """注册游戏聊天监听。"""
         pass  # GameChatEvent 由薄壳转发
 
-    def listen_player_join(self, handler):
+    def listen_player_join(self, handler):  # noqa: PYL-R0201
+        """注册玩家加入监听。"""
         pass  # PlayerJoinEvent 由薄壳转发
 
-    def listen_player_leave(self, handler):
+    def listen_player_leave(self, handler):  # noqa: PYL-R0201
+        """注册玩家离开监听。"""
         pass  # PlayerLeaveEvent 由薄壳转发
 
-    def listen_group_message(self, handler):
+    def listen_group_message(self, handler):  # noqa: PYL-R0201
+        """注册群消息监听。"""
         pass  # GroupMessageEvent 由薄壳转发
 
     def register_console_command(self, triggers, hint, usage, func):
@@ -80,13 +138,16 @@ class GuardianAdapter:
 
     # ── 查询 ──
 
-    def get_plugin_api(self, name: str):
+    def get_plugin_api(self, name: str):  # noqa: PYL-R0201
+        """获取插件 API。"""
         return None
 
-    def is_user_admin(self, user_id: int, config_mgr) -> bool:
+    def is_user_admin(self, user_id: int, config_mgr) -> bool:  # noqa: PYL-R0201
+        """检查用户是否为管理员。"""
         return False
 
-    def set_config_mgr(self, config_mgr):
+    def set_config_mgr(self, config_mgr):  # noqa: PYL-R0201
+        """设置配置管理器引用。"""
         pass
 
     def set_online(self, players: list):
@@ -95,4 +156,5 @@ class GuardianAdapter:
 
     @property
     def online_players(self) -> list:
+        """在线玩家列表。"""
         return getattr(self, '_online_players', [])

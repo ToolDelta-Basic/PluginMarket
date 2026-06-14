@@ -8,51 +8,51 @@ class IFrameworkAdapter(ABC):
     """平台适配器抽象基类，定义所有需要实现的方法。"""
 
     @abstractmethod
-    def send_game_command(self, cmd: str) -> None:
+    def send_game_command(self, cmd: str) -> None:  # noqa: PYL-R0201
         """发送游戏指令。"""
 
     @abstractmethod
-    def send_game_message(self, target: str, text: str) -> None:
+    def send_game_message(self, target: str, text: str) -> None:  # noqa: PYL-R0201
         """向游戏内目标发送消息。"""
 
     @abstractmethod
-    def get_online_players(self) -> List[str]:
+    def get_online_players(self) -> List[str]:  # noqa: PYL-R0201
         """获取当前在线玩家列表（纯名字列表）。"""
 
     @abstractmethod
-    def send_group_msg(self, group_id: int, message: str) -> bool:
+    def send_group_msg(self, group_id: int, message: str) -> bool:  # noqa: PYL-R0201
         """发送群聊消息。"""
 
     @abstractmethod
-    def send_private_msg(self, user_id: int, message: str) -> bool:
+    def send_private_msg(self, user_id: int, message: str) -> bool:  # noqa: PYL-R0201
         """发送私聊消息。"""
 
     @abstractmethod
-    def listen_game_chat(
+    def listen_game_chat(  # noqa: PYL-R0201
         self, handler: Callable[[str, str], None]
     ) -> None:
         """注册游戏聊天监听。"""
 
     @abstractmethod
-    def listen_group_message(
+    def listen_group_message(  # noqa: PYL-R0201
         self, handler: Callable[[Dict[str, Any]], None]
     ) -> None:
         """注册群消息监听。"""
 
     @abstractmethod
-    def listen_player_join(
+    def listen_player_join(  # noqa: PYL-R0201
         self, handler: Callable[[str], None]
     ) -> None:
         """注册玩家加入事件监听。"""
 
     @abstractmethod
-    def listen_player_leave(
+    def listen_player_leave(  # noqa: PYL-R0201
         self, handler: Callable[[str], None]
     ) -> None:
         """注册玩家离开事件监听。"""
 
     @abstractmethod
-    def register_console_command(
+    def register_console_command(  # noqa: PYL-R0201
         self,
         triggers: List[str],
         hint: str,
@@ -62,21 +62,21 @@ class IFrameworkAdapter(ABC):
         """注册控制台命令。"""
 
     @abstractmethod
-    def get_plugin_api(self, name: str) -> Optional[Any]:
+    def get_plugin_api(self, name: str) -> Optional[Any]:  # noqa: PYL-R0201
         """获取其他插件的 API 实例。"""
 
     @abstractmethod
-    def is_user_admin(self, user_id: int, config_mgr) -> bool:
+    def is_user_admin(self, user_id: int, config_mgr) -> bool:  # noqa: PYL-R0201
         """检查用户是否为平台管理员。"""
 
     @abstractmethod
-    def send_game_command_with_resp(
+    def send_game_command_with_resp(  # noqa: PYL-R0201
         self, cmd: str, timeout: float = 5.0
     ) -> Optional[str]:
         """发送游戏指令并等待响应文本，超时返回 None。"""
 
     @abstractmethod
-    def send_game_command_full(
+    def send_game_command_full(  # noqa: PYL-R0201
         self, cmd: str, timeout: float = 5.0
     ) -> Optional[Dict[str, Any]]:
         """发送游戏指令并返回完整响应。
@@ -104,36 +104,36 @@ class IFrameworkAdapter(ABC):
 
     # ── 可选扩展: 生命周期事件 ──────────────────────────────
 
-    def listen_active(self, handler: Callable[[], None]) -> None:
+    def listen_active(self, handler: Callable[[], None]) -> None:  # noqa: PYL-R0201
         """注册框架就绪处理器（可选实现）。"""
 
-    def listen_frame_exit(self, handler: Callable[[Any], None]) -> None:
+    def listen_frame_exit(self, handler: Callable[[Any], None]) -> None:  # noqa: PYL-R0201
         """注册框架退出处理器（可选实现）。"""
 
-    def listen_player_pre_join(self, handler: Callable[[str], None]) -> None:
+    def listen_player_pre_join(self, handler: Callable[[str], None]) -> None:  # noqa: PYL-R0201
         """注册玩家预加入处理器（可选实现）。"""
 
     # ── 可选扩展: 数据包监听 ──────────────────────────────────
 
-    def listen_dict_packet(
+    def listen_dict_packet(  # noqa: PYL-R0201
         self, packet_id: int, handler: Callable[[dict], bool]
     ) -> None:
         """注册字典数据包监听，返回 True 拦截数据包。"""
 
-    def listen_bytes_packet(
+    def listen_bytes_packet(  # noqa: PYL-R0201
         self, packet_id: int, handler: Callable[[bytes], bool]
     ) -> None:
         """注册二进制数据包监听，返回 True 拦截数据包。"""
 
     # ── 可选扩展: 标题栏消息 ────────────────────────────────
 
-    def send_game_title(self, target: str, text: str) -> None:
+    def send_game_title(self, target: str, text: str) -> None:  # noqa: PYL-R0201
         """向玩家显示标题栏消息（可选实现）。"""
 
-    def send_game_subtitle(self, target: str, text: str) -> None:
+    def send_game_subtitle(self, target: str, text: str) -> None:  # noqa: PYL-R0201
         """向玩家显示小标题栏消息（可选实现）。"""
 
-    def send_game_actionbar(self, target: str, text: str) -> None:
+    def send_game_actionbar(self, target: str, text: str) -> None:  # noqa: PYL-R0201
         """向玩家显示行动栏消息（可选实现）。"""
 
     # ── 可选扩展: 轮询发信 ────────────────────────────────

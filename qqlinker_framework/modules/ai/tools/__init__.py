@@ -11,7 +11,7 @@ import logging
 import os
 import pkgutil
 
-from qqlinker_framework.管理 import ToolType
+from qqlinker_framework.managers import ToolType
 
 
 def register_all(tool_manager, services=None):

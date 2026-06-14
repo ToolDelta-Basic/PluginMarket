@@ -1,22 +1,23 @@
-"""Gatekeeper 代理 — 业务模块访问框架核心的唯一通道
+"""Gatekeeper 代理 — 业务模块访问框架核心的唯一通道 (v6)
 
 ═══════════════════════════════════════════════════════════════════════════
 隔离层设计:
 
   业务模块                     GatekeeperProxy                  框架核心
   ─────────────────────────────────────────────────────────────────────
-  self.gatekeeper.get_service()    →  UID 检查 + 审计  →  ServiceContainer
-  self.gatekeeper.register_command() →  min_uid 校验   →  self._commands
+  self.gatekeeper.get_service()    →  MID 检查 + 审计  →  ServiceContainer
+  self.gatekeeper.register_command() →  min_mid 校验   →  self._commands
   self.gatekeeper.listen()        →  事件白名单       →  event_bus
   self.gatekeeper.get_config()    →  权限透传         →  _ConfigProxy
   self.gatekeeper.read_file()     →  沙箱检查         →  builtins.open
   self.gatekeeper.send_group()    →  频率检查+审计    →  MessageManager
 
 每个 GatekeeperProxy 实例绑定到一个模块，三重检查:
-  1. UID 级别检查（继承自 ServiceContainer.view）
+  1. MID 级别检查（继承自 ServiceContainer.scope）
   2. 资源配额检查（委托给 ResourceGuardian）
   3. 审计记录（委托给 AuditTrail）
 
+v6: 使用 mid 替代 uid; get_service() 采用声明式依赖检查。
 不允许模块直接访问 self.services、self.register_command 等底层 API。
 ═══════════════════════════════════════════════════════════════════════════
 """
@@ -70,19 +71,20 @@ def _audit(
 
 
 class GatekeeperProxy:
-    """业务模块访问框架核心的唯一代理。
+    """业务模块访问框架核心的唯一代理 (v6)。
 
     每个模块持有自己的 GatekeeperProxy 实例，
     所有核心 API 调用必须经过此代理。
     代理内部做三重检查：
-    1. UID 级别检查（继承自 ServiceContainer.view）
+    1. MID 级别检查（继承自 ServiceContainer.scope）
     2. 资源配额检查（委托给 ResourceGuardian）
     3. 审计记录（委托给 AuditTrail）
     """
 
     __slots__ = (
         "_services",
-        "_uid",
+        "_mid",
+        "_uid",  # 兼容旧代码
         "_module_name",
         "_guardian",
         "_audit",
@@ -97,8 +99,9 @@ class GatekeeperProxy:
     def __init__(
         self,
         services: Any,
-        uid: int,
-        module_name: str,
+        mid: Optional[int] = None,
+        uid: Optional[int] = None,
+        module_name: str = "",
         guardian: Any = None,
         audit: Any = None,
         config: Any = None,
@@ -107,7 +110,9 @@ class GatekeeperProxy:
         q_callbacks: dict = None,
     ):
         self._services = services
-        self._uid = uid
+        # v6: mid 优先; uid 兼容
+        self._mid = mid if mid is not None else (uid if uid is not None else 300)
+        self._uid = self._mid  # 旧名别名同步
         self._module_name = module_name
         self._guardian = guardian
         self._audit = audit
@@ -119,18 +124,23 @@ class GatekeeperProxy:
         self._module_events: list = []
 
     @property
+    def mid(self) -> int:
+        """只读 MID 属性 (v6)。"""
+        return self._mid
+
+    @property
     def uid(self) -> int:
-        """只读 UID 属性。"""
-        return self._uid
+        """只读 UID 属性（旧名别名 → mid）。"""
+        return self._mid
 
     # ══════════════════════════════════════════════════════════════════
     # 1. 服务访问代理
     # ══════════════════════════════════════════════════════════════════
 
     def get_service(self, name: str) -> Any:
-        """带审计日志的服务获取。
+        """带审计日志的服务获取 (v6 declarative)。
 
-        通过 ServiceContainer.get() 实现，自动做 UID 级别检查。
+        通过 ServiceContainer.get() 实现，自动做 MID 级别声明式检查。
         每次服务获取都会记录审计日志。
 
         Args:
@@ -141,7 +151,7 @@ class GatekeeperProxy:
 
         Raises:
             KeyError: 服务未注册。
-            PermissionError: 调用方等级不足。
+            PermissionError: 调用方权限不足。
         """
         _audit(self, "get_service", target=name, detail="service_access")
         result = self._services.get(name)
@@ -171,10 +181,11 @@ class GatekeeperProxy:
         argument_hint: str = "",
         cooldown: float | None = None,
         min_uid: int = 400,  # UID_NOBODY
+        min_mid: Optional[int] = None,  # v6: 新名
     ) -> None:
         """注册命令处理器 — 通过 Gatekeeper 代理。
 
-        校验 min_uid ≥ 模块自身 uid，防止低权限模块注册高权限命令。
+        校验 min_mid ≥ 模块自身 mid，防止低权限模块注册高权限命令。
         同时做资源配额检查。
 
         Args:
@@ -186,15 +197,16 @@ class GatekeeperProxy:
             required_role: 要求的角色名。
             argument_hint: 参数提示。
             cooldown: 冷却时间（秒）。
-            min_uid: 最低 UID 要求。
+            min_uid: (deprecated) 最低 UID 要求。
+            min_mid: (v6) 最低 MID 要求。
         """
-        # ── 沙箱检查: min_uid 不能低于模块自身 uid ──
-        # 即模块不可注册高于自身权限的命令
-        if min_uid < self._uid:
+        effective_min = min_mid if min_mid is not None else min_uid
+        # ── 沙箱检查: min_mid 不能低于模块自身 mid ──
+        if effective_min < self._mid:
             _log.warning(
-                "Gatekeeper: 模块 '%s' (uid=%d) 尝试注册命令 '%s' "
-                "(min_uid=%d < 自身 uid=%d)，已拒绝",
-                self._module_name, self._uid, trigger, min_uid, self._uid,
+                "Gatekeeper: 模块 '%s' (mid=%d) 尝试注册命令 '%s' "
+                "(min_mid=%d < 自身 mid=%d)，已拒绝",
+                self._module_name, self._mid, trigger, effective_min, self._mid,
             )
             return
 
@@ -203,7 +215,7 @@ class GatekeeperProxy:
         # 频率检查由 ResourceGuardian.guard() 在命令执行时做
 
         _audit(self, "register_command", target=trigger,
-               detail=f"min_uid={min_uid} type={cmd_type}")
+               detail=f"min_mid={effective_min} type={cmd_type}")
 
         self._module_commands[trigger] = {
             "trigger": trigger,
@@ -214,7 +226,7 @@ class GatekeeperProxy:
             "required_role": required_role,
             "argument_hint": argument_hint,
             "cooldown": cooldown or 0.0,
-            "min_uid": min_uid,
+            "min_uid": effective_min,
         }
 
     def listen(self, event_type: str, handler: Callable, priority: int = 0) -> None:
@@ -229,10 +241,10 @@ class GatekeeperProxy:
             priority: 订阅优先级。
         """
         # ── 沙箱检查: 非 root 模块只能订阅白名单事件 ──
-        if self._uid > 0 and event_type not in ALLOWED_EVENTS:
+        if self._mid > 0 and event_type not in ALLOWED_EVENTS:
             _log.warning(
-                "Gatekeeper: 模块 '%s' (uid=%d) 尝试订阅受限事件 '%s'，已拒绝",
-                self._module_name, self._uid, event_type,
+                "Gatekeeper: 模块 '%s' (mid=%d) 尝试订阅受限事件 '%s'，已拒绝",
+                self._module_name, self._mid, event_type,
             )
             return
 
@@ -303,7 +315,7 @@ class GatekeeperProxy:
             文件内容字符串，或 None（权限拒绝/文件不存在）。
         """
         if self._guardian and not self._guardian.check_file_access(
-            path, self._uid, mode="r", module_name=self._module_name
+            path, self._mid, mode="r", module_name=self._module_name
         ):
             _log.warning(
                 "Gatekeeper: 模块 '%s' 文件读取被沙箱拒绝: '%s'",
@@ -334,7 +346,7 @@ class GatekeeperProxy:
             True 写入成功，False 被拒绝或失败。
         """
         if self._guardian and not self._guardian.check_file_access(
-            path, self._uid, mode="w", module_name=self._module_name
+            path, self._mid, mode="w", module_name=self._module_name
         ):
             _log.warning(
                 "Gatekeeper: 模块 '%s' 文件写入被沙箱拒绝: '%s'",
@@ -383,15 +395,15 @@ class GatekeeperProxy:
         if self._message is None:
             _log.error(
                 "Gatekeeper: message 服务不可用，群消息发送被拒绝 "
-                "(group_id=%s, module=%s, uid=%d)",
-                group_id, self._module_name, self._uid,
+                "(group_id=%s, module=%s, mid=%d)",
+                group_id, self._module_name, self._mid,
             )
             return
 
         # ── 资源配额检查 ──
         if self._guardian:
             allowed = await self._guardian.check_msg_send(
-                self._uid, module_name=self._module_name
+                self._mid, module_name=self._module_name
             )
             if not allowed:
                 _log.warning(
@@ -402,7 +414,7 @@ class GatekeeperProxy:
 
         _audit(self, "send_group", target=str(group_id),
                detail=f"msg_len={len(text)}")
-        await self._message.send_group(group_id, text, requester_uid=self._uid)
+        await self._message.send_group(group_id, text, requester_uid=self._mid)
 
     async def send_private(self, user_id: int, text: str) -> None:
         """发送私聊消息 — 频率检查 + 审计。
@@ -416,15 +428,15 @@ class GatekeeperProxy:
         if self._message is None:
             _log.error(
                 "Gatekeeper: message 服务不可用，私聊消息发送被拒绝 "
-                "(user_id=%s, module=%s, uid=%d)",
-                user_id, self._module_name, self._uid,
+                "(user_id=%s, module=%s, mid=%d)",
+                user_id, self._module_name, self._mid,
             )
             return
 
         # ── 资源配额检查 ──
         if self._guardian:
             allowed = await self._guardian.check_msg_send(
-                self._uid, module_name=self._module_name
+                self._mid, module_name=self._module_name
             )
             if not allowed:
                 _log.warning(
@@ -435,7 +447,7 @@ class GatekeeperProxy:
 
         _audit(self, "send_private", target=str(user_id),
                detail=f"msg_len={len(text)}")
-        await self._message.send_private(user_id, text, requester_uid=self._uid)
+        await self._message.send_private(user_id, text, requester_uid=self._mid)
 
     # ══════════════════════════════════════════════════════════════════
     # 内部 API（供 Module 基类使用）
@@ -456,4 +468,4 @@ class GatekeeperProxy:
 
     def __repr__(self) -> str:
         return (f"<GatekeeperProxy module={self._module_name!r} "
-                f"uid={self._uid}>")
+                f"mid={self._mid}>")

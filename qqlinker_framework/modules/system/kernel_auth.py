@@ -44,6 +44,7 @@ def is_exec_exposed(method) -> bool:
 
 
 class KernelAuthModule(Module):
+    """内核认证模块。"""
     background = True
     """内核级授权模块。uid=0，仅 root 用户可触发。"""
 

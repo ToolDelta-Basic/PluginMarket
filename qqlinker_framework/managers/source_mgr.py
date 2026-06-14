@@ -16,12 +16,13 @@ v7.0 — 注册表允则机制: 模块加载唯一权威来源 = 模块注册表
 v8.0 — 重构为 SourceManager，统一所有加载源
 """
 import asyncio
+import importlib
 import inspect
 import logging
 import os as _os
 import contextvars
 from typing import Type, List, Optional, Set, Dict
-from qqlinker_framework.core.module import Module
+from qqlinker_framework.core.module import Module, FrozenState
 from qqlinker_framework.core.kernel.error_hints import hint
 from qqlinker_framework.core.kernel.prioritized_lock import PrioritizedLock
 from qqlinker_framework.core.drivers.registry import ModuleRegistry
@@ -73,7 +74,8 @@ class SourceManager:
         # v8: 懒加载模块类注册表（background=False 的模块）
         self._lazy_classes: dict[str, Type[Module]] = {}
 
-    def _check_depth(self) -> None:
+    @staticmethod
+    def _check_depth() -> None:
         """递归深度检查，超限抛出 RecursionError。"""
         depth = _module_mgr_depth.get()
         if depth >= MAX_MODULE_MGR_DEPTH:
@@ -146,7 +148,8 @@ class SourceManager:
 
         return True, [], []
 
-    def check_circular_dependencies(self, mods: List[Module]) -> List[str]:
+    @staticmethod
+    def check_circular_dependencies(mods: List[Module]) -> List[str]:
         """检测模块间的循环依赖（A 依赖 B，B 依赖 A）。
 
         使用 "类名 → required_services" 的边关系构建有向图，
@@ -599,15 +602,369 @@ class SourceManager:
         logger.info("模块 '%s' 加载成功", temp_mod.name)
         return temp_mod
 
+    # ═══════════════════════════════════════════════════════════
+    # v1.5: 热重载 dry-run 安全保证
+    # ═══════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _dry_run_import(module_cls: Type[Module]) -> Optional[Type[Module]]:
+        """Dry-run 导入检查：验证模块类是否可以安全加载。
+
+        不将模块注册到任何总线，仅做如下检查：
+        1. import 代码本身（已通过 class 引用传入，跳过）
+        2. 检查类的 required_services 格式
+        3. 检查类的 config_schema / default_config 格式
+        4. 尝试实例化（不调用 on_init/on_start）
+
+        Args:
+            module_cls: 模块类引用
+        Returns:
+            模块类本身（检查通过），或 None（检查失败）
+        """
+        logger = logging.getLogger(__name__)
+
+        # 1. 检查 required_services 格式
+        required = getattr(module_cls, 'required_services', None)
+        if required is not None:
+            if not isinstance(required, (list, tuple)):
+                logger.error(
+                    "❌ 模块 '%s': required_services 必须是 list/tuple，实际 %s",
+                    getattr(module_cls, 'name', module_cls.__name__),
+                    type(required).__name__,
+                )
+                return None
+            for srv in required:
+                if not isinstance(srv, str):
+                    logger.error(
+                        "❌ 模块 '%s': required_services 中的元素必须是 str，实际 %s",
+                        getattr(module_cls, 'name', module_cls.__name__),
+                        type(srv).__name__,
+                    )
+                    return None
+
+        # 2. 检查 config_schema / default_config 格式
+        config_schema = getattr(module_cls, 'config_schema', None)
+        default_config = getattr(module_cls, 'default_config', None)
+        if config_schema is not None:
+            if not isinstance(config_schema, dict):
+                logger.error(
+                    "❌ 模块 '%s': config_schema 必须是 dict，实际 %s",
+                    getattr(module_cls, 'name', module_cls.__name__),
+                    type(config_schema).__name__,
+                )
+                return None
+        if default_config is not None:
+            if not isinstance(default_config, dict):
+                logger.error(
+                    "❌ 模块 '%s': default_config 必须是 dict，实际 %s",
+                    getattr(module_cls, 'name', module_cls.__name__),
+                    type(default_config).__name__,
+                )
+                return None
+
+        # 3. 检查类是否继承自 Module
+        try:
+            if not issubclass(module_cls, Module):
+                logger.error(
+                    "❌ 模块 '%s': 必须是 Module 的子类",
+                    getattr(module_cls, 'name', module_cls.__name__),
+                )
+                return None
+        except TypeError:
+            logger.error(
+                "❌ 模块 '%s': 不是有效的类",
+                getattr(module_cls, 'name', module_cls.__name__),
+            )
+            return None
+
+        # 4. 尝试实例化（使用 __new__ 来捕获 ImportError/SyntaxError 等）
+        try:
+            _ = module_cls.__new__(module_cls)
+        except Exception as e:
+            logger.error(
+                "❌ 模块 '%s': 实例化失败: %s (%s)",
+                getattr(module_cls, 'name', module_cls.__name__),
+                e, type(e).__name__,
+            )
+            return None
+
+        logger.info(
+            "✅ dry-run 通过: 模块 '%s' (required=%s)",
+            getattr(module_cls, 'name', module_cls.__name__),
+            required if required else '[]',
+        )
+        return module_cls
+
+    def validate_module_dependencies(self, cls: Type[Module]) -> tuple:
+        """验证模块类的依赖是否满足。
+
+        检查:
+        1. cls.required_services 中的服务是否已在 services 中注册
+        2. 循环依赖检测（基于已加载模块和待加载类）
+
+        Args:
+            cls: 待验证的模块类
+        Returns:
+            (ok: bool, error_message: str)
+        """
+        logger = logging.getLogger(__name__)
+        mod_name = getattr(cls, 'name', cls.__name__)
+
+        # 1. 检查 required_services 服务可用性
+        required = getattr(cls, 'required_services', [])
+        missing: List[str] = []
+        for srv_name in required:
+            if not self.services.has(srv_name):
+                missing.append(srv_name)
+
+        if missing:
+            msg = f"缺失服务: {', '.join(missing)}"
+            logger.error(
+                "❌ 模块 '%s' 依赖验证失败: %s。"
+                "已知服务: %s",
+                mod_name, msg,
+                ", ".join(sorted(self.services.list_accessible().keys()))
+                if hasattr(self.services, 'list_accessible')
+                else "(无法列出)",
+            )
+            return False, msg
+
+        # 2. 循环依赖检测
+        all_mods: List[Module] = list(self._loaded_modules.values())
+        try:
+            temp_mod = cls(self.services, self.event_bus)
+        except Exception as e:
+            err_msg = f"实例化失败: {e}"
+            logger.error("❌ 模块 '%s' 依赖验证失败: %s", mod_name, err_msg)
+            return False, err_msg
+
+        all_mods.append(temp_mod)
+        circular = self.check_circular_dependencies(all_mods)
+
+        if mod_name in circular:
+            msg = f"检测到循环依赖（涉及: {', '.join(circular)}）"
+            logger.warning("⚠ 模块 '%s': %s", mod_name, msg)
+            return False, msg
+
+        logger.info("✅ 模块 '%s' 依赖验证通过", mod_name)
+        return True, ""
+
     async def reload_module(self, module_name: str) -> bool:
-        """重载指定模块（先卸载再加载）。"""
-        mod = self._loaded_modules.get(module_name)
-        if not mod:
+        """重载指定模块（dry-run 安全保证 + 回滚）。
+
+        流程:
+        1. 找到旧模块类
+        2. Dry-run 导入新代码，验证依赖
+        3. 卸载旧模块
+        4. 加载新模块
+        5. 失败时回滚到旧模块
+        """
+        logger = logging.getLogger(__name__)
+
+        # Phase 1: 找到模块类
+        old_mod = self._loaded_modules.get(module_name)
+        if not old_mod:
+            logger.warning("重载失败: 模块 '%s' 未加载", module_name)
             return False
-        module_cls = type(mod)
-        if await self.unload_module(module_name):
-            return await self.load_module(module_cls) is not None
-        return False
+        old_cls = type(old_mod)
+
+        # Phase 2: dry-run — 预检新代码
+        new_cls = self._dry_run_import(old_cls)
+        if new_cls is None:
+            logger.error("⛔ 重载预检失败: 模块 '%s' 新代码校验未通过", module_name)
+            return False
+
+        # 验证依赖
+        ok, err = self.validate_module_dependencies(new_cls)
+        if not ok:
+            logger.error(
+                "⛔ 重载预检失败: 模块 '%s' 依赖不满足: %s",
+                module_name, err,
+            )
+            return False
+
+        # Phase 3: 卸载旧模块
+        logger.info("卸载旧模块 '%s'...", module_name)
+        unloaded = await self.unload_module(module_name)
+        if not unloaded:
+            logger.error("⛔ 重载失败: 无法卸载模块 '%s'", module_name)
+            return False
+
+        # Phase 4: 加载新模块
+        try:
+            logger.info("加载新模块 '%s'...", module_name)
+            result = await self.load_module(new_cls)
+            if result is not None:
+                logger.info("✅ 模块 '%s' 重载成功", module_name)
+                return True
+            else:
+                raise RuntimeError("load_module 返回 None")
+        except Exception as e:
+            # Phase 5: 回滚 — 重新加载旧模块
+            logger.error(
+                "⛔ 新模块加载失败: %s，回滚到旧版本", e
+            )
+            try:
+                await self.load_module(old_cls)
+                logger.info("🔄 模块 '%s' 已回滚到旧版本", module_name)
+            except Exception as rollback_err:
+                logger.critical(
+                    "💀 模块 '%s' 回滚也失败了: %s。模块已丢失！",
+                    module_name, rollback_err,
+                )
+            return False
+
+    # ═══════════════════════════════════════════════════════════
+    # v6: FREEZE / THAW — 模块冻结与解冻
+    # ═══════════════════════════════════════════════════════════
+
+    async def freeze_module(self, module_name: str) -> bool:
+        """冻结指定模块：保留实例但取消事件/命令注册。
+
+        kernel 组 (uid=0) 模块不可冻结。
+
+        Returns:
+            True 表示冻结成功，False 表示失败（模块不存在/不可冻结/已冻结）。
+        """
+        logger = logging.getLogger(__name__)
+        mod = self._loaded_modules.get(module_name)
+        if mod is None:
+            logger.warning("冻结失败: 模块 '%s' 未加载", module_name)
+            return False
+
+        # kernel 组不可冻结
+        if getattr(mod, 'uid', 400) == 0:
+            logger.warning("冻结失败: 模块 '%s' 是 kernel 组，不可冻结", module_name)
+            return False
+
+        # 已冻结 → 幂等返回 True
+        if getattr(mod, 'frozen', False):
+            logger.info("模块 '%s' 已冻结，跳过", module_name)
+            return True
+
+        try:
+            # 调用模块自身 on_freeze 钩子
+            await mod.on_freeze()
+
+            # 从 EventBus 取消该模块的所有事件订阅
+            if self.event_bus and hasattr(mod, '_event_handlers'):
+                for event_type, handler, _priority in mod._event_handlers:
+                    self.event_bus.unsubscribe(event_type, handler)
+                logger.debug(
+                    "模块 '%s': 已取消 %d 个事件订阅",
+                    module_name, len(mod._event_handlers),
+                )
+
+            # 从 CommandManager 取消该模块的所有命令注册
+            if hasattr(self.host, 'command_mgr'):
+                for trigger in list(getattr(mod, '_commands', {}).keys()):
+                    self.host.command_mgr.unregister(trigger)
+                logger.debug(
+                    "模块 '%s': 已取消 %d 个命令注册",
+                    module_name, len(getattr(mod, '_commands', {})),
+                )
+
+            # 标记为已冻结
+            mod.frozen = True
+
+            # 通知 HealthScorer（不计入降分，标记为 SUSPENDED）
+            health_scorer = getattr(self.host, 'health_scorer', None)
+            if health_scorer and hasattr(health_scorer, 'on_module_frozen'):
+                health_scorer.on_module_frozen(module_name)
+
+            logger.info("模块 '%s' 已冻结", module_name)
+            return True
+
+        except Exception as e:
+            logger.error("冻结模块 '%s' 失败: %s", module_name, e)
+            return False
+
+    async def thaw_module(self, module_name: str) -> bool:
+        """解冻指定模块：重新注册事件/命令。
+
+        Returns:
+            True 表示解冻成功，False 表示失败（模块不存在/未冻结）。
+        """
+        logger = logging.getLogger(__name__)
+        mod = self._loaded_modules.get(module_name)
+        if mod is None:
+            logger.warning("解冻失败: 模块 '%s' 未加载", module_name)
+            return False
+
+        # 未冻结 → 幂等返回 True
+        if not getattr(mod, 'frozen', False):
+            logger.info("模块 '%s' 未冻结，跳过", module_name)
+            return True
+
+        try:
+            # 重新注册事件订阅
+            if self.event_bus and hasattr(mod, '_event_handlers'):
+                for event_type, handler, priority in mod._event_handlers:
+                    if event_type == "GroupMessageEvent":
+                        # 重新包装群过滤器
+                        original = handler
+                        module_name_inner = mod.name
+                        group_filter_inner = getattr(mod, 'group_filter', None)
+
+                        async def _rebuilt_handler(event,
+                                                   _orig=original,
+                                                   _mn=module_name_inner,
+                                                   _gf=group_filter_inner):
+                            if _gf is None:
+                                await _orig(event)
+                                return
+                            if _gf.is_module_enabled(event.group_id, _mn):
+                                await _orig(event)
+
+                        wrapped = _rebuilt_handler
+                        self.event_bus.subscribe(event_type, wrapped, priority)
+                    else:
+                        self.event_bus.subscribe(event_type, handler, priority)
+                logger.debug(
+                    "模块 '%s': 已重新注册 %d 个事件订阅",
+                    module_name, len(mod._event_handlers),
+                )
+
+            # 重新注册命令
+            if hasattr(self.host, 'command_mgr'):
+                for cmd_info in getattr(mod, '_commands', {}).values():
+                    self.host.command_mgr.register(**cmd_info)
+                logger.debug(
+                    "模块 '%s': 已重新注册 %d 个命令",
+                    module_name, len(getattr(mod, '_commands', {})),
+                )
+
+            # 调用模块自身 on_thaw 钩子
+            await mod.on_thaw()
+
+            # 标记为已解冻
+            mod.frozen = False
+
+            # 通知 HealthScorer
+            health_scorer = getattr(self.host, 'health_scorer', None)
+            if health_scorer and hasattr(health_scorer, 'on_module_thawed'):
+                health_scorer.on_module_thawed(module_name)
+
+            logger.info("模块 '%s' 已解冻", module_name)
+            return True
+
+        except Exception as e:
+            logger.error("解冻模块 '%s' 失败: %s", module_name, e)
+            return False
+
+    def list_frozen(self) -> list:
+        """返回已冻结的模块名称列表。"""
+        return [
+            name for name, mod in self._loaded_modules.items()
+            if getattr(mod, 'frozen', False)
+        ]
+
+    def is_frozen(self, module_name: str) -> bool:
+        """检查指定模块是否已冻结。"""
+        mod = self._loaded_modules.get(module_name)
+        if mod is None:
+            return False
+        return getattr(mod, 'frozen', False)
 
     # ═══════════════════════════════════════════════════════════
     # 回滚
@@ -716,6 +1073,7 @@ class SourceManager:
 
     @registry.setter
     def registry(self, value):
+        """设置模块注册表引用。"""
         self._registry = value
 
     # ── 模块扫描 ──

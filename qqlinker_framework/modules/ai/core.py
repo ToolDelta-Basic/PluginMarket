@@ -36,7 +36,7 @@ from .auditor import Auditor
 from .tools import register_all
 from .tools.safety import is_trusted_image_host, validate_url
 from .balance import Balancer
-from ...管理.ai_engine import AIEngine
+from ...managers.ai_engine import AIEngine
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -166,6 +166,7 @@ class RateLimiter:
         return timestamps
 
     def check(self, user_id: int, group_id: int = 0) -> Tuple[bool, str]:
+        """检查速率限制。"""
         now = time.time()
         self._global_hits = self._prune(self._global_hits, now)
         if len(self._global_hits) >= self._global_limit:
@@ -190,6 +191,7 @@ class RateLimiter:
         return True, ""
 
     def get_stats(self) -> dict:
+        """获取速率限制统计。"""
         now = time.time()
         self._global_hits = self._prune(self._global_hits, now)
         return {
@@ -217,6 +219,7 @@ class InputGuard:
         self._compiled_fallback: Dict[int, re.Pattern] = {}
 
     def set_patterns(self, patterns: List[str]) -> None:
+        """设置注入检测模式。"""
         self._patterns = patterns
         self._compiled.clear()
 
@@ -232,6 +235,7 @@ class InputGuard:
         return pat
 
     def validate(self, text: str) -> Tuple[bool, Optional[str]]:
+        """验证输入安全性。"""
         if len(text) > _INPUT_MAX_LENGTH:
             return False, f"输入过长（最大 {_INPUT_MAX_LENGTH} 字符）"
         source = self._patterns or _HARDCODED_INJECTION_PATTERNS
@@ -258,8 +262,8 @@ def _has_cyrillic(text: str) -> bool:
 # ═══════════════════════════════════════════════════════════
 
 class AICore(Module):
-    background = True
     """AI 核心模块 v2：集成 LLM 对话、工具体系、余额系统和群级记忆。"""
+    background = True
 
     name = "ai_core"
     tier = 100  # TIER_DAEMON: 系统守护
@@ -496,7 +500,8 @@ class AICore(Module):
     # 上下文注入
     # ═══════════════════════════════════════════════════════════
 
-    def _inject_context(self, system_prompt: str, user_id: int,
+    @staticmethod
+    def _inject_context(system_prompt: str, user_id: int,
                         nickname: str, group_id: int, sender_uid: int) -> str:
         context = (
             "\n\n【上下文信息】\n"
@@ -511,7 +516,8 @@ class AICore(Module):
     # 工具体系
     # ═══════════════════════════════════════════════════════════
 
-    def _get_available_tools_for_uid(self, sender_uid: int) -> List[dict]:
+    @staticmethod
+    def _get_available_tools_for_uid(sender_uid: int) -> List[dict]:
         available = []
         for tool_def in _TOOL_REGISTRY:
             if sender_uid >= tool_def["min_uid"]:
@@ -945,6 +951,7 @@ class AICore(Module):
     # ═══════════════════════════════════════════════════════════
 
     def checkpoint(self) -> dict | None:
+        """崩溃恢复检查点。"""
         now = time.time()
         active = {}
         for gid, last_active in self.conversation_last_active.items():

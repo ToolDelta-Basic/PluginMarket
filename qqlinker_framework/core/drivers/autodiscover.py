@@ -80,10 +80,12 @@ def _scan_module_source(source: str) -> List[str]:
         return found
 
     class _DangerousVisitor(ast.NodeVisitor):
+        """检查 AST 节点中的危险调用。"""
         # 可通过 getattr 动态访问的危险模块名
         _DANGEROUS_GETATTR_MODULES = frozenset({'os', 'sys', 'subprocess'})
 
-        def _is_name(self, node, names):
+        @staticmethod
+        def _is_name(node, names):
             """Fix H2: 检查节点是否为指定的 Name 节点。
 
             修复前此方法作为类外 @staticmethod 定义，导致
@@ -92,6 +94,7 @@ def _scan_module_source(source: str) -> List[str]:
             return isinstance(node, ast.Name) and node.id in names
 
         def visit_Call(self, node):
+            """访问函数调用节点。"""
             # 检查 func 是否为危险调用
             name = _get_call_name(node.func)
             if name == 'getattr':
@@ -387,7 +390,7 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
             and getattr(attr, "name", None)
         ):
             # 外部模块 uid: 优先从持久化授权文件读取，否则默认 400
-            from qqlinker_framework.管理 import UID_NB as _NB
+            from qqlinker_framework.managers import UID_NB as _NB
             declared_uid = getattr(attr, "uid", 400)
             # 尝试从授权记录读取持久化的有效 uid
             effective_uid = _load_external_uid_persisted(

@@ -42,6 +42,7 @@ _log = logging.getLogger(__name__)
 # ── 会话状态 ──────────────────────────────────────────────
 
 class SessionState:
+    """CMD 会话状态枚举。"""
     ACTIVE = "ACTIVE"
     EXITED = "EXITED"
 
@@ -49,6 +50,7 @@ SESSION_TIMEOUT_SECONDS = 300
 
 
 def parse_args(text: str) -> Tuple[str, Dict[str, str]]:
+    """解析 CMD 命令参数。"""
     tokens = text[1:].strip().split()
     if not tokens:
         return "", {}
@@ -71,6 +73,7 @@ def parse_args(text: str) -> Tuple[str, Dict[str, str]]:
 
 
 class CmdSession:
+    """CMD 交互式命令会话。"""
     def __init__(self, host: "FrameworkHost", ctx: Any) -> None:
         self.host = host
         self.ctx = ctx
@@ -80,6 +83,7 @@ class CmdSession:
         _log.info("CMD 会话已创建 (caller_uid=%s)", self._caller_uid)
 
     def is_timed_out(self) -> bool:
+        """检查会话是否超时。"""
         return (time.monotonic() - self._last_activity) > SESSION_TIMEOUT_SECONDS
 
     def _touch(self) -> None:
@@ -105,6 +109,7 @@ class CmdSession:
             "kill": self._cmd_kill, "grant": self._cmd_grant,
             "revoke": self._cmd_revoke, "ulist": self._cmd_ulist,
             "exec": self._cmd_exec, "run": self._cmd_run,
+            "freeze": self._cmd_freeze, "thaw": self._cmd_thaw,
             "help": self._cmd_help, "exit": self._cmd_exit, "quit": self._cmd_exit,
         }
         handler = handlers.get(cmd)
@@ -213,6 +218,34 @@ class CmdSession:
         mod.refresh_view(400, self.host.services)
         return f"✓ 模块 '{target_name}' 授权已撤销 → nobody(400)"
 
+    async def _cmd_freeze(self, params):
+        """.freeze --name <模块名>  冻结指定模块"""
+        target_name = params.get("name", "")
+        if not target_name:
+            return "用法: .freeze --name <模块名>"
+        try:
+            ok = await self.host.module_mgr.freeze_module(target_name)
+            if ok:
+                return f"✓ 模块 '{target_name}' 已冻结"
+            return f"✗ 模块 '{target_name}' 冻结失败（模块不存在/不可冻结/已冻结）"
+        except Exception as e:
+            _log.exception(".freeze 命令异常")
+            return f"✗ 异常: {e}"
+
+    async def _cmd_thaw(self, params):
+        """.thaw --name <模块名>  解冻指定模块"""
+        target_name = params.get("name", "")
+        if not target_name:
+            return "用法: .thaw --name <模块名>"
+        try:
+            ok = await self.host.module_mgr.thaw_module(target_name)
+            if ok:
+                return f"✓ 模块 '{target_name}' 已解冻"
+            return f"✗ 模块 '{target_name}' 解冻失败（模块不存在/未冻结）"
+        except Exception as e:
+            _log.exception(".thaw 命令异常")
+            return f"✗ 异常: {e}"
+
     def _cmd_ulist(self, params):
         loaded = self.host.module_mgr._loaded_modules
         if not loaded:
@@ -260,10 +293,13 @@ class CmdSession:
         except Exception as e:
             return f"✗ 执行失败: {e}"
 
-    def _cmd_help(self, params):
+    @staticmethod
+    def _cmd_help(params):
         return (
             "══════ CMD 控制台 ══════\n"
             ".kill --name <模块> [--mode graceful|force|hard] --confirm yes  卸载模块\n"
+            ".freeze --name <模块>  冻结模块（保留实例但取消事件/命令）\n"
+            ".thaw --name <模块>  解冻模块（重新注册事件/命令）\n"
             ".ulist  列出所有已加载模块\n"
             ".run --cmd <游戏指令>  执行游戏指令\n"
             ".help  显示此帮助\n"
@@ -282,8 +318,8 @@ class CmdSession:
 # ── 模块定义 ─────────────────────────────────────────────
 
 class KernelCMDsModule(Module):
+    """CMD 交互式命令会话模块。"""
     background = True
-    """CMD 交互式命令会话模块"""
 
     name = "kernel_cmds"
     tier = 0
@@ -313,6 +349,136 @@ class KernelCMDsModule(Module):
         )
         await ctx.reply("CMD 会话已启动。输入 .help 查看命令，.exit 退出。")
 
+    # ── v6: 冻结/解冻/状态 内核命令 ──
+
+    @command(".冻结", min_uid=0)
+    async def _cmd_freeze(self, ctx):
+        """冻结指定模块（kernel 级命令）"""
+        parts = ctx.message.split(None, 1) if ctx.message else []
+        if len(parts) < 2:
+            await ctx.reply("用法: .冻结 <模块名>  或  .冻结列表")
+            return
+        target = parts[1].strip()
+        if target == "列表":
+            # 显示已冻结模块
+            try:
+                host = self._root_services.get("_host")
+            except Exception:
+                host = None
+            if host is None:
+                await ctx.reply("✗ 框架主机引用不可用")
+                return
+            frozen = host.list_frozen()
+            if not frozen:
+                await ctx.reply("当前没有已冻结的模块")
+            else:
+                await ctx.reply(
+                    f"已冻结模块 ({len(frozen)} 个): "
+                    + ", ".join(frozen)
+                )
+            return
+        # 冻结指定模块
+        try:
+            host = self._root_services.get("_host")
+        except Exception:
+            host = None
+        if host is None:
+            await ctx.reply("✗ 框架主机引用不可用")
+            return
+        ok = await host.freeze_module(target)
+        if ok:
+            await ctx.reply(f"✓ 模块 '{target}' 已冻结")
+        else:
+            await ctx.reply(f"✗ 模块 '{target}' 冻结失败（不存在/不可冻结/已冻结）")
+
+    @command(".解冻", min_uid=0)
+    async def _cmd_thaw(self, ctx):
+        """解冻指定模块（kernel 级命令）"""
+        parts = ctx.message.split(None, 1) if ctx.message else []
+        if len(parts) < 2:
+            await ctx.reply("用法: .解冻 <模块名>")
+            return
+        target = parts[1].strip()
+        try:
+            host = self._root_services.get("_host")
+        except Exception:
+            host = None
+        if host is None:
+            await ctx.reply("✗ 框架主机引用不可用")
+            return
+        ok = await host.thaw_module(target)
+        if ok:
+            await ctx.reply(f"✓ 模块 '{target}' 已解冻")
+        else:
+            await ctx.reply(f"✗ 模块 '{target}' 解冻失败（不存在/未冻结）")
+
+    @command(".状态", min_uid=100)
+    async def _cmd_status(self, ctx):
+        """显示框架健康摘要或单模块详情（daemon 级命令）"""
+        try:
+            host = self._root_services.get("_host")
+        except Exception:
+            host = None
+        if host is None:
+            await ctx.reply("✗ 框架主机引用不可用")
+            return
+        parts = ctx.message.split(None, 1) if ctx.message else []
+        telemetry = getattr(host, 'telemetry', None)
+
+        if len(parts) < 2 or not parts[1].strip():
+            # 显示框架整体健康摘要
+            lines = ["📊 **框架健康摘要**"]
+            if telemetry:
+                summary = telemetry.summary()
+                lines.append(f"  运行时间: {summary['uptime_human']}")
+                lines.append(f"  指标数: {summary['total_metrics']}")
+                lines.append(f"  告警规则: {summary['total_alerts']}")
+                lines.append(f"  已触发告警: {summary['triggered_alerts']}")
+                health = summary.get('health', {})
+                if health:
+                    lines.append(f"  健康模块: {health.get('healthy', '?')}")
+                    lines.append(f"  注意模块: {health.get('attention', '?')}")
+                    lines.append(f"  降级模块: {health.get('degraded', '?')}")
+                    lines.append(f"  不健康模块: {health.get('unhealthy', '?')}")
+            frozen = host.list_frozen()
+            if frozen:
+                lines.append(f"  ❄️ 已冻结: {', '.join(frozen)}")
+            loaded = host.module_mgr.get_loaded_modules()
+            lines.append(f"  已加载模块: {len(loaded)}")
+            lines.append("\n💡 .状态 <模块名> 查看单模块详情")
+            await ctx.reply("\n".join(lines))
+        else:
+            # 显示单模块详情
+            target = parts[1].strip()
+            mod = host.module_mgr._loaded_modules.get(target)
+            if mod is None:
+                await ctx.reply(f"✗ 模块 '{target}' 未加载")
+                return
+            frozen = getattr(mod, 'frozen', False)
+            uid = getattr(mod, 'uid', '?')
+            enabled = getattr(mod, 'enabled', True)
+            version = getattr(mod, 'version', (0, 0, 0))
+            deps = getattr(mod, 'dependencies', [])
+            req_svcs = getattr(mod, 'required_services', [])
+            cmds = list(getattr(mod, '_commands', {}).keys())
+            events = len(getattr(mod, '_event_handlers', []))
+
+            lines = [
+                f"📦 **{target}** 模块详情",
+                f"  UID: {uid}",
+                f"  状态: {'❄️ 已冻结' if frozen else ('✅ 启用' if enabled else '⛔ 禁用')}",
+                f"  版本: {'.'.join(str(v) for v in version)}",
+                f"  依赖: {', '.join(deps) if deps else '(无)'}",
+                f"  所需服务: {', '.join(req_svcs) if req_svcs else '(无)'}",
+                f"  命令数: {len(cmds)}",
+                f"  事件订阅数: {events}",
+            ]
+            if cmds:
+                lines.append(f"  命令: {', '.join(cmds[:10])}")
+                if len(cmds) > 10:
+                    lines.append(f"    ... 等 {len(cmds)} 个")
+            await ctx.reply("\n".join(lines))
+
     @listen("GroupMessageEvent", priority=50)
     async def _on_cmd_input(self, event):
         session = self._sessions.get(event.user_id)
@@ -330,6 +496,7 @@ class KernelCMDsModule(Module):
 
 
 def can_enter_cmd(caller_uid: int, admin_uids: Optional[List[int]] = None) -> bool:
+    """检查是否可进入 CMD 会话。"""
     if caller_uid == TIER_KERNEL:
         return True
     if admin_uids and caller_uid in admin_uids:

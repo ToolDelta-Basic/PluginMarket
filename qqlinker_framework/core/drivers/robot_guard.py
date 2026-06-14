@@ -30,6 +30,7 @@ class RobotRegistry:
         self._lock = threading.Lock()
 
     def register(self, name: str, client, group_ids: list):
+        """注册机器人。"""
         with self._lock:
             self._robots[name] = {
                 "client": client,
@@ -40,16 +41,19 @@ class RobotRegistry:
         _log.info("[机器人] 已注册: %s (群: %s)", name, ", ".join(map(str, group_ids)))
 
     def remove(self, name: str):
+        """移除机器人。"""
         with self._lock:
             self._robots.pop(name, None)
 
     def touch(self, name: str):
+        """更新机器人心跳时间。"""
         with self._lock:
             if name in self._robots:
                 self._robots[name]["last_seen"] = time.time()
 
     @property
     def count(self) -> int:
+        """已注册机器人数量。"""
         return len(self._robots)
 
     @property
@@ -378,7 +382,8 @@ class SendGuard:
                 return name
         return None
 
-    def _get_available_robots(self, robots_dict: dict) -> List[str]:
+    @staticmethod
+    def _get_available_robots(robots_dict: dict) -> List[str]:
         """获取所有可用（在线 + 未熔断）的机器人列表。"""
         from ...services.ws_client import WsClient, CircuitState
         available = []

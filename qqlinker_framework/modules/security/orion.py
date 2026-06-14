@@ -150,6 +150,7 @@ class BanStore:
 
 
 class OrionBridge(Module):
+    """Orion 安全桥接模块。"""
     background = True
     """自主封禁模块：使用原生游戏指令 + 本地 JSON 记录。"""
 

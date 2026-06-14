@@ -49,7 +49,11 @@ if _FRAMEWORK_ROOT not in sys.path:
 
 from .server import IPCServer
 from .client import IPCClient
-from .protocol import make_event, _encode_message
+from .protocol import (
+    IPC_VERSION, DEFAULT_CAPABILITIES,
+    make_event, make_hello_ack, _encode_message, _decode_line,
+    is_hello, negotiate_capabilities,
+)
 
 
 class Guardian:
@@ -65,6 +69,11 @@ class Guardian:
         self._server = IPCServer(socket_path)
         self._shell: asyncio.StreamWriter | None = None
         self._logger = logging.getLogger("guardian")
+        # ── v1.5: IPC 版本协商 ──
+        self._client_version: int | None = None
+        self._client_capabilities: list = []
+        self._negotiated_capabilities: list = []
+        self._version_negotiated = False
 
     # ═══════════════════════════════════════════════════════════
     # IPC 处理器（薄壳 → 守护进程）
@@ -132,6 +141,59 @@ class Guardian:
             await adapter.send_game_command(cmd)
         return {"ok": True}
 
+    async def _handle_hello(self, params: dict) -> dict:
+        """处理客户端 HELLO 握手 — 版本协商。
+
+        客户端连接后发送 HELLO，服务端回复 HELLO_ACK。
+        如果版本不匹配，记录警告但不拒绝连接（降级运行）。
+        """
+        client_version = params.get("version", 0)
+        client_caps = params.get("capabilities", [])
+        self._client_version = client_version
+        self._client_capabilities = client_caps
+
+        if client_version != IPC_VERSION:
+            self._logger.warning(
+                "IPC 版本不匹配: 客户端 v%d, 服务端 v%d。降级运行。",
+                client_version, IPC_VERSION,
+            )
+        else:
+            self._logger.info(
+                "IPC 版本协商成功: v%d, 客户端能力=%s",
+                client_version, client_caps,
+            )
+
+        # 协商共同支持的能力
+        self._negotiated_capabilities = negotiate_capabilities(
+            client_caps, DEFAULT_CAPABILITIES
+        )
+        self._version_negotiated = True
+
+        self._logger.info(
+            "协商能力: %s (客户端=%d, 服务端=%d, 交集=%d)",
+            self._negotiated_capabilities,
+            len(client_caps), len(DEFAULT_CAPABILITIES),
+            len(self._negotiated_capabilities),
+        )
+
+        return {
+            "type": "HELLO_ACK",
+            "version": IPC_VERSION,
+            "capabilities": DEFAULT_CAPABILITIES,
+        }
+
+    def has_capability(self, cap: str) -> bool:
+        """检查协商后是否支持指定能力。"""
+        return cap in self._negotiated_capabilities
+
+    def get_capabilities(self) -> list:
+        """返回协商后的能力列表。"""
+        return list(self._negotiated_capabilities)
+
+    def is_version_negotiated(self) -> bool:
+        """版本协商是否已完成。"""
+        return self._version_negotiated
+
     # ═══════════════════════════════════════════════════════════
     # 反向通道（守护进程 → 薄壳）
     # ═══════════════════════════════════════════════════════════
@@ -152,19 +214,31 @@ class Guardian:
             self._logger.debug("推送失败: %s", e)
 
     async def push_send_group_msg(self, group_id: int, message: str) -> None:
+        if not self.has_capability("send_group_msg"):
+            self._logger.debug("能力 'send_group_msg' 未协商，跳过推送")
+            return
         await self._push_to_shell("send_group_msg", {
             "group_id": group_id, "message": message,
         })
 
     async def push_send_private_msg(self, user_id: int, message: str) -> None:
+        if not self.has_capability("send_private_msg"):
+            self._logger.debug("能力 'send_private_msg' 未协商，跳过推送")
+            return
         await self._push_to_shell("send_private_msg", {
             "user_id": user_id, "message": message,
         })
 
     async def push_game_command(self, cmd: str) -> None:
+        if not self.has_capability("game_command"):
+            self._logger.debug("能力 'game_command' 未协商，跳过推送")
+            return
         await self._push_to_shell("game_command", {"command": cmd})
 
     async def push_get_online_players(self) -> None:
+        if not self.has_capability("player_list"):
+            self._logger.debug("能力 'player_list' 未协商，跳过推送")
+            return
         await self._push_to_shell("get_online_players", {})
 
     # ═══════════════════════════════════════════════════════════
@@ -179,6 +253,8 @@ class Guardian:
         self._server.register("group_message", self._handle_group_message)
         self._server.register("cmd", self._handle_cmd)
         self._server.register("ping", self._handle_ping)
+        # v1.5: 注册版本协商 HELLO 处理器
+        self._server.register("HELLO", self._handle_hello)
 
         # 启动 IPC Server（接受薄壳连接）
         await self._server.start()
@@ -201,6 +277,7 @@ class Guardian:
 # ═══════════════════════════════════════════════════════════════
 
 def main():
+    """守护进程入口。"""
     parser = argparse.ArgumentParser(description="QQLinker 守护进程")
     parser.add_argument("--socket", default="/tmp/qqlinker-guardian.sock",
                         help="Unix socket 路径")

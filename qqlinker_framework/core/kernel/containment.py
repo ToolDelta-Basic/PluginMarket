@@ -78,6 +78,7 @@ def safe_call(
     """
     @functools.wraps(func)
     def sync_wrapper(*args, **kwargs):
+        """同步包装器：捕获 CancelledError。"""
         try:
             return func(*args, **kwargs)
         except Exception as e:
@@ -170,6 +171,7 @@ def safe_handler(
     """
     @functools.wraps(func)
     def sync_wrapper(*args, **kwargs):
+        """带取消安全的事件包装器。"""
         try:
             return func(*args, **kwargs)
         except asyncio.CancelledError:
@@ -250,6 +252,7 @@ def plugin_wrapper(entry_func: Callable) -> Callable:
     """
     @functools.wraps(entry_func)
     def wrapper(*args, **kwargs):
+        """入口包装器：捕获 SystemExit。"""
         try:
             return entry_func(*args, **kwargs)
         except SystemExit:

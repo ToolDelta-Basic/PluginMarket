@@ -7,7 +7,7 @@ import asyncio
 import time
 import logging
 from typing import Dict, List, Optional
-from qqlinker_framework.管理 import CommandManager
+
 from ...core.kernel.error_hints import hint
 from ..kernel.context import CommandContext
 from ..kernel.audit_trail import AuditTrail
@@ -32,7 +32,7 @@ class CommandRouter:
 
     def __init__(
         self,
-        command_mgr: CommandManager,
+        command_mgr,  # : CommandManager
         adapter,
         config_mgr,
         message_mgr,
@@ -40,6 +40,7 @@ class CommandRouter:
         loaded_modules: dict = None,
         uid_lookup=None,
         audit_trail: Optional[AuditTrail] = None,
+        source_mgr=None,
     ):
         self.command_mgr = command_mgr
         self.adapter = adapter
@@ -47,6 +48,7 @@ class CommandRouter:
         self.message_mgr = message_mgr
         self.group_filter = group_filter
         self.loaded_modules = loaded_modules or {}
+        self.source_mgr = source_mgr
         self.uid_lookup = uid_lookup
         self.audit_trail = audit_trail
         self._cooldowns: dict[str, dict[int, float]] = {}
@@ -121,6 +123,30 @@ class CommandRouter:
                     )
                     return False
             return False
+
+    async def _resolve_callback(self, cmd_info: dict, module_name: str):
+        """解析命令回调 — 懒加载模块先激活后返回方法引用。
+
+        对于已加载模块（background=True），直接返回 callback（绑定方法）。
+        对于懒加载模块（background=False），通过 SourceManager 激活后获取方法。
+        """
+        callback = cmd_info.get("callback")
+        if callback is not None:
+            return callback
+
+        # 懒加载模块未激活：通过 SourceManager 激活
+        if self.source_mgr is None:
+            return None
+
+        module = await self.source_mgr._activate_lazy_module(module_name)
+        if module is None:
+            return None
+
+        # 从新激活的模块获取方法
+        method_name = cmd_info.get("method")
+        if method_name:
+            return getattr(module, method_name, None)
+        return None
 
     async def _record_circuit_failure(self, module_name: str, error: str = "") -> None:
         """记录模块命令执行失败，超过阈值则熔断。"""
@@ -358,13 +384,23 @@ class CommandRouter:
                         event.handled = True
                         return True
                     # 命令超时包装
+                    callback = await self._resolve_callback(cmd_info, module_name)
+                    if callback is None:
+                        await ctx.reply("⚠️ 模块不可用，请稍后重试")
+                        event.handled = True
+                        return True
                     await guardian.guard(
-                        cmd_info["callback"](ctx),
+                        callback(ctx),
                         user_uid,
                         module_name,
                     )
                 else:
-                    await cmd_info["callback"](ctx)
+                    callback = await self._resolve_callback(cmd_info, module_name)
+                    if callback is None:
+                        await ctx.reply("⚠️ 模块不可用，请稍后重试")
+                        event.handled = True
+                        return True
+                    await callback(ctx)
 
                 event.handled = True
                 # 执行成功后才记录冷却

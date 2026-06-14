@@ -23,7 +23,7 @@ class DummyModule(Module):
             await debug.register_module(
                 self.name, {"ping": _dbg_ping}
             )
-        except KeyError:
+        except (KeyError, PermissionError):
             pass
 
         print("[DummyModule] 初始化完成")

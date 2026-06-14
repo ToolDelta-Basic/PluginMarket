@@ -1,5 +1,8 @@
 # __init__.py
-"""云链群服互通框架 - ToolDelta 插件入口 (v1.4.3)
+
+__version__ = "1.5.0"
+
+"""云链群服互通框架 - ToolDelta 插件入口 (v1.5.0)
 
 启动方式:
   1. ToolDelta 环境 → 自动作为插件加载
@@ -36,7 +39,10 @@ def _bootstrap_integrity_check():
     }
     missing = []
     for rel, desc in _fatal_files.items():
-        if not os.path.isfile(os.path.join(_framework_base, rel)):
+        # v6: 同时检查 管理/ 和 managers/ 路径
+        check_paths = [rel, rel.replace("管理/", "managers/", 1)] if "管理/" in rel else [rel]
+        found = any(os.path.isfile(os.path.join(_framework_base, p)) for p in check_paths)
+        if not found:
             missing.append((rel, desc))
     if not missing:
         return
@@ -55,6 +61,7 @@ try:
 except ImportError:
     HAS_TOOLDELTA = False
     class Plugin:
+        """ToolDelta Plugin 基类 mock。"""
         name: str = ""
         version: tuple = (0, 0, 0)
         author: str = ""
@@ -63,21 +70,47 @@ except ImportError:
             self.frame = frame
             self.game_ctrl = None
             self.data_path = "."
-        def ListenPreload(self, func, priority=0): pass
-        def ListenActive(self, func, priority=0): pass
-        def ListenPlayerJoin(self, func, priority=0): pass
-        def ListenPlayerPreJoin(self, func, priority=0): pass
-        def ListenPlayerLeave(self, func, priority=0): pass
-        def ListenChat(self, func, priority=0): pass
-        def ListenFrameExit(self, func, priority=0): pass
-        def ListenPacket(self, pk_id, func, priority=0): pass
-        def ListenBytesPacket(self, pk_id, func, priority=0): pass
-        def ListenInternalBroadcast(self, name, func, priority=0): pass
+        def ListenPreload(self, func, priority=0):  # noqa: PYL-R0201
+            """预加载监听。"""
+            pass
+        def ListenActive(self, func, priority=0):  # noqa: PYL-R0201
+            """激活监听。"""
+            pass
+        def ListenPlayerJoin(self, func, priority=0):  # noqa: PYL-R0201
+            """玩家加入监听。"""
+            pass
+        def ListenPlayerPreJoin(self, func, priority=0):  # noqa: PYL-R0201
+            """玩家预加入监听。"""
+            pass
+        def ListenPlayerLeave(self, func, priority=0):  # noqa: PYL-R0201
+            """玩家离开监听。"""
+            pass
+        def ListenChat(self, func, priority=0):  # noqa: PYL-R0201
+            """聊天监听。"""
+            pass
+        def ListenFrameExit(self, func, priority=0):  # noqa: PYL-R0201
+            """框架退出监听。"""
+            pass
+        def ListenPacket(self, pk_id, func, priority=0):  # noqa: PYL-R0201
+            """数据包监听。"""
+            pass
+        def ListenBytesPacket(self, pk_id, func, priority=0):  # noqa: PYL-R0201
+            """字节数据包监听。"""
+            pass
+        def ListenInternalBroadcast(self, name, func, priority=0):  # noqa: PYL-R0201
+            """内部广播监听。"""
+            pass
         @staticmethod
-        def GetPluginAPI(api_name, min_version=(0, 0, 0), force=True): return None
+        def GetPluginAPI(api_name, min_version=(0, 0, 0), force=True):
+            """获取插件 API。"""
+            return None
         @staticmethod
-        def BroadcastEvent(evt): return []
-        def get_typecheck_plugin_api(self, api_cls): raise NotImplementedError
+        def BroadcastEvent(evt):
+            """广播事件。"""
+            return []
+        def get_typecheck_plugin_api(self, api_cls):  # noqa: PYL-R0201
+            """类型检查插件 API。"""
+            raise NotImplementedError
     def plugin_entry(cls, *args, **kwargs): return cls
     ToolDelta = None
 
@@ -98,7 +131,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
 
     name = "群服互通框架"
-    version = (1, 4, 3)
+    version = (1, 5, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 

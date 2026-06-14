@@ -26,7 +26,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from .admin_tools import AdminToolManager
-from qqlinker_framework.管理.admin_tools.workflow_registry import WorkflowStep, FailStrategy, WorkflowDefinition
+from qqlinker_framework.managers.admin_tools.workflow_registry import WorkflowStep, FailStrategy, WorkflowDefinition
 
 _log = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ def admin_workflow(
     steps = steps or []
 
     def decorator(func: Callable):
+        """内部装饰器：附加工作流元信息。"""
         # 附加元数据到函数上
         func._workflow_info = {
             "name": name,

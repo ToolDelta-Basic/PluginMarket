@@ -44,6 +44,7 @@ def _check_pw(pw: str, st: str) -> bool:
 # 会话
 # ═══════════════════════════════════════════════
 class Sessions:
+    """会话管理器，含爆破保护。"""
     def __init__(self):
         self._m = {}
         self._ttl = 86400
@@ -70,13 +71,17 @@ class Sessions:
         self._login_fails.pop(ip, None)
 
     def mk(self, u: str) -> str:
+        """创建新会话令牌。"""
         self._gc(); t = secrets.token_hex(32)
         self._m[t] = {"u": u, "ts": time.time()}; return t
     def ok(self, t: str) -> Optional[str]:
+        """验证会话令牌，返回用户名或 None。"""
         self._gc(); s = self._m.get(t)
         if not s or time.time() - s["ts"] > self._ttl: return None
         return s["u"]
-    def rm(self, t: str): self._m.pop(t, None)
+    def rm(self, t: str):
+        """删除会话令牌。"""
+        self._m.pop(t, None)
     def _gc(self):
         n = time.time()
         for t in [t for t, s in self._m.items() if n - s["ts"] > self._ttl]:
@@ -86,6 +91,7 @@ class Sessions:
 # 用户
 # ═══════════════════════════════════════════════
 class Users:
+    """用户数据库管理器。"""
     def __init__(self, fp: str):
         self._p = fp; self._u: dict = {}; self._lk = threading.Lock()
         if os.path.exists(fp):
@@ -98,16 +104,20 @@ class Users:
         with open(t, 'w') as f: json.dump(self._u, f, ensure_ascii=False, indent=2)
         os.replace(t, self._p)
     def add(self, u: str, p: str) -> bool:
+        """添加用户。"""
         with self._lk:
             if u in self._u: return False
             self._u[u] = {"pw": _hash_pw(p), "ts": time.time()}; self._sv(); return True
     def chk(self, u: str, p: str) -> bool:
+        """校验用户密码。"""
         with self._lk:
             if u not in self._u: return False
             return _check_pw(p, self._u[u].get("pw", ""))
     def ls(self) -> List[str]:
+        """列出所有用户名。"""
         with self._lk: return sorted(self._u.keys())
     def rm(self, u: str) -> bool:
+        """删除用户。"""
         with self._lk:
             if u not in self._u: return False
             del self._u[u]; self._sv(); return True
@@ -478,9 +488,12 @@ setInterval(() => { if (document.getElementById('ap').classList.contains('on')) 
 # HTTP 处理器
 # ═══════════════════════════════════════════════
 class _H(http.server.BaseHTTPRequestHandler):
+    """Web 面板 HTTP 请求处理器。"""
     provider: Any = None  # set by module
 
-    def log_message(self, f, *a): _log.debug("panel %s %s", self.command, f % a)
+    def log_message(self, f, *a):
+        """自定义日志输出。"""
+        _log.debug("panel %s %s", self.command, f % a)
 
     def _ok(self, d: dict, code=200):
         b = json.dumps(d, ensure_ascii=False, default=str).encode()
@@ -506,6 +519,7 @@ class _H(http.server.BaseHTTPRequestHandler):
             return {}
 
     def do_GET(self):
+        """处理 GET 请求。"""
         p = urlparse(self.path).path
         if p == "/":
             self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.end_headers()
@@ -515,6 +529,7 @@ class _H(http.server.BaseHTTPRequestHandler):
         self.send_error(404)
 
     def do_POST(self):
+        """处理 POST 请求。"""
         p = urlparse(self.path).path
         if p.startswith("/api/"):
             return self._api_post(p[5:])
@@ -607,6 +622,7 @@ class _H(http.server.BaseHTTPRequestHandler):
 # 模块入口
 # ═══════════════════════════════════════════════
 class PanelModule(Module):
+    """Web 管理面板模块。"""
     name = "webpanel"; tier = 300  # TIER_APP; version = (2, 0, 0)
     default_config = {"管理面板": {"端口": 8381, "地址": "127.0.0.1"}}
 

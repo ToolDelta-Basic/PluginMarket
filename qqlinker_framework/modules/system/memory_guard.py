@@ -58,6 +58,7 @@ _log = logging.getLogger(__name__)
 
 # ── 内存状态枚举 ──
 class MemState:
+    """内存状态枚举。"""
     OK = "ok"
     WARNING = "warning"
     DEGRADED = "degraded"
@@ -382,7 +383,8 @@ class MemoryGuard(Module):
 
     # ── 工具方法 ──
 
-    def _get_rss_mb(self) -> float:
+    @staticmethod
+    def _get_rss_mb() -> float:
         """获取当前进程 RSS (MB)，纯 Python 实现无需 psutil。"""
         try:
             with open("/proc/self/status") as f:
@@ -394,7 +396,8 @@ class MemoryGuard(Module):
             pass
         return 0.0
 
-    def _get_system_memory(self) -> dict:
+    @staticmethod
+    def _get_system_memory() -> dict:
         """读取系统内存信息（Linux /proc/meminfo）。"""
         try:
             meminfo = {}
@@ -416,7 +419,8 @@ class MemoryGuard(Module):
         except Exception:
             return {"total_gb": 0, "available_gb": 0, "used_ratio": 0}
 
-    def _get_uptime(self) -> str:
+    @staticmethod
+    def _get_uptime() -> str:
         """获取进程运行时长。"""
         try:
             # Linux: /proc/self 启动时间

@@ -135,6 +135,7 @@ class BindingService:
 
 
 class PlayerBindingModule(Module):
+    """玩家绑定模块。"""
     background = True
     """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
 

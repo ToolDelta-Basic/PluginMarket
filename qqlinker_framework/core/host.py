@@ -19,23 +19,25 @@ from .kernel.services import (
     TIER_SERVICE,
     TIER_APP,
     UID_NOBODY,
+    MID_KERNEL,
+    MID_SERVICE,
     InteractiveSessionTracker,
 )
 from .kernel.bus import EventBus
 from .module import Module
-from qqlinker_framework.管理 import CommandRouter
+from qqlinker_framework.managers import CommandRouter
 from .drivers.event_bridge import EventBridge
 
-from qqlinker_framework.管理 import ConfigManager
-from qqlinker_framework.管理 import GroupConfigManager
-from qqlinker_framework.管理 import GroupModuleFilter
-from qqlinker_framework.管理 import RecoveryEngine
-from qqlinker_framework.管理 import PackageManager
-from qqlinker_framework.管理 import SourceManager
-from qqlinker_framework.管理 import CommandManager
-from qqlinker_framework.管理 import MessageManager
-from qqlinker_framework.管理 import ToolManager
-from qqlinker_framework.管理 import ConsoleCommands
+from qqlinker_framework.managers import ConfigManager
+from qqlinker_framework.managers import GroupConfigManager
+from qqlinker_framework.managers import GroupModuleFilter
+from qqlinker_framework.managers import RecoveryEngine
+from qqlinker_framework.managers import PackageManager
+from qqlinker_framework.managers import SourceManager
+from qqlinker_framework.managers import CommandManager
+from qqlinker_framework.managers import MessageManager
+from qqlinker_framework.managers import ToolManager
+from qqlinker_framework.managers import ConsoleCommands
 
 from ..adapters.base import IFrameworkAdapter
 from ..services.ws_client import WsClient, _get_websocket
@@ -47,12 +49,13 @@ from ..services.market_server import (
 )
 from .kernel.error_hints import hint
 from .drivers.gatekeeper import GatekeeperBridge, register_default_capabilities
-from qqlinker_framework.管理 import NetworkManager, NetworkConfig
+from qqlinker_framework.managers import NetworkManager, NetworkConfig
 from .kernel.events import ConfigReloadEvent
 from .kernel.resource_guardian import ResourceGuardian, GuardianConfig
 from .kernel.degradation import GracefulDegradation
 from .kernel.health_score import ModuleHealthScorer
 from .drivers.watchdog import EventLoopWatchdog
+from qqlinker_framework.managers.telemetry_hub import TelemetryHub
 
 
 class FrameworkHost:
@@ -67,7 +70,7 @@ class FrameworkHost:
 
     def __init__(self, adapter: IFrameworkAdapter, data_path: str = None):
         self.adapter = adapter
-        self.services = ServiceContainer(tier=TIER_KERNEL)
+        self.services = ServiceContainer(mid=MID_KERNEL)
         self.event_bus = EventBus()
         self.data_path = data_path or "."
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -163,6 +166,12 @@ class FrameworkHost:
         # ── 模块健康评分系统（v5: 多维度评分）──
         self.health_scorer = ModuleHealthScorer(data_path=self.data_path)
         self._module_health_status: Dict[str, str] = {}  # "healthy"|"degraded"|"dead"
+
+        # ── TelemetryHub — 统一可观测性中心（v6）──
+        self.telemetry = TelemetryHub(
+            event_bus=self.event_bus,
+            health_scorer=self.health_scorer,
+        )
 
         # ── 事件循环看门狗（v5: 假死检测 + 降级恢复）──
         self._watchdog: Optional[EventLoopWatchdog] = None
@@ -433,7 +442,18 @@ class FrameworkHost:
                         self.adapter.set_ws_client(ws_client)
                     if hasattr(self.adapter, 'event_bus'):
                         self.adapter.event_bus = self.event_bus
-                ws_client.set_message_callback(self.bridge.on_ws_group_message)
+                # v6: 包装 WS 回调，嵌入 TelemetryHub 记录点
+                _orig_ws_cb = self.bridge.on_ws_group_message
+
+                def _ws_cb_with_telemetry(data):
+                    t0 = time.monotonic()
+                    _orig_ws_cb(data)
+                    elapsed_ms = (time.monotonic() - t0) * 1000
+                    self.telemetry.record("ws.message.in", {
+                        "elapsed_ms": round(elapsed_ms, 2),
+                        "has_message": bool(data.get("message") if isinstance(data, dict) else False),
+                    })
+                ws_client.set_message_callback(_ws_cb_with_telemetry)
                 ws_client.connect()
                 logger.info("WebSocket 连接已发起: %s", svc_name)
 
@@ -474,7 +494,7 @@ class FrameworkHost:
                     self.robot_registry.register(name, ws_client, linked_groups)
                     # 为每个机器人创建独立 MessageManager（用于队列深度查询）
                     if name not in self._msg_mgrs:
-                        from qqlinker_framework.管理 import MessageManager
+                        from qqlinker_framework.managers import MessageManager
                         mgr = MessageManager(self.adapter)
                         mgr._queue = __import__('asyncio').PriorityQueue()
                         self._msg_mgrs[name] = mgr
@@ -538,13 +558,26 @@ class FrameworkHost:
             audit_trail=self.audit_trail,
             source_mgr=self.module_mgr,
         )
-        self.event_bus.subscribe("GroupMessageEvent", self._router.handle_message)
+        # v6: 包装命令路由，嵌入 TelemetryHub 记录点
+        _orig_handle = self._router.handle_message
+
+        async def _handle_with_telemetry(event):
+            t0 = time.monotonic()
+            result = await _orig_handle(event)
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            self.telemetry.record("module.command.done", {
+                "module": getattr(event, 'module_name', 'core'),
+                "elapsed_ms": round(elapsed_ms, 2),
+                "success": result is not False,
+            })
+            return result
+        self.event_bus.subscribe("GroupMessageEvent", _handle_with_telemetry)
 
         # 注册内核 .审计 命令
         self._register_audit_command()
 
         # ── 管理工具编排器 ──（在模块加载前注册，模块可引用）
-        from qqlinker_framework.管理 import AdminToolManager
+        from qqlinker_framework.managers import AdminToolManager
         self._admin_tool_mgr = AdminToolManager(self.services)
         self._admin_tool_mgr.init_with_services()
         self.services.register("admin_tool", self._admin_tool_mgr, uid=TIER_DAEMON,
@@ -572,7 +605,7 @@ class FrameworkHost:
         # ── 能力安全桥梁 ──（在所有服务和模块就绪后注册白名单方法）
         register_default_capabilities(self.gatekeeper)
         # 注册新的多层配置桥接
-        from qqlinker_framework.管理 import register_config_bridge
+        from qqlinker_framework.managers import register_config_bridge
         register_config_bridge(self.gatekeeper, self.config_mgr)
 
         # 模块加载完毕后，传播新增字段到所有群子配置
@@ -626,6 +659,15 @@ class FrameworkHost:
             uid=TIER_DAEMON,
             _caller="qqlinker_framework.core.host",
         )
+
+        # ── v6: 注册 TelemetryHub 到 services ──
+        self.services.register(
+            "telemetry", self.telemetry,
+            uid=MID_SERVICE,
+            _caller="qqlinker_framework.core.host",
+        )
+        logger.info("TelemetryHub 已注册")
+
         logger.info("模块健康评分器已注册")
 
         # ── v5: 启动事件循环看门狗（假死检测 + 降级恢复）──
@@ -1082,6 +1124,9 @@ class FrameworkHost:
             self.group_filter.set_module_names(
                 set(self.module_mgr._loaded_modules.keys())
             )
+            self.telemetry.record("module.lifecycle", {
+                "module": module_name, "action": "unload",
+            })
         return result
 
     async def load_module(self, module_cls: Type[Module]) -> Optional[Module]:
@@ -1094,6 +1139,9 @@ class FrameworkHost:
             self.group_filter.set_module_names(
                 set(self.module_mgr._loaded_modules.keys())
             )
+            self.telemetry.record("module.lifecycle", {
+                "module": mod.name, "action": "load",
+            })
         return mod
 
     async def reload_module(self, module_name: str) -> bool:
@@ -1104,7 +1152,34 @@ class FrameworkHost:
             self.group_filter.set_module_names(
                 set(self.module_mgr._loaded_modules.keys())
             )
+            self.telemetry.record("module.lifecycle", {
+                "module": module_name, "action": "reload",
+            })
         return result
+
+    # ── v6: FREEZE / THAW API ──
+
+    async def freeze_module(self, name: str) -> bool:
+        """冻结指定模块 — 委托给 SourceManager。"""
+        result = await self.module_mgr.freeze_module(name)
+        if result:
+            self.telemetry.record("module.lifecycle", {
+                "module": name, "action": "freeze",
+            })
+        return result
+
+    async def thaw_module(self, name: str) -> bool:
+        """解冻指定模块 — 委托给 SourceManager。"""
+        result = await self.module_mgr.thaw_module(name)
+        if result:
+            self.telemetry.record("module.lifecycle", {
+                "module": name, "action": "thaw",
+            })
+        return result
+
+    def list_frozen(self) -> list:
+        """返回已冻结模块列表 — 委托给 SourceManager。"""
+        return self.module_mgr.list_frozen()
 
     @property
     def main_loop(self):

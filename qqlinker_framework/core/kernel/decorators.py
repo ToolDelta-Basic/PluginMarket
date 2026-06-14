@@ -41,6 +41,7 @@ def command(
     """
 
     def decorator(func: Callable):
+        """内部装饰器：附加命令元信息。"""
         func._command_info = {
             "trigger": trigger,
             "type": cmd_type,

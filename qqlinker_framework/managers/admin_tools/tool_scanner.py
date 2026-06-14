@@ -28,7 +28,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from .admin_tools import AdminToolManager
-from qqlinker_framework.管理.admin_tools.workflow_registry import WorkflowDefinition, WorkflowStep, FailStrategy
+from qqlinker_framework.managers.admin_tools.workflow_registry import WorkflowDefinition, WorkflowStep, FailStrategy
 
 _log = logging.getLogger(__name__)
 
@@ -49,9 +49,11 @@ class ValidationResult:
 
     @property
     def is_valid(self) -> bool:
+        """是否验证通过。"""
         return len(self.errors) == 0
 
     def merge(self, other: "ValidationResult") -> "ValidationResult":
+        """合并另一个验证结果。"""
         self.errors.extend(other.errors)
         self.warnings.extend(other.warnings)
         self.info.extend(other.info)

@@ -31,7 +31,7 @@ def escape_player_name(name: str) -> str:
     """转义玩家名中的危险字符，防止 Minecraft 命令注入。
 
     Minecraft 原生命令使用双引号包裹参数，玩家名中含 " 可逃逸
-    引号并执行任意命令。此处将 ", \, \n, \r 转义以消除注入风险。
+    引号并执行任意命令。此处将 \", \\, \\n, \\r 转义以消除注入风险。
     """
     name = name.replace('\\', '\\\\')  # 反斜杠 → 双反斜杠
     name = name.replace('"', '\\"')        # 双引号 → 转义双引号

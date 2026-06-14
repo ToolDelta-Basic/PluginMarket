@@ -507,9 +507,11 @@ class ConfigManager:
         return True
 
     def get_data_dir(self) -> str:
+        """获取数据目录路径。"""
         return self._data_dir
 
     def get_config_dir(self) -> str:
+        """获取配置目录路径。"""
         return self._config_dir
 
     # ── 令牌代理 ────────────────────────────────────────
@@ -571,6 +573,7 @@ class ConfigManager:
     # ── 热重载 ────────────────────────────────────────────
 
     def reload(self) -> bool:
+        """热重载配置文件。"""
         if not self._loaded:
             return False
         changed = False
@@ -631,6 +634,7 @@ class ConfigManager:
 
     def start_watching(self, interval: float = 2.0,
                        on_reload: Optional[Callable] = None) -> None:
+        """启动文件变化监控。"""
         if self._watcher_thread and self._watcher_thread.is_alive():
             return
         self._on_reload_callback = on_reload
@@ -648,6 +652,7 @@ class ConfigManager:
         self._watcher_thread.start()
 
     def stop_watching(self) -> None:
+        """停止文件变化监控。"""
         if self._watcher_stop:
             self._watcher_stop.set()
         if self._watcher_thread and self._watcher_thread.is_alive():

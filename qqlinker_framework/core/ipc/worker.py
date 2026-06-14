@@ -21,7 +21,7 @@ from typing import Optional
 from .server import IPCServer
 from .protocol import ERR_INTERNAL, IPCError
 from ..drivers.registry import ModuleRegistry
-from qqlinker_framework.管理 import file_watcher_main
+from qqlinker_framework.managers import file_watcher_main
 
 logger = logging.getLogger("worker")
 

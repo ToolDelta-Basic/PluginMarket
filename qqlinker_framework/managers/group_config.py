@@ -84,7 +84,7 @@ class GroupConfigManager:
         return self._repair_dir
 
     @property
-    def multi_file_mode(self) -> bool:
+    def multi_file_mode(self) -> bool:  # noqa: PYL-R0201
         """是否启用多文件分化模式。"""
         return MULTI_FILE_MODE
 

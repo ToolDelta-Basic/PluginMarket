@@ -107,3 +107,68 @@ def is_error(msg: dict) -> bool:
 def is_event(msg: dict) -> bool:
     """是否为推送事件."""
     return "event" in msg and "id" not in msg
+
+
+# ---------------------------------------------------------------------------
+# 版本协商
+# ---------------------------------------------------------------------------
+
+IPC_VERSION = 2
+
+DEFAULT_CAPABILITIES = [
+    "group_message", "send_group_msg", "send_private_msg",
+    "game_command", "player_list", "freeze_module", "thaw_module",
+    "telemetry_snapshot",
+]
+
+HELLO_MSG = {
+    "type": "HELLO",
+    "version": IPC_VERSION,
+    "capabilities": DEFAULT_CAPABILITIES,
+}
+
+HELLO_ACK_MSG = {
+    "type": "HELLO_ACK",
+    "version": IPC_VERSION,
+    "capabilities": DEFAULT_CAPABILITIES,
+}
+
+
+def is_hello(msg: dict) -> bool:
+    """是否为 HELLO 握手消息."""
+    return msg.get("type") == "HELLO" and "version" in msg
+
+
+def is_hello_ack(msg: dict) -> bool:
+    """是否为 HELLO_ACK 握手回复."""
+    return msg.get("type") == "HELLO_ACK" and "version" in msg
+
+
+def make_hello(version: int = IPC_VERSION, capabilities: list | None = None) -> dict:
+    """创建 HELLO 握手消息."""
+    return {
+        "type": "HELLO",
+        "version": version,
+        "capabilities": capabilities or DEFAULT_CAPABILITIES,
+    }
+
+
+def make_hello_ack(version: int = IPC_VERSION, capabilities: list | None = None) -> dict:
+    """创建 HELLO_ACK 握手回复."""
+    return {
+        "type": "HELLO_ACK",
+        "version": version,
+        "capabilities": capabilities or DEFAULT_CAPABILITIES,
+    }
+
+
+def negotiate_capabilities(client_caps: list, server_caps: list) -> list:
+    """协商共同支持的能力集.
+
+    Args:
+        client_caps: 客户端声明的能力列表.
+        server_caps: 服务端声明的能力列表.
+    Returns:
+        双方共同支持的能力列表（交集）。
+    """
+    return list(set(client_caps) & set(server_caps))

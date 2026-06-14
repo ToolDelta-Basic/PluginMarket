@@ -42,11 +42,13 @@ class ModuleMarketServer:
 
     @property
     def modules_dir(self) -> str:
+        """模块目录路径。"""
         path = os.path.join(self._data_path, _MODULE_DIR_NAME)
         os.makedirs(path, exist_ok=True)
         return path
 
     def start(self):
+        """启动市场服务器。"""
         conf = {
             "modules_dir": self.modules_dir,
             "upload_token": self._token,
@@ -58,6 +60,7 @@ class ModuleMarketServer:
         _c = conf
 
         class _Bound(MarketHandler):
+            """绑定配置的市场处理器。"""
             market_conf = _c
 
         self._httpd = http.server.HTTPServer((self._host, self._port), _Bound)
@@ -65,6 +68,7 @@ class ModuleMarketServer:
         self._thread.start()
 
     def stop(self):
+        """停止市场服务器。"""
         if self._httpd:
             self._httpd.shutdown()
         if self._thread and self._thread.is_alive():
@@ -72,6 +76,7 @@ class ModuleMarketServer:
 
     @property
     def url(self) -> str:
+        """市场服务器 URL。"""
         return f"http://{self._host}:{self._port}"
 
 
@@ -83,6 +88,7 @@ class MarketSourceAggregator:
         self._timeout = timeout
 
     def list_all(self, page: int = 1, per_page: int = 20, category: str = "") -> Dict[str, Any]:
+        """列出所有市场的模块。"""
         if not HAS_URLLIB:
             return {"modules": [], "sources": [], "conflicts": [], "error": "urllib unavailable"}
         seen: Dict[str, dict] = {}
@@ -125,6 +131,7 @@ class MarketSourceAggregator:
         }
 
     def search(self, keyword: str) -> Dict[str, Any]:
+        """搜索模块。"""
         all_mods = self.list_all(per_page=200)
         kw = keyword.lower()
         filtered = [m for m in all_mods["items"]
@@ -132,6 +139,7 @@ class MarketSourceAggregator:
         return {"modules": filtered, "query": keyword, "sources": all_mods["sources"]}
 
     def download_url(self, module_name: str) -> Optional[str]:
+        """获取模块下载 URL。"""
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", module_name)
         for url in self._sources:
             try:
@@ -143,6 +151,7 @@ class MarketSourceAggregator:
         return None
 
     def fetch_module(self, module_name: str, data_path: str) -> Optional[str]:
+        """下载模块到本地。"""
         safe = re.sub(r"[^a-zA-Z0-9_\-]", "", module_name)
         for url in self._sources:
             try:

@@ -117,7 +117,8 @@ class TemplateEngine:
 
     # ── 加载 ──
 
-    def list_builtin(self) -> List[str]:
+    @staticmethod
+    def list_builtin() -> List[str]:
         """列出内置模板名称。"""
         return sorted(_BUILTIN_TEMPLATES.keys())
 
@@ -155,7 +156,8 @@ class TemplateEngine:
             return self._load_file(fp)
         return None
 
-    def _load_file(self, fp: str) -> Optional[dict]:
+    @staticmethod
+    def _load_file(fp: str) -> Optional[dict]:
         """加载模板 JSON 文件。"""
         try:
             with open(fp, 'r', encoding='utf-8') as f:

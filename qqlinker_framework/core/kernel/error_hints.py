@@ -152,10 +152,12 @@ class ErrorMode:
 
     @classmethod
     def set_config_source(cls, config_svc):
+        """设置配置源。"""
         cls._config_svc = config_svc
 
     @classmethod
     def current(cls) -> str:
+        """获取当前错误模式。"""
         if cls._mode is not None:
             return cls._mode
         # 命令行 > 环境变量 > config.json > 默认
@@ -184,14 +186,17 @@ class ErrorMode:
 
     @classmethod
     def is_friendly(cls) -> bool:
+        """是否为友好模式。"""
         return cls.current() == cls.FRIENDLY
 
     @classmethod
     def is_debug(cls) -> bool:
+        """是否为调试模式。"""
         return cls.current() == cls.DEBUG
 
     @classmethod
     def reset(cls):
+        """重置模式缓存。"""
         cls._mode = None
 
 

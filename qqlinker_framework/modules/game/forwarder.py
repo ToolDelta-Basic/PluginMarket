@@ -19,6 +19,7 @@ from ...services.dedup import LayeredDedup
 
 
 class GameForwarder(Module):
+    """游戏消息转发模块。"""
     background = True
     """负责游戏聊天与QQ群消息的双向转发，以及加入/离开提示。"""
 
@@ -114,14 +115,15 @@ class GameForwarder(Module):
                 return
 
         # 稳定哈希避免 PYTHONHASHSEED 随机化导致去重失效
-        name_bytes = event.player_name.encode()
-        player_hash = int(
-            hashlib.sha256(name_bytes).hexdigest()[:8], 16
-        )
-        if not self.dedup.check_and_add_content(
-            msg, player_hash
-        ):
-            return
+        if self.dedup is not None:
+            name_bytes = event.player_name.encode()
+            player_hash = int(
+                hashlib.sha256(name_bytes).hexdigest()[:8], 16
+            )
+            if not self.dedup.check_and_add_content(
+                msg, player_hash
+            ):
+                return
 
         template = cfg.get("转发格式", "<{player}> {message}")
         text = template.replace("{player}", event.player_name).replace(
@@ -157,8 +159,9 @@ class GameForwarder(Module):
         if any(msg.startswith(p) for p in block_prefixes):
             return
 
-        msg_id = event.raw_data.get("message_id")
-        if not msg_id or (self.dedup and not self.dedup.check_and_add_id(str(msg_id))):
+        # 有 message_id 时做消息级别去重
+        msg_id = event.raw_data.get("message_id") if event.raw_data else None
+        if msg_id and self.dedup is not None and not self.dedup.check_and_add_id(str(msg_id)):
             return
 
         template = cfg.get("转发格式", "§7[QQ] {nickname}§7: {message}")

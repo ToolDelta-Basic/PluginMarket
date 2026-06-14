@@ -51,18 +51,22 @@ class Balancer:
 
     @property
     def enabled(self) -> bool:
+        """是否启用计费。"""
         return self._enabled
 
     @enabled.setter
     def enabled(self, value: bool) -> None:
+        """设置计费开关。"""
         self._enabled = value
 
     @property
     def token_price(self) -> float:
+        """每百万 token 价格。"""
         return self._token_price
 
     @token_price.setter
     def token_price(self, value: float) -> None:
+        """设置 token 价格。"""
         self._token_price = value
 
     # ── 持久化 ────────────────────────────────────────────
