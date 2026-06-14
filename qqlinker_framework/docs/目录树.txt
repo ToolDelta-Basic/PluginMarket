@@ -1,0 +1,96 @@
+qqlinker_framework/                     # 框架根目录 (ToolDelta 类式插件)
+├── __init__.py                          # 插件入口 — 生命周期、完整性检查
+├── __main__.py                          # python -m qqlinker_framework 入口
+├── datas.json                           # 依赖声明
+│
+├── core/                                # 核心层
+│   ├── host.py                          # 框架调度器 — 组装服务、生命周期、热插拔
+│   ├── module.py                        # 模块基类 — 约定优于配置、魔法属性注入
+│   ├── kernel/                          # 微内核 — 框架运行的必要基础
+│   │   ├── services.py                  # 服务容器 — 五层等级制权限体系
+│   │   ├── bus.py                       # 事件总线 — 递归防护 + 线程安全
+│   │   ├── events.py                    # 标准事件定义
+│   │   ├── context.py                   # 命令上下文
+│   │   ├── defguard.py                  # 防御性输入验证层
+│   │   ├── sanitize.py                  # 通用输入清洗 (Minecraft/Unicode)
+│   │   ├── containment.py               # 异常隔离层 — 四层兜底
+│   │   ├── decorators.py                # 声明式装饰器 (@command/@listen/@tool)
+│   │   ├── error_hints.py               # 友善错误提示库
+│   │   └── audit.py                     # 统一审计日志基础设施
+│   └── drivers/                         # 驱动层 — 可选加载，移除不崩
+│       ├── routing.py                   # 命令路由 — 权限/角色/冷却/群过滤
+│       ├── gatekeeper.py                # 能力安全桥梁 (Capability Bridge)
+│       ├── event_bridge.py              # 事件桥接 — 游戏→QQ 事件分发
+│       ├── recovery.py                  # 崩溃恢复引擎 — 心跳/检查点/防滥用
+│       ├── autodiscover.py              # 模块自动发现 — 包扫描 + 文件扫描
+│       └── protocols.py                 # 驱动接口定义 — 可替换实现
+│
+├── managers/                            # 管理器层 — 可插拔服务
+│   ├── config_mgr.py                    # 配置管理器 — 多层独立文件 + UID 门控
+│   ├── group_config_mgr.py              # 群聊子配置 — 继承模型 + 自动修复
+│   ├── module_mgr.py                    # 模块管理器 — 三阶段加载 + 热插拔
+│   ├── command_mgr.py                   # 命令注册/注销
+│   ├── message_mgr.py                   # 消息管理器 — 削峰填谷
+│   ├── tool_mgr.py                      # 工具管理器 — AI 工具注册
+│   ├── package_mgr.py                   # 包管理器 — pip 依赖检查
+│   ├── group_filter.py                  # 群级模块/命令过滤器
+│   └── console.py                       # 控制台命令注册
+│
+├── modules/                             # 业务模块
+│   ├── ai/                              # AI 对话模块
+│   │   ├── core.py                      # AI 核心 — 对话管理 + 安全注入检测
+│   │   ├── auditor.py                   # AI 审核 — 违规检测 + 分级惩罚
+│   │   ├── llm_client.py                # LLM 客户端 — API 封装
+│   │   ├── security.py                  # AI 安全增强
+│   │   └── tools/                       # AI 工具组
+│   │       ├── image.py                 # 图片生成
+│   │       ├── search.py                # 搜索
+│   │       ├── scraper.py               # 网页抓取
+│   │       ├── tts.py                   # 语音合成
+│   │       └── safety.py                # 安全工具
+│   ├── game/                            # 游戏模块
+│   │   ├── admin.py                     # 游戏管理 — 在线/踢出/封禁
+│   │   ├── binding.py                   # 玩家绑定 — QQ↔MC 玩家
+│   │   ├── forwarder.py                 # 消息转发 — QQ↔游戏
+│   │   ├── monitor.py                   # TPS 监控
+│   │   ├── tracker.py                   # 玩家追踪
+│   │   └── acg_image.py                 # ACG 图片 — 随机二次元图
+│   ├── security/                        # 安全模块
+│   │   └── orion.py                     # 封禁系统 — 自实现 BanStore
+│   ├── system/                          # 系统模块
+│   │   ├── auth.py                      # 授权管理 — UID 分配 + 角色
+│   │   ├── kernel_auth.py               # 内核授权 — .grant/.exec/.sudo
+│   │   ├── kernel_cmds.py               # CMD 会话 — 管理控制台
+│   │   ├── config_repair.py             # 配置修复 — 自动检测 + 手动修复
+│   │   ├── help.py                      # 帮助命令 — 分页浏览 + 超时关闭
+│   │   ├── panel.py                     # Web 管理面板
+│   │   ├── persona.py                   # 用户人设管理
+│   │   └── ping.py                      # 心跳检测
+│   └── logging/                         # 日志模块
+│       └── chat.py                      # 聊天日志记录
+│
+├── services/                            # 服务层 — 框架级公共服务
+│   ├── ws_client.py                     # WebSocket 客户端 — OneBot 连接
+│   ├── debug_engine.py                  # 调试引擎 — 消息/API 记录
+│   ├── dedup/                           # 去重引擎
+│   │   ├── layered_dedup.py             # 多层去重 — ID + 内容 + Redis
+│   │   └── bloom_filter.py              # 布隆过滤器
+│   └── market_server/                   # 模块市场
+│       ├── server.py                    # HTTP 服务器
+│       ├── handler.py                   # REST API 处理器
+│       └── signer.py                    # 签名/验签
+│
+├── adapters/                            # 平台适配器
+│   ├── base.py                          # 适配器基类 (IFrameworkAdapter)
+│   └── tooldelta_adapter.py             # ToolDelta 适配器实现
+│
+├── testing/                             # 测试框架
+│   ├── runner.py                        # 测试运行器 — 54 个测试
+│   ├── cli.py                           # 命令行测试入口
+│   └── mock_adapter.py                  # Mock 适配器
+│
+└── docs/                                # 文档
+    ├── 目录树.txt                        # 本文件
+    ├── API文档.md                        # API 参考
+    ├── 平台迁移说明.md                   # 从旧平台迁移指南
+    └── 模块开发指南.md                     # 模块开发指南

@@ -1,0 +1,48 @@
+{
+  "name": "memory_group",
+  "tool_type": "ai",
+  "description": "记忆工具组：获取对话历史、搜索长期记忆、获取角色设定。AI 在回复前应优先调用这些工具获取上下文，而非依赖预加载。",
+  "category": "memory",
+  "risk_level": "low",
+  "sub_tools": [
+    {
+      "name": "get_recent_memory",
+      "description": "获取最近几条群聊对话历史。当用户的问题涉及之前聊过的内容时调用。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "返回的对话条数，默认 10，最大 50"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_long_memory",
+      "description": "按关键词搜索长期记忆中存储的对话内容。当用户提到特定话题/事件/人物时调用。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "搜索关键词"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "最多返回条数，默认 5，最大 20"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "get_persona",
+      "description": "获取当前用户的角色设定。当 AI 需要知道用户设定的是什么角色时调用。",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}

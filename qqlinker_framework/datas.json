@@ -1,0 +1,11 @@
+{
+    "plugin-id": "qqlinker-framework",
+    "author": "小石潭记qwq",
+    "version": "1.0.0",
+    "description": "模块化群服互通框架",
+    "plugin-type": "classic",
+    "pre-plugins": {
+        "XUID获取": "0.0.7",
+        "Orion_System": "any"
+    }
+}

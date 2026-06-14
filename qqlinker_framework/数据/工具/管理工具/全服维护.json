@@ -1,0 +1,27 @@
+{
+  "name": "全服维护",
+  "tool_type": "admin",
+  "description": "对 Minecraft 服务器执行全服维护操作：备份世界、清理实体、重启服务器。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "操作": {
+        "type": "string",
+        "description": "维护操作类型",
+        "enum": ["备份世界", "清理实体", "重启服务器", "全部执行"]
+      },
+      "广播消息": {
+        "type": "string",
+        "description": "给玩家的广播通知（可选）"
+      }
+    },
+    "required": ["操作"]
+  },
+  "risk_level": "high",
+  "require_confirm": true,
+  "admin_only": true,
+  "api_type": "generic",
+  "category": "server",
+  "timeout": 120,
+  "enabled": true
+}

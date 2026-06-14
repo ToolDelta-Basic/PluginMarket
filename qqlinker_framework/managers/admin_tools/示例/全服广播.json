@@ -1,0 +1,27 @@
+{
+  "name": "全服广播",
+  "description": "向所有已连接的 QQ 群和游戏内发送统一公告",
+  "require_confirm": true,
+  "min_tier": "service",
+  "fail_strategy": "continue_on_error",
+  "steps": [
+    {
+      "description": "获取所有活跃群列表",
+      "module": "group_config",
+      "method": "list_active_groups",
+      "args": {}
+    },
+    {
+      "description": "向每个QQ群发送公告",
+      "module": "message",
+      "method": "broadcast_to_all_groups",
+      "args": {"msg": "📢 通知：请各位玩家注意查看公告"}
+    },
+    {
+      "description": "在游戏内用 say 命令广播",
+      "module": "adapter",
+      "method": "send_game_command",
+      "args": {"command": "say §6[公告] §f请各位玩家注意查看QQ群公告"}
+    }
+  ]
+}
