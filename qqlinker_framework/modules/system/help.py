@@ -32,7 +32,8 @@ class HelpModule(Module):
     """
 
     name = "help"
-    tier = 300  # TIER_APP
+    mid = 300  # TIER_APP
+    tier = 300  # deprecated, use mid
     version = (2, 1, 0)
     required_services = ["command", "message", "config"]
 
@@ -249,10 +250,11 @@ class HelpModule(Module):
         return f"{header}\n{body}\n{footer}"
 
     def _is_admin(self, user_id: int) -> bool:
-        """判断用户是否为管理员。"""
+        """判断用户是否为管理员（兼容字符串和整数 user_id）。"""
         try:
             admin_list = self.config.get("管理员.管理员QQ", [])
-            return user_id in [int(q) for q in admin_list]
+            uid_int = int(user_id) if not isinstance(user_id, int) else user_id
+            return uid_int in [int(q) for q in admin_list]
         except (TypeError, ValueError):
             return False
 

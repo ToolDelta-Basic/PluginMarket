@@ -304,7 +304,8 @@ class GlobalChatLogModule(Module):
     """全局聊天日志模块，记录聊天消息并提供查询服务。"""
 
     name = "global_chat_log"
-    tier = 100  # TIER_DAEMON  # daemon: 系统守护
+    mid = 100  # TIER_DAEMON  # daemon: 系统守护
+    tier = 100  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message"]
 

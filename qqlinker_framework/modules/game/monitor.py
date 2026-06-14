@@ -35,8 +35,10 @@ class TPSMonitorModule(Module):
     """TPS 监控模块，提供 .性能 命令和 'tps' 服务。"""
 
     name = "tps_monitor"
+    mid = 100
     tier = 100  # TIER_DAEMON  # 需要 adapter 查询 TPS
     version = (1, 0, 0)
+    background = False  # lazy: command-only, no @listen subscriptions
 
     default_config = {
         "TPS监控": {

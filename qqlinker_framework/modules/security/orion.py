@@ -155,7 +155,8 @@ class OrionBridge(Module):
     """自主封禁模块：使用原生游戏指令 + 本地 JSON 记录。"""
 
     name = "orion_bridge"
-    tier = 100  # TIER_DAEMON  # daemon: 系统守护
+    mid = 100  # TIER_DAEMON  # daemon: 系统守护
+    tier = 100  # deprecated, use mid
     version = (2, 0, 0)
     required_services = ["config", "adapter", "message"]
 

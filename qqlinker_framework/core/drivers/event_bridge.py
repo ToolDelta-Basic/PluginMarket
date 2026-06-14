@@ -45,8 +45,11 @@ class EventBridge:
         self.adapter = adapter
         self._session_tracker = session_tracker
 
-    def _is_user_interactive(self, user_id) -> bool:
-        """检查用户是否处于交互式会话（豁免去重）。"""
+    def _is_user_interactive(self, user_id: int) -> bool:
+        """检查用户是否处于交互式会话（豁免去重）。
+
+        user_id 来自 validate_onebot_event 的 safe_int 转换，保证为 int。
+        """
         if self._session_tracker is None:
             return False
         try:
@@ -112,14 +115,13 @@ class EventBridge:
             pass  # 直接跳过一切去重
 
         # ── Layer 1.5: 交互式会话中的用户 — 跳过短文本去重 ──
-        elif len(stripped) <= 5 and self._is_user_interactive(data.get("user_id", 0)):
+        # data["user_id"] 已在 validate_onebot_event 中通过 safe_int 转为 int
+        elif len(stripped) <= 5 and self._is_user_interactive(data["user_id"]):
             pass  # 交互式会话豁免去重
 
         # ── Layer 2: 命令消息 — 短 TTL 专用去重 (5s) ──
         elif stripped.startswith("."):
-            from ..kernel.defguard import safe_int
-            user_id = safe_int(data.get("user_id", 0), 0)
-            logic_id = f"cmd_{group_id}_{user_id}_{text[:30]}"
+            logic_id = f"cmd_{group_id}_{data['user_id']}_{text[:30]}"
             if self.dedup and not self.dedup.check_and_add_command(logic_id):
                 return
 
@@ -143,8 +145,15 @@ class EventBridge:
         except Exception as e:
             _log.error("原始消息处理器异常: %s。%s", e, hint["EVENT_HANDLER_FAILED"])
 
+        # 统一 user_id 为 int（OneBot 可能传字符串）
+        uid_raw = data.get("user_id", 0)
+        try:
+            uid_int = int(uid_raw) if not isinstance(uid_raw, int) else uid_raw
+        except (TypeError, ValueError):
+            uid_int = 0
+
         event = GroupMessageEvent(
-            user_id=data["user_id"],
+            user_id=uid_int,
             group_id=group_id,
             nickname=nickname,
             message=text.strip(),

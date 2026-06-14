@@ -140,7 +140,8 @@ class PlayerBindingModule(Module):
     """玩家-QQ绑定模块，提供 .绑定 命令并监听游戏内 #绑定 请求。"""
 
     name = "player_binding"
-    tier = 100  # TIER_DAEMON  # 需要 adapter 执行游戏命令
+    mid = 100  # TIER_DAEMON  # 需要 adapter 执行游戏命令
+    tier = 100  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message", "adapter"]
 

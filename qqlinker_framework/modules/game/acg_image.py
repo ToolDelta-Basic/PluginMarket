@@ -110,8 +110,10 @@ class ACGImageModule(Module):
     """
 
     name = "acg_image"
+    mid = 300
     tier = 300  # TIER_APP
     version = (1, 2, 0)
+    background = False  # lazy: command-only, no @listen subscriptions
     dependencies: list[str] = []
     required_services = ["message", "config"]
 

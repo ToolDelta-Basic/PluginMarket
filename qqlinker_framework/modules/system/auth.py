@@ -15,6 +15,19 @@ _log = logging.getLogger(__name__)
 _SUDO_COOLDOWN = 30
 
 
+def _normalize_qq_list(qq_list: list) -> list:
+    """将 QQ 号列表统一转为 int，剔除无效值（兼容 OneBot 协议 string 和 int）。"""
+    result = []
+    for q in qq_list:
+        if not q:
+            continue
+        try:
+            result.append(int(q))
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
 def persist_user_uid(config, services, user_id: int, new_uid: int):
     """持久化用户的 UID 等级到 config.json（模块级共享函数）。
 
@@ -25,20 +38,22 @@ def persist_user_uid(config, services, user_id: int, new_uid: int):
     if not isinstance(uid_map, dict):
         uid_map = {}
 
+    uid_int = int(user_id) if not isinstance(user_id, int) else user_id
     for uid_str in list(uid_map.keys()):
         qq_list = uid_map.get(uid_str, [])
-        if isinstance(qq_list, list) and user_id in qq_list:
-            qq_list.remove(user_id)
-            if not qq_list:
+        if isinstance(qq_list, list) and uid_int in _normalize_qq_list(qq_list):
+            qq_list_normalized = _normalize_qq_list(qq_list)
+            qq_list_normalized.remove(uid_int)
+            if not qq_list_normalized:
                 del uid_map[uid_str]
             else:
-                uid_map[uid_str] = qq_list
+                uid_map[uid_str] = qq_list_normalized
 
     key = str(new_uid)
     if key not in uid_map:
         uid_map[key] = []
-    if user_id not in uid_map[key]:
-        uid_map[key].append(user_id)
+    if uid_int not in _normalize_qq_list(uid_map[key]):
+        uid_map[key].append(uid_int)
 
     config.set("权限管理.UID授权", uid_map)
     try:
@@ -53,7 +68,8 @@ class AuthModule(Module):
     """UID 身份认证与提权申请模块。"""
 
     name = "auth"
-    tier = 100  # TIER_DAEMON  # daemon: 系统守护（身份管理）
+    mid = 100  # TIER_DAEMON  # daemon: 系统守护（身份管理）
+    tier = 100  # deprecated, use mid
     version = (1, 2, 0)
     required_services = ["config", "message"]
 
@@ -259,6 +275,7 @@ class AuthModule(Module):
           2. 查 管理员.管理员QQ 列表 → uid=100
           4. 否则 nobody (400)
         """
+        uid_int = int(user_id) if not isinstance(user_id, int) else user_id
         uid_map = self.config.get("权限管理.UID授权", {})
         if isinstance(uid_map, dict):
             for uid_str, qq_list in uid_map.items():
@@ -266,15 +283,13 @@ class AuthModule(Module):
                     uid_level = int(uid_str)
                 except ValueError:
                     continue
-                if isinstance(qq_list, list) and user_id in qq_list:
+                if isinstance(qq_list, list) and uid_int in _normalize_qq_list(qq_list):
                     return uid_level
         admin_list = self.config.get("管理员.管理员QQ", [])
         if isinstance(admin_list, list):
             try:
-                if user_id in [int(q) for q in admin_list if q]:
+                if uid_int in [int(q) for q in admin_list if q]:
                     return 100
-            except (TypeError, ValueError):
-                pass
             except (TypeError, ValueError):
                 pass
         return UID_NOBODY

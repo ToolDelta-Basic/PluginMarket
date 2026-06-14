@@ -313,8 +313,10 @@ class AIAuditEnhanceModule(Module):
     """AI 审计增强,使用 LLM 进行反思与审查规则管理,并对外提供审核服务。"""
 
     name = "ai_audit_enhance"
+    mid = 100
     tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 4)
+    background = True  # must preload: subscribes to AIPrePrompt/AIPostResponse via @listen in on_init
     dependencies = ["ai_core"]
     required_services = ["config"]
 

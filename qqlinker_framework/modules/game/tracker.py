@@ -103,8 +103,10 @@ class PlayerTrackerModule(Module):
     """玩家坐标追踪模块，定时查询坐标，持久化并生成分布图。"""
 
     name = "player_tracker"
+    mid = 100
     tier = 100  # TIER_DAEMON  # daemon: 系统守护
     version = (1, 0, 0)
+    background = False  # lazy: command-only, no @listen subscriptions
     required_services = ["config", "message", "adapter"]
 
     default_config = {

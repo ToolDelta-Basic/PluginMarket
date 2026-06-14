@@ -391,7 +391,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
             return False
         admin_list = cfg.get("管理员.管理员QQ", [])
         try:
-            return user_id in [int(q) for q in admin_list]
+            uid_int = int(user_id) if not isinstance(user_id, int) else user_id
+            return uid_int in [int(q) for q in admin_list]
         except (TypeError, ValueError):
             return False
 

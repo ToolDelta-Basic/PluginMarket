@@ -73,7 +73,8 @@ class MemoryGuard(Module):
     """
 
     name: str = "memory_guard"
-    uid: int = 100  # daemon
+    mid: int = 100  # daemon
+    uid: int = 100  # deprecated, use mid
     version: tuple = (1, 0, 0)
     background: bool = True
 

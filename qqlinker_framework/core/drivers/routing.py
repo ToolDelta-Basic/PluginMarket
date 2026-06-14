@@ -220,7 +220,27 @@ class CommandRouter:
         }
 
     async def handle_message(self, event):
-        """处理群消息事件，查找匹配命令并执行。"""
+        """处理群消息事件，查找匹配命令并执行。
+
+        v6 增强: 检查交互式会话约定 — 若用户处于交互式会话且
+        capture_command=True，跳过所有命令匹配。
+        """
+        # ── v6 交互式会话拦截 ──
+        tracker = None
+        try:
+            tracker = self.source_mgr.host.services.try_get("session_tracker")
+        except Exception:
+            pass
+        if tracker is not None:
+            session = tracker.get_session(event.user_id) if hasattr(tracker, 'get_session') else None
+            if session and session.get("capture_command", True):
+                # 更新时间戳
+                if hasattr(tracker, 'touch'):
+                    tracker.touch(event.user_id)
+                # 不过滤事件 — 模块的 @listen 处理器仍然能收到 GroupMessageEvent
+                # 但不走命令路由
+                return False
+
         return await self._handle_message_impl(event)
 
     async def _handle_message_impl(self, event):
@@ -240,6 +260,11 @@ class CommandRouter:
                 if not self.group_filter.is_command_enabled(
                     event.group_id, module_name, trigger, caller_uid=caller_uid
                 ):
+                    _log = logging.getLogger(__name__)
+                    _log.debug(
+                        "命令被群过滤拦截: trigger=%s module=%s group=%d user=%d",
+                        trigger, module_name, event.group_id, event.user_id,
+                    )
                     return False  # 静默忽略，不给提示
 
             # ── 冷却检查 ──
@@ -304,7 +329,7 @@ class CommandRouter:
                     f"🔒 权限不足，该命令仅管理员可用。{hint['COMMAND_PERMISSION_DENIED']}"
                 )
                 logging.getLogger(__name__).warning(
-                    "用户 %d 尝试越权执行命令 %s", event.user_id, trigger,
+                    "用户 %s 尝试越权执行命令 %s", str(event.user_id), trigger,
                 )
                 event.handled = True
                 return True
@@ -315,8 +340,8 @@ class CommandRouter:
                 user_uid = self.uid_lookup(event.user_id)
                 if user_uid > 0 and user_uid > min_uid:
                     logging.getLogger(__name__).warning(
-                        "用户 %d (uid=%d) 尝试执行需要 min_uid=%d 的命令 %s",
-                        event.user_id, user_uid, min_uid, trigger,
+                        "用户 %s (uid=%s) 尝试执行需要 min_uid=%s 的命令 %s",
+                        str(event.user_id), str(user_uid), str(min_uid), trigger,
                     )
                     ctx = CommandContext(
                         user_id=event.user_id,
@@ -508,16 +533,17 @@ class CommandRouter:
             pass  # 健康评分非关键，静默降级
 
     def _check_role(self, role: str, user_id: int) -> bool:
-        """检查用户是否属于指定角色。"""
+        """检查用户是否属于指定角色（兼容字符串和整数 user_id）。"""
         roles = self.config_mgr.get("权限管理.角色", {}, requester_uid=0)
         if not isinstance(roles, dict):
             return False
         allowed = roles.get(role, [])
         if not isinstance(allowed, list):
             return False
-        if user_id in allowed:
+        uid_int = int(user_id) if not isinstance(user_id, int) else user_id
+        if uid_int in [int(q) for q in allowed if q]:
             return True
         logging.getLogger(__name__).warning(
-            "用户 %d 无角色 '%s' 权限", user_id, role
+            "用户 %s 无角色 '%s' 权限", str(user_id), role
         )
         return False

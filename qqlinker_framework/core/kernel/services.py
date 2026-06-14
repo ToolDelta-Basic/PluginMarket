@@ -524,29 +524,49 @@ class ServiceContainer:
 # ═══════════════════════════════════════════════════════════════
 
 class InteractiveSessionTracker:
-    """追踪哪些用户处于交互式会话中。
+    """追踪哪些用户处于交互式会话中 — 通用交互式对话约定。
 
-    处于交互式会话中的用户，消息去重机制应放宽，
-    避免 '1' / '2' / '是' / '否' 等短输入被拦截。
+    v6 增强:
+      - 新增 capture_module — 标记哪个模块在捕获用户输入
+      - 新增 capture_command — 是否拦截其他命令路由（默认 True）
+      - 支持超时自动退出
+      - CommandRouter 在 handle_message 中检查此约定：
+        若用户处于交互式会话且 capture_command=True，
+        跳过所有命令匹配，消息仅发布为 GroupMessageEvent。
 
-    用法:
-      tracker = InteractiveSessionTracker()
-      tracker.enter(user_id, group_id, session_type="rule_create")
-      ... 用户输入 ...
-      tracker.leave(user_id)
-      tracker.is_active(user_id) → bool
+    用法（任何模块）:
+      tracker = services.get("session_tracker")
+      tracker.enter(uid, gid, session_type="my_flow", capture_module="my_module")
+      ... 用户在交互模式下的所有输入不会被命令路由拦截 ...
+      tracker.leave(uid)
     """
+
+    DEFAULT_TIMEOUT = 300  # 5 分钟无输入自动退出
 
     def __init__(self):
         self._sessions: Dict[str, dict] = {}
 
-    def enter(self, user_id: int, group_id: int = 0, session_type: str = ""):
-        """用户进入交互式会话。"""
+    def enter(self, user_id: int, group_id: int = 0,
+              session_type: str = "", capture_module: str = "",
+              capture_command: bool = True):
+        """用户进入交互式会话。
+
+        Args:
+            user_id: QQ 用户 ID
+            group_id: 群号
+            session_type: 会话类型标识（如 'rule_create', 'bind_flow'）
+            capture_module: 捕获输入的模块名（用于审计和冲突检测）
+            capture_command: True 时拦截其他命令路由
+        """
         key = str(user_id)
+        import time
         self._sessions[key] = {
             "user_id": user_id,
             "group_id": group_id,
             "type": session_type,
+            "capture_module": capture_module,
+            "capture_command": capture_command,
+            "ts": time.time(),
         }
 
     def leave(self, user_id: int):
@@ -554,9 +574,52 @@ class InteractiveSessionTracker:
         self._sessions.pop(str(user_id), None)
 
     def is_active(self, user_id: int) -> bool:
-        """用户是否处于交互式会话中。"""
-        return str(user_id) in self._sessions
+        """用户是否处于交互式会话中（含超时检查）。"""
+        key = str(user_id)
+        session = self._sessions.get(key)
+        if session is None:
+            return False
+        import time
+        if time.time() - session.get("ts", 0) > self.DEFAULT_TIMEOUT:
+            self._sessions.pop(key, None)
+            return False
+        return True
+
+    def touch(self, user_id: int):
+        """刷新会话时间戳（收到用户输入时调用）。"""
+        key = str(user_id)
+        session = self._sessions.get(key)
+        if session is not None:
+            import time
+            session["ts"] = time.time()
+
+    def get_session(self, user_id: int) -> Optional[dict]:
+        """获取用户的交互式会话信息（含超时检查）。"""
+        key = str(user_id)
+        session = self._sessions.get(key)
+        if session is None:
+            return None
+        import time
+        if time.time() - session.get("ts", 0) > self.DEFAULT_TIMEOUT:
+            self._sessions.pop(key, None)
+            return None
+        return dict(session)
 
     def active_users(self) -> list:
-        """所有交互式会话中的用户 ID 列表。"""
+        """所有交互式会话中的用户 ID 列表（排除超时）。"""
+        import time
+        now = time.time()
+        expired = []
+        for key, session in list(self._sessions.items()):
+            if now - session.get("ts", 0) > self.DEFAULT_TIMEOUT:
+                expired.append(key)
+        for key in expired:
+            self._sessions.pop(key, None)
         return [int(k) for k in self._sessions]
+
+    def should_capture_commands(self, user_id: int) -> bool:
+        """是否应该拦截该用户的命令路由。由 CommandRouter 调用。"""
+        session = self.get_session(user_id)
+        if session is None:
+            return False
+        return bool(session.get("capture_command", True))

@@ -50,7 +50,8 @@ class ConfigRouter(Module):
     """配置路由模块。"""
     background = True
     name = "config_router"
-    tier = 100
+    mid = 100
+    tier = 100  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message"]
 

@@ -348,38 +348,84 @@ class SourceManager:
                 )
         finally:
             self._release_lock()
+            self._release_lock()
 
-        # Phase 2: 按依赖拓扑排序后执行 on_init
-        # 有依赖的模块会在其所依赖的模块之后初始化
-        sorted_names = self.services.resolve_order()
-        # 将模块按 resolve_order 重排（保留原 modules 中不在排序结果中的模块）
-        name_to_mod = {m.name: m for m in modules}
-        ordered_modules: List[Module] = []
-        seen: set = set()
-        for name in sorted_names:
-            if name in name_to_mod and name not in seen:
-                ordered_modules.append(name_to_mod[name])
-                seen.add(name)
-        # 追加任何不在依赖图中的模块（按原始注册顺序）
-        for mod in modules:
-            if mod.name not in seen:
-                ordered_modules.append(mod)
-                seen.add(mod.name)
-        modules = ordered_modules
-
-        # ── v5: 模块健康状态初始化 ──
+        # Phase 2 — v6: 并行分层初始化
+        # 按 required_services 依赖关系分层：同一层的模块无互相依赖，可并行 on_init。
+        # 层间严格串行，每层内所有模块的超时互不影响。
         degradation = getattr(self.host, 'degradation', None)
 
+        # 构建依赖图：{模块名 → {依赖的模块名}}
+        deps = {}
         for mod in modules:
-            # ── v5: 级联故障隔离 ── 单个模块异常仅影响自身
-            try:
-                mod._apply_conventions()
-                if not mod.enabled:
-                    logger.info("模块 '%s' 已禁用，跳过初始化", mod.name)
-                    self._set_module_health(mod.name, "healthy")
-                    continue
-                await mod.on_init()
+            deps[mod.name] = set()
+            for srv in mod.required_services:
+                for other in modules:
+                    if other.name == srv:
+                        deps[mod.name].add(srv)
+                        break
 
+        # 拓扑分层（Kahn 算法变体）
+        layers = []
+        remaining = {m.name for m in modules}
+        name_to_mod = {m.name: m for m in modules}
+
+        while remaining:
+            layer = []
+            for name in sorted(remaining):
+                if all(d not in remaining for d in deps.get(name, set())):
+                    layer.append(name_to_mod[name])
+            if not layer:
+                layer = [name_to_mod[n] for n in sorted(remaining)]
+            for mod in layer:
+                remaining.discard(mod.name)
+            layers.append(layer)
+
+        logger.info(
+            "Phase 2: %d 个模块分 %d 层初始化",
+            len(modules), len(layers),
+        )
+        for li, layer in enumerate(layers):
+            logger.debug("  Layer %d: %s", li + 1,
+                         ', '.join(m.name for m in layer))
+
+        for layer in layers:
+            # 层内并行 on_init
+            async def _init_one(mod):
+                try:
+                    mod._apply_conventions()
+                    if not mod.enabled:
+                        self._set_module_health(mod.name, "healthy")
+                        return (mod, None)
+                    await asyncio.wait_for(mod.on_init(), timeout=30.0)
+                    return (mod, None)
+                except asyncio.TimeoutError:
+                    return (mod, "on_init 超时 (30s)")
+                except Exception as e:
+                    return (mod, str(e))
+
+            results = await asyncio.gather(
+                *[_init_one(mod) for mod in layer]
+            )
+
+            for mod, error_msg in results:
+                if error_msg:
+                    logger.error(
+                        "模块 '%s' 初始化失败: %s。%s",
+                        mod.name, error_msg, hint["MODULE_INIT_FAILED"],
+                    )
+                    self._set_module_health(mod.name, "dead", error_msg)
+                    await self._rollback_module(mod)
+                    if degradation:
+                        degradation.on_module_fail(mod.name, error_msg)
+                    for dep_name in getattr(mod, 'required_services', []):
+                        self.services.unregister_dependency(mod.name, dep_name)
+                    continue
+
+                if not mod.enabled:
+                    continue
+
+                # 注册工具和命令
                 if mod.tools:
                     for tool_def in mod.tools:
                         self.host.tool_mgr.register_tool(tool_def)
@@ -389,22 +435,6 @@ class SourceManager:
                     self.host.command_mgr.register(**cmd_info)
                 await mod._post_init_conventions()
                 self._set_module_health(mod.name, "healthy")
-
-            except Exception as e:
-                logger.error(
-                    "模块 '%s' 初始化失败: %s。%s",
-                    mod.name, e, hint["MODULE_INIT_FAILED"],
-                )
-                self._set_module_health(mod.name, "dead", str(e))
-                await self._rollback_module(mod)
-                # ── v5: 级联隔离 ── 通知降级引擎，不影响其他模块
-                if degradation:
-                    degradation.on_module_fail(mod.name, str(e), e)
-                # 移除已注册的模块间依赖
-                for dep_name in getattr(mod, 'required_services', []):
-                    self.services.unregister_dependency(mod.name, dep_name)
-                continue
-
         # Phase 3: on_start — 级联故障隔离：单个模块异常不传播
         started_modules = []
         await self._acquire_lock(uid=0, timeout=30.0)

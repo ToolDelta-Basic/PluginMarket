@@ -51,8 +51,10 @@ class GroupPersonaModule(Module):
     """群级人设管理模块。"""
 
     name = "group_persona"
+    mid = 300
     tier = 300
     version = (1, 0, 0)
+    background = False  # lazy: command-only, no @listen subscriptions
     dependencies = ["ai_core"]
     required_services = ["config", "message"]
 

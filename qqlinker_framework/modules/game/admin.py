@@ -30,7 +30,8 @@ class GameAdmin(Module):
     """游戏管理模块：.在线 查看在线玩家，.指令/.执行 执行游戏指令。"""
 
     name = "game_admin"
-    tier = 100  # TIER_DAEMON  # daemon: 系统守护
+    mid = 100  # TIER_DAEMON  # daemon: 系统守护
+    tier = 100  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "adapter"]
 

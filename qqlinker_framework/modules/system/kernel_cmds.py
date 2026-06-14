@@ -322,7 +322,8 @@ class KernelCMDsModule(Module):
     background = True
 
     name = "kernel_cmds"
-    tier = 0
+    mid = 0
+    tier = 0  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["message"]
 

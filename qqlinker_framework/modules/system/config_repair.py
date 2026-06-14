@@ -55,11 +55,12 @@ def _check_uid_auth(ctx, services, uid_lookup=None) -> bool:
     if user_uid <= 100:
         return True
     
-    # fallback: 检查 op_only 列表
+    # fallback: 检查 op_only 列表（兼容字符串和整数 user_id）
     try:
         config = services.get("config")
         admin_list = config.get("管理员.管理员QQ", [])
-        if ctx.user_id in [int(q) for q in admin_list if q]:
+        uid_int = int(ctx.user_id) if not isinstance(ctx.user_id, int) else ctx.user_id
+        if uid_int in [int(q) for q in admin_list if q]:
             return True
     except Exception:
         pass
@@ -71,8 +72,10 @@ class ConfigRepairModule(Module):
     """配置修复与诊断模块。"""
 
     name = "config_repair"
+    mid = 200
     tier = 200  # TIER_SERVICE
     version = (1, 0, 1)
+    background = False  # lazy: command-only, no @listen subscriptions
     dependencies: list[str] = []
     required_services = ["config", "group_config", "message"]
 

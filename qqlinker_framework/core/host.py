@@ -960,13 +960,18 @@ class FrameworkHost:
                     uid_level = int(uid_str)
                 except ValueError:
                     continue
-                if isinstance(qq_list, list) and user_id in qq_list:
-                    return uid_level
-        # 管理员列表
+                if isinstance(qq_list, list):
+                    uid_int = int(user_id) if not isinstance(user_id, int) else user_id
+                    qq_ints = [int(q) for q in qq_list if q]
+                    if uid_int in qq_ints:
+                        return uid_level
+        # 管理员列表（兼容字符串和整数 user_id）
         admin_list = self.config_mgr.get("管理员.管理员QQ", [], requester_uid=0)
         if isinstance(admin_list, list):
             try:
-                if user_id in [int(q) for q in admin_list if q]:
+                uid_int = int(user_id) if not isinstance(user_id, int) else user_id
+                admin_ints = [int(q) for q in admin_list if q]
+                if uid_int in admin_ints:
                     return 100
             except (TypeError, ValueError):
                 pass

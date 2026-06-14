@@ -266,7 +266,8 @@ class AICore(Module):
     background = True
 
     name = "ai_core"
-    tier = 100  # TIER_DAEMON: 系统守护
+    mid = 100  # TIER_DAEMON: 系统守护
+    tier = 100  # deprecated, use mid
     version = (2, 0, 0)
     required_services = [
         "config", "message", "tool", "adapter", "dedup", "uid_lookup",

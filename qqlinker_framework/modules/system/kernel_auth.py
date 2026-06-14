@@ -15,7 +15,7 @@ from ...core.module import Module
 from ...core.kernel.decorators import command
 from ...core.kernel.services import uid_label, TIER_KERNEL, TIER_DAEMON, TIER_SERVICE, UID_NOBODY
 from ...core.kernel.audit import audit_log, audit_log_exec, AuditLevel
-from .auth import persist_user_uid
+from .auth import persist_user_uid, _normalize_qq_list
 
 _log = logging.getLogger(__name__)
 
@@ -49,7 +49,8 @@ class KernelAuthModule(Module):
     """内核级授权模块。uid=0，仅 root 用户可触发。"""
 
     name = "kernel_auth"
-    tier = 0  # TIER_KERNEL  # root: 框架内核
+    mid = 0  # TIER_KERNEL  # root: 框架内核
+    tier = 0  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message"]
 
@@ -282,6 +283,7 @@ class KernelAuthModule(Module):
           2. 查 管理员.管理员QQ 列表 → uid=100
           4. 否则 nobody (400)
         """
+        uid_int = int(user_id) if not isinstance(user_id, int) else user_id
         uid_map = self.config.get("权限管理.UID授权", {})
         if isinstance(uid_map, dict):
             for uid_str, qq_list in uid_map.items():
@@ -289,15 +291,13 @@ class KernelAuthModule(Module):
                     uid_level = int(uid_str)
                 except ValueError:
                     continue
-                if isinstance(qq_list, list) and user_id in qq_list:
+                if isinstance(qq_list, list) and uid_int in _normalize_qq_list(qq_list):
                     return uid_level
         admin_list = self.config.get("管理员.管理员QQ", [])
         if isinstance(admin_list, list):
             try:
-                if user_id in [int(q) for q in admin_list if q]:
+                if uid_int in [int(q) for q in admin_list if q]:
                     return 100
-            except (TypeError, ValueError):
-                pass
             except (TypeError, ValueError):
                 pass
         return UID_NOBODY
