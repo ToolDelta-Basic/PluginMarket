@@ -191,6 +191,19 @@ class MemoryGuard(Module):
             sys_mem = self._get_system_memory()
             now = time.time()
 
+            # ── v5.2: 周期性清理过期命令（每 10 次检查 = 每 20 分钟）──
+            self._orphan_cleanup_count = getattr(self, '_orphan_cleanup_count', 0) + 1
+            if self._orphan_cleanup_count >= 10:
+                self._orphan_cleanup_count = 0
+                try:
+                    host = self.services.try_get("host")
+                    if host and hasattr(host, 'module_mgr'):
+                        cleaned = await host.module_mgr.cleanup_orphan_commands()
+                        if cleaned:
+                            _log.info("清理 %d 条过期命令", cleaned)
+                except Exception:
+                    pass
+
             # 记录历史
             self._rss_history.append((now, rss_mb))
             # 只保留最近 24 小时

@@ -1,8 +1,10 @@
 API 参考文档
 
-版本 1.4.3
+版本 1.5.0
 
-本文档描述框架中对外开放的核心服务、管理器、事件以及模块开发所需的全部接口。所有示例均基于 Python 3.10+ 及框架 1.4.3。
+本文档描述框架中对外开放的核心服务、管理器、事件以及模块开发所需的全部接口。所有示例均基于 Python 3.10+ 及框架 1.5.0。
+
+v1.5.0 新增: ServiceRegistry（服务注册表）、TemplateEngine（模板引擎）、StandaloneAdapter（纯QQ适配器）、DemoModule（演示模式）。
 
 v1.4.3 新增: ModuleRegistry（模块注册表）、IPC 服务（进程间通信）、文件热监控。
 
@@ -18,6 +20,7 @@ ServiceContainer.register(name, instance_or_factory)
 
 · name (str)：服务名称。
 · instance_or_factory (Any)：实例或可调用工厂函数。若为工厂，则每次调用 get 时只执行一次并缓存结果。
+· v1.5.0 起，注册前需通过服务注册表（ServiceRegistry）允则检查。若服务在注册表中被标记为禁用，则抛出 RuntimeError 拒绝注册。内核级服务（mid ≤ 99）免检。
 
 ServiceContainer.get(name) -> Any
 
@@ -35,6 +38,17 @@ services = ServiceContainer()
 services.register("config", ConfigManager())
 config = services.get("config")
 ```
+
+---
+
+1.1 依赖分层改进 (v1.5.0+)
+
+`initialize_all()` 的 Phase 2（依赖分析阶段）现在同时使用模块声明的 `required_services` 和 `dependencies` 进行分层。框架会构建完整的依赖 DAG，确保模块按依赖拓扑顺序依次初始化，避免因依赖未就绪导致的启动错误。
+
+· `required_services`：模块所需的 ServiceContainer 中的服务名称，自动注入为实例属性。
+· `dependencies`：模块依赖的其他模块名称（字符串列表），确保依赖模块先初始化。
+
+两者在 Phase 2 中合并计算拓扑排序，共同决定模块初始化顺序。
 
 ---
 
@@ -100,6 +114,7 @@ await Module.on_start()
 await Module.on_stop()
 
 · 可选。模块卸载时的清理逻辑（如关闭连接、释放资源）。
+· v1.5.0 起，框架关闭时每个模块的 on_stop 有 5 秒超时保护。若模块的 on_stop 执行超过 5 秒，框架会跳过该模块继续关闭后续模块，不阻塞整体关闭流程。超时模块会在日志中记录警告。
 
 Module.register_command(trigger, callback, *, cmd_type="group", description="", op_only=False, argument_hint="")
 
@@ -289,6 +304,8 @@ PackageManager.install_packages(packages, upgrade=False, mirror_sources=None) ->
 
 抽象基类，定义所有需要实现的平台操作。当前实现为 ToolDeltaAdapter。
 
+v1.5.0 新增 StandaloneAdapter（adapters/standalone.py），纯 QQ 机器人模式：所有游戏相关接口（send_game_command、send_game_message、get_online_players、listen_game_chat、listen_player_join、listen_player_leave）均为空实现，仅保留群消息和私聊消息的发送与监听功能。适用于无需游戏服务器集成的部署场景。
+
 核心方法（均需实现）：
 
 · send_game_command(cmd: str)
@@ -319,6 +336,8 @@ PlayerJoinEvent player_name
 PlayerLeaveEvent player_name
 AIResponseEvent user_id, group_id, reply, media, should_forward_to_game
 SystemStartEvent / SystemStopEvent 框架生命周期
+
+v1.5.0 权限模型更新：规则引擎托管事件（如由规则触发的自动回复）使用 raw_data._rule_uid 作为权限判断 uid，而非事件的 sender_id。这确保规则引擎触发的操作以规则创建者的身份校验权限。
 
 ---
 
@@ -360,7 +379,48 @@ ModuleRegistry.stats() -> dict
 
 ---
 
-13. IPC 进程间通信 (v1.4.3+)
+13. 服务注册表 ServiceRegistry (v1.5.0+)
+
+位置：core/drivers/service_registry.py
+
+服务注册表与模块注册表采用相同的允则（allowlist）JSON 控制机制，管理所有通过 ServiceContainer 注册的服务是否被允许运行。
+
+持久化文件：`数据/服务注册表.json`
+
+内核级服务（mid ≤ 99）免检，无需注册即可直接使用。这些服务由框架核心管理，不可禁用。
+
+首次启动时若注册表文件不存在，自动签署（auto_sign）所有已注册服务为启用状态。
+
+当服务调用 ServiceContainer.register() 注册时，框架会检查服务注册表。若该服务被标记为禁用，注册将被拒绝并抛出异常。
+
+主要方法（线程安全）：
+
+ServiceRegistry.is_allowed(service_name: str) -> bool
+
+· 查询服务是否被允许注册。内核级服务（mid ≤ 99）始终返回 True。
+
+ServiceRegistry.auto_sign(service_names: list[str]) -> set[str]
+
+· 自动签署新发现的服务（默认启用）。已在注册表中的服务不受影响。
+· 返回本次新签署的服务名集合。
+
+ServiceRegistry.set_enabled(service_name: str, enabled: bool) -> bool
+
+· 设置服务启用状态，立即持久化到磁盘。
+· 内核级服务不可更改，对其调用返回 False。
+· 返回 True 表示状态已变更。
+
+ServiceRegistry.get_all_entries() -> dict[str, dict]
+
+· 返回注册表完整快照。
+
+ServiceRegistry.stats() -> dict
+
+· 返回统计信息：{"总服务数": int, "已启用": int, "已禁用": int, "内核级": int}
+
+---
+
+14. IPC 进程间通信 (v1.4.3+)
 
 位置：core/ipc/
 
@@ -394,4 +454,125 @@ Worker 子进程注册的服务方法：
 │  主进程      │ ◄────────────── │  Worker子进程 │
 │  (事件循环)  │                │  (注册表+监控) │
 └──────────────┘                └──────────────┘
+
+---
+
+15. 模板引擎 TemplateEngine (v1.5.0+)
+
+位置：core/template_engine.py
+
+服务名："template"
+
+模板引擎负责管理 Prompt 模板，支持四种内置模板和 JSON 结构定义。模板决定 AI 回复的行为风格。
+
+用户命令：
+
+· `.模板 列表` — 列出所有可用模板（保守/默认/激进/调试）及其简介。
+· `.模板 检查` — 查看当前选中的模板详情。
+· `.模板 切换 <模板名>` — 切换当前模板（仅管理员）。
+· `.模板 状态` — 显示当前生效的模板名称。
+
+四种内置模板：
+
+| 模板名 | 描述 |
+|--------|------|
+| 保守 | 避免过激言论，回复谨慎克制 |
+| 默认 | 均衡风格，正常对话 |
+| 激进 | 大胆自由，允许更多个性表达 |
+| 调试 | 显示内部推理过程，用于开发调优 |
+
+模板 JSON 结构：
+
+```json
+{
+  "名称": "默认",
+  "人设": "你是一个友好的群聊助手...",
+  "规则": ["不说脏话", "不涉及政治敏感"],
+  "对话示例": ["用户: 你好\n助手: 你好呀~"],
+  "风格": "温馨友善",
+  "处理方式": null
+}
+```
+
+主要方法：
+
+TemplateEngine.list_builtin() -> list[str]
+
+· 返回所有内置模板名称列表。
+
+TemplateEngine.get_template(name: str) -> dict | None
+
+· 获取指定模板的完整 JSON 结构，不存在则返回 None。
+
+TemplateEngine.check(name: str) -> dict
+
+· 预览模板内容，供 `.模板 检查` 命令使用。
+
+TemplateEngine.switch(name: str) -> bool
+
+· 切换当前活动模板。若模板不存在则返回 False。
+
+TemplateEngine.check_active() -> dict
+
+· 获取当前活动模板的完整 JSON 结构。
+
+TemplateEngine.save_active() -> None
+
+· 将当前活动模板持久化到磁盘。
+
+---
+
+16. 演示模块 DemoModule (v1.5.0+)
+
+位置：modules/demo/
+
+演示模式允许通过预定义的场景脚本在群聊中自动演示框架功能。用于测试、展示和教学。
+
+用户命令：
+
+· `.演示 列表` — 列出所有可用的演示场景名称和简介。
+· `.演示 <场景名>` — 在群聊中启动一场演示。
+
+装饰器约定：
+
+```python
+@demo_scene(name="欢迎演示", description="展示欢迎新成员功能")
+async def welcome_demo(ctx: DemoContext):
+    await ctx.say("大家好！今天我来演示新人欢迎功能~")
+    await ctx.sleep(2)
+    await ctx.say("首先，我们模拟新成员加入…")
+```
+
+DemoContext API：
+
+· `await ctx.say(message: str)` — 向群聊发送消息。
+· `await ctx.sleep(seconds: float)` — 暂停指定秒数后继续。
+· `ctx.log(message: str)` — 记录调试日志。
+
+安全设计：
+
+· 虚拟 user_id：演示消息的 user_id 为负数（如 -1），与真实用户隔离。
+· 不进 EventBus：演示消息不触发事件总线，避免干扰正常业务逻辑。
+· 直接发送：绕过消息管理器队列，直接调用 `adapter.send_group_msg()`。
+
+并发控制：
+
+· 每群最多 1 个演示同时运行。若群内已有演示在进行，新请求将被拒绝并提示。
+
+---
+
+17. 命令残留清理 (v1.5.0+)
+
+位置：core/source_manager.py
+
+SourceManager 提供 `cleanup_orphan_commands()` 方法，周期性清理已卸载或未加载模块的过期命令注册。该检查每 20 分钟自动运行一次，防止模块卸载后命令残留导致的无效路由。
+
+```python
+# SourceManager 内部逻辑
+async def cleanup_orphan_commands(self):
+    """清理所有未加载模块的过期命令注册"""
+    ...
+```
+
+模块开发者无需主动调用，框架自动管理。
 ```

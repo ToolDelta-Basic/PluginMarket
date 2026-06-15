@@ -54,6 +54,7 @@ class ConfigRouter(Module):
     tier = 100  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message"]
+    dependencies = ["template"]
 
     def __init__(self, services, event_bus):
         super().__init__(services, event_bus)
@@ -65,32 +66,34 @@ class ConfigRouter(Module):
     async def _startup_check(self):
         """启动时检查：如果未选择模板则引导，否则检查配置。"""
         try:
-            from .template_engine import TemplateEngine
-            data_dir = self._get_data_dir()
-            self._template_engine = TemplateEngine(data_dir, self.config)
-            active = self._template_engine.check_active()
+            engine = self.services.try_get("template")
+            if engine is None:
+                _log.debug("TemplateEngine 服务未注册，跳过模板检查")
+            else:
+                self._template_engine = engine
+                active = engine.check_active()
 
-            if active is None:
-                self._print_banner("🎉 欢迎使用 QQLinker！",
-                    "发送 配置 模板 选择并应用配置模板：",
-                    "  保守 — 仅核心互通",
-                    "  默认 — 推荐的默认配置",
-                    "  激进 — 全部功能 (高消耗)",
-                    "  调试 — 开发测试用",
-                    "",
-                    "或编辑 data/配置/ 目录下的 JSON 文件")
-                _log.info("首次启动: 发送 配置 模板 选择配置模板")
-                return
+                if active is None:
+                    self._print_banner("🎉 欢迎使用 QQLinker！",
+                        "发送 .模板 列表 选择配置模板：",
+                        "  保守 — 仅核心互通",
+                        "  默认 — 推荐的默认配置",
+                        "  激进 — 全部功能 (高消耗)",
+                        "  调试 — 开发测试用",
+                        "",
+                        "或编辑 data/配置/ 目录下的 JSON 文件")
+                    _log.info("首次启动: 发送 .模板 列表 选择配置模板")
+                    return
 
-            if not active["ok"]:
-                req = len(active["missing_required"])
-                priv = len(active["missing_private"])
-                self._print_banner(
-                    f"⚠️ 配置模板 '{active['template']}' 未完成！",
-                    f"{req} 项必填 + {priv} 项隐私需设置",
-                    "发送 配置 检查并修复配置问题")
-                _log.warning("模板 %s 有 %d 项未完成", active["template"], req + priv)
-                return
+                if not active["ok"]:
+                    req = len(active["missing_required"])
+                    priv = len(active["missing_private"])
+                    self._print_banner(
+                        f"⚠️ 配置模板 '{active['template']}' 未完成！",
+                        f"{req} 项必填 + {priv} 项隐私需设置",
+                        "发送 .模板 检查并修复配置问题")
+                    _log.warning("模板 %s 有 %d 项未完成", active["template"], req + priv)
+                    return
 
         except Exception as e:
             _log.debug("模板引擎跳过: %s", e)
@@ -126,7 +129,14 @@ class ConfigRouter(Module):
         if not args:
             await self._do_check(ctx)
         elif args[0] == "模板":
-            await self._do_template(ctx)
+            # 向后兼容: 转发到 .模板 命令
+            await ctx.reply(
+                "📋 模板管理已独立为 .模板 命令:\n"
+                "  .模板 列表         → 列出所有模板\n"
+                "  .模板 切换 <名称>  → 切换模板\n"
+                "  .模板 检查         → 检查当前模板完成情况\n"
+                "  .模板 状态         → 显示当前模板状态"
+            )
         elif args[0] == "向导":
             await self._do_wizard(ctx)
         elif args[0] == "修复":
@@ -139,11 +149,14 @@ class ConfigRouter(Module):
             await ctx.reply(
                 "📋 配置命令:\n"
                 "  配置               → 检查核心配置\n"
-                "  配置 模板 [名称]    → 查看/切换配置模板\n"
                 "  配置 向导           → 交互式引导\n"
                 "  配置 修复 <群号>    → 修复群子配置\n"
                 "  配置 状态           → 所有群配置状态\n"
-                "  配置 预览 <群> <节>  → 预览群配置节")
+                "  配置 预览 <群> <节>  → 预览群配置节\n"
+                "\n模板管理请用:\n"
+                "  .模板 列表         → 列出所有模板\n"
+                "  .模板 切换 <名称>  → 切换模板\n"
+                "  .模板 检查         → 检查模板完成情况")
 
     async def _do_check(self, ctx):
         lines = ["🔍 配置检查报告\n"]
@@ -193,41 +206,6 @@ class ConfigRouter(Module):
         if len(text) > 2000:
             text = text[:1990] + "...\n(截断)"
         await ctx.reply(text)
-
-    async def _do_template(self, ctx):
-        """配置 模板 — 查看/切换配置模板。"""
-        if not self._template_engine:
-            await ctx.reply("模板引擎未初始化")
-            return
-
-        args = ctx.args[1:] if len(ctx.args) > 1 else []
-        if not args:
-            # 列出可用模板
-            active_name = "?"
-            active_file = os.path.join(self._get_data_dir(), ".active_template")
-            if os.path.isfile(active_file):
-                with open(active_file) as f:
-                    active_name = f.read().strip()
-
-            lines = ["📋 可用配置模板\n"]
-            for name in self._template_engine.list_builtin():
-                mark = " ← 当前" if name == active_name else ""
-                tmpl = self._template_engine.get_template(name)
-                desc = tmpl.get("description", "")[:50] if tmpl else ""
-                lines.append(f"  {name}{mark}\n    {desc}")
-            for ext in self._template_engine.list_external():
-                mark = " ← 当前" if ext.get("name") == active_name else ""
-                lines.append(
-                    f"  📦 {ext['name']} v{ext['version']} "
-                    f"({ext['file']}){mark}"
-                )
-            lines.append("\n发送 配置 模板 <名称> 切换模板")
-            await ctx.reply("\n".join(lines))
-            return
-
-        target = args[0]
-        ok, msg = self._template_engine.switch(target)
-        await ctx.reply(msg)
 
     async def _do_wizard(self, ctx):
         await ctx.reply(

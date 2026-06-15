@@ -37,6 +37,7 @@ _log = logging.getLogger(__name__)
 
 # ── 层级常量（数字越小权限越高） ──────────────────────────
 TIER_KERNEL = 0        # kernel — 完全权限
+UID_ROOT = 0
 UID_DAEMON = 100    # daemon — 框架守护
 UID_SERVICE = 200   # service — 框架服务
 UID_APP = 300       # app — 用户模块

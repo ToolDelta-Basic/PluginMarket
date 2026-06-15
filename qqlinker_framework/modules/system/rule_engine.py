@@ -28,11 +28,14 @@
    - 规则执行: 伪造消息 caller_uid = RULE_EXEC_UID (200)
 ═══════════════════════════════════════════════════════════════════════════
 """
+import copy
+
 import asyncio
 import json
 import logging
 import os
 import re
+import tempfile
 import time
 from typing import Any, Dict, List, Optional
 
@@ -55,6 +58,9 @@ _RULES_PREFIX = "rules"
 
 # 交互式创建状态(user_id → 创建会话)
 _create_sessions: Dict[int, dict] = {}
+
+# 动作链最大消息数（防止洪水放大攻击）
+MAX_ACTIONS_PER_RULE = 20
 
 def _strip_cq(text: str) -> str:
     """剥离 CQ 码,只保留纯文本。"""
@@ -412,7 +418,15 @@ class RuleEngineModule(Module):
                     "nickname": nickname, "message": text,
                     "match": match_result, "msg_id": msg_id,
                 }
-                for action in rule.get("动作链", []):
+                actions = rule.get("动作链", [])
+                # v5.2: 洪水防护 — 执行动作链中最多 MAX_ACTIONS_PER_RULE 条
+                if len(actions) > MAX_ACTIONS_PER_RULE:
+                    _log.warning(
+                        "规则 '%s' 动作链过长 (%d > %d)，截断执行",
+                        rule.get("规则名", "?"), len(actions), MAX_ACTIONS_PER_RULE,
+                    )
+                    actions = actions[:MAX_ACTIONS_PER_RULE]
+                for action in actions:
                     rendered = _replace_vars(action, ctx) if isinstance(action, str) else ""
                     if not rendered:
                         continue
@@ -508,6 +522,22 @@ class RuleEngineModule(Module):
                 await self.message.send_group(gid, preview)
                 return
             data["动作链"].append(text)
+            # 洪水防护：动作链上限
+            if len(data["动作链"]) >= MAX_ACTIONS_PER_RULE:
+                next_step("confirm")
+                await self.message.send_group(gid,
+                    f"⚠️ 已达到动作链上限 ({MAX_ACTIONS_PER_RULE} 条)，"
+                    f"自动进入确认步骤")
+                # 触发确认预览
+                preview = (
+                    f"规则预览:\n"
+                    f"  名称: {data.get('规则名', '?')}\n"
+                    f"  事件: {data.get('匹配事件', '?')}\n"
+                    f"  模式: {data.get('匹配类型', '?')} = '{data.get('匹配模式', '')}'\n"
+                    f"  动作: {len(data.get('动作链', []))} 条\n"
+                    f"确认创建? (是/否)"
+                )
+                await self.message.send_group(gid, preview)
             return
 
         if step == "confirm":
@@ -541,7 +571,10 @@ class RuleEngineModule(Module):
     # ═══════════════════════════════════════════════════════════
 
     def _get_rules(self, group_id: int) -> list:
-        """从独立文件加载规则(不经过 ConfigManager HMAC)。"""
+        """从独立文件加载规则(不经过 ConfigManager HMAC)。
+
+        返回深拷贝,调用方可安全修改而不污染内存缓存。
+        """
         path = self._rules_path(group_id)
         if not os.path.exists(path):
             return []
@@ -549,19 +582,26 @@ class RuleEngineModule(Module):
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             rules = data.get('rules', []) if isinstance(data, dict) else []
-            return rules if isinstance(rules, list) else []
+            return copy.deepcopy(rules) if isinstance(rules, list) else []
         except Exception:
             return []
 
     async def _save_rules(self, group_id: int, rules: list):
-        """保存规则到独立文件。"""
+        """保存规则到独立文件（原子写入）。"""
         path = self._rules_path(group_id)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         try:
-            tmp = path + '.tmp'
-            with open(tmp, 'w', encoding='utf-8') as f:
-                json.dump({'rules': rules}, f, ensure_ascii=False, indent=2)
-            os.replace(tmp, path)
+            fd, tmp = tempfile.mkstemp(
+                suffix='.json', prefix=f'{group_id}_',
+                dir=os.path.dirname(path),
+            )
+            try:
+                with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                    json.dump({'rules': rules}, f, ensure_ascii=False, indent=2)
+                os.replace(tmp, path)
+            finally:
+                if os.path.exists(tmp):
+                    os.unlink(tmp)
         except Exception as e:
             _log.error("保存规则失败: %s", e)
 

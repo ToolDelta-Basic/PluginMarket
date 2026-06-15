@@ -335,29 +335,39 @@ class CommandRouter:
                 return True
 
             # ── UID 等级检查 ──
+            # v5.1: 规则引擎托管事件使用 _rule_uid 作为权限 uid
+            rule_uid = getattr(event, "raw_data", {}).get("_rule_uid", 0)
             min_uid = cmd_info.get("min_uid", 400)
             if self.uid_lookup and min_uid >= 0:
-                user_uid = self.uid_lookup(event.user_id)
-                if user_uid > 0 and user_uid > min_uid:
-                    logging.getLogger(__name__).warning(
-                        "用户 %s (uid=%s) 尝试执行需要 min_uid=%s 的命令 %s",
-                        str(event.user_id), str(user_uid), str(min_uid), trigger,
+                if rule_uid and rule_uid <= min_uid:
+                    # 规则引擎托管: _rule_uid ≤ min_uid → 通过权限检查
+                    logging.getLogger(__name__).debug(
+                        "规则引擎托管命令: trigger=%s rule_uid=%s min_uid=%s "
+                        "触发用户=%s",
+                        trigger, str(rule_uid), str(min_uid), str(event.user_id),
                     )
-                    ctx = CommandContext(
-                        user_id=event.user_id,
-                        group_id=event.group_id,
-                        nickname=event.nickname,
-                        message=event.message,
-                        args=[],
-                        adapter=self.adapter,
-                        message_mgr=self.message_mgr,
-                    )
-                    await ctx.reply(
-                        f"\U0001f512 你的 UID ({user_uid}) 不足，"
-                        f"该命令需要 UID <= {min_uid}"
-                    )
-                    event.handled = True
-                    return True
+                else:
+                    user_uid = self.uid_lookup(event.user_id)
+                    if user_uid > 0 and user_uid > min_uid:
+                        logging.getLogger(__name__).warning(
+                            "用户 %s (uid=%s) 尝试执行需要 min_uid=%s 的命令 %s",
+                            str(event.user_id), str(user_uid), str(min_uid), trigger,
+                        )
+                        ctx = CommandContext(
+                            user_id=event.user_id,
+                            group_id=event.group_id,
+                            nickname=event.nickname,
+                            message=event.message,
+                            args=[],
+                            adapter=self.adapter,
+                            message_mgr=self.message_mgr,
+                        )
+                        await ctx.reply(
+                            f"\U0001f512 你的 UID ({user_uid}) 不足，"
+                            f"该命令需要 UID <= {min_uid}"
+                        )
+                        event.handled = True
+                        return True
 
             args_str = msg[len(trigger):].strip()
             args = args_str.split() if args_str else []

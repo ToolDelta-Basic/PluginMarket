@@ -355,7 +355,8 @@ class SourceManager:
         # 层间严格串行，每层内所有模块的超时互不影响。
         degradation = getattr(self.host, 'degradation', None)
 
-        # 构建依赖图：{模块名 → {依赖的模块名}}
+        # 构建依赖图：{模块名 → {依赖的模块名}}（含 required_services 和 dependencies）
+        name_to_mod = {m.name: m for m in modules}
         deps = {}
         for mod in modules:
             deps[mod.name] = set()
@@ -364,11 +365,14 @@ class SourceManager:
                     if other.name == srv:
                         deps[mod.name].add(srv)
                         break
+            # v5.2: dependencies 也纳入分层依赖
+            for dep_name in getattr(mod, 'dependencies', []):
+                if dep_name in name_to_mod:
+                    deps[mod.name].add(dep_name)
 
         # 拓扑分层（Kahn 算法变体）
         layers = []
         remaining = {m.name for m in modules}
-        name_to_mod = {m.name: m for m in modules}
 
         while remaining:
             layer = []
@@ -1288,3 +1292,49 @@ class SourceManager:
         if hasattr(self.host, '_module_health_status'):
             return dict(self.host._module_health_status)
         return {}
+
+    async def cleanup_orphan_commands(self) -> int:
+        """清理过期命令 — 模块已卸载/未加载但命令仍在 command_mgr 中。
+
+        周期性运行（如内存守护触发），检查每条注册命令的 plugin 字段
+        是否对应一个已加载的模块。如果模块不存在或未激活，清理该命令。
+
+        Returns:
+            清理的命令数。
+        """
+        logger = logging.getLogger(__name__)
+        cleaned = 0
+        # 识别所有已加载和懒加载的模块名
+        try:
+            known_modules: set[str] = set(self._loaded_modules.keys())
+            known_modules.update(self._lazy_classes.keys())
+            # 内置虚拟模块（core / package / workflow 等不走 loaded_modules）
+            known_modules.update({"core", "package"})
+        except Exception:
+            return 0
+
+        # 扫描 command_mgr 中的命令
+        for cmd_info in self.host.command_mgr.get_group_commands():
+            plugin = cmd_info.get("plugin", "")
+            trigger = cmd_info.get("trigger", "?")
+            if plugin and plugin not in known_modules:
+                self.host.command_mgr.unregister(trigger)
+                logger.info(
+                    "清理过期命令 '%s': 模块 '%s' 未加载",
+                    trigger, plugin,
+                )
+                cleaned += 1
+
+        # 也扫描控制台命令
+        for cmd_info in self.host.command_mgr.get_console_commands():
+            plugin = cmd_info.get("plugin", "")
+            trigger = cmd_info.get("trigger", "?")
+            if plugin and plugin not in known_modules:
+                self.host.command_mgr.unregister(trigger)
+                logger.info(
+                    "清理过期控制台命令 '%s': 模块 '%s' 未加载",
+                    trigger, plugin,
+                )
+                cleaned += 1
+
+        return cleaned

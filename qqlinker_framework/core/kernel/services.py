@@ -254,7 +254,8 @@ class ServiceContainer:
     mid 值越小权限越高。root(0) 始终拥有一切权限。
     """
 
-    def __init__(self, mid: int = MID_KERNEL, tier: Optional[int] = None):
+    def __init__(self, mid: int = MID_KERNEL, tier: Optional[int] = None,
+                 service_registry=None):
         if tier is not None:
             mid = tier  # 旧名兼容
         self._mid = mid
@@ -263,8 +264,10 @@ class ServiceContainer:
         self._factories: Dict[str, Callable[[], Any]] = {}
         self._lock = threading.Lock()
         self._deps: Dict[str, Set[str]] = {}
-        self._required_services: Dict[str, List[str]] = {}  # v6: declarative service deps
-        # ★ C1 修复: 视图锁定标记（root 容器本身不锁定 _mid 修改）
+        self._required_services: Dict[str, List[str]] = {}
+        # ── v5.2: 服务注册表（允则控制）──
+        self._service_registry = service_registry
+        # ★ C1 修复: 视图锁定标记
         self._view_locked = False
 
     # ── v6 新名属性 ──
@@ -342,6 +345,8 @@ class ServiceContainer:
         scoped._deps = self._deps
         scoped._lock = self._lock
         scoped._required_services = self._required_services
+        # ── v5.2: 服务注册表引用 ──
+        scoped._service_registry = self._service_registry
         # ★ C1 修复: 锁定视图，_mid 此后不可修改
         object.__setattr__(scoped, '_view_locked', True)
         return scoped
@@ -373,6 +378,22 @@ class ServiceContainer:
         """
         if uid is not None:
             mid = uid  # 旧名兼容
+
+        # ── v5.2: 服务注册表允则检查 ──
+        if self._service_registry is not None:
+            if not self._service_registry.is_allowed(name, mid):
+                # 注册表为空 → 首次启动兜底：自动签署
+                if not self._service_registry.get_all_entries():
+                    self._service_registry.auto_sign(name)
+                else:
+                    _log.error(
+                        "安全拒绝: 服务 '%s' 未在服务注册表中启用", name
+                    )
+                    raise PermissionError(
+                        f"服务 '{name}' 未在服务注册表中启用。"
+                        f"请将 '{name}' 添加到 数据/服务注册表.json"
+                    )
+
         if name in self._services or name in self._factories:
             _log.warning("服务 '%s' 已注册，将被覆盖", name)
 

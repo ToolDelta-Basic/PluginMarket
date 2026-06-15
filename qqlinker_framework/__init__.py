@@ -1,8 +1,8 @@
 # __init__.py
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
-"""云链群服互通框架 - ToolDelta 插件入口 (v1.5.0)
+"""云链群服互通框架 - ToolDelta 插件入口 (v1.5.1)
 
 启动方式:
   1. ToolDelta 环境 → 自动作为插件加载

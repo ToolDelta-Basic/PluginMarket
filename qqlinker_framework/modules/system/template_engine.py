@@ -300,3 +300,156 @@ class TemplateEngine:
         active_file = os.path.join(self._data_dir, ".active_template")
         with open(active_file, 'w') as f:
             f.write(name)
+
+
+# ═══════════════════════════════════════════════════════════
+# TemplateModule — 宿主框架命令
+# ═══════════════════════════════════════════════════════════
+
+from ...core.module import Module
+from ...core.kernel.decorators import command
+
+
+class TemplateModule(Module):
+    """配置模板模块 — 注册为宿主框架服务，提供统一的模板管理约定。
+
+    命令:
+      .模板              → 查看当前模板状态 + 可用列表
+      .模板 列表         → 列出所有模板
+      .模板 检查         → 检查当前模板完成情况
+      .模板 状态         → 显示当前激活模板和完成状态
+      .模板 切换 <名称>   → 备份配置并切换到指定模板
+
+    约定:
+      其他模块通过 services.get("template") 获取 TemplateEngine 引用。
+      TemplateEngine 在 TemplateModule.on_init 中注册到服务容器。
+    """
+
+    name = "template"
+    mid = 100
+    version = (1, 0, 0)
+    required_services = ["config"]
+    background = True
+
+    async def on_init(self):
+        data_dir = self._get_data_dir()
+        self._engine = TemplateEngine(data_dir, self.config)
+        # 注册为宿主框架服务，其他模块可通过 services.get("template") 获取
+        self.services.register("template", self._engine)
+        _log.info("模板引擎已注册为服务 'template'")
+
+    @command(".模板", description="配置模板管理 (列表/检查/切换/状态)")
+    async def _cmd_template(self, ctx):
+        args = ctx.args if ctx.args else []
+        if not args:
+            await self._cmd_status(ctx)
+            return
+        sub = args[0]
+        if sub == "列表":
+            await self._cmd_list(ctx)
+        elif sub == "检查":
+            await self._cmd_check(ctx)
+        elif sub == "状态":
+            await self._cmd_status(ctx)
+        elif sub == "切换":
+            await self._cmd_switch(ctx)
+        else:
+            await ctx.reply(
+                "📋 .模板 命令:\n"
+                "  .模板              → 查看当前模板状态\n"
+                "  .模板 列表         → 列出所有模板\n"
+                "  .模板 检查         → 检查当前模板完成情况\n"
+                "  .模板 状态         → 显示当前模板状态\n"
+                "  .模板 切换 <名称>  → 切换模板"
+            )
+
+    async def _cmd_list(self, ctx):
+        active_name = "?"
+        active_file = os.path.join(self._get_data_dir(), ".active_template")
+        if os.path.isfile(active_file):
+            with open(active_file) as f:
+                active_name = f.read().strip()
+
+        lines = ["📋 可用配置模板\n"]
+        for name in self._engine.list_builtin():
+            mark = " ← 当前" if name == active_name else ""
+            tmpl = self._engine.get_template(name)
+            desc = tmpl.get("description", "")[:50] if tmpl else ""
+            lines.append(f"  {name}{mark}\n    {desc}")
+        for ext in self._engine.list_external():
+            mark = " ← 当前" if ext.get("name") == active_name else ""
+            lines.append(
+                f"  📦 {ext['name']} v{ext['version']} "
+                f"({ext['file']}){mark}"
+            )
+        lines.append("\n发送 .模板 切换 <名称> 切换模板")
+        await ctx.reply("\n".join(lines))
+
+    async def _cmd_check(self, ctx):
+        result = self._engine.check_active()
+        if result is None:
+            await ctx.reply("未选择模板。使用 .模板 列表 查看可用模板，.模板 切换 <名称> 切换")
+            return
+        if result["ok"]:
+            await ctx.reply(
+                f"✅ 模板 '{result['template']}' ({result['type']}) 通过\n"
+                f"   所有必填项和隐私项已配置完成"
+            )
+            return
+        lines = [
+            f"⚠️ 模板 '{result['template']}' ({result['type']}) 未完成",
+            "",
+        ]
+        for r in result.get("missing_required", []):
+            lines.append(f"  ❌ {r['desc']}")
+        for r in result.get("missing_private", []):
+            lines.append(f"  🔒 {r['desc']}")
+        await ctx.reply("\n".join(lines))
+
+    async def _cmd_status(self, ctx):
+        result = self._engine.check_active()
+        if result is None:
+            await ctx.reply(
+                "📋 未选择配置模板\n\n"
+                "使用 .模板 列表 查看可用模板\n"
+                "使用 .模板 切换 <名称> 选择模板"
+            )
+            return
+        status_icon = "✅" if result["ok"] else "⚠️"
+        lines = [
+            f"{status_icon} 当前模板: {result['template']} ({result['type']})",
+        ]
+        req_n = len(result.get("missing_required", []))
+        priv_n = len(result.get("missing_private", []))
+        opt_n = len(result.get("missing_optional", []))
+        parts = []
+        if req_n:
+            parts.append(f"{req_n} 必填缺失")
+        if priv_n:
+            parts.append(f"{priv_n} 隐私需设置")
+        if opt_n:
+            parts.append(f"{opt_n} 可选未设")
+        if parts:
+            lines.append(f"  {' · '.join(parts)}")
+        else:
+            lines.append("  全部配置完成 ✓")
+        lines.append("\n.模板 检查 → 查看详情")
+        await ctx.reply("\n".join(lines))
+
+    async def _cmd_switch(self, ctx):
+        args = ctx.args[1:] if len(ctx.args) > 1 else []
+        if not args:
+            await ctx.reply(
+                "用法: .模板 切换 <名称>\n\n"
+                "先使用 .模板 列表 查看可用模板"
+            )
+            return
+        target = args[0]
+        ok, msg = self._engine.switch(target)
+        await ctx.reply(msg)
+
+    def _get_data_dir(self) -> str:
+        try:
+            return self.config.get_data_dir() or "."
+        except Exception:
+            return "."
