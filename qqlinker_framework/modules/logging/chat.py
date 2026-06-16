@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 
 from ...core.module import Module
-from ...core.kernel.events import GroupMessageEvent, GameChatEvent
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -336,7 +335,7 @@ class GlobalChatLogModule(Module):
         self.listen("GroupMessageEvent", self._on_group_msg, priority=0)
         self.listen("GameChatEvent", self._on_game_chat, priority=0)
 
-    async def _on_group_msg(self, event: GroupMessageEvent):
+    async def _on_group_msg(self, event):
         """处理群消息事件，记录到日志。"""
         if event.handled:
             return
@@ -349,7 +348,7 @@ class GlobalChatLogModule(Module):
             raw=event.raw_data,
         )
 
-    async def _on_game_chat(self, event: GameChatEvent):
+    async def _on_game_chat(self, event):
         """处理游戏聊天事件，记录到日志。"""
         await self._service.record_message(
             source="game",

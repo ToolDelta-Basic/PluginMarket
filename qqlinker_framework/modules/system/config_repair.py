@@ -23,7 +23,6 @@ from ...core.kernel.decorators import exec_exposed
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
 

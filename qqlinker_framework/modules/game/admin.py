@@ -10,7 +10,6 @@
 """
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.audit import audit_log, AuditLevel
 
 import logging
 
@@ -56,6 +55,7 @@ class GameAdmin(Module):
 
     async def on_init(self):
         """框架已自动注册 default_config 配置节，模块只注册命令。"""
+        self._audit = self.services.get("audit")
 
         async def _dbg_stats():
             """调试端点。"""
@@ -153,12 +153,14 @@ class GameAdmin(Module):
             return
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"game_command: {sanitized[:200]}",
+            level=self._audit.AuditLevel.INFO,
+            module="game_admin",
             sender=str(ctx.user_id),
             action="game_command",
             target=sanitized[:200],
             detail=f"by_{ctx.nickname}_in_group_{ctx.group_id}",
-            level=AuditLevel.INFO,
             group_id=ctx.group_id,
         )
 
@@ -199,12 +201,14 @@ class GameAdmin(Module):
                 results.append(f"❌ /{cmd} ({sanitized})")
 
         # 审计日志（批量）
-        audit_log(
+        self._audit.log(
+            f"game_script: {len(commands)} commands",
+            level=self._audit.AuditLevel.INFO,
+            module="game_admin",
             sender=str(ctx.user_id),
             action="game_script",
             target=f"{len(commands)} commands",
             detail=f"by_{ctx.nickname}_results={len([r for r in results if r.startswith('✅')])}",
-            level=AuditLevel.INFO,
             group_id=ctx.group_id,
         )
 

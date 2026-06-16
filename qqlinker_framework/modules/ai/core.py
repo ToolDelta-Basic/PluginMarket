@@ -26,11 +26,6 @@ import traceback
 from typing import Callable, Dict, List, Optional, Tuple
 
 from ...core.module import Module
-from ...core.kernel.events import (
-    GroupMessageEvent,
-    AIPrePromptReflectionEvent,
-    AIPostResponseReflectionEvent,
-)
 from .llm_client import LLMClientFactory
 from .auditor import Auditor
 from .tools import register_all
@@ -351,6 +346,11 @@ class AICore(Module):
         self._input_guard = InputGuard()
 
     async def on_init(self):
+        proto = self.services.get("protocol")
+        self._GroupMessageEvent = proto.GroupMessageEvent
+        self._AIPrePromptReflectionEvent = proto.AIPrePromptReflectionEvent
+        self._AIPostResponseReflectionEvent = proto.AIPostResponseReflectionEvent
+
         self.max_memory = self.config.get("AI助手.记忆条数", _DEFAULT_MAX_MESSAGES)
         self.max_memory_bytes = self.config.get("AI助手.记忆大小上限MB", 10) * 1024 * 1024
         self.conversation_max_age = self.config.get("AI助手.会话过期秒", 1800)
@@ -391,7 +391,10 @@ class AICore(Module):
                      "启用" if bal_enabled else "禁用", bal_default, bal_price)
 
         self._root_services.register("ai_core", self)
-        register_all(self.tool, services=self._root_services)
+        if self.tool is not None:
+            register_all(self.tool, services=self._root_services)
+        else:
+            _logger.warning("tool 服务不可用，AI 工具未加载")
 
         triggers = self.config.get("AI助手.触发词", ["/ai", ".问"])
         for trigger in triggers:
@@ -401,7 +404,7 @@ class AICore(Module):
         # .ai 统一子命令路由
         self.register_command(".ai", self._cmd_ai_router,
                               description="AI 助手（子命令：提问/余额/统计/充值/主动发言/温度/画像/评估/梦境/记忆）",
-                              argument_hint="<子命令> [参数...]")
+                              argument_hint="<提问|余额|统计|充值|主动发言|温度|画像|评估|梦境|记忆> [参数]")
 
         self.register_command(".删除记忆", self._cmd_del_memory,
                               description="删除指定群的长期记忆（管理员）",
@@ -474,7 +477,7 @@ class AICore(Module):
     async def clear_history(self, user_id: int):
         _logger.debug("[AI_CORE] clear_history 已废弃 (v2 按群存储)")
 
-    async def on_group_message(self, event: GroupMessageEvent):
+    async def on_group_message(self, event):
         await self.auditor.process_message(event.user_id, event.group_id, event.message)
         if self._proactive_speaker:
             self._proactive_speaker.notify_message(event.group_id)
@@ -622,17 +625,17 @@ class AICore(Module):
         args = ctx.args if ctx.args else []
         if not args:
             await ctx.reply(
-                "🤖 .ai 子命令:\n"
-                "  .ai 提问 <问题>          → 向 AI 提问\n"
-                "  .ai 余额                → 查看本群余额\n"
-                "  .ai 统计                → 查看消耗统计\n"
-                "  .ai 充值 <群号> <点数>  → 管理员充值\n"
-                "  .ai 主动发言 <开|关|状态> → 控制主动发言\n"
-                "  .ai 温度 <状态|规则>     → 温度调整\n"
-                "  .ai 画像 [历史|重置]     → 置信度画像\n"
-                "  .ai 评估 抽样            → 抽样评估\n"
-                "  .ai 梦境 [日期|奇闻]     → 框架梦境\n"
-                "  .ai 记忆 <清除|删除>     → 记忆管理")
+                "🤖 .ai <提问|余额|统计|充值|主动发言|温度|画像|评估|梦境|记忆> [参数]\n"
+                "  提问 <问题>          — 向 AI 提问\n"
+                "  余额                — 查看本群余额\n"
+                "  统计                — 查看消耗统计\n"
+                "  充值 <群号> <点数>  — 管理员充值\n"
+                "  主动发言 <开|关|状态> — 控制主动发言\n"
+                "  温度 <状态|规则>     — 温度调整\n"
+                "  画像 <历史|重置>     — 置信度画像\n"
+                "  评估 抽样            — 抽样评估\n"
+                "  梦境 <日期|奇闻>     — 框架梦境\n"
+                "  记忆 <清除|删除>     — 记忆管理")
             return
         sub = args[0]
         if sub == "余额":
@@ -825,7 +828,7 @@ class AICore(Module):
         # AI 需要历史上下文时必须调用工具（get_recent_memory / get_long_memory）。
         messages = [{"role": "user", "content": question}]
 
-        pre_event = AIPrePromptReflectionEvent(
+        pre_event = self._AIPrePromptReflectionEvent(
             user_id=user_id, group_id=group_id, message=question)
         await self.event_bus.publish(pre_event)
         if pre_event.supplement:
@@ -851,7 +854,7 @@ class AICore(Module):
         await self._add_to_group_history(group_id, {"role": "user", "content": question})
         if response and "__REJECT__" not in str(response) and "__FINISH__" not in str(response):
             await self._add_to_group_history(group_id, {"role": "assistant", "content": response})
-        post_event = AIPostResponseReflectionEvent(
+        post_event = self._AIPostResponseReflectionEvent(
             user_id=user_id, group_id=group_id,
             reply=response, original_message=question)
         await self.event_bus.publish(post_event)

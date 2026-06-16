@@ -81,7 +81,7 @@ class CommandRouter:
     async def _get_guardian(self):
         """安全获取资源守护者服务。"""
         try:
-            from ..host import FrameworkHost
+            from ...libraries.channel_host import ChannelHost as FrameworkHost
             host = None
             # 通过 uid_lookup 的 closure 反向查找（weak pattern）
             # fallback: 检查 services container
@@ -248,10 +248,25 @@ class CommandRouter:
         msg = (event.message or "").strip()
         if not msg:
             return False
-        for cmd_info in self.command_mgr.get_group_commands():
+        # v1.5.1: 最长匹配优先（子命令优先于主命令）
+        all_cmds = self.command_mgr.get_group_commands()
+        matched = None
+        matched_len = 0
+        for cmd_info in all_cmds:
             trigger = cmd_info["trigger"]
-            if not msg.startswith(trigger):
-                continue
+            if msg.startswith(trigger):
+                # 确保触发词后是空格或结尾（防止 .帮助 匹配 .帮助列表）
+                rest = msg[len(trigger):]
+                if rest and not rest[0].isspace():
+                    continue
+                if len(trigger) > matched_len:
+                    matched = cmd_info
+                    matched_len = len(trigger)
+        if matched is None:
+            return False
+        cmd_info = matched
+        trigger = cmd_info["trigger"]
+        if True:  # 保持原有缩进结构
 
             # ── 群级模块/命令过滤 (root不受隔离) ──
             if self.group_filter:
@@ -529,7 +544,7 @@ class CommandRouter:
                                      exception: Optional[Exception] = None):
         """通知健康评分器命令执行结果。"""
         try:
-            from ..host import FrameworkHost
+            from ...libraries.channel_host import ChannelHost as FrameworkHost
             host = None
             if hasattr(self, '_host_ref'):
                 host = self._host_ref

@@ -338,7 +338,7 @@ class MemoryGuard(Module):
 
             # 尝试通过 framework_restart 服务进行软重启
             # 软重启不会杀进程，Minecraft/OneBot 不受影响
-            restart_fn = self._root_services.get("framework_restart")
+            restart_fn = self._root_services.try_get("framework_restart")
             if restart_fn:
                 loop = asyncio.get_event_loop()
                 # 需要在新任务中执行，因为当前协程会被停掉

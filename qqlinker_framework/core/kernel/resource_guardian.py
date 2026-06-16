@@ -104,7 +104,7 @@ class ModuleProfile:
 # 防止 C1 提权（_tier=0）后连带绕过 ResourceGuardian。
 
 _VERIFIED_ROOT_MODULES: frozenset = frozenset({
-    "qqlinker_framework.core.host",
+    "qqlinker_framework.core.host", "qqlinker_framework.libraries.channel_host",
     "qqlinker_framework.__init__",
     "qqlinker_framework.managers",
     "qqlinker_framework.modules.security.orion",

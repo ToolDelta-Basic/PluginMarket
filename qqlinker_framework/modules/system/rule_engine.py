@@ -41,7 +41,6 @@ from typing import Any, Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command, listen
-from ...core.kernel.services import UID_NOBODY
 
 _log = logging.getLogger(__name__)
 
@@ -222,14 +221,14 @@ class RuleEngineModule(Module):
 
     async def _show_help(self, ctx):
         await ctx.reply(
-            "📐 规则引擎:\n"
-            "  .规则 列表              - 查看本群规则\n"
-            "  .规则 创建              - 交互式创建规则\n"
-            "  .规则 删除 <规则名>     - 删除规则\n"
-            "  .规则 启用 <规则名>     - 启用规则\n"
-            "  .规则 禁用 <规则名>     - 禁用规则\n"
-            "  .规则 测试 <消息>       - 测试匹配(不执行)\n"
-            "  .规则 查看 <规则名>     - 查看规则详情"
+            "📐 .规则 <列表|创建|删除|启用|禁用|测试|查看> [参数]\n"
+            "  列表              — 查看本群规则\n"
+            "  创建              — 交互式创建规则\n"
+            "  删除 <规则名>     — 删除规则\n"
+            "  启用 <规则名>     — 启用规则\n"
+            "  禁用 <规则名>     — 禁用规则\n"
+            "  测试 <消息>       — 测试匹配(不执行)\n"
+            "  查看 <规则名>     — 查看规则详情"
         )
 
     async def _cmd_list(self, ctx):
@@ -629,8 +628,9 @@ class RuleEngineModule(Module):
         except RuntimeError:
             return
         _log.debug("规则动作: 路由命令 '%s' (user=%d group=%d)", cmd_text[:60], user_id, group_id)
-        from ...core.kernel.events import GroupMessageEvent  # noqa: F811
-        fake_event = GroupMessageEvent(
+        # 事件类型通过 protocol 服务获取
+        proto = self.services.get("protocol")
+        fake_event = proto.GroupMessageEvent(
             user_id=user_id,
             group_id=group_id,
             nickname="[规则引擎]",

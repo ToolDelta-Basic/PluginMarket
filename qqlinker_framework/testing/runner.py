@@ -500,7 +500,7 @@ def test_framework_full_lifecycle():
     """回归: 框架完整启动→事件→停止 不崩溃"""
     import asyncio, tempfile, os, shutil
     from .mock_adapter import MockAdapter
-    from ..core.host import FrameworkHost
+    from ..libraries.channel_host import ChannelHost as FrameworkHost
     from ..core.kernel.events import GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent
 
     tmp = tempfile.mkdtemp()
@@ -517,9 +517,9 @@ def test_framework_full_lifecycle():
             modules = host.module_mgr.get_loaded_modules()
             assert len(modules) >= 5, f"期望 >=5 个模块，实际 {len(modules)}"
 
-            await host.event_bus.publish(GameChatEvent(player_name="P1", message="hello"))
-            await host.event_bus.publish(PlayerJoinEvent(player_name="NewGuy"))
-            await host.event_bus.publish(PlayerLeaveEvent(player_name="NewGuy"))
+            await host.event_bus.publish("GameChatEvent", GameChatEvent(player_name="P1", message="hello"))
+            await host.event_bus.publish("PlayerJoinEvent", PlayerJoinEvent(player_name="NewGuy"))
+            await host.event_bus.publish("PlayerLeaveEvent", PlayerLeaveEvent(player_name="NewGuy"))
             await host.stop()
             return True
 
@@ -577,7 +577,7 @@ def test_module_hot_reload():
     """回归: 热重载不崩溃，命令保持可用"""
     import asyncio, tempfile, shutil
     from .mock_adapter import MockAdapter
-    from ..core.host import FrameworkHost
+    from ..libraries.channel_host import ChannelHost as FrameworkHost
 
     tmp = tempfile.mkdtemp()
     try:
@@ -635,7 +635,7 @@ def test_event_bus_recursion_limit():
 def test_config_type_validation():
     """回归: ConfigManager 类型校验自动修复（不再崩溃）。"""
     import tempfile, json, os
-    from ..managers.config_mgr import ConfigManager
+    from ..managers.config_mgr import ConfigManager, UID_ROOT
 
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "cfg.json")
@@ -646,7 +646,7 @@ def test_config_type_validation():
         cm.register_section("测试", {"数量": 10}, caller_uid=0)
         cm.load()
         # 自动修复：str "不是数字" 无法转为 int → 回退默认值 10
-        assert cm.get("测试.数量") == 10
+        assert cm.get("测试.数量", requester_uid=UID_ROOT) == 10
 
 
 def test_ban_store_persistence():
@@ -800,7 +800,7 @@ def test_host_stop_idempotent():
     """隔离层: FrameworkHost.stop() 幂等——多次调用不崩溃"""
     import asyncio, tempfile, shutil
     from ..testing.mock_adapter import MockAdapter
-    from ..core.host import FrameworkHost
+    from ..libraries.channel_host import ChannelHost as FrameworkHost
 
     tmp = tempfile.mkdtemp()
     try:
@@ -944,7 +944,7 @@ def test_role_system_check():
 
 def test_config_hotreload():
     """配置: ConfigManager.reload 检测 mtime 变化"""
-    from ..managers.config_mgr import ConfigManager
+    from ..managers.config_mgr import ConfigManager, UID_ROOT
     import tempfile, os, time, json
     tmp = tempfile.mkdtemp()
     try:
@@ -954,7 +954,7 @@ def test_config_hotreload():
         cm = ConfigManager(fp, data_dir=tmp)
         cm.register_section("test", {"val": 0}, caller_uid=0)
         cm.load()
-        assert cm.get("test.val") == 1
+        assert cm.get("test.val", requester_uid=UID_ROOT) == 1
         # 修改文件（直接改迁移后的文件）
         time.sleep(0.1)
         mod_file = os.path.join(tmp, "配置", "模块", "test.json")
@@ -962,7 +962,7 @@ def test_config_hotreload():
             json.dump({"test": {"val": 42}}, f)
         ok = cm.reload()
         assert ok
-        assert cm.get("test.val") == 42
+        assert cm.get("test.val", requester_uid=UID_ROOT) == 42
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
@@ -1497,7 +1497,7 @@ def test_config_tiered_access():
         assert cm.set("AI助手.温度", 999, requester_uid=UID_NOBODY) is False
         # daemon 可写
         assert cm.set("AI助手.温度", 0.8, requester_uid=UID_DAEMON) is True
-        assert cm.get("AI助手.温度") == 0.8
+        assert cm.get("AI助手.温度", requester_uid=UID_ROOT) == 0.8
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
@@ -1932,7 +1932,7 @@ def test_stress_tester_report_generation():
         host._modules = [mod]
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         assert os.path.isfile(report_path), f"报告文件应存在: {report_path}"
@@ -1983,7 +1983,7 @@ def test_stress_tester_skips_kernel_modules():
         host._modules = [mod_k, mod_u]
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         with open(report_path, "r") as f:
@@ -2010,7 +2010,7 @@ def test_stress_tester_empty_modules():
         host._modules = []
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report_path = os.path.join(tmp, "stress_report.json")
         assert os.path.isfile(report_path)
@@ -2037,7 +2037,7 @@ def test_stress_tester_get_last_report():
         host._modules = []
 
         tester = StressTester(host, data_path=tmp)
-        tester._run()
+        tester._run(skip_delay=True)
 
         report = tester.get_last_report()
         assert report is not None

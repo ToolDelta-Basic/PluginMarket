@@ -1,6 +1,6 @@
 # __init__.py
 
-__version__ = "1.5.1"
+__version__ = "1.6.0"
 
 """云链群服互通框架 - ToolDelta 插件入口 (v1.5.1)
 
@@ -29,7 +29,7 @@ def _bootstrap_integrity_check():
         return
     _framework_base = os.path.dirname(os.path.abspath(__file__))
     _fatal_files = {
-        "core/host.py":            "框架核心调度器",
+        "libraries/channel_host.py":  "信道框架启动器",
         "core/module.py":          "模块基类",
         "core/kernel/bus.py":          "事件总线",
         "core/kernel/services.py":     "服务容器",
@@ -114,7 +114,7 @@ except ImportError:
     def plugin_entry(cls, *args, **kwargs): return cls
     ToolDelta = None
 
-from .core.host import FrameworkHost
+from .libraries.channel_host import ChannelHost, BootstrapError
 from .core.kernel.containment import (
     plugin_wrapper,
     register_shutdown_callback, trigger_safe_shutdown,
@@ -147,7 +147,7 @@ class QQLinkerFrameworkPlugin(Plugin):
 
     @plugin_wrapper
     def on_preload(self):
-        """预加载: 初始化适配器、注册前置插件、发现模块。"""
+        """预加载: 初始化适配器、创建 ChannelHost。"""
         data_dir = str(self.data_path)
         self._adapter = ToolDeltaAdapter(self)
 
@@ -161,22 +161,25 @@ class QQLinkerFrameworkPlugin(Plugin):
                         "⚠ 前置插件 '%s' (>= v%s) 不可用", api_name,
                         ".".join(str(x) for x in min_ver))
 
-        self._host = FrameworkHost(self._adapter, data_path=data_dir)
+        # 创建 ChannelHost（纯信道启动器）
+        from .libraries.channel_host import ChannelHost
+        self._host = ChannelHost(adapter=self._adapter, data_path=data_dir)
 
-        # 注册框架软重启服务（memory_guard 等模块通过 services.get("framework_restart") 调用）
-        self._host.services.register("framework_restart", self.soft_restart, uid=100,
-                                      _caller="qqlinker_framework.__init__")
+        # 注册框架级服务
+        self._host.services.register("framework_restart", self.soft_restart, mid=100)
 
         pre_apis = self._adapter.get_pre_plugin_apis()
         if pre_apis:
             for api_name, api_inst in pre_apis.items():
                 svc_name = f"pre_api.{api_name}"
-                self._host.services.register(svc_name, api_inst, uid=400,
-                                              _caller="qqlinker_framework.__init__")
+                self._host.services.register(svc_name, api_inst, mid=400)
 
+        # 检查并自动安装强依赖
         self._host.package_mgr.register_requirements({"websocket-client": "websocket"})
-        self._host.register_modules_from_package("qqlinker_framework.modules")
-        self._host.register_external_modules()
+        missing = self._host.package_mgr.check_missing()
+        if missing:
+            logging.getLogger(__name__).info("检测到缺失依赖，自动安装: %s", ", ".join(missing.keys()))
+            self._host.package_mgr.install_missing()
 
         logging.getLogger(__name__).info("插件预加载完成，等待游戏连接...")
 
@@ -187,15 +190,17 @@ class QQLinkerFrameworkPlugin(Plugin):
         if not self._host:
             return
 
-        pkg_mgr = self._host.package_mgr
-        missing = pkg_mgr.check_missing()
-        if missing:
-            logging.getLogger(__name__).warning(
-                "⚠ 缺失依赖: %s。请在控制台执行 qqdeps install 自动安装",
-                ", ".join(missing.keys()))
-
         if self._adapter:
             self._adapter.handle_active()
+
+        # 注册控制台命令
+        try:
+            from .managers.console import ConsoleCommands
+            console = ConsoleCommands(self._host)
+            console.register_all()
+        except Exception as e:
+            logging.getLogger(__name__).debug("控制台命令注册失败: %s", e)
+
         self._framework_thread = threading.Thread(
             target=self._run_framework, daemon=True)
         self._framework_thread.start()
@@ -291,29 +296,25 @@ class QQLinkerFrameworkPlugin(Plugin):
             import gc
             gc.collect()
 
-            # 6. 重新创建 host（保留 adapter + data_path）
-            from .core.host import FrameworkHost
+            # 6. 重新创建 ChannelHost
+            from .libraries.channel_host import ChannelHost
             data_dir = str(self.data_path)
 
             # 保留旧 adapter 引用
             old_adapter = self._adapter
             self._adapter = ToolDeltaAdapter(self)
-            # 复制状态
             if old_adapter and hasattr(old_adapter, '_pre_apis'):
                 self._adapter._pre_apis = getattr(old_adapter, '_pre_apis', {})
 
-            self._host = FrameworkHost(self._adapter, data_path=data_dir)
+            self._host = ChannelHost(adapter=self._adapter, data_path=data_dir)
 
+            # 注册框架级服务
+            self._host.services.register("framework_restart", self.soft_restart, mid=100)
             pre_apis = self._adapter.get_pre_plugin_apis()
             if pre_apis:
                 for api_name, api_inst in pre_apis.items():
                     svc_name = f"pre_api.{api_name}"
-                    self._host.services.register(svc_name, api_inst, uid=400,
-                                                  _caller="qqlinker_framework.__init__.soft_restart")
-
-            self._host.package_mgr.register_requirements({"websocket-client": "websocket"})
-            self._host.register_modules_from_package("qqlinker_framework.modules")
-            self._host.register_external_modules()
+                    self._host.services.register(svc_name, api_inst, mid=400)
 
             # 7. 重新启动框架线程
             logger.info("启动新框架线程...")

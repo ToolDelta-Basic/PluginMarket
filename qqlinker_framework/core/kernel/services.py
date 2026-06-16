@@ -233,7 +233,7 @@ validate_module_tier = validate_module_mid
 # 包含框架实际使用的所有 caller 字符串
 
 _DAEMON_TRUSTED_MODULES: frozenset = frozenset({
-    "qqlinker_framework.core.host",
+    "qqlinker_framework.core.host", "qqlinker_framework.libraries.channel_host",
     "qqlinker_framework.__init__",
     "qqlinker_framework.modules.security.orion",
 })
@@ -255,12 +255,13 @@ class ServiceContainer:
     """
 
     def __init__(self, mid: int = MID_KERNEL, tier: Optional[int] = None,
-                 service_registry=None):
+                 service_registry=None, group: str = ""):
         if tier is not None:
             mid = tier  # 旧名兼容
         self._mid = mid
         self._services: Dict[str, Any] = {}
         self._service_mids: Dict[str, int] = {}
+        self._service_groups: Dict[str, str] = {}
         self._factories: Dict[str, Callable[[], Any]] = {}
         self._lock = threading.Lock()
         self._deps: Dict[str, Set[str]] = {}
@@ -269,6 +270,8 @@ class ServiceContainer:
         self._service_registry = service_registry
         # ★ C1 修复: 视图锁定标记
         self._view_locked = False
+        # ── v1.5.1: 组内免检 ──
+        self._group = group
 
     # ── v6 新名属性 ──
 
@@ -326,7 +329,7 @@ class ServiceContainer:
             )
         super().__setattr__(name, value)
 
-    def scope(self, mid: int) -> "ServiceContainer":
+    def scope(self, mid: int, group: str = "") -> "ServiceContainer":
         """创建一个 mid 受限的视图（v6 新名，原 view()），共享底层服务注册表。
 
         每个模块得到独立的 ServiceContainer 视图 —— 共享 _services /
@@ -347,6 +350,9 @@ class ServiceContainer:
         scoped._required_services = self._required_services
         # ── v5.2: 服务注册表引用 ──
         scoped._service_registry = self._service_registry
+        scoped._service_groups = self._service_groups
+        # ── v1.5.1: 组内免检 ──
+        scoped._group = group
         # ★ C1 修复: 锁定视图，_mid 此后不可修改
         object.__setattr__(scoped, '_view_locked', True)
         return scoped
@@ -364,6 +370,7 @@ class ServiceContainer:
         is_factory: Optional[bool] = None,
         _caller: str = "",
         description: str = "",
+        group: str = "",
     ):
         """注册服务实例或工厂函数。
 
@@ -419,6 +426,8 @@ class ServiceContainer:
             self._service_mids[name] = mid
             # 兼容旧代码: _service_tiers 同步引用
             self._service_tiers = self._service_mids
+            # ── v1.5.1: 记录服务所属组 ──
+            self._service_groups[name] = group
 
     def get(self, name: str, *, mid: Optional[int] = None) -> Any:
         """获取服务实例，基于 declarative 权限检查 (v6)。
@@ -442,6 +451,9 @@ class ServiceContainer:
         # kernel 始终通过
         if caller_mid == MID_KERNEL:
             pass
+        # v1.5.1: 组内免检
+        elif self._group and self._group == self._service_groups.get(name, ""):
+            pass  # 同组，跳过 mid 检查
         elif caller_mid <= MID_DAEMON:
             # daemon 组: 仍允许旧式访问（兼容）
             if caller_mid > req_mid:

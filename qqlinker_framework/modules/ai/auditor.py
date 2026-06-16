@@ -12,7 +12,7 @@ import os
 import time
 from typing import Dict, List, Optional, Tuple
 
-from ...core.kernel.defguard import escape_player_name
+
 
 _logger = logging.getLogger(__name__)
 
@@ -297,7 +297,8 @@ class Auditor:
         try:
             player_name = self._resolve_player_name(user_id)
             if player_name:
-                safe_name = escape_player_name(player_name)
+                sec = self.ai.services.get("security")
+                safe_name = sec.escape_player_name(player_name)
                 self.ai.adapter.send_game_command(
                     f'kick "{safe_name}" AI审核：多次违规发言'
                 )

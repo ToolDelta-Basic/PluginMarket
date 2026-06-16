@@ -27,6 +27,7 @@ import enum
 import json
 import logging
 import os
+import sys
 import tempfile
 import threading
 from abc import ABC, abstractmethod
@@ -319,6 +320,7 @@ class Module(ABC):
     # ── 必须声明 ──
     name: str = ""
     mid: int = 300  # v6: 模块 ID, 0=kernel, 100-199=daemon, 200-299=service, 300-399=app, 400-499=nobody
+    group: str = "standalone"  # 模块所属组，自动从包 __init__.py 读取
 
     # ── 可选覆写 ──
     # uid/tier 为 property → self.mid; 子类可声明类属性覆盖默认值
@@ -367,6 +369,26 @@ class Module(ABC):
         if declared_tier is not None and not isinstance(declared_tier, property) and declared_tier != 300:
             declared_mid = declared_tier
         self.mid = declared_mid
+        # v1.5.1: 自动从包 __init__.py 读取 MODULE_GROUP
+        _module_has_own_mid = (
+            'mid' in cls_dict
+            or (declared_uid is not None and not isinstance(declared_uid, property))
+            or (declared_tier is not None and not isinstance(declared_tier, property))
+        )
+        if self.group == "standalone":
+            try:
+                pkg = sys.modules.get(type(self).__module__)
+                if pkg:
+                    pkg_name = type(self).__module__.rsplit('.', 1)[0]
+                    parent_pkg = sys.modules.get(pkg_name)
+                    if parent_pkg and hasattr(parent_pkg, 'MODULE_GROUP'):
+                        grp = parent_pkg.MODULE_GROUP
+                        self.group = grp.get("name", "standalone")
+                        # 组 mid 作为默认值，模块显式声明的 mid 优先
+                        if "mid" in grp and not _module_has_own_mid:
+                            self.mid = grp["mid"]
+            except Exception:
+                pass
         if self.mid <= 0:
             layer = "kernel"
         elif self.mid <= 100:
@@ -390,6 +412,11 @@ class Module(ABC):
         self._commands: dict = {}
         self._event_handlers: list = []
         self._tool_defs: list = []
+
+        # ── 便利属性（在服务注入前初始化，因为降级警告需要 logger）──
+        self.logger = logging.getLogger(
+            f"{__name__.rsplit('.', 1)[0]}.{self.name}" or __name__
+        )
 
         # ── 服务注入（含 mid 权限校验 + v5 优雅降级）──
         # Fix: 通过受限视图 self.services 获取服务，而非直接使用 root 容器
@@ -428,9 +455,6 @@ class Module(ABC):
                 )
 
         # ── 便利属性 ──
-        self.logger = logging.getLogger(
-            f"{__name__.rsplit('.', 1)[0]}.{self.name}" or __name__
-        )
         self._data_dir: str | None = None
         self.db: JsonDatabase | None = None
 
@@ -444,6 +468,16 @@ class Module(ABC):
         # 因此使用 root 容器。bridge 返回给 daemon 级模块使用；
         # 外部模块通过 _root_services property（受限视图）无法获取。
         self._bridge = self._resolve_bridge(services)
+
+        # ── 配置注入：初始化 self.cfg_* 属性 ──
+        if self.config_schema:
+            config_svc = getattr(self, 'config', None)
+            for attr_name, (config_path, default) in self.config_schema.items():
+                try:
+                    value = config_svc.get(config_path, default) if config_svc else default
+                except Exception:
+                    value = default
+                setattr(self, f"cfg_{attr_name}", value)
 
         # ── 配置热重载：自动更新 self.cfg_* 属性 ──
         if self.config_schema and self.event_bus is not None:

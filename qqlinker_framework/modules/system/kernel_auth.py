@@ -13,8 +13,6 @@ import logging
 import time
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.services import uid_label, TIER_KERNEL, TIER_DAEMON, TIER_SERVICE, UID_NOBODY
-from ...core.kernel.audit import audit_log, audit_log_exec, AuditLevel
 from .auth import persist_user_uid, _normalize_qq_list
 
 _log = logging.getLogger(__name__)
@@ -49,13 +47,16 @@ class KernelAuthModule(Module):
     """内核级授权模块。uid=0，仅 root 用户可触发。"""
 
     name = "kernel_auth"
-    mid = 0  # TIER_KERNEL  # root: 框架内核
+    mid = 0  # 0  # root: 框架内核
     tier = 0  # deprecated, use mid
     version = (1, 0, 0)
     required_services = ["config", "message"]
 
     async def on_init(self):
         """初始化：注册命令（装饰器自动扫描）。"""
+        self._proto = self.services.get("protocol")
+        self._audit = self.services.get("audit")
+        self._modules_svc = self.services.try_get("modules")
 
     # ── 命令 ──
 
@@ -71,7 +72,7 @@ class KernelAuthModule(Module):
         禁止: .grant <任何人> 0    (root 只能在配置文件设置)
         """
         caller_uid = self._get_user_uid(ctx.user_id)
-        if caller_uid > TIER_KERNEL:
+        if caller_uid > 0:
             await ctx.reply(f"\u274c 仅 root(0) 可使用此命令。你的 UID: {caller_uid}")
             return
 
@@ -86,7 +87,7 @@ class KernelAuthModule(Module):
             await ctx.reply("\u274c QQ号格式错误")
             return
 
-        new_uid = UID_NOBODY
+        new_uid = 400
         if len(ctx.args) >= 2:
             try:
                 new_uid = int(ctx.args[1])
@@ -94,19 +95,19 @@ class KernelAuthModule(Module):
                 await ctx.reply("\u274c UID等级格式错误")
                 return
 
-        if new_uid < 0 or new_uid >= UID_NOBODY + 10000:
+        if new_uid < 0 or new_uid >= 400 + 10000:
             await ctx.reply(f"\u274c 无效的 UID 等级: {new_uid}\n"
                             f"有效范围: 100=守护, 1000=系统, 2000=用户")
             return
 
         # ★ 硬限制: 禁止通过 .grant 授予 uid=0
-        if new_uid <= TIER_KERNEL:
-            audit_log(
+        if new_uid <= 0:
+            self._audit.log(
                 sender=str(ctx.user_id),
                 action="grant_root_attempt",
                 target=str(target_qq),
                 detail=f"grant_attempt_from_{ctx.user_id}_to_{target_qq}_uid=0",
-                level=AuditLevel.CRITICAL,
+                level=self._audit.AuditLevel.CRITICAL,
                 group_id=ctx.group_id,
             )
             _log.critical(
@@ -125,21 +126,21 @@ class KernelAuthModule(Module):
         if confirm_arg != "--confirm":
             await ctx.reply(
                 f"\u26a0\ufe0f 即将将用户 {target_qq} 授权为 UID {new_uid} "
-                f"({uid_label(new_uid)})。\n"
+                f"({self._proto.uid_label(new_uid)})。\n"
                 f"请追加 --confirm 确认操作。"
             )
             return
 
         self._set_user_uid(target_qq, new_uid)
-        label = uid_label(new_uid)
+        label = self._proto.uid_label(new_uid)
 
         # 审计日志
-        audit_log(
+        self._audit.log(
             sender=str(ctx.user_id),
             action="grant",
             target=str(target_qq),
             detail=f"new_uid={new_uid} label={label}",
-            level=AuditLevel.WARNING,
+            level=self._audit.AuditLevel.WARNING,
             group_id=ctx.group_id,
         )
 
@@ -149,7 +150,7 @@ class KernelAuthModule(Module):
                 f"\u2705 用户 {target_qq} 已授权为: UID {new_uid} ({label})，"
                 f"并已加入管理员列表"
             )
-        elif new_uid >= UID_NOBODY:
+        elif new_uid >= 400:
             self._remove_admin(target_qq)
             await ctx.reply(
                 f"\u2705 用户 {target_qq} 已降级为: UID {new_uid} ({label})"
@@ -172,7 +173,7 @@ class KernelAuthModule(Module):
         root 的调用权限不被被调用方法阻止。
         """
         user_uid = self._get_user_uid(ctx.user_id)
-        if user_uid > TIER_KERNEL:
+        if user_uid > 0:
             await ctx.reply(f"\u274c 仅 root(0) 可使用此命令。你的 UID: {user_uid}")
             return
 
@@ -180,8 +181,8 @@ class KernelAuthModule(Module):
         if not args:
             loaded = []
             try:
-                host = self.services.get("_host")
-                for name, mod in host.module_mgr._loaded_modules.items():
+                modules_svc = self.services.get("modules")
+                for name, mod in modules_svc.list_loaded().items():
                     mod_uid = getattr(mod, 'uid', 400)
                     if mod_uid > 0:
                         # 只列出有 exec_exposed 方法的模块
@@ -210,8 +211,8 @@ class KernelAuthModule(Module):
 
         target_mod = None
         try:
-            host = self.services.get("_host")
-            target_mod = host.module_mgr._loaded_modules.get(mod_name)
+            modules_svc = self.services.get("modules")
+            target_mod = modules_svc.get(mod_name)
         except Exception:
             pass
 
@@ -219,9 +220,9 @@ class KernelAuthModule(Module):
             await ctx.reply(f"\u274c 模块 '{mod_name}' 未加载")
             return
 
-        target_uid = getattr(target_mod, 'uid', UID_NOBODY)
+        target_uid = getattr(target_mod, 'uid', 400)
         # root 不能通过 .exec 调用其他 root 级模块（包括自身 kernel_auth）
-        if target_uid <= TIER_KERNEL:
+        if target_uid <= 0:
             await ctx.reply(f"\u274c 禁止调用 root 级模块 '{mod_name}'")
             return
 
@@ -234,12 +235,12 @@ class KernelAuthModule(Module):
 
         # ★ @exec_exposed 白名单检查
         if not is_exec_exposed(method):
-            audit_log(
+            self._audit.log(
                 sender=str(ctx.user_id),
                 action="exec_blocked_not_exposed",
                 target=f"{mod_name}.{method_name}",
                 detail="方法未标记 @exec_exposed",
-                level=AuditLevel.WARNING,
+                level=self._audit.AuditLevel.WARNING,
                 group_id=ctx.group_id,
             )
             await ctx.reply(
@@ -250,7 +251,7 @@ class KernelAuthModule(Module):
 
         # 审计日志：记录 .exec 调用（合并为一条）
         exec_args = args[1:] if len(args) > 1 else []
-        audit_log_exec(
+        self._audit.log_exec(
             caller_uid=ctx.user_id,
             module_name=mod_name,
             method_name=method_name,
@@ -300,7 +301,7 @@ class KernelAuthModule(Module):
                     return 100
             except (TypeError, ValueError):
                 pass
-        return UID_NOBODY
+        return 400
 
     def _set_user_uid(self, user_id: int, new_uid: int):
         """设置用户的 UID 等级（持久化到 config.json）。"""
@@ -342,3 +343,87 @@ class KernelAuthModule(Module):
         except Exception:
             pass
         _log.info("用户 %d 已从管理员列表移除", user_id)
+
+    @command(".用户组", description="用户组管理 (root only)", min_uid=0)
+    async def _cmd_user_group(self, ctx):
+        args = ctx.args if ctx.args else []
+        if not args:
+            await ctx.reply(
+                "📋 .用户组 <创建|删除|加入|移除|权限|列表|查看> [参数]\n"
+                "  创建 <组名>\n"
+                "  删除 <组名>\n"
+                "  加入 <组名> <QQ号>\n"
+                "  移除 <组名> <QQ号>\n"
+                "  权限 <组名> <模块组> <权限> <是|否>\n"
+                "  列表\n"
+                "  查看 <组名>"
+            )
+            return
+
+        registry = self.services.try_get("user_group_registry")
+        if not registry:
+            await ctx.reply("用户组注册表未初始化")
+            return
+
+        sub = args[0]
+
+        if sub == "创建" and len(args) >= 2:
+            name = args[1]
+            ok = registry.create_group(name)
+            await ctx.reply(f"✅ 用户组 '{name}' 创建成功" if ok else f"❌ 用户组 '{name}' 已存在")
+
+        elif sub == "删除" and len(args) >= 2:
+            name = args[1]
+            ok = registry.delete_group(name)
+            await ctx.reply(f"✅ 用户组 '{name}' 已删除" if ok else f"❌ 用户组 '{name}' 不存在")
+
+        elif sub == "加入" and len(args) >= 3:
+            name, qq = args[1], int(args[2])
+            ok = registry.add_member(name, qq)
+            await ctx.reply(f"✅ {qq} 已加入 '{name}'" if ok else f"❌ 用户组 '{name}' 不存在")
+
+        elif sub == "移除" and len(args) >= 3:
+            name, qq = args[1], int(args[2])
+            ok = registry.remove_member(name, qq)
+            await ctx.reply(f"✅ {qq} 已从 '{name}' 移除" if ok else f"❌ 操作失败")
+
+        elif sub == "权限" and len(args) >= 5:
+            group_name = args[1]
+            module_group = args[2]
+            action = args[3]
+            allowed = args[4] in ("是", "true", "1", "yes")
+            ok = registry.set_permission(group_name, module_group, action, allowed)
+            await ctx.reply(f"✅ {group_name}.{module_group}.{action} = {allowed}" if ok else "❌ 操作失败")
+
+        elif sub == "列表":
+            groups = registry.list_groups()
+            if not groups:
+                await ctx.reply("暂无用户组")
+                return
+            lines = [f"📋 用户组 ({len(groups)} 个):"]
+            for name, data in groups.items():
+                members = data.get("成员", [])
+                perms = data.get("权限", {})
+                lines.append(f"  • {name} ({len(members)} 人, {len(perms)} 组权限)")
+            await ctx.reply("\n".join(lines))
+
+        elif sub == "查看" and len(args) >= 2:
+            name = args[1]
+            groups = registry.list_groups()
+            data = groups.get(name)
+            if not data:
+                await ctx.reply(f"用户组 '{name}' 不存在")
+                return
+            members = data.get("成员", [])
+            perms = data.get("权限", {})
+            lines = [f"📋 用户组: {name}"]
+            lines.append(f"  成员 ({len(members)}): {', '.join(str(m) for m in members[:10])}")
+            if perms:
+                lines.append("  权限:")
+                for mg, p in perms.items():
+                    ps = " ".join(f"{k}={'✓' if v else '✗'}" for k, v in p.items())
+                    lines.append(f"    {mg}: {ps}")
+            await ctx.reply("\n".join(lines))
+
+        else:
+            await ctx.reply("参数错误。使用 .用户组 查看帮助")

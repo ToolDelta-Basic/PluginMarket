@@ -77,9 +77,9 @@ class GroupPersonaModule(Module):
             svc = self.services.get("group_persona")
             current = svc.get_persona(ctx.group_id)
             if current:
-                await ctx.reply(f"当前群人设: {current}\n\n用法: .群设 <描述> 或 .群设 清除")
+                await ctx.reply(f"当前群人设: {current}\n\n用法: .群设 <描述|清除>")
             else:
-                await ctx.reply("当前群未设人设。\n用法: .群设 <描述>")
+                await ctx.reply("当前群未设人设。\n用法: .群设 <描述|清除>")
             return
 
         svc = self.services.get("group_persona")

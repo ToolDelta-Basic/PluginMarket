@@ -21,10 +21,6 @@ from typing import Any, Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.events import PlayerJoinEvent
-from ...core.kernel.defguard import escape_player_name
-from ...core.kernel.sanitize import sanitize_player_name, sanitize_game_command_param
-from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
 
@@ -168,6 +164,8 @@ class OrionBridge(Module):
 
     async def on_init(self) -> None:
         """初始化封禁存储、注册命令和事件监听。"""
+        self._sec = self.services.get("security")
+        self._audit = self.services.get("audit")
 
         async def _dbg_status() -> str:
             """调试端点。"""
@@ -189,25 +187,24 @@ class OrionBridge(Module):
         self._store = BanStore(self.data_dir)
 
         # 注册为全局服务，供其他模块调用
-        self._root_services.register("orion_bridge", self, uid=100,
+        self._root_services.register("orion_bridge", self, mid=100,
                                _caller="qqlinker_framework.modules.security.orion")
 
         self.listen("PlayerJoinEvent", self._on_player_join, priority=10)
 
     # ── 机器可调用接口（其他模块绑定用）────────────────────
 
-    @staticmethod
-    def _build_kick_command(player: str, reason: str) -> str:
+    def _build_kick_command(self, player: str, reason: str) -> str:
         """安全构建 kick 命令，使用参数化接口。
 
         所有参数经过 sanitize_player_name / sanitize_game_command_param
         清洗后再拼入命令字符串。
         """
-        safe_player = sanitize_player_name(player)
-        safe_reason = sanitize_game_command_param(
+        safe_player = self._sec.sanitize_player_name(player)
+        safe_reason = self._sec.sanitize_game_command_param(
             reason, allow_spaces=True
         )
-        return f'kick "{escape_player_name(safe_player)}" {safe_reason}'
+        return f'kick "{self._sec.escape_player_name(safe_player)}" {safe_reason}'
 
     def ban_player(
         self, player: str, reason: str = "", duration: int = -1,
@@ -229,8 +226,8 @@ class OrionBridge(Module):
             duration: 时长（分钟），-1 表示永久。
         """
         # 清洗输入
-        safe_player = sanitize_player_name(player)
-        safe_reason = sanitize_game_command_param(
+        safe_player = self._sec.sanitize_player_name(player)
+        safe_reason = self._sec.sanitize_game_command_param(
             reason, allow_spaces=True
         ) or "系统封禁"
 
@@ -255,12 +252,14 @@ class OrionBridge(Module):
         self.adapter.send_game_command(cmd)
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"ban_programmatic: {safe_player}",
+            level=self._audit.AuditLevel.WARNING,
+            module="orion_bridge",
             sender="AI_Auditor",
             action="ban_programmatic",
             target=safe_player,
             detail=f"duration={duration}min reason={safe_reason[:100]}",
-            level=AuditLevel.WARNING,
         )
 
         _log.info(
@@ -270,14 +269,14 @@ class OrionBridge(Module):
 
     # ── 进服拦截 ────────────────────────────────────────────
 
-    async def _on_player_join(self, event: PlayerJoinEvent) -> None:
+    async def _on_player_join(self, event) -> None:
         """玩家进服时检查封禁状态，被封则自动踢出。"""
-        player = sanitize_player_name(event.player_name)
+        player = self._sec.sanitize_player_name(event.player_name)
         record = self._store.get(player)
         if not record:
             return
 
-        reason = sanitize_game_command_param(
+        reason = self._sec.sanitize_game_command_param(
             record.get("reason", "已被封禁"), allow_spaces=True
         )
         duration = record.get("duration", -1)
@@ -303,8 +302,8 @@ class OrionBridge(Module):
             await ctx.reply("用法：.封禁 <玩家名> [原因] [时长(分钟), -1=永久]")
             return
 
-        player = sanitize_player_name(args[0])
-        reason = sanitize_game_command_param(
+        player = self._sec.sanitize_player_name(args[0])
+        reason = self._sec.sanitize_game_command_param(
             args[1] if len(args) > 1 else "管理员操作",
             allow_spaces=True,
         )
@@ -335,12 +334,14 @@ class OrionBridge(Module):
         self.adapter.send_game_command(cmd)
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"ban: {player}",
+            level=self._audit.AuditLevel.WARNING,
+            module="orion_bridge",
             sender=str(ctx.user_id),
             action="ban",
             target=player,
             detail=f"duration={duration}s reason={reason[:100]}",
-            level=AuditLevel.WARNING,
             group_id=ctx.group_id,
         )
 
@@ -357,15 +358,17 @@ class OrionBridge(Module):
             await ctx.reply("用法：.解封 <玩家名>")
             return
 
-        player = sanitize_player_name(ctx.args[0])
+        player = self._sec.sanitize_player_name(ctx.args[0])
         if self._store.remove(player):
             # 审计日志
-            audit_log(
+            self._audit.log(
+                f"unban: {player}",
+                level=self._audit.AuditLevel.WARNING,
+                module="orion_bridge",
                 sender=str(ctx.user_id),
                 action="unban",
                 target=player,
                 detail=f"by_{ctx.nickname}",
-                level=AuditLevel.WARNING,
                 group_id=ctx.group_id,
             )
             await ctx.reply(f"✅ 已解封 {player}")
@@ -401,8 +404,8 @@ class OrionBridge(Module):
             await ctx.reply("用法：.踢出 <玩家名> [原因]")
             return
 
-        player = sanitize_player_name(args[0])
-        reason = sanitize_game_command_param(
+        player = self._sec.sanitize_player_name(args[0])
+        reason = self._sec.sanitize_game_command_param(
             args[1] if len(args) > 1 else "管理员操作",
             allow_spaces=True,
         )
@@ -410,12 +413,14 @@ class OrionBridge(Module):
         self.adapter.send_game_command(cmd)
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"kick: {player}",
+            level=self._audit.AuditLevel.INFO,
+            module="orion_bridge",
             sender=str(ctx.user_id),
             action="kick",
             target=player,
             detail=f"reason={reason[:100]}",
-            level=AuditLevel.INFO,
             group_id=ctx.group_id,
         )
 

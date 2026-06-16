@@ -127,7 +127,7 @@ class DemoModule(Module):
     async def _cmd_demo(self, ctx):
         args = ctx.args if ctx.args else []
         if not args:
-            await ctx.reply(".演示 列表  — 查看演示场景\n.演示 <场景名> — 执行演示")
+            await ctx.reply(".演示 <列表|场景名>\n  列表     — 查看演示场景\n  <场景名> — 执行演示")
             return
 
         sub = args[0]

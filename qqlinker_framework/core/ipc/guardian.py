@@ -84,7 +84,7 @@ class Guardian:
         if self._host is not None:
             return {"ok": True, "msg": "already_started"}
 
-        from ...core.host import FrameworkHost
+        from ...libraries.channel_host import ChannelHost as FrameworkHost
         # 创建最小化适配器（不连任何外部服务，全通过 IPC 通信）
         from .guardian_adapter import GuardianAdapter
         adapter = GuardianAdapter(self)

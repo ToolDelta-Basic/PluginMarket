@@ -355,12 +355,11 @@ class TemplateModule(Module):
             await self._cmd_switch(ctx)
         else:
             await ctx.reply(
-                "📋 .模板 命令:\n"
-                "  .模板              → 查看当前模板状态\n"
-                "  .模板 列表         → 列出所有模板\n"
-                "  .模板 检查         → 检查当前模板完成情况\n"
-                "  .模板 状态         → 显示当前模板状态\n"
-                "  .模板 切换 <名称>  → 切换模板"
+                "📋 .模板 <列表|检查|状态|切换> [参数]\n"
+                "  列表         — 列出所有模板\n"
+                "  检查         — 检查当前模板完成情况\n"
+                "  状态         — 显示当前模板状态\n"
+                "  切换 <名称>  — 切换模板"
             )
 
     async def _cmd_list(self, ctx):

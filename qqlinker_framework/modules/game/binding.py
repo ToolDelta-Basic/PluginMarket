@@ -13,9 +13,6 @@ from typing import Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.events import GameChatEvent
-from ...core.kernel.sanitize import sanitize_player_name, sanitize_game_command_param
-from ...core.kernel.defguard import escape_player_name
 
 # ── 绑定安全限制 ──
 _BIND_CODE_TTL = 300          # 验证码有效期（秒）= 5 分钟
@@ -156,6 +153,7 @@ class PlayerBindingModule(Module):
 
     async def on_init(self):
         """框架已导出 binding 服务，模块只注册命令和事件。"""
+        self._sec = self.services.get("security")
 
         async def _dbg_bindings():
             """调试端点。"""
@@ -187,29 +185,29 @@ class PlayerBindingModule(Module):
         self.listen("GameChatEvent", self.on_game_chat)
 
     # ---------- 游戏内监听 ----------
-    @staticmethod
-    def _build_tellraw(player: str, text: str) -> str:
+    def _build_tellraw(self, player: str, text: str) -> str:
         """安全构建 tellraw 命令，使用 Python dict → 一次性 json.dumps。
 
         防止通过玩家名注入 JSON 结构或命令。
         """
-        safe_player = sanitize_player_name(player)
-        safe_text = sanitize_game_command_param(text, allow_spaces=True)
+        sec = self._sec
+        safe_player = sec.sanitize_player_name(player)
+        safe_text = sec.sanitize_game_command_param(text, allow_spaces=True)
         payload = {
             "rawtext": [{"text": safe_text}]
         }
         return (
-            f'tellraw "{escape_player_name(safe_player)}" '
+            f'tellraw "{sec.escape_player_name(safe_player)}" '
             + json.dumps(payload, ensure_ascii=False)
         )
 
-    async def on_game_chat(self, event: GameChatEvent):
+    async def on_game_chat(self, event):
         """监听游戏内 #绑定 请求，生成验证码并发送 tellraw。"""
         msg = (event.message or "").strip()
         if not msg:
             return
         if msg == "#绑定":
-            player = sanitize_player_name(event.player_name)
+            player = self._sec.sanitize_player_name(event.player_name)
             existing_qq = self.binding_service.get_qq_by_player(player)
             if existing_qq:
                 self.adapter.send_game_message(

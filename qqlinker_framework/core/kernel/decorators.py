@@ -23,6 +23,7 @@ def is_exec_exposed(method) -> bool:
 def command(
     trigger: str,
     *,
+    sub: str = "",
     cmd_type: str = "group",
     description: str = "",
     op_only: bool = False,
@@ -33,17 +34,27 @@ def command(
 ):
     """标记方法为命令处理器。
 
+    支持多变体和子命令：
+      @command(".规则 | /规则")              → .规则 和 /规则 都触发
+      @command(".规则 | /规则", sub="创建")  → .规则 创建 触发
+
     Args:
-        trigger: 命令触发词（如 ".帮助"）。
+        trigger: 命令触发词，用 | 分隔多个变体（如 ".帮助 | /帮助 | 帮助"）。
+        sub: 子命令名（如 "创建"）。空串表示主命令。
         cooldown: 冷却秒。None 取模块 default_cooldown。
-        required_role: 需要的角色名（如 "moderator"），空串表示不限制。
-        min_uid: 最低 UID 等级要求。默认 400 (nobody)，即所有人可用。
+        required_role: 需要的角色名，空串不限制。
+        min_uid: 最低 UID 等级。默认 400 (nobody)。
     """
 
     def decorator(func: Callable):
         """内部装饰器：附加命令元信息。"""
+        # 解析 | 分隔的多变体
+        variants = [t.strip() for t in trigger.split("|") if t.strip()]
+        primary = variants[0] if variants else trigger.strip()
         func._command_info = {
-            "trigger": trigger,
+            "trigger": primary,
+            "variants": variants,
+            "sub": sub,
             "type": cmd_type,
             "description": description,
             "op_only": op_only,

@@ -14,10 +14,6 @@ import logging
 from typing import List, Dict, Optional
 
 from ...core.module import Module
-from ...core.kernel.events import (
-    AIPrePromptReflectionEvent,
-    AIPostResponseReflectionEvent,
-)
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -354,7 +350,7 @@ class AIAuditEnhanceModule(Module):
         self._store = AuditKnowledgeStore(data_dir)
 
         # 暴露 audit 服务，供外部模块调用 check_message()
-        self._root_services.register("audit", self)
+        self._root_services.register("ai_audit", self)
 
         # 注册命令
         self.register_command(
@@ -507,7 +503,7 @@ class AIAuditEnhanceModule(Module):
                      rejection.get("reject_reason"))
 
     # ---------- 事件处理 ----------
-    async def _on_pre_reflection(self, event: AIPrePromptReflectionEvent):
+    async def _on_pre_reflection(self, event):
         """使用 LLM 分析用户消息,若启用则注入补充系统提示(含 L3 审查法则)。"""
         if self._pre_reflection_level == "关闭" or not self._ensure_llm_client():
             return
@@ -568,7 +564,7 @@ class AIAuditEnhanceModule(Module):
             event.supplement = "\n".join(supplement_parts)
 
     async def _on_post_reflection(
-        self, event: AIPostResponseReflectionEvent
+        self, event
     ):
         """使用 LLM 检查 AI 回复是否合规,记录违规案例。"""
         if self._post_reflection_level == "关闭" or not self._ensure_llm_client():

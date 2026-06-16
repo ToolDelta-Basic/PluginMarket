@@ -6,8 +6,6 @@ import logging
 import time
 from ...core.module import Module
 from ...core.kernel.decorators import command
-from ...core.kernel.services import uid_label, TIER_KERNEL, UID_NOBODY
-from ...core.kernel.audit import audit_log, AuditLevel
 
 _log = logging.getLogger(__name__)
 
@@ -79,6 +77,11 @@ class AuthModule(Module):
 
     async def on_init(self):
         """初始化：注册命令（装饰器自动扫描）。"""
+        proto = self.services.get("protocol")
+        self._uid_label = proto.uid_label
+        self._TIER_KERNEL = proto.TIER_KERNEL
+        self._UID_NOBODY = proto.UID_NOBODY
+        self._audit = self.services.get("audit")
 
     # ── 命令 ──
 
@@ -86,7 +89,7 @@ class AuthModule(Module):
     async def cmd_uid(self, ctx):
         """返回当前用户的 UID 等级。"""
         user_uid = self._get_user_uid(ctx.user_id)
-        label = uid_label(user_uid)
+        label = self._uid_label(user_uid)
         tier_names = {
             0: "root (全部接口可用)",
             100: "daemon (系统守护)",
@@ -140,7 +143,10 @@ class AuthModule(Module):
             pass
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"sudo_request: {ctx.user_id}",
+            level=self._audit.AuditLevel.INFO,
+            module="auth",
             sender=str(ctx.user_id),
             action="sudo_request",
             target="daemon",
@@ -201,12 +207,14 @@ class AuthModule(Module):
             pass
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"approve_sudo: {target_qq}",
+            level=self._audit.AuditLevel.WARNING,
+            module="auth",
             sender=str(ctx.user_id),
             action="approve_sudo",
             target=str(target_qq),
             detail=f"approved_by_{ctx.user_id}_to_daemon",
-            level=AuditLevel.WARNING,
             group_id=ctx.group_id,
         )
 
@@ -234,10 +242,10 @@ class AuthModule(Module):
             return
 
         current_uid = self._get_user_uid(target_qq)
-        if current_uid <= TIER_KERNEL:
+        if current_uid <= self._TIER_KERNEL:
             await ctx.reply("\u274c 无法降级 root 用户")
             return
-        if current_uid >= UID_NOBODY:
+        if current_uid >= self._UID_NOBODY:
             await ctx.reply(f"用户 {target_qq} 已经是普通用户")
             return
 
@@ -245,21 +253,23 @@ class AuthModule(Module):
         if len(ctx.args) < 2 or ctx.args[1] != "--confirm":
             await ctx.reply(
                 f"\u26a0\ufe0f 即将将用户 {target_qq} "
-                f"(当前 {uid_label(current_uid)}) 降级为 nobody。\n"
+                f"(当前 {self._uid_label(current_uid)}) 降级为 nobody。\n"
                 f"请追加 --confirm 确认操作。"
             )
             return
 
-        self._set_user_uid(target_qq, UID_NOBODY)
+        self._set_user_uid(target_qq, self._UID_NOBODY)
         self._remove_admin(target_qq)
 
         # 审计日志
-        audit_log(
+        self._audit.log(
+            f"revoke: {target_qq}",
+            level=self._audit.AuditLevel.WARNING,
+            module="auth",
             sender=str(ctx.user_id),
             action="revoke",
             target=str(target_qq),
             detail=f"from_{current_uid}_to_nobody",
-            level=AuditLevel.WARNING,
             group_id=ctx.group_id,
         )
 
@@ -292,7 +302,7 @@ class AuthModule(Module):
                     return 100
             except (TypeError, ValueError):
                 pass
-        return UID_NOBODY
+        return self._UID_NOBODY
 
     def _set_user_uid(self, user_id: int, new_uid: int):
         """设置用户的 UID 等级（持久化到 config.json）。"""

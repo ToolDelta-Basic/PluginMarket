@@ -23,7 +23,7 @@ import threading
 from typing import Optional
 
 from .mock_adapter import MockAdapter
-from ..core.host import FrameworkHost
+from ..libraries.channel_host import ChannelHost as FrameworkHost
 
 
 class MockFrameworkCLI(cmd.Cmd):

@@ -8,7 +8,6 @@ import logging
 from typing import Dict, List, Optional, Tuple
 from ...core.module import Module
 from ...core.kernel.decorators import command, listen
-from ...core.kernel.services import UID_NOBODY
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -263,4 +262,4 @@ class HelpModule(Module):
         try:
             return self.services.get("uid_lookup")(user_id)
         except Exception:
-            return UID_NOBODY
+            return 400  # UID_NOBODY

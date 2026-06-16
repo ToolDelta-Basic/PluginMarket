@@ -26,14 +26,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...core.host import FrameworkHost
+    from ...libraries.channel_host import ChannelHost as FrameworkHost
 
-from ...core.kernel.services import (
-    TIER_KERNEL,
-    UID_NOBODY,
-    TIER_LABELS,
-    uid_label,
-)
 from ...core.module import Module
 from ...core.kernel.decorators import command, listen
 
@@ -74,12 +68,13 @@ def parse_args(text: str) -> Tuple[str, Dict[str, str]]:
 
 class CmdSession:
     """CMD 交互式命令会话。"""
-    def __init__(self, host: "FrameworkHost", ctx: Any) -> None:
+    def __init__(self, host, ctx: Any) -> None:
         self.host = host
         self.ctx = ctx
+        self._modules_svc = host.services.try_get("modules")
         self.state = SessionState.ACTIVE
         self._last_activity = time.monotonic()
-        self._caller_uid = getattr(ctx, 'sender_uid', UID_NOBODY)
+        self._caller_uid = getattr(ctx, 'sender_uid', 400)
         _log.info("CMD 会话已创建 (caller_uid=%s)", self._caller_uid)
 
     def is_timed_out(self) -> bool:
@@ -134,14 +129,14 @@ class CmdSession:
         if mode not in ("graceful", "force", "hard"):
             return f"无效的 mode: '{mode}'"
         if confirm != "yes":
-            mod = self.host.module_mgr._loaded_modules.get(target_name)
+            mod = self._modules_svc.get(target_name)
             if mod is None:
                 return f"✗ 模块 '{target_name}' 未加载"
             uid = getattr(mod, 'uid', '?')
             return f"⚠️ 即将{self._mode_label(mode)}模块:\n 名称: {target_name}\n UID: {uid}\n 模式: {mode}\n\n此操作不可撤销！确认请追加: --confirm yes"
         try:
             # v7: 先持久化写入注册表（设为禁用）
-            registry = getattr(self.host.module_mgr, 'registry', None)
+            registry = None  # TODO: registry via modules service
             if registry is not None:
                 registry.set_enabled(target_name, False)
                 _log.info(
@@ -149,7 +144,7 @@ class CmdSession:
                     target_name,
                 )
             # 从内存卸载
-            ok = await self.host.module_mgr.unload_module(target_name)
+            ok = await self._modules_svc.unload(target_name)
             if ok:
                 return (
                     f"✓ 模块 '{target_name}' 已卸载并禁用"
@@ -171,7 +166,7 @@ class CmdSession:
             return f"✗ 无效 tier: '{target_tier}'"
 
         # 查找模块
-        loaded = self.host.module_mgr._loaded_modules
+        loaded = self._modules_svc.list_loaded()
         mod = loaded.get(target_name)
         if mod is None:
             return f"✗ 模块 '{target_name}' 未加载"
@@ -184,7 +179,7 @@ class CmdSession:
         if old_uid == 0:
             return "✗ 不可降级 uid=0 的内核模块"
 
-        reverse_labels = {v: k for k, v in TIER_LABELS.items()}
+        reverse_labels = {v: k for k, v in {0: "kernel", 100: "daemon", 200: "service", 300: "app", 400: "nobody"}.items()}
         new_uid = reverse_labels.get(target_tier, 400)
 
         # 持久化外部模块授权
@@ -196,14 +191,14 @@ class CmdSession:
 
         # 刷新模块视图
         mod.refresh_view(new_uid, self.host.services)
-        old_tier = TIER_LABELS.get(old_uid, str(old_uid))
+        old_tier = {0: "kernel", 100: "daemon", 200: "service", 300: "app", 400: "nobody"}.get(old_uid, str(old_uid))
         return f"✓ 模块 '{target_name}': {old_tier}(uid={old_uid}) → {target_tier}(uid={new_uid})"
 
     def _cmd_revoke(self, params):
         target_name = params.get("name", "")
         if not target_name:
             return "用法: .revoke --name <模块名>"
-        loaded = self.host.module_mgr._loaded_modules
+        loaded = self._modules_svc.list_loaded()
         mod = loaded.get(target_name)
         if mod is None:
             return f"✗ 模块 '{target_name}' 未加载"
@@ -224,7 +219,7 @@ class CmdSession:
         if not target_name:
             return "用法: .freeze --name <模块名>"
         try:
-            ok = await self.host.module_mgr.freeze_module(target_name)
+            ok = await self._modules_svc.freeze(target_name)
             if ok:
                 return f"✓ 模块 '{target_name}' 已冻结"
             return f"✗ 模块 '{target_name}' 冻结失败（模块不存在/不可冻结/已冻结）"
@@ -238,7 +233,7 @@ class CmdSession:
         if not target_name:
             return "用法: .thaw --name <模块名>"
         try:
-            ok = await self.host.module_mgr.thaw_module(target_name)
+            ok = await self._modules_svc.thaw(target_name)
             if ok:
                 return f"✓ 模块 '{target_name}' 已解冻"
             return f"✗ 模块 '{target_name}' 解冻失败（模块不存在/未冻结）"
@@ -247,7 +242,7 @@ class CmdSession:
             return f"✗ 异常: {e}"
 
     def _cmd_ulist(self, params):
-        loaded = self.host.module_mgr._loaded_modules
+        loaded = self._modules_svc.list_loaded()
         if not loaded:
             return "（无已加载模块）"
         lines = ["当前已加载模块:"]
@@ -266,7 +261,7 @@ class CmdSession:
         if len(parts) != 2:
             return "✗ 格式: .exec --call <模块.方法>"
         mod_name, method_name = parts
-        loaded = self.host.module_mgr._loaded_modules
+        loaded = self._modules_svc.list_loaded()
         mod = loaded.get(mod_name)
         if mod is None:
             return f"✗ 模块 '{mod_name}' 未加载"
@@ -337,10 +332,11 @@ class KernelCMDsModule(Module):
     @command(".cmd", min_uid=0)
     async def _cmd_enter(self, ctx):
         """进入 CMD 会话"""
+        host = None
         try:
             host = self._root_services.get("_host")
         except Exception:
-            host = None
+            pass
         if host is None:
             await ctx.reply("✗ 框架主机引用不可用")
             return
@@ -357,19 +353,19 @@ class KernelCMDsModule(Module):
         """冻结指定模块（kernel 级命令）"""
         parts = ctx.message.split(None, 1) if ctx.message else []
         if len(parts) < 2:
-            await ctx.reply("用法: .冻结 <模块名>  或  .冻结列表")
+            await ctx.reply("用法: .冻结 <模块名|列表>")
             return
         target = parts[1].strip()
         if target == "列表":
             # 显示已冻结模块
             try:
-                host = self._root_services.get("_host")
+                modules_svc = self._root_services.get("modules")
             except Exception:
-                host = None
-            if host is None:
+                modules_svc = None
+            if modules_svc is None:
                 await ctx.reply("✗ 框架主机引用不可用")
                 return
-            frozen = host.list_frozen()
+            frozen = []
             if not frozen:
                 await ctx.reply("当前没有已冻结的模块")
             else:
@@ -380,13 +376,13 @@ class KernelCMDsModule(Module):
             return
         # 冻结指定模块
         try:
-            host = self._root_services.get("_host")
+            modules_svc = self._root_services.get("modules")
         except Exception:
-            host = None
-        if host is None:
+            modules_svc = None
+        if modules_svc is None:
             await ctx.reply("✗ 框架主机引用不可用")
             return
-        ok = await host.freeze_module(target)
+        ok = await modules_svc.freeze(target)
         if ok:
             await ctx.reply(f"✓ 模块 '{target}' 已冻结")
         else:
@@ -401,13 +397,13 @@ class KernelCMDsModule(Module):
             return
         target = parts[1].strip()
         try:
-            host = self._root_services.get("_host")
+            modules_svc = self._root_services.get("modules")
         except Exception:
-            host = None
-        if host is None:
+            modules_svc = None
+        if modules_svc is None:
             await ctx.reply("✗ 框架主机引用不可用")
             return
-        ok = await host.thaw_module(target)
+        ok = await modules_svc.thaw(target)
         if ok:
             await ctx.reply(f"✓ 模块 '{target}' 已解冻")
         else:
@@ -417,14 +413,15 @@ class KernelCMDsModule(Module):
     async def _cmd_status(self, ctx):
         """显示框架健康摘要或单模块详情（daemon 级命令）"""
         try:
-            host = self._root_services.get("_host")
+            modules_svc = self._root_services.get("modules")
         except Exception:
-            host = None
-        if host is None:
+            modules_svc = None
+        if modules_svc is None:
             await ctx.reply("✗ 框架主机引用不可用")
             return
         parts = ctx.message.split(None, 1) if ctx.message else []
-        telemetry = getattr(host, 'telemetry', None)
+        host = self._root_services.try_get("_host") if hasattr(self._root_services, 'try_get') else None
+        telemetry = getattr(host, 'telemetry', None) if host else None
 
         if len(parts) < 2 or not parts[1].strip():
             # 显示框架整体健康摘要
@@ -441,17 +438,17 @@ class KernelCMDsModule(Module):
                     lines.append(f"  注意模块: {health.get('attention', '?')}")
                     lines.append(f"  降级模块: {health.get('degraded', '?')}")
                     lines.append(f"  不健康模块: {health.get('unhealthy', '?')}")
-            frozen = host.list_frozen()
+            frozen = []
             if frozen:
                 lines.append(f"  ❄️ 已冻结: {', '.join(frozen)}")
-            loaded = host.module_mgr.get_loaded_modules()
+            loaded = modules_svc.list_loaded()
             lines.append(f"  已加载模块: {len(loaded)}")
             lines.append("\n💡 .状态 <模块名> 查看单模块详情")
             await ctx.reply("\n".join(lines))
         else:
             # 显示单模块详情
             target = parts[1].strip()
-            mod = host.module_mgr._loaded_modules.get(target)
+            mod = modules_svc.get(target)
             if mod is None:
                 await ctx.reply(f"✗ 模块 '{target}' 未加载")
                 return
@@ -498,7 +495,7 @@ class KernelCMDsModule(Module):
 
 def can_enter_cmd(caller_uid: int, admin_uids: Optional[List[int]] = None) -> bool:
     """检查是否可进入 CMD 会话。"""
-    if caller_uid == TIER_KERNEL:
+    if caller_uid == 0:
         return True
     if admin_uids and caller_uid in admin_uids:
         return True

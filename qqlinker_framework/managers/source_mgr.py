@@ -1039,22 +1039,28 @@ class SourceManager:
                 info = method._command_info
                 min_uid = info.get('min_uid', 400)
                 # ── 二次校验: 非 root 模块命令 min_uid 不能低于模块自身 uid ──
+                primary = info.get('trigger', '?')
                 if mod.uid > 0 and min_uid < mod.uid:
                     logger.warning(
                         "模块 '%s' (uid=%d) 装饰器声明命令 '%s' (min_uid=%d < %d)，已拒绝",
-                        mod.name, mod.uid, info.get('trigger', '?'), min_uid, mod.uid,
+                        mod.name, mod.uid, primary, min_uid, mod.uid,
                     )
                     continue
-                mod.register_command(
-                    info['trigger'], method,
-                    cmd_type=info.get('type', 'group'),
-                    description=info.get('description', ''),
-                    op_only=info.get('op_only', False),
-                    required_role=info.get('required_role', ''),
-                    argument_hint=info.get('argument_hint', ''),
-                    cooldown=info.get('cooldown'),
-                    min_uid=min_uid,
-                )
+                # v1.5.1: 多变体 + 子命令支持
+                variants = info.get('variants', [primary])
+                sub = info.get('sub', '')
+                for variant in variants:
+                    trigger = f"{variant} {sub}".strip() if sub else variant
+                    mod.register_command(
+                        trigger, method,
+                        cmd_type=info.get('type', 'group'),
+                        description=info.get('description', ''),
+                        op_only=info.get('op_only', False),
+                        required_role=info.get('required_role', ''),
+                        argument_hint=info.get('argument_hint', ''),
+                        cooldown=info.get('cooldown'),
+                        min_uid=min_uid,
+                    )
             if hasattr(method, '_event_info'):
                 info = method._event_info
                 event_type = info.get('event_type', '')

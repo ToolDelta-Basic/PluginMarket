@@ -8,13 +8,6 @@ import asyncio
 import hashlib
 import logging
 from ...core.module import Module
-from ...core.kernel.events import (
-    GameChatEvent,
-    GroupMessageEvent,
-    PlayerJoinEvent,
-    PlayerLeaveEvent,
-)
-from ...core.kernel.sanitize import contains_homoglyphs, unicode_safe_strip
 from ...services.dedup import LayeredDedup
 
 
@@ -60,6 +53,7 @@ class GameForwarder(Module):
 
     async def on_init(self):
         """框架已自动注册 default_config 配置节，模块只订阅事件。"""
+        self._sec = self.services.get("security")
 
         async def _dbg_stats():
             """调试端点。"""
@@ -90,7 +84,7 @@ class GameForwarder(Module):
         except (ValueError, TypeError):
             return []
 
-    async def on_game_chat(self, event: GameChatEvent):
+    async def on_game_chat(self, event):
         """将游戏聊天消息转发到所有链接的QQ群。
 
         添加 [游戏] 来源标签前缀，防止来源混淆攻击。
@@ -103,7 +97,7 @@ class GameForwarder(Module):
             return
 
         # Unicode 同形字检测
-        if contains_homoglyphs(msg):
+        if self._sec.contains_homoglyphs(msg):
             return
 
         allow_prefixes = cfg.get("仅转发以下字符串开头的消息", [])
@@ -135,7 +129,7 @@ class GameForwarder(Module):
         for gid in self._get_linked_groups():
             await self.message.send_group(gid, text)
 
-    async def on_group_message(self, event: GroupMessageEvent):
+    async def on_group_message(self, event):
         """将QQ群消息转发到游戏公屏。
 
         包含 Unicode 同形字检测，防止绕过前缀黑名单。
@@ -153,7 +147,7 @@ class GameForwarder(Module):
             return
 
         # Unicode 同形字检测
-        if contains_homoglyphs(msg):
+        if self._sec.contains_homoglyphs(msg):
             return
 
         block_prefixes = cfg.get("屏蔽以下字符串开头的消息", [])
@@ -174,7 +168,7 @@ class GameForwarder(Module):
             None, self.adapter.send_game_message, "@a", text
         )
 
-    async def on_player_join(self, event: PlayerJoinEvent):
+    async def on_player_join(self, event):
         """转发玩家加入游戏提示。"""
         if not self.config.get("消息转发.转发玩家进退提示", True):
             return
@@ -183,7 +177,7 @@ class GameForwarder(Module):
                 gid, f"{event.player_name} 加入了游戏"
             )
 
-    async def on_player_leave(self, event: PlayerLeaveEvent):
+    async def on_player_leave(self, event):
         """转发玩家离开游戏提示。"""
         if not self.config.get("消息转发.转发玩家进退提示", True):
             return

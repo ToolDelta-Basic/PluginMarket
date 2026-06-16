@@ -8,7 +8,7 @@ import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from qqlinker_framework.core.host import FrameworkHost
+    from qqlinker_framework.libraries.channel_host import ChannelHost as FrameworkHost
 
 _log = logging.getLogger(__name__)
 
