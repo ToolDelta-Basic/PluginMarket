@@ -963,6 +963,10 @@
         "__init__.py",
         "datas.json"
     ],
+    "desperated_plugins/Web版插件市场-试行": [
+        "__init__.py",
+        "datas.json"
+    ],
     "desperated_plugins/bdx导出器Pro": [
         "__init__.py",
         "datas.json"
@@ -1065,10 +1069,6 @@
         "datas.json"
     ],
     "管理员白名单": [
-        "__init__.py",
-        "datas.json"
-    ],
-    "Web版插件市场-试行": [
         "__init__.py",
         "datas.json"
     ],

@@ -973,6 +973,10 @@
             "__init__.py": 0,
             "datas.json": 0
         },
+        "Web版插件市场-试行": {
+            "__init__.py": 0,
+            "datas.json": 0
+        },
         "bdx导出器Pro": {
             "__init__.py": 0,
             "datas.json": 0
@@ -1077,10 +1081,6 @@
         "datas.json": 0
     },
     "管理员白名单": {
-        "__init__.py": 0,
-        "datas.json": 0
-    },
-    "Web版插件市场-试行": {
         "__init__.py": 0,
         "datas.json": 0
     },

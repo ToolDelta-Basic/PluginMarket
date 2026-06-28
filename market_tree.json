@@ -555,12 +555,6 @@
       "version": "0.0.2",
       "plugin-type": "classic"
     },
-    "pluginmarket_web": {
-      "name": "Web版插件市场-试行",
-      "author": "xingchen",
-      "version": "0.1.1",
-      "plugin-type": "classic"
-    },
     "白名单&管理员检测": {
       "name": "白名单&管理员检测",
       "author": "猫七街",
