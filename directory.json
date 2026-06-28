@@ -650,11 +650,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "世界の记忆": [
-        "__init__.py",
-        "readme.txt",
-        "datas.json"
-    ],
     "权限管理": [
         "__init__.py",
         "datas.json"
@@ -1473,6 +1468,11 @@
     ],
     "admin命令": [
         "__init__.py",
+        "datas.json"
+    ],
+    "世界的记忆の复制": [
+        "__init__.py",
+        "readme.txt",
         "datas.json"
     ],
     "进服一言": [

@@ -159,12 +159,6 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
-    "世界の记忆": {
-      "name": "世界の记忆",
-      "author": "9S, Meteora·Österreich, Altair and Echidna",
-      "version": "0.3.0",
-      "plugin-type": "classic"
-    },
     "进服默认权限(必备)": {
       "name": "权限管理",
       "author": "权威-马牛逼",
@@ -751,6 +745,12 @@
       "name": "admin命令",
       "author": "wling/Hadwin",
       "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "世界的记忆の复制": {
+      "name": "世界的记忆の复制",
+      "author": "9S, Meteora·Österreich, Altair and Echidna",
+      "version": "0.3.0",
       "plugin-type": "classic"
     },
     "进服一言": {
