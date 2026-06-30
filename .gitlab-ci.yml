@@ -1,0 +1,15 @@
+# SAST.gitlab-ci.yml
+# GitLab SAST / Advanced SAST configuration
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+
+variables:
+  # Enable GitLab Advanced SAST
+  GITLAB_ADVANCED_SAST_ENABLED: "true"
+
+  # Optional: show more useful analyzer logs
+  SECURE_LOG_LEVEL: "info"
+
+  # Optional: exclude common non-source directories
+  SAST_EXCLUDED_PATHS: "spec,test,tests,tmp,node_modules,vendor,dist,build"
