@@ -1,18 +1,3 @@
-"""配置修复模块 — 自动检测并修复群子配置的类型错误
-
-═══════════════════════════════════════════════════════════════════════════
- 功能
-═══════════════════════════════════════════════════════════════════════════
- · 终端启动时，群配置加载过程中类型校验失败 → 自动备份 + fallback
- · 管理员可通过 .修复配置 <群号> 手动修复某群配置
- · .配置状态 查看所有群的子配置状态
- · .配置预览 <群号> <节名> 预览某群某节合并后的配置
- · 备份文件存放至 data/repair_backups/，路径模式下按模块约定
-
- 权限: UID≤100 或管理员可查看/修复
- 隐私: 自动脱敏令牌、密钥、QQ号等敏感字段
-═══════════════════════════════════════════════════════════════════════════
-"""
 import json
 import logging
 import os
@@ -61,8 +46,8 @@ def _check_uid_auth(ctx, services, uid_lookup=None) -> bool:
         uid_int = int(ctx.user_id) if not isinstance(ctx.user_id, int) else ctx.user_id
         if uid_int in [int(q) for q in admin_list if q]:
             return True
-    except Exception:
-        pass
+    except Exception as e:
+        _log.warning("config_repair._check_uid_auth: %s", e)
     
     return False
 
@@ -94,8 +79,8 @@ class ConfigRepairModule(Module):
     async def on_init(self) -> None:
         try:
             self._uid_lookup = self.services.get("uid_lookup")
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("config_repair.on_init: %s", e)
         _log.info("[config_repair] 配置修复模块已就绪")
 
     def _check_auth(self, ctx) -> bool:

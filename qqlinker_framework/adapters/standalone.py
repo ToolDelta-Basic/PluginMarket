@@ -1,9 +1,4 @@
 # adapters/standalone.py
-"""QQ 独立模式适配器 — 不连接游戏服务器，纯 QQ 机器人。
-
-所有游戏相关方法返回空值/NOOP，保持接口兼容。
-模块可通过 self.adapter 存在性判断是否在游戏模式。
-"""
 import logging
 from typing import Callable, Dict, Any, List, Optional
 

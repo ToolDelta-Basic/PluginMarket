@@ -1,38 +1,3 @@
-"""QQLinker 守护进程 — 独立进程中的 FrameworkHost
-
-═══════════════════════════════════════════════════════════════════════════
- 架构
-═══════════════════════════════════════════════════════════════════════════
- QQLinker Guardian 是独立于 ToolDelta 的守护进程：
-   · 内部运行完整的 FrameworkHost（模块管理、注册表、防御墙等）
-   · 通过 Unix socket IPC 与 ToolDelta 插件薄壳通信
-   · 完全自管线程/事件循环，不受宿主框架限制
-
- 双向 IPC 协议：
-   # 薄壳 → 守护进程 (请求)
-   group_message    — 转发群消息
-   start             — 框架启动
-   stop              — 框架停止
-   cmd               — 执行命令
-   ping              — 心跳检测
-
-   # 守护进程 → 薄壳 (推送)
-   send_group_msg   — 发送群消息
-   send_private_msg — 发送私聊消息
-   game_command      — 执行游戏指令
-   player_list       — 获取在线玩家
-   started           — 框架就绪
-   stopped           — 框架已停止
-
- 启动方式：
-   python -m qqlinker_framework.core.ipc.guardian \
-       --socket /tmp/qqlinker-guardian.sock \
-       --data-path /path/to/data
-
- 停止：
-   发送 SIGTERM 或 SIGINT
-═══════════════════════════════════════════════════════════════════════════
-"""
 import argparse
 import asyncio
 import logging
@@ -54,6 +19,8 @@ from .protocol import (
     make_event, make_hello_ack, _encode_message, _decode_line,
     is_hello, negotiate_capabilities,
 )
+
+_log = logging.getLogger(__name__)
 
 
 class Guardian:
@@ -265,8 +232,8 @@ class Guardian:
         if self._host:
             try:
                 await self._host.stop()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("guardian.stop: %s", e)
             self._host = None
         await self._server.stop()
         self._logger.info("守护进程已停止")
@@ -306,8 +273,8 @@ def main():
 
     try:
         asyncio.run(run())
-    except KeyboardInterrupt:
-        pass
+    except KeyboardInterrupt as e:
+        _log.debug("guardian.run: %s", e)
 
 
 if __name__ == "__main__":

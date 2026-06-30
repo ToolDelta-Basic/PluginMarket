@@ -1,4 +1,3 @@
-"""LLM 客户端工厂，处理 OpenAI 兼容 API 调用及工具循环。"""
 import json
 import asyncio
 import logging

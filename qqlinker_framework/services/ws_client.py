@@ -1,10 +1,10 @@
-"""WebSocket 客户端服务，支持自动重连、断路器保护和 OneBot 消息收发。"""
 import json
 import random
 import ssl
 import threading
 import time
 import logging
+_log = logging.getLogger(__name__)
 import enum
 import importlib
 from typing import Callable, Optional
@@ -150,8 +150,8 @@ class WsClient:
         if self.ws:
             try:
                 self.ws.close()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("ws_client.disconnect: %s", e)
 
     def is_circuit_open(self) -> bool:
         """查询断路器是否处于熔断状态。"""

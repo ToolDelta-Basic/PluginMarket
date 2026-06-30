@@ -1,21 +1,10 @@
-"""AI 引擎 — 将 LLM 对话能力从 AICore 中抽离为独立服务。
-
-模块通过 services.get("ai_engine") 获取实例，不再直接依赖 ai_core。
-
-功能:
-  - chat() — 对话接口（支持工具调用循环）
-  - chat_simple() — 简单对话（无工具调用）
-  - get_available_tools() — 按 UID 获取可用工具 schema
-  - get_group_memory() / add_to_memory() — 群对话记忆
-"""
-
 import asyncio
 import json
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .tool_policy import ToolPolicy, filter_tools
+from ..libraries.core.engine import Engine, EngineConfig
 
 _log = logging.getLogger(__name__)
 _log.setLevel(logging.INFO)
@@ -86,11 +75,14 @@ _ENGINE_TOOL_REGISTRY: List[dict] = [
 ]
 
 
-class AIEngine:
+class AIEngine(Engine):
     """AI 引擎 — 模块通过 services.get("ai_engine") 使用。
 
     AICore 在 on_init 中创建此实例并注册为服务。其他模块无需再
     通过 tool_manager._root_services 获取 AICore。
+
+    引擎定义:
+      AIEngine 是多个库组合后形成的新服务，对外提供 "ai" 服务。
 
     属性:
       ai_core: 反向引用 AICore（用于访问安全规则、审核等核心能力）
@@ -98,12 +90,23 @@ class AIEngine:
 
     name = "ai_engine"
 
-    def __init__(self, ai_core):
+    config = EngineConfig(
+        name="ai_engine",
+        version="1.0.0",
+        mounts=["tool_mgr", "config", "message"],
+        pipeline=["filter", "generate", "format", "respond"],
+        provides=["ai"],
+    )
+
+    def __init__(self, ai_core=None, services=None, event_bus=None):
         """初始化引擎。
 
         Args:
-            ai_core: AICore 模块实例（用于内存管理、审核、服务访问等）
+            ai_core: AICore 模块实例（用于内存管理、审核、服务访问等）。
+            services: 服务容器（兼容 Engine 基类签名）。
+            event_bus: 事件总线（兼容 Engine 基类签名）。
         """
+        super().__init__(services, event_bus)
         self.ai_core = ai_core
         self._logger = logging.getLogger(f"{__name__}.AIEngine")
         # 可选：引擎级配置覆盖
@@ -138,10 +141,12 @@ class AIEngine:
 
         # 按 UID 获取可用工具并过滤
         if tools is None:
+            from ..managers.tool_policy import filter_tools
             base_tools = self.get_available_tools(caller_uid)
             tools = filter_tools(base_tools, caller_uid)
         elif tools:
             # 即使外部传入了 tools，也要做策略过滤
+            from ..managers.tool_policy import filter_tools
             tools = filter_tools(list(tools), caller_uid)
 
         return await self.ai_core.llm_factory.chat(
@@ -251,6 +256,23 @@ class AIEngine:
             self.ai_core.conversations[group_id] = []
         self.ai_core.conversations[group_id].append(msg)
         self.ai_core.conversation_last_active[group_id] = time.time()
+
+    # ═══════════════════════════════════════════════════════════
+    # Engine 生命周期
+    # ═══════════════════════════════════════════════════════════
+
+    async def ignite(self) -> None:
+        """启动引擎 — 验证依赖后初始化管线。"""
+        # 挂载验证：确保依赖库已注册
+        if not self._verify_mounts():
+            self._logger.warning(
+                "AI 引擎启动: 部分依赖库未就绪，继续以降级模式运行"
+            )
+        self._logger.info("AI 引擎已启动 v%s", self.config.version)
+
+    async def extinguish(self) -> None:
+        """停止引擎。"""
+        self._logger.info("AI 引擎已停止")
 
         # 裁剪超量记忆
         limit = self.ai_core.max_memory * 2

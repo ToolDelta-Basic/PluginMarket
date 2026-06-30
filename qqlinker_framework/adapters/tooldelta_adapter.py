@@ -1,14 +1,6 @@
 # adapters/tooldelta_adapter.py
-"""ToolDelta 平台适配器实现
-
-v1.1.0 — 新增:
-  - 生命周期感知: ListenActive, ListenFrameExit, ListenPreJoin
-  - 标题栏 API: player_title / player_subtitle / player_actionbar
-  - 数据包监听: ListenPacket, ListenBytesPacket
-  - UUID 解析增强: 自动回退 querytarget
-  - pre_plugin_apis: 自动注册 datas.json 声明的依赖插件 API
-"""
 import logging
+_log = logging.getLogger(__name__)
 from typing import Callable, Dict, Any, List, Optional
 
 try:
@@ -186,8 +178,8 @@ class ToolDeltaAdapter(IFrameworkAdapter):
         if send_guard is not None:
             try:
                 return send_guard.send_with_ack(group_id, message, priority=1)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("tooldelta_adapter.send_message_round_robin: %s", e)
         if hasattr(self.plugin, 'send_group_msg'):
             return self.plugin.send_group_msg(group_id, message)
         # 向后兼容 fallback

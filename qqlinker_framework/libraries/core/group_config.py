@@ -1,8 +1,3 @@
-"""群级子配置管理库。
-
-注册服务: "group_config"
-依赖: config_store
-"""
 import json
 import logging
 import os
@@ -79,8 +74,8 @@ class GroupConfigManager:
             if f.endswith(".json"):
                 try:
                     result.append(int(f[:-5]))
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    _log.debug("group_config.get_all_groups: %s", e)
         return result
 
     def _load_group(self, group_id: int) -> dict:
@@ -93,8 +88,8 @@ class GroupConfigManager:
                     data = json.load(f)
                 self._cache[group_id] = data
                 return data
-            except (json.JSONDecodeError, OSError):
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                _log.debug("group_config._load_group: %s", e)
         data = {}
         self._cache[group_id] = data
         return data

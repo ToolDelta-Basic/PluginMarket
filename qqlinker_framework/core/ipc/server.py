@@ -1,15 +1,8 @@
-"""IPCServer — 异步 Unix socket 服务端.
-
-特性:
-    - 监听 unix socket (asyncio.start_server)
-    - register(method, handler) 注册处理器
-    - 并发连接，每个请求独立 task
-"""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+_log = logging.getLogger(__name__)
 import os
 from typing import Any, Callable, Awaitable
 
@@ -55,8 +48,8 @@ class IPCServer:
         # 清理旧的 socket 文件
         try:
             os.unlink(self._path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("server.start: %s", e)
         self._server = await asyncio.start_unix_server(
             self._handle_client, self._path
         )
@@ -71,8 +64,8 @@ class IPCServer:
             self._server = None
         try:
             os.unlink(self._path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("server.stop: %s", e)
         for task in self._connections:
             task.cancel()
         if self._connections:
@@ -98,16 +91,16 @@ class IPCServer:
                     task = asyncio.create_task(self._dispatch(msg, writer))
                     self._connections.add(task)
                     task.add_done_callback(self._connections.discard)
-        except IPCError:
-            pass
-        except OSError:
-            pass
+        except IPCError as e:
+            _log.warning("server._handle_client: %s", e)
+        except OSError as e:
+            _log.warning("server._handle_client: %s", e)
         finally:
             try:
                 writer.close()
                 await writer.wait_closed()
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("server._handle_client: %s", e)
             logger.debug("Connection closed: %s", peer)
 
     async def _dispatch(self, msg: dict, writer: asyncio.StreamWriter) -> None:
@@ -139,8 +132,8 @@ class IPCServer:
         try:
             writer.write(_encode_message(resp))
             await writer.drain()
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("server.server: %s", e)
 
     # ------------------------------------------------------------------
     # 上下文管理器

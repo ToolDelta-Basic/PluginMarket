@@ -1,7 +1,3 @@
-"""健康监控库 — 健康检查 + 看门狗（骨架）。
-
-依赖: module_loader
-"""
 import logging
 from ..channel_host import Library
 

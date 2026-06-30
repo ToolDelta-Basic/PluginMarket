@@ -1,19 +1,3 @@
-"""事件循环心跳看门狗 — 假死检测 + 降级恢复
-
-═══════════════════════════════════════════════════════════════════════════
- 设计
-═══════════════════════════════════════════════════════════════════════════
- · last_event_loop_heartbeat  — 记录事件循环最后一次心跳时间
- · _heartbeat_loop()           — 每 N 秒更新时间戳（需要事件循环响应）
- · _watchdog_loop()             — 外部线程同步检查心跳是否过期
- · 假死处理                    — 停用非核心服务（优雅降级）而非直接崩溃
- ═══════════════════════════════════════════════════════════════════════════
-
- 集成:
-   - host.py: start() 中通过 monitoring 模块或直接导入启动
-   - degradation.py: 假死时调用 degrade_all_noncritical()
- ═══════════════════════════════════════════════════════════════════════════
-"""
 import asyncio
 import logging
 import os
@@ -241,8 +225,8 @@ class EventLoopWatchdog:
             frozen_path = "/tmp/qqlinker_framework_frozen"
             with open(frozen_path, 'w') as f:
                 f.write(str(int(time.time())))
-        except OSError:
-            pass
+        except OSError as e:
+            _log.debug("watchdog.watchdog: %s", e)
 
         # ── 触发事件循环中的降级回调（如果循环本身恢复）──
         if not self._stopped:
@@ -250,8 +234,8 @@ class EventLoopWatchdog:
                 self._loop.call_soon_threadsafe(
                     lambda: _log.warning("事件循环已恢复响应 — 正在降级模式运行")
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("watchdog.watchdog: %s", e)
 
     # ═══════════════════════════════════════════════════════════
     # 生命周期
@@ -292,16 +276,16 @@ class EventLoopWatchdog:
             self._heartbeat_task.cancel()
             try:
                 await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("watchdog.stop: %s", e)
 
         # 清理假死标记文件
         try:
             frozen_path = "/tmp/qqlinker_framework_frozen"
             if os.path.exists(frozen_path):
                 os.unlink(frozen_path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.debug("watchdog.stop: %s", e)
 
         if self._watchdog_thread and self._watchdog_thread.is_alive():
             self._watchdog_thread.join(timeout=5.0)

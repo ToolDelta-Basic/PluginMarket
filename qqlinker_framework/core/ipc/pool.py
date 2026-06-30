@@ -1,15 +1,8 @@
-"""WorkerPool — 子进程池管理.
-
-特性:
-    - 用 subprocess 启停 worker 进程
-    - 崩溃自动重启，最多 3 次 / 5 分钟
-    - 入口指向 core.ipc.worker
-"""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+_log = logging.getLogger(__name__)
 import os
 import sys
 import time
@@ -65,8 +58,8 @@ class WorkerPool:
         # 清理 socket
         try:
             os.unlink(self._path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("pool.stop_all: %s", e)
         logger.info("WorkerPool stopped")
 
     async def _start_one(self, index: int) -> None:
@@ -118,8 +111,8 @@ class WorkerPool:
         # 在池中移除旧进程引用
         try:
             self._processes.remove(proc)
-        except ValueError:
-            pass
+        except ValueError as e:
+            _log.warning("pool.pool: %s", e)
         await self._start_one(index)
 
     # ------------------------------------------------------------------

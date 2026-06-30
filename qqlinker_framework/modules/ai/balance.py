@@ -1,15 +1,10 @@
-"""AI 余额管理系统
-
-提供群维度的 TOKEN 余额管理，支持查询、消费、充值。
-存储于 data/ai/balances.json，以 group_id 为键。
-"""
-
 import asyncio
 import json
 import logging
 import os
 import time
 from typing import Dict, Optional
+_log = logging.getLogger(__name__)
 
 _logger = logging.getLogger(__name__)
 
@@ -199,8 +194,8 @@ class Balancer:
                                 total_recharged += entry.get("amount", 0)
                         except json.JSONDecodeError:
                             continue
-            except OSError:
-                pass
+            except OSError as e:
+                _log.debug("balance.get_stats: %s", e)
 
         balance = await self.get(group_id)
         if balance == float("inf"):

@@ -1,13 +1,3 @@
-"""工具注册：ToolPolicy（白名单/黑名单模式）与工具过滤逻辑。
-
-每个模块引用 AI 引擎时可以声明自己的工具策略，引擎根据 caller_uid
-和策略过滤返回的 tools schema 列表。
-
-用法:
-  - 模块创建 ToolPolicy 并注册到引擎
-  - 调用 chat() 时传递 caller_uid，引擎自动过滤工具
-"""
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 

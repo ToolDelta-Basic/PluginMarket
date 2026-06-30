@@ -1,20 +1,3 @@
-"""能力安全桥梁 (Capability Security Bridge)
-
-═══════════════════════════════════════════════════════════════════════════
-核心职责:
-  1. 安全隔离: 模块永远拿不到内核对象引用，只能通过 bridge 调用
-  2. API 稳定: 内核方法名可自由重构，bridge 映射保持对外不变
-  3. UID 门控: 不同 UID 的模块看到不同的白名单方法集
-  4. 二次校验: 依赖 gatekeeper 的模块入口可追加独立权限校验
-
-设计:
-  - bridge 自身 uid=0（root 权限访问内核服务），但不注册到 ServiceContainer
-  - 模块通过 Module._bridge 私有属性获取（opt-in，与现有 self.services 共存）
-  - 所有调用: bridge.call("服务.方法", arg1, arg2, ...)
-  - 白名单决定: 某种 UID 级别能看到哪些方法
-
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import logging

@@ -1,5 +1,4 @@
 # services/dedup/exceptions.py
-"""去重模块自定义异常。"""
 
 
 class DedupError(Exception):

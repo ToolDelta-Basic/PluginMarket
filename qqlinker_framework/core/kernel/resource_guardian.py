@@ -1,18 +1,3 @@
-"""资源守护者 (Resource Guardian) — QQLinker v5 第四层奶酪片
-
-对非 root (uid≠0) 模块进行运行时资源消耗监控与执行动作。
-
-监控指标:
-  - cpu_timeout: 命令执行超时 (默认 3s)
-  - frequency: 模块调用频率 (滑动窗口)
-  - msg_rate: 消息发送频率 (小时级)
-  - file_sandbox: 文件访问白名单检查
-
-动作:
-  - 软限制 → 警告日志
-  - 硬限制 → _rollback_module (杀死模块)
-  - 多次违规 → 永久禁用 (persist 黑名单)
-"""
 import asyncio
 import collections
 import json
@@ -441,8 +426,8 @@ class ResourceGuardian:
                 detail=detail,
                 level=AuditLevel.WARNING,
             )
-        except ImportError:
-            pass
+        except ImportError as e:
+            _log.warning("resource_guardian.resource_guardian: %s", e)
 
         # ── v5: 通知健康评分器（违规）──
         self._notify_health_scorer(module_name)
@@ -540,16 +525,16 @@ class ResourceGuardian:
         try:
             if self._host_ref and hasattr(self._host_ref, 'health_scorer'):
                 self._host_ref.health_scorer.on_violation(module_name)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("resource_guardian._notify_health_scorer: %s", e)
 
     def _notify_health_scorer_degradation(self, module_name: str):
         """通知健康评分器：模块降级/隔离。"""
         try:
             if self._host_ref and hasattr(self._host_ref, 'health_scorer'):
                 self._host_ref.health_scorer.on_degradation(module_name)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("resource_guardian._notify_health_scorer_degradatio: %s", e)
 
     # ── 查询 API ──
 

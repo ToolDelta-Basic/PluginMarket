@@ -1,8 +1,3 @@
-"""消息队列库 — 令牌桶削峰 + 异步发送队列。
-
-注册服务: "message"
-依赖: 无
-"""
 import asyncio
 import logging
 import time
@@ -57,8 +52,8 @@ class MessageQueue:
             self._task.cancel()
             try:
                 await self._task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("message_queue.stop: %s", e)
 
     async def send_group(self, group_id: int, message: str, **kwargs) -> None:
         """发送群消息（入队）。

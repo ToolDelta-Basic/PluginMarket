@@ -1,34 +1,3 @@
-"""崩溃恢复引擎 — 健康心跳 + 崩溃检测 + 检查点 + 递归防护 + 防滥用
-
-═══════════════════════════════════════════════════════════════════════════
- 架构
-═══════════════════════════════════════════════════════════════════════════
- · .heartbeat 健康文件          — 每 N 秒 touch，外部 watchdog/cron 监控
- · .crashed 崩溃标记            — 正常退出删除，崩溃时残留，启动时检测
- · .restart_guard 递归防护      — 防止配置错误导致的无限重启循环
- · checkpoint() 模块约定        — 模块声明式持久化关键状态
- · restore_checkpoint() 恢复    — 启动恢复模式时重新注入
- · 定期检查点 (30s)             — 框架调度器自动轮询模块 checkpoint
-═══════════════════════════════════════════════════════════════════════════
-
- 递归重启防护
-═══════════════════════════════════════════════════════════════════════════
- 如果框架在 N 秒内崩溃了 M 次，视为故障循环，拒绝继续重启。
-
- 参数:
-   RESTART_WINDOW_SECONDS = 300    # 5 分钟窗口
-   RESTART_MAX_IN_WINDOW  = 3      # 窗口内最多 3 次
-
- 存储: data/.restart_guard.json
-   {
-     "history": [ts1, ts2, ts3, ...],  # 最近崩溃时间戳
-     "last_clean_exit": ts              # 上一次完全正常退出的时间
-   }
-
- 当触发防护时，写入 data/.restart_blocked 标记文件，
- 外部 watchdog 应检查此文件并停止重试。
-═══════════════════════════════════════════════════════════════════════════
-"""
 import asyncio
 import hashlib
 import hmac
@@ -39,7 +8,8 @@ import re
 import secrets
 import time
 from typing import Any, Callable, Optional
-from ..kernel.services import TIER_NOBODY
+from ..core.kernel.services import TIER_NOBODY
+from ..libraries.core.engine import Engine, EngineConfig
 
 _log = logging.getLogger(__name__)
 
@@ -52,22 +22,37 @@ _MODULE_NAME_RE = re.compile(r'[^a-zA-Z0-9_-]')  # 模块名净化
 _CHECKPOINT_HEADER = b"QQLINKER_CHECKPOINT_V1"  # HMAC 签名前缀
 
 
-class RecoveryEngine:
-    """崩溃恢复引擎：心跳、检测、检查点调度、递归防护。"""
+class RecoveryEngine(Engine):
+    """崩溃恢复引擎：心跳、检测、检查点调度、递归防护。
 
-    def __init__(self, data_dir: str):
+    引擎定义:
+      挂载 recovery 库提供递归重启防护和检查点持久化能力，
+      对外提供 "recovery" 服务。
+    """
+
+    config = EngineConfig(
+        name="recovery_engine",
+        version="1.0.0",
+        mounts=["config_store"],
+        pipeline=["heartbeat", "checkpoint", "restart_guard"],
+        provides=["recovery"],
+    )
+
+    def __init__(self, data_dir: str = "", services=None, event_bus=None):
+        super().__init__(services, event_bus)
         self._data_dir = data_dir
-        self._heartbeat_path = os.path.join(data_dir, "数据", ".心跳")
-        self._crashed_path = os.path.join(data_dir, "数据", ".崩溃标记")
+        self._heartbeat_path = os.path.join(data_dir, "数据", ".心跳") if data_dir else ""
+        self._crashed_path = os.path.join(data_dir, "数据", ".崩溃标记") if data_dir else ""
         self._restart_guard_path = os.path.join(
             data_dir, "数据", ".restart_guard.json"
-        )
+        ) if data_dir else ""
         self._restart_blocked_path = os.path.join(
             data_dir, "数据", ".restart_blocked"
-        )
-        self._checkpoint_dir = os.path.join(data_dir, "数据", "检查点")
-        os.makedirs(os.path.dirname(self._heartbeat_path), exist_ok=True)
-        os.makedirs(self._checkpoint_dir, exist_ok=True)
+        ) if data_dir else ""
+        self._checkpoint_dir = os.path.join(data_dir, "数据", "检查点") if data_dir else ""
+        if data_dir:
+            os.makedirs(os.path.dirname(self._heartbeat_path), exist_ok=True)
+            os.makedirs(self._checkpoint_dir, exist_ok=True)
 
         # 运行时状态
         self._heartbeat_task: Optional[asyncio.Task] = None
@@ -137,8 +122,8 @@ class RecoveryEngine:
             else:
                 with open(self._heartbeat_path, 'w') as f:
                     f.write(str(int(time.time())))
-        except OSError:
-            pass  # 磁盘满了也尽量不崩溃
+        except OSError as e:
+            _log.debug("recovery._touch_heartbeat: %s", e)  # 磁盘满了也尽量不崩溃
 
     async def _heartbeat_loop(self) -> None:
         """异步心跳循环。"""
@@ -177,8 +162,8 @@ class RecoveryEngine:
         for path in (self._crashed_path, self._heartbeat_path):
             try:
                 os.remove(path)
-            except (FileNotFoundError, OSError):
-                pass
+            except (FileNotFoundError, OSError) as e:
+                _log.debug("recovery.clean_shutdown: %s", e)
         _log.debug("崩溃标记和心跳文件已清理")
 
     def was_crashed(self) -> bool:
@@ -238,8 +223,8 @@ class RecoveryEngine:
                         "crash_times": recent,
                         "blocked_at": now,
                     }, f, ensure_ascii=False, indent=2)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.debug("recovery.recovery: %s", e)
             return False
 
         # 记录本次启动
@@ -250,8 +235,8 @@ class RecoveryEngine:
                     "history": recent,
                     "last_launch": now,
                 }, f, ensure_ascii=False, indent=2)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.debug("recovery.recovery: %s", e)
 
         _log.info(
             "重启防护: 窗口内第 %d 次启动 (阈值: %d)",
@@ -279,8 +264,8 @@ class RecoveryEngine:
                 data["last_clean_exit"] = time.time()
                 with open(self._restart_guard_path, 'w') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.debug("recovery.mark_clean_exit: %s", e)
 
     # ═══════════════════════════════════════════════════════════
     # 检查点引擎
@@ -451,6 +436,22 @@ class RecoveryEngine:
         return result
 
     # ═══════════════════════════════════════════════════════════
+    # Engine 生命周期
+    # ═══════════════════════════════════════════════════════════
+
+    async def ignite(self) -> None:
+        """启动引擎 — 验证 config_store 库已挂载。"""
+        if not self._verify_mounts():
+            _log.warning(
+                "恢复引擎启动: config_store 库未就绪，继续以降级模式运行"
+            )
+        _log.info("恢复引擎已启动 v%s", self.config.version)
+
+    async def extinguish(self) -> None:
+        """停止引擎 — 等价于 stop()。"""
+        await self.stop()
+
+    # ═══════════════════════════════════════════════════════════
     # 生命周期
     # ═══════════════════════════════════════════════════════════
 
@@ -462,8 +463,8 @@ class RecoveryEngine:
                 task.cancel()
                 try:
                     await task
-                except asyncio.CancelledError:
-                    pass
+                except asyncio.CancelledError as e:
+                    _log.debug("recovery.stop: %s", e)
         # 最后一次 checkpoint（尽力而为）
         await self._save_all_checkpoints()
         _log.info("恢复引擎已停止")

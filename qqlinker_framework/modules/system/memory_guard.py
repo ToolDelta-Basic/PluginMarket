@@ -1,46 +1,3 @@
-"""内存守护模块 — 系统内存监控 + 智能重启
-
-═══════════════════════════════════════════════════════════════════════════
- 功能
-═══════════════════════════════════════════════════════════════════════════
- · 实时监控进程 RSS 和系统可用内存
- · 多级阈值响应: 警告 → 退化 → 夜间安全重启
- · 夜间静默重启: 只在凌晨窗口 + 无长命令运行时触发
- · 定期计划重启: 可配置每天/每周定时重启
- · N小时内存高水位触发重启（不受夜间限制，预防泄漏累积）
-
- 安全设计
-───────────────────────────────────────────────────────────────────────────
- · 重启前检查: 是否有活跃的长命令 (长命令=执行超过5分钟)
- · 用户通知: 群内提前广播 + 倒计时
- · 优雅停机: 保存所有状态 → 通知上游进程 → exit
- · 外层恢复: Watchdog/进程管理器检测退出后自动拉起
- · 冷却期: 重启后N小时内不再次重启（防止重启风暴）
- ═══════════════════════════════════════════════════════════════════════════
-
- 配置:
-   节: 内存守护
-   ├── 是否启用 (bool, 默认 true)
-   ├── 检查间隔_秒 (int, 默认 120)
-   ├── 警告阈值_RSS_MB (int, 默认 800)
-   ├── 退化触发_内存占用比例 (float, 默认 0.85)
-   ├── 夜间安全重启 (bool, 默认 true)
-   ├── 夜间窗口_起始时 (int, 默认 2)
-   ├── 夜间窗口_结束时 (int, 默认 6)
-   ├── 长命令判定_分钟 (int, 默认 5)
-   ├── 重启前广播_秒 (int, 默认 30)
-   ├── 重启冷却_小时 (float, 默认 2)
-   ├── 重启后等待_秒 (int, 默认 10)
-   ├── N小时高水位_小时 (float, 默认 0=禁用)
-   ├── 高水位阈值_RSS_MB (int, 默认 1200)
-   ├── 定期重启_模式 (str, "关闭"/"每天"/"每周", 默认 "每天")
-   ├── 每天重启_时间 (str, "HH:MM", 默认 "04:00")
-   ├── 每周重启_星期几 (int, 0=周一, 默认 0)
-   ├── 每周重启_时间 (str, "HH:MM", 默认 "04:00")
-   ├── 通知群号 (int, 默认 0=不通知)
-   ╰── 广播消息模板 (str, 简洁自定义)
-"""
-
 import asyncio
 import gc
 import logging
@@ -201,8 +158,8 @@ class MemoryGuard(Module):
                         cleaned = await host.module_mgr.cleanup_orphan_commands()
                         if cleaned:
                             _log.info("清理 %d 条过期命令", cleaned)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("memory_guard._memory_check: %s", e)
 
             # 记录历史
             self._rss_history.append((now, rss_mb))
@@ -406,8 +363,8 @@ class MemoryGuard(Module):
                     if line.startswith("VmRSS:"):
                         kb_val = int(line.split(":")[1].strip().split()[0])
                         return kb_val / 1024.0
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("memory_guard._get_rss_mb: %s", e)
         return 0.0
 
     @staticmethod
@@ -476,8 +433,8 @@ class MemoryGuard(Module):
             # 触发 gc 释放内存
             gc.collect()
             _log.info("已执行 gc.collect()")
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("memory_guard._save_state_before_restart: %s", e)
 
     async def _notify(self, msg: str):
         """发送通知到配置的群号。"""

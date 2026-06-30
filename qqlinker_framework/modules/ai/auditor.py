@@ -1,16 +1,10 @@
-"""审核拦截器：基于正则匹配违规词，自动处理违规用户。
-
-增强特性:
-  - 分层检测：正则初筛 → LLM 复核（若 audit 服务可用）
-  - 违规记录持久化到 data_dir/violations.json，跨重启保留
-  - 处理动作支持禁言/踢出/封禁，可调用 Orion 封禁系统
-"""
 import asyncio
 import json
 import logging
 import os
 import time
 from typing import Dict, List, Optional, Tuple
+_log = logging.getLogger(__name__)
 
 
 
@@ -381,8 +375,8 @@ class Auditor:
                 name = binding.get_player_name(user_id)
                 if name:
                     return name
-        except (KeyError, AttributeError):
-            pass
+        except (KeyError, AttributeError) as e:
+            _log.debug("auditor._resolve_player_name: %s", e)
 
         # Fallback：通过在线玩家列表推断（搜索包含 QQ 号的玩家名）
         try:
@@ -391,8 +385,8 @@ class Auditor:
             for p in players:
                 if user_str in p:
                     return p
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("auditor._resolve_player_name: %s", e)
 
         return None
 

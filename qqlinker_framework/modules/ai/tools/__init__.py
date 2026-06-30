@@ -1,11 +1,4 @@
 # modules/ai/tools/__init__.py
-"""工具子包：自动发现并注册所有工具模块。
-
-v2: 双路径注册 — 同时支持 Python 模块自动发现和 JSON 目录扫描。
-  1. 自动导入当前目录下的所有 Python 工具模块并调用 register_tools。
-  2. 从 数据/工具/AI工具/ 目录加载 JSON schema 定义文件，
-     通过 name 字段匹配已有工具的回调（callback 仍由 Python 代码提供）。
-"""
 import importlib
 import logging
 import os

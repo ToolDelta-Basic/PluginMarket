@@ -1,11 +1,4 @@
 # modules/ai/tools/web_search.py
-"""网络搜索工具（百度千帆）
-
-安全特性:
-  - query 长度限制 500 字符
-  - query IP 地址模式过滤
-  - 搜索结果恶意链接清洗
-"""
 
 try:
     import aiohttp

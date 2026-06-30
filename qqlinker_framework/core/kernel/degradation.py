@@ -1,18 +1,3 @@
-"""优雅降级引擎 — 服务分级 + 降级不崩溃 + 恐慌广播
-
-═══════════════════════════════════════════════════════════════════════════
- 核心概念
-═══════════════════════════════════════════════════════════════════════════
- · 关键服务 (CRITICAL)     — 失败 → 框架无法运行，触发恐慌广播
- · 非关键服务 (NONCRITICAL) — 失败 → 自动降级运行，记录警告日志
- · 降级状态追踪            — 记录哪些服务已降级，供监控/恢复查询
-
- 集成点:
-   - host.py: Phase 0 初始化 GracefulDegradation，非关键 init 失败时调用
-   - module.py: _apply_conventions 中 required_services 缺失 → 降级而非崩溃
-   - routing.py: 模块级熔断触发时 → 记录降级事件
-═══════════════════════════════════════════════════════════════════════════
-"""
 import logging
 import time
 from typing import Dict, List, Optional, Set
@@ -199,12 +184,14 @@ class GracefulDegradation:
                 )
                 try:
                     loop = asyncio.get_running_loop()
-                    loop.create_task(self.event_bus.publish(event))
-                except RuntimeError:
+                    loop.create_task(
+                        self.event_bus.publish(event)
+                    )
+                except RuntimeError as e:
                     # 无运行中的事件循环（初始化早期阶段）
-                    pass
-            except ImportError:
-                pass
+                    _log.debug("degradation._handle_critical_failure: %s", e)
+            except ImportError as e:
+                _log.debug("degradation.degradation: %s", e)
 
         # 调用外部恐慌回调
         if self.on_panic is not None:

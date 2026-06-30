@@ -1,20 +1,3 @@
-"""管理工具编排层 — 组合调用模块 @exec_exposed 方法形成预设工作流
-
-═══════════════════════════════════════════════════════════════════════════
- 核心功能
-═══════════════════════════════════════════════════════════════════════════
- · AdminToolManager — 工作流注册、执行、列表、热重载
- · admin_workflow 装饰器 — 声明式工作流定义
- · JSON 扫描器 — 从 数据/管理工具/ 目录扫描 JSON 工作流定义
- · 失败策略 — 遇错停止 / 忽略继续 / 回滚
- · 确认机制 — require_confirm=True 时执行前需二次确认
-
- 安全:
- · 通过 gatekeeper 的 模块.调用 bridge 调用 @exec_exposed 方法
- · 所有执行写入审计日志
- · 工作流定义受 min_tier 保护
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import asyncio
@@ -37,6 +20,7 @@ from qqlinker_framework.core.kernel.services import (
     UID_NOBODY,
     tier_label,
 )
+from ...libraries.core.scanner import Scanner
 
 _log = logging.getLogger(__name__)
 
@@ -413,8 +397,8 @@ class AdminToolManager:
             try:
                 host = self._services.get("_host")
                 bridge = getattr(host, 'gatekeeper', None)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("__init__._execute_step: %s", e)
 
             if bridge is None:
                 raise RuntimeError("gatekeeper bridge 不可用")
@@ -560,14 +544,15 @@ class AdminToolManager:
         count = 0
         loaded_names: set = set()
 
-        for fname in sorted(os.listdir(self._json_scan_dir)):
-            if not fname.endswith(".json"):
-                continue
-            path = os.path.join(self._json_scan_dir, fname)
+        scanner = Scanner(self._json_scan_dir)
+        results = scanner.find("*.json", track_mtime=True)
+
+        for path, mtime in results:
+            fname = path.name
+            path_str = str(path)
             try:
-                mtime = os.path.getmtime(path)
                 # 检查文件是否自上次扫描后修改
-                prev_mtime = self._last_scan_mtimes.get(path, 0)
+                prev_mtime = self._last_scan_mtimes.get(path_str, 0)
                 if prev_mtime and prev_mtime >= mtime:
                     # 文件未修改，跳过（但仍需记录名称以防被误删）
                     with self._lock:
@@ -614,7 +599,7 @@ class AdminToolManager:
                     self._workflows[name] = wf
                     loaded_names.add(name)
 
-                self._last_scan_mtimes[path] = mtime
+                self._last_scan_mtimes[path_str] = mtime
                 count += 1
                 _log.debug("JSON 工作流已加载: '%s' (%d 步)", name, len(steps))
 
@@ -669,8 +654,8 @@ class AdminToolManager:
             self._watch_task.cancel()
             try:
                 await self._watch_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("__init__.stop_file_watcher: %s", e)
             self._watch_task = None
             _log.info("管理工具文件监控已停止")
 

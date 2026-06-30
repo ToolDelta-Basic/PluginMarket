@@ -1,7 +1,3 @@
-"""身份认证模块 — .uid 查看等级、.sudo 提权申请、.approve 批准。
-
-sudo/approve 提供用户→管理员的提权通道。root 和 daemon 的授权由内核模块 kernel_auth 处理。
-"""
 import logging
 import time
 from ...core.module import Module
@@ -56,8 +52,8 @@ def persist_user_uid(config, services, user_id: int, new_uid: int):
     config.set("权限管理.UID授权", uid_map)
     try:
         services.get("config").save()
-    except Exception:
-        pass
+    except Exception as e:
+        _log.warning("auth.auth: %s", e)
 
 
 class AuthModule(Module):
@@ -139,8 +135,8 @@ class AuthModule(Module):
         self.config.set("权限管理.提权待审", pending)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("auth.auth: %s", e)
 
         # 审计日志
         self._audit.log(
@@ -162,8 +158,8 @@ class AuthModule(Module):
                     f"\U0001f514 提权请求\n用户: {ctx.nickname}({ctx.user_id})\n"
                     f"原因: {reason}\n批准: .approve {ctx.user_id}"
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("auth.auth: %s", e)
 
     @command(".approve", description="批准提权申请（管理员）", op_only=True,
              argument_hint="<QQ号> [--confirm]", min_uid=100)
@@ -203,8 +199,8 @@ class AuthModule(Module):
         self.config.set("权限管理.提权待审", pending)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("auth.auth: %s", e)
 
         # 审计日志
         self._audit.log(
@@ -222,8 +218,8 @@ class AuthModule(Module):
         try:
             await self.message.send_private(target_qq,
                 "\u2705 你的提权申请已被管理员批准！你现在拥有 daemon 级别权限。")
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("auth.auth: %s", e)
 
     @command(".revoke", description="降级用户权限（管理员）", op_only=True,
              argument_hint="<QQ号> [--confirm]", min_uid=100)
@@ -300,8 +296,8 @@ class AuthModule(Module):
             try:
                 if uid_int in [int(q) for q in admin_list if q]:
                     return 100
-            except (TypeError, ValueError):
-                pass
+            except (TypeError, ValueError) as e:
+                _log.warning("auth._get_user_uid: %s", e)
         return self._UID_NOBODY
 
     def _set_user_uid(self, user_id: int, new_uid: int):
@@ -336,8 +332,8 @@ class AuthModule(Module):
         self.config.set("管理员.管理员QQ", admin_list)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("auth._ensure_admin: %s", e)
         _log.info("用户 %d 已加入管理员列表", user_id)
 
     def _remove_admin(self, user_id: int) -> None:
@@ -349,6 +345,6 @@ class AuthModule(Module):
         self.config.set("管理员.管理员QQ", admin_list)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("auth._remove_admin: %s", e)
         _log.info("用户 %d 已从管理员列表移除", user_id)

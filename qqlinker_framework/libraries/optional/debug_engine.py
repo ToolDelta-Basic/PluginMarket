@@ -1,7 +1,3 @@
-"""调试引擎库 — 诊断工具（骨架）。
-
-依赖: 无
-"""
 from ..channel_host import Library
 
 

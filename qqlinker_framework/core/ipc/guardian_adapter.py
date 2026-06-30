@@ -1,22 +1,3 @@
-"""守护进程适配器 — FrameworkHost 在守护进程中的"外部接口"
-
-═══════════════════════════════════════════════════════════════════════════
- 设计
-═══════════════════════════════════════════════════════════════════════════
- GuardianAdapter 实现了 IFrameworkAdapter 接口，但它不做真正的 I/O。
- 所有对外操作（发消息、发游戏指令等）通过 Guardian 推送到 IPC 连接，
- 由 ToolDelta 端的薄壳实际执行。
-
- IPC 版本协商:
-   客户端连接后通过 IPC 发送 HELLO，GuardianAdapter 接收后回复 HELLO_ACK。
-   协商的能力决定哪些操作可以通过 IPC 推送到薄壳。
-
- 方向:
-   模块 → host.services.adapter.send_group_msg(...)
-        → GuardianAdapter._push_to_shell("send_group_msg", ...)
-        → ToolDelta 薄壳收到推送 → 调用真正的 adapter.send_group_msg(...)
-═══════════════════════════════════════════════════════════════════════════
-"""
 import logging
 from typing import TYPE_CHECKING
 

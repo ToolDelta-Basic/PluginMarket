@@ -1,4 +1,3 @@
-"""模块市场服务器 + 多源聚合器。"""
 import http.server
 import json
 import logging

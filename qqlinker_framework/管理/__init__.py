@@ -1,8 +1,3 @@
-"""向后兼容层 — 从 管理/ 重定向到 managers/。
-
-此模块为兼容性保留。v6 已将所有代码移至 managers/。
-通过 `from qqlinker_framework.管理 import X` 仍然可用。
-"""
 from ..managers import *  # noqa: F401, F403
 
 # 显式重导出以消除 linter 警告

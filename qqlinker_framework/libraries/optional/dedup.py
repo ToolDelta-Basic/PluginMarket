@@ -1,7 +1,3 @@
-"""消息去重库 — 分层消息去重。
-
-依赖: config_store
-"""
 import hashlib
 import time
 import threading

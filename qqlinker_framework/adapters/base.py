@@ -1,7 +1,8 @@
 # adapters/base.py
-"""平台适配器抽象接口"""
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional, Any, Dict
+import logging
+_log = logging.getLogger(__name__)
 
 
 class IFrameworkAdapter(ABC):
@@ -161,8 +162,8 @@ class IFrameworkAdapter(ABC):
         if send_guard is not None:
             try:
                 return send_guard.send_with_ack(group_id, message, priority=1)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("base.send_message_round_robin: %s", e)
         return self.send_group_msg(group_id, message)
 
     # ── 可选扩展: 跨插件 API 代理 ─────────────────────────────

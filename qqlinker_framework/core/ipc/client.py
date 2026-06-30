@@ -1,16 +1,8 @@
-"""IPCClient — 异步 Unix socket 客户端.
-
-特性:
-    - call(method, params, timeout) → 发请求等待响应
-    - notify(event, data) → 推送事件不等待
-    - 自动重连 (最多 3 次)
-    - 超时处理
-"""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+_log = logging.getLogger(__name__)
 from typing import Any
 
 from .protocol import (
@@ -71,8 +63,8 @@ class IPCClient:
             self._recv_task.cancel()
             try:
                 await self._recv_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("client.close: %s", e)
             self._recv_task = None
         if self._writer:
             self._writer.close()

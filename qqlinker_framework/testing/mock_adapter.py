@@ -1,5 +1,7 @@
 """Mock 适配器 — 实现 IFrameworkAdapter 完整接口，纯内存操作。"""
 from typing import Any, Callable, Dict, List, Optional
+import logging
+_log = logging.getLogger(__name__)
 
 
 _MOCK_PARAM = (
@@ -238,8 +240,8 @@ class MockAdapter:
         for handler in self._group_handlers:
             try:
                 handler(data)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("mock_adapter.trigger_raw_group_handlers: %s", e)
 
     def fire_group_message(self, user_id: int = 0, group_id: int = 0,
                            message: str = "", nickname: str = "",

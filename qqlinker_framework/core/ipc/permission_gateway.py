@@ -1,9 +1,3 @@
-"""IPC 权限网关 — 速率限制 + MID 检查 + 命令过滤 + 审计。
-
-提供 PermissionGateway 作为 IPC Server 的核心安全组件，
-在命令到达执行层之前进行完整的权限校验链。
-"""
-
 from __future__ import annotations
 
 import json
@@ -12,6 +6,8 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from .command_filter import check_command_safety
+import logging
+_log = logging.getLogger(__name__)
 
 __all__ = [
     "PermissionGateway",
@@ -246,5 +242,5 @@ class PermissionGateway:
     def __del__(self) -> None:
         try:
             self.close()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("permission_gateway.__del__: %s", e)

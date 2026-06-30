@@ -1,19 +1,3 @@
-"""异常隔离层 — 确保框架异常永不传播到宿主
-
-═══════════════════════════════════════════════════════════════════════════
-设计原则:
-  1. 任何异常都不能传播到 ToolDelta / 宿主编排系统
-  2. 非关键路径异常 → 隔离并降级，日志记录
-  3. 关键路径异常 → 触发安全卸载，框架退出但不影响宿主
-  4. 所有回调函数都经过 safe_call 包装
-
-分层策略:
-  L1: safe_call()          — 单个函数调用的安全包装
-  L2: safe_handler()       — 事件处理器的安全包装（含卸载保护）
-  L3: safe_shutdown()      — 框架安全卸载（确保资源释放）
-  L4: plugin_wrapper()     — 插件入口的外层兜底（捕获一切）
-═══════════════════════════════════════════════════════════════════════════
-"""
 # noqa: PYL-R0201 (containment pattern — sync wrappers extract async detection, not a method usability issue)
 
 import asyncio
@@ -86,8 +70,8 @@ def safe_call(
             if on_error:
                 try:
                     on_error(e)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("containment.sync_wrapper: %s", e)
             return None
 
     @functools.wraps(func)
@@ -101,8 +85,8 @@ def safe_call(
             if on_error:
                 try:
                     on_error(e)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("containment.async_wrapper: %s", e)
             return None
 
     if asyncio.iscoroutinefunction(func):

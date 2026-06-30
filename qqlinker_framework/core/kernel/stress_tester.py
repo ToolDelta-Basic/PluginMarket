@@ -1,14 +1,3 @@
-"""自动压力测试器 (StressTester)
-
-启动后在后台线程运行（不阻塞主循环），对已加载模块执行基础压力测试：
-  - 对每个已注册命令执行 1 次空参数调用
-  - 对每个事件处理器模拟空事件
-  - 记录执行时间、内存增量、是否异常
-  - 输出报告到 data/stress_report.json
-
-测试时间窗口: 启动后 90-120s 内完成
-只测试 UID≥300 的模块（用户模块），不测内核命令
-"""
 import asyncio
 import json
 import logging
@@ -199,8 +188,8 @@ class StressTester:
             if tracemalloc.is_tracing():
                 mem_after = tracemalloc.get_traced_memory()[0]
                 result["memory_delta_bytes"] = max(0, mem_after - mem_before)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("stress_tester.stress_tester: %s", e)
 
         if result["error"] is None:
             result["passed"] = True
@@ -336,6 +325,6 @@ class StressTester:
             try:
                 with open(report_path, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("stress_tester.get_last_report: %s", e)
         return None

@@ -1,10 +1,3 @@
-"""审计日志库 — 统一的审计日志接口。
-
-注册服务: "audit"
-依赖: config_store
-
-模块通过 self.services.get("audit").log(...) 记录审计事件。
-"""
 import logging
 import os
 import time

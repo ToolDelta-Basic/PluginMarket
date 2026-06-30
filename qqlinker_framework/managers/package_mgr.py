@@ -1,9 +1,9 @@
-"""包管理器 —— 依赖检查、安装（支持多镜像、失败回滚）+ v1.4.3 哈希验证"""
 import hashlib
 import importlib
 import subprocess
 import sys
 import logging
+_log = logging.getLogger(__name__)
 import shutil
 import os
 from typing import Dict, List, Optional, Tuple
@@ -296,8 +296,8 @@ class PackageManager:
                 else:
                     try:
                         os.remove(item_path)
-                    except OSError:
-                        pass
+                    except OSError as e:
+                        _log.warning("package_mgr._cleanup_partial: %s", e)
             logging.getLogger(__name__).warning("已清理部分安装残留")
         except Exception as e:
             logging.getLogger(__name__).error("清理残留失败: %s", e)

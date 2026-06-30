@@ -1,8 +1,3 @@
-"""命令路由中间件（权限检查 + 角色系统 + 冷却控制 + 群级模块过滤 + 友好错误提示）。
-
-v2.0: 新增 per-user asyncio.Lock 映射 — 同一用户消息串行处理。
-v3.0: 新增模块级熔断器 — 60s 内连续 3 次失败自动熔断 120s。
-"""
 import asyncio
 import time
 import logging
@@ -11,14 +6,17 @@ from typing import Dict, List, Optional
 from ...core.kernel.error_hints import hint
 from ..kernel.context import CommandContext
 from ..kernel.audit_trail import AuditTrail
+from .circuit_breaker import (
+    CircuitBreaker,
+    CIRCUIT_BREAKER_WINDOW,
+    CIRCUIT_BREAKER_THRESHOLD,
+    CIRCUIT_BREAKER_COOLDOWN,
+)
+
+_log = logging.getLogger(__name__)
 
 # 默认 per-user 锁获取超时（秒）
 USER_LOCK_TIMEOUT = 30.0
-
-# ── v3.0 熔断器常量 ──
-CIRCUIT_BREAKER_WINDOW = 60.0      # 60 秒故障窗口
-CIRCUIT_BREAKER_THRESHOLD = 3       # 窗口内 3 次连续失败触发熔断
-CIRCUIT_BREAKER_COOLDOWN = 120.0    # 熔断 120 秒后尝试恢复
 
 
 class CommandRouter:
@@ -60,15 +58,10 @@ class CommandRouter:
         self._user_lock_last_used: Dict[int, float] = {}
         self._user_lock_cleanup_count = 0
 
-        # Layer 3: v3.0 模块级熔断器（60s/3次/120s）
-        # _circuit_breakers[module_name] = {
-        #     "failures": [(timestamp, error_type), ...],  # 窗口内失败记录
-        #     "open_since": timestamp or 0,               # 熔断开启时间
-        #     "total_failures": int,                        # 总故障数（监控用）
-        # }
-        self._circuit_breakers: Dict[str, dict] = {}
-        self._circuit_breaker_lock = asyncio.Lock()
-        self._cb_cleanup_count = 0
+        # Layer 3: v3.0 模块级熔断器（委托给 CircuitBreaker）
+        self._circuit_breaker = CircuitBreaker(
+            services=getattr(self, 'services', None),
+        )
 
     async def _get_user_lock(self, user_id: int) -> asyncio.Lock:
         """获取或创建 per-user 锁（线程安全）。"""
@@ -89,8 +82,8 @@ class CommandRouter:
                 host = self._host_ref
             if host and hasattr(host, 'guardian'):
                 return host.guardian
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("routing._get_guardian: %s", e)
         return None
 
     # ═══════════════════════════════════════════════════════════
@@ -99,30 +92,7 @@ class CommandRouter:
 
     async def _check_circuit_breaker(self, module_name: str) -> bool:
         """检查模块熔断器是否开启。返回 True 表示熔断中（拒绝执行）。"""
-        async with self._circuit_breaker_lock:
-            cb = self._circuit_breakers.get(module_name)
-            if cb is None:
-                return False
-            # 熔断已开启
-            if cb.get("open_since", 0) > 0:
-                elapsed = time.time() - cb["open_since"]
-                if elapsed < CIRCUIT_BREAKER_COOLDOWN:
-                    # 仍在熔断期
-                    remain = CIRCUIT_BREAKER_COOLDOWN - elapsed
-                    logging.getLogger(__name__).warning(
-                        "熔断器: 模块 '%s' 已熔断 (剩余 %.0fs)",
-                        module_name, remain,
-                    )
-                    return True
-                else:
-                    # 熔断期结束，尝试半开（half-open）恢复
-                    cb["open_since"] = 0.0
-                    # 保留 failures 记录以便半开状态跟踪
-                    logging.getLogger(__name__).info(
-                        "熔断器: 模块 '%s' 进入半开恢复状态", module_name,
-                    )
-                    return False
-            return False
+        return await self._circuit_breaker.is_open(module_name)
 
     async def _resolve_callback(self, cmd_info: dict, module_name: str):
         """解析命令回调 — 懒加载模块先激活后返回方法引用。
@@ -150,74 +120,15 @@ class CommandRouter:
 
     async def _record_circuit_failure(self, module_name: str, error: str = "") -> None:
         """记录模块命令执行失败，超过阈值则熔断。"""
-        now = time.time()
-        async with self._circuit_breaker_lock:
-            if module_name not in self._circuit_breakers:
-                self._circuit_breakers[module_name] = {
-                    "failures": [],
-                    "open_since": 0.0,
-                    "total_failures": 0,
-                }
-            cb = self._circuit_breakers[module_name]
-
-            # 只保留窗口内的失败记录
-            recent = [f for f in cb["failures"] if now - f[0] < CIRCUIT_BREAKER_WINDOW]
-            recent.append((now, error[:100] if error else "unknown"))
-            cb["failures"] = recent
-            cb["total_failures"] += 1
-
-            if len(recent) >= CIRCUIT_BREAKER_THRESHOLD:
-                # 触发熔断
-                cb["open_since"] = now
-                logging.getLogger(__name__).error(
-                    "⚡ 熔断器触发: 模块 '%s' 在 %.0fs 内连续 %d 次失败，"
-                    "已熔断 %ds",
-                    module_name, CIRCUIT_BREAKER_WINDOW,
-                    CIRCUIT_BREAKER_THRESHOLD, CIRCUIT_BREAKER_COOLDOWN,
-                )
-                # 通知降级引擎
-                try:
-                    degradation = self.services.try_get("degradation") if hasattr(self, 'services') else None
-                    if degradation:
-                        degradation.on_service_fail(
-                            f"module:{module_name}",
-                            f"circuit_breaker_open: {len(recent)} failures in {CIRCUIT_BREAKER_WINDOW}s",
-                        )
-                except Exception:
-                    pass
+        await self._circuit_breaker.record_failure(module_name, error)
 
     async def _reset_circuit_breaker(self, module_name: str) -> None:
         """命令执行成功后重置熔断器（半开恢复确认）。"""
-        async with self._circuit_breaker_lock:
-            if module_name in self._circuit_breakers:
-                cb = self._circuit_breakers[module_name]
-                if cb.get("open_since", 0) == 0.0 and len(cb.get("failures", [])) > 0:
-                    # 半开状态成功执行 → 完全恢复
-                    cb["failures"] = []
-                    logging.getLogger(__name__).info(
-                        "熔断器: 模块 '%s' 已恢复 (半开确认)", module_name,
-                    )
-                    # 清除降级状态
-                    try:
-                        degradation = self.services.try_get("degradation") if hasattr(self, 'services') else None
-                        if degradation:
-                            degradation.clear_degraded(f"module:{module_name}")
-                    except Exception:
-                        pass
+        await self._circuit_breaker.record_success(module_name)
 
     def get_circuit_breaker_status(self) -> Dict[str, dict]:
         """返回所有熔断器状态（供监控/控制台查询）。"""
-        return {
-            name: {
-                "open": cb.get("open_since", 0) > 0,
-                "open_since": cb.get("open_since", 0),
-                "recent_failures": len(cb.get("failures", [])),
-                "total_failures": cb.get("total_failures", 0),
-                "cooldown_remaining": max(0, CIRCUIT_BREAKER_COOLDOWN - (time.time() - cb.get("open_since", 0)))
-                    if cb.get("open_since", 0) > 0 else 0,
-            }
-            for name, cb in self._circuit_breakers.items()
-        }
+        return self._circuit_breaker.get_status()
 
     async def handle_message(self, event):
         """处理群消息事件，查找匹配命令并执行。
@@ -229,8 +140,8 @@ class CommandRouter:
         tracker = None
         try:
             tracker = self.source_mgr.host.services.try_get("session_tracker")
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("routing.handle_message: %s", e)
         if tracker is not None:
             session = tracker.get_session(event.user_id) if hasattr(tracker, 'get_session') else None
             if session and session.get("capture_command", True):
@@ -472,8 +383,8 @@ class CommandRouter:
                     await ctx.reply(
                         "⏰ 命令执行超时，请稍后再试。"
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("routing.routing: %s", e)
                 # ── v5: 通知健康评分器（失败）──
                 await self._notify_health_scorer(module_name, success=False,
                                                   elapsed_ms=3000, exception=None)
@@ -489,8 +400,8 @@ class CommandRouter:
                     await ctx.reply(
                         f"❌ 命令执行出错。{hint['COMMAND_EXEC_FAILED']}"
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("routing.routing: %s", e)
                 # ── v5: 通知健康评分器（失败）──
                 await self._notify_health_scorer(module_name, success=False,
                                                   exception=e)
@@ -554,8 +465,8 @@ class CommandRouter:
                     scorer.on_command_success(module_name, elapsed_ms)
                 else:
                     scorer.on_command_failure(module_name, elapsed_ms, exception)
-        except Exception:
-            pass  # 健康评分非关键，静默降级
+        except Exception as e:
+            _log.warning("routing._notify_health_scorer: %s", e)  # 健康评分非关键，静默降级
 
     def _check_role(self, role: str, user_id: int) -> bool:
         """检查用户是否属于指定角色（兼容字符串和整数 user_id）。"""

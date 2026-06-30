@@ -1,9 +1,3 @@
-"""AI 主动发言引擎
-
-ProactiveSpeaker 类：定时 asyncio 任务，监测群内消息活跃度，
-在满足条件时自动调用 LLM 生成发言。
-"""
-
 import asyncio
 import logging
 import random

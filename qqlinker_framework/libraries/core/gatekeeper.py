@@ -1,8 +1,3 @@
-"""Gatekeeper 库 — UID 注册 + 管理员列表 + uid_lookup。
-
-注册服务: "uid_lookup", "gatekeeper"
-依赖: config_store
-"""
 import json
 import logging
 import os
@@ -39,8 +34,8 @@ class UIDStore:
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(self._uids, f, ensure_ascii=False, indent=2)
             os.replace(tmp, self._path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("gatekeeper._save: %s", e)
 
     def get_uid(self, qq: int) -> int:
         """获取用户 UID 等级。默认 400 (nobody)。"""

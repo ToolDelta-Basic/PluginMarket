@@ -1,12 +1,3 @@
-"""统一审计日志基础设施。
-
-提供:
-  - audit_log(): 记录关键操作到审计日志文件
-  - AuditLevel: 审计严重级别
-
-所有关键操作（封禁、解封、grant、exec、approve、sudo、配置修复、命令执行）
-统一通过此模块记录。
-"""
 import hashlib  # noqa: F811 — sha256 used for args_hash
 import json
 import logging

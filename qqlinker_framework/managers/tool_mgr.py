@@ -1,9 +1,3 @@
-"""通用工具管理器 —— 管理工具注册、配置注入与执行
-
-v2: 支持工具分类（AI 工具 vs 管理工具）。
-- AI 工具: 给 AI function calling 使用，注册到 OpenAI schema
-- 管理工具: 给 AdminToolManager 做工作流编排，不暴露给 AI
-"""
 import asyncio
 import inspect
 import os

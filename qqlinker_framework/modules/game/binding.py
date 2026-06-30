@@ -1,10 +1,3 @@
-"""玩家-QQ绑定模块，提供验证码验证流程与绑定管理服务。
-
-安全特性:
-  - 绑定码使用 secrets.token_hex() 生成（不可预测）
-  - 绑定码 5 分钟 TTL 过期
-  - 同一 QQ 号绑定速率限制（每小时 3 次）
-"""
 import json
 import os
 import secrets
@@ -13,6 +6,9 @@ from typing import Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
+from ...core.kernel.events import GameChatEvent
+import logging
+_log = logging.getLogger(__name__)
 
 # ── 绑定安全限制 ──
 _BIND_CODE_TTL = 300          # 验证码有效期（秒）= 5 分钟
@@ -165,8 +161,8 @@ class PlayerBindingModule(Module):
             await debug.register_module(
                 self.name, {"bindings": _dbg_bindings}
             )
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("binding._dbg_bindings: %s", e)
 
         self.register_command(
             ".绑定", self._cmd_qq_bind,
@@ -182,7 +178,7 @@ class PlayerBindingModule(Module):
             description="查看当前绑定的游戏账号",
         )
 
-        self.listen("GameChatEvent", self.on_game_chat)
+        self.listen(GameChatEvent, self.on_game_chat)
 
     # ---------- 游戏内监听 ----------
     def _build_tellraw(self, player: str, text: str) -> str:

@@ -1,25 +1,3 @@
-"""配置管理器（多层独立文件存储 + UID 访问控制 + 自动迁移）
-
-═══════════════════════════════════════════════════════════════
-层次结构:
-  配置/
-    ├─ 核心.json          # L1 — 系统核心 (读≤100, 写=0)
-    ├─ 安全.json          # L2 — 安全/隐私 (读=0, 写=0)
-    ├─ 管理.json          # L3 — 管理策略 (读≤100, 写≤100)
-    └─ 模块/              # L4 — 模块自用 (读≤300, 写≤300)
-        ├─ ai_core.json
-        └─ ...
-
-访问规则:
-  - register_section(name, defaults, 读权限uid, 写权限uid)
-  - get(key, requester_uid) — 低于读权限时拒绝
-  - set(key, value, requester_uid) — 低于写权限时拒绝
-  - auth_bridge.read(config_key, uid) — Gatekeeper 集成
-
-迁移:
-  首次启动时自动检测旧 config.json，拆分为各层文件。
-═══════════════════════════════════════════════════════════════
-"""
 import hashlib
 import hmac
 import json
@@ -234,8 +212,8 @@ class ConfigManager:
             backup_path = path + ".bak"
             try:
                 shutil.copy2(path, backup_path)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("config_mgr._save_file: %s", e)
         os.replace(tmp, path)
 
     # ── HMAC 签名 ─────────────────────────────────────────
@@ -430,8 +408,8 @@ class ConfigManager:
                     self._last_mtimes[fname] = os.path.getmtime(
                         self._file_path(fname)
                     )
-                except OSError:
-                    pass
+                except OSError as e:
+                    _log.warning("config_mgr.config_mgr: %s", e)
 
             # Fix 1: 发布原子快照，供无锁读取
             self._publish_snapshot()
@@ -644,8 +622,8 @@ class ConfigManager:
                 self._last_mtimes[fname] = os.path.getmtime(
                     self._file_path(fname)
                 )
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("config_mgr.start_watching: %s", e)
         self._watcher_stop = threading.Event()
         self._watcher_thread = threading.Thread(
             target=self._watch_loop, args=(interval,), daemon=True,
@@ -764,15 +742,15 @@ def _config_smart_cast(value, target_type) -> Any:
     if target_type is int and isinstance(value, str):
         try:
             return int(value.strip())
-        except ValueError:
-            pass
+        except ValueError as e:
+            _log.warning("config_mgr._config_smart_cast: %s", e)
 
     # str → float
     if target_type is float and isinstance(value, str):
         try:
             return float(value.strip())
-        except ValueError:
-            pass
+        except ValueError as e:
+            _log.warning("config_mgr.config_mgr: %s", e)
 
     # str → bool
     if target_type is bool and isinstance(value, str):
@@ -788,8 +766,8 @@ def _config_smart_cast(value, target_type) -> Any:
         if v.startswith("["):
             try:
                 return _json.loads(v)
-            except (_json.JSONDecodeError, ValueError):
-                pass
+            except (_json.JSONDecodeError, ValueError) as e:
+                _log.warning("config_mgr.config_mgr: %s", e)
         # 逗号分隔
         parts = [p.strip() for p in v.split(",") if p.strip()]
         if parts:
@@ -799,8 +777,8 @@ def _config_smart_cast(value, target_type) -> Any:
     if target_type is dict and isinstance(value, str):
         try:
             return _json.loads(value)
-        except (_json.JSONDecodeError, ValueError):
-            pass
+        except (_json.JSONDecodeError, ValueError) as e:
+            _log.warning("config_mgr.config_mgr: %s", e)
 
     # int/float/bool → str
     if target_type is str and isinstance(value, (int, float, bool)):
@@ -912,15 +890,15 @@ def _repair_json(filepath: str):
     backup = filepath + '.bak'
     try:
         shutil.copy2(filepath, backup)
-    except OSError:
-        pass
+    except OSError as e:
+        _log.warning("config_mgr.config_mgr: %s", e)
 
     try:
         import json as _json
         with open(filepath, 'w', encoding='utf-8') as f:
             _json.dump(data, f, ensure_ascii=False, indent=2)
         _log.info("JSON 智能修复成功: %s (原 %d bytes)", _os.path.basename(filepath), len(original))
-    except OSError:
-        pass
+    except OSError as e:
+        _log.warning("config_mgr.config_mgr: %s", e)
 
     return data

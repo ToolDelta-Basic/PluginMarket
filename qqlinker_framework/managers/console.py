@@ -1,7 +1,3 @@
-"""控制台命令管理器 — qqdeps 依赖管理、qqhealth 健康检查。
-
-从 FrameworkHost 拆分出来，保持内核简洁。
-"""
 import json
 import logging
 import threading
@@ -196,8 +192,8 @@ class ConsoleCommands:
             try:
                 dedup.redis.client.ping()
                 status["redis_connected"] = True
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("console._qqhealth: %s", e)
         debug = host.services.get("debug")
         if debug:
             status["counters"] = debug.get_counters()

@@ -1,9 +1,3 @@
-"""GameProxy — 框架端游戏操作代理（通过 IPC 转发到宿主）。
-
-在 --ipc-mode 下，模块通过 GameProxy 执行游戏指令。
-GameProxy 内嵌权限检查（PermissionGateway），再将合法请求序列化后通过 IPC 发往宿主。
-"""
-
 from __future__ import annotations
 
 import logging

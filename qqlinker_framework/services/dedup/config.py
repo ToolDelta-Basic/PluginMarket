@@ -1,5 +1,4 @@
 # services/dedup/config.py
-"""去重配置数据类。"""
 from dataclasses import dataclass
 from typing import Optional
 

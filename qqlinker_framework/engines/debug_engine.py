@@ -1,9 +1,4 @@
 # pylint: disable=protected-access
-"""调试引擎 —— 框架级可观测性服务，提供模块调试操作注册、消息/API监控。
-
-⚠️ 安全限制：仅当 Python __debug__ 为 True 或配置明确启用时才激活。
-生产环境应禁用此模块。
-"""
 import os
 import asyncio
 import logging
@@ -11,14 +6,31 @@ import time
 from collections import deque
 from typing import Callable, Dict, List, Optional, Any
 
+from ..core.kernel.events import GroupMessageEvent, GameChatEvent, PlayerPositionEvent
+from ..libraries.core.engine import Engine, EngineConfig
+
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 
 
-class DebugEngine:
-    """调试引擎，提供模块操作注册、消息通道监控、API调用记录。"""
+class DebugEngine(Engine):
+    """调试引擎，提供模块操作注册、消息通道监控、API调用记录。
+
+    引擎定义:
+      挂载 ws_client/adapter 库提供消息通道监控和 API 调用记录能力，
+      对外提供 "debug" 服务。
+    """
+
+    config = EngineConfig(
+        name="debug_engine",
+        version="1.0.0",
+        mounts=["adapter", "tool"],
+        pipeline=["monitor", "record", "query"],
+        provides=["debug"],
+    )
 
     def __init__(self, services, config, event_bus):
+        super().__init__(services, event_bus)
         self._services = services
         self._config = config
         self._event_bus = event_bus
@@ -108,9 +120,9 @@ class DebugEngine:
             return
         if self._hooks_installed:
             return
-        self._event_bus.subscribe("GroupMessageEvent", self._on_group_msg, 0)
-        self._event_bus.subscribe("GameChatEvent", self._on_game_chat, 0)
-        self._event_bus.subscribe("PlayerPositionEvent", self._on_pos, 0)
+        self._event_bus.subscribe(GroupMessageEvent, self._on_group_msg, 0)
+        self._event_bus.subscribe(GameChatEvent, self._on_game_chat, 0)
+        self._event_bus.subscribe(PlayerPositionEvent, self._on_pos, 0)
         self._wrap_service("adapter", [
             "send_game_command_with_resp",
             "send_game_command_full",
@@ -276,3 +288,21 @@ class DebugEngine:
         if self._disabled:
             return
         self._wrap_service(service_name, methods)
+
+    # ═══════════════════════════════════════════════════════════
+    # Engine 生命周期
+    # ═══════════════════════════════════════════════════════════
+
+    async def ignite(self) -> None:
+        """启动引擎 — 验证依赖库，安装监控钩子。"""
+        if not self._verify_mounts():
+            _logger.warning(
+                "调试引擎启动: 部分依赖库未就绪，继续以降级模式运行"
+            )
+        self.install_hooks()
+        _logger.info("调试引擎已启动 v%s", self.config.version)
+
+    async def extinguish(self) -> None:
+        """停止引擎 — 清空缓冲区。"""
+        self.clear_logs()
+        _logger.info("调试引擎已停止")

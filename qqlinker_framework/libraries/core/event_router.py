@@ -1,14 +1,19 @@
-"""事件路由库 — 订阅 GroupMessageEvent → 命令匹配 → 分发执行。
-
-依赖: command_registry, message_queue, adapter_bridge
-"""
 import asyncio
 import logging
+import re
 from typing import Optional
 
 from ..channel_host import Library
+from ...core.kernel.events import GroupMessageEvent
 
 _log = logging.getLogger(__name__)
+
+_CQ_RE = re.compile(r'\[CQ:[^\]]+\]')
+
+
+def _strip_cq(text: str) -> str:
+    """剥离 CQ 码,只保留纯文本。"""
+    return _CQ_RE.sub('', text)
 
 
 class CommandContext:
@@ -46,10 +51,10 @@ class EventRouterLibrary(Library):
             from ...core.kernel.services import InteractiveSessionTracker
             tracker = InteractiveSessionTracker()
             self.services.register("session_tracker", tracker, mid=300)
-        self.events.subscribe("GroupMessageEvent", self._on_group_message, priority=50)
+        self.events.subscribe(GroupMessageEvent, self._on_group_message, priority=50)
 
     async def unmount(self) -> None:
-        self.events.unsubscribe("GroupMessageEvent", self._on_group_message)
+        self.events.unsubscribe(GroupMessageEvent, self._on_group_message)
 
     async def _on_group_message(self, event) -> None:
         """处理群消息事件 — 命令路由。
@@ -57,7 +62,8 @@ class EventRouterLibrary(Library):
         尊重轮式对话：若用户处于交互式会话且 capture_command=True，
         跳过命令路由，让消息直接流向模块的 @listen 处理器。
         """
-        msg = (event.message or "").strip()
+        # 剥离 CQ 码后做命令匹配（@机器人、引用消息等不干扰触发词）
+        msg = _strip_cq(event.message or "").strip()
         if not msg:
             return
 

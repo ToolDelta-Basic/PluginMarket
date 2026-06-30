@@ -1,1 +1,2 @@
-"""可选库 — 缺失不影响核心启动。"""
+# libraries/optional package
+# 可选库：市场服务/调试引擎

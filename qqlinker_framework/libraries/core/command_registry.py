@@ -1,8 +1,3 @@
-"""命令注册库 — 命令注册 + 最长匹配路由 + 冷却 + 权限检查。
-
-注册服务: "command"
-依赖: 无
-"""
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional

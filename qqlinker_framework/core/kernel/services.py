@@ -1,27 +1,3 @@
-"""服务容器 (ServiceContainer) — mid + role + group 权限模型 (v6)
-
-═══════════════════════════════════════════════════════════════════════════
-权限模型 (v6 — mid + role + group 三分离)：
-
-  mid 范围  组名        说明                       模块示例
-  ─────────────────────────────────────────────────────────────────────
-  0         kernel      root 完全权限               FrameworkHost
-  100-199   daemon      框架守护/核心引擎             ai_core, orion
-  200-299   service     框架服务引擎                 WS, dedup, market
-  300-399   app         用户业务模块                  forwarder, acg_image
-  400-499   nobody      外部第三方模块                外部 .py 文件
-
-访问规则:
-  - kernel 组 (mid=0) 拥有全部权限
-  - 同组内按 default_perm 判断 (owner → admin → writer → reader → none)
-  - 跨组访问查 delegations 字典
-
-注册规则:
-  - 服务声明自己的 mid (service_mid)
-  - 模块 mid 由 validate_module_mid() 决定
-
-═══════════════════════════════════════════════════════════════════════════
-"""
 import inspect
 import logging
 import threading

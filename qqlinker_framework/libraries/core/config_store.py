@@ -1,12 +1,3 @@
-"""配置存储库 v1.6.0 — 分层配置系统。
-
-读写都走分层文件（权威源）。
-自动生成合并视图文件供查看。
-外部修改合并视图时延迟拆分同步回分层。
-
-注册服务: "config"
-依赖: 无
-"""
 import asyncio
 import json
 import logging
@@ -179,8 +170,8 @@ class ConfigStore:
                 with open(path, "r", encoding="utf-8") as f:
                     self._mapping = json.load(f)
                 return
-            except (json.JSONDecodeError, OSError):
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                _log.warning("config_store._load_mapping: %s", e)
         # 使用默认映射并写出
         self._mapping = dict(DEFAULT_MAPPING)
         self._save_mapping()
@@ -191,8 +182,8 @@ class ConfigStore:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(self._mapping, f, ensure_ascii=False, indent=2)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("config_store._save_mapping: %s", e)
 
     def _migrate_legacy(self) -> None:
         """迁移旧 config.json（一次性）。"""
@@ -241,8 +232,8 @@ class ConfigStore:
                         layer = json.load(f)
                     if isinstance(layer, dict):
                         self._deep_merge(self._data, layer)
-                except (json.JSONDecodeError, OSError):
-                    pass
+                except (json.JSONDecodeError, OSError) as e:
+                    _log.warning("config_store._load_layered: %s", e)
 
     def _save_key_to_layer(self, top_key: str) -> None:
         """将指定顶层键保存到对应的分层文件。"""
@@ -377,5 +368,5 @@ class ConfigStoreLibrary(Library):
             await asyncio.sleep(5)
             try:
                 self._store.check_merged_view_changes()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("config_store._watch_merged_view: %s", e)

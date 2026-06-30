@@ -1,8 +1,3 @@
-"""事件桥接模块 — 游戏→QQ 事件分发 + OneBot 消息解析。
-
-从 FrameworkHost 拆分出来，聚焦事件转换与分发。
-不持有 FrameworkHost 引用，通过独立参数解耦。
-"""
 import asyncio
 import logging
 from typing import Callable, Optional
@@ -10,19 +5,20 @@ from typing import Callable, Optional
 from ..kernel.events import (
     GameChatEvent, PlayerJoinEvent, PlayerLeaveEvent, GroupMessageEvent,
 )
+from ..kernel.outbound import OutboundMessageEvent
 from ..kernel.defguard import validate_onebot_event
 from ..kernel.error_hints import hint
-from ..kernel.bus import EventBus
+from ...libraries.channel_host import LaneRouter
 
 access_log = logging.getLogger("access")
 _log = logging.getLogger(__name__)
 
 
 class EventBridge:
-    """将游戏侧和 QQ 侧事件桥接到 EventBus。
+    """将游戏侧和 QQ 侧事件桥接到 LaneRouter。
 
     通过独立参数接收依赖，不持有 FrameworkHost 引用:
-        - event_bus: 事件总线
+        - event_bus: LaneRouter 事件总线
         - config_mgr: 配置管理器（用于读取链接的群聊等）
         - dedup: 消息去重引擎
         - main_loop_getter: 返回当前主事件循环的可调用对象
@@ -31,7 +27,7 @@ class EventBridge:
 
     def __init__(
         self,
-        event_bus: EventBus,
+        event_bus: LaneRouter,
         config_mgr,
         dedup,
         main_loop_getter: Callable[[], Optional[asyncio.AbstractEventLoop]],
@@ -83,7 +79,8 @@ class EventBridge:
         if loop and loop.is_running():
             try:
                 asyncio.run_coroutine_threadsafe(
-                    self.event_bus.publish(event), loop,
+                    self.event_bus.publish(event),
+                    loop,
                 )
             except Exception as e:
                 logging.getLogger(__name__).error(
@@ -162,7 +159,8 @@ class EventBridge:
         loop = self.main_loop_getter()
         if loop and loop.is_running():
             asyncio.run_coroutine_threadsafe(
-                self.event_bus.publish(event), loop,
+                self.event_bus.publish(event),
+                loop,
             )
 
     @staticmethod

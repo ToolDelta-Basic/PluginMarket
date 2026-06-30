@@ -1,43 +1,33 @@
-"""模块基类 — 约定优于配置 
-
-═══════════════════════════════════════════════════════════════════════════
- 约定属性               │ 框架自动执行
-═══════════════════════════════════════════════════════════════════════════
- default_config         │ 注册配置节
- config_schema          │ 自动注入类型安全配置为 self.cfg_<name>
- exports                │ 静态服务注册
- create_exports() → dict│ 动态服务工厂
- tools                  │ 声明式工具定义列表，自动注册到 ToolManager
- scheduled              │ 声明式定时任务，自动启动/停止
- hot_reload_state       │ 序列化热重载状态，自动持久化
- dependencies           │ 拓扑排序加载顺序
- required_services      │ 自动注入为 self.<name>
- enabled                │ False 跳过加载
- default_cooldown       │ 命令默认冷却
-═══════════════════════════════════════════════════════════════════════════
-
-框架注入属性:
-  self.logger           │ 模块专用 logger
-  self.data_dir         │ 模块数据目录（自动创建）
-  self.db               │ JSON 数据库代理（自动创建 collections）
-═══════════════════════════════════════════════════════════════════════════
-"""
 import asyncio
 import enum
-import json
 import logging
+import warnings
+_log = logging.getLogger(__name__)
 import os
 import sys
-import tempfile
-import threading
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from .kernel.services import ServiceContainer, mid_label, validate_module_mid as validate_module_uid, MID_KERNEL, MID_DAEMON
-from .kernel.bus import EventBus
 from .kernel.error_hints import hint
+
+if TYPE_CHECKING:
+    from ..libraries.core.lane_router import LaneRouter
 from .kernel.degradation import DEGRADABLE_SERVICES, CRITICAL_SERVICES
-from .kernel.gatekeeper import GatekeeperProxy, ALLOWED_EVENTS as _ALLOWED_EVENTS_FOR_MODULE
+from .kernel.gatekeeper import GatekeeperProxy
+from .kernel.events import (
+    GroupMessageEvent, ConfigReloadEvent,
+    PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent,
+)
+
+# ── 从拆分文件导入（保持向后兼容的 re-export）──
+from .module_helpers import (
+    JsonCollection, JsonDatabase, ScheduledTask, HotReloadState, _safe_call,
+)
+from .module_proxies import (
+    _ConfigProxy, _GroupConfigProxy, _SingleGroupConfigProxy,
+    _GameProxy, _QQProxy,
+)
 
 
 # ── FrozenState 枚举 ─────────────────────────────────────────
@@ -49,242 +39,6 @@ class FrozenState(enum.Enum):
     SUSPENDED = "SUSPENDED"
 
 
-# ── JSON 数据库代理 ──────────────────────────────────────────
-
-class JsonCollection:
-    """单个 JSON 集合的 CRUD 代理，自动持久化。"""
-
-    def __init__(self, filepath: str):
-        self._file = filepath
-        self._lock = threading.Lock()
-        self._data: Dict[str, Any] = {}
-        self._load()
-
-    def _load(self):
-        """从磁盘加载 JSON 数据。"""
-        if os.path.exists(self._file):
-            try:
-                with open(self._file, "r", encoding="utf-8") as f:
-                    self._data = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                self._data = {}
-
-    def _save(self):
-        """持久化当前数据到磁盘（原子写入：临时文件 + os.replace）。"""
-        dirname = os.path.dirname(self._file) or "."
-        os.makedirs(dirname, exist_ok=True)
-        tmpfd, tmppath = tempfile.mkstemp(
-            dir=dirname,
-            prefix=os.path.basename(self._file) + ".",
-            suffix=".tmp",
-        )
-        try:
-            with os.fdopen(tmpfd, "w", encoding="utf-8") as f:
-                json.dump(self._data, f, ensure_ascii=False, indent=2)
-            os.replace(tmppath, self._file)
-        except Exception:
-            # 清理临时文件，避免泄漏
-            try:
-                os.unlink(tmppath)
-            except OSError:
-                pass
-            raise
-
-    # ── CRUD ──
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """读取指定键的值。"""
-        with self._lock:
-            return self._data.get(key, default)
-
-    def set(self, key: str, value: Any) -> None:
-        """写入键值对并持久化。"""
-        with self._lock:
-            self._data[key] = value
-            self._save()
-
-    def delete(self, key: str) -> bool:
-        """删除指定键，返回是否成功。"""
-        with self._lock:
-            if key in self._data:
-                del self._data[key]
-                self._save()
-                return True
-            return False
-
-    def all(self) -> Dict[str, Any]:
-        """返回所有键值对的浅拷贝。"""
-        with self._lock:
-            return dict(self._data)
-
-    def exists(self, key: str) -> bool:
-        """检查键是否存在。"""
-        with self._lock:
-            return key in self._data
-
-    def count(self) -> int:
-        """返回存储条目数量。"""
-        with self._lock:
-            return len(self._data)
-
-    def clear(self) -> None:
-        """清空所有数据。"""
-        with self._lock:
-            self._data.clear()
-            self._save()
-
-    def keys(self) -> List[str]:
-        """返回所有键的列表。"""
-        with self._lock:
-            return list(self._data.keys())
-
-    def values(self) -> List[Any]:
-        """返回所有值的列表。"""
-        with self._lock:
-            return list(self._data.values())
-
-    def update(self, items: Dict[str, Any]) -> None:
-        """批量更新键值对。"""
-        with self._lock:
-            self._data.update(items)
-            self._save()
-
-    def __repr__(self):
-        return f"<JsonCollection keys={len(self._data)}>"
-
-
-class JsonDatabase:
-    """JSON 数据库代理 — 按模块自动管理 collections。"""
-
-    def __init__(self, data_dir: str, collections: List[str]):
-        os.makedirs(data_dir, exist_ok=True)
-        for name in collections:
-            filepath = os.path.join(data_dir, f"{name}.json")
-            setattr(self, name, JsonCollection(filepath))
-
-
-# ── 定时任务定义 ─────────────────────────────────────────────
-
-class ScheduledTask:
-    """声明式定时任务定义。"""
-
-    def __init__(
-        self,
-        name: str,
-        handler: Callable,
-        *,
-        interval: float | None = None,
-        cron: str | None = None,
-        run_on_start: bool = False,
-        enabled: bool = True,
-    ):
-        self.name = name
-        self.handler = handler
-        self.interval = interval          # 间隔秒数（None = cron 模式）
-        self.cron = cron                  # cron 表达式（None = interval 模式）
-        self.run_on_start = run_on_start
-        self.enabled = enabled
-        self._task: asyncio.Task | None = None
-        self._stop_event = asyncio.Event()
-
-    def start(self) -> Optional[asyncio.Task]:
-        """启动定时任务。"""
-        if self._task and not self._task.done():
-            return self._task
-
-        async def _runner():
-            """定时任务主循环: 间隔等待并执行回调。"""
-            if self.run_on_start:
-                await _safe_call(self.handler)
-            while not self._stop_event.is_set():
-                try:
-                    if self.interval:
-                        await asyncio.wait_for(
-                            self._stop_event.wait(), timeout=self.interval
-                        )
-                        if self._stop_event.is_set():
-                            break
-                    else:
-                        # cron 模式简化：按最近整分钟触发
-                        await asyncio.sleep(60)
-                    if self.enabled:
-                        await _safe_call(self.handler)
-                except asyncio.TimeoutError:
-                    if self.enabled:
-                        await _safe_call(self.handler)
-                except asyncio.CancelledError:
-                    break
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # 无运行中事件循环（热插拔/非 async 上下文）→ 用 get_event_loop fallback
-            loop = asyncio.get_event_loop()
-        self._task = loop.create_task(_runner())
-        return self._task
-
-    def stop(self):
-        """停止定时任务并取消异步任务。"""
-        self._stop_event.set()
-        if self._task:
-            self._task.cancel()
-
-
-async def _safe_call(handler: Callable):
-    """安全调用处理器，捕获异常并记录日志。"""
-    try:
-        if asyncio.iscoroutinefunction(handler):
-            await handler()
-        else:
-            await asyncio.get_running_loop().run_in_executor(None, handler)
-    except Exception:
-        logging.getLogger(__name__).exception("定时任务异常。%s", hint["UNEXPECTED_ERROR"])
-
-
-# ── 热重载状态 ──────────────────────────────────────────────
-
-class HotReloadState:
-    """热重载状态管理器 — 自动从磁盘序列化/反序列化。"""
-
-    def __init__(self, filepath: str, defaults: Dict[str, Any] = None):
-        self._file = filepath
-        self._defaults = defaults or {}
-        self._data: Dict[str, Any] = {}
-        self.load()
-
-    def load(self):
-        """从磁盘加载状态，合并默认值。"""
-        if os.path.exists(self._file):
-            try:
-                with open(self._file, "r", encoding="utf-8") as f:
-                    loaded = json.load(f)
-                self._data = {**self._defaults, **loaded}
-            except (json.JSONDecodeError, IOError):
-                self._data = dict(self._defaults)
-        else:
-            self._data = dict(self._defaults)
-
-    def save(self):
-        """持久化当前状态到磁盘。"""
-        os.makedirs(os.path.dirname(self._file), exist_ok=True)
-        with open(self._file, "w", encoding="utf-8") as f:
-            json.dump(self._data, f, ensure_ascii=False, indent=2)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """读取指定键的值。"""
-        return self._data.get(key, default)
-
-    def set(self, key: str, value: Any):
-        """写入键值对并持久化。"""
-        self._data[key] = value
-        self.save()
-
-    def all(self) -> Dict[str, Any]:
-        """返回所有键值对的浅拷贝。"""
-        return dict(self._data)
-
-
-# ── 事件白名单（非 root 模块可订阅的受限事件）──
-# v5: 统一从 gatekeeper.py 导入，单一数据源
 
 
 # ── 模块基类 ─────────────────────────────────────────────────
@@ -323,9 +77,8 @@ class Module(ABC):
     group: str = "standalone"  # 模块所属组，自动从包 __init__.py 读取
 
     # ── 可选覆写 ──
-    # uid/tier 为 property → self.mid; 子类可声明类属性覆盖默认值
-    uid: int = 300  # noqa: F811  # deprecated, alias for mid
-    tier: int = 300  # noqa: F811  # deprecated, alias for mid
+    # uid/tier 已废弃，统一使用 mid。子类仍可声明 uid=200 或 tier=200，
+    # __init__ 通过 cls_dict 读取后合并到 mid。实例属性 .uid/.tier 返回 self.mid + DeprecationWarning。
     version: tuple = (0, 0, 1)
     dependencies: list[str] = []
     required_services: list[str] = []
@@ -349,27 +102,40 @@ class Module(ABC):
     _scheduled_tasks: List[ScheduledTask] = []
     _hot_state: HotReloadState | None = None
 
-    def __init__(self, services: ServiceContainer, event_bus: EventBus | None = None):
-        # H1 修复: root 容器引用以名称修饰存储，防止外部直接访问。
-        # _root_services 属性 (property, 见下方) 根据 mid 返回受限视图或 root 视图:
-        #   - daemon (mid≤100): 返回 root 容器（完整权限）
-        #   - 其余: 返回 self.services（受限视图）
+    def __init__(self, services: ServiceContainer, event_bus: "LaneRouter | None" = None):
         self.__root_services = services
         self.event_bus = event_bus
-        # ── v6: 统一 mid 字段 — uid/tier 兼容读取，默认取 mid ──
-        # 注意: uid/tier 在 Module 上定义为 property，
-        # 子类可能用类属性覆写。用 __dict__ 读取避免捕获 property descriptor。
+        self._setup_mid()
+        self.services = services.scope(self.mid)
+        if self.required_services:
+            services.register_required_services(self.mid, self.required_services)
+        # ── 命令/事件/工具注册表 ──
+        self._commands: dict = {}
+        self._event_handlers: list = []
+        self._tool_defs: list = []
+        self.logger = logging.getLogger(
+            f"{__name__.rsplit('.', 1)[0]}.{self.name}" or __name__
+        )
+        self._setup_service_injection()
+        self._data_dir: str | None = None
+        self.db: JsonDatabase | None = None
+        self._inject_magic_attrs(self.__root_services)
+        self._bridge = self._resolve_bridge(services)
+        self._setup_config_schema()
+
+    # ── __init__ 拆分的 _setup_* 方法 ──
+
+    def _setup_mid(self) -> None:
+        """统一 mid 字段 — uid/tier 兼容读取，自动从包 MODULE_GROUP 读取。"""
         cls_dict = self.__class__.__dict__
         declared_mid = cls_dict.get('mid', 300)
         declared_uid = cls_dict.get('uid', None)
         declared_tier = cls_dict.get('tier', None)
-        # 兼容: uid 或 tier 如果被显式声明且不同于默认值, 采纳
         if declared_uid is not None and not isinstance(declared_uid, property) and declared_uid != 300:
             declared_mid = declared_uid
         if declared_tier is not None and not isinstance(declared_tier, property) and declared_tier != 300:
             declared_mid = declared_tier
         self.mid = declared_mid
-        # v1.5.1: 自动从包 __init__.py 读取 MODULE_GROUP
         _module_has_own_mid = (
             'mid' in cls_dict
             or (declared_uid is not None and not isinstance(declared_uid, property))
@@ -384,11 +150,10 @@ class Module(ABC):
                     if parent_pkg and hasattr(parent_pkg, 'MODULE_GROUP'):
                         grp = parent_pkg.MODULE_GROUP
                         self.group = grp.get("name", "standalone")
-                        # 组 mid 作为默认值，模块显式声明的 mid 优先
                         if "mid" in grp and not _module_has_own_mid:
                             self.mid = grp["mid"]
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("module._setup_mid: %s", e)
         if self.mid <= 0:
             layer = "kernel"
         elif self.mid <= 100:
@@ -401,39 +166,17 @@ class Module(ABC):
             layer = "nobody"
         self.mid = validate_module_uid(self.mid, self.name, layer=layer)
 
-        # ── MID 受限的服务容器视图 (v6: scope 替代 view) ──
-        self.services = services.scope(self.mid)
-
-        # ── v6: 注册声明式服务依赖 ──
-        if self.required_services:
-            services.register_required_services(self.mid, self.required_services)
-
-        # ── 命令/事件/工具注册表 ──
-        self._commands: dict = {}
-        self._event_handlers: list = []
-        self._tool_defs: list = []
-
-        # ── 便利属性（在服务注入前初始化，因为降级警告需要 logger）──
-        self.logger = logging.getLogger(
-            f"{__name__.rsplit('.', 1)[0]}.{self.name}" or __name__
-        )
-
-        # ── 服务注入（含 mid 权限校验 + v5 优雅降级）──
-        # Fix: 通过受限视图 self.services 获取服务，而非直接使用 root 容器
-        # services。self.services 是 mid 视图，自动过滤无权限的服务。
-        # v5: 非关键服务缺失时降级运行而非崩溃。
+    def _setup_service_injection(self) -> None:
+        """服务注入（含 mid 权限校验 + v5 优雅降级）。"""
         for srv_name in self.required_services:
             if not self.services.has(srv_name):
-                # v5 降级判断: 非关键服务缺失 → 降级运行
                 if srv_name in DEGRADABLE_SERVICES:
                     self.logger.warning(
-                        "🔶 模块 '%s': 非关键服务 '%s' 未注册，以降级模式运行",
+                        "\U0001f536 模块 '%s': 非关键服务 '%s' 未注册，以降级模式运行",
                         self.name, srv_name,
                     )
-                    # 设置占位属性为 None，模块代码需自行 null-check
                     setattr(self, srv_name, None)
                     continue
-                # 关键服务缺失 → 仍抛异常（框架级错误）
                 raise RuntimeError(
                     f"模块 '{self.name}' 需要服务 '{srv_name}'，但未注册。"
                     f"{hint['SERVICE_NOT_FOUND']}"
@@ -441,10 +184,9 @@ class Module(ABC):
             try:
                 setattr(self, srv_name, self.services.get(srv_name))
             except PermissionError as e:
-                # v5 降级判断: 非关键服务无权限 → 降级运行
                 if srv_name in DEGRADABLE_SERVICES:
                     self.logger.warning(
-                        "🔶 模块 '%s': 无权访问非关键服务 '%s' (%s)，以降级模式运行",
+                        "\U0001f536 模块 '%s': 无权访问非关键服务 '%s' (%s)，以降级模式运行",
                         self.name, srv_name, e,
                     )
                     setattr(self, srv_name, None)
@@ -454,22 +196,8 @@ class Module(ABC):
                     f"无权访问服务 '{srv_name}': {e}"
                 )
 
-        # ── 便利属性 ──
-        self._data_dir: str | None = None
-        self.db: JsonDatabase | None = None
-
-        # ── 魔法属性（简化开发）──
-        # H1 修复: 框架初始化注入使用 root 容器，
-        # 注入的代理（_ConfigProxy, _GameProxy 等）自带 caller_mid 权限检查。
-        self._inject_magic_attrs(self.__root_services)
-
-        # ── 能力安全桥梁（私有属性，不注册到服务容器）──
-        # _resolve_bridge 需要访问 _host (uid=0) 服务，
-        # 因此使用 root 容器。bridge 返回给 daemon 级模块使用；
-        # 外部模块通过 _root_services property（受限视图）无法获取。
-        self._bridge = self._resolve_bridge(services)
-
-        # ── 配置注入：初始化 self.cfg_* 属性 ──
+    def _setup_config_schema(self) -> None:
+        """配置注入 + 配置热重载订阅。"""
         if self.config_schema:
             config_svc = getattr(self, 'config', None)
             for attr_name, (config_path, default) in self.config_schema.items():
@@ -478,13 +206,10 @@ class Module(ABC):
                 except Exception:
                     value = default
                 setattr(self, f"cfg_{attr_name}", value)
-
-        # ── 配置热重载：自动更新 self.cfg_* 属性 ──
         if self.config_schema and self.event_bus is not None:
-            self.event_bus.subscribe("ConfigReloadEvent", self._on_config_reloaded)
+            self.event_bus.subscribe(ConfigReloadEvent, self._on_config_reloaded)
 
-    @staticmethod
-    def _resolve_bridge(services):
+    def _resolve_bridge(self, services):
         """从 FrameworkHost 中解析 GatekeeperBridge 实例。
 
         _host 服务为 uid=0 (root)，只能通过 root 容器访问。
@@ -573,8 +298,8 @@ class Module(ABC):
         self.message = None
         try:
             self.message = services.get("message")
-        except (KeyError, PermissionError):
-            pass
+        except (KeyError, PermissionError) as e:
+            _log.debug("module.module: %s", e)
         self.qq = _QQProxy(self.adapter, self.services, caller_mid=self.mid)
 
         # ── ★ Gatekeeper 代理 — 业务模块访问框架核心的唯一通道 ──
@@ -603,20 +328,40 @@ class Module(ABC):
 
     @property
     def uid(self) -> int:  # noqa: F811
-        """旧名别名 → self.mid（兼容旧代码）。"""
+        """已废弃：使用 ``mid`` 代替。"""
+        warnings.warn(
+            "Module.uid is deprecated; use Module.mid instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.mid
 
     @uid.setter
     def uid(self, value: int):  # noqa: F811
+        warnings.warn(
+            "Module.uid is deprecated; use Module.mid instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.mid = value
 
     @property
     def tier(self) -> int:  # noqa: F811
-        """旧名别名 → self.mid（兼容旧代码）。"""
+        """已废弃：使用 ``mid`` 代替。"""
+        warnings.warn(
+            "Module.tier is deprecated; use Module.mid instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.mid
 
     @tier.setter
     def tier(self, value: int):  # noqa: F811
+        warnings.warn(
+            "Module.tier is deprecated; use Module.mid instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.mid = value
 
     @property
@@ -643,8 +388,8 @@ class Module(ABC):
             if cfg_proxy is not None:
                 try:
                     base = cfg_proxy.get_data_dir()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("module.data_dir: %s", e)
             # H1 修复: 使用 self.services（受限视图）代替 __root_services
             if base is None and self.services is not None:
                 try:
@@ -798,7 +543,7 @@ class Module(ABC):
             task.stop()
         self._scheduled_tasks.clear()
 
-    def _apply_gatekeeper_event(self, event_type: str,
+    def _apply_gatekeeper_event(self, event_class: type,
                                 handler: Callable, priority: int) -> None:
         """应用由 Gatekeeper 代理注册的事件（绕过双重白名单检查）。
 
@@ -806,7 +551,7 @@ class Module(ABC):
         此处只负责实际订阅 — GroupMessageEvent 自动包装群级过滤。
         """
         wrapped = handler
-        if event_type == "GroupMessageEvent":
+        if event_class is GroupMessageEvent:
             original = handler
             module_name = self.name
             group_filter = getattr(self, 'group_filter', None)
@@ -932,32 +677,38 @@ class Module(ABC):
             "min_uid": min_uid,
         }
 
-    def listen(self, event_type: str, handler: Callable, priority: int = 0):
+    def listen(self, event_class: type, handler: Callable, priority: int = 0):
         """订阅事件并记录到事件处理器列表。
 
         对于 GroupMessageEvent，自动包装群级模块过滤中间件。
 
         沙箱: 非 root 模块（uid > 0）只能订阅白名单事件：
         GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent。
+
+        Args:
+            event_class: 事件类（如 GroupMessageEvent），不是字符串。
+            handler: async 事件处理器。
+            priority: lane 内优先级。
         """
+        event_type = event_class.__name__
+
         # ── 沙箱检查：非 root 模块受限事件白名单 ──
-        if self.mid > 0 and event_type not in _ALLOWED_EVENTS_FOR_MODULE:
+        _allowed = {GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent}
+        if self.mid > 0 and event_class not in _allowed:
             self.logger.warning(
                 "模块 '%s' (mid=%d) 尝试订阅受限事件 '%s'，已拒绝",
                 self.name, self.mid, event_type,
             )
             return
+
         wrapped = handler
-        if event_type == "GroupMessageEvent":
+        if event_class is GroupMessageEvent:
             original = handler
             module_name = self.name
-            # 通过 services 获取 GroupModuleFilter（避免循环导入）
             group_filter = getattr(self, 'group_filter', None)
 
             async def _filtered_handler(event):
-                """群级模块过滤包装：检查该群是否禁用当前模块。"""
                 if group_filter is None:
-                    # 没有 filter 服务时不过滤
                     await original(event)
                     return
                 if group_filter.is_module_enabled(event.group_id, module_name):
@@ -965,7 +716,7 @@ class Module(ABC):
 
             wrapped = _filtered_handler
 
-        self.event_bus.subscribe(event_type, wrapped, priority)
+        self.event_bus.subscribe(event_class, wrapped, priority)
         self._event_handlers.append((event_type, handler, priority))
 
     def register_tool(self, tool_definition: dict):
@@ -1003,226 +754,3 @@ class Module(ABC):
             )
 
 
-# ═══════════════════════════════════════════════════════════════
-# 魔法属性代理 — 让模块开发者用 self.game.say(...) 等直觉 API
-# ═══════════════════════════════════════════════════════════════
-
-class _ConfigProxy:
-    """配置代理: self.config.键 自动调用 config.get("键")。
-
-    Fix: 传入 caller_mid 防止越权 — 任何 mid≥300 的模块
-    只能以其自身身份读写配置，不能以 mid=0 绕过权限。
-    """
-
-    __slots__ = ("_cfg", "_caller_mid")
-
-    def __init__(self, config_svc, caller_mid=400):
-        self._cfg = config_svc
-        self._caller_mid = caller_mid
-
-    def __getattr__(self, key: str):
-        if key.startswith("_"):
-            raise AttributeError(key)
-        return self._cfg.get(key, requester_uid=self._caller_mid)
-
-    def get(self, key: str, default=None):
-        """获取配置值。"""
-        return self._cfg.get(key, default, requester_uid=self._caller_mid)
-
-    def set(self, key: str, value):
-        """设置配置值。"""
-        return self._cfg.set(key, value, requester_uid=self._caller_mid)
-
-    def save(self):
-        """保存配置。"""
-        return self._cfg.save()
-
-    def register_section(self, section: str, defaults: dict):
-        """Fix M2: 传入 caller_mid 阻止低权限模块注册高权限配置节。"""
-        return self._cfg.register_section(section, defaults, caller_uid=self._caller_mid)
-
-    def get_data_dir(self):
-        """获取数据目录路径。"""
-        return self._cfg.get_data_dir()
-
-
-class _GroupConfigProxy:
-    """群配置代理: self.group_config.get(group_id, key) / .for_group(group_id).
-
-    传入 caller_mid 防止越权。
-    """
-
-    __slots__ = ("_gcfg", "_caller_mid")
-
-    def __init__(self, group_config_svc, caller_mid=400):
-        self._gcfg = group_config_svc
-        self._caller_mid = caller_mid
-
-    def __getattr__(self, key: str):
-        """代理底层 GroupConfigManager 的属性（如 repair_dir）。"""
-        if key.startswith("_"):
-            raise AttributeError(key)
-        return getattr(self._gcfg, key)
-
-    def get(self, group_id: int, key: str, default=None):
-        """获取指定群的配置值。"""
-        return self._gcfg.get(group_id, key, default, requester_uid=self._caller_mid)
-
-    def for_group(self, group_id: int) -> "_SingleGroupConfigProxy":
-        """返回单群配置代理，方便链式调用。"""
-        return _SingleGroupConfigProxy(self._gcfg, group_id, caller_mid=self._caller_mid)
-
-    def get_module_config(self, group_id: int, section: str) -> dict:
-        """获取指定群的模块节配置。"""
-        return self._gcfg.get_group_module_config(group_id, section, requester_uid=self._caller_mid)
-
-
-class _SingleGroupConfigProxy:
-    """单群配置代理。"""
-
-    __slots__ = ("_gcfg", "_group_id", "_caller_mid")
-
-    def __init__(self, gcfg, group_id: int, caller_mid=400):
-        self._gcfg = gcfg
-        self._group_id = group_id
-        self._caller_mid = caller_mid
-
-    def get(self, key: str, default=None):
-        """获取单群配置值。"""
-        return self._gcfg.get(self._group_id, key, default, requester_uid=self._caller_mid)
-
-
-class _GameProxy:
-    """游戏操作代理: self.game.say/send/cmd/players。
-
-    Fix: cmd() 强制 mid 检查 — mid≤100 (daemon+) 放行，
-    mid>100 检查是否在 "游戏管理.允许执行命令的模块" 白名单中。
-    """
-
-    __slots__ = ("_adapter", "_caller_mid", "_config")
-
-    def __init__(self, adapter, caller_mid=400, config=None):
-        self._adapter = adapter
-        self._caller_mid = caller_mid
-        self._config = config
-
-    def _check_cmd_permission(self) -> bool:
-        """检查当前调用者是否有权限执行游戏命令。
-
-        Returns:
-            True 表示允许执行。
-        """
-        if self._caller_mid <= 100:
-            return True  # daemon+ 放行
-        if not self._config:
-            return False
-        whitelist = self._config.get("游戏管理.允许执行命令的模块", [])
-        if not isinstance(whitelist, list):
-            whitelist = []
-        # 白名单为空则只有框架内置模块可执行
-        if not whitelist:
-            return False
-        # 当前模块名需在白名单中
-        import inspect
-        # 尝试从调用栈获取模块名
-        for frame_info in inspect.stack():
-            frame_locals = frame_info.frame.f_locals
-            mod = frame_locals.get('self')
-            if mod is not None and hasattr(mod, 'name') and hasattr(mod, 'mid'):
-                if mod.mid == self._caller_mid:
-                    return mod.name in whitelist
-        return False
-
-    def say(self, target: str, text: str):
-        """向游戏内目标发送消息。"""
-        if self._adapter:
-            self._adapter.send_game_message(target, text)
-
-    def cmd(self, command: str):
-        """发送游戏指令（需 mid 白名单检查）。"""
-        if not self._check_cmd_permission():
-            logging.getLogger(__name__).warning(
-                "游戏命令拒绝: mid=%d 不在白名单中 (cmd=%s)",
-                self._caller_mid, command[:80],
-            )
-            return
-        if self._adapter:
-            self._adapter.send_game_command(command)
-
-    def title(self, target: str, text: str):
-        """显示标题栏消息。"""
-        if self._adapter:
-            self._adapter.send_game_title(target, text)
-
-    def subtitle(self, target: str, text: str):
-        """显示副标题消息。"""
-        if self._adapter:
-            self._adapter.send_game_subtitle(target, text)
-
-    def actionbar(self, target: str, text: str):
-        """显示行动栏消息。"""
-        if self._adapter:
-            self._adapter.send_game_actionbar(target, text)
-
-    @property
-    def players(self) -> list:
-        """在线玩家列表。"""
-        return self._adapter.get_online_players() if self._adapter else []
-
-    def cmd_with_resp(self, cmd: str, timeout: float = 5.0):
-        """发送指令并等响应。"""
-        if self._adapter:
-            return self._adapter.send_game_command_with_resp(cmd, timeout)
-        return None
-
-
-class _QQProxy:
-    """QQ 操作代理: self.qq.send_group(gid, text) / self.qq.send_private(uid, text)。
-
-    Fix: 移除 fallback 到 adapter 的路径，该路径绕过 MessageManager 的
-    限流和审计。消息发送只走 message 服务（内建 guardian 检查）。
-    传入 caller_mid 用于审计追踪。
-    """
-
-    __slots__ = ("_adapter", "_services", "_caller_mid")
-
-    def __init__(self, adapter, services=None, caller_mid=400):
-        self._adapter = adapter
-        self._services = services
-        self._caller_mid = caller_mid
-
-    @property
-    def _msg(self):
-        """动态获取 message 服务（避免构造时捕获 None）。"""
-        if self._services:
-            try:
-                return self._services.get("message")
-            except (KeyError, PermissionError):
-                return None
-        return None
-
-    async def send_group(self, group_id: int, text: str):
-        """发送群消息（仅通过 MessageManager，绕过即拒绝）。
-
-        message 服务内部已包含 guardian 限流和审计追踪。
-        """
-        if self._msg:
-            await self._msg.send_group(group_id, text, requester_uid=self._caller_mid)
-        else:
-            logging.getLogger(__name__).error(
-                "QQ代理: message 服务不可用，消息发送被拒绝 (group_id=%s, mid=%d)",
-                group_id, self._caller_mid,
-            )
-
-    async def send_private(self, user_id: int, text: str):
-        """发送私聊消息（仅通过 MessageManager，绕过即拒绝）。
-
-        message 服务内部已包含 guardian 限流和审计追踪。
-        """
-        if self._msg:
-            await self._msg.send_private(user_id, text, requester_uid=self._caller_mid)
-        else:
-            logging.getLogger(__name__).error(
-                "QQ代理: message 服务不可用，消息发送被拒绝 (user_id=%s, mid=%d)",
-                user_id, self._caller_mid,
-            )

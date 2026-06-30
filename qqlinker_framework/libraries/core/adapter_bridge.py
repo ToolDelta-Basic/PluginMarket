@@ -1,10 +1,3 @@
-"""适配器桥接库 — 平台回调 → 信道事件发布。
-
-将 WS 消息回调转换为统一的信道事件，通过 EventBus 发布。
-同时将消息队列的发送回调绑定到 WS 客户端。
-
-依赖: ws_client
-"""
 import asyncio
 import logging
 import time
@@ -84,15 +77,30 @@ class AdapterBridgeLibrary(Library):
         pass
 
     def _on_ws_message(self, data: dict) -> None:
-        """WS 消息回调 — 解析后发布到事件总线。"""
+        """WS 消息回调 — 解析后发布到事件总线。
+
+        仅处理配置中 "消息转发.链接的群聊" 中指定的群。
+        未配置的群消息在入口处直接丢弃，不发布任何事件。
+        """
         post_type = data.get("post_type", "")
 
         if post_type == "message":
             msg_type = data.get("message_type", "")
             if msg_type == "group":
+                group_id = data.get("group_id", 0)
+
+                # ── 群白名单过滤：只处理配置中链接的群聊 ──
+                config = self.services.try_get("config")
+                if config is not None:
+                    linked_groups = config.get("消息转发.链接的群聊", [])
+                    # linked_groups 支持 int 和 str 混合
+                    linked_set = {int(g) for g in linked_groups}
+                    if group_id not in linked_set:
+                        return
+
                 event = GroupMessageEvent(
                     user_id=data.get("user_id", 0),
-                    group_id=data.get("group_id", 0),
+                    group_id=group_id,
                     nickname=data.get("sender", {}).get("nickname", ""),
                     message=data.get("raw_message", data.get("message", "")),
                     raw_data=data,
@@ -101,5 +109,5 @@ class AdapterBridgeLibrary(Library):
                 if self._loop and not self._loop.is_closed():
                     self._loop.call_soon_threadsafe(
                         asyncio.ensure_future,
-                        self.events.publish("GroupMessageEvent", event, source="adapter_bridge")
+                        self.events.publish(event)
                     )

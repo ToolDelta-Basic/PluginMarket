@@ -1,11 +1,3 @@
-"""框架端 IPC 集成 — 当以 --ipc-mode 启动时，用 IPCClient 替代直接 adapter。
-
-在 ChannelHost.start() 中检测 IPC 模式：
-- 如果有 --ipc-mode 参数，创建 IPCClient 连接宿主
-- 注册 GameProxy 作为 "game" 服务
-- adapter 设为 IPCAdapterProxy（通过 IPC 调用宿主方法）
-"""
-
 from __future__ import annotations
 
 import logging

@@ -1,20 +1,4 @@
 # pylint: disable=protected-access
-"""加载源管理器 – 统一管理所有扫描/发现/加载/注册入口
-
-从 ModuleManager 重构而来 (v8.0):
-  - 统一模块发现: discover_from_package / discover_from_files
-  - 统一工具扫描: scan_tool_directory / register_tool / get_ai_tools / get_admin_tools
-  - 统一工作流扫描: scan_workflow_directory / register_workflow / get_workflows
-  - 统一配置注册: register_config_section
-  - 统一包管理: install_package / list_packages
-  - 保留模块注册表（允则）
-
-v1.2 — 新增启动依赖检查（服务存在性 + 循环依赖检测）
-v7.0 — 注册表允则机制: 模块加载唯一权威来源 = 模块注册表 JSON
-       只有注册表中明确标记"启用"的模块才运行，
-       新发现的模块默认写入注册表并自动启用
-v8.0 — 重构为 SourceManager，统一所有加载源
-"""
 import asyncio
 import importlib
 import inspect
@@ -26,6 +10,31 @@ from qqlinker_framework.core.module import Module, FrozenState
 from qqlinker_framework.core.kernel.error_hints import hint
 from qqlinker_framework.core.kernel.prioritized_lock import PrioritizedLock
 from qqlinker_framework.core.drivers.registry import ModuleRegistry
+from qqlinker_framework.core.kernel.events import (
+    GroupMessageEvent, PrivateMessageEvent, GameChatEvent,
+    PlayerJoinEvent, PlayerLeaveEvent, PlayerPositionEvent,
+    AIResponseEvent, SystemStartEvent, SystemStopEvent,
+    SystemPanicEvent, ConfigReloadEvent,
+    AIPrePromptReflectionEvent, AIPostResponseReflectionEvent,
+)
+from qqlinker_framework.core.kernel.gatekeeper import ALLOWED_EVENTS
+from .source_mgr_validation import (
+    check_circular_dependencies as _check_circular_deps,
+    dry_run_import as _dry_run_import,
+)
+_log = logging.getLogger(__name__)
+
+# ── 事件类型字符串 → 类映射 ──
+_EVENT_STR_TO_CLASS: Dict[str, type] = {
+    cls.__name__: cls
+    for cls in (
+        GroupMessageEvent, PrivateMessageEvent, GameChatEvent,
+        PlayerJoinEvent, PlayerLeaveEvent, PlayerPositionEvent,
+        AIResponseEvent, SystemStartEvent, SystemStopEvent,
+        SystemPanicEvent, ConfigReloadEvent,
+        AIPrePromptReflectionEvent, AIPostResponseReflectionEvent,
+    )
+}
 
 # ── 递归深度防护 ──────────────────────────────────────────
 _module_mgr_depth: contextvars.ContextVar[int] = contextvars.ContextVar(
@@ -150,77 +159,8 @@ class SourceManager:
 
     @staticmethod
     def check_circular_dependencies(mods: List[Module]) -> List[str]:
-        """检测模块间的循环依赖（A 依赖 B，B 依赖 A）。
-
-        使用 "类名 → required_services" 的边关系构建有向图，
-        DFS 检测环。
-
-        Returns:
-            涉及循环依赖的所有模块名列表（空表示无环）。
-        """
-        logger = logging.getLogger(__name__)
-
-        # 构建依赖图: module_name → set of depended_module_names
-        dep_graph: Dict[str, Set[str]] = {}
-        name_map: Dict[str, Module] = {}
-
-        # 先完整构建 name_map，再构建依赖图
-        for mod in mods:
-            name = getattr(mod, 'name', mod.__class__.__name__)
-            name_map[name] = mod
-            dep_graph[name] = set()
-
-        for mod in mods:
-            name = getattr(mod, 'name', mod.__class__.__name__)
-            for srv_name in getattr(mod, 'required_services', []):
-                # 服务名可能与模块名相同（如 "message", "command"）
-                if srv_name in name_map:
-                    dep_graph[name].add(srv_name)
-            for dep_name in getattr(mod, 'dependencies', []):
-                if dep_name in name_map:
-                    dep_graph[name].add(dep_name)
-
-        # DFS 检测环
-        WHITE, GRAY, BLACK = 0, 1, 2
-        color: Dict[str, int] = {name: WHITE for name in dep_graph}
-        cycle_nodes: Set[str] = set()
-
-        def dfs(node: str, path: List[str]) -> bool:
-            """DFS 遍历，返回是否发现环。"""
-            color[node] = GRAY
-            path.append(node)
-            for neighbor in dep_graph.get(node, set()):
-                if neighbor not in color:
-                    continue
-                if color[neighbor] == GRAY:
-                    # 发现环: path 中从 neighbor 开始的部分
-                    cycle_start = path.index(neighbor)
-                    cycle = path[cycle_start:]
-                    cycle_nodes.update(cycle)
-                    logger.error(
-                        "⛔ 检测到循环依赖: %s → %s（通过 %s）",
-                        node, neighbor, " → ".join(cycle),
-                    )
-                    return True
-                if color[neighbor] == WHITE:
-                    if dfs(neighbor, path):
-                        # 继续 DFS 以发现所有环
-                        pass
-            path.pop()
-            color[node] = BLACK
-            return False
-
-        for node in list(dep_graph.keys()):
-            if color.get(node) == WHITE:
-                dfs(node, [])
-
-        if cycle_nodes:
-            logger.warning(
-                "循环依赖涉及模块: %s。这些模块将按原始顺序加载。",
-                ", ".join(sorted(cycle_nodes)),
-            )
-
-        return list(cycle_nodes)
+        """检测模块间的循环依赖。委托给 source_mgr_validation。"""
+        return _check_circular_deps(mods)
 
     # ═══════════════════════════════════════════════════════════
     # v7: 注册表允则机制 — 模块加载唯一权威来源
@@ -347,7 +287,6 @@ class SourceManager:
                     len(circular), ", ".join(circular),
                 )
         finally:
-            self._release_lock()
             self._release_lock()
 
         # Phase 2 — v6: 并行分层初始化
@@ -642,92 +581,8 @@ class SourceManager:
 
     @staticmethod
     def _dry_run_import(module_cls: Type[Module]) -> Optional[Type[Module]]:
-        """Dry-run 导入检查：验证模块类是否可以安全加载。
-
-        不将模块注册到任何总线，仅做如下检查：
-        1. import 代码本身（已通过 class 引用传入，跳过）
-        2. 检查类的 required_services 格式
-        3. 检查类的 config_schema / default_config 格式
-        4. 尝试实例化（不调用 on_init/on_start）
-
-        Args:
-            module_cls: 模块类引用
-        Returns:
-            模块类本身（检查通过），或 None（检查失败）
-        """
-        logger = logging.getLogger(__name__)
-
-        # 1. 检查 required_services 格式
-        required = getattr(module_cls, 'required_services', None)
-        if required is not None:
-            if not isinstance(required, (list, tuple)):
-                logger.error(
-                    "❌ 模块 '%s': required_services 必须是 list/tuple，实际 %s",
-                    getattr(module_cls, 'name', module_cls.__name__),
-                    type(required).__name__,
-                )
-                return None
-            for srv in required:
-                if not isinstance(srv, str):
-                    logger.error(
-                        "❌ 模块 '%s': required_services 中的元素必须是 str，实际 %s",
-                        getattr(module_cls, 'name', module_cls.__name__),
-                        type(srv).__name__,
-                    )
-                    return None
-
-        # 2. 检查 config_schema / default_config 格式
-        config_schema = getattr(module_cls, 'config_schema', None)
-        default_config = getattr(module_cls, 'default_config', None)
-        if config_schema is not None:
-            if not isinstance(config_schema, dict):
-                logger.error(
-                    "❌ 模块 '%s': config_schema 必须是 dict，实际 %s",
-                    getattr(module_cls, 'name', module_cls.__name__),
-                    type(config_schema).__name__,
-                )
-                return None
-        if default_config is not None:
-            if not isinstance(default_config, dict):
-                logger.error(
-                    "❌ 模块 '%s': default_config 必须是 dict，实际 %s",
-                    getattr(module_cls, 'name', module_cls.__name__),
-                    type(default_config).__name__,
-                )
-                return None
-
-        # 3. 检查类是否继承自 Module
-        try:
-            if not issubclass(module_cls, Module):
-                logger.error(
-                    "❌ 模块 '%s': 必须是 Module 的子类",
-                    getattr(module_cls, 'name', module_cls.__name__),
-                )
-                return None
-        except TypeError:
-            logger.error(
-                "❌ 模块 '%s': 不是有效的类",
-                getattr(module_cls, 'name', module_cls.__name__),
-            )
-            return None
-
-        # 4. 尝试实例化（使用 __new__ 来捕获 ImportError/SyntaxError 等）
-        try:
-            _ = module_cls.__new__(module_cls)
-        except Exception as e:
-            logger.error(
-                "❌ 模块 '%s': 实例化失败: %s (%s)",
-                getattr(module_cls, 'name', module_cls.__name__),
-                e, type(e).__name__,
-            )
-            return None
-
-        logger.info(
-            "✅ dry-run 通过: 模块 '%s' (required=%s)",
-            getattr(module_cls, 'name', module_cls.__name__),
-            required if required else '[]',
-        )
-        return module_cls
+        """Dry-run 导入检查。委托给 source_mgr_validation。"""
+        return _dry_run_import(module_cls)
 
     def validate_module_dependencies(self, cls: Type[Module]) -> tuple:
         """验证模块类的依赖是否满足。
@@ -880,10 +735,11 @@ class SourceManager:
             # 调用模块自身 on_freeze 钩子
             await mod.on_freeze()
 
-            # 从 EventBus 取消该模块的所有事件订阅
+            # 从 LaneRouter 取消该模块的所有事件订阅
             if self.event_bus and hasattr(mod, '_event_handlers'):
-                for event_type, handler, _priority in mod._event_handlers:
-                    self.event_bus.unsubscribe(event_type, handler)
+                for event_type_or_class, handler, _priority in mod._event_handlers:
+                    event_class = _EVENT_STR_TO_CLASS.get(event_type_or_class, event_type_or_class)
+                    self.event_bus.unsubscribe(event_class, handler)
                 logger.debug(
                     "模块 '%s': 已取消 %d 个事件订阅",
                     module_name, len(mod._event_handlers),
@@ -933,8 +789,9 @@ class SourceManager:
         try:
             # 重新注册事件订阅
             if self.event_bus and hasattr(mod, '_event_handlers'):
-                for event_type, handler, priority in mod._event_handlers:
-                    if event_type == "GroupMessageEvent":
+                for event_type_or_class, handler, priority in mod._event_handlers:
+                    event_class = _EVENT_STR_TO_CLASS.get(event_type_or_class, event_type_or_class)
+                    if event_class is GroupMessageEvent:
                         # 重新包装群过滤器
                         original = handler
                         module_name_inner = mod.name
@@ -951,9 +808,9 @@ class SourceManager:
                                 await _orig(event)
 
                         wrapped = _rebuilt_handler
-                        self.event_bus.subscribe(event_type, wrapped, priority)
+                        self.event_bus.subscribe(event_class, wrapped, priority)
                     else:
-                        self.event_bus.subscribe(event_type, handler, priority)
+                        self.event_bus.subscribe(event_class, handler, priority)
                 logger.debug(
                     "模块 '%s': 已重新注册 %d 个事件订阅",
                     module_name, len(mod._event_handlers),
@@ -1006,8 +863,9 @@ class SourceManager:
 
     async def _rollback_module(self, mod: Module):
         """回滚模块: 清理事件订阅、命令、工具和定时任务。"""
-        for event_type, handler, _ in mod._event_handlers:
-            self.event_bus.unsubscribe(event_type, handler)
+        for event_type_or_class, handler, _ in mod._event_handlers:
+            event_class = _EVENT_STR_TO_CLASS.get(event_type_or_class, event_type_or_class)
+            self.event_bus.unsubscribe(event_class, handler)
         mod._event_handlers.clear()
         for trigger in list(mod._commands.keys()):
             self.host.command_mgr.unregister(trigger)
@@ -1049,6 +907,8 @@ class SourceManager:
                 # v1.5.1: 多变体 + 子命令支持
                 variants = info.get('variants', [primary])
                 sub = info.get('sub', '')
+                rule_accessible = info.get('rule_accessible', False)
+                hidden = info.get('hidden', False)
                 for variant in variants:
                     trigger = f"{variant} {sub}".strip() if sub else variant
                     mod.register_command(
@@ -1061,18 +921,23 @@ class SourceManager:
                         cooldown=info.get('cooldown'),
                         min_uid=min_uid,
                     )
+                    # v1.7: 注入 @command 新增字段到已注册的命令条目
+                    if rule_accessible or hidden:
+                        cmd_entry = mod._commands.get(trigger)
+                        if cmd_entry:
+                            cmd_entry['rule_accessible'] = rule_accessible
+                            cmd_entry['hidden'] = hidden
             if hasattr(method, '_event_info'):
                 info = method._event_info
-                event_type = info.get('event_type', '')
+                event_class = info.get('event_type', None)
                 # ── 二次校验: 非 root 模块事件白名单 ──
-                from qqlinker_framework.core.module import _ALLOWED_EVENTS_FOR_MODULE
-                if mod.uid > 0 and event_type not in _ALLOWED_EVENTS_FOR_MODULE:
+                if mod.uid > 0 and event_class not in ALLOWED_EVENTS:
                     logger.warning(
                         "模块 '%s' (uid=%d) 装饰器声明订阅受限事件 '%s'，已拒绝",
-                        mod.name, mod.uid, event_type,
+                        mod.name, mod.uid, getattr(event_class, '__name__', event_class),
                     )
                     continue
-                mod.listen(info['event_type'], method, info.get('priority', 0))
+                mod.listen(event_class, method, info.get('priority', 0))
             if hasattr(method, '_tool_info'):
                 tool_info = method._tool_info
                 tool_uid = tool_info.get('uid', 300)

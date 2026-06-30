@@ -1,21 +1,3 @@
-"""熔断器 (Circuit Breaker) — 防止级联故障传播。
-
-═══════════════════════════════════════════════════════════════════════════
-状态机:
-  CLOSED    ── 正常状态，请求通过。连续失败 ≥ failure_threshold → OPEN
-  OPEN      ── 熔断状态，请求立即拒绝。冷却 cooldown_seconds 后 → HALF_OPEN
-  HALF_OPEN ── 探测状态，允许少量请求通过。成功 → CLOSED，失败 → OPEN
-
-用途:
-  - NetworkManager 为每个目标服务维护独立的熔断器
-  - 外部服务故障时快速失败，避免资源耗尽
-  - 自动恢复：冷却后探测，成功后恢复全流量
-
-参考:
-  - Release It!, Michael Nygard
-  - Resilience4j CircuitBreaker
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import asyncio

@@ -1,26 +1,3 @@
-"""防御性输入验证层 (Defensive Guard)
-
-═══════════════════════════════════════════════════════════════════════════
-设计原则: 对所有输入默认不信任，显式验证后再使用。
-═══════════════════════════════════════════════════════════════════════════
-
-使用方式:
-  from qqlinker_framework.core.defguard import (
-      safe_str, safe_int, safe_dict, safe_list,
-      safe_event_message, safe_config_get, validate_onebot_event,
-  )
-
-核心约定:
-  1. 所有 safe_* 函数绝不抛异常，返回安全的默认值
-  2. validate_* 函数返回 (ok, sanitized_value, error_reason) 三元组
-  3. 字符串默认截断到合理长度，防止 DoS
-
-═══════════════════════════════════════════════════════════════════════════
-
-此外还提供 Minecraft 命令注入防护函数 escape_player_name。
-═══════════════════════════════════════════════════════════════════════
-"""
-
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 

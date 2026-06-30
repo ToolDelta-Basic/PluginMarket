@@ -1,10 +1,3 @@
-"""ChannelHost — 纯信道框架启动器 v1.6.0
-
-框架 = 通信信道。ChannelHost 创建信道本体（ServiceRegistry + EventBus），
-扫描库目录，拓扑排序后顺序挂载。
-
-信道本体不是库——它是库运行的基础设施。
-"""
 import asyncio
 import importlib
 import importlib.util
@@ -12,7 +5,6 @@ import inspect
 import logging
 import os
 import threading
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -165,67 +157,13 @@ class ScopedView:
 
 
 # ═══════════════════════════════════════════════════════════
-# EventBus — 信道事件管道
+# LaneRouter 导入 — 原子事件路由器（替代旧 EventBus）
 # ═══════════════════════════════════════════════════════════
 
-EventCallback = Callable[..., Any]
-
-
-class EventBus:
-    """线程安全的事件发布订阅总线。"""
-
-    def __init__(self):
-        self._handlers: Dict[str, List[tuple]] = defaultdict(list)
-        self._lock = threading.Lock()
-        self._depth = 0
-        self._max_depth = 10
-
-    def subscribe(self, event_type: str, callback: EventCallback, priority: int = 0):
-        """订阅事件。priority 越大越早执行。"""
-        with self._lock:
-            self._handlers[event_type].append((priority, callback))
-            self._handlers[event_type].sort(key=lambda x: -x[0])
-
-    def unsubscribe(self, event_type: str, callback: EventCallback):
-        """取消订阅。"""
-        with self._lock:
-            self._handlers[event_type] = [
-                (p, cb) for p, cb in self._handlers[event_type]
-                if cb is not callback
-            ]
-
-    async def publish(self, event_type: str, event: Any = None, source: str = ""):
-        """发布事件，按优先级通知所有订阅者。
-
-        如果 event 对象有 handled 属性且被设为 True，后续 handler 不再执行。
-
-        Args:
-            event_type: 事件类型名称字符串（如 "GroupMessageEvent"）
-            event: 事件对象
-            source: 发布来源标识
-        """
-        if self._depth >= self._max_depth:
-            _log.warning("事件 %s 达到最大递归深度 %d，已丢弃。"
-                         "事件触发链达到最大深度限制（%d层），已自动截断。"
-                         "请检查是否有模块在处理 A 事件时又发布 A 事件。",
-                         event_type, self._max_depth, self._max_depth)
-            return
-        self._depth += 1
-        try:
-            handlers = list(self._handlers.get(event_type, []))
-            for _, callback in handlers:
-                # 检查 event.handled — 若已标记则停止传播
-                if event is not None and getattr(event, 'handled', False):
-                    break
-                try:
-                    if asyncio.iscoroutinefunction(callback):
-                        await callback(event)
-                    else:
-                        callback(event)
-                except Exception as e:
-                    _log.error("事件处理异常 [%s]: %s", event_type, e)
-        finally:
-            self._depth -= 1
+from .core.lane_router import LaneRouter, Lane, LaneConfig, BUILTIN_LANES  # noqa: E402
+from .core.scanner import Scanner
+from .core.pipeline import PipelineEngine  # noqa: E402
+from .core.ipc_bridge import IPCEventBridge  # noqa: E402
 
 
 # ═══════════════════════════════════════════════════════════
@@ -245,7 +183,7 @@ class Library:
 
     # ChannelHost 挂载前注入
     services: Optional[ServiceRegistry] = None
-    events: Optional[EventBus] = None
+    events: Optional[LaneRouter] = None
 
     async def mount(self) -> None:
         """挂载库。"""
@@ -278,7 +216,7 @@ CORE_LIBRARIES = frozenset([
 class ChannelHost:
     """纯信道框架启动器。
 
-    1. 创建信道本体（ServiceRegistry + EventBus）
+    1. 创建信道本体（ServiceRegistry + LaneRouter）
     2. 扫描库目录
     3. 校验核心库完整性
     4. 拓扑排序
@@ -289,7 +227,7 @@ class ChannelHost:
         self._data_path = os.path.abspath(data_path)
         self._adapter = adapter
         self._registry = ServiceRegistry()
-        self._event_bus = EventBus()
+        self._event_bus = LaneRouter()
         self._libraries: List[Library] = []
         self._sorted: List[Library] = []
 
@@ -308,6 +246,12 @@ class ChannelHost:
         # 注册 module_mgr 供 module_loader 同步已加载模块
         self._registry.register("_host_module_mgr", self.module_mgr, mid=0)
         self._registry.register("_host", self, mid=0)
+
+        # IPC 子系统（惰性初始化）
+        self._ipc_bridge = None
+        self._ipc_pool = None
+        self._ipc_client = None
+        self._pipeline = None
 
     def register_modules_from_package(self, package_name: str = "qqlinker_framework.modules") -> None:
         """兼容: 模块发现（实际由 module_loader 库在 start() 时处理）。"""
@@ -376,7 +320,32 @@ class ChannelHost:
         # 4. 拓扑排序
         self._sorted = self._topo_sort(self._libraries)
 
-        # 5. 顺序 mount
+        # 5. 启动 LaneRouter
+        await self._event_bus.start()
+
+        # 5a. IPC 桥接器初始化（可选 — 在 LaneRouter 和 PipelineEngine 之间）
+        ipc_config = getattr(self, '_config', {}).get("ipc", {})
+        if ipc_config.get("enabled", False):
+            await self._init_ipc(ipc_config)
+
+        # 5b. 启动管道引擎（细粒度 topic 路由）
+        self._pipeline = PipelineEngine(self._event_bus)
+        await self._pipeline.start()
+        self._registry.register("_pipeline", self._pipeline, mid=0, _trusted=True)
+
+        # 5c. 将管道引擎连接到 LaneRouter 的 chat lane
+        from .core.protocol import GroupMessageEvent  # deferred import (避免循环引用)
+        self._event_bus.subscribe(GroupMessageEvent, self._pipeline._on_chat_event,
+                                  priority=100)
+
+        # 5d. 引擎注册与启动
+        # 引擎 = 多个挂载库组合后的新服务
+        # EngineRegistry 管理所有引擎的生命周期（ignite/extinguish）
+        from .core.engine import EngineRegistry  # deferred import
+        self._engine_registry = EngineRegistry(self._registry)
+        self._registry.register("engine_registry", self._engine_registry, mid=50, _trusted=True)
+
+        # 6. 顺序 mount
         for lib in self._sorted:
             lib.services = self._registry
             lib.events = self._event_bus
@@ -392,52 +361,136 @@ class ChannelHost:
 
         logger.info("框架启动完成 (%d 个库)", len(self._sorted))
 
+        # 7. 启动所有已注册引擎
+        await self._engine_registry.ignite_all()
+        logger.info("引擎注册表已启动 (%d 个引擎)", self._engine_registry.count)
+
+    async def _init_ipc(self, ipc_config: dict):
+        """初始化 IPC 子系统（可选）。
+
+        在 LaneRouter 启动后、PipelineEngine 启动前调用。
+        IPC 桥接器位于 LaneRouter 和 PipelineEngine 之间，
+        将事件通过 IPC 转发到 worker 进程处理。
+
+        Config 格式:
+            ipc:
+              enabled: true
+              socket_path: /tmp/qqlinker.ipc
+              bridge_lanes: [chat, ai, realtime]
+              worker_count: 4
+        """
+        try:
+            # Try multiple import paths for IPC components
+            _WorkerPool = None
+            _IPCClient = None
+            for pkg_path in ['core.ipc', 'qqlinker_framework.core.ipc']:
+                try:
+                    mod = __import__(pkg_path, fromlist=['WorkerPool', 'IPCClient'])
+                    _WorkerPool = mod.WorkerPool
+                    _IPCClient = mod.IPCClient
+                    break
+                except ImportError:
+                    continue
+            if _WorkerPool is None:
+                raise ImportError("core.ipc 模块不可用")
+
+            socket_path = ipc_config.get("socket_path", "/tmp/qqlinker.ipc")
+            worker_count = ipc_config.get("worker_count", 2)
+            bridge_lanes = ipc_config.get("bridge_lanes", ["chat"])
+
+            # 创建 IPC 管理器和客户端
+            self._ipc_pool = _WorkerPool(socket_path, count=worker_count)
+            self._ipc_client = _IPCClient(socket_path)
+
+            # 启动 worker pool（子进程）
+            await self._ipc_pool.start_all()
+
+            # 连接 IPC 客户端
+            await self._ipc_client.connect()
+
+            # 注册 IPC 服务
+            self._registry.register("ipc_pool", self._ipc_pool, mid=100, _trusted=True)
+            self._registry.register("ipc_client", self._ipc_client, mid=100, _trusted=True)
+
+            # 创建 IPC 桥接器
+            self._ipc_bridge = IPCEventBridge(self._event_bus, ipc_client=self._ipc_client)
+
+            # 桥接指定 lanes
+            for lane_name in bridge_lanes:
+                await self._ipc_bridge.bridge_lane(lane_name)
+
+            # 注册桥接器到服务注册表
+            self._registry.register("ipc_bridge", self._ipc_bridge, mid=100, _trusted=True)
+            self._registry.register("ipc", self._ipc_bridge, mid=100, _trusted=True)
+
+            _log.info(
+                "IPC 子系统已启动 (path=%s, workers=%d, lanes=%s)",
+                socket_path, worker_count, bridge_lanes,
+            )
+
+        except ImportError as e:
+            _log.warning("IPC 子系统不可用（缺少依赖）: %s", e)
+        except Exception as e:
+            _log.error("IPC 子系统初始化失败: %s", e)
+            # IPC 失败不阻止框架启动（优雅降级）
+
+    async def _stop_ipc(self):
+        """停止 IPC 子系统。"""
+        # 停止桥接器
+        if getattr(self, '_ipc_bridge', None):
+            try:
+                await self._ipc_bridge.stop()
+            except Exception as e:
+                _log.debug("IPC 桥接器停止异常: %s", e)
+            self._ipc_bridge = None
+
+        # 断开客户端
+        if getattr(self, '_ipc_client', None):
+            try:
+                await self._ipc_client.close()
+            except Exception as e:
+                _log.debug("IPC 客户端关闭异常: %s", e)
+            self._ipc_client = None
+
+        # 停止 worker pool
+        if getattr(self, '_ipc_pool', None):
+            try:
+                await self._ipc_pool.stop_all()
+            except Exception as e:
+                _log.debug("IPC worker pool 停止异常: %s", e)
+            self._ipc_pool = None
+
+        _log.info("IPC 子系统已停止")
+
     async def stop(self) -> None:
         """停止框架（逆序卸载）。"""
+        # 停止引擎
+        if hasattr(self, '_engine_registry'):
+            await self._engine_registry.extinguish_all()
+            _log.info("引擎已全部停止")
         for lib in reversed(self._sorted):
             try:
                 await lib.unmount()
                 _log.info("卸载库: %s", lib.name)
             except Exception as e:
                 _log.error("卸载库 '%s' 异常: %s", lib.name, e)
+        # 停止 IPC 子系统（在 PipelineEngine 之前）
+        await self._stop_ipc()
+        await self._event_bus.stop()
+        if hasattr(self, '_pipeline'):
+            await self._pipeline.stop()
 
     # ── 内部方法 ──────────────────────────────────────────
 
     def _scan_directory(self, directory: str) -> List[Library]:
         """扫描目录下所有 .py 文件，找到 Library 子类并实例化。"""
-        results: List[Library] = []
-        if not os.path.isdir(directory):
-            return results
-
-        # 确定包导入路径
         # libraries/core/ -> qqlinker_framework.libraries.core
         # libraries/optional/ -> qqlinker_framework.libraries.optional
         dir_name = os.path.basename(directory)
         package_prefix = f"qqlinker_framework.libraries.{dir_name}"
 
-        for filename in sorted(os.listdir(directory)):
-            if not filename.endswith(".py") or filename.startswith("_"):
-                continue
-
-            module_name = f"{package_prefix}.{filename[:-3]}"
-
-            try:
-                mod = importlib.import_module(module_name)
-
-                for attr_name in dir(mod):
-                    attr = getattr(mod, attr_name)
-                    if (
-                        isinstance(attr, type)
-                        and issubclass(attr, Library)
-                        and attr is not Library
-                        and getattr(attr, "name", "")
-                    ):
-                        instance = attr()
-                        results.append(instance)
-            except Exception as e:
-                _log.warning("扫描库文件失败 [%s]: %s", module_name, e)
-
-        return results
+        scanner = Scanner(directory)
+        return scanner.find_classes(Library, "*.py", import_prefix=package_prefix)
 
     def _topo_sort(self, libraries: List[Library]) -> List[Library]:
         """拓扑排序（按 dependencies）。"""

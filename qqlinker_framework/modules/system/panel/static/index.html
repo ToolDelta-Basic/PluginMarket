@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QQLinker 管理面板</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- 登录遮罩 -->
+<div id="lo">
+  <div class="lb">
+    <h1>⚙️ <span>QQLinker</span> 管理面板</h1>
+    <div class="lt">
+      <button id="tL" class="ac" onclick="st('login')">登录</button>
+      <button id="tR" onclick="st('reg')">注册</button>
+    </div>
+    <div id="fL">
+      <input id="lU" placeholder="用户名" autocomplete="username">
+      <input id="lP" type="password" placeholder="密码">
+      <button onclick="lg()">登 录</button>
+    </div>
+    <div id="fR" style="display:none">
+      <input id="rU" placeholder="用户名（3-32字符）">
+      <input id="rP" type="password" placeholder="密码（至少6位）">
+      <input id="rP2" type="password" placeholder="确认密码">
+      <button onclick="rg()">注 册</button>
+    </div>
+    <div class="er" id="ae"></div>
+  </div>
+</div>
+
+<!-- 主面板 -->
+<div class="ap" id="ap">
+  <div class="tb">
+    <h1>⚙️ <span>QQLinker</span> 管理面板</h1>
+    <div class="u"><span id="ud"></span><button onclick="lo()">退出</button></div>
+  </div>
+  <div class="ts">
+    <button class="ac" onclick="sw('db')" id="tb-db">📊 仪表盘</button>
+    <button onclick="sw('cf')" id="tb-cf">⚙️ 配置</button>
+    <button onclick="sw('md')" id="tb-md">📦 模块</button>
+    <button onclick="sw('us')" id="tb-us">👤 用户</button>
+  </div>
+  <div id="pn-db"></div>
+  <div id="pn-cf" style="display:none"></div>
+  <div id="pn-md" style="display:none"></div>
+  <div id="pn-us" style="display:none"></div>
+</div>
+
+<div class="to" id="to"></div>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

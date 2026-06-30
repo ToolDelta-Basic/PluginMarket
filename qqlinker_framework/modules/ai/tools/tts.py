@@ -1,14 +1,9 @@
 # modules/ai/tools/tts.py
-"""文本转语音工具（硅基流动）
-
-安全特性:
-  - text 长度限制 500 字符
-  - 发送前安全审核检查（audit.check_message）
-"""
 import base64
 import logging
 
 from .safety import sanitize_prompt
+_log = logging.getLogger(__name__)
 
 try:
     import aiohttp
@@ -53,8 +48,8 @@ def register_tools(tool_manager, **kwargs):
                         "TTS 被安全审核拦截: %s", audit_result
                     )
                     return "文本包含不安全内容，已被拦截"
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("tts.tts: %s", e)
 
         provider = config.get("硅基流动", {})
         address = provider.get("地址", "")

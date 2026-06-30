@@ -1,13 +1,3 @@
-"""命令审计追溯系统 — 命令级执行记录与查询。
-
-提供:
-  - AuditTrail: 记录命令执行上下文 → audit_trail.jsonl (NDJSON)
-  - 每日自动轮转: audit_trail_YYYYMMDD.jsonl
-  - 保留 30 天，过期自动删除
-  - 查询: 按用户/模块/时间范围/热点统计
-
-隐私: 只记录命令元数据，不记录消息原文内容。
-"""
 import json
 import logging
 import os
@@ -107,8 +97,8 @@ class AuditTrail:
                         try:
                             os.remove(fp)
                             _log.info("清理过期审计日志: %s", fname)
-                        except OSError:
-                            pass
+                        except OSError as e:
+                            _log.warning("audit_trail._cleanup_old_files: %s", e)
         except OSError as e:
             _log.warning("审计日志过期清理失败: %s", e)
 
@@ -191,12 +181,12 @@ class AuditTrail:
                             if line:
                                 try:
                                     entries.append(json.loads(line))
-                                except json.JSONDecodeError:
-                                    pass
-                except OSError:
-                    pass
-        except OSError:
-            pass
+                                except json.JSONDecodeError as e:
+                                    _log.warning("audit_trail._read_all_entries: %s", e)
+                except OSError as e:
+                    _log.warning("audit_trail._read_all_entries: %s", e)
+        except OSError as e:
+            _log.warning("audit_trail._read_all_entries: %s", e)
         return entries
 
     def get_by_user(

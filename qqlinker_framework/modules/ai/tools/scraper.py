@@ -1,11 +1,4 @@
 # modules/ai/tools/web_scraper.py
-"""网页抓取工具 —— 通过 Scrapling API 获取网页原文
-
-安全特性:
-  - URL SSRF 防护（内网拒绝、协议检查、长度限制）
-  - 请求超时强制上限（10 秒）
-  - 响应体大小限制（2 MB）
-"""
 import asyncio
 import logging
 

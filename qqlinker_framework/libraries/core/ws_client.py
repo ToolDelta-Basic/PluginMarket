@@ -1,8 +1,3 @@
-"""WebSocket 客户端库 — 连接管理 + 重连 + 心跳。
-
-注册服务: "ws_client"
-依赖: config_store
-"""
 import asyncio
 import json
 import logging
@@ -52,8 +47,8 @@ class WsClient:
         if self._ws:
             try:
                 self._ws.close()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("ws_client.stop: %s", e)
 
     def send(self, data: dict) -> bool:
         """发送 JSON 消息。"""

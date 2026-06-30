@@ -1,7 +1,8 @@
-"""Redis 客户端封装，支持自动重连与冷却。"""
 import threading
 import time
 from typing import Optional
+import logging
+_log = logging.getLogger(__name__)
 
 try:
     import redis
@@ -72,8 +73,8 @@ class RedisClient:
             try:
                 client_snapshot.ping()
                 return client_snapshot
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("redis_client.client: %s", e)
 
         # 慢路径：需要重建连接，加锁保护
         with self._lock:
@@ -105,8 +106,8 @@ class RedisClient:
             if self._client:
                 try:
                     self._client.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("redis_client.reset: %s", e)
             self._client = None
 
     def execute(self, func_name: str, *args, **kwargs):

@@ -1,19 +1,8 @@
-"""Worker 主进程 — 注册全部服务方法并启动 IPC 服务.
-
-注册方法:
-    registry.set_enabled, registry.is_enabled, registry.get_all, registry.auto_register
-    registry.stats, registry.get_entry, registry.remove_entry
-    module.reload, module.unload
-    ai.chat, dedup.check, dedup.add, audit.record, stats.report, ping
-
-启动方式:
-    python -m core.ipc.worker <socket_path> [--data-path <path>]
-"""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+_log = logging.getLogger(__name__)
 import sys
 import time
 from typing import Optional
@@ -237,15 +226,15 @@ def main() -> None:
             try:
                 while True:
                     await asyncio.sleep(3600)
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("worker.run: %s", e)
             finally:
                 if file_watcher_task:
                     file_watcher_task.cancel()
                     try:
                         await file_watcher_task
-                    except asyncio.CancelledError:
-                        pass
+                    except asyncio.CancelledError as e:
+                        _log.debug("worker.run: %s", e)
 
     try:
         asyncio.run(run())

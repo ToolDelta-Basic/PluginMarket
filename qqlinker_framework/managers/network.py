@@ -1,30 +1,3 @@
-"""统一网络连接管理器 (NetworkManager)
-
-═══════════════════════════════════════════════════════════════════════════
-职责:
-  1. HTTP 客户端 — 统一 aiohttp session 管理、连接池、超时控制
-  2. WebSocket 连接 — 自动重连、心跳维持（委托给现有的 WsClient）
-  3. 重试策略 — 指数退避，从 重试策略.py 加载
-  4. 熔断保护 — 每个目标 host 独立熔断，从 熔断器.py 加载
-  5. SSRF 防护 — 内网地址检测、黑名单域名过滤
-
-使用方式:
-  # 通过 services 获取
-  net = services.get("network")
-  data = await net.http_get("https://api.example.com/data")
-  resp = await net.http_post("https://api.example.com/submit", json={...})
-
-  # 创建独立 session（连接池）
-  session = net.create_session(base_url="https://api.siliconflow.cn", pool_size=5)
-
-设计原则:
-  - 所有 HTTP 方法自动应用重试策略 + 熔断保护
-  - 熔断器按 host 维度隔离（不同 API 互不影响）
-  - 超时控制：总超时 + 连接超时 + 读超时，可从配置读取
-  - SSRF 防护：内网 IP 和黑名单域名自动拦截（可配置关闭）
-  - 与现有 WsClient 并存：WS 管理仍由 core/host.py 中的 WsClient 处理
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import asyncio
@@ -531,8 +504,8 @@ class NetworkManager:
                     try:
                         raw = await resp.read()
                         text_preview = raw[:200].decode("utf-8", errors="replace")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _log.warning("network.network: %s", e)
                     # 关闭错误响应
                     resp.release()
 
@@ -568,8 +541,8 @@ class NetworkManager:
                     try:
                         raw = await resp.read()
                         text_preview = raw[:200].decode("utf-8", errors="replace")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _log.warning("network.network: %s", e)
                     resp.release()
                     raise aiohttp.ClientResponseError(
                         request_info=resp.request_info,

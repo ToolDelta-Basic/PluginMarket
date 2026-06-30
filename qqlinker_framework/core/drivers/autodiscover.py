@@ -1,26 +1,7 @@
-"""模块自动发现引擎 — 支持 Python 包扫描 + 文件目录扫描 + 远程下载。
-
-模块存放路径（按优先级）:
-  1. 内置模块: qqlinker_framework/modules/ 包（安装时自带）
-  2. 外部模块: {data_path}/插件数据文件/模块源件/*.py（用户自行放置）
-  3. 远程模块: 通过 qqdeps module add <url> 下载安装
-
-约定了两种模块格式:
-  A) 独立 .py 文件:   模块源件/my_mod.py（含一个 Module 子类）
-  B) 目录包:          模块源件/<模块名>/ 目录下含 module.json 和模块代码
-
-  module.json 示例:
-  {
-    "name": "my_module",
-    "version": "1.0.0",
-    "author": "...",
-    "description": "...",
-    "entry": "__init__.py"
-  }
-"""
 import ast
 import importlib
 import logging
+_log = logging.getLogger(__name__)
 import pkgutil
 import re
 from typing import Dict, List, Optional, Type
@@ -302,8 +283,8 @@ def discover_from_files(data_path: str) -> List[Type[Module]]:
                 try:
                     with open(manifest, "r", encoding="utf-8") as f:
                         _json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("autodiscover.autodiscover: %s", e)
             # 扫描目录下所有 .py 文件
             for root, _, files in _os.walk(full):
                 for f in files:
@@ -343,8 +324,8 @@ def _load_py_file(filepath: str) -> Optional[Type[Module]]:
                 filepath, file_size, _MAX_MODULE_FILE_SIZE,
             )
             return None
-    except OSError:
-        pass  # 无法获取大小不阻止加载
+    except OSError as e:
+        _log.debug("autodiscover._load_py_file: %s", e)  # 无法获取大小不阻止加载
 
     # ── 安全检查 3: AST 扫描危险调用 ──
     try:
@@ -511,8 +492,8 @@ def list_external_modules(data_path: str) -> List[Dict[str, str]]:
                 try:
                     with open(manifest, "r", encoding="utf-8") as f:
                         info = _json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("autodiscover.list_external_modules: %s", e)
             result.append({
                 "name": entry,
                 "type": "package",
@@ -571,8 +552,8 @@ def _load_external_uids() -> dict:
         try:
             with open(fpath, "r") as f:
                 return _json.load(f)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("autodiscover._load_external_uids: %s", e)
     return {}
 
 

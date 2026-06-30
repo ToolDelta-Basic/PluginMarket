@@ -1,14 +1,3 @@
-"""ConfigStore — 统一配置存储 (v6)
-
-替代旧版 ConfigManager 的分散配置文件管理。
-所有配置统一为 namespace → JSON 文件映射。
-
-用法:
-  store = ConfigStore(data_path="数据")
-  store.get("core.消息转发.游戏到群.是否启用")
-  store.set("module.forwarder.链接的群聊", [123456])
-  store.register_section("module.acg_image", defaults_dict)
-"""
 import json
 import logging
 import os
@@ -154,8 +143,8 @@ class ConfigStore:
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except (json.JSONDecodeError, IOError):
-                pass
+            except (json.JSONDecodeError, IOError) as e:
+                _log.warning("config_store._load_json_file: %s", e)
         return {}
 
     @staticmethod
@@ -175,8 +164,8 @@ class ConfigStore:
         except Exception:
             try:
                 os.unlink(tmppath)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("config_store._save_json_file: %s", e)
             raise
 
     @staticmethod

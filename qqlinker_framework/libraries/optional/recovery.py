@@ -1,7 +1,3 @@
-"""恢复引擎库 — 递归重启防护。
-
-依赖: config_store
-"""
 import logging
 import os
 import time

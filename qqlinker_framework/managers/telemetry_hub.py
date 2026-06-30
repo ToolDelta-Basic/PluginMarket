@@ -1,21 +1,3 @@
-"""TelemetryHub — 统一可观测性中心 (v6)
-
-从所有系统组件收集指标、做窗口聚合、触发告警。
-
-数据源:
-  - EventBus 消息吞吐量
-  - 命令执行次数/耗时（来自 CommandRouter）
-  - 资源违规（来自 ResourceGuardian）
-  - WS 连接状态/延迟（来自 WsClient）
-  - 模块健康评分（来自 HealthScorer）
-  - 消息发送量（来自 MessageManager）
-  - 系统资源（psutil）
-
-设计目标:
-  - record() 必须是 O(1) 操作，不阻塞事件循环
-  - MetricQuery 纯 Python 实现，不依赖 numpy/pandas
-  - 告警规则可配置驱动
-"""
 import collections
 import logging
 import math
@@ -320,8 +302,8 @@ class TelemetryHub:
         if self.health_scorer:
             try:
                 health_summary = self.health_scorer.get_summary()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("telemetry_hub.summary: %s", e)
 
         return {
             "uptime_seconds": round(uptime, 1),

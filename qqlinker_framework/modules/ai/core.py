@@ -1,21 +1,3 @@
-"""AI 核心模块 v2：LLM 对话 + 工具体系 + 余额 + 群级记忆 + 上下文注入
-
-V2 新增:
-  - 上下文注入 (#sender_id, #sender_name, #group_id, #sender_uid)
-  - 工具体系（8 个工具，min_uid 控制可用性，sender_uid 决定可见集合）
-  - 工具调用循环（无需 ctx.reply，工具 loop 驱动输出）
-  - 对话记忆按群存储，共享上下文
-  - Balancer 余额系统（可选）
-  - ProactiveSpeaker 主动发言（可选）
-  - AI 模块自身 uid=100 (daemon)
-
-安全特性全保留:
-  - 三层速率限制（全局 + 每用户 + 每群组）
-  - 提示注入检测与拦截
-  - 输入长度上限 (2000 字符)
-  - IMAGE tag 数量限制 + URL 安全验证
-  - 完整审计日志记录
-"""
 import asyncio
 import json
 import logging
@@ -26,12 +8,14 @@ import traceback
 from typing import Callable, Dict, List, Optional, Tuple
 
 from ...core.module import Module
+from ...core.kernel.events import GroupMessageEvent
 from .llm_client import LLMClientFactory
 from .auditor import Auditor
 from .tools import register_all
 from .tools.safety import is_trusted_image_host, validate_url
 from .balance import Balancer
-from ...managers.ai_engine import AIEngine
+from ...engines.ai_engine import AIEngine
+_log = logging.getLogger(__name__)
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -416,7 +400,7 @@ class AICore(Module):
                               description="清除本群的对话记忆")
 
         self._root_services.register("llm_client", self.llm_factory)
-        self.listen("GroupMessageEvent", self.on_group_message, priority=10)
+        self.listen(GroupMessageEvent, self.on_group_message, priority=10)
 
         proactive_cfg = self.config.get("AI助手.主动发言", {}) or {}
         if proactive_cfg.get("是否启用", False):
@@ -449,16 +433,66 @@ class AICore(Module):
         try:
             debug = self.services.get("debug")
             await debug.register_module(self.name, {"stats": _dbg_stats, "convos": _dbg_convos})
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("core._dbg_convos: %s", e)
+
+        # v1.7: 注册命令帮助
+        try:
+            help_svc = self.services.try_get("help_service")
+            if help_svc:
+                triggers = self.config.get("AI助手.触发词", ["/ai", ".问"])
+                primary_trigger = triggers[0] if triggers else ".问"
+                all_triggers = ", ".join(triggers)
+                help_svc.register_help(".ai", {
+                    "description": f"AI 助手 — 通过 {all_triggers} 或 .ai 与 LLM 对话",
+                    "usage": ".ai <提问|余额|统计|充值|主动发言|温度|画像|评估|梦境|记忆> [参数]",
+                    "examples": [
+                        ".ai 提问 今天天气怎么样",
+                        ".ai 余额",
+                        ".ai 温度 0.8",
+                        ".ai 画像 查看",
+                    ],
+                    "sub_commands": [
+                        ("提问 <问题>", "向 AI 提问"),
+                        ("余额 [查看|充值 <QQ> <数量>]", "Token 余额管理"),
+                        ("统计", "查看 AI 调用统计"),
+                        ("充值 <QQ> <数量>", "为指定用户充值 token（管理员）"),
+                        ("主动发言 [开|关|状态]", "控制 AI 主动发言"),
+                        ("温度 [数值]", "设置或查看 LLM 温度"),
+                        ("画像 <查看|设置> [参数]", "用户画像管理"),
+                        ("评估 <消息>", "评估消息意图"),
+                        ("梦境", "让 AI 分享一个随机想法"),
+                        ("记忆 <查看|清除>", "对话记忆管理"),
+                    ],
+                    "aliases": list(triggers),
+                    "module": "ai_core",
+                    "see_also": [".删除记忆", ".清除记忆", ".清除我的记忆"],
+                })
+                help_svc.register_help(".删除记忆", {
+                    "description": "删除指定群的长期记忆（管理员）",
+                    "usage": ".删除记忆 <群号>",
+                    "module": "ai_core",
+                })
+                help_svc.register_help(".清除记忆", {
+                    "description": "清除所有群的长期记忆（管理员）",
+                    "usage": ".清除记忆",
+                    "module": "ai_core",
+                })
+                help_svc.register_help(".清除我的记忆", {
+                    "description": "清除本群的对话记忆",
+                    "usage": ".清除我的记忆",
+                    "module": "ai_core",
+                })
+        except Exception as e:
+            _log.debug("ai_core help register: %s", e)
 
     async def on_stop(self):
         if self._proactive_task and not self._proactive_task.done():
             self._proactive_task.cancel()
             try:
                 await self._proactive_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("core.on_stop: %s", e)
 
     # ═══════════════════════════════════════════════════════════
     # 公共方法
@@ -763,8 +797,8 @@ class AICore(Module):
                     case["filter_layer"] = "LLM"
                     case["llm_reason"] = llm_reason[:200]
                 await audit.add_case(case)
-        except (KeyError, AttributeError):
-            pass
+        except (KeyError, AttributeError) as e:
+            _log.debug("core._record_injection_attempt: %s", e)
 
     async def _audit_llm_check(self, ctx, question: str):
         try:
@@ -790,8 +824,8 @@ class AICore(Module):
                     f"{history_summary}\n当前用户消息：{question[:500]}")
                 return await audit.check_message(
                     ctx.user_id, getattr(ctx, "group_id", 0), prompt)
-        except (KeyError, AttributeError):
-            pass
+        except (KeyError, AttributeError) as e:
+            _log.debug("core._audit_llm_check: %s", e)
         return None
 
     def _build_system_prompt(self, sender_uid: int) -> str:
@@ -905,8 +939,8 @@ class AICore(Module):
         if not history:
             try:
                 os.remove(path)
-            except FileNotFoundError:
-                pass
+            except FileNotFoundError as e:
+                _log.debug("core._save_group_memory_file: %s", e)
             return
         try:
             def _write():
@@ -1005,8 +1039,8 @@ class AICore(Module):
             self.conversation_last_active.pop(target_gid, None)
         try:
             os.remove(self._group_memory_file_path(target_gid))
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            _log.debug("core._cmd_del_memory: %s", e)
         await ctx.reply(f"已清除群 {target_gid} 的对话记忆。")
 
     async def _cmd_clear_memory(self, ctx):
@@ -1028,8 +1062,8 @@ class AICore(Module):
             self.conversation_last_active.pop(ctx.group_id, None)
         try:
             os.remove(self._group_memory_file_path(ctx.group_id))
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            _log.debug("core._cmd_clear_my_memory: %s", e)
         await ctx.reply("已清除本群的对话记忆。")
 
     async def _cmd_balance(self, ctx):

@@ -1,25 +1,3 @@
-"""模块健康评分系统 (Module Health Scorer) — QQLinker v5
-
-为每个模块维护一个健康评分（0-100），根据运行状态动态调整。
-
-评分维度（各占 25 分）:
-  - 稳定性 (stability): 启动成功率、运行时长
-  - 性能 (performance): 命令平均执行时间
-  - 资源 (resource): 频率违规次数、消息发送量
-  - 异常 (error): 异常次数、降级次数
-
-评分等级:
-  80-100: 健康 ✅
-  60-79:  注意 ⚠️
-  40-59:  降级 🔶
-  0-39:   不健康 🔴
-
-集成点:
-  - host.py: 初始化 HealthScorer，注册到 services
-  - routing.py: 命令执行成功/失败后通知 scorer
-  - resource_guardian.py: 违规时通知 scorer
-"""
-
 import json
 import logging
 import os

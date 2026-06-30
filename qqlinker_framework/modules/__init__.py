@@ -1,9 +1,2 @@
-"""云链群服互通框架 — 业务模块包
-
-子包结构:
-  game/      群服互通 (管理、转发、绑定、追踪、性能)
-  ai/        AI 智能 (对话、审核、安全、工具)
-  security/  安全反制 (猎户座桥接)
-  system/    系统功能 (帮助、人设、心跳)
-  logging/   聊天日志
-"""
+# modules package
+# 模块目录：ai/game/logging/security/system

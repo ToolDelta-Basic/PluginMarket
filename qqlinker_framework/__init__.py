@@ -1,8 +1,8 @@
 # __init__.py
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 
-"""云链群服互通框架 - ToolDelta 插件入口 (v1.5.1)
+"""云链群服互通框架 - ToolDelta 插件入口 (v1.7.0)
 
 启动方式:
   1. ToolDelta 环境 → 自动作为插件加载
@@ -13,6 +13,7 @@ __version__ = "1.6.0"
 import asyncio
 import json
 import logging
+_log = logging.getLogger(__name__)
 import os
 import sys
 import threading
@@ -31,7 +32,7 @@ def _bootstrap_integrity_check():
     _fatal_files = {
         "libraries/channel_host.py":  "信道框架启动器",
         "core/module.py":          "模块基类",
-        "core/kernel/bus.py":          "事件总线",
+        "libraries/core/lane_router.py":  "事件路由器",
         "core/kernel/services.py":     "服务容器",
         "管理/config_mgr.py":  "配置管理器",
         "管理/source_mgr.py":  "加载源管理器",
@@ -131,7 +132,7 @@ class QQLinkerFrameworkPlugin(Plugin):
     """群服互通框架插件入口，负责生命周期管理。"""
 
     name = "群服互通框架"
-    version = (1, 5, 0)
+    version = (1, 7, 0)
     author = "小石潭记qwq"
     description = "模块化群服互通框架 · 约定优于配置"
 
@@ -215,8 +216,8 @@ class QQLinkerFrameworkPlugin(Plugin):
             self._loop.run_until_complete(self._host.start())
             register_shutdown_callback(self._safe_shutdown)
             self._loop.run_forever()
-        except asyncio.CancelledError:
-            pass
+        except asyncio.CancelledError as e:
+            _log.debug("__init__._run_framework: %s", e)
         except Exception as e:
             logging.getLogger(__name__).critical(
                 "⚠ 框架运行异常: %s\n%s", e, traceback.format_exc())
@@ -231,20 +232,20 @@ class QQLinkerFrameworkPlugin(Plugin):
                 future = asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
                 try:
                     future.result(timeout=30)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("__init__._safe_shutdown: %s", e)
                 try:
                     self._loop.call_soon_threadsafe(self._loop.stop)
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e:
+                    _log.debug("__init__._safe_shutdown: %s", e)
+        except Exception as e:
+            _log.debug("__init__._safe_shutdown: %s", e)
         finally:
             try:
                 if self._loop and not self._loop.is_closed():
                     self._loop.close()
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("__init__._safe_shutdown: %s", e)
 
     async def soft_restart(self, reason: str = "") -> bool:
         """框架级软重启 — 停止旧线程 + 事件循环，重新创建并启动。
@@ -267,12 +268,12 @@ class QQLinkerFrameworkPlugin(Plugin):
                 try:
                     future = asyncio.run_coroutine_threadsafe(old_host.stop(), old_loop)
                     future.result(timeout=30)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("__init__.soft_restart: %s", e)
                 try:
                     old_loop.call_soon_threadsafe(old_loop.stop)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("__init__.soft_restart: %s", e)
 
             # 2. 等待旧线程结束
             if self._framework_thread and self._framework_thread.is_alive():
@@ -284,8 +285,8 @@ class QQLinkerFrameworkPlugin(Plugin):
             if old_loop and not old_loop.is_closed():
                 try:
                     old_loop.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.debug("__init__.__init__: %s", e)
 
             # 4. 重置状态
             self._loop = None
@@ -341,12 +342,12 @@ class QQLinkerFrameworkPlugin(Plugin):
             future = asyncio.run_coroutine_threadsafe(self._host.stop(), self._loop)
             try:
                 future.result(timeout=30)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("__init__.on_def: %s", e)
             try:
                 self._loop.call_soon_threadsafe(self._loop.stop)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("__init__.on_def: %s", e)
         if self._framework_thread and self._framework_thread.is_alive():
             self._framework_thread.join(timeout=5)
 

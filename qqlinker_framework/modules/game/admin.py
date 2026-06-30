@@ -1,13 +1,3 @@
-"""游戏管理指令模块：玩家列表、指令执行、脚本串联、白名单校验。
-
-提供命令:
-  .在线 — 查看在线玩家列表
-  .指令   — 执行单条游戏指令（管理员）
-  .执行   — 批量执行多条指令（管理员）
-
-所有指令通过白名单+危险参数过滤实现安全控制。
-所有管理员命令执行写入审计日志。
-"""
 from ...core.module import Module
 from ...core.kernel.decorators import command
 
@@ -73,8 +63,8 @@ class GameAdmin(Module):
                 self.name,
                 {"stats": _dbg_stats, "config": _dbg_config},
             )
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("admin._dbg_config: %s", e)
 
         self.register_command(
             ".在线", self.cmd_list, description="查看在线玩家列表"
@@ -89,6 +79,31 @@ class GameAdmin(Module):
             description="执行多条游戏指令，用 / 分隔（管理员）",
             op_only=True, argument_hint="<指令1/指令2/...>"
         )
+
+        # v1.7: 注册命令帮助
+        try:
+            help_svc = self.services.try_get("help_service")
+            if help_svc:
+                help_svc.register_help(".在线", {
+                    "description": "查看在线玩家列表",
+                    "usage": ".在线",
+                    "examples": [".在线"],
+                    "module": "game_admin",
+                })
+                help_svc.register_help(".指令", {
+                    "description": "执行单条游戏指令（管理员）",
+                    "usage": ".指令 <游戏命令>",
+                    "examples": [".指令 list", ".指令 say 你好"],
+                    "module": "game_admin",
+                })
+                help_svc.register_help(".执行", {
+                    "description": "执行多条游戏指令，用 / 分隔（管理员）",
+                    "usage": ".执行 <指令1/指令2/...>",
+                    "examples": [".执行 say 你好/give @a diamond 1"],
+                    "module": "game_admin",
+                })
+        except Exception as e:
+            _log.debug("game_admin help register: %s", e)
 
     def _get_cfg(self):
         """获取游戏管理配置节。"""

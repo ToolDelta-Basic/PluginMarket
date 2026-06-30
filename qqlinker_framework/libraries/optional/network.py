@@ -1,7 +1,3 @@
-"""网络库 — 多机器人 + SendGuard + LoadBalancer（骨架）。
-
-依赖: ws_client, config_store
-"""
 import logging
 from ..channel_host import Library
 

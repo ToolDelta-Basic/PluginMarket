@@ -1,17 +1,3 @@
-"""统一重试策略定义 — 指数退避 + 可重试错误分类。
-
-═══════════════════════════════════════════════════════════════════════════
-用途:
-  - NetworkManager 的 http_get / http_post 自动应用此策略
-  - 模块也可直接实例化用于自定义 HTTP 调用
-  - 非幂等操作（POST/PUT）默认不重试，可显式设置 allow_post_retry=True
-
-设计:
-  - 指数退避: delay = backoff_base × backoff_factor^attempt，上限 max_backoff
-  - 抖动: ±25% 随机抖动防止雷群效应
-  - 可重试条件: 连接错误、超时、服务器 5xx、429 限流
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import asyncio

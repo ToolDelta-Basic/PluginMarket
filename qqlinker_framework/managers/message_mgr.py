@@ -1,10 +1,7 @@
-"""消息管理器
-
-v2.0: 消息发送超时保护 — _dispatch 添加 asyncio.wait_for(timeout=5.0)
-"""
 import asyncio
 import time
 import logging
+_log = logging.getLogger(__name__)
 from enum import IntEnum
 from typing import Optional
 
@@ -62,8 +59,8 @@ class MessageManager:
             self._worker_task.cancel()
             try:
                 await self._worker_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("message_mgr.stop: %s", e)
 
     async def send_group(
         self,

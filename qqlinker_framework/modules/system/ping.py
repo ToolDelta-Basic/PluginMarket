@@ -1,6 +1,7 @@
-"""测试模块，提供 .ping 命令。"""
 from ...core.module import Module
 from ...core.kernel.decorators import command
+import logging
+_log = logging.getLogger(__name__)
 
 
 class DummyModule(Module):
@@ -25,8 +26,8 @@ class DummyModule(Module):
             await debug.register_module(
                 self.name, {"ping": _dbg_ping}
             )
-        except (KeyError, PermissionError):
-            pass
+        except (KeyError, PermissionError) as e:
+            _log.debug("ping._dbg_ping: %s", e)
 
         print("[DummyModule] 初始化完成")
 

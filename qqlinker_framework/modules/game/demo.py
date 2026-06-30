@@ -1,32 +1,3 @@
-"""演示模式 — DemoRunner 约定
-
-═══ 设计原则 ═══
-  1. 硬编码返回：命令→回应的完整对话由开发者预先编写
-  2. 零副作用：不发真实命令，不触发框架路由
-  3. 自定义说明：每条回应可加括号注释，帮用户理解含义
-  4. 独立于平台：纯文本发送，不依赖命令路由
-
-═══ 用法 ═══
-  from qqlinker_framework.modules.game.demo import demo_scene, DemoContext
-
-  @demo_scene(name="我的演示", interval=3, description="展示核心功能")
-  async def my_demo(ctx: DemoContext):
-      await ctx.user("玩家A", ".ping")
-      await ctx.bot("Pong! (框架心跳检测，响应时间正常)")
-      await ctx.sleep(2)
-      await ctx.user("玩家B", ".在线")
-      await ctx.bot("当前在线: Player1, Player2 (游戏玩家列表)")
-
-  # .演示 列表  → 查看所有场景
-  # .演示 我的演示  → 执行
-
-═══ 安全 ═══
-  所有消息为硬编码文本，直接调 adapter.send_group_msg 发出
-  不进 EventBus，不触发命令路由，不经过规则引擎
-  零攻击面、零副作用
-
-  v1.3: 硬编码返回模式 — user() 发用户消息，bot() 发机器人回复
-"""
 import asyncio
 import logging
 import time

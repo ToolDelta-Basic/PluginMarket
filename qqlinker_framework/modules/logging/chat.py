@@ -1,10 +1,3 @@
-"""全局聊天日志服务，记录、查询所有群消息和游戏消息。
-
-安全特性:
-  - 敏感字段遮蔽（IP、token 等）
-  - 日志文件大小和保留天数可配置
-  - 防止磁盘耗尽
-"""
 import asyncio
 import os
 import json
@@ -16,6 +9,8 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 
 from ...core.module import Module
+from ...core.kernel.events import GroupMessageEvent, GameChatEvent
+_log = logging.getLogger(__name__)
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -84,10 +79,10 @@ def _get_dir_size_mb(dir_path: str) -> float:
             for f in files:
                 try:
                     total += os.path.getsize(os.path.join(root, f))
-                except OSError:
-                    pass
-    except OSError:
-        pass
+                except OSError as e:
+                    _log.debug("chat._get_dir_size_mb: %s", e)
+    except OSError as e:
+        _log.debug("chat._get_dir_size_mb: %s", e)
     return total / (1024 * 1024)
 
 
@@ -200,8 +195,8 @@ class ChatLogService:
                         import shutil
                         shutil.rmtree(dirpath)
                         _logger.info("已清理过期日志目录: %s", dirname)
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    _log.debug("chat._cleanup_old_logs: %s", e)
 
             # ── 清理 2: 磁盘空间检查 ──
             total_size_mb = _get_dir_size_mb(base)
@@ -219,8 +214,8 @@ class ChatLogService:
                     try:
                         dir_date = datetime.strptime(dirname, "%Y%m%d")
                         dated_dirs.append((dir_date, dirpath))
-                    except ValueError:
-                        pass
+                    except ValueError as e:
+                        _log.debug("chat.chat: %s", e)
                 dated_dirs.sort(key=lambda x: x[0])
                 # 保留最近几天的
                 while (len(dated_dirs) > max(2, self._retention_days) and
@@ -332,8 +327,8 @@ class GlobalChatLogModule(Module):
         )
         self._root_services.register("global_chat_log", self._service)
 
-        self.listen("GroupMessageEvent", self._on_group_msg, priority=0)
-        self.listen("GameChatEvent", self._on_game_chat, priority=0)
+        self.listen(GroupMessageEvent, self._on_group_msg, priority=0)
+        self.listen(GameChatEvent, self._on_game_chat, priority=0)
 
     async def _on_group_msg(self, event):
         """处理群消息事件，记录到日志。"""

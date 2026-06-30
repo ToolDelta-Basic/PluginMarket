@@ -1,4 +1,3 @@
-"""TPS 估算模块，通过定时执行 /list 命令测量服务器性能。"""
 import asyncio
 import time
 from collections import deque
@@ -6,6 +5,8 @@ from typing import Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
+import logging
+_log = logging.getLogger(__name__)
 
 
 class TPSService:
@@ -69,8 +70,8 @@ class TPSMonitorModule(Module):
             await debug.register_module(
                 self.name, {"tps": _dbg_tps}
             )
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("monitor._dbg_tps: %s", e)
 
         cfg = self.config.get("TPS监控")
         self._interval = cfg.get("测量间隔秒", 30)
@@ -106,8 +107,8 @@ class TPSMonitorModule(Module):
                     self._service.update(elapsed)
             except asyncio.CancelledError:
                 break
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("monitor._measure_loop: %s", e)
 
     @command(".性能")
     async def _cmd_tps(self, ctx):

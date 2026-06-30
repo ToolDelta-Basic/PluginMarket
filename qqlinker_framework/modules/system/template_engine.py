@@ -1,37 +1,11 @@
-"""配置模板引擎 — 定义/加载/校验/切换配置模板。
-
-模板是配置节的校验规则载体，不包含实际配置值（隐私节除外）。
-隐私节（标记为 private）的值永不读取、永不覆盖，必须由用户手动设置。
-
-模板类型:
-  保守   — 最少配置，仅核心互通 (地址+令牌)
-  默认   — 推荐默认配置
-  激进   — 全部功能启用
-  调试   — 开发/测试用，打开调试开关
-
-存储:
-  内置模板: core/ipc/templates/ (源码目录)
-  外部/市场模板: data/模板/
-
-模板 JSON 结构:
-{
-  "name": "默认配置",
-  "version": "1.0",
-  "type": "default",
-  "description": "...",
-  "sections": {
-    "网络连接": {"地址": "required", "令牌": "private"},
-    "消息转发": {"链接的群聊": "optional"},
-    "AI助手": {"API密钥": "private"}
-  }
-}
-"""
 import json
 import logging
 import os
 import shutil
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+
+from ...libraries.core.engine import Engine, EngineConfig
 
 _log = logging.getLogger(__name__)
 
@@ -104,16 +78,29 @@ _BUILTIN_TEMPLATES: Dict[str, dict] = {
 # TemplateEngine
 # ═══════════════════════════════════════════════════════════
 
-class TemplateEngine:
-    """配置模板引擎：加载、校验、切换。"""
+class TemplateEngine(Engine):
+    """配置模板引擎：加载、校验、切换。
 
-    def __init__(self, data_dir: str, config_mgr):
+    挂载 config 库提供配置管理能力，对外提供 "template" 服务。
+    """
+
+    config = EngineConfig(
+        name="template_engine",
+        version="1.0.0",
+        mounts=["config"],
+        pipeline=["load", "validate", "apply"],
+        provides=["template"],
+    )
+
+    def __init__(self, data_dir: str = "", config_mgr=None, services=None, event_bus=None):
+        super().__init__(services, event_bus)
         self._data_dir = data_dir
-        self._templates_dir = os.path.join(data_dir, TEMPLATES_DIR)
-        self._backups_dir = os.path.join(data_dir, BACKUPS_DIR)
+        self._templates_dir = os.path.join(data_dir, TEMPLATES_DIR) if data_dir else ""
+        self._backups_dir = os.path.join(data_dir, BACKUPS_DIR) if data_dir else ""
         self._config_mgr = config_mgr
-        os.makedirs(self._templates_dir, exist_ok=True)
-        os.makedirs(self._backups_dir, exist_ok=True)
+        if data_dir:
+            os.makedirs(self._templates_dir, exist_ok=True)
+            os.makedirs(self._backups_dir, exist_ok=True)
 
     # ── 加载 ──
 
@@ -140,8 +127,8 @@ class TemplateEngine:
                         "type": tpl.get("type", "?"),
                         "file": fname,
                     })
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("template_engine.list_external: %s", e)
         return result
 
     def get_template(self, name_or_file: str) -> Optional[dict]:
@@ -300,6 +287,22 @@ class TemplateEngine:
         active_file = os.path.join(self._data_dir, ".active_template")
         with open(active_file, 'w') as f:
             f.write(name)
+
+    # ═══════════════════════════════════════════════════════════
+    # Engine 生命周期
+    # ═══════════════════════════════════════════════════════════
+
+    async def ignite(self) -> None:
+        """启动引擎 — 验证 config 库已挂载。"""
+        if not self._verify_mounts():
+            _log.warning(
+                "模板引擎启动: config 库未就绪，继续以降级模式运行"
+            )
+        _log.info("模板引擎已启动 v%s", self.config.version)
+
+    async def extinguish(self) -> None:
+        """停止引擎。"""
+        _log.info("模板引擎已停止")
 
 
 # ═══════════════════════════════════════════════════════════

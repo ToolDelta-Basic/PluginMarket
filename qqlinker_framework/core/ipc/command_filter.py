@@ -1,9 +1,3 @@
-"""命令安全过滤器 — 解析 MC 命令并检查权限。
-
-支持 Bedrock Edition 命令格式（可能没有 / 前缀），
-处理 /execute 嵌套链，检查危险命令和参数安全性。
-"""
-
 from __future__ import annotations
 
 import re

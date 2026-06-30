@@ -1,10 +1,5 @@
-"""基于 RedisBloom 的布隆过滤器封装。
-
-安全特性:
-  - 假阳性率日志警告
-  - 最大元素数限制防止退化
-"""
 import logging
+_log = logging.getLogger(__name__)
 import time
 from .redis_client import RedisClient
 from .config import DedupConfig
@@ -94,9 +89,9 @@ class BloomFilter:
                             "布隆过滤器接近满载: %d/%d (%.1f%%), 建议增加容量",
                             size, capacity, load_factor * 100,
                         )
-        except Exception:
+        except Exception as e:
             # RedisBloom 可能不可用或命令不支持，静默降级
-            pass
+            _log.debug("bloom_filter.bloom_filter: %s", e)
 
     def _check_element_limit(self) -> None:
         """检查布隆过滤器元素数是否超过最大限制。

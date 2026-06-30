@@ -1,10 +1,3 @@
-"""AI 审计增强模块:使用 LLM 进行输入前反思与输出后合规检查。
-
-安全特性:
-  - Unicode 同形字检测（Cyrillic 字母冒充 Latin 字母）
-  - 输入香农熵 / 重复率检测（padding 绕过检测）
-  - 独立默认审核级别（不与 _pre_reflection_level 耦合）
-"""
 import math
 import os
 import json
@@ -14,6 +7,9 @@ import logging
 from typing import List, Dict, Optional
 
 from ...core.module import Module
+from ...core.kernel.events import (
+    AIPrePromptReflectionEvent, AIPostResponseReflectionEvent,
+)
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -367,12 +363,12 @@ class AIAuditEnhanceModule(Module):
         )
 
         self.listen(
-            "AIPrePromptReflectionEvent",
+            AIPrePromptReflectionEvent,
             self._on_pre_reflection,
             priority=10,
         )
         self.listen(
-            "AIPostResponseReflectionEvent",
+            AIPostResponseReflectionEvent,
             self._on_post_reflection,
             priority=10,
         )

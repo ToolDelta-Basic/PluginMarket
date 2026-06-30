@@ -1,4 +1,3 @@
-"""玩家坐标追踪与分布图模块，通过适配器通用接口获取坐标。"""
 import asyncio
 import base64
 import io
@@ -10,6 +9,7 @@ from typing import Dict, Any, Optional, List
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
+_log = logging.getLogger(__name__)
 
 try:
     from PIL import Image, ImageDraw
@@ -138,8 +138,8 @@ class PlayerTrackerModule(Module):
             await debug.register_module(
                 self.name, {"positions": _dbg_positions}
             )
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("tracker._dbg_positions: %s", e)
 
         cfg = self.config.get("玩家分布图")
         max_snapshots = cfg.get("最大快照数", 100)

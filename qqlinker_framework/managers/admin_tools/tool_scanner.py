@@ -1,21 +1,3 @@
-"""工具扫描 — 从 数据/管理工具/ 目录扫描 JSON 工作流定义并支持热加载
-
-═══════════════════════════════════════════════════════════════════════════
- 功能
-═══════════════════════════════════════════════════════════════════════════
- · 扫描 数据/管理工具/*.json 工作流定义文件
- · 支持热加载 — 文件变化时自动重载（基于 FileWatcher 或定时扫描）
- · 文件校验 — JSON 格式、步骤完整性、模块存在性
- · 新旧工作流同步 — 删除文件自动注销对应工作流
- · 目录监听 — 基于 inotify 或轮询的文件变化监控
-
- 使用:
-   1. 将 JSON 工作流文件放入 数据/管理工具/ 目录
-   2. FrameworkHost 启动时自动加载
-   3. 运行时使用 管理工具.重载 命令手动热重载
-   4. 启用 FileWatcher 时自动检测文件变化
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import asyncio
@@ -29,6 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from .admin_tools import AdminToolManager
 from qqlinker_framework.managers.admin_tools.workflow_registry import WorkflowDefinition, WorkflowStep, FailStrategy
+from ...libraries.core.scanner import Scanner
 
 _log = logging.getLogger(__name__)
 
@@ -193,10 +176,9 @@ def validate_directory(
         _log.warning("管理工具目录不存在: %s", scan_dir)
         return results
 
-    for fname in sorted(os.listdir(scan_dir)):
-        if not fname.endswith(".json"):
-            continue
-        path = os.path.join(scan_dir, fname)
+    scanner = Scanner(scan_dir)
+    for path in scanner.find("*.json"):
+        fname = path.name
         result = ValidationResult()
 
         try:
@@ -265,18 +247,9 @@ class FileWatcher:
 
     def _scan(self) -> Dict[str, float]:
         """扫描目录返回 {filename: mtime} 映射。"""
-        state: Dict[str, float] = {}
-        if not os.path.isdir(self._watch_dir):
-            return state
-        suffix = self._pattern.lstrip("*")
-        for fname in os.listdir(self._watch_dir):
-            if fname.endswith(suffix):
-                path = os.path.join(self._watch_dir, fname)
-                try:
-                    state[fname] = os.path.getmtime(path)
-                except OSError:
-                    state[fname] = 0.0
-        return state
+        scanner = Scanner(self._watch_dir)
+        results = scanner.find(self._pattern, track_mtime=True)
+        return {p.name: mtime for p, mtime in results}
 
     async def start(self) -> None:
         """启动文件监控循环。"""
@@ -325,8 +298,8 @@ class FileWatcher:
             self._task.cancel()
             try:
                 await self._task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("tool_scanner.stop: %s", e)
         self._task = None
         _log.info("FileWatcher 已停止")
 
@@ -370,9 +343,9 @@ async def setup_file_watcher(
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(_async_rescan(admin_tool, filename, event_type))
-        except RuntimeError:
+        except RuntimeError as e:
             # 没有运行中的事件循环，下次定时扫描会捡起
-            pass
+            _log.warning("tool_scanner.on_file_change: %s", e)
 
     watcher = FileWatcher(
         watch_dir=scan_dir,

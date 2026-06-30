@@ -1,5 +1,4 @@
 # pylint: disable=protected-access
-"""声明式装饰器 — 支持命令、事件、工具、定时任务的声明式注册。"""
 from typing import Any, Callable
 
 
@@ -31,6 +30,8 @@ def command(
     argument_hint: str = "",
     cooldown: float | None = None,
     min_uid: int = 400,
+    rule_accessible: bool = False,
+    hidden: bool = False,
 ):
     """标记方法为命令处理器。
 
@@ -62,23 +63,25 @@ def command(
             "argument_hint": argument_hint,
             "cooldown": cooldown,
             "min_uid": min_uid,
+            "rule_accessible": rule_accessible,
+            "hidden": hidden,
         }
         return func
     return decorator
 
 
-def listen(event_type: str, priority: int = 0):
+def listen(event_class: type, priority: int = 0):
     """标记方法为事件监听器。
 
     Args:
-        event_type: 事件类名（如 "GroupMessageEvent"）。
+        event_class: 事件类（如 GroupMessageEvent）。
         priority: 优先级，数值越高越早执行。
     """
 
     def decorator(func: Callable):
         """内部装饰器: 将事件元信息附加到函数 _event_info 属性。"""
         func._event_info = {
-            "event_type": event_type,
+            "event_type": event_class,
             "priority": priority,
         }
         return func

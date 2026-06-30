@@ -1,35 +1,19 @@
-"""CMD 交互式命令会话引擎 + 命令实现 (kernel_cmds)
-
-═══════════════════════════════════════════════════════════════════════════
-CMD 会话是轮询式的管理控制台：
-
- 1. 用户输入 .cmd 进入 CMD 会话
- 2. 后续以 '.' 开头的消息在当前会话中处理
- 3. .exit / .quit 退出，或 300s 无输入自动超时
-
-内置命令:
- .kill — 杀死/卸载模块（v7: 持久化写入注册表）
- .grant — 提升模块级别
- .revoke — 降级模块到 nobody
- .ulist — 列出所有模块
- .help — 帮助信息
- .exit — 退出会话
-
-权限: 仅 uid=0（终端持有者）或被授权的管理员可进入 .cmd
-═══════════════════════════════════════════════════════════════════════════
-"""
 import asyncio
 import inspect
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 from typing import TYPE_CHECKING
+
+_CQ_RE = re.compile(r'\[CQ:[^\]]+\]')
 
 if TYPE_CHECKING:
     from ...libraries.channel_host import ChannelHost as FrameworkHost
 
 from ...core.module import Module
 from ...core.kernel.decorators import command, listen
+from ...core.kernel.events import GroupMessageEvent
 
 _log = logging.getLogger(__name__)
 
@@ -186,8 +170,8 @@ class CmdSession:
         from ..core.drivers.autodiscover import grant_external_module_uid
         try:
             grant_external_module_uid(target_name, new_uid)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_cmds.kernel_cmds: %s", e)
 
         # 刷新模块视图
         mod.refresh_view(new_uid, self.host.services)
@@ -208,8 +192,8 @@ class CmdSession:
         from ..core.drivers.autodiscover import revoke_external_module_uid
         try:
             revoke_external_module_uid(target_name)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_cmds._cmd_revoke: %s", e)
         mod.refresh_view(400, self.host.services)
         return f"✓ 模块 '{target_name}' 授权已撤销 → nobody(400)"
 
@@ -335,8 +319,8 @@ class KernelCMDsModule(Module):
         host = None
         try:
             host = self._root_services.get("_host")
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_cmds._cmd_enter: %s", e)
         if host is None:
             await ctx.reply("✗ 框架主机引用不可用")
             return
@@ -477,7 +461,7 @@ class KernelCMDsModule(Module):
                     lines.append(f"    ... 等 {len(cmds)} 个")
             await ctx.reply("\n".join(lines))
 
-    @listen("GroupMessageEvent", priority=50)
+    @listen(GroupMessageEvent, priority=50)
     async def _on_cmd_input(self, event):
         session = self._sessions.get(event.user_id)
         if session is None:
@@ -486,7 +470,11 @@ class KernelCMDsModule(Module):
             del self._sessions[event.user_id]
             await self.message.send_group(event.group_id, "CMD 会话已超时自动关闭。")
             return
-        reply = await session.handle(event.message)
+        # 剥离 CQ 码后再交给 CMD 会话处理
+        clean_msg = _CQ_RE.sub('', event.message or '').strip()
+        if not clean_msg:
+            return
+        reply = await session.handle(clean_msg)
         event.handled = True
         await self.message.send_group(event.group_id, reply)
         if session.state == SessionState.EXITED:

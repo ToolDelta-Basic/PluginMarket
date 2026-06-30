@@ -1,9 +1,3 @@
-"""多层去重引擎：本地TTL缓存 + Redis + 布隆过滤器。
-
-全部使用标准库实现，零第三方依赖。
-- 本地 TTL 缓存：纯 Python 堆实现
-- Redis：可选（redis 包未安装时自动禁用，不影响本地去重）
-"""
 import time
 import hashlib
 import threading

@@ -1,8 +1,11 @@
 # managers/__init__.py — 管理层统一导出
-"""管理模块 — 框架所有管理类和驱动类的统一入口。
 
-通过 `from qqlinker_framework.managers import X` 导入所有管理类。
-"""
+# ── 引擎形式化基类 ──
+# 支持两种导入路径：包内调用（..libraries）和脚本直接导入（libraries）
+try:
+    from ..libraries.core.engine import Engine, EngineConfig, EngineRegistry
+except (ImportError, ValueError):
+    from libraries.core.engine import Engine, EngineConfig, EngineRegistry
 
 # ── 核心管理器 ──
 from .config_mgr import ConfigManager, register_config_bridge, TIER_KERNEL, UID_DAEMON, UID_SERVICE, UID_APP, UID_NOBODY
@@ -24,7 +27,7 @@ from .retry_policy import RetryPolicy
 from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig, CircuitBreakerOpenError, CircuitState
 
 # ── AI 引擎 ──
-from .ai_engine import AIEngine
+from ..engines.ai_engine import AIEngine
 from .tool_policy import ToolPolicy, register_policy, unregister_policy, get_policy, filter_tools, READONLY_POLICY, NO_TOOLS_POLICY
 
 # ── 其他模块级管理器 ──
@@ -35,6 +38,8 @@ from .rule_engine import RuleService, RuleEngineModule, RULE_MANAGE_UID, RULE_EX
 from .admin_tools import AdminToolManager
 
 __all__ = [
+    # 引擎形式化
+    "Engine", "EngineConfig", "EngineRegistry",
     # 核心管理器
     "ConfigManager", "register_config_bridge",
     "TIER_KERNEL", "UID_DAEMON", "UID_SERVICE", "UID_APP", "UID_NOBODY",

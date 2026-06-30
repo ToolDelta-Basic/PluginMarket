@@ -1,13 +1,3 @@
-"""模块市场 REST API 处理器 — 列表/搜索/下载/上传/统计。
-
-安全特性:
-  - 上传文件名校验（禁止路径分隔符、..、特殊字符）
-  - 文件大小限制（10 MB）
-  - MIME 类型校验（仅允许 zip 或 application/octet-stream）
-  - ZipSlip 防护（拒绝符号链接、.. 路径、绝对路径）
-  - 拒绝 __pycache__ 和 .pyc 编译文件
-  - 上传速率限制（每 IP 每分钟 3 次）
-"""
 import http.server
 import json
 import logging
@@ -552,5 +542,5 @@ class MarketHandler(http.server.BaseHTTPRequestHandler):
         try:
             with open(self._downloads_file(), "w") as f:
                 json.dump(downloads, f)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("handler._record_download: %s", e)

@@ -1,13 +1,3 @@
-"""优先级锁 (PrioritizedLock) — 锁竞争防御
-
-UID 越小优先级越高，同等级随机获取。
-
-特性:
-  - 等待队列按优先级排序（UID 越小越优先）
-  - 同优先级的等待者随机选取（防饥饿）
-  - 可配置等待超时（默认 5s）
-  - 递归深度计数器防止死循环
-"""
 import asyncio
 import logging
 import random

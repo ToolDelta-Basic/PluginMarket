@@ -1,24 +1,3 @@
-"""工作流注册装饰器 — 声明式定义管理工具工作流
-
-═══════════════════════════════════════════════════════════════════════════
- 用法示例
-
-   from .admin_tools import AdminToolManager, WorkflowStep, FailStrategy
-
-   @admin_workflow(
-       name="全服维护",
-       description="踢出所有玩家、发公告、关服",
-       steps=[
-           WorkflowStep("踢出玩家", module="orion", method="kick_all", args_from_ctx=True),
-           WorkflowStep("发送公告", module="message", method="broadcast", args={"msg": "服务器维护中..."}),
-           WorkflowStep("关闭服务器", module="adapter", method="shutdown"),
-       ],
-       require_confirm=True,
-   )
-   async def maintenance(ctx):
-       pass  # 函数体可为空，纯声明式定义
-═══════════════════════════════════════════════════════════════════════════
-"""
 from __future__ import annotations
 
 import functools
@@ -166,8 +145,8 @@ def admin_command(
             admin_tool: Optional[AdminToolManager] = None
             try:
                 admin_tool = self.services.get("admin_tool")
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("workflow_registry.wrapper: %s", e)
 
             if admin_tool is None:
                 await ctx.reply("❌ 管理工具编排器未初始化")

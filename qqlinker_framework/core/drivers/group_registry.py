@@ -1,23 +1,3 @@
-"""模块组注册表 — 控制哪些模块组允许加载。
-
-持久化文件：注册表/模块组.json
-
-结构：
-{
-  "模块组": {
-    "system": {"启用": true, "保护": true, "描述": "系统功能模块组"},
-    "security": {"启用": true, "保护": true, "描述": "安全反制模块组"},
-    "ai": {"启用": true, "保护": false, "描述": "AI 智能核心模块组"},
-    "game": {"启用": true, "保护": false, "描述": "游戏互通模块组"},
-    "logging": {"启用": true, "保护": false, "描述": "日志记录模块组"}
-  }
-}
-
-保护机制：
-  - "保护": true 的组不可被用户禁用或卸载
-  - system 和 security 组始终受保护
-  - 首次发现新组自动签署启用
-"""
 import json
 import logging
 import os

@@ -1,14 +1,3 @@
-"""IPC 协议定义 — JSON 行协议.
-
-格式:
-    请求:  {"id":"uuid","method":"str","params":{...},"ts":float}
-    响应:  {"id":"uuid","result":{...}}
-    错误:  {"id":"uuid","error":{"code":int,"message":"str"}}
-    推送:  {"event":"str","data":{...}}   (无 id)
-
-注册表: REGISTRY = {}
-"""
-
 from __future__ import annotations
 
 import json

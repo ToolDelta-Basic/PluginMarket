@@ -1,4 +1,3 @@
-"""群级AI人设模块 — 提供 .群设 / .清除群设 命令，绑定到群聊而非用户。"""
 import json
 import os
 import logging

@@ -1,17 +1,3 @@
-"""自主封禁系统：基于游戏指令 + 本地记录实现封禁/解封/踢出。
-
-原猎户座插件不提供 API 入口，本模块使用游戏原生命令驱动封禁逻辑，
-配合 PlayerJoinEvent 监听实现进服自动拦截。
-
-命令:
-  .封禁 <玩家名> [原因] [时长分钟]  — 封禁玩家（管理员）
-  .解封 <玩家名>                      — 解除封禁（管理员）
-  .封禁列表                           — 查看封禁列表（管理员）
-  .踢出 <玩家名> [原因]              — 踢出玩家（管理员）
-
-所有封禁/解封/踢出操作写入审计日志。
-"""
-
 import json
 import logging
 import os
@@ -21,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from ...core.module import Module
 from ...core.kernel.decorators import command
+from ...core.kernel.events import PlayerJoinEvent
 
 _log = logging.getLogger(__name__)
 
@@ -76,16 +63,16 @@ class BanStore:
             )
             try:
                 os.remove(path)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("orion.get: %s", e)
             return None
         # 验证 record 是 dict（防止非 dict JSON 导致后续崩溃）
         if not isinstance(record, dict):
             _log.warning("封禁记录格式异常 %s，已移除", path)
             try:
                 os.remove(path)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("orion.get: %s", e)
             return None
         duration = record.get("duration", -1)
         # 防御性处理 duration <= 0：视为永久封禁（不过期）
@@ -96,8 +83,8 @@ class BanStore:
         if time.time() >= end_time:
             try:
                 os.remove(path)
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("orion.orion: %s", e)
             return None
         return record
 
@@ -140,8 +127,8 @@ class BanStore:
                 full = os.path.join(self._dir, fname)
                 try:
                     os.remove(full)
-                except OSError:
-                    pass
+                except OSError as e:
+                    _log.warning("orion.list_all: %s", e)
         return result
 
 
@@ -181,8 +168,8 @@ class OrionBridge(Module):
         try:
             debug = self.services.get("debug")
             await debug.register_module(self.name, {"status": _dbg_status})
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.warning("orion._dbg_status: %s", e)
 
         self._store = BanStore(self.data_dir)
 
@@ -190,7 +177,45 @@ class OrionBridge(Module):
         self._root_services.register("orion_bridge", self, mid=100,
                                _caller="qqlinker_framework.modules.security.orion")
 
-        self.listen("PlayerJoinEvent", self._on_player_join, priority=10)
+        self.listen(PlayerJoinEvent, self._on_player_join, priority=10)
+
+        # v1.7: 注册命令帮助
+        try:
+            help_svc = self.services.try_get("help_service")
+            if help_svc:
+                help_svc.register_help(".封禁", {
+                    "description": "封禁指定玩家（管理员）",
+                    "usage": ".封禁 <玩家名> [理由] [时长(秒)]",
+                    "examples": [
+                        ".封禁 hacker 破坏作弊 3600",
+                        ".封禁 cheater",
+                    ],
+                    "module": "orion_bridge",
+                    "see_also": [".解封", ".封禁列表", ".踢出"],
+                })
+                help_svc.register_help(".解封", {
+                    "description": "解封指定玩家（管理员）",
+                    "usage": ".解封 <玩家名>",
+                    "examples": [".解封 hacker"],
+                    "module": "orion_bridge",
+                    "see_also": [".封禁", ".封禁列表"],
+                })
+                help_svc.register_help(".封禁列表", {
+                    "description": "查看当前封禁列表（管理员）",
+                    "usage": ".封禁列表",
+                    "examples": [".封禁列表"],
+                    "module": "orion_bridge",
+                    "see_also": [".封禁", ".解封"],
+                })
+                help_svc.register_help(".踢出", {
+                    "description": "踢出指定玩家（管理员）",
+                    "usage": ".踢出 <玩家名> [理由]",
+                    "examples": [".踢出 laggy", ".踢出 spammer 刷屏"],
+                    "module": "orion_bridge",
+                    "see_also": [".封禁"],
+                })
+        except Exception as e:
+            _log.warning("orion help register: %s", e)
 
     # ── 机器可调用接口（其他模块绑定用）────────────────────
 

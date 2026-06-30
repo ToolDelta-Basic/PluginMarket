@@ -1,12 +1,9 @@
-"""通用输入清洗工具函数。
-
-提供 Minecraft 命令参数和玩家名的安全转义函数，
-防止字符串拼接导致的命令注入。
-"""
 import json
 import re
 import unicodedata
 from typing import List, Optional, Set
+import logging
+_log = logging.getLogger(__name__)
 
 # ── 禁止使用的 Minecraft 命令分隔符和危险字符 ──────────────
 
@@ -44,8 +41,8 @@ def _init_homoglyph_map() -> None:
     for homoglyph, ascii_char in pairs:
         try:
             _HOMOGLYPH_MAP[ord(homoglyph)] = ord(ascii_char)
-        except (TypeError, ValueError):
-            pass
+        except (TypeError, ValueError) as e:
+            _log.debug("sanitize._init_homoglyph_map: %s", e)
 
 
 _init_homoglyph_map()

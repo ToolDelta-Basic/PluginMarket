@@ -1,14 +1,8 @@
 # modules/ai/tools/generate_image.py
-"""图像生成工具（硅基流动）—— 返回 [IMAGE:url] 供 AI 核心解析发送
-
-安全特性:
-  - prompt 长度限制 500 字符
-  - 发送前安全审核检查（audit.check_message）
-  - 返回图片 URL 受信任域名验证
-"""
 import logging
 
 from .safety import is_trusted_image_host, sanitize_prompt
+_log = logging.getLogger(__name__)
 
 try:
     import aiohttp
@@ -51,9 +45,9 @@ def register_tools(tool_manager, **kwargs):
                         "图片生成被安全审核拦截: %s", audit_result
                     )
                     return "图片描述包含不安全内容，已被拦截"
-        except Exception:
+        except Exception as e:
             # audit 不可用或调用失败时不崩溃，继续执行
-            pass
+            _log.debug("image.image: %s", e)
 
         provider = config.get("硅基流动", {})
         address = provider.get("地址", "")

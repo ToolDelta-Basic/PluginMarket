@@ -1,11 +1,3 @@
-"""协议定义库 — 公共常量 + 事件类型 + UID 层级。
-
-注册服务: "protocol"
-依赖: 无
-
-模块通过 self.services.get("protocol") 获取所有公共定义，
-不需要 import 任何框架内部模块。
-"""
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional

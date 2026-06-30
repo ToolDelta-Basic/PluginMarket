@@ -1,10 +1,3 @@
-"""安全工具库 — sanitize / escape / homoglyph 检测。
-
-注册服务: "security"
-依赖: 无
-
-模块通过 self.services.get("security").sanitize_player_name(...) 使用。
-"""
 import re
 import unicodedata
 from typing import Set

@@ -1,24 +1,3 @@
-"""文件监控 Worker — 通过 IPC 通知主进程模块目录变化
-
-═══════════════════════════════════════════════════════════════════════════
- 设计
-═══════════════════════════════════════════════════════════════════════════
- · 作为 WorkerPool 的一个子进程运行
- · 通过 Unix socket IPC 与主进程通信
- · 调用 IPC 方法: registry.auto_register, registry.set_enabled 等
- · 检测变化后通过 IPC notify 推送事件到主进程
-
- 职责边界（子进程侧）:
-   - 扫描模块源件目录，检测新增/删除/修改
-   - 新模块自动注册到注册表（调用 registry.auto_register）
-   - 推送 MODULE_FILE_ADDED / MODULE_FILE_REMOVED / MODULE_FILE_CHANGED
-   - 不直接操作框架内部状态，全部通过 IPC
-
- 安全:
-   - 仅监控 .py 文件
-   - 通过 IPC 单向上报，不接触框架内核
-═══════════════════════════════════════════════════════════════════════════
-"""
 import asyncio
 import logging
 import os
@@ -203,8 +182,8 @@ class ModuleFileWatcher:
         # 清理
         try:
             await self._client.close()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.debug("file_watcher.file_watcher: %s", e)
         _log.info(
             "文件监控 Worker 已停止 (扫描=%d, 变化=%d)",
             self._scan_count, self._changes_detected,

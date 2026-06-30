@@ -1,14 +1,3 @@
-"""AI 记忆工具 — 让 AI 通过工具自主获取上下文，而非预加载。
-
-v1.4.3: 工具驱动上下文。AI 收到消息后先调用这些工具获取需要的信息，
-然后才回复。这大幅减少了每次请求的 token 消耗。
-
-工具:
-  get_recent_memory  — 获取最近的对话历史
-  get_long_memory    — 搜索长期记忆中的内容
-  get_persona        — 获取当前用户的角色设定
-"""
-
 import logging
 
 _log = logging.getLogger(__name__)

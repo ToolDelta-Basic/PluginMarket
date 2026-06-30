@@ -1,7 +1,3 @@
-"""模块市场库 — HTTP 服务（骨架）。
-
-依赖: config_store, module_loader
-"""
 import logging
 from ..channel_host import Library
 

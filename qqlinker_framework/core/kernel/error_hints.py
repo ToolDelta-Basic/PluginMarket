@@ -1,16 +1,3 @@
-"""用户友好的错误原因解释系统
-
-错误显示模式:
-  FRIENDLY (默认) — 只显示原因，隐藏技术堆栈
-  DEBUG           — 同时显示原因 + 完整 traceback
-
-优先级: --error-mode= 命令行 > QQLINKER_ERROR_MODE 环境变量 > config.json > 默认friendly
-
-使用:
-  from qqlinker_framework.core.error_hints import hint, ErrorMode
-  logger.error("连接失败: %s。%s", e, hint["WS_CONNECT_FAILED"])
-"""
-
 import logging
 import os
 import sys
@@ -179,8 +166,8 @@ class ErrorMode:
                 if cfg in ("调试", "debug", "Debug"):
                     cls._mode = cls.DEBUG
                     return cls._mode
-            except Exception:
-                pass
+            except Exception as e:
+                _log.debug("error_hints.current: %s", e)
         cls._mode = cls.FRIENDLY
         return cls._mode
 

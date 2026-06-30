@@ -1,14 +1,15 @@
-"""双向消息转发模块：游戏↔QQ群。
-
-安全加固:
-  - 游戏来源消息添加 [游戏] 来源标签前缀
-  - 消息转发添加 Unicode 同形字检测
-"""
 import asyncio
 import hashlib
 import logging
+_log = logging.getLogger(__name__)
+import re
 from ...core.module import Module
+from ...core.kernel.events import (
+    GameChatEvent, GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent,
+)
 from ...services.dedup import LayeredDedup
+
+_CQ_RE = re.compile(r'\[CQ:[^\]]+\]')
 
 
 class GameForwarder(Module):
@@ -64,15 +65,15 @@ class GameForwarder(Module):
             await debug.register_module(
                 self.name, {"stats": _dbg_stats}
             )
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("forwarder._dbg_stats: %s", e)
 
-        self.listen("GameChatEvent", self.on_game_chat)
+        self.listen(GameChatEvent, self.on_game_chat)
         self.listen(
-            "GroupMessageEvent", self.on_group_message, priority=-10
+            GroupMessageEvent, self.on_group_message, priority=-10
         )
-        self.listen("PlayerJoinEvent", self.on_player_join)
-        self.listen("PlayerLeaveEvent", self.on_player_leave)
+        self.listen(PlayerJoinEvent, self.on_player_join)
+        self.listen(PlayerLeaveEvent, self.on_player_leave)
 
     def _get_linked_groups(self) -> list[int]:
         """获取配置中链接的群号列表。"""
@@ -142,7 +143,11 @@ class GameForwarder(Module):
         cfg = self.config.get("消息转发.群到游戏", {})
         if not cfg.get("是否启用", True):
             return
-        msg = (event.message or "").strip()
+        raw_msg = (event.message or "").strip()
+        if not raw_msg:
+            return
+        # 剥离 CQ 码后做前缀匹配（避免 [CQ:at] 干扰黑名单检查）
+        msg = _CQ_RE.sub('', raw_msg).strip()
         if not msg:
             return
 

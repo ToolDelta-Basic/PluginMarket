@@ -1,12 +1,3 @@
-"""内核授权模块 — .grant 授权 UID、.exec 调用模块方法（root 独占）。
-
-uid=0 (root) — 只能由框架内核加载，不通过模块市场分发。
-
-安全约束:
-  - .grant 不允许授予 uid=0（root 只能在配置文件/启动参数中设置）
-  - .exec 只能调用标记了 @exec_exposed 的方法
-  - 所有 .exec 调用写入审计日志文件
-"""
 import hashlib
 import json
 import logging
@@ -195,8 +186,8 @@ class KernelAuthModule(Module):
                                 f"  {name} (uid={mod_uid}) "
                                 f"[{', '.join(exposed[:3])}]"
                             )
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("kernel_auth.kernel_auth: %s", e)
             hint = f"\U0001f6e0\ufe0f UID: {user_uid} | .exec <模块.方法> [参数]"
             if loaded:
                 hint += "\n可调用模块 (标记 @exec_exposed 的方法):\n" + "\n".join(loaded[:15])
@@ -213,8 +204,8 @@ class KernelAuthModule(Module):
         try:
             modules_svc = self.services.get("modules")
             target_mod = modules_svc.get(mod_name)
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_auth.kernel_auth: %s", e)
 
         if target_mod is None:
             await ctx.reply(f"\u274c 模块 '{mod_name}' 未加载")
@@ -299,8 +290,8 @@ class KernelAuthModule(Module):
             try:
                 if uid_int in [int(q) for q in admin_list if q]:
                     return 100
-            except (TypeError, ValueError):
-                pass
+            except (TypeError, ValueError) as e:
+                _log.warning("kernel_auth._get_user_uid: %s", e)
         return 400
 
     def _set_user_uid(self, user_id: int, new_uid: int):
@@ -328,8 +319,8 @@ class KernelAuthModule(Module):
         self.config.set("管理员.管理员QQ", admin_list)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_auth._ensure_admin: %s", e)
         _log.info("用户 %d 已加入管理员列表", user_id)
 
     def _remove_admin(self, user_id: int) -> None:
@@ -340,8 +331,8 @@ class KernelAuthModule(Module):
         self.config.set("管理员.管理员QQ", admin_list)
         try:
             self.services.get("config").save()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("kernel_auth._remove_admin: %s", e)
         _log.info("用户 %d 已从管理员列表移除", user_id)
 
     @command(".用户组", description="用户组管理 (root only)", min_uid=0)

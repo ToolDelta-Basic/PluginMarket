@@ -1,15 +1,6 @@
-"""随机二次元图片模块 — 直接通过 URL 发送 ACG 图片到 QQ 群
-
-安全特性:
-  - URL 验证（拒绝内网地址、仅允许 http/https）
-  - 内容类型预期为 image/*（由 OneBot 客户端处理）
-
-v2 新增:
-  - ACG 冷却限制：单群每分钟 + 单人每分钟（时间窗口计数器）
-  - ACG 余额制：可选消耗点数
-"""
 import collections
 import logging
+_log = logging.getLogger(__name__)
 import time
 from urllib.parse import urlparse
 
@@ -175,8 +166,8 @@ class ACGImageModule(Module):
 
             await debug.register_module(self.name, {"test": _dbg_test})
             logger.info("[acg_image] 调试端点已注册")
-        except KeyError:
-            pass
+        except KeyError as e:
+            _log.debug("acg_image._dbg_test: %s", e)
 
         for trigger in [".来张图", ".二次元", ".随机图片"]:
             self.register_command(

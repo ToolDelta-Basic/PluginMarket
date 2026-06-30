@@ -1,9 +1,3 @@
-"""共享安全工具函数：供所有 AI tool 复用的 URL/输入验证。
-
-提供:
-  - validate_url()      — SSRF 防护：内网拒绝、协议检查、长度限制
-  - sanitize_prompt()   — 输入清洗：长度截断 + 控制字符清理
-"""
 import ipaddress
 import re
 import urllib.parse

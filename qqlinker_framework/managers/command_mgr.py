@@ -1,4 +1,3 @@
-"""命令注册管理器"""
 from typing import Callable, Dict, List, Optional
 
 
@@ -22,6 +21,8 @@ class CommandManager:
         min_uid: int = 400,
         plugin_name: str = "core",
         method: str = "",
+        rule_accessible: bool = False,
+        hidden: bool = False,
     ):
         """注册一条命令。
 
@@ -40,6 +41,8 @@ class CommandManager:
             "cooldown": cooldown,
             "min_uid": min_uid,
             "plugin": plugin_name,
+            "rule_accessible": rule_accessible,
+            "hidden": hidden,
         }
         self._commands[trigger] = info
 

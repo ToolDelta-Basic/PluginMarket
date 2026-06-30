@@ -1,8 +1,3 @@
-"""模块加载库 — 模块发现 + 拓扑排序 + @command 装饰器扫描 + scope 注入。
-
-注册服务: "module_loader"
-依赖: config_store, command_registry, message_queue
-"""
 import importlib
 import importlib.util
 import inspect
@@ -42,8 +37,8 @@ class ModuleRegistry:
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump({"模块注册表": self._entries}, f, ensure_ascii=False, indent=2)
             os.replace(tmp, self._path)
-        except OSError:
-            pass
+        except OSError as e:
+            _log.warning("module_loader._save: %s", e)
 
     def is_enabled(self, name: str) -> bool:
         entry = self._entries.get(name)
@@ -241,8 +236,8 @@ class ModuleLoaderLibrary(Library):
                 grp = parent_pkg.MODULE_GROUP
                 if 'mid' in grp:
                     return grp['mid']
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("module_loader._resolve_mid: %s", e)
         return 300
 
     def _scan_decorators(self, mod, command_mgr) -> None:
@@ -274,6 +269,8 @@ class ModuleLoaderLibrary(Library):
                         cooldown=info.get('cooldown') or 0.0,
                         min_uid=min_uid,
                         plugin=getattr(mod, 'name', ''),
+                        rule_accessible=info.get('rule_accessible', False),
+                        hidden=info.get('hidden', False),
                     )
 
             # @listen 装饰器扫描：注册事件监听器
@@ -284,9 +281,14 @@ class ModuleLoaderLibrary(Library):
                 if not event_type:
                     continue
                 # 权限检查：非 root 模块只能订阅白名单事件
-                _ALLOWED = {'GroupMessageEvent', 'PlayerJoinEvent',
-                            'PlayerLeaveEvent', 'GameChatEvent',
-                            'PrivateMessageEvent', 'ConfigReloadEvent'}
+                from ...core.kernel.events import (
+                    GroupMessageEvent, PlayerJoinEvent,
+                    PlayerLeaveEvent, GameChatEvent,
+                    PrivateMessageEvent, ConfigReloadEvent,
+                )
+                _ALLOWED = {GroupMessageEvent, PlayerJoinEvent,
+                            PlayerLeaveEvent, GameChatEvent,
+                            PrivateMessageEvent, ConfigReloadEvent}
                 if mod.mid > 0 and event_type not in _ALLOWED:
                     _log.warning(
                         "模块 '%s' (mid=%d) 装饰器声明订阅受限事件 '%s'，已拒绝",
@@ -353,8 +355,8 @@ class ModulesService:
             if hasattr(mod, 'on_stop'):
                 try:
                     await mod.on_stop()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _log.warning("module_loader.freeze: %s", e)
             return True
         return False
 

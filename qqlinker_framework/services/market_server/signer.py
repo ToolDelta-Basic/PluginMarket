@@ -1,4 +1,3 @@
-"""模块市场签名工具 — HMAC-SHA256 签名/验证 + 时效性 + 防重放。"""
 import hashlib
 import hmac
 import time

@@ -1,18 +1,8 @@
-"""薄壳插件入口 — 在 ToolDelta 进程中运行，启动框架子进程并桥接 IPC。
-
-使用方式：
-    在 ToolDelta 插件的 on_def() 中调用 Shell.start()
-    Shell 会：
-    1. 生成随机 IPC token
-    2. 启动框架子进程（传入 socket 路径 + token）
-    3. 启动 IPC Server（持有 game_ctrl）
-    4. 等待框架进程连接
-"""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+_log = logging.getLogger(__name__)
 import os
 import secrets
 import subprocess
@@ -90,8 +80,8 @@ class Shell:
             self._monitor_task.cancel()
             try:
                 await self._monitor_task
-            except asyncio.CancelledError:
-                pass
+            except asyncio.CancelledError as e:
+                _log.debug("shell.stop: %s", e)
             self._monitor_task = None
 
         # 终止子进程

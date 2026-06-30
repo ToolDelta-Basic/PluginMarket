@@ -1,18 +1,3 @@
-"""群聊子配置管理器 — 继承模型 + 类型校验 + 字段自动传播 + 文件热重载 + v6 多文件分化
-
-═══════════════════════════════════════════════════════════════════════════
- 设计
-═══════════════════════════════════════════════════════════════════════════
- · 主配置 config.json                             → 默认值 + 参考模板
- · 群子配置 data/groups/<群号>/<section>.json     → 每模块节独立文件
- · 加载优先级: 子配置 > 主配置（deep merge）
- · 新群首次触发: 从主配置 copy 到子配置目录
- · 主配置变更: 不影响已存在的子配置（propagate_new_fields 手动传播）
- · 模块新增字段: 自动追加到所有群子配置
- · 类型校验失败: 备份原配置 → fallback 主配置该群 → 终端报告
- · 多文件分化 (v6): 每群每模块节独立文件，避免单文件过大 + 并行 I/O
-═══════════════════════════════════════════════════════════════════════════
-"""
 import hashlib
 import hmac
 import json
@@ -28,6 +13,7 @@ from typing import Any, Callable, Optional
 
 from qqlinker_framework.core.kernel.error_hints import hint
 from .config_mgr import ConfigManager
+from ..libraries.core.scanner import Scanner
 
 _log = logging.getLogger(__name__)
 
@@ -219,10 +205,9 @@ class GroupConfigManager:
         # 检查是否有任何子配置文件存在
         any_section_exists = False
         if os.path.isdir(group_dir):
-            for fname in os.listdir(group_dir):
-                if fname.endswith(".json") and fname != "config.json":
-                    any_section_exists = True
-                    break
+            scanner = Scanner(group_dir)
+            json_files = scanner.find("*.json", exclude=["config.json"])
+            any_section_exists = len(json_files) > 0
 
         if not any_section_exists:
             # 首次：从主配置 seed 所有 group-scope 节
@@ -386,8 +371,8 @@ class GroupConfigManager:
                     "群 %d 子配置自动修复 %d 处类型错误，已写回",
                     group_id, repaired
                 )
-            except OSError:
-                pass
+            except OSError as e:
+                _log.warning("group_config._validate_and_repair: %s", e)
         return sub_data, repaired
 
     def _auto_repair_section(self, sub_data: dict, main_data: dict,
@@ -592,15 +577,14 @@ class GroupConfigManager:
         if not os.path.isdir(group_dir):
             return
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        for fname in os.listdir(group_dir):
-            if not fname.endswith(".json"):
-                continue
-            src = os.path.join(group_dir, fname)
+        scanner = Scanner(group_dir)
+        for path in scanner.find("*.json"):
+            src = str(path)
             if not os.path.isfile(src):
                 continue
             dst = os.path.join(
                 self._repair_dir,
-                f"config_group_{group_id}_{fname.replace('.json', '')}_{ts}.json",
+                f"config_group_{group_id}_{path.stem}_{ts}.json",
             )
             try:
                 shutil.copy2(src, dst)
@@ -621,14 +605,10 @@ class GroupConfigManager:
                 group_id = int(entry)
             except ValueError:
                 continue
-            files = [
-                f for f in os.listdir(group_dir)
-                if f.endswith(".json")
-            ]
-            total_size = sum(
-                os.path.getsize(os.path.join(group_dir, f))
-                for f in files
-            )
+            scanner = Scanner(group_dir)
+            json_paths = scanner.find("*.json")
+            files = [p.name for p in json_paths]
+            total_size = sum(p.stat().st_size for p in json_paths)
             result.append({
                 "group_id": group_id,
                 "has_config": len(files) > 0,
@@ -762,14 +742,10 @@ class GroupConfigManager:
 
             # 扫描该群目录下所有 JSON 文件
             any_changed = False
-            for fname in os.listdir(group_dir):
-                if not fname.endswith(".json"):
-                    continue
-                fp = os.path.join(group_dir, fname)
-                try:
-                    mtime = os.path.getmtime(fp)
-                except OSError:
-                    continue
+            scanner = Scanner(group_dir)
+            json_files = scanner.find("*.json", track_mtime=True)
+            for fp_path, mtime in json_files:
+                fp = str(fp_path)
                 if mtime != self._mtime_cache.get(fp, 0):
                     self._mtime_cache[fp] = mtime
                     any_changed = True

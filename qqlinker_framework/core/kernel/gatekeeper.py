@@ -1,26 +1,3 @@
-"""Gatekeeper 代理 — 业务模块访问框架核心的唯一通道 (v6)
-
-═══════════════════════════════════════════════════════════════════════════
-隔离层设计:
-
-  业务模块                     GatekeeperProxy                  框架核心
-  ─────────────────────────────────────────────────────────────────────
-  self.gatekeeper.get_service()    →  MID 检查 + 审计  →  ServiceContainer
-  self.gatekeeper.register_command() →  min_mid 校验   →  self._commands
-  self.gatekeeper.listen()        →  事件白名单       →  event_bus
-  self.gatekeeper.get_config()    →  权限透传         →  _ConfigProxy
-  self.gatekeeper.read_file()     →  沙箱检查         →  builtins.open
-  self.gatekeeper.send_group()    →  频率检查+审计    →  MessageManager
-
-每个 GatekeeperProxy 实例绑定到一个模块，三重检查:
-  1. MID 级别检查（继承自 ServiceContainer.scope）
-  2. 资源配额检查（委托给 ResourceGuardian）
-  3. 审计记录（委托给 AuditTrail）
-
-v6: 使用 mid 替代 uid; get_service() 采用声明式依赖检查。
-不允许模块直接访问 self.services、self.register_command 等底层 API。
-═══════════════════════════════════════════════════════════════════════════
-"""
 import functools
 import logging
 import os
@@ -29,15 +6,21 @@ from typing import Any, Callable, Dict, Optional
 
 _log = logging.getLogger(__name__)
 
+from .events import (
+    GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent,
+    GameChatEvent, ConfigReloadEvent,
+    AIPrePromptReflectionEvent, AIPostResponseReflectionEvent,
+)
+
 # ── 事件允许列表（非 root 模块可订阅的事件类型）──
 ALLOWED_EVENTS = frozenset({
-    'GroupMessageEvent',
-    'PlayerJoinEvent',
-    'PlayerLeaveEvent',
-    'GameChatEvent',
-    'ConfigReloadEvent',
-    'AIPrePromptReflectionEvent',
-    'AIPostResponseReflectionEvent',
+    GroupMessageEvent,
+    PlayerJoinEvent,
+    PlayerLeaveEvent,
+    GameChatEvent,
+    ConfigReloadEvent,
+    AIPrePromptReflectionEvent,
+    AIPostResponseReflectionEvent,
 })
 
 
@@ -65,9 +48,9 @@ def _audit(
                 uid_level=gatekeeper._uid,
                 success=True,
             )
-    except Exception:
+    except Exception as e:
         # 审计失败不应影响主流程
-        pass
+        _log.warning("gatekeeper._audit: %s", e)
 
 
 class GatekeeperProxy:
@@ -229,31 +212,31 @@ class GatekeeperProxy:
             "min_uid": effective_min,
         }
 
-    def listen(self, event_type: str, handler: Callable, priority: int = 0) -> None:
+    def listen(self, event_class: type, handler: Callable, priority: int = 0) -> None:
         """订阅事件 — 通过 Gatekeeper 代理。
 
         校验事件类型是否在允许列表中（非 root 模块）。
         同时进行资源配额检查并记录审计日志。
 
         Args:
-            event_type: 事件类型字符串（如 'GroupMessageEvent'）。
+            event_class: 事件类（如 GroupMessageEvent），不是字符串。
             handler: 事件处理回调。
             priority: 订阅优先级。
         """
         # ── 沙箱检查: 非 root 模块只能订阅白名单事件 ──
-        if self._mid > 0 and event_type not in ALLOWED_EVENTS:
+        if self._mid > 0 and event_class not in ALLOWED_EVENTS:
             _log.warning(
                 "Gatekeeper: 模块 '%s' (mid=%d) 尝试订阅受限事件 '%s'，已拒绝",
-                self._module_name, self._mid, event_type,
+                self._module_name, self._mid, event_class.__name__,
             )
             return
 
-        _audit(self, "listen", target=event_type,
+        _audit(self, "listen", target=event_class.__name__,
                detail=f"priority={priority}")
 
         # ── 事件注册到 gatekeeper 内部注册表 ──
         # 实际订阅由 Module._apply_conventions 在收集后统一处理
-        self._module_events.append((event_type, handler, priority))
+        self._module_events.append((event_class, handler, priority))
 
     # ══════════════════════════════════════════════════════════════════
     # 3. 配置代理
@@ -375,8 +358,8 @@ class GatekeeperProxy:
                 base = self._config.get_data_dir()
                 if base:
                     return os.path.join(base, "模块", self._module_name)
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("gatekeeper.data_dir: %s", e)
         return None
 
     # ══════════════════════════════════════════════════════════════════
