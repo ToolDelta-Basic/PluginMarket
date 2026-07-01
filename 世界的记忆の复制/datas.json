@@ -1,0 +1,12 @@
+{
+  "author": "9S, Meteora·Österreich, Altair and Echidna",
+  "version": "0.3.0",
+  "plugin-type": "classic",
+  "description": "精心制作的两本完整的睿智之书的复制品，并分别赠予碧翠丝和罗兹瓦尔",
+  "pre-plugins": {
+    "pip": "0.0.5",
+    "主动区块请求": "0.4.5"
+  },
+  "plugin-id": "世界的记忆の复制",
+  "enabled": true
+}

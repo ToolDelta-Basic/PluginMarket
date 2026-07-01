@@ -8,6 +8,5 @@
     "聊天栏菜单": "0.0.1",
     "雪球菜单v3": "0.0.1"
   },
-  "plugin-id": "home-point-setter",
-  "enabled": false
+  "plugin-id": "home-point-setter"
 }
