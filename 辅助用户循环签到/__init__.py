@@ -38,7 +38,6 @@ class NV1TimedSignIn(Plugin):
         self._pwd_plain_cached: Optional[str] = None
         self._pwd_hash_cached: Optional[str] = None
 
-
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         self.ListenFrameExit(self.on_exit)
