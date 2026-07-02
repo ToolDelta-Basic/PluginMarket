@@ -1234,6 +1234,10 @@
         "默哀.midseq",
         "新鸳鸯蝴蝶梦.midseq"
     ],
+    "头顶称号": [
+        "__init__.py",
+        "datas.json"
+    ],
     "schematic导入器": [
         "core.py",
         "__init__.py",

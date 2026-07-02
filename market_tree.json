@@ -585,6 +585,12 @@
       "version": "0.1.7",
       "plugin-type": "classic"
     },
+    "头顶称号": {
+      "name": "头顶称号",
+      "author": "南Nan",
+      "version": "0.2.0",
+      "plugin-type": "classic"
+    },
     "schematic导入器": {
       "name": "schematic导入器",
       "author": "style_天枢",
