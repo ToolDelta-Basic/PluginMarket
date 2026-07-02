@@ -38,7 +38,6 @@ class NV1TimedSignIn(Plugin):
         self._pwd_plain_cached: Optional[str] = None
         self._pwd_hash_cached: Optional[str] = None
 
-        self._logged_in = False
 
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
@@ -175,16 +174,13 @@ class NV1TimedSignIn(Plugin):
 
         if j is None:
             Print.print_err(f"[{self.name}] 登录失败：{text}")
-            self._logged_in = False
             return False
 
         if not bool(j.get("success", False)):
             msg = j.get("message", "登录失败")
             Print.print_err(f"[{self.name}] 登录失败：{msg}")
-            self._logged_in = False
             return False
 
-        self._logged_in = True
         return True
 
     def _do_sign(
