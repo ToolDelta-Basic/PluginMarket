@@ -72,7 +72,7 @@ class Gatekeeper:
 
     def get_admins(self) -> list:
         """获取管理员 QQ 列表。"""
-        return self._config.get("管理员.管理员QQ", [])
+        return self._config.get("管理员.管理员QQ", [], requester_uid=0)
 
     def is_admin(self, qq: int) -> bool:
         return qq in self.get_admins()

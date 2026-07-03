@@ -397,7 +397,7 @@ class GatekeeperProxy:
 
         _audit(self, "send_group", target=str(group_id),
                detail=f"msg_len={len(text)}")
-        await self._message.send_group(group_id, text, requester_uid=self._mid)
+        await self._message.send_group(group_id, text)
 
     async def send_private(self, user_id: int, text: str) -> None:
         """发送私聊消息 — 频率检查 + 审计。
@@ -430,7 +430,7 @@ class GatekeeperProxy:
 
         _audit(self, "send_private", target=str(user_id),
                detail=f"msg_len={len(text)}")
-        await self._message.send_private(user_id, text, requester_uid=self._mid)
+        await self._message.send_private(user_id, text)
 
     # ══════════════════════════════════════════════════════════════════
     # 内部 API（供 Module 基类使用）

@@ -28,6 +28,8 @@ class CommandRegistry:
         min_uid: int = 400,
         plugin: str = "",
         method: str = "",
+        rule_accessible: bool = False,
+        hidden: bool = False,
     ) -> None:
         """注册命令。"""
         self._commands[trigger] = {
@@ -42,6 +44,8 @@ class CommandRegistry:
             "min_uid": min_uid,
             "plugin": plugin,
             "method": method,
+            "rule_accessible": rule_accessible,
+            "hidden": hidden,
         }
 
     def unregister(self, trigger: str) -> None:

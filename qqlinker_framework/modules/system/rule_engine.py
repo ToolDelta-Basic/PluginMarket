@@ -232,7 +232,7 @@ class RuleEngineModule(Module, Engine):
 
     config = EngineConfig(
         name="rule_engine",
-        version="1.7.0",
+        version="1.7.1",
         mounts=["message", "config", "group_config"],
         pipeline=["match", "cooldown_check", "execute_actions"],
         provides=["rule"],

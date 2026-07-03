@@ -428,10 +428,12 @@ def test_defguard_event_sanitize_in_bus():
         await router.start()
         # None message → LaneRouter 标准化为 ""
         await router.publish(GameChatEvent(player_name="P1", message=None))
+        await asyncio.sleep(0.1)  # 等待 worker 调度
         assert captured[-1] == ("GameChatEvent", "")
 
         # None message → ""
         await router.publish(GroupMessageEvent(user_id=1, group_id=1, nickname="X", message=None, raw_data={}))
+        await asyncio.sleep(0.1)  # 等待 worker 调度
         assert captured[-1] == ("GroupMessageEvent", "")
 
         await router.stop()
@@ -481,11 +483,13 @@ def test_none_message_safety():
         router.subscribe(GroupMessageEvent, handler)
 
         await router.publish(GameChatEvent(player_name="Test", message=None))
+        await asyncio.sleep(0.1)  # 等待 worker 调度
         assert len(hit) == 1 and hit[0] == ""
 
         await router.publish(GroupMessageEvent(
             user_id=1, group_id=1, nickname="T", message=None, raw_data={}
         ))
+        await asyncio.sleep(0.1)  # 等待 worker 调度
         assert len(hit) == 2 and hit[1] == ""
 
         await router.stop()

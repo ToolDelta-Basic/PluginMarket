@@ -100,7 +100,7 @@ class EventRouterLibrary(Library):
         # 权限检查
         if cmd_info.get("op_only"):
             config = self.services.try_get("config")
-            admins = config.get("管理员.管理员QQ", []) if config else []
+            admins = config.get("管理员.管理员QQ", [], requester_uid=0) if config else []
             if event.user_id not in admins:
                 return
 

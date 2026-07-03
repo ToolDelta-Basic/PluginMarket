@@ -18,6 +18,7 @@ from .kernel.gatekeeper import GatekeeperProxy
 from .kernel.events import (
     GroupMessageEvent, ConfigReloadEvent,
     PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent,
+    AIPrePromptReflectionEvent, AIPostResponseReflectionEvent,
 )
 
 # ── 从拆分文件导入（保持向后兼容的 re-export）──
@@ -106,6 +107,24 @@ class Module(ABC):
         self.__root_services = services
         self.event_bus = event_bus
         self._setup_mid()
+        # ★ 安全: 设置 CallContext，使后续配置读取等操作能获取正确的调用者 mid
+        from .kernel.call_context import CallContext, set_call_context
+        set_call_context(CallContext(
+            mid=self.mid, module_name=self.name,
+            source="internal", trigger_type="module_init",
+            entry_point="Module.__init__", is_framework=False,
+        ))
+
+        # ── 权限声明校验 ──
+        if hasattr(self, 'required_permissions'):
+            from qqlinker_framework.core.kernel.permission_registry import validate_module_permissions
+            violations = validate_module_permissions(
+                self.required_permissions, self.mid, self.name)
+            if violations:
+                _log.warning(
+                    "模块 '%s' (mid=%d) 声明的权限超出其层级: %s",
+                    self.name, self.mid, violations)
+
         self.services = services.scope(self.mid)
         if self.required_services:
             services.register_required_services(self.mid, self.required_services)
@@ -275,16 +294,11 @@ class Module(ABC):
         # self.config — v6: 从 ConfigStore 获取 namespace 视图
         try:
             raw_cfg = services.get("config")
-            # v6: 优先使用 ConfigStore；fallback 到旧 _ConfigProxy
-            if hasattr(raw_cfg, '_cfg') and hasattr(raw_cfg._cfg, '_data_path'):
-                # 旧版 _ConfigProxy — 保留兼容
-                self.config = _ConfigProxy(raw_cfg, caller_mid=self.mid)
-            else:
-                self.config = _ConfigProxy(raw_cfg, caller_mid=self.mid)
+            self.config = _ConfigProxy(raw_cfg, caller_mid=self.mid)
         except (KeyError, PermissionError):
             self.config = None
 
-        # self.group_config — 传入 caller_mid 防止越权
+        # self.group_config — ServiceWrapper 自动注入身份
         try:
             raw_gcfg = services.get("group_config")
             self.group_config = _GroupConfigProxy(raw_gcfg, caller_mid=self.mid)
@@ -445,11 +459,15 @@ class Module(ABC):
         # ── A: default_config → register_section (with scope) ──
         if cfg_svc and self.default_config:
             # Fix: 框架初始化阶段使用 root bypass 注册配置节。
-            # _ConfigProxy 传入了 caller_mid 用于运行时校验，但
-            # _apply_conventions 是框架初始化路径，应使用 root 免检。
-            raw_cfg = cfg_svc._cfg  # 绕过 _ConfigProxy 的 caller_mid 限制
+            # _ConfigProxy 不再传递 caller_mid；_apply_conventions 是框架初始化路径。
+            raw_cfg = cfg_svc._cfg
+            # v6: ServiceWrapper 自动注入 caller_uid；裸 ConfigStore 显式传入 caller_uid=0
+            _wrapped = hasattr(raw_cfg, '_target')
             for section, defaults in self.default_config.items():
-                raw_cfg.register_section(section, defaults, caller_uid=0)
+                if _wrapped:
+                    raw_cfg.register_section(section, defaults)
+                else:
+                    raw_cfg.register_section(section, defaults, caller_uid=0)
                 # 同时向 GroupConfigManager 注册 scope
                 scope = self.config_scope.get(section, "group")
                 if group_cfg_svc:
@@ -650,6 +668,7 @@ class Module(ABC):
         argument_hint: str = "",
         cooldown: float | None = None,
         min_uid: int = 400,
+        hidden: bool = False,
     ):
         """注册一个命令处理器。
 
@@ -675,6 +694,7 @@ class Module(ABC):
             "argument_hint": argument_hint,
             "cooldown": cooldown,
             "min_uid": min_uid,
+            "hidden": hidden,
         }
 
     def listen(self, event_class: type, handler: Callable, priority: int = 0):
@@ -693,7 +713,8 @@ class Module(ABC):
         event_type = event_class.__name__
 
         # ── 沙箱检查：非 root 模块受限事件白名单 ──
-        _allowed = {GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent}
+        _allowed = {GroupMessageEvent, PlayerJoinEvent, PlayerLeaveEvent, GameChatEvent,
+                     AIPrePromptReflectionEvent, AIPostResponseReflectionEvent}
         if self.mid > 0 and event_class not in _allowed:
             self.logger.warning(
                 "模块 '%s' (mid=%d) 尝试订阅受限事件 '%s'，已拒绝",

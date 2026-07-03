@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from ..kernel.audit import audit_log, AuditLevel
+from ..kernel.call_context import CallContext, set_call_context, clear_call_context
 from ..kernel.services import (
     TIER_KERNEL as _TIER_KERNEL,
     TIER_DAEMON as _TIER_DAEMON,
@@ -142,23 +143,32 @@ class GatekeeperBridge:
             KeyError: 方法未注册。
             PermissionError: 调用方层级不足。
         """
-        spec = self._methods.get(path)
-        if spec is None:
-            raise KeyError(
-                f"bridge 方法 '{path}' 未注册。"
-                f"可用方法: {self.list_methods(caller_uid)}"
-            )
-
-        caller_tier = _uid_tier(caller_uid)
-        min_rank = _TIER_RANK.get(spec.min_tier, 99)
-        caller_rank = _TIER_RANK.get(caller_tier, 99)
-        if caller_rank > min_rank:
-            raise PermissionError(
-                f"{caller_tier}(uid={caller_uid}) 无权调用 "
-                f"'{path}' (至少需要 {spec.min_tier})"
-            )
-
+        ctx = CallContext(
+            mid=caller_uid if isinstance(caller_uid, int) else 400,
+            module_name="gatekeeper_bridge",
+            source="bridge",
+            trigger_type=path,
+            entry_point="GatekeeperBridge.call",
+            is_framework=True,
+        )
+        set_call_context(ctx)
         try:
+            spec = self._methods.get(path)
+            if spec is None:
+                raise KeyError(
+                    f"bridge 方法 '{path}' 未注册。"
+                    f"可用方法: {self.list_methods(caller_uid)}"
+                )
+
+            caller_tier = _uid_tier(caller_uid)
+            min_rank = _TIER_RANK.get(spec.min_tier, 99)
+            caller_rank = _TIER_RANK.get(caller_tier, 99)
+            if caller_rank > min_rank:
+                raise PermissionError(
+                    f"{caller_tier}(uid={caller_uid}) 无权调用 "
+                    f"'{path}' (至少需要 {spec.min_tier})"
+                )
+
             # 自动注入 caller_uid 供 bridge 方法使用
             # 方法可声明 uid 参数来接收调用方 UID
             # 不影响未声明该参数的方法
@@ -180,6 +190,8 @@ class GatekeeperBridge:
         except Exception as e:
             _log.debug("bridge 调用 '%s' 失败: %s", path, e)
             raise
+        finally:
+            clear_call_context()
 
     def call_async(self, path: str, caller_uid: int, *args, **kwargs) -> Any:
         """bridge 调用，返回协程（用于异步方法）。"""
@@ -252,13 +264,13 @@ def register_default_capabilities(bridge: GatekeeperBridge) -> None:
     if cfg is not None:
         bridge.register(
             "配置.读",
-            lambda key, default=None, uid=0: cfg.get(key, default, requester_uid=uid),
+            lambda key, default=None, uid=0: cfg.get(key, default),
             min_tier="app", readonly=True,
             description="按模块 UID 权限读取配置（KEY路径, 默认值）",
         )
         bridge.register(
             "配置.写",
-            lambda key, value, uid=0: cfg.set(key, value, requester_uid=uid),
+            lambda key, value, uid=0: cfg.set(key, value),
             min_tier="daemon", readonly=False,
             description="按模块 UID 权限写入配置（KEY路径, 值）",
         )

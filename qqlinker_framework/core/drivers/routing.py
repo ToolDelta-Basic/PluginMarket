@@ -261,18 +261,23 @@ class CommandRouter:
                 return True
 
             # ── UID 等级检查 ──
-            # v5.1: 规则引擎托管事件使用 _rule_uid 作为权限 uid
-            rule_uid = getattr(event, "raw_data", {}).get("_rule_uid", 0)
+            # v5.2: 规则引擎委托通过事件来源验证，不再依赖可伪造的 raw_data
+            trusted_rule = (
+                getattr(event, "is_trusted_source", False)
+                and getattr(event, "publisher_module", "") == "qqlinker_framework.modules.system.rule_engine"
+                and getattr(event, "publisher_mid", 400) <= 200
+            )
+            is_trusted = getattr(event, "is_trusted_source", False)
             min_uid = cmd_info.get("min_uid", 400)
             if self.uid_lookup and min_uid >= 0:
-                if rule_uid and rule_uid <= min_uid:
-                    # 规则引擎托管: _rule_uid ≤ min_uid → 通过权限检查
+                if trusted_rule:
+                    # 规则引擎已通过来源验证 → 权限委托
                     logging.getLogger(__name__).debug(
-                        "规则引擎托管命令: trigger=%s rule_uid=%s min_uid=%s "
-                        "触发用户=%s",
-                        trigger, str(rule_uid), str(min_uid), str(event.user_id),
+                        "规则引擎委托命令: trigger=%s publisher=%s",
+                        trigger, str(getattr(event, 'publisher_module', '?')),
                     )
-                else:
+                elif is_trusted:
+                    # 可信来源 (EventBridge) → 按 user_id 查权限
                     user_uid = self.uid_lookup(event.user_id)
                     if user_uid > 0 and user_uid > min_uid:
                         logging.getLogger(__name__).warning(
@@ -291,6 +296,31 @@ class CommandRouter:
                         await ctx.reply(
                             f"\U0001f512 你的 UID ({user_uid}) 不足，"
                             f"该命令需要 UID <= {min_uid}"
+                        )
+                        event.handled = True
+                        return True
+                else:
+                    # ★ 非可信来源 (模块直接发布) → 以 publisher_mid 做权限上限
+                    publisher_mid = getattr(event, "publisher_mid", 400)
+                    publisher_mod = getattr(event, "publisher_module", "?")
+                    if publisher_mid > min_uid:
+                        logging.getLogger(__name__).warning(
+                            "拒绝: 模块 '%s' (mid=%d) 发布非可信事件尝试执行 "
+                            "min_uid=%d 命令 %s, user_id=%s",
+                            publisher_mod, publisher_mid,
+                            min_uid, trigger, str(event.user_id),
+                        )
+                        ctx = CommandContext(
+                            user_id=event.user_id,
+                            group_id=event.group_id,
+                            nickname=event.nickname,
+                            message=event.message,
+                            args=[],
+                            adapter=self.adapter,
+                            message_mgr=self.message_mgr,
+                        )
+                        await ctx.reply(
+                            "🔒 权限不足"
                         )
                         event.handled = True
                         return True

@@ -8,6 +8,7 @@ from ..kernel.events import (
 from ..kernel.outbound import OutboundMessageEvent
 from ..kernel.defguard import validate_onebot_event
 from ..kernel.error_hints import hint
+from ..kernel.services import MID_DAEMON
 from ...libraries.channel_host import LaneRouter
 
 access_log = logging.getLogger("access")
@@ -40,6 +41,8 @@ class EventBridge:
         self.main_loop_getter = main_loop_getter
         self.adapter = adapter
         self._session_tracker = session_tracker
+        self._publisher_mid = MID_DAEMON
+        self._publisher_module = "qqlinker_framework.core.drivers.event_bridge"
 
     def _is_user_interactive(self, user_id: int) -> bool:
         """检查用户是否处于交互式会话（豁免去重）。
@@ -77,6 +80,10 @@ class EventBridge:
         """线程安全地发布事件到主循环。"""
         loop = self.main_loop_getter()
         if loop and loop.is_running():
+            # 标记事件来源（通过 object.__setattr__ 设置 init=False 字段）
+            object.__setattr__(event, 'publisher_mid', self._publisher_mid)
+            object.__setattr__(event, 'publisher_module', self._publisher_module)
+            object.__setattr__(event, 'is_trusted_source', True)
             try:
                 asyncio.run_coroutine_threadsafe(
                     self.event_bus.publish(event),

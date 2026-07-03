@@ -4,6 +4,9 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set
 
+from .call_context import get_call_context, CallContext
+from .service_wrappers import ServiceWrapper, _IDENTITY_INJECTION_MAP
+
 _log = logging.getLogger(__name__)
 
 # ── MID 常量 (v6: 重命名自 TIER_*) ─────────────────────────
@@ -248,6 +251,7 @@ class ServiceContainer:
         self._view_locked = False
         # ── v1.5.1: 组内免检 ──
         self._group = group
+        self._permission_registry = None
 
     # ── v6 新名属性 ──
 
@@ -326,6 +330,7 @@ class ServiceContainer:
         scoped._required_services = self._required_services
         # ── v5.2: 服务注册表引用 ──
         scoped._service_registry = self._service_registry
+        scoped._permission_registry = self._permission_registry
         scoped._service_groups = self._service_groups
         # ── v1.5.1: 组内免检 ──
         scoped._group = group
@@ -338,6 +343,10 @@ class ServiceContainer:
     def view(self, tier: int) -> "ServiceContainer":
         """旧名别名 → scope()。"""
         return self.scope(tier)
+
+    def set_permission_registry(self, registry) -> None:
+        """设置权限注册表引用。"""
+        self._permission_registry = registry
 
     def register(
         self, name: str, instance_or_factory: Any, *,
@@ -453,13 +462,21 @@ class ServiceContainer:
                 )
 
         if name in self._services:
-            return self._services[name]
+            instance = self._services[name]
+            if self._mid != MID_KERNEL and name in _IDENTITY_INJECTION_MAP:
+                return ServiceWrapper(instance, name)
+            return instance
         # 工厂延迟创建
         with self._lock:
             if name in self._services:
-                return self._services[name]
+                instance = self._services[name]
+                if self._mid != MID_KERNEL and name in _IDENTITY_INJECTION_MAP:
+                    return ServiceWrapper(instance, name)
+                return instance
             instance = self._factories[name]()
             self._services[name] = instance
+            if self._mid != MID_KERNEL and name in _IDENTITY_INJECTION_MAP:
+                return ServiceWrapper(instance, name)
             return instance
 
     def try_get(self, name: str) -> Optional[Any]:
@@ -557,7 +574,8 @@ class InteractiveSessionTracker:
 
     def enter(self, user_id: int, group_id: int = 0,
               session_type: str = "", capture_module: str = "",
-              capture_command: bool = True):
+              capture_command: bool = True,
+              *, caller_mid: int = MID_NOBODY):
         """用户进入交互式会话。
 
         Args:
@@ -566,21 +584,45 @@ class InteractiveSessionTracker:
             session_type: 会话类型标识（如 'rule_create', 'bind_flow'）
             capture_module: 捕获输入的模块名（用于审计和冲突检测）
             capture_command: True 时拦截其他命令路由
+            caller_mid: 调用方模块 ID（用于权限校验和同模块豁免）
         """
         key = str(user_id)
         import time
+        if key in self._sessions:
+            _log.warning(
+                "用户 %s 已在交互式会话中 (现有 caller_mid=%s, 新 caller_mid=%s)",
+                user_id, self._sessions[key].get("caller_mid", "?"), caller_mid,
+            )
         self._sessions[key] = {
             "user_id": user_id,
             "group_id": group_id,
             "type": session_type,
             "capture_module": capture_module,
             "capture_command": capture_command,
+            "caller_mid": caller_mid,
             "ts": time.time(),
         }
 
-    def leave(self, user_id: int):
-        """用户退出交互式会话。"""
-        self._sessions.pop(str(user_id), None)
+    def leave(self, user_id: int, *, caller_mid: int = MID_NOBODY):
+        """用户退出交互式会话。
+
+        Args:
+            user_id: QQ 用户 ID
+            caller_mid: 调用方模块 ID（必须与 enter 时的 caller_mid 一致）
+
+        Raises:
+            PermissionError: caller_mid 与 session 记录不一致
+        """
+        key = str(user_id)
+        session = self._sessions.get(key)
+        if session is None:
+            return
+        if session.get("caller_mid", MID_NOBODY) != caller_mid:
+            raise PermissionError(
+                f"caller_mid 不匹配: session 记录为 {session.get('caller_mid')}, "
+                f"调用方为 {caller_mid}"
+            )
+        self._sessions.pop(key, None)
 
     def is_active(self, user_id: int) -> bool:
         """用户是否处于交互式会话中（含超时检查）。"""
@@ -626,9 +668,18 @@ class InteractiveSessionTracker:
             self._sessions.pop(key, None)
         return [int(k) for k in self._sessions]
 
-    def should_capture_commands(self, user_id: int) -> bool:
-        """是否应该拦截该用户的命令路由。由 CommandRouter 调用。"""
+    def should_capture_commands(self, user_id: int, *,
+                                 caller_mid: Optional[int] = None) -> bool:
+        """是否应该拦截该用户的命令路由。由 CommandRouter 调用。
+
+        Args:
+            user_id: QQ 用户 ID
+            caller_mid: 调用方模块 ID（与 session 相同时不拦截，允许自己处理）
+        """
         session = self.get_session(user_id)
         if session is None:
+            return False
+        # 同模块豁免：自己捕获自己，允许自己处理
+        if caller_mid is not None and session.get("caller_mid") == caller_mid:
             return False
         return bool(session.get("capture_command", True))

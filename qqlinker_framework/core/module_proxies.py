@@ -21,7 +21,7 @@ class _ConfigProxy:
         return self._cfg.get(key, requester_uid=self._caller_mid)
 
     def get(self, key: str, default=None):
-        """获取配置值。"""
+        """获取配置值。caller_mid 作为 ServiceWrapper 不生效时的 fallback。"""
         return self._cfg.get(key, default, requester_uid=self._caller_mid)
 
     def set(self, key: str, value):
@@ -33,7 +33,7 @@ class _ConfigProxy:
         return self._cfg.save()
 
     def register_section(self, section: str, defaults: dict):
-        """传入 caller_mid 阻止低权限模块注册高权限配置节。"""
+        """注册配置节。caller_mid 作为 ServiceWrapper 不生效时的 fallback。"""
         return self._cfg.register_section(section, defaults, caller_uid=self._caller_mid)
 
     def get_data_dir(self):
@@ -60,7 +60,7 @@ class _GroupConfigProxy:
         return getattr(self._gcfg, key)
 
     def get(self, group_id: int, key: str, default=None):
-        """获取指定群的配置值。"""
+        """获取指定群的配置值。caller_mid 作为 ServiceWrapper 不生效时的 fallback。"""
         return self._gcfg.get(group_id, key, default, requester_uid=self._caller_mid)
 
     def for_group(self, group_id: int) -> "_SingleGroupConfigProxy":
@@ -73,7 +73,7 @@ class _GroupConfigProxy:
 
     def register_module_schema(self, section: str, defaults: dict, scope: str):
         """注册模块配置 schema。"""
-        return self._gcfg.register_module_schema(section, defaults, scope)
+        return self._gcfg.register_module_schema(section, defaults, scope, caller_uid=self._caller_mid)
 
 
 class _SingleGroupConfigProxy:
@@ -192,7 +192,7 @@ class _QQProxy:
     async def send_group(self, group_id: int, text: str):
         """发送群消息（仅通过 MessageManager）。"""
         if self._msg:
-            await self._msg.send_group(group_id, text, requester_uid=self._caller_mid)
+            await self._msg.send_group(group_id, text)
         else:
             logging.getLogger(__name__).error(
                 "QQ代理: message 服务不可用，消息发送被拒绝 (group_id=%s, mid=%d)",
@@ -202,7 +202,7 @@ class _QQProxy:
     async def send_private(self, user_id: int, text: str):
         """发送私聊消息（仅通过 MessageManager）。"""
         if self._msg:
-            await self._msg.send_private(user_id, text, requester_uid=self._caller_mid)
+            await self._msg.send_private(user_id, text)
         else:
             logging.getLogger(__name__).error(
                 "QQ代理: message 服务不可用，消息发送被拒绝 (user_id=%s, mid=%d)",

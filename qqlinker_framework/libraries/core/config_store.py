@@ -6,6 +6,22 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
+try:
+    from qqlinker_framework.core.kernel.call_context import get_call_context
+except ImportError:
+    get_call_context = None  # type: ignore
+
+try:
+    from qqlinker_framework.core.kernel.services import (
+        MID_KERNEL, MID_DAEMON, MID_SERVICE, MID_APP, MID_NOBODY,
+    )
+except ImportError:
+    MID_KERNEL = 0
+    MID_DAEMON = 100
+    MID_SERVICE = 200
+    MID_APP = 300
+    MID_NOBODY = 400
+
 from ..channel_host import Library
 
 _log = logging.getLogger(__name__)
@@ -15,6 +31,26 @@ DEFAULT_MAPPING = {
     "核心.json": ["网络连接", "框架", "模块管理", "去重"],
     "安全.json": ["安全", "LLM安全", "网络连接.令牌"],
     "管理.json": ["管理员", "群管理", "多机器人"],
+}
+
+# 首次启动时的默认配置值（仅对新文件生效，不覆盖已有配置）
+FILE_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    "核心.json": {
+        "网络连接": {"地址": "ws://127.0.0.1:3001"},
+        "去重": {"窗口秒": 60},
+        "框架": {},
+        "模块管理": {},
+    },
+    "安全.json": {
+        "安全": {},
+        "LLM安全": {},
+        "网络连接": {"令牌": ""},
+    },
+    "管理.json": {
+        "管理员": {"管理员QQ": []},
+        "群管理": {},
+        "多机器人": {},
+    },
 }
 
 MAPPING_FILENAME = "配置映射.json"
@@ -29,6 +65,18 @@ class ConfigStore:
     - 合并视图为只读（自动生成，外部修改时延迟同步回分层）
     - config.json 仅首次启动迁移用
     """
+
+    # UAC 权限表
+    _NAMESPACE_READ_UID: Dict[str, int] = {
+        "core": MID_DAEMON,
+        "安全": MID_DAEMON,
+        "管理": MID_DAEMON,
+    }
+    _NAMESPACE_WRITE_UID: Dict[str, int] = {
+        "core": MID_KERNEL,
+        "安全": MID_DAEMON,
+        "管理": MID_DAEMON,
+    }
 
     def __init__(self, data_dir: str):
         self._root_dir = data_dir
@@ -57,16 +105,47 @@ class ConfigStore:
         self._load_mapping()
         # 迁移旧 config.json
         self._migrate_legacy()
-        # 从分层文件加载
+        # ── 首次启动：先确保核心分层文件存在（含默认值），再加载 ──
+        self._ensure_layer_files()
+        # 从分层文件加载（此时文件已存在）
         self._load_layered()
         # 生成合并视图
         self._write_merged_view()
 
-        # 调试日志
+        # 调试日志（用 _resolve 绕过权限检查）
         _log.info("配置加载完成: data_dir=%s, 文件=%s, 网络连接.地址=%s",
                   self._data_dir,
                   [f for f in os.listdir(self._data_dir) if f.endswith('.json')],
-                  self.get('网络连接.地址', '(未找到)'))
+                  self._resolve('网络连接.地址', '(未找到)'))
+
+    def _ensure_layer_files(self) -> None:
+        """首次启动时确保分层配置文件存在（注入合理默认值）。
+
+        仅对新文件生效；已有文件不覆盖，确保用户修改不丢失。
+        """
+        for filename in list(self._mapping.keys()):
+            path = os.path.join(self._data_dir, filename)
+            if os.path.isfile(path):
+                continue
+
+            # 1) 从 FILE_DEFAULTS 获取模板（包含合理默认值）
+            template = dict(FILE_DEFAULTS.get(filename, {}))
+
+            # 2) 将内存中已有数据合并（迁移/模块注册产生的值优先）
+            owned_keys = self._mapping.get(filename, [])
+            for key in owned_keys:
+                parts = key.split(".")
+                top = parts[0]
+                if top in self._data:
+                    if isinstance(self._data[top], dict) and top in template:
+                        # 深度合并：模板有结构 + 内存有实际值
+                        merged = dict(template[top])
+                        merged.update(self._data[top])
+                        template[top] = merged
+                    else:
+                        template[top] = self._data[top]
+
+            self._atomic_write(path, template)
 
     # ═══════════════════════════════════════════════════════
     # 公开接口
@@ -74,11 +153,19 @@ class ConfigStore:
 
     def get(self, path: str, default: Any = None, **kwargs) -> Any:
         """读取配置值（支持点号路径）。"""
+        requester_uid = self._resolve_uid(kwargs, 'requester_uid')
+        if not self._check_read_permission(path, requester_uid):
+            _log.warning("ConfigStore.get 权限拒绝: path=%s, uid=%s", path, requester_uid)
+            return default
         with self._lock:
             return self._resolve(path, default)
 
     def set(self, path: str, value: Any, **kwargs) -> None:
         """写入配置值（自动写入对应分层文件）。"""
+        requester_uid = self._resolve_uid(kwargs, 'requester_uid')
+        if not self._check_write_permission(path, requester_uid):
+            _log.warning("ConfigStore.set 权限拒绝: path=%s, uid=%s", path, requester_uid)
+            return
         with self._lock:
             parts = path.split(".")
             d = self._data
@@ -94,6 +181,11 @@ class ConfigStore:
 
     def register_section(self, section: str, defaults: dict, **kwargs) -> None:
         """注册配置节及其默认值。"""
+        caller_uid = self._resolve_uid(kwargs, 'caller_uid')
+        _BUILTIN_NS = {"core", "安全", "管理"}
+        if section in _BUILTIN_NS and caller_uid > MID_DAEMON:
+            _log.warning("ConfigStore.register_section 权限拒绝: section=%s, uid=%s", section, caller_uid)
+            return
         with self._lock:
             if section not in self._data:
                 self._data[section] = dict(defaults)
@@ -161,6 +253,38 @@ class ConfigStore:
     # ═══════════════════════════════════════════════════════
     # 内部方法
     # ═══════════════════════════════════════════════════════
+
+    @staticmethod
+    def _resolve_uid(kwargs: dict, param_name: str) -> int:
+        """解析调用者 uid：优先 CallContext.mid，其次 kwargs 显式参数，最后 MID_NOBODY。"""
+        if get_call_context is not None:
+            try:
+                ctx = get_call_context()
+                if ctx is not None:
+                    return ctx.mid
+            except Exception:
+                pass
+        return kwargs.get(param_name, MID_NOBODY)
+
+    def _check_read_permission(self, path: str, requester_uid: int) -> bool:
+        """检查对 path 是否有读权限。root(0)/daemon(≤MID_DAEMON) 始终通过；其他按 namespace 权限表。"""
+        if requester_uid == 0:
+            return True
+        if requester_uid <= MID_DAEMON:
+            return True
+        namespace = path.split(".")[0]
+        required = self._NAMESPACE_READ_UID.get(namespace, MID_APP)
+        return requester_uid <= required
+
+    def _check_write_permission(self, path: str, requester_uid: int) -> bool:
+        """检查对 path 是否有写权限。root(0)/daemon(≤MID_DAEMON) 始终通过；其他按 namespace 权限表。"""
+        if requester_uid == 0:
+            return True
+        if requester_uid <= MID_DAEMON:
+            return True
+        namespace = path.split(".")[0]
+        required = self._NAMESPACE_WRITE_UID.get(namespace, MID_DAEMON)
+        return requester_uid <= required
 
     def _load_mapping(self) -> None:
         """加载配置映射文件。"""
@@ -236,18 +360,34 @@ class ConfigStore:
                     _log.warning("config_store._load_layered: %s", e)
 
     def _save_key_to_layer(self, top_key: str) -> None:
-        """将指定顶层键保存到对应的分层文件。"""
+        """将指定顶层键保存到对应的分层文件。
+
+        保留磁盘上已有但不在 self._data 中的键（如空节占位），
+        防止 _ensure_layer_files 创建的初始结构被覆盖。
+        """
         target_file = self._find_layer_for_key(top_key)
         target_path = os.path.join(self._data_dir, target_file)
 
         # 收集该文件拥有的所有顶层键
         owned_keys = self._get_keys_for_file(target_file)
 
-        # 构建该文件的数据
+        # 先加载磁盘已有数据（保留空节占位）
+        existing = {}
+        if os.path.isfile(target_path):
+            try:
+                with open(target_path, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # 构建该文件的数据：内存值优先，磁盘已有键兜底
         file_data = {}
         for key in owned_keys:
             if key in self._data:
                 file_data[key] = self._data[key]
+            elif key in existing:
+                # 保留用户创建的空节/占位（如 FILE_DEFAULTS 注入的初始结构）
+                file_data[key] = existing[key]
         # 确保当前 key 也写入
         if top_key in self._data and top_key not in file_data:
             file_data[top_key] = self._data[top_key]
@@ -260,12 +400,26 @@ class ConfigStore:
         written_keys: set = set()
 
         for filename, keys in self._mapping.items():
+            target_path = os.path.join(self._data_dir, filename)
+            # 加载磁盘已有数据（保留空节占位）
+            existing = {}
+            if os.path.isfile(target_path):
+                try:
+                    with open(target_path, "r", encoding="utf-8") as f:
+                        existing = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    pass
+
             file_data = {}
             for key in keys:
                 # key 可能是 "网络连接.令牌" 这种子路径，取顶层
                 top = key.split(".")[0]
                 if top in self._data:
                     file_data[top] = self._data[top]
+                    written_keys.add(top)
+                elif top in existing:
+                    # 保留磁盘已有键（空节占位）
+                    file_data[top] = existing[top]
                     written_keys.add(top)
             if file_data:
                 path = os.path.join(self._data_dir, filename)

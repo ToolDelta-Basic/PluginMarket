@@ -95,7 +95,8 @@ class DedupLibrary(Library):
 
     async def mount(self) -> None:
         config = self.services.get("config")
-        window = config.get("去重.窗口秒", 60.0)
+        # 库挂载时无模块上下文，显式传入 requester_uid=0
+        window = config.get("去重.窗口秒", 60.0, requester_uid=0)
         store = DedupStore(window)
         self.services.register("dedup", store, mid=300)
 

@@ -133,6 +133,14 @@ class ModuleLoaderLibrary(Library):
                 if hasattr(mod, '_post_init_conventions'):
                     await mod._post_init_conventions()
 
+                # 注册 on_init 中通过 self.register_command() 声明的命令
+                if mod._commands:
+                    for trigger, cmd_info in mod._commands.items():
+                        # 跳过装饰器已注册的命令（避免重复）
+                        if not command_mgr.find_command(trigger):
+                            command_mgr.register(**cmd_info)
+                    _log.debug("模块 '%s' 注册了 %d 个命令", mod_name, len(mod._commands))
+
                 self._loaded[mod_name] = mod
                 loaded_count += 1
                 _log.debug("模块加载成功: %s (mid=%d)", mod_name, mid)

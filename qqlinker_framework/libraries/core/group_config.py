@@ -4,6 +4,22 @@ import os
 import threading
 from typing import Any, Dict
 
+try:
+    from qqlinker_framework.core.kernel.call_context import get_call_context
+except ImportError:
+    get_call_context = None  # type: ignore
+
+try:
+    from qqlinker_framework.core.kernel.services import (
+        MID_KERNEL, MID_DAEMON, MID_SERVICE, MID_APP, MID_NOBODY,
+    )
+except ImportError:
+    MID_KERNEL = 0
+    MID_DAEMON = 100
+    MID_SERVICE = 200
+    MID_APP = 300
+    MID_NOBODY = 400
+
 from ..channel_host import Library
 
 _log = logging.getLogger(__name__)
@@ -18,11 +34,27 @@ class GroupConfigManager:
         self._cache: Dict[int, dict] = {}
         self._lock = threading.Lock()
 
+    @staticmethod
+    def _resolve_uid(kwargs: dict, param_name: str) -> int:
+        """解析调用者 uid：优先 CallContext.mid，其次 kwargs 显式参数，最后 MID_NOBODY。"""
+        if get_call_context is not None:
+            try:
+                ctx = get_call_context()
+                if ctx is not None:
+                    return ctx.mid
+            except Exception:
+                pass
+        return kwargs.get(param_name, MID_NOBODY)
+
     def get(self, group_id: int, path: str, default: Any = None, **kwargs) -> Any:
         """读取群配置。
 
         kwargs 允许传入 requester_uid 等元数据（兼容旧代码）。
         """
+        requester_uid = self._resolve_uid(kwargs, 'requester_uid')
+        if requester_uid != 0 and requester_uid > MID_APP:
+            _log.warning("GroupConfigManager.get 权限拒绝: group_id=%s, path=%s, uid=%s", group_id, path, requester_uid)
+            return default
         with self._lock:
             data = self._load_group(group_id)
         parts = path.split(".")
@@ -47,8 +79,12 @@ class GroupConfigManager:
         data = self.get(group_id, section, {})
         return data if isinstance(data, dict) else {}
 
-    def set(self, group_id: int, path: str, value: Any) -> None:
+    def set(self, group_id: int, path: str, value: Any, **kwargs) -> None:
         """写入群配置。"""
+        requester_uid = self._resolve_uid(kwargs, 'requester_uid')
+        if requester_uid != 0 and requester_uid > MID_DAEMON:
+            _log.warning("GroupConfigManager.set 权限拒绝: group_id=%s, path=%s, uid=%s", group_id, path, requester_uid)
+            return
         with self._lock:
             data = self._load_group(group_id)
             parts = path.split(".")
@@ -60,8 +96,12 @@ class GroupConfigManager:
             d[parts[-1]] = value
             self._save_group(group_id, data)
 
-    def register_module_schema(self, section: str, defaults: dict, scope: str = "group") -> None:
+    def register_module_schema(self, section: str, defaults: dict, scope: str = "group", **kwargs) -> None:
         """注册模块配置 schema（兼容旧接口）。"""
+        caller_uid = self._resolve_uid(kwargs, 'caller_uid')
+        if caller_uid != 0 and caller_uid > MID_APP:
+            _log.warning("GroupConfigManager.register_module_schema 权限拒绝: section=%s, uid=%s", section, caller_uid)
+            return
         # 暂存 schema 定义，后续群配置初始化时使用
         if not hasattr(self, '_schemas'):
             self._schemas = {}

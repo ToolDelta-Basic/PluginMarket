@@ -14,12 +14,21 @@ class BaseEvent:
         priority: lane 内优先级。正值 = 更高优先，0 = 默认。
         event_id: 事件唯一标识（自动生成）。
         reply_to: 跨 lane 追踪链 — 当前事件由哪个事件触发。
+        publisher_mid: 发布此事件的模块 MID。由 LaneRouter.publish() 注入，不可伪造。
+        publisher_module: 发布此事件的模块名。
+        is_trusted_source: 事件是否来自可信源（WS/内核/守护进程）。
     """
 
     timestamp: float = field(default_factory=time.time, init=False, repr=False)
     priority: int = field(default=0, init=False, repr=False)
     event_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12], init=False, repr=False)
     reply_to: Optional[str] = field(default=None, init=False, repr=False)
+    publisher_mid: int = field(default=400, init=False, repr=False)
+    """发布此事件的模块 MID。由 LaneRouter.publish() 注入，不可伪造。"""
+    publisher_module: str = field(default="", init=False, repr=False)
+    """发布此事件的模块名。"""
+    is_trusted_source: bool = field(default=False, init=False, repr=False)
+    """事件是否来自可信源（WS/内核/守护进程）。"""
 
 
 # ═══════════════════════════════════════════════════════════

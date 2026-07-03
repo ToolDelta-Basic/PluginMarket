@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from .priority_queue import PriorityEventQueue
+from ...core.kernel.services import MID_NOBODY
 
 _log = logging.getLogger(__name__)
 
@@ -262,6 +263,16 @@ class LaneRouter:
         self._running = False
         self._cleanup_task: Optional[asyncio.Task] = None
 
+        # Lane 发布权限白名单
+        self._lane_acl: Dict[str, set] = {
+            "critical": {0, 100},        # 仅 kernel + daemon
+            "admin":    {0, 100},
+            "chat":     {0, 100, 200, 300, 400},
+            "realtime": {0, 100, 200, 300},
+            "ai":       {0, 100, 200, 300, 400},
+            "background": {0, 100, 200, 300, 400},
+        }
+
     # ── 生命周期 ──────────────────────────────
 
     async def start(self):
@@ -330,8 +341,29 @@ class LaneRouter:
 
         Returns:
             True 表示入队成功，False 表示被背压拒绝。
+
+        Raises:
+            PermissionError: lane ACL 检查失败时抛出。
         """
         lane_name = getattr(event, 'lane', None) or self._resolve_lane(type(event))
+
+        # ★ 自动检测发布者身份（未签注事件）
+        if not getattr(event, 'is_trusted_source', False):
+            caller_mid = _detect_publisher_mid()
+            object.__setattr__(event, 'publisher_mid', caller_mid)
+            if hasattr(event, 'publisher_module') and not event.publisher_module:
+                mod = _detect_publisher_module()
+                object.__setattr__(event, 'publisher_module', mod)
+        else:
+            caller_mid = getattr(event, 'publisher_mid', MID_NOBODY)
+
+        # Lane ACL 检查 (仅对已签注的可信来源事件生效)
+        if getattr(event, 'is_trusted_source', False):
+            allowed = self._lane_acl.get(lane_name, set())
+            if allowed and caller_mid not in allowed:
+                raise PermissionError(
+                    f"mid={caller_mid} 无权向 lane '{lane_name}' 发布事件")
+
         lane = self._get_or_create_lane(lane_name)
 
         if priority == 0:
@@ -448,3 +480,34 @@ class LaneRouter:
     def lane_names(self) -> List[str]:
         """返回所有 lane 名称。"""
         return list(self._lanes.keys())
+
+
+# ═══════════════════════════════════════════════════════════
+# 发布者身份检测
+# ═══════════════════════════════════════════════════════════
+
+def _detect_publisher_mid() -> int:
+    """通过调用栈推断事件发布者的 mid。
+
+    遍历调用栈，找到第一个持有 mid 属性的模块实例。
+    如果找不到，返回 MID_NOBODY(400)。
+    """
+    import inspect
+    for frame_info in inspect.stack():
+        mod = frame_info.frame.f_locals.get('self')
+        if mod is not None and hasattr(mod, 'mid'):
+            mid = getattr(mod, 'mid', 0)
+            # 跳过 LaneRouter 自身 (mid=0 但没有 services 属性)
+            if hasattr(mod, 'services') and mid >= 0:
+                return mid
+    return 400  # MID_NOBODY
+
+
+def _detect_publisher_module() -> str:
+    """通过调用栈推断事件发布者的模块名。"""
+    import inspect
+    for frame_info in inspect.stack():
+        mod = frame_info.frame.f_locals.get('self')
+        if mod is not None and hasattr(mod, 'name') and hasattr(mod, 'mid'):
+            return getattr(mod, 'name', '')
+    return ""
