@@ -1,7 +1,7 @@
 """Guild cloud interop ToolDelta plugin entrypoint."""
 
 from threading import Event
-from typing import Dict, TYPE_CHECKING as PY_TYPE_CHECKING
+from typing import Dict
 
 from tooldelta import (
     FrameExit,
@@ -27,11 +27,6 @@ from guild_cloud_interop.config_watcher import (
     refresh_config_file_state,
 )
 from guild_cloud_interop.ui import wrap_player
-
-if PY_TYPE_CHECKING:
-    from 前置_聊天栏菜单 import ChatbarMenu
-    from 前置_玩家XUID获取 import XUIDGetter
-
 
 def _normalize_chatbar_trigger(trigger: object, fallback: str = "公会") -> str:
     """Return the trigger token expected by 聊天栏菜单.add_new_trigger."""
@@ -112,6 +107,9 @@ class GuildPlugin(Plugin):
         self.xuidm = self.GetPluginAPI("XUID获取")
 
         if TYPE_CHECKING:
+            from 前置_聊天栏菜单 import ChatbarMenu
+            from 前置_玩家XUID获取 import XUIDGetter
+
             self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
             self.xuidm = self.get_typecheck_plugin_api(XUIDGetter)
 

@@ -5,7 +5,7 @@ import os
 import time
 import threading
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING as PY_TYPE_CHECKING
+from typing import Any
 from tooldelta import (
     cfg as config,
     utils,
@@ -16,12 +16,6 @@ from tooldelta import (
     TYPE_CHECKING,
     plugin_entry,
 )
-
-if PY_TYPE_CHECKING:
-    from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
-    from 前置_聊天栏菜单 import ChatbarMenu
-    from 前置_Cb2Bot通信 import TellrawCb2Bot
-
 
 CONFIG_FILE_DIR = "插件配置文件"
 DYNAMIC_LOAD_SETTINGS_KEY = "动态载入设置"
@@ -812,6 +806,10 @@ class TaskSystemCloudInterop(Plugin):
         self.chatbar = self.GetPluginAPI("聊天栏菜单")
         self.cb2bot = self.GetPluginAPI("Cb2Bot通信")
         if TYPE_CHECKING:
+            from ZBasic_Lang_中文编程 import ToolDelta_ZBasic
+            from 前置_聊天栏菜单 import ChatbarMenu
+            from 前置_Cb2Bot通信 import TellrawCb2Bot
+
             self.interper = self.get_typecheck_plugin_api(ToolDelta_ZBasic)
             self.chatbar = self.get_typecheck_plugin_api(ChatbarMenu)
             self.cb2bot = self.get_typecheck_plugin_api(TellrawCb2Bot)
