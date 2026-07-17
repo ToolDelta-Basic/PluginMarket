@@ -40,7 +40,8 @@ SUPPORTED_REDIRECT_STATUSES = (
     HTTPStatus.TEMPORARY_REDIRECT,
     HTTPStatus.PERMANENT_REDIRECT,
 )
-SUCCESS_STATUSES = SUPPORTED_REDIRECT_STATUSES + (HTTPStatus.SWITCHING_PROTOCOLS,)
+SUCCESS_STATUSES = SUPPORTED_REDIRECT_STATUSES + \
+    (HTTPStatus.SWITCHING_PROTOCOLS,)
 
 CookieJar = SimpleCookieJar()
 
@@ -60,7 +61,8 @@ def handshake(
     sock, url: str, hostname: str, port: int, resource: str, **options
 ) -> handshake_response:
     """Perform the client handshake and validate the server response."""
-    headers, key = _get_handshake_headers(resource, url, hostname, port, options)
+    headers, key = _get_handshake_headers(
+        resource, url, hostname, port, options)
 
     header_str = "\r\n".join(headers)
     send(sock, header_str)
@@ -111,13 +113,16 @@ def _get_handshake_headers(  # skipcq: PY-R1000
 
     key = _create_sec_websocket_key()
 
-    # Append Sec-WebSocket-Key & Sec-WebSocket-Version if not manually specified
-    if not options.get("header") or "Sec-WebSocket-Key" not in options["header"]:
+    # Append Sec-WebSocket-Key & Sec-WebSocket-Version if not manually
+    # specified
+    if not options.get(
+            "header") or "Sec-WebSocket-Key" not in options["header"]:
         headers.append(f"Sec-WebSocket-Key: {key}")
     else:
         key = options["header"]["Sec-WebSocket-Key"]
 
-    if not options.get("header") or "Sec-WebSocket-Version" not in options["header"]:
+    if not options.get(
+            "header") or "Sec-WebSocket-Version" not in options["header"]:
         headers.append(f"Sec-WebSocket-Version: {VERSION}")
 
     if not options.get("connection"):
@@ -130,7 +135,8 @@ def _get_handshake_headers(  # skipcq: PY-R1000
 
     if header := options.get("header"):
         if isinstance(header, dict):
-            header = [": ".join([k, v]) for k, v in header.items() if v is not None]
+            header = [": ".join([k, v])
+                      for k, v in header.items() if v is not None]
         headers.extend(header)
 
     server_cookie = CookieJar.get(host)
@@ -143,7 +149,9 @@ def _get_handshake_headers(  # skipcq: PY-R1000
     return headers, key
 
 
-def _get_resp_headers(sock, success_statuses: tuple = SUCCESS_STATUSES) -> tuple:
+def _get_resp_headers(
+        sock,
+        success_statuses: tuple = SUCCESS_STATUSES) -> tuple:
     """Read and validate the HTTP response headers for the handshake."""
     status, resp_headers, status_message = read_headers(sock)
     if status not in success_statuses:
@@ -176,7 +184,8 @@ _HEADERS_TO_CHECK = {
 def _create_sec_websocket_accept_digest(value: bytes) -> bytes:
     """Return the RFC 6455-required SHA-1 digest for Sec-WebSocket-Accept."""
     try:
-        return hashlib.sha1(value, usedforsecurity=False).digest()  # skipcq: PTC-W1003
+        return hashlib.sha1(
+            value, usedforsecurity=False).digest()  # skipcq: PTC-W1003
     except TypeError:
         return hashlib.sha1(value).digest()  # skipcq: PTC-W1003
 
@@ -194,7 +203,8 @@ def _validate(headers, key: str, subprotocols) -> tuple:
 
     if subprotocols:
         subproto = headers.get("sec-websocket-protocol")
-        if not subproto or subproto.lower() not in [s.lower() for s in subprotocols]:
+        if not subproto or subproto.lower() not in [
+                s.lower() for s in subprotocols]:
             error(f"Invalid subprotocol: {subprotocols}")
             return False, None
         subproto = subproto.lower()
