@@ -28,6 +28,7 @@ from guild_cloud_interop.config_watcher import (
 )
 from guild_cloud_interop.ui import wrap_player
 
+
 def _normalize_chatbar_trigger(trigger: object, fallback: str = "公会") -> str:
     """Return the trigger token expected by 聊天栏菜单.add_new_trigger."""
     if not isinstance(trigger, str):
