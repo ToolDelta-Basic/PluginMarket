@@ -1,0 +1,10 @@
+{
+    "plugin-id": "CyanStock（券商股票系统）",
+    "author": "CyanForest",
+    "version": "0.1.3",
+    "plugin-type": "classic",
+    "description": "五家券商，计分板货币交易，市场情绪指数，随机利好利空事件，VIP分级折扣，定时补货，持仓上限自动平仓，全菜单式交互，支持面板可视化配置",
+    "pre-plugins": {
+        "聊天栏菜单": "0.0.1"
+    }
+}
