@@ -1,0 +1,9 @@
+{
+    "author": "Mono",
+    "version": "0.0.4",
+    "plugin-type": "classic",
+    "description": "指令频率监测插件，统计并限制所有插件发送指令的频率",
+    "pre-plugins": {},
+    "plugin-id": "command_frequency_monitor",
+    "enabled": true
+}
