@@ -10,7 +10,16 @@ from tooldelta import Plugin, plugin_entry, utils, cfg, Config
 from tooldelta.internal.types import FrameExit, Packet_CommandOutput
 
 
+def _require_callable(func: Callable | None) -> Callable:
+    """确保原始方法引用已初始化，避免调用空引用"""
+    if func is None:
+        raise RuntimeError("原始命令方法引用未初始化")
+    return func
+
+
 class CommandFrequencyMonitor(Plugin):
+    """指令频率监测插件：统计并限制所有插件发送指令的频率"""
+
     name = "指令频率监测"
     author = "Mono"
     description = "指令频率监测插件，统计并限制所有插件发送指令的频率"
@@ -67,7 +76,7 @@ class CommandFrequencyMonitor(Plugin):
 
     # 统计时间窗口配置（秒）
     TIME_WINDOWS = [5, 10, 30, 60, 600]
-    
+
     # 窗口名称映射
     WINDOW_NAMES = {
         5: "5秒",
@@ -96,7 +105,7 @@ class CommandFrequencyMonitor(Plugin):
 
     def __init__(self, frame):
         super().__init__(frame)
-        
+
         # 加载配置
         self.config, _ = self.get_config_and_version(
             self.CONFIG_SCHEMA, self.DEFAULT_CONFIG
@@ -106,18 +115,30 @@ class CommandFrequencyMonitor(Plugin):
         # 保存原始命令方法引用（类级别，防止重复包装）
         if not CommandFrequencyMonitor._originals_stored:
             CommandFrequencyMonitor._original_sendaicmd_ref = self.game_ctrl.sendaicmd
-            CommandFrequencyMonitor._original_sendaicmdonly_ref = self.game_ctrl.sendaicmdonly
+            CommandFrequencyMonitor._original_sendaicmdonly_ref = (
+                self.game_ctrl.sendaicmdonly
+            )
             CommandFrequencyMonitor._original_sendcmd_ref = self.game_ctrl.sendcmd
             CommandFrequencyMonitor._original_sendwocmd_ref = self.game_ctrl.sendwocmd
             CommandFrequencyMonitor._original_sendwscmd_ref = self.game_ctrl.sendwscmd
             CommandFrequencyMonitor._originals_stored = True
 
         # 实例级别引用（方便调用）
-        self._original_sendaicmd = CommandFrequencyMonitor._original_sendaicmd_ref
-        self._original_sendaicmdonly = CommandFrequencyMonitor._original_sendaicmdonly_ref
-        self._original_sendcmd = CommandFrequencyMonitor._original_sendcmd_ref
-        self._original_sendwocmd = CommandFrequencyMonitor._original_sendwocmd_ref
-        self._original_sendwscmd = CommandFrequencyMonitor._original_sendwscmd_ref
+        self._original_sendaicmd = _require_callable(
+            CommandFrequencyMonitor._original_sendaicmd_ref
+        )
+        self._original_sendaicmdonly = _require_callable(
+            CommandFrequencyMonitor._original_sendaicmdonly_ref
+        )
+        self._original_sendcmd = _require_callable(
+            CommandFrequencyMonitor._original_sendcmd_ref
+        )
+        self._original_sendwocmd = _require_callable(
+            CommandFrequencyMonitor._original_sendwocmd_ref
+        )
+        self._original_sendwscmd = _require_callable(
+            CommandFrequencyMonitor._original_sendwscmd_ref
+        )
 
         # 命令时间戳记录（线程安全）- 使用list配合bisect进行二分查找
         # 时间戳按插入顺序递增，天然有序
@@ -169,7 +190,9 @@ class CommandFrequencyMonitor(Plugin):
         """恢复命令发送方法为原始方法"""
         if CommandFrequencyMonitor._originals_stored:
             self.game_ctrl.sendaicmd = CommandFrequencyMonitor._original_sendaicmd_ref
-            self.game_ctrl.sendaicmdonly = CommandFrequencyMonitor._original_sendaicmdonly_ref
+            self.game_ctrl.sendaicmdonly = (
+                CommandFrequencyMonitor._original_sendaicmdonly_ref
+            )
             self.game_ctrl.sendcmd = CommandFrequencyMonitor._original_sendcmd_ref
             self.game_ctrl.sendwocmd = CommandFrequencyMonitor._original_sendwocmd_ref
             self.game_ctrl.sendwscmd = CommandFrequencyMonitor._original_sendwscmd_ref
@@ -222,13 +245,13 @@ class CommandFrequencyMonitor(Plugin):
 
     def _check_block_and_record(self) -> bool:
         """检查是否被阻止，如果未被阻止则记录命令并返回True，否则返回False
-        
+
         使用单个锁保护整个检查+记录流程，确保原子性。
         IO操作（print_war）已移到锁外，避免阻塞全局锁。
         """
         now = time.time()
         blocked_reason = ""
-        
+
         with self._lock:
             # 检查阻止状态
             if now < self._blocked_until:
@@ -239,26 +262,26 @@ class CommandFrequencyMonitor(Plugin):
                 # 记录命令并清理过期数据（在同一锁内完成）
                 self._record_command(now)
                 return True
-        
+
         # IO操作移到锁外
         if blocked_reason == "blocked":
             self.print_war("指令发送被阻止，当前处于频率限制期间")
         elif blocked_reason == "exiting":
             self.print_war("指令发送被阻止，程序即将退出")
-        
+
         return False
 
     def _check_warnings(self) -> bool:
         """检查并触发警告阈值
-        
+
         _warning_states 仅由监控线程访问，故无需加锁。
-        
+
         Returns:
             bool: 是否需要强制退出
         """
         max_limit = self.config["max_freq_limit"]
         current_freq = self._get_frequency(5)  # 使用5秒窗口作为参考
-        
+
         # 计算当前频率占最高限制的百分比
         percentage = (current_freq / max_limit) * 100 if max_limit > 0 else 0
 
@@ -273,11 +296,10 @@ class CommandFrequencyMonitor(Plugin):
                             f"指令频率超过最高限制的{threshold}% ({current_freq:.2f}条/秒)，强制退出程序"
                         )
                         return True  # 需要强制退出
-                    else:
-                        self.print_war(
-                            f"指令频率达到最高限制的{threshold}% ({current_freq:.2f}条/秒)"
-                        )
-        
+                    self.print_war(
+                        f"指令频率达到最高限制的{threshold}% ({current_freq:.2f}条/秒)"
+                    )
+
         # 重置警告状态（当频率下降到阈值以下时）
         for threshold in [50, 70, 90, 120]:
             if percentage < threshold * 0.8 and self._warning_states[threshold]:
@@ -289,19 +311,19 @@ class CommandFrequencyMonitor(Plugin):
         """监测线程主循环"""
         while not self._stop_event.is_set():
             time.sleep(0.5)  # 每0.5秒检查一次
-            
+
             # 检查警告阈值（_warning_states仅由监控线程访问，无需加锁）
             if self._check_warnings():
                 # 在锁内标记已触发强制退出
                 with self._lock:
                     self._force_exit_triggered = True
-                
+
                 # 停止监测循环
                 self._stop_event.set()
-                
+
                 # 记录退出日志（只写一次）
                 self._write_exit_log()
-                
+
                 # 尝试调用框架退出API
                 try:
                     if hasattr(self.frame, 'exit'):
@@ -316,7 +338,7 @@ class CommandFrequencyMonitor(Plugin):
             # 检查频率限制：获取一次锁，统一计算所有窗口频率（快照一致性）
             with self._lock:
                 now = time.time()
-                
+
                 # 如果未被阻止，检查是否需要阻止
                 if now >= self._blocked_until:
                     # 计算所有窗口的频率（同一时刻的快照）
@@ -325,7 +347,7 @@ class CommandFrequencyMonitor(Plugin):
                         cutoff = now - window
                         idx = bisect_left(self._cmd_timestamps, cutoff)
                         frequencies[window] = (len(self._cmd_timestamps) - idx) / window
-                    
+
                     # 检查各窗口频率是否超过阈值
                     for window in self.FREQ_LIMIT_CONFIG_MAP:
                         freq = frequencies[window]
@@ -481,47 +503,47 @@ class CommandFrequencyMonitor(Plugin):
     def on_frame_exit(self, _: FrameExit):
         """框架退出时清理资源并记录日志"""
         self._stop_event.set()
-        
+
         # 恢复原始方法引用
         self._restore_game_ctrl_methods()
-        
+
         # 记录退出日志（只写一次）
         self._write_exit_log()
-        
+
         self.print_inf("指令频率监测插件已停止")
 
     def _write_exit_log(self):
         """将指令频率统计信息写入日志文件（只写一次）"""
         if self._exit_log_written:
             return
-        
+
         self._exit_log_written = True
-        
+
         import datetime
-        
+
         now = datetime.datetime.now()
         timestamp_str = now.strftime("%Y-%m-%d_%H-%M-%S")
-        
+
         # 确保目录存在
         self.data_path.mkdir(parents=True, exist_ok=True)
-        
+
         # 日志文件名
         log_file = self.data_path / f"exit_log_{timestamp_str}.txt"
-        
+
         # 构建日志内容
         frequencies = self.get_all_frequencies()
         log_lines = [
             "=" * 50,
-            f"指令频率监测 - 退出日志",
+            "指令频率监测 - 退出日志",
             f"退出时间: {now.strftime('%Y-%m-%d %H:%M:%S')}",
             "=" * 50,
             "",
             "【频率统计】",
         ]
-        
+
         for window, freq in frequencies.items():
             log_lines.append(f"  {window}: {freq:.2f} 条/秒")
-        
+
         log_lines.extend([
             "",
             "【其他统计】",
@@ -529,15 +551,15 @@ class CommandFrequencyMonitor(Plugin):
             "",
             "【配置信息】",
         ])
-        
+
         for key, value in self.config.items():
             log_lines.append(f"  {key}: {value}")
-        
+
         log_lines.extend([
             "",
             "=" * 50,
         ])
-        
+
         # 写入日志文件
         try:
             with open(log_file, "w", encoding="utf-8") as f:
