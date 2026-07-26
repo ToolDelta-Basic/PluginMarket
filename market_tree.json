@@ -12,7 +12,7 @@
     "MC-MIDIPlayer": {
       "name": "前置_MIDI播放器",
       "author": "SuperScript",
-      "version": "0.2.8",
+      "version": "0.2.9",
       "plugin-type": "classic"
     },
     "群服互通Ultra": {
@@ -384,13 +384,13 @@
     "mcstructure导入器[可导入命令]": {
       "name": "mcstructure导入器[可导入命令]",
       "author": "style_天枢",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "杀戮光环举报": {
       "name": "杀戮光环举报",
       "author": "丸山彩",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "plugin-type": "classic"
     },
     "quick_plugin_installer": {
@@ -462,7 +462,7 @@
     "基本插件功能库": {
       "name": "前置_基本插件功能库",
       "author": "SuperScript",
-      "version": "0.0.12",
+      "version": "0.0.13",
       "plugin-type": "classic"
     },
     "发言频率限制v2": {
@@ -492,7 +492,7 @@
     "schematic导入器": {
       "name": "schematic导入器",
       "author": "style_天枢",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "封禁系统": {
@@ -606,7 +606,7 @@
     "command_frequency_monitor": {
       "name": "tooldelta_plugin_指令频率监测",
       "author": "Mono",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "plugin-type": "classic"
     },
     "死亡点返回": {
