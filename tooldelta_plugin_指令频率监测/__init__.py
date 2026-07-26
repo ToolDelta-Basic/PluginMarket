@@ -10,11 +10,9 @@ from tooldelta import Plugin, plugin_entry, utils, cfg, Config
 from tooldelta.internal.types import FrameExit, Packet_CommandOutput
 
 
-def _require_callable(func: Callable | None) -> Callable:
-    """确保原始方法引用已初始化，避免调用空引用"""
-    if func is None:
-        raise RuntimeError("原始命令方法引用未初始化")
-    return func
+def _unpatched_placeholder(*_args, **_kwargs):
+    """原始方法引用的占位符：在原始方法被捕获前调用即抛错"""
+    raise RuntimeError("原始命令方法引用未初始化")
 
 
 class CommandFrequencyMonitor(Plugin):
@@ -27,11 +25,11 @@ class CommandFrequencyMonitor(Plugin):
 
     # 类级别的原始方法引用，防止插件重载时重复包装
     _originals_stored: ClassVar[bool] = False
-    _original_sendaicmd_ref: ClassVar[Callable | None] = None
-    _original_sendaicmdonly_ref: ClassVar[Callable | None] = None
-    _original_sendcmd_ref: ClassVar[Callable | None] = None
-    _original_sendwocmd_ref: ClassVar[Callable | None] = None
-    _original_sendwscmd_ref: ClassVar[Callable | None] = None
+    _original_sendaicmd_ref: ClassVar[Callable] = _unpatched_placeholder
+    _original_sendaicmdonly_ref: ClassVar[Callable] = _unpatched_placeholder
+    _original_sendcmd_ref: ClassVar[Callable] = _unpatched_placeholder
+    _original_sendwocmd_ref: ClassVar[Callable] = _unpatched_placeholder
+    _original_sendwscmd_ref: ClassVar[Callable] = _unpatched_placeholder
 
     # 默认配置（使用英文蛇形命名）
     DEFAULT_CONFIG = {
@@ -124,21 +122,13 @@ class CommandFrequencyMonitor(Plugin):
             CommandFrequencyMonitor._originals_stored = True
 
         # 实例级别引用（方便调用）
-        self._original_sendaicmd = _require_callable(
-            CommandFrequencyMonitor._original_sendaicmd_ref
-        )
-        self._original_sendaicmdonly = _require_callable(
+        self._original_sendaicmd = CommandFrequencyMonitor._original_sendaicmd_ref
+        self._original_sendaicmdonly = (
             CommandFrequencyMonitor._original_sendaicmdonly_ref
         )
-        self._original_sendcmd = _require_callable(
-            CommandFrequencyMonitor._original_sendcmd_ref
-        )
-        self._original_sendwocmd = _require_callable(
-            CommandFrequencyMonitor._original_sendwocmd_ref
-        )
-        self._original_sendwscmd = _require_callable(
-            CommandFrequencyMonitor._original_sendwscmd_ref
-        )
+        self._original_sendcmd = CommandFrequencyMonitor._original_sendcmd_ref
+        self._original_sendwocmd = CommandFrequencyMonitor._original_sendwocmd_ref
+        self._original_sendwscmd = CommandFrequencyMonitor._original_sendwscmd_ref
 
         # 命令时间戳记录（线程安全）- 使用list配合bisect进行二分查找
         # 时间戳按插入顺序递增，天然有序
