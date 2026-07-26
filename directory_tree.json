@@ -781,6 +781,10 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "tooldelta_plugin_NEMC-sync": {
+        "__init__.py": 0,
+        "datas.json": 0
+    },
     "自定义聊天栏菜单": {
         "__init__.py": 0,
         "datas.json": 0
@@ -1355,6 +1359,10 @@
         "qlutils.py": 0,
         "proc.py": 0,
         "cfg_formatter.py": 0
+    },
+    "tooldelta_plugin_指令频率监测": {
+        "__init__.py": 0,
+        "datas.json": 0
     },
     "死亡点返回": {
         "__init__.py": 0,

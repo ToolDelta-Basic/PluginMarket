@@ -249,6 +249,12 @@
       "version": "0.0.5",
       "plugin-type": "classic"
     },
+    "nemc-message-sync-client": {
+      "name": "tooldelta_plugin_NEMC-sync",
+      "author": "Mono",
+      "version": "0.0.1",
+      "plugin-type": "classic"
+    },
     "自定义聊天栏菜单": {
       "name": "自定义聊天栏菜单",
       "author": "SuperScript",
@@ -595,6 +601,12 @@
       "name": "群服互通本地版启动器",
       "author": "SuperScript",
       "version": "0.0.3",
+      "plugin-type": "classic"
+    },
+    "command_frequency_monitor": {
+      "name": "tooldelta_plugin_指令频率监测",
+      "author": "Mono",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "死亡点返回": {
