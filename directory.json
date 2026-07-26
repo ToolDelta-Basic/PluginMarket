@@ -1441,6 +1441,11 @@
         "__init__.py",
         "datas.json"
     ],
+    "CyanStock(券商股票系统)": [
+        "__init__.py",
+        "datas.json",
+        "README.md"
+    ],
     "灵魂出窍": [
         "__init__.py",
         "datas.json"
