@@ -1,0 +1,10 @@
+{
+  "author": "Mono",
+  "version": "0.0.1",
+  "description": "QQ官方bot | 双向互通 网易Minecraft 和 QQ 群消息",
+  "limit_launcher": null,
+  "pre-plugins": {
+  },
+  "plugin-type": "classic",
+  "plugin-id": "nemc-message-sync-client"
+}
