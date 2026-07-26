@@ -358,8 +358,9 @@ class CommandFrequencyMonitor(Plugin):
             count = len(self._cmd_timestamps) - idx
         return count / window_seconds if window_seconds > 0 else 0.0
 
+    @staticmethod
     def _get_timestamps_frequency(
-        self, timestamps: list[float], cutoff: float, window_seconds: int
+        timestamps: list[float], cutoff: float, window_seconds: int
     ) -> float:
         """获取给定时间戳列表在指定窗口内的频率（内部方法，需在锁内调用）。"""
         idx = bisect_left(timestamps, cutoff)
@@ -718,7 +719,8 @@ class CommandFrequencyMonitor(Plugin):
             for identity in COMMAND_IDENTITIES
         }
 
-    def get_server_limits(self) -> dict[str, dict[int, float]]:
+    @staticmethod
+    def get_server_limits() -> dict[str, dict[int, float]]:
         """
         获取服务器真实频率限制表（API方法）。
 
