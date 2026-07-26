@@ -21,7 +21,7 @@ class CommandFrequencyMonitor(Plugin):
     name = "指令频率监测"
     author = "Mono"
     description = "指令频率监测插件，统计并限制所有插件发送指令的频率"
-    version = (0, 0, 4)
+    version = (0, 0, 5)
 
     # 类级别的原始方法引用，防止插件重载时重复包装
     _originals_stored: ClassVar[bool] = False
@@ -32,7 +32,7 @@ class CommandFrequencyMonitor(Plugin):
     _original_sendwscmd_ref: ClassVar[Callable] = _unpatched_placeholder
 
     # 默认配置（使用英文蛇形命名）
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: ClassVar[dict[str, float | bool]] = {
         # 频率限制配置：当指定时间内平均频率超过阈值时，阻止后续指令发送指定秒数
         "freq_limit_5s_threshold": 10.0,
         "freq_limit_5s_block_duration": 5.0,
@@ -54,7 +54,7 @@ class CommandFrequencyMonitor(Plugin):
     }
 
     # 配置类型校验
-    CONFIG_SCHEMA = {
+    CONFIG_SCHEMA: ClassVar[dict[str, type]] = {
         "freq_limit_5s_threshold": Config.PNumber,
         "freq_limit_5s_block_duration": Config.PNumber,
         "freq_limit_10s_threshold": Config.PNumber,
@@ -73,10 +73,10 @@ class CommandFrequencyMonitor(Plugin):
     }
 
     # 统计时间窗口配置（秒）
-    TIME_WINDOWS = [5, 10, 30, 60, 600]
+    TIME_WINDOWS: ClassVar[list[int]] = [5, 10, 30, 60, 600]
 
     # 窗口名称映射
-    WINDOW_NAMES = {
+    WINDOW_NAMES: ClassVar[dict[int, str]] = {
         5: "5秒",
         10: "10秒",
         30: "30秒",
@@ -85,7 +85,7 @@ class CommandFrequencyMonitor(Plugin):
     }
 
     # 警告阈值配置映射
-    WARNING_CONFIG_MAP = {
+    WARNING_CONFIG_MAP: ClassVar[dict[int, str]] = {
         50: "warning_50pct_enable",
         70: "warning_70pct_enable",
         90: "warning_90pct_enable",
@@ -93,7 +93,7 @@ class CommandFrequencyMonitor(Plugin):
     }
 
     # 频率限制配置映射（窗口秒数 -> (阈值键, 阻止时长键)）
-    FREQ_LIMIT_CONFIG_MAP = {
+    FREQ_LIMIT_CONFIG_MAP: ClassVar[dict[int, tuple[str, str]]] = {
         5: ("freq_limit_5s_threshold", "freq_limit_5s_block_duration"),
         10: ("freq_limit_10s_threshold", "freq_limit_10s_block_duration"),
         30: ("freq_limit_30s_threshold", "freq_limit_30s_block_duration"),
@@ -197,7 +197,9 @@ class CommandFrequencyMonitor(Plugin):
             self.print_inf(f"  {window}: {freq:.2f} 条/秒")
         self.print_inf(f"  命令总数: {self.get_command_count()}")
         if self.is_blocked():
-            self.print_war(f"  当前状态: 已阻止 ({self.get_block_remaining_time():.1f}秒后恢复)")
+            self.print_war(
+                f"  当前状态: 已阻止 ({self.get_block_remaining_time():.1f}秒后恢复)"
+            )
         else:
             self.print_suc("  当前状态: 正常")
 
@@ -316,10 +318,11 @@ class CommandFrequencyMonitor(Plugin):
 
                 # 尝试调用框架退出API
                 try:
-                    if hasattr(self.frame, 'exit'):
-                        self.frame.exit()
-                    elif hasattr(self.frame.launcher, 'update_status'):
+                    if hasattr(self.frame, "exit"):
+                        self.frame.exit()  # type: ignore
+                    elif hasattr(self.frame.launcher, "update_status"):
                         from tooldelta.constants import SysStatus
+
                         self.frame.launcher.update_status(SysStatus.NORMAL_EXIT)
                 except Exception as e:
                     self.print_err(f"触发框架退出时出错: {e}")
@@ -534,21 +537,25 @@ class CommandFrequencyMonitor(Plugin):
         for window, freq in frequencies.items():
             log_lines.append(f"  {window}: {freq:.2f} 条/秒")
 
-        log_lines.extend([
-            "",
-            "【其他统计】",
-            f"  命令总数: {self.get_command_count()}",
-            "",
-            "【配置信息】",
-        ])
+        log_lines.extend(
+            [
+                "",
+                "【其他统计】",
+                f"  命令总数: {self.get_command_count()}",
+                "",
+                "【配置信息】",
+            ]
+        )
 
         for key, value in self.config.items():
             log_lines.append(f"  {key}: {value}")
 
-        log_lines.extend([
-            "",
-            "=" * 50,
-        ])
+        log_lines.extend(
+            [
+                "",
+                "=" * 50,
+            ]
+        )
 
         # 写入日志文件
         try:

@@ -152,4 +152,4 @@ class Core:
         if self.cfg.CMD_MODE == 0:
             self.plugin.game_ctrl.sendwocmd(cmd)
         elif self.cfg.CMD_MODE == 1:
-            self.plugin.funclib.sendaicmd(cmd)
+            self.plugin.game_ctrl.sendaicmd(cmd)

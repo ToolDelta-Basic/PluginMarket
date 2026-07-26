@@ -1,10 +1,8 @@
 import json
-import uuid
 import threading
-from tooldelta import Plugin, constants, utils, Chat, Player, plugin_entry
-from tooldelta.constants.netease import PYRPC_OP_SEND
+from tooldelta import Plugin, utils, Chat, Player, plugin_entry, TYPE_CHECKING
 
-if 0:
+if TYPE_CHECKING:
     from tooldelta.internal.types import Packet_CommandOutput
 
 
@@ -16,7 +14,7 @@ def find_key_from_value(dic, val):
 
 
 class BasicFunctionLib(Plugin):
-    version = (0, 0, 12)
+    version = (0, 0, 13)
     name = "基本插件功能库"
     author = "SuperScript"
     description = "提供额外的方法用于获取游戏数据"
@@ -276,28 +274,6 @@ class BasicFunctionLib(Plugin):
         "返回命令执行是否成功"
         res = self.game_ctrl.sendwscmd_with_resp(cmd, timeout).SuccessCount
         return bool(res)
-
-    def sendaicmd(self, cmd: str):
-        "发送一条魔法指令。"
-        my_runtimeid = self.game_ctrl.players.getBotInfo().runtime_id
-        pk = {
-            "Value": [
-                "ModEventC2S",
-                [
-                    "Minecraft",
-                    "aiCommand",
-                    "ExecuteCommandEvent",
-                    {
-                        "playerId": str(my_runtimeid),
-                        "cmd": cmd,
-                        "uuid": str(uuid.uuid4()),
-                    },
-                ],
-                None,
-            ],
-            "OperationType": PYRPC_OP_SEND,
-        }
-        self.game_ctrl.sendPacket(constants.PacketIDS.PyRpc, pk)
 
 
 EXC_PLAYER_LEAVE = OSError("Player left when waiting msg.")

@@ -5,9 +5,10 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Deque, List, Optional, Set, Tuple
+from typing import Any
 
 from tooldelta import Plugin, Print, ToolDelta, cfg, plugin_entry
+from tooldelta.constants import PacketIDS
 
 
 @dataclass
@@ -24,9 +25,7 @@ class KillAuraReport(Plugin):
 
     name = "杀戮光环举报"
     author = "丸山彩"
-    version = (0, 0, 1)
-
-    _PKT_LEVEL_SOUND_EVENT = 123
+    version = (0, 0, 2)
 
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
@@ -59,30 +58,28 @@ class KillAuraReport(Plugin):
             self.name, std_cfg, default_cfg, self.version
         )
 
-        self.funclib = None
         self.ban_api = None
 
-        self._q: Deque[_ReportCase] = deque()
+        self._q: deque[_ReportCase] = deque()
         self._q_event = threading.Event()
         self._q_lock = threading.Lock()
-        self._queued_targets: Set[str] = set()
+        self._queued_targets: set[str] = set()
 
         self._case_lock = threading.Lock()
-        self._current: Optional[_ReportCase] = None
-        self._bot_pos: Optional[Tuple[float, float, float]] = None
-        self._hit_times: Deque[float] = deque()
-        self._over_since: Optional[float] = None
+        self._current: _ReportCase | None = None
+        self._bot_pos: tuple[float, float, float] | None = None
+        self._hit_times: deque[float] = deque()
+        self._over_since: float | None = None
 
         self._worker_started = False
 
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         self.ListenChat(self.on_chat)
-        self.ListenPacket(self._PKT_LEVEL_SOUND_EVENT, self.on_pkt_sound)
+        self.ListenPacket(PacketIDS.LevelSoundEvent, self.on_pkt_sound)
 
     def on_preload(self):
         """Preload"""
-        self.funclib = self.GetPluginAPI("基本插件功能库")
         try:
             self.ban_api = self.GetPluginAPI("封禁系统", force=False)
         except Exception:
@@ -144,10 +141,10 @@ class KillAuraReport(Plugin):
         self,
         *,
         reporter: str,
-        players: List[str],
+        players: list[str],
         page: int,
         page_size: int,
-    ) -> Tuple[List[str], str, int, int]:
+    ) -> tuple[list[str], str, int, int]:
         """格式化某一页的玩家列表提示"""
         total_pages = (len(players) + page_size - 1) // page_size
         if total_pages <= 0:
@@ -179,8 +176,8 @@ class KillAuraReport(Plugin):
         resp: str,
         page: int,
         total_pages: int,
-        shown: List[str],
-    ) -> Tuple[str, Optional[int], Optional[str]]:
+        shown: list[str],
+    ) -> tuple[str, int | None, str | None]:
         """处理一次分页输入"""
         resp = resp.strip()
 
@@ -315,7 +312,7 @@ class KillAuraReport(Plugin):
 
         try:
             try:
-                self.funclib.sendaicmd("/gamerule sendcommandfeedback false")
+                self.game_ctrl.sendaicmd("/gamerule sendcommandfeedback false")
             except Exception:
                 pass
 
@@ -446,7 +443,7 @@ class KillAuraReport(Plugin):
         if (
             not isinstance(pos, list)
             or len(pos) < 3
-            or not isinstance(pos[0], (int, float))
+            or not isinstance(pos[0], (int | float))
         ):
             return False
 
@@ -473,9 +470,9 @@ class KillAuraReport(Plugin):
 
         return False
 
-    def _get_online_player_names(self) -> List[str]:
+    def _get_online_player_names(self) -> list[str]:
         """获取在线玩家名列表"""
-        names: List[str] = []
+        names: list[str] = []
         try:
             for p in list(self.game_ctrl.players):
                 n = getattr(p, "name", None)
@@ -491,7 +488,7 @@ class KillAuraReport(Plugin):
             raw = {"rawtext": [{"text": text}]}
             raw_s = json.dumps(raw, ensure_ascii=False)
             cmd = f'/tellraw @a[name="{player_name}"] {raw_s}'
-            self.funclib.sendaicmd(cmd)
+            self.game_ctrl.sendaicmd(cmd)
         except Exception:
             pass
 
@@ -521,7 +518,7 @@ class KillAuraReport(Plugin):
         return KillAuraReport._ws_has_receipt(resp, allow_empty=False)
 
     @staticmethod
-    def _ws_get_first_parameter(resp: Any) -> Optional[Any]:
+    def _ws_get_first_parameter(resp: Any) -> Any | None:
         """获取 ws 回执中的第一个参数"""
         try:
             out = getattr(resp, "OutputMessages", None)
@@ -543,7 +540,7 @@ class KillAuraReport(Plugin):
         return None
 
     @staticmethod
-    def _parse_querytarget_parameter(parameter: Any) -> Optional[List[dict]]:
+    def _parse_querytarget_parameter(parameter: Any) -> list[dict] | None:
         """把 querytarget 参数解析为 list[dict]"""
         try:
             if isinstance(parameter, str):
@@ -554,7 +551,7 @@ class KillAuraReport(Plugin):
         except Exception:
             return None
 
-    def _querytarget_self_pos(self) -> Optional[Tuple[float, float, float]]:
+    def _querytarget_self_pos(self) -> tuple[float, float, float] | None:
         """querytarget @s 获取机器人坐标"""
         try:
             resp = self.game_ctrl.sendwscmd_with_resp("/querytarget @s", 2)
@@ -574,10 +571,11 @@ class KillAuraReport(Plugin):
             x = pos.get("x")
             y = pos.get("y")
             z = pos.get("z")
-            if not all(isinstance(v, (int, float)) for v in (x, y, z)):
+            if not all(isinstance(v, (int | float)) for v in (x, y, z)):
                 return None
 
-            return (float(x), float(y), float(z))
+            if x and y and z:
+                return (float(x), float(y), float(z))
         except Exception:
             return None
 

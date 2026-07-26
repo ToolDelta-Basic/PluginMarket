@@ -14,7 +14,6 @@ CHUNK_SIZE = 16
 class ChunkPainter:
     def __init__(self, plugin: "SchematicLoader") -> None:
         self.game_ctrl = plugin.game_ctrl
-        self.funclib = plugin.funclib
         self.cfg = plugin.config_mgr
 
     def paint_chunked_blocks(
@@ -150,4 +149,4 @@ class ChunkPainter:
         if self.cfg.CMD_MODE == 0:
             self.game_ctrl.sendwocmd(cmd)
         elif self.cfg.CMD_MODE == 1:
-            self.funclib.sendaicmd(cmd)
+            self.game_ctrl.sendaicmd(cmd)
