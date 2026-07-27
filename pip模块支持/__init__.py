@@ -59,6 +59,7 @@ class PipSupport(Plugin):
     def _build_install_command(
         self, packages: list[str], upgrade: bool = False
     ) -> list[str]:
+        """Build the command used to install Python packages."""
         install_args = [
             "install",
             "--index-url",
@@ -89,6 +90,7 @@ class PipSupport(Plugin):
 
     @staticmethod
     def _can_run_current_python() -> bool:
+        """Return whether the current Python executable can be started."""
         try:
             proc = subprocess.run(
                 [sys.executable, "-c", "import sys"],
@@ -102,6 +104,7 @@ class PipSupport(Plugin):
 
     @classmethod
     def _current_python_has_pip(cls) -> bool:
+        """Return whether the current Python executable can run pip."""
         if not cls._can_run_current_python():
             return False
         try:
