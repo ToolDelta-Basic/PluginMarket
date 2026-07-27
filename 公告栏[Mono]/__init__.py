@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import datetime
 import importlib
+import sys
 import threading
 import time
 from collections.abc import Iterator
+from dataclasses import dataclass, field
 from typing import Any
 
 from tooldelta import Plugin, cfg, plugin_entry, utils
@@ -12,10 +14,39 @@ from tooldelta.constants import PacketIDS
 from tooldelta.internal.launch_cli import FrameFateArk
 from tooldelta.internal.types import Packet_CommandOutput
 
-try:
-    import ntplib
-except ModuleNotFoundError:
-    ntplib = None
+
+@dataclass
+class _NtpState:
+    """NTP 时间同步的模块级状态容器。
+
+    用 dataclass 替代 global 语句修改模块级变量,
+    既保持线程安全又符合静态检查规范。
+    """
+
+    time_offset: datetime.timedelta = datetime.timedelta(0)
+    offset_lock: threading.Lock = field(default_factory=threading.Lock)
+
+
+_ntp_state = _NtpState()
+
+
+def _import_ntplib():
+    """尝试在当前环境中导入 ntplib。
+
+    导入成功会将 ntplib 注入 sys.modules 供后续使用。
+    若首次导入失败,返回 None,由调用方决定是否安装。
+    """
+    if "ntplib" in sys.modules:
+        return sys.modules["ntplib"]
+    try:
+        import ntplib
+
+        return ntplib
+    except ModuleNotFoundError:
+        return None
+
+
+ntplib = _import_ntplib()
 
 
 OBJECTIVE_NAME = "公告"
@@ -53,9 +84,6 @@ CONFIG_SCHEMA = cfg.auto_to_std(DEFAULT_CONFIG)
 CONFIG_SCHEMA["刷新时间"] = cfg.PNumber
 CONFIG_SCHEMA["TPS连续为0显示未知次数"] = cfg.PInt
 
-_time_offset: datetime.timedelta = datetime.timedelta(0)
-_offset_lock = threading.Lock()
-
 
 def _get_beijing_timezone() -> datetime.tzinfo:
     """获取北京时区(UTC+8)对象。
@@ -72,9 +100,8 @@ def _set_time_offset(offset: datetime.timedelta) -> None:
     Args:
         offset: NTP 服务器返回的时间偏移量。
     """
-    global _time_offset
-    with _offset_lock:
-        _time_offset = offset
+    with _ntp_state.offset_lock:
+        _ntp_state.time_offset = offset
 
 
 def _get_synced_now(tz: datetime.tzinfo) -> datetime.datetime:
@@ -86,8 +113,8 @@ def _get_synced_now(tz: datetime.tzinfo) -> datetime.datetime:
     Returns:
         校正后的当前时间。
     """
-    with _offset_lock:
-        offset = _time_offset
+    with _ntp_state.offset_lock:
+        offset = _ntp_state.time_offset
     return datetime.datetime.now(tz) + offset
 
 
@@ -187,25 +214,41 @@ class BetterAnnounce(Plugin):
             frame: ToolDelta 框架实例。
         """
         super().__init__(frame)
+        self.config: dict[str, Any] = {}
+        self.announce_templates: list[str] = []
+        self.refresh_interval: int | float = 1
+        self.title: str = "公告栏"
+        self.zero_tps_unknown_count: int = 3
+        self.tps_calculator: Any = None
+        self.is_first_refresh: bool = True
+        self.start_time: float = time.time()
+        self.created_score_entries: dict[Any, str] = {}
+        self.latest_texts: list[str] = []
+        self.last_tps_value: float | None = None
+        self.same_tps_value_count: int = 0
+        self.is_rental_server: bool = False
+        self.can_use_ai_command: bool = False
+
         self.ListenPreload(self.on_preload)
         self.ListenActive(self.on_active)
         self.ListenPacket([PacketIDS.IDSetScore], self.on_set_score)
 
     def on_preload(self) -> None:
         """预加载阶段:读取配置、初始化状态、检测服务器环境与命令模式,
-        并启动后台 NTP 时间同步线程。"""
+        并启动后台 NTP 时间同步线程。
+        """
         self.config, _ = self.get_config_and_version(CONFIG_SCHEMA, DEFAULT_CONFIG)
-        self.announce_templates: list[str] = self.config["公告栏内容"]
-        self.refresh_interval: int | float = self.config["刷新时间"]
-        self.title: str = self.config["标题"]
-        self.zero_tps_unknown_count: int = self.config["TPS连续为0显示未知次数"]
+        self.announce_templates = self.config["公告栏内容"]
+        self.refresh_interval = self.config["刷新时间"]
+        self.title = self.config["标题"]
+        self.zero_tps_unknown_count = self.config["TPS连续为0显示未知次数"]
 
         self.tps_calculator = self.GetPluginAPI("tps计算器", (0, 0, 1), True)
         self.is_first_refresh = True
         self.start_time = time.time()
-        self.created_score_entries: dict[Any, str] = {}
-        self.latest_texts: list[str] = []
-        self.last_tps_value: float | None = None
+        self.created_score_entries = {}
+        self.latest_texts = []
+        self.last_tps_value = None
         self.same_tps_value_count = 0
 
         self.is_rental_server = self._is_rental_server()
@@ -224,10 +267,9 @@ class BetterAnnounce(Plugin):
         若 ntplib 未安装,先尝试通过 pip 模块支持插件安装;
         安装失败或 ntplib 不可用时打印提示并使用系统时间。
         """
-        if ntplib is None:
-            if not self._try_install_ntplib():
-                self.print_war("§6NTP 时间同步未启用,将使用系统时间")
-                return
+        if ntplib is None and not self._try_install_ntplib():
+            self.print_war("§6NTP 时间同步未启用,将使用系统时间")
+            return
         thread = threading.Thread(
             target=self._sync_ntp_time,
             name="NTP时间同步",
@@ -251,8 +293,10 @@ class BetterAnnounce(Plugin):
             self.print_err(f"§cntplib 安装失败: {err}")
             return False
         try:
-            global ntplib
-            ntplib = importlib.import_module("ntplib")
+            importlib.invalidate_caches()
+            module = importlib.import_module("ntplib")
+            sys.modules["ntplib"] = module
+            globals()["ntplib"] = module
         except ImportError as err:
             self.print_err(f"§cntplib 安装后导入失败: {err}")
             return False
@@ -635,9 +679,9 @@ class BetterAnnounce(Plugin):
         Args:
             entries: 数据包中的计分项列表。
         """
-        for entry in entries:
-            if entry["ObjectiveName"] == OBJECTIVE_NAME:
-                self.created_score_entries[entry["EntryID"]] = entry["DisplayName"]
+        for item in entries:
+            if item["ObjectiveName"] == OBJECTIVE_NAME:
+                self.created_score_entries[item["EntryID"]] = item["DisplayName"]
 
     def _remove_deleted_entries(self, entries: list[dict[str, Any]]) -> None:
         """移除已删除的计分板项记录。
@@ -645,8 +689,8 @@ class BetterAnnounce(Plugin):
         Args:
             entries: 数据包中的计分项列表。
         """
-        for entry in entries:
-            self.created_score_entries.pop(entry["EntryID"], None)
+        for item in entries:
+            self.created_score_entries.pop(item["EntryID"], None)
 
     def _clear_recorded_score_entries(self) -> None:
         """清理所有由本插件创建的计分项,避免计分板堆积。"""
