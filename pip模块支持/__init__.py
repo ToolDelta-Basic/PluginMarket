@@ -1,13 +1,18 @@
-import sys
 import importlib
+import shutil
 import subprocess
-from tooldelta import Plugin, utils, fmts, plugin_entry
-from importlib.metadata import version, PackageNotFoundError
+import sys
+from importlib.metadata import PackageNotFoundError, version
+
+from tooldelta import Plugin, fmts, plugin_entry, utils
+
+PYPI_INDEX_URL = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+
 
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 6)
+    version = (0, 0, 7)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -18,7 +23,7 @@ class PipSupport(Plugin):
         )
 
     # -------------------------  API  -----------------------------
-    def install(self, packages: list[str], upgrade = False):
+    def install(self, packages: list[str], upgrade: bool = False):
         if not packages:
             return
         pending: list[str] = []
@@ -36,25 +41,7 @@ class PipSupport(Plugin):
             return
         packages = pending
 
-        pyexec = sys.executable
-        if "py" not in pyexec:
-            # 这不是 Python, 是 ToolDelta
-            install_opts = ["pip", "install", "-i", "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple", "--target", self.data_path, *packages]
-        else:
-            install_opts = [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "-i",
-                "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple",
-                "--target",
-                self.data_path,
-                *packages,
-            ]
-        if upgrade:
-            install_opts.append("--upgrade")
-
+        install_opts = self._build_install_command(packages, upgrade)
         proc = subprocess.Popen(
             install_opts,
             stdout=subprocess.PIPE,
@@ -64,10 +51,69 @@ class PipSupport(Plugin):
         self._readline_stderr(proc)
         returncode = proc.wait()
         if returncode != 0:
-            fmts.print_err("pip安装模块时出现错误")
+            fmts.print_err("模块安装时出现错误")
             raise SystemExit
         importlib.invalidate_caches()
         fmts.print_suc(f"模块 {', '.join(packages)} 安装成功")
+
+    def _build_install_command(
+        self, packages: list[str], upgrade: bool = False
+    ) -> list[str]:
+        install_args = [
+            "install",
+            "--index-url",
+            PYPI_INDEX_URL,
+            "--target",
+            str(self.data_path),
+        ]
+        if upgrade:
+            install_args.append("--upgrade")
+        install_args.extend(packages)
+
+        if self._current_python_has_pip():
+            return [sys.executable, "-m", "pip", *install_args]
+
+        uv_exec = shutil.which("uv")
+        if uv_exec:
+            uv_args = ["pip", *install_args]
+            if self._can_run_current_python():
+                uv_args[2:2] = ["--python", sys.executable]
+            return [uv_exec, *uv_args]
+
+        pip_exec = shutil.which("pip")
+        if pip_exec:
+            return [pip_exec, *install_args]
+
+        fmts.print_err("未找到可用的 pip 或 uv 命令")
+        raise SystemExit
+
+    @staticmethod
+    def _can_run_current_python() -> bool:
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-c", "import sys"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            return False
+        return proc.returncode == 0
+
+    @classmethod
+    def _current_python_has_pip(cls) -> bool:
+        if not cls._can_run_current_python():
+            return False
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "pip", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            return False
+        return proc.returncode == 0
 
     def require(self, module_pip_name_and_imp_name: dict[str, str] | str | list[str]):
         """
@@ -97,11 +143,11 @@ class PipSupport(Plugin):
                 need_installed.append(package_name)
         if need_installed:
             self.install(need_installed)
-            
+
     def upgrade(self, *modules: str):
         """
         更新库。
-        
+
         Args:
             *modules (str): 需要更新的库的库名
         """
