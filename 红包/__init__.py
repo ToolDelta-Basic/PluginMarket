@@ -10,16 +10,11 @@ from .runtime_reload import reload_plugin_modules
 
 reload_plugin_modules(__name__)
 
+from .broadcasting import RedPacketBroadcastMixin  # noqa: E402
 from .configuration import load_configuration  # noqa: E402
 from .interaction import CommandCollector  # noqa: E402
-from .messages import (  # noqa: E402
-    claim_message,
-    completed_message,
-    created_message,
-    is_red_packet_command,
-    tellraw_payload,
-)
-from .models import RedPacket, RedPacketState, player_identity  # noqa: E402
+from .messages import is_red_packet_command  # noqa: E402
+from .models import RedPacketState, player_identity  # noqa: E402
 from .service import RedPacketService  # noqa: E402
 from .storage import RedPacketStore  # noqa: E402
 from .text_validation import (  # noqa: E402
@@ -28,7 +23,7 @@ from .text_validation import (  # noqa: E402
 )
 
 
-class LuckyRedPacket(Plugin):
+class LuckyRedPacket(RedPacketBroadcastMixin, Plugin):
     """让玩家发送并领取拼手气口令红包。"""
 
     name = "红包"
@@ -37,6 +32,7 @@ class LuckyRedPacket(Plugin):
     description = "支持全服口令领取的拼手气红包"
 
     def __init__(self, frame: Any) -> None:
+        """初始化配置、持久化状态和事件监听器。"""
         super().__init__(frame)
         (
             self.config,
@@ -66,6 +62,7 @@ class LuckyRedPacket(Plugin):
         self.ListenFrameExit(self.on_frame_exit)
 
     def on_preload(self) -> None:
+        """注册聊天栏红包命令。"""
         chatbar = self.GetPluginAPI("聊天栏菜单", (0, 4, 1))
         chatbar.add_new_trigger(
             ["fhb", "发红包"],
@@ -79,6 +76,7 @@ class LuckyRedPacket(Plugin):
         )
 
     def on_active(self) -> None:
+        """恢复到期任务并启动退款检查线程。"""
         if not self._storage_ready:
             return
         self.service.process_expired()
@@ -89,6 +87,7 @@ class LuckyRedPacket(Plugin):
         )
 
     def on_frame_exit(self, _: FrameExit) -> None:
+        """通知后台退款线程停止。"""
         self._stop_event.set()
 
     def on_red_packet_command(
@@ -96,6 +95,7 @@ class LuckyRedPacket(Plugin):
         player: Player,
         args: tuple[Any, ...],
     ) -> bool:
+        """接收红包命令并立即释放聊天栏菜单回调。"""
         if not self._storage_ready:
             player.show("§c红包数据异常，功能暂时不可用，请联系管理员§r")
             return True
@@ -117,6 +117,7 @@ class LuckyRedPacket(Plugin):
         args: tuple[Any, ...],
         identity: str,
     ) -> None:
+        """在独立线程中完成缺参询问和红包创建。"""
         collector = CommandCollector(
             player,
             args,
@@ -136,6 +137,7 @@ class LuckyRedPacket(Plugin):
             self._set_prompting(identity, False)
 
     def on_chat(self, chat: Chat) -> None:
+        """把命中的普通聊天口令交给领取流程。"""
         if not self._storage_ready:
             return
         raw_message = str(chat.msg)
@@ -159,38 +161,17 @@ class LuckyRedPacket(Plugin):
         )
 
     def on_player_join(self, player: Player) -> None:
+        """向上线玩家发送待投递的退款通知。"""
         if self._storage_ready:
             self.service.deliver_refund_notices(player)
 
-    def broadcast_created(self, packet: RedPacket) -> None:
-        self._broadcast_raw(created_message(packet, self.currency_name))
-
-    def broadcast_claim(
-        self,
-        claimant_name: str,
-        sender_name: str,
-        amount: int,
-    ) -> None:
-        self._broadcast_raw(
-            claim_message(
-                claimant_name,
-                sender_name,
-                amount,
-                self.currency_name,
-            )
-        )
-
-    def broadcast_completed(self, packet: RedPacket) -> None:
-        self._broadcast_raw(completed_message(packet, self.currency_name))
-
-    def _broadcast_raw(self, message: str) -> None:
-        self.game_ctrl.sendwocmd(f"/tellraw @a {tellraw_payload(message)}")
-
     def _expiry_loop(self) -> None:
+        """周期检查红包到期状态。"""
         while not self._stop_event.wait(1):
             self.service.process_expired()
 
     def _set_prompting(self, identity: str, prompting: bool) -> None:
+        """更新玩家是否正在回答创建问题。"""
         with self._prompting_lock:
             if prompting:
                 self._prompting_players.add(identity)

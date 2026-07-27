@@ -14,9 +14,11 @@ class RedPacketStore:
     """把红包状态保存到插件数据目录。"""
 
     def __init__(self, path: Path) -> None:
+        """保存红包状态文件路径。"""
         self.path = path
 
     def load(self) -> RedPacketState:
+        """读取状态文件，不存在时创建空状态。"""
         if not self.path.exists():
             state = RedPacketState()
             self.save(state)
@@ -30,5 +32,5 @@ class RedPacketStore:
             raise ValueError(f"红包数据文件损坏: {err}") from err
 
     def save(self, state: RedPacketState) -> None:
+        """以安全 JSON 写入完整红包状态。"""
         safe_json_dump(state.to_dict(), self.path, indent=2)
-

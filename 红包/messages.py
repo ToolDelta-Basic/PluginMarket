@@ -8,6 +8,7 @@ from .models import RedPacket
 
 
 def created_message(packet: RedPacket, currency_name: str) -> str:
+    """生成红包创建公告。"""
     return (
         "§c§l------->>抢红包<<-------§r\n"
         f"§f玩家 §b{packet.sender_name} §f发送了价值 "
@@ -23,6 +24,7 @@ def claim_message(
     amount: int,
     currency_name: str,
 ) -> str:
+    """生成单次领取公告。"""
     return (
         f"§f玩家 §a§l{claimant_name}§r§f 从 §b{sender_name} "
         f"§f的红包中抢到了 §6§l{amount} {currency_name}§r"
@@ -30,6 +32,7 @@ def claim_message(
 
 
 def completed_message(packet: RedPacket, currency_name: str) -> str:
+    """生成红包抢完及手气最佳公告。"""
     return (
         f"§f玩家 §b{packet.sender_name} §f发送的红包被抢完，"
         f"§a§l{packet.best_claimant_name}§r§f 是手气最佳，抢到了 "
@@ -38,6 +41,7 @@ def completed_message(packet: RedPacket, currency_name: str) -> str:
 
 
 def refund_message(packet: RedPacket, currency_name: str) -> str:
+    """生成红包到期退款通知。"""
     packet_label = (
         f"红包「{packet.phrase}」"
         if packet.has_valid_phrase()
@@ -50,6 +54,7 @@ def refund_message(packet: RedPacket, currency_name: str) -> str:
 
 
 def tellraw_payload(message: str) -> str:
+    """把消息安全序列化为 tellraw JSON。"""
     return json.dumps(
         {"rawtext": [{"text": message}]},
         ensure_ascii=False,
@@ -58,6 +63,7 @@ def tellraw_payload(message: str) -> str:
 
 
 def is_red_packet_command(message: str) -> bool:
+    """判断聊天内容是否为红包命令。"""
     lowered = message.casefold()
     return lowered == ".fhb" or lowered.startswith(".fhb ") or (
         message == ".发红包"

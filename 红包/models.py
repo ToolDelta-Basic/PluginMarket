@@ -21,6 +21,7 @@ class RedPacketRequest:
     phrase: str
 
     def has_valid_phrase(self) -> bool:
+        """检查创建请求中的口令是否安全。"""
         return (
             1 <= len(self.phrase) <= 32
             and not any(character.isspace() for character in self.phrase)
@@ -49,10 +50,12 @@ class RedPacket:
     status: str = "active"
 
     def to_dict(self) -> dict[str, Any]:
+        """转换为可持久化字典。"""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RedPacket":
+        """从持久化字典恢复并校验红包。"""
         packet = cls(
             packet_id=str(data["packet_id"]),
             sender_name=str(data["sender_name"]),
@@ -77,6 +80,7 @@ class RedPacket:
         return packet
 
     def has_valid_phrase(self) -> bool:
+        """检查持久化红包口令是否安全。"""
         return (
             1 <= len(self.phrase) <= 32
             and not any(character.isspace() for character in self.phrase)
@@ -84,6 +88,7 @@ class RedPacket:
         )
 
     def validate(self, allow_unsafe_phrase: bool = False) -> None:
+        """校验红包金额、份数、口令和状态。"""
         if not self.packet_id or not self.sender_name or not self.sender_key:
             raise ValueError("红包身份信息不完整")
         if self.total_amount < 1 or self.total_amount > MAX_SCORE:
@@ -112,6 +117,7 @@ class RedPacketState:
     refund_notices: dict[str, list[str]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        """转换全部红包状态为持久化字典。"""
         return {
             "format_version": 1,
             "packets": [
@@ -122,6 +128,7 @@ class RedPacketState:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RedPacketState":
+        """从持久化字典恢复全部红包状态。"""
         if int(data.get("format_version", 0)) != 1:
             raise ValueError("不支持的红包数据版本")
         packets = {}

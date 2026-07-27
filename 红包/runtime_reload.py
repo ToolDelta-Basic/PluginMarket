@@ -14,6 +14,7 @@ RELOAD_ORDER = (
     "economy",
     "storage",
     "messages",
+    "broadcasting",
     "service",
 )
 
@@ -26,4 +27,3 @@ def reload_plugin_modules(package_name: str) -> None:
         cached_module = sys.modules.get(module_name)
         if cached_module is not None:
             importlib.reload(cached_module)
-

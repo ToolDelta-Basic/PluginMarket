@@ -11,9 +11,11 @@ class ScoreboardEconomy:
     """集中封装带结果校验的计分板余额变更。"""
 
     def __init__(self, plugin: Any) -> None:
+        """保存插件实例以访问计分板和在线玩家。"""
         self.plugin = plugin
 
     def get_balance(self, player: Any) -> int | None:
+        """读取玩家余额，失败时向玩家说明原因。"""
         try:
             return int(player.getScore(self.plugin.scoreboard_name, timeout=5))
         except TimeoutError:
@@ -29,6 +31,7 @@ class ScoreboardEconomy:
         return None
 
     def change_score(self, target: str, amount: int) -> bool:
+        """增减目标分数并返回命令是否成功。"""
         action = "add" if amount >= 0 else "remove"
         value = abs(amount)
         command = (
@@ -43,6 +46,7 @@ class ScoreboardEconomy:
             return False
 
     def find_online_player(self, identity: str) -> Any | None:
+        """按稳定身份键查找在线玩家。"""
         try:
             players = self.plugin.game_ctrl.players.getAllPlayers()
         except Exception:
@@ -54,5 +58,6 @@ class ScoreboardEconomy:
 
     @staticmethod
     def quoted_name(name: str) -> str:
+        """转义并引用离线计分板玩家名。"""
         escaped = name.replace("\\", "\\\\").replace('"', '\\"')
         return f'"{escaped}"'

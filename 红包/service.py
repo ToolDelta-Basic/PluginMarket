@@ -10,13 +10,7 @@ from typing import Any
 
 from .economy import ScoreboardEconomy
 from .messages import refund_message
-from .models import (
-    RedPacket,
-    RedPacketRequest,
-    RedPacketState,
-    choose_lucky_amount,
-    player_identity,
-)
+from .models import RedPacket, RedPacketRequest, RedPacketState, choose_lucky_amount, player_identity
 from .storage import RedPacketStore
 
 
@@ -30,6 +24,7 @@ class RedPacketService:
         state: RedPacketState,
         rng: random.Random | None = None,
     ) -> None:
+        """保存业务依赖并创建跨操作线程锁。"""
         self.plugin = plugin
         self.store = store
         self.state = state
@@ -38,10 +33,12 @@ class RedPacketService:
         self.economy = ScoreboardEconomy(plugin)
 
     def has_active_phrase(self, phrase: str) -> bool:
+        """检查口令是否对应活跃红包。"""
         with self.lock:
             return self._find_active(phrase) is not None
 
     def create(self, player: Any, request: RedPacketRequest) -> bool:
+        """扣款、保存并激活玩家创建的红包。"""
         with self.lock:
             if not request.has_valid_phrase():
                 player.show("§c禁止使用无效字符§r")
@@ -97,6 +94,7 @@ class RedPacketService:
             return True
 
     def claim(self, player: Any, phrase: str) -> bool:
+        """为玩家随机发放一份命中口令的红包。"""
         with self.lock:
             packet = self._find_active(phrase)
             if packet is None:
@@ -132,6 +130,7 @@ class RedPacketService:
             return True
 
     def process_expired(self, now: float | None = None) -> None:
+        """标记到期红包并重试所有待处理退款。"""
         current_time = time.time() if now is None else now
         with self.lock:
             changed = False
@@ -146,6 +145,7 @@ class RedPacketService:
                     self._try_refund(packet)
 
     def deliver_refund_notices(self, player: Any) -> None:
+        """向上线玩家投递离线期间产生的退款通知。"""
         key = player_identity(player)
         with self.lock:
             messages = self.state.refund_notices.pop(key, [])
@@ -158,6 +158,7 @@ class RedPacketService:
             player.show(message)
 
     def _try_refund(self, packet: RedPacket) -> None:
+        """尝试退回一个红包的全部剩余金额。"""
         online_player = self.economy.find_online_player(packet.sender_key)
         target = (
             online_player.safe_name
@@ -183,12 +184,14 @@ class RedPacketService:
             )
 
     def _find_active(self, phrase: str) -> RedPacket | None:
+        """按大小写精确查找活跃红包。"""
         for packet in self.state.packets.values():
             if packet.status == "active" and packet.phrase == phrase:
                 return packet
         return None
 
     def _save(self) -> bool:
+        """保存当前状态并统一记录失败。"""
         try:
             self.store.save(self.state)
             return True

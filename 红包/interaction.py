@@ -21,12 +21,14 @@ class CommandCollector:
         args: tuple[Any, ...],
         set_prompting: Callable[[bool], None],
     ) -> None:
+        """保存玩家和最多三个命令参数。"""
         values = [str(value) for value in args[:3]]
         self.values = values + [""] * (3 - len(values))
         self.player = player
         self.set_prompting = set_prompting
 
     def collect(self) -> RedPacketRequest | None:
+        """校验已有参数并逐项询问缺失值。"""
         interactive = any(value == "" for value in self.values)
         if interactive:
             self.set_prompting(True)
@@ -63,6 +65,7 @@ class CommandCollector:
         parser: Callable[[str], Any],
         prompt: str,
     ) -> Any | None:
+        """取得并解析一个参数，交互输入失败时允许重试。"""
         supplied = self.values[index]
         if supplied != "":
             try:
@@ -92,6 +95,7 @@ class CommandCollector:
 
     @staticmethod
     def _parse_amount(value: str) -> int:
+        """解析红包总金额。"""
         try:
             amount = int(value)
         except ValueError as err:
@@ -102,6 +106,7 @@ class CommandCollector:
 
     @staticmethod
     def _parse_count(value: str, amount: int) -> int:
+        """解析红包份数并确保总金额足够分配。"""
         try:
             count = int(value)
         except ValueError as err:
@@ -112,6 +117,7 @@ class CommandCollector:
 
     @staticmethod
     def _parse_phrase(value: str) -> str:
+        """解析单词形式的红包口令。"""
         phrase = value.strip()
         if not 1 <= len(phrase) <= 32:
             raise ValueError("红包口令长度必须为 1～32 个字符")

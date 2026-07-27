@@ -25,6 +25,7 @@ def load_configuration(
     plugin_name: str,
     plugin_version: tuple[int, int, int],
 ) -> tuple[dict[str, Any], str, str, int]:
+    """读取并规范化红包插件配置。"""
     config, _ = cfg.get_plugin_config_and_version(
         plugin_name,
         CONFIG_STANDARD,
