@@ -39,9 +39,7 @@ def _import_ntplib():
     if "ntplib" in sys.modules:
         return sys.modules["ntplib"]
     try:
-        import ntplib
-
-        return ntplib
+        return importlib.import_module("ntplib")
     except ModuleNotFoundError:
         return None
 
