@@ -150,7 +150,6 @@ def choose_lucky_amount(
     rng: Random,
 ) -> int:
     """使用双均值法抽取一份，并保证每个剩余红包至少有 1。"""
-
     if remaining_count < 1 or remaining_amount < remaining_count:
         raise ValueError("红包剩余金额和份数不合法")
     if remaining_count == 1:
@@ -162,7 +161,6 @@ def choose_lucky_amount(
 
 def player_identity(player: Any) -> str:
     """获取跨重启尽量稳定的玩家身份键。"""
-
     for prefix, attribute in (("xuid", "xuid"), ("uuid", "uuid")):
         value = str(getattr(player, attribute, "") or "").strip()
         if value:

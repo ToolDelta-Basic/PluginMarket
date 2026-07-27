@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from json import JSONDecodeError
 from pathlib import Path
 
 from tooldelta.utils.safe_json import safe_json_dump, safe_json_load
@@ -28,7 +27,7 @@ class RedPacketStore:
             if not isinstance(raw_state, dict):
                 raise ValueError("红包数据根节点必须是对象")
             return RedPacketState.from_dict(raw_state)
-        except (JSONDecodeError, KeyError, TypeError, ValueError) as err:
+        except (KeyError, TypeError, ValueError) as err:
             raise ValueError(f"红包数据文件损坏: {err}") from err
 
     def save(self, state: RedPacketState) -> None:

@@ -178,4 +178,5 @@ class LuckyRedPacket(RedPacketBroadcastMixin, Plugin):
             else:
                 self._prompting_players.discard(identity)
 
+
 entry = plugin_entry(LuckyRedPacket)

@@ -21,7 +21,6 @@ RELOAD_ORDER = (
 
 def reload_plugin_modules(package_name: str) -> None:
     """按依赖顺序刷新已缓存的红包模块。"""
-
     for module_suffix in RELOAD_ORDER:
         module_name = f"{package_name}.{module_suffix}"
         cached_module = sys.modules.get(module_name)
