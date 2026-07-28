@@ -1497,20 +1497,7 @@
     },
     "公告栏[Mono]": {
         "__init__.py": 0,
-        "datas.json": 0,
-        "pytz": {
-            "reference.py": 0,
-            "tzfile.py": 0,
-            "__init__.py": 0,
-            "tzinfo.py": 0,
-            "lazy.py": 0,
-            "exceptions.py": 0,
-            "zoneinfo": {
-                "Asia": {
-                    "Shanghai": 0
-                }
-            }
-        }
+        "datas.json": 0
     },
     "聊天历史记录": {
         "__init__.py": 0,

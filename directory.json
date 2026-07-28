@@ -1483,18 +1483,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "公告栏[Mono]/pytz": [
-        "reference.py",
-        "tzfile.py",
-        "__init__.py",
-        "tzinfo.py",
-        "lazy.py",
-        "exceptions.py"
-    ],
-    "公告栏[Mono]/pytz/zoneinfo": [],
-    "公告栏[Mono]/pytz/zoneinfo/Asia": [
-        "Shanghai"
-    ],
     "聊天历史记录": [
         "__init__.py",
         "datas.json"

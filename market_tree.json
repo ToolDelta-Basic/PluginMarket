@@ -84,7 +84,7 @@
     "pip": {
       "name": "pip模块支持",
       "author": "SuperScript",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "plugin-type": "classic"
     },
     "anti-fast-piston": {
@@ -606,7 +606,7 @@
     "command_frequency_monitor": {
       "name": "tooldelta_plugin_指令频率监测",
       "author": "Mono",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "plugin-type": "classic"
     },
     "死亡点返回": {
@@ -780,7 +780,7 @@
     "ad": {
       "name": "公告栏[Mono]",
       "author": "Mono",
-      "version": "1.0.2",
+      "version": "1.2.0",
       "plugin-type": "classic"
     },
     "chat-history": {
