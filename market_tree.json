@@ -384,7 +384,7 @@
     "mcstructure导入器[可导入命令]": {
       "name": "mcstructure导入器[可导入命令]",
       "author": "style_天枢",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "plugin-type": "classic"
     },
     "杀戮光环举报": {
@@ -492,7 +492,7 @@
     "schematic导入器": {
       "name": "schematic导入器",
       "author": "style_天枢",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "封禁系统": {
