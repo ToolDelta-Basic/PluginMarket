@@ -17,7 +17,7 @@ reload(chunk_painter)
 class SchematicLoader(Plugin):
     name = "schematic导入器"
     author = "style_天枢"
-    version = (0, 0, 3)
+    version = (0, 0, 4)
 
     def __init__(self, frame) -> None:
         super().__init__(frame)

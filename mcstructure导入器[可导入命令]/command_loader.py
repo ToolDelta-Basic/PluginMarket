@@ -12,7 +12,8 @@ class CommandLoader:
     def __init__(self, plugin: "MCStructureLoader") -> None:
         self.game_ctrl = plugin.game_ctrl
         self.cfg = plugin.config_mgr
-        self.sendanycmd = plugin.core.sendanycmd
+        self.sendaicmd = plugin.game_ctrl.sendaicmd
+        self.sendaicmd_with_resp = plugin.game_ctrl.sendaicmd_with_resp
 
     def load_command(
         self,
@@ -26,18 +27,18 @@ class CommandLoader:
         sleep_time = 1 / self.cfg.CMD_LOAD_SPEED
         set_count = 0
         fmts.print_inf("\n§e开始导入命令")
-        fmts.print_inf("§c警告: 导入命令时需要关闭 启用命令方块")
-        self.sendanycmd("/gamerule commandblocksenabled false")
+        fmts.print_inf("§c警告: 导入命令时需要关闭游戏规则: commandblocksenabled")
+        self.sendaicmd("/gamerule commandblocksenabled false")
         for packet in command_data:
             position = packet["Position"]
             x = position[0] + start_x
             y = position[1] + start_y
             z = position[2] + start_z
             packet["Position"] = [x, y, z]
-            self.sendanycmd(
+            self.sendaicmd(
                 f'/execute in {dim} run tp @a[name="{self.game_ctrl.bot_name}"] {x} {y} {z}'
             )
-            OutputMessages = self.game_ctrl.sendwscmd_with_resp(
+            OutputMessages = self.sendaicmd_with_resp(
                 f"/testforblock {x} {y} {z} air"
             ).as_dict["OutputMessages"][0]
             Success = OutputMessages["Success"]

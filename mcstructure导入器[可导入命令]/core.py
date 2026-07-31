@@ -148,8 +148,3 @@ class Core:
             return None, None, None, None
         return dim, x, y, z
 
-    def sendanycmd(self, cmd: str) -> None:
-        if self.cfg.CMD_MODE == 0:
-            self.plugin.game_ctrl.sendwocmd(cmd)
-        elif self.cfg.CMD_MODE == 1:
-            self.plugin.game_ctrl.sendaicmd(cmd)

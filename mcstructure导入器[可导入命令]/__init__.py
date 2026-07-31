@@ -19,7 +19,7 @@ reload(command_loader)
 class MCStructureLoader(Plugin):
     name = "mcstructure导入器[可导入命令]"
     author = "style_天枢"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
 
     def __init__(self, frame) -> None:
         super().__init__(frame)

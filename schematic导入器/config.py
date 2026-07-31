@@ -11,13 +11,11 @@ if TYPE_CHECKING:
 class Config:
     CONFIG_DEFAULT: ClassVar[dict[str, Any]] = {
         "是否导入空气方块": True,
-        "导入速度(方块/秒)": 5000,
-        "命令模式(0:控制台命令;1:魔法指令)": 1,
+        "导入速度(方块/秒)": 1000,
     }
     CONFIG_STD: ClassVar[dict[str, Any]] = {
         "是否导入空气方块": bool,
         "导入速度(方块/秒)": cfg.PInt,
-        "命令模式(0:控制台命令;1:魔法指令)": int,
     }
 
     def __init__(self, plugin: "SchematicLoader") -> None:
@@ -33,7 +31,6 @@ class Config:
                 self.version,
             )
             self.get_parsed_config()
-            self.check_config()
         except cfg.ConfigKeyError as error:
             fmts.print_inf(
                 f"§e<schematic导入器> §6警告: 发现插件配置文件中有{error},这可能是因为插件本体已更新而插件配置文件未更新,已自动替换为新版配置文件"
@@ -51,12 +48,4 @@ class Config:
         config = self.config
         self.INCLUDE_AIR: bool = config["是否导入空气方块"]
         self.LOAD_SPEED: int = config["导入速度(方块/秒)"]
-        self.CMD_MODE: int = config["命令模式(0:控制台命令;1:魔法指令)"]
 
-    def check_config(self) -> None:
-        if self.CMD_MODE not in (0, 1):
-            fmts.print_inf(
-                "§e<schematic导入器> §6警告: 您填写的命令模式有误, 已切换为 <魔法指令>"
-            )
-            self.config["命令模式(0:控制台命令;1:魔法指令)"] = 1
-            cfg.upgrade_plugin_config(self.name, self.config, self.version)

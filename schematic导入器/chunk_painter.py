@@ -15,6 +15,8 @@ class ChunkPainter:
     def __init__(self, plugin: "SchematicLoader") -> None:
         self.game_ctrl = plugin.game_ctrl
         self.cfg = plugin.config_mgr
+        self.sendaicmd = plugin.game_ctrl.sendaicmd
+        self.sendaicmd_with_resp = plugin.game_ctrl.sendaicmd_with_resp
 
     def paint_chunked_blocks(
         self,
@@ -65,10 +67,10 @@ class ChunkPainter:
                 fmts.print_inf(
                     f"§e当前区块位置 ({cx},{cz}), 区块数 ({chunk_counter}/{total_chunks})"
                 )
-                self.sendanycmd(
+                self.sendaicmd(
                     f'/execute in {dim} run tp @a[name="{self.game_ctrl.bot_name}"] {tp_x} {tp_y} {tp_z}'
                 )
-                self.game_ctrl.sendwscmd_with_resp("/testforblock ~ ~ ~ air")
+                self.sendaicmd_with_resp("/testforblock ~ ~ ~ air")
 
                 # 如果配置要求导入空气方块, 则先用/fill以区块为单位填充成空气
                 if self.cfg.INCLUDE_AIR:
@@ -82,7 +84,7 @@ class ChunkPainter:
                         y_high = start_y + local_y_top
                         y1 = min(y_low, y_high)
                         y2 = max(y_low, y_high)
-                        self.sendanycmd(f"/fill {x1} {y1} {z1} {x2} {y2} {z2} air")
+                        self.sendaicmd(f"/fill {x1} {y1} {z1} {x2} {y2} {z2} air")
                     fmts.print_inf(f"§a区块 ({cx},{cz}) 清理已完成")
 
                 set_count = 0
@@ -132,7 +134,7 @@ class ChunkPainter:
                     gy = start_y + int(yi)
                     gz = start_z + z_local
 
-                    self.sendanycmd(f"/setblock {gx} {gy} {gz} {block_name}")
+                    self.sendaicmd(f"/setblock {gx} {gy} {gz} {block_name}")
                     set_count += 1
                     time.sleep(1 / self.cfg.LOAD_SPEED)
 
@@ -145,8 +147,3 @@ class ChunkPainter:
         elapsed = time.perf_counter() - start_time
         fmts.print_inf(f"\n§a已完成导入, 共耗时 {elapsed:.6f} 秒")
 
-    def sendanycmd(self, cmd: str) -> None:
-        if self.cfg.CMD_MODE == 0:
-            self.game_ctrl.sendwocmd(cmd)
-        elif self.cfg.CMD_MODE == 1:
-            self.game_ctrl.sendaicmd(cmd)

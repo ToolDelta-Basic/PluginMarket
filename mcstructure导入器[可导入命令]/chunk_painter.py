@@ -15,7 +15,8 @@ class ChunkPainter:
         self.plugin = plugin
         self.game_ctrl = plugin.game_ctrl
         self.cfg = plugin.config_mgr
-        self.sendanycmd = plugin.core.sendanycmd
+        self.sendaicmd = plugin.game_ctrl.sendaicmd
+        self.sendaicmd_with_resp = plugin.game_ctrl.sendaicmd_with_resp
 
     def paint_chunked_blocks(
         self,
@@ -71,10 +72,10 @@ class ChunkPainter:
                 fmts.print_inf(
                     f"§e当前区块位置 ({cx},{cz}), 区块数 ({chunk_counter}/{total_chunks})"
                 )
-                self.sendanycmd(
+                self.sendaicmd(
                     f'/execute in {dim} run tp @a[name="{self.game_ctrl.bot_name}"] {tp_x} {tp_y} {tp_z}'
                 )
-                self.game_ctrl.sendwscmd_with_resp(
+                self.sendaicmd_with_resp(
                     f"/testforblock {tp_x} {tp_y} {tp_z} air"
                 )
 
@@ -90,7 +91,7 @@ class ChunkPainter:
                         y_high = start_y + local_y_top
                         y1 = min(y_low, y_high)
                         y2 = max(y_low, y_high)
-                        self.sendanycmd(f"/fill {x1} {y1} {z1} {x2} {y2} {z2} air")
+                        self.sendaicmd(f"/fill {x1} {y1} {z1} {x2} {y2} {z2} air")
                     fmts.print_inf(f"§a区块 ({cx},{cz}) 清理已完成")
 
                 set_count = 0
@@ -113,7 +114,7 @@ class ChunkPainter:
                             # 如果 block_secondary 具有有效索引(>=0), 则输出对应 /setblock
                             if sec_idx != AIR_INDEX and 0 <= sec_idx < palette_len:
                                 sec_name_states = block_palette[sec_idx]
-                                self.sendanycmd(
+                                self.sendaicmd(
                                     f"/setblock {world_x} {world_y} {world_z} {sec_name_states}"
                                 )
                                 set_count += 1
@@ -122,7 +123,7 @@ class ChunkPainter:
                             # 如果 block_primary 具有有效索引(>=0), 则输出对应 /setblock
                             if pri_idx != AIR_INDEX and 0 <= pri_idx < palette_len:
                                 pri_name_states = block_palette[pri_idx]
-                                self.sendanycmd(
+                                self.sendaicmd(
                                     f"/setblock {world_x} {world_y} {world_z} {pri_name_states}"
                                 )
                                 set_count += 1
@@ -137,7 +138,7 @@ class ChunkPainter:
         elapsed = time.perf_counter() - start_time
         fmts.print_inf(f"\n§a已完成方块导入, 共耗时 {elapsed:.6f} 秒")
 
-        if self.cfg.INCLUDE_CMD:
+        if self.cfg.INCLUDE_CMD and command_data:
             self.plugin.command_loader.load_command(
                 command_data, dim, start_x, start_y, start_z
             )
