@@ -222,7 +222,8 @@ class QQLinkerRuntimeMixin:
             retry_stop.clear()
         return retry_stop
 
-    def _wait_for_cloud_delay(self, retry_stop, delay: float) -> bool:
+    @staticmethod
+    def _wait_for_cloud_delay(retry_stop, delay: float) -> bool:
         """等待云链重试间隔，并返回是否收到停止信号。"""
         if retry_stop is not None:
             return bool(retry_stop.wait(delay))
