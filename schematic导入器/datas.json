@@ -1,9 +1,0 @@
-{
-  "author": "style_天枢",
-  "version": "0.0.4",
-  "plugin-type": "classic",
-  "description": "schematic导入器",
-  "pre-plugins": {},
-  "plugin-id": "schematic导入器",
-  "enabled": true
-}
