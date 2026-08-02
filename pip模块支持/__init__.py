@@ -1,18 +1,25 @@
-import importlib
-import shutil
-import subprocess
 import sys
-from importlib.metadata import PackageNotFoundError, version
+import importlib
+import subprocess
+from tooldelta import Plugin, utils, fmts, plugin_entry
+from importlib.metadata import version, PackageNotFoundError
 
-from tooldelta import Plugin, fmts, plugin_entry, utils
 
-PYPI_INDEX_URL = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+def decode_bytes(data: bytes) -> str:
+    if not data:
+        return ""
+    for encoding in ("utf-8", "gbk", "cp936", "gb18030"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return data.decode("utf-8", errors="replace")
 
 
 class PipSupport(Plugin):
     name = "pip模块安装支持"
     author = "ToolDelta"
-    version = (0, 0, 7)
+    version = (0, 0, 8)
 
     def __init__(self, frame):
         super().__init__(frame)
@@ -23,7 +30,7 @@ class PipSupport(Plugin):
         )
 
     # -------------------------  API  -----------------------------
-    def install(self, packages: list[str], upgrade: bool = False):
+    def install(self, packages: list[str], upgrade=False):
         if not packages:
             return
         pending: list[str] = []
@@ -41,82 +48,47 @@ class PipSupport(Plugin):
             return
         packages = pending
 
-        install_opts = self._build_install_command(packages, upgrade)
+        pyexec = sys.executable
+        if "py" not in pyexec:
+            # 这不是 Python, 是 ToolDelta
+            install_opts = [
+                "pip",
+                "install",
+                "-i",
+                "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple",
+                "--target",
+                self.data_path,
+                *packages,
+            ]
+        else:
+            install_opts = [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-i",
+                "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple",
+                "--target",
+                self.data_path,
+                *packages,
+            ]
+        if upgrade:
+            install_opts.append("--upgrade")
+
         proc = subprocess.Popen(
             install_opts,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            bufsize=1,
         )
         self._readline_stdout(proc)
         self._readline_stderr(proc)
         returncode = proc.wait()
         if returncode != 0:
-            fmts.print_err("模块安装时出现错误")
+            fmts.print_err("pip安装模块时出现错误")
             raise SystemExit
         importlib.invalidate_caches()
         fmts.print_suc(f"模块 {', '.join(packages)} 安装成功")
-
-    def _build_install_command(
-        self, packages: list[str], upgrade: bool = False
-    ) -> list[str]:
-        """Build the command used to install Python packages."""
-        install_args = [
-            "install",
-            "--index-url",
-            PYPI_INDEX_URL,
-            "--target",
-            str(self.data_path),
-        ]
-        if upgrade:
-            install_args.append("--upgrade")
-        install_args.extend(packages)
-
-        if self._current_python_has_pip():
-            return [sys.executable, "-m", "pip", *install_args]
-
-        uv_exec = shutil.which("uv")
-        if uv_exec:
-            uv_args = ["pip", *install_args]
-            if self._can_run_current_python():
-                uv_args[2:2] = ["--python", sys.executable]
-            return [uv_exec, *uv_args]
-
-        pip_exec = shutil.which("pip")
-        if pip_exec:
-            return [pip_exec, *install_args]
-
-        fmts.print_err("未找到可用的 pip 或 uv 命令")
-        raise SystemExit
-
-    @staticmethod
-    def _can_run_current_python() -> bool:
-        """Return whether the current Python executable can be started."""
-        try:
-            proc = subprocess.run(
-                [sys.executable, "-c", "import sys"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except OSError:
-            return False
-        return proc.returncode == 0
-
-    @classmethod
-    def _current_python_has_pip(cls) -> bool:
-        """Return whether the current Python executable can run pip."""
-        if not cls._can_run_current_python():
-            return False
-        try:
-            proc = subprocess.run(
-                [sys.executable, "-m", "pip", "--version"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except OSError:
-            return False
-        return proc.returncode == 0
 
     def require(self, module_pip_name_and_imp_name: dict[str, str] | str | list[str]):
         """
@@ -170,18 +142,24 @@ class PipSupport(Plugin):
     def _readline_stdout(self, proc: subprocess.Popen[bytes]):
         assert proc.stdout
         while True:
-            line = proc.stdout.readline().decode().strip()
-            if not line:
+            raw = proc.stdout.readline()
+            if not raw:
                 break
+            line = decode_bytes(raw).strip()
+            if not line:
+                continue
             fmts.print_with_info(line, "§e pips §r")
 
     @utils.thread_func("pip安装模块错误输出")
     def _readline_stderr(self, proc: subprocess.Popen[bytes]):
         assert proc.stderr
         while True:
-            line = proc.stderr.readline().decode().strip()
-            if not line:
+            raw = proc.stderr.readline()
+            if not raw:
                 break
+            line = decode_bytes(raw).strip()
+            if not line:
+                continue
             fmts.print_with_info(line, "§c pips §r")
 
 
