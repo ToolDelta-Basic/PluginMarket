@@ -63,6 +63,7 @@ class QQBotClient:
         self.on_openid_discovered = None
 
     def _report_error(self, error_code, message, details=None):
+        "通过错误回调或日志输出带稳定错误码的官机异常。"
         details = [str(item) for item in (details or [])]
         if self._error_cb is not None:
             try:
@@ -76,10 +77,12 @@ class QQBotClient:
 
     @property
     def api_base(self):
+        '''返回 QQ 官方机器人开放平台 API 根地址。'''
         return self.API_BASE
 
     @staticmethod
     def _validate_https_url(url):
+        '''Validate and return an HTTPS-only QQ Bot API URL.'''
         url = str(url).strip()
         parsed = urllib.parse.urlsplit(url)
         if parsed.scheme.lower() != "https" or not parsed.netloc:
@@ -87,6 +90,7 @@ class QQBotClient:
         return url
 
     def _http_post(self, url, body, headers=None):
+        '''向官机接口发送 JSON POST 请求并解析 JSON 响应。'''
         url = self._validate_https_url(url)
         headers = dict(headers or {})
         headers.setdefault("Content-Type", "application/json")
@@ -102,6 +106,7 @@ class QQBotClient:
             raise QQBotHTTPError(error.code, detail) from error
 
     def _http_get(self, url, headers=None):
+        '''向官机接口发送 GET 请求并解析 JSON 响应。'''
         url = self._validate_https_url(url)
         request = urllib.request.Request(
             url, headers=dict(headers or {}), method="GET")
@@ -114,6 +119,7 @@ class QQBotClient:
             raise QQBotHTTPError(error.code, detail) from error
 
     def _get_token(self):
+        '''获取并缓存 QQ 官方机器人 AccessToken。'''
         with self._lock:
             if self._token and time.time() < self._token_expire - 60:
                 return self._token
@@ -159,15 +165,22 @@ class QQBotClient:
             return self._token
 
     def _auth_headers(self):
+        '''构造包含当前 AccessToken 的官机 API 请求头。'''
         return {
             "Authorization": f"QQBot {self._get_token()}",
             "Content-Type": "application/json",
         }
 
     def _get_group_openid(self, group_id):
+        '''获取群号对应的官方群 OpenID，未绑定时保留原值。'''
         return self._openid_map.get(str(group_id), str(group_id))
 
+    def replace_openid_map(self, openid_map):
+        '''使用群号到官方群 OpenID 的最新映射替换当前缓存。'''
+        self._openid_map = dict(openid_map)
+
     def send_group_msg(self, group_id, message):
+        '''向指定群聊发送一条 QQ 官方机器人文本消息。'''
         openid = self._get_group_openid(group_id)
         url = f"{self.api_base}/v2/groups/{openid}/messages"
         try:
@@ -181,6 +194,7 @@ class QQBotClient:
                 f"openid={openid}(群{group_id}) | {error}") from error
 
     def send_private_msg(self, user_openid, message):
+        '''向指定用户 OpenID 发送一条官机私聊文本消息。'''
         url = f"{self.api_base}/v2/users/{user_openid}/messages"
         return self._http_post(
             url,
@@ -189,6 +203,7 @@ class QQBotClient:
         )
 
     def _fetch_gateway_url(self):
+        '''获取官机网关地址，并把平台错误转换为状态码输出。'''
         try:
             response = self._http_get(
                 f"{self.api_base}/gateway/bot", self._auth_headers())
@@ -238,6 +253,7 @@ class QQBotClient:
             return ""
 
     def start_receiver(self):
+        '''启动官机 WebSocket 消息接收线程。'''
         if self._ws_active:
             return
         self._ws_active = True
@@ -251,8 +267,9 @@ class QQBotClient:
         self._log("官机消息接收器已启动")
 
     def stop_receiver(self):
+        '''停止官机消息接收器并关闭当前 WebSocket。'''
         self._ws_active = False
-        _stop_heartbeat(self)
+        self._stop_heartbeat()
         ws = self._ws
         if ws is not None:
             try:
@@ -268,6 +285,7 @@ class QQBotClient:
                 )
 
     def _ws_loop(self):
+        '''维持官机网关连接，并在断开后按间隔重试。'''
         ws_module = self._websocket_module
         if ws_module is None:
             self._report_error(
@@ -290,15 +308,15 @@ class QQBotClient:
                 ws_app = ws_module.WebSocketApp(
                     gateway,
                     None,
-                    on_message=lambda ws, msg, sid=session_id: _on_message(
-                        self, ws, msg, sid),
+                    on_message=lambda ws, msg, sid=session_id: self._on_message(
+                        ws, msg, sid),
                     on_error=lambda _ws, error, sid=session_id: self._log_error(
                         error, sid),
-                    on_close=lambda ws, code, reason, sid=session_id: _on_close(
-                        self, ws, code, reason, sid),
+                    on_close=lambda ws, code, reason, sid=session_id: self._on_close(
+                        ws, code, reason, sid),
                 )
-                ws_app.on_open = lambda ws, sid=session_id: _on_open(
-                    self, ws, sid)
+                ws_app.on_open = lambda ws, sid=session_id: self._on_open(
+                    ws, sid)
                 self._ws = ws_app
                 ws_app.run_forever()
             except Exception as error:
@@ -315,6 +333,7 @@ class QQBotClient:
                 break
 
     def _wait_before_retry(self, seconds):
+        '''等待重试间隔，并在接收器停止时提前结束等待。'''
         for _ in range(max(1, int(seconds * 2))):
             if not self._ws_active:
                 return True
@@ -322,6 +341,7 @@ class QQBotClient:
         return not self._ws_active
 
     def _log_error(self, error, session_id):
+        '''记录当前网关会话产生的 WebSocket 回调异常。'''
         if session_id == self._ws_session_id and error:
             self._report_error(
                 "QQBOT-1302",
@@ -333,6 +353,7 @@ class QQBotClient:
             )
 
     def _resolve_or_discover(self, openid):
+        '''解析官方群 OpenID 对应群号，或安全绑定唯一待绑定群。'''
         for group_id, mapped_openid in self._openid_map.items():
             if mapped_openid == openid:
                 return int(group_id)
@@ -360,6 +381,7 @@ class QQBotClient:
 
     @staticmethod
     def openid_to_userid(openid):
+        '''把无法直接作为 QQ 号使用的 OpenID 转为稳定会话标识。'''
         if not openid:
             return 0
         value = 0
@@ -368,133 +390,139 @@ class QQBotClient:
         return value
 
 
-def _on_open(client, ws, session_id):
-    if session_id != client._ws_session_id or ws is not client._ws:
-        return
-    ws.send(json.dumps({
-        "op": 2,
-        "d": {
-            "token": f"QQBot {client._get_token()}",
-            "intents": 1 << 25,
-            "shard": [0, 1],
-        },
-    }))
+    def _on_open(self, ws, session_id):
+        '''在当前网关会话打开后发送官机鉴权数据。'''
+        if session_id != self._ws_session_id or ws is not self._ws:
+            return
+        ws.send(json.dumps({
+            "op": 2,
+            "d": {
+                "token": f"QQBot {self._get_token()}",
+                "intents": 1 << 25,
+                "shard": [0, 1],
+            },
+        }))
 
+    def _on_message(self, ws, raw, session_id):
+        '''解析当前网关会话收到的事件并分派对应处理。'''
+        if session_id != self._ws_session_id or ws is not self._ws:
+            return
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return
+        operation = data.get("op")
+        if operation == 10:
+            interval = max(
+                data["d"].get("heartbeat_interval", 41250) / 1000.0,
+                1.0,
+            )
+            self._start_heartbeat(ws, interval)
+        elif operation == 0:
+            event_type = data.get("t", "")
+            event = data.get("d", {})
+            if event_type == "READY":
+                self._ws_available = True
+                user = event.get("user", {})
+                self._log(f"官机已就绪: {user.get('username', '?')}")
+            elif event_type in (
+                "GROUP_MESSAGE_CREATE",
+                "GROUP_AT_MESSAGE_CREATE",
+            ):
+                self._handle_group_message(event)
+        elif operation == 9:
+            self._report_error(
+                "QQBOT-1304",
+                "官机网关鉴权失败",
+                ["网关操作码: 9", f"网关响应: {data.get('d')}"],
+            )
+            ws.close()
 
-def _on_message(client, ws, raw, session_id):
-    if session_id != client._ws_session_id or ws is not client._ws:
-        return
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        return
-    operation = data.get("op")
-    if operation == 10:
-        interval = max(
-            data["d"].get("heartbeat_interval", 41250) / 1000.0,
-            1.0,
+    def _on_close(self, ws, code, reason, session_id):
+        '''处理当前网关会话关闭并输出异常关闭码。'''
+        if session_id != self._ws_session_id or ws is not self._ws:
+            return
+        self._ws_available = False
+        self._stop_heartbeat()
+        if self._ws_active and code not in (1000, 1001):
+            self._report_error(
+                "QQBOT-1303",
+                "官机 WebSocket 异常关闭",
+                [
+                    f"WebSocket 关闭码: {code if code is not None else '未知'}",
+                    f"关闭原因: {reason or '未提供'}",
+                    "10 秒后尝试重连",
+                ],
+            )
+
+    def _start_heartbeat(self, ws, interval):
+        '''为当前官机网关连接启动心跳线程。'''
+        self._stop_heartbeat()
+        done = threading.Event()
+        self._ws_heartbeat_done = done
+
+        def heartbeat_loop():
+            '''按网关要求的间隔持续发送心跳包。'''
+            while not done.wait(interval):
+                try:
+                    ws.send(json.dumps({"op": 1, "d": 0}))
+                except Exception as error:
+                    self._report_error(
+                        "QQBOT-1401",
+                        "官机网关心跳发送失败",
+                        [
+                            f"异常类型: {type(error).__name__}",
+                            f"异常信息: {error}",
+                        ],
+                    )
+                    break
+
+        threading.Thread(
+            target=heartbeat_loop,
+            name="QQBotHeartbeat",
+            daemon=True,
+        ).start()
+
+    def _stop_heartbeat(self):
+        '''停止并清除当前官机网关心跳任务。'''
+        done = self._ws_heartbeat_done
+        if done is not None:
+            done.set()
+            self._ws_heartbeat_done = None
+
+    def _handle_group_message(self, event):
+        '''把官机群事件转换为 Ultra 所需的群消息参数。'''
+        if self.on_group_message is None:
+            return
+        group_openid = event.get("group_openid") or event.get("group_id", "")
+        if not group_openid:
+            return
+        group_id = self._resolve_or_discover(group_openid)
+        if group_id is None:
+            return
+        author = event.get("author", {})
+        content = normalize_official_group_content(event.get("content", ""))
+        if not content:
+            return
+        user_openid = (
+            author.get("member_openid")
+            or author.get("id")
+            or author.get("user_openid")
+            or author.get("openid")
+            or ""
         )
-        _start_heartbeat(client, ws, interval)
-    elif operation == 0:
-        event_type = data.get("t", "")
-        event = data.get("d", {})
-        if event_type == "READY":
-            client._ws_available = True
-            user = event.get("user", {})
-            client._log(f"官机已就绪: {user.get('username', '?')}")
-        elif event_type in ("GROUP_MESSAGE_CREATE", "GROUP_AT_MESSAGE_CREATE"):
-            _handle_group_message(client, event)
-    elif operation == 9:
-        client._report_error(
-            "QQBOT-1304",
-            "官机网关鉴权失败",
-            ["网关操作码: 9", f"网关响应: {data.get('d')}"],
+        if not user_openid:
+            self._log("收到官机群消息，但事件缺少成员 OpenID，已忽略")
+            return
+        self.on_group_message(
+            group_id,
+            self.openid_to_userid(user_openid),
+            author.get("username") or author.get("nickname") or "QQ成员",
+            content,
+            bool(author.get("bot")),
+            user_openid,
+            author.get("member_role") or author.get("role") or "member",
         )
-        ws.close()
-
-
-def _on_close(client, ws, code, reason, session_id):
-    if session_id != client._ws_session_id or ws is not client._ws:
-        return
-    client._ws_available = False
-    _stop_heartbeat(client)
-    if client._ws_active and code not in (1000, 1001):
-        client._report_error(
-            "QQBOT-1303",
-            "官机 WebSocket 异常关闭",
-            [
-                f"WebSocket 关闭码: {code if code is not None else '未知'}",
-                f"关闭原因: {reason or '未提供'}",
-                "10 秒后尝试重连",
-            ],
-        )
-
-
-def _start_heartbeat(client, ws, interval):
-    _stop_heartbeat(client)
-    client._ws_heartbeat_done = threading.Event()
-
-    def heartbeat_loop():
-        while not client._ws_heartbeat_done.wait(interval):
-            try:
-                ws.send(json.dumps({"op": 1, "d": 0}))
-            except Exception as error:
-                client._report_error(
-                    "QQBOT-1401",
-                    "官机网关心跳发送失败",
-                    [
-                        f"异常类型: {type(error).__name__}",
-                        f"异常信息: {error}",
-                    ],
-                )
-                break
-
-    threading.Thread(
-        target=heartbeat_loop,
-        name="QQBotHeartbeat",
-        daemon=True,
-    ).start()
-
-
-def _stop_heartbeat(client):
-    done = client._ws_heartbeat_done
-    if done is not None:
-        done.set()
-        client._ws_heartbeat_done = None
-
-
-def _handle_group_message(client, event):
-    if client.on_group_message is None:
-        return
-    group_openid = event.get("group_openid") or event.get("group_id", "")
-    if not group_openid:
-        return
-    group_id = client._resolve_or_discover(group_openid)
-    if group_id is None:
-        return
-    author = event.get("author", {})
-    content = normalize_official_group_content(event.get("content", ""))
-    if not content:
-        return
-    user_openid = (
-        author.get("member_openid")
-        or author.get("id")
-        or author.get("user_openid")
-        or author.get("openid")
-        or ""
-    )
-    if not user_openid:
-        client._log("收到官机群消息，但事件缺少成员 OpenID，已忽略")
-        return
-    client.on_group_message(
-        group_id,
-        client.openid_to_userid(user_openid),
-        author.get("username") or author.get("nickname") or "QQ成员",
-        content,
-        bool(author.get("bot")),
-        user_openid,
-        author.get("member_role") or author.get("role") or "member",
-    )
 
 
 def normalize_official_group_content(content):
@@ -509,6 +537,7 @@ def convert_cq_at_to_official(message, display_name_of=None):
     mapping = display_name_of or {}
 
     def replace(match):
+        '''把单个 CQ at 片段替换为可读昵称。'''
         user_id = int(match.group(1))
         display_name = str(mapping.get(user_id, "QQ成员")).strip() or "QQ成员"
         return f"@{display_name}"

@@ -1,8 +1,7 @@
 """QQ group menu and command handlers for Ultra."""
 
 import time
-from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 from tooldelta import utils
 
@@ -1796,19 +1795,7 @@ class QQLinkerQQMixin:
 
     def qq_guild_player_menu(self, group_id: int, qqid: int):  # skipcq: PY-R1000
         """普通群成员可使用的公会菜单，要求 QQ 已绑定游戏账号。"""
-        reject_qqbot_feature = getattr(
-            self,
-            "_reject_qqbot_real_qq_feature",
-            None,
-        )
-        if callable(reject_qqbot_feature):
-            reject_qqbot_feature = cast(
-                Callable[[int, int, str], bool],
-                reject_qqbot_feature,
-            )
-        else:
-            reject_qqbot_feature = None
-        if reject_qqbot_feature is not None and reject_qqbot_feature(
+        if self._reject_qqbot_real_qq_feature(
                 group_id, qqid, "binding"):
             return
         if not self.ensure_guild_system(group_id, qqid):
@@ -3676,19 +3663,7 @@ class QQLinkerQQMixin:
 
         可管理的层级由“权限设置”中的管理员菜单权限决定。
         """
-        reject_qqbot_feature = getattr(
-            self,
-            "_reject_qqbot_real_qq_feature",
-            None,
-        )
-        if callable(reject_qqbot_feature):
-            reject_qqbot_feature = cast(
-                Callable[[int, int, str], bool],
-                reject_qqbot_feature,
-            )
-        else:
-            reject_qqbot_feature = None
-        if reject_qqbot_feature is not None and reject_qqbot_feature(
+        if self._reject_qqbot_real_qq_feature(
                 group_id, qqid, "admin_menu"):
             return
         options = []
@@ -4073,4 +4048,3 @@ class QQLinkerQQMixin:
             return
 
         self._reply_to_qq(group_id, qqid, "❀ 您的输入有误")
-

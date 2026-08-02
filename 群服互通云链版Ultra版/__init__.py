@@ -245,4 +245,3 @@ entry = plugin_entry(
     ["群服互通云链版Ultra版", "QQLinkerUltraAPI"],
     (2, 1, 8),
 )
-

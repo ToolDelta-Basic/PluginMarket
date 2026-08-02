@@ -3,9 +3,8 @@
 import importlib
 import json
 import time
-from collections.abc import Callable
 from copy import deepcopy
-from typing import Any, cast
+from typing import Any
 
 from tooldelta import Chat, InternalBroadcast, Player, utils
 
@@ -193,11 +192,12 @@ class QQLinkerRuntimeMixin:
                     return False, msg
         return True, msg
 
-    @utils.thread_func("云链群服连接进程")
-    def connect_to_websocket(self):
-        """按当前配置或本地桥接参数建立到云链的连接。"""
-        if not self._manual_launch and not self.cloud_channel_enabled():
-            return
+    def _cloud_connection_requested(self) -> bool:
+        """返回当前是否仍需要保持云链连接。"""
+        return bool(self._manual_launch or self.cloud_channel_enabled())
+
+    def _activate_ws_runner(self) -> bool:
+        """独占云链连接线程，并拒绝重复启动请求。"""
         with self._ws_runner_lock:
             if self._ws_runner_active:
                 self._print_cloud_status(
@@ -206,96 +206,152 @@ class QQLinkerRuntimeMixin:
                     ["云链连接线程已在运行", "本次重复连接请求已忽略"],
                     level="warn",
                 )
-                return
+                return False
             self._ws_runner_active = True
+        return True
 
+    def _deactivate_ws_runner(self) -> None:
+        """释放云链连接线程的独占运行标记。"""
+        with self._ws_runner_lock:
+            self._ws_runner_active = False
+
+    def _prepare_ws_retry_stop(self):
+        """清空上次停止信号并返回可中断等待的事件。"""
         retry_stop = getattr(self, "_ws_retry_stop", None)
         if retry_stop is not None:
             retry_stop.clear()
+        return retry_stop
+
+    def _wait_for_cloud_delay(self, retry_stop, delay: float) -> bool:
+        """等待云链重试间隔，并返回是否收到停止信号。"""
+        if retry_stop is not None:
+            return bool(retry_stop.wait(delay))
+        time.sleep(delay)
+        return False
+
+    def _print_cloud_rate_limit_notice(self, now: float, delay: int) -> None:
+        """在每个限流周期内只输出一次云链暂停重连提示。"""
+        if getattr(self, "_ws_rate_limit_notice_until", 0.0) > now:
+            return
+        minutes = max(1, (delay + 59) // 60)
+        self._ws_rate_limit_notice_until = now + delay
+        self._print_cloud_status(
+            "群服互通 云链连接",
+            "限流",
+            [
+                "本小时云链连接失败已达到 5 次",
+                "每小时最多尝试 5 次，已暂停自动重连",
+                f"约 {minutes} 分钟后自动恢复连接尝试",
+            ],
+            level="warn",
+        )
+
+    def _wait_for_cloud_rate_limit(self, retry_stop) -> bool | None:
+        """处理每小时连接次数限制；未限流时返回 None。"""
+        now = time.time()
+        retry_wait = self._cloud_retry_wait_seconds(now)
+        if retry_wait <= 0:
+            return None
+        delay = self._ceil_retry_delay(retry_wait)
+        self._ws_reconnect_delay = delay
+        self._print_cloud_rate_limit_notice(now, delay)
+        return self._wait_for_cloud_delay(retry_stop, delay)
+
+    def _cloud_websocket_header(self) -> dict[str, str] | None:
+        """根据云链校验码构造 WebSocket 鉴权请求头。"""
+        validate_code = self.cfg["云链设置"]["校验码"].strip()
+        if not validate_code:
+            return None
+        return {"Authorization": f"Bearer {validate_code}"}
+
+    def _create_cloud_websocket(
+        self,
+        target: str,
+        header: dict[str, str] | None,
+        session_id: int,
+    ):
+        """创建绑定当前会话编号的云链 WebSocket 客户端。"""
+        websocket_module = getattr(self, "_websocket_module", None)
+        if websocket_module is None:
+            raise RuntimeError("websocket-client 依赖尚未加载")
+
+        def _on_message(ws_obj, message, sid=session_id):
+            """Forward websocket messages to the active session handler."""
+            return self.on_ws_message(ws_obj, message, sid) and None
+
+        def _on_error(ws_obj, error, sid=session_id):
+            """Forward websocket errors to the active session handler."""
+            return self.on_ws_error(ws_obj, error, sid)
+
+        def _on_close(ws_obj, code, reason, sid=session_id):
+            """Forward websocket close events to the active session handler."""
+            return self.on_ws_close(ws_obj, code, reason, sid)
+
+        ws_app = websocket_module.WebSocketApp(
+            target,
+            header,
+            on_message=_on_message,
+            on_error=_on_error,
+            on_close=_on_close,
+        )
+        ws_app.on_open = lambda ws_obj, sid=session_id: self.on_ws_open(
+            ws_obj, sid)
+        return ws_app
+
+    def _run_cloud_connection_attempt(self) -> None:
+        """创建一个云链会话并运行到本次连接结束。"""
+        target = self._get_websocket_target()
+        self._print_cloud_status(
+            "群服互通 云链连接",
+            "连接中",
+            ["正在尝试连接云链", f"目标地址: {target}"],
+            level="info",
+        )
+        session_id = self._start_ws_session()
+        ws_app = self._create_cloud_websocket(
+            target,
+            self._cloud_websocket_header(),
+            session_id,
+        )
+        self.ws = ws_app
+        self.available = False
+        ws_app.run_forever()
+
+    def _next_cloud_reconnect_delay(self):
+        """返回下一次云链重连延迟；无需重连时返回 None。"""
+        delay = self._ws_reconnect_delay
+        if delay is None or not self._cloud_connection_requested():
+            return None
+        return delay
+
+    def _run_cloud_connection_loop(self, retry_stop) -> None:
+        """循环执行云链限流等待、连接和断线重试。"""
+        while self._cloud_connection_requested():
+            rate_limit_stopped = self._wait_for_cloud_rate_limit(retry_stop)
+            if rate_limit_stopped is not None:
+                if rate_limit_stopped:
+                    return
+                continue
+            self._run_cloud_connection_attempt()
+            delay = self._next_cloud_reconnect_delay()
+            if delay is None:
+                return
+            if self._wait_for_cloud_delay(retry_stop, delay):
+                return
+
+    @utils.thread_func("云链群服连接进程")
+    def connect_to_websocket(self):
+        """按当前配置或本地桥接参数建立到云链的连接。"""
+        if not self._cloud_connection_requested():
+            return
+        if not self._activate_ws_runner():
+            return
+        retry_stop = self._prepare_ws_retry_stop()
         self.reloaded = False
-
         try:
-            while True:
-                if not self._manual_launch and not self.cloud_channel_enabled():
-                    break
-                now = time.time()
-                retry_wait = self._cloud_retry_wait_seconds(now)
-                if retry_wait > 0:
-                    delay = self._ceil_retry_delay(retry_wait)
-                    self._ws_reconnect_delay = delay
-                    if getattr(self, "_ws_rate_limit_notice_until", 0.0) <= now:
-                        minutes = max(1, (delay + 59) // 60)
-                        self._ws_rate_limit_notice_until = now + delay
-                        self._print_cloud_status(
-                            "群服互通 云链连接",
-                            "限流",
-                            [
-                                "本小时云链连接失败已达到 5 次",
-                                "每小时最多尝试 5 次，已暂停自动重连",
-                                f"约 {minutes} 分钟后自动恢复连接尝试",
-                            ],
-                            level="warn",
-                        )
-                    if retry_stop is not None:
-                        if retry_stop.wait(delay):
-                            break
-                    else:
-                        time.sleep(delay)
-                    continue
-                target = self._get_websocket_target()
-                header = None
-                validate_code = self.cfg["云链设置"]["校验码"].strip()
-                if validate_code:
-                    header = {"Authorization": f"Bearer {validate_code}"}
-                self._print_cloud_status(
-                    "群服互通 云链连接",
-                    "连接中",
-                    ["正在尝试连接云链", f"目标地址: {target}"],
-                    level="info",
-                )
-                session_id = self._start_ws_session()
-
-                def _on_message(ws_obj, message, sid=session_id):
-                    """Forward websocket messages to the active session handler."""
-                    return self.on_ws_message(ws_obj, message, sid) and None
-
-                def _on_error(ws_obj, error, sid=session_id):
-                    """Forward websocket errors to the active session handler."""
-                    return self.on_ws_error(ws_obj, error, sid)
-
-                def _on_close(ws_obj, code, reason, sid=session_id):
-                    """Forward websocket close events to the active session handler."""
-                    return self.on_ws_close(ws_obj, code, reason, sid)
-
-                websocket_module = getattr(self, "_websocket_module", None)
-                if websocket_module is None:
-                    raise RuntimeError("websocket-client 依赖尚未加载")
-                ws_app = websocket_module.WebSocketApp(
-                    target,
-                    header,
-                    on_message=_on_message,
-                    on_error=_on_error,
-                    on_close=_on_close,
-                )
-                ws_app.on_open = lambda ws_obj, sid=session_id: self.on_ws_open(
-                    ws_obj, sid)
-                self.ws = ws_app
-                self.available = False
-                ws_app.run_forever()
-
-                delay = self._ws_reconnect_delay
-                if delay is None or (
-                    not self._manual_launch and not self.cloud_channel_enabled()
-                ):
-                    break
-                if retry_stop is not None:
-                    if retry_stop.wait(delay):
-                        break
-                else:
-                    time.sleep(delay)
+            self._run_cloud_connection_loop(retry_stop)
         finally:
-            with self._ws_runner_lock:
-                self._ws_runner_active = False
+            self._deactivate_ws_runner()
 
     def _get_websocket_target(self):
         """返回当前应连接的 WebSocket 地址。"""
@@ -626,20 +682,13 @@ class QQLinkerRuntimeMixin:
 
     def _is_help_menu_reopen_message(self, group_id: int, msg: str) -> bool:
         """判断等待菜单期间的消息是否要求重新打开帮助菜单。"""
-        getter = getattr(self, "get_group_help_triggers", None)
-        if not callable(getter):
-            return False
-        get_triggers = cast(Callable[[int], list[str]], getter)
-        return str(msg).strip() in get_triggers(group_id)
+        return str(msg).strip() in self.get_group_help_triggers(group_id)
 
     def _menu_exit_input_for_group(self, group_id: int) -> str:
         """返回用于释放旧菜单等待的首个退出触发词。"""
-        getter = getattr(self, "get_group_menu_exit_triggers", None)
-        if callable(getter):
-            get_triggers = cast(Callable[[int], list[str]], getter)
-            triggers = get_triggers(group_id)
-            if triggers:
-                return str(triggers[0])
+        triggers = self.get_group_menu_exit_triggers(group_id)
+        if triggers:
+            return str(triggers[0])
         return "q"
 
     def _stop_when_group_broadcast_handled(
@@ -880,28 +929,45 @@ class QQLinkerRuntimeMixin:
             do_remove_cq_code=False,
         )
 
-    def _handle_exact_trigger(
-            self,
-            group_id: int,
-            qqid: int,
-            clean_msg: str) -> bool:
-        """处理帮助、管理员菜单、背包查询等完全匹配型触发词。"""
-        reject_qqbot_feature = getattr(
-            self,
-            "_reject_qqbot_real_qq_feature",
-            None,
-        )
-        if callable(reject_qqbot_feature):
-            reject_qqbot_feature = cast(
-                Callable[[int, int, str], bool],
-                reject_qqbot_feature,
-            )
-        else:
-            reject_qqbot_feature = None
+    def _handle_admin_menu_trigger(
+        self,
+        group_id: int,
+        qqid: int,
+        clean_msg: str,
+    ) -> bool:
+        """处理完全匹配的管理员菜单触发词。"""
+        if clean_msg not in self.get_group_admin_menu_triggers(group_id):
+            return False
+        if self._reject_qqbot_real_qq_feature(
+            group_id,
+            qqid,
+            "admin_menu",
+        ):
+            return True
+        if not self._has_any_group_permission(
+            group_id,
+            qqid,
+            ("QQ普通管理员菜单权限", "QQ超级管理员菜单权限"),
+        ):
+            self._reply_permission_denied(group_id, qqid)
+            return True
+        self.qq_admin_menu(group_id, qqid)
+        return True
+
+    def _handle_identity_exact_trigger(
+        self,
+        group_id: int,
+        qqid: int,
+        clean_msg: str,
+    ) -> bool:
+        """处理绑定、帮助及管理员菜单这类身份相关触发词。"""
         if (
             clean_msg in self.get_group_binding_triggers(group_id)
-            and reject_qqbot_feature is not None
-            and reject_qqbot_feature(group_id, qqid, "binding")
+            and self._reject_qqbot_real_qq_feature(
+                group_id,
+                qqid,
+                "binding",
+            )
         ):
             return True
         if self._handle_binding_trigger(group_id, qqid, clean_msg):
@@ -909,66 +975,80 @@ class QQLinkerRuntimeMixin:
         if clean_msg in self.get_group_help_triggers(group_id):
             self.on_qq_help(group_id, qqid, [])
             return True
-        if clean_msg in self.get_group_admin_menu_triggers(group_id):
-            if (
-                reject_qqbot_feature is not None
-                and reject_qqbot_feature(group_id, qqid, "admin_menu")
-            ):
-                return True
-            if not self._has_any_group_permission(
-                group_id,
-                qqid,
-                ("QQ普通管理员菜单权限", "QQ超级管理员菜单权限"),
-            ):
-                self._reply_permission_denied(group_id, qqid)
-                return True
-            self.qq_admin_menu(group_id, qqid)
-            return True
-        if clean_msg in self.get_group_config_menu_triggers(group_id):
-            return self._run_permission_action(
-                group_id,
-                qqid,
+        return self._handle_admin_menu_trigger(group_id, qqid, clean_msg)
+
+    def _handle_permission_exact_trigger(
+        self,
+        group_id: int,
+        qqid: int,
+        clean_msg: str,
+    ) -> bool:
+        """以统一表驱动方式处理带权限的完全匹配菜单。"""
+        actions = (
+            (
+                self.get_group_config_menu_triggers(group_id),
                 "配置配置文件权限",
                 lambda: self.qq_config_center_menu(group_id, qqid),
-            )
-        if clean_msg in self.get_group_player_list_triggers(group_id):
-            if not self._has_group_permission(group_id, qqid, "查看玩家人数权限"):
-                self._reply_permission_denied(group_id, qqid)
-                return True
-            self.on_qq_player_list(group_id, qqid, [])
-            return True
-        if clean_msg in self.get_group_inventory_menu_triggers(group_id):
-            return self._run_permission_action(
-                group_id,
-                qqid,
+            ),
+            (
+                self.get_group_player_list_triggers(group_id),
+                "查看玩家人数权限",
+                lambda: self.on_qq_player_list(group_id, qqid, []),
+            ),
+            (
+                self.get_group_inventory_menu_triggers(group_id),
                 "查询背包权限",
                 lambda: self.qq_inventory_menu(group_id, qqid),
-            )
-        if clean_msg in self.get_group_checker_menu_triggers(group_id):
-            return self._run_permission_action(
-                group_id,
-                qqid,
+            ),
+            (
+                self.get_group_checker_menu_triggers(group_id),
                 "白名单&管理员检测权限",
                 lambda: self.qq_checker_menu(group_id, qqid),
-            )
-        if clean_msg in self.get_group_task_menu_triggers(group_id):
-            return self._run_permission_action(
-                group_id,
-                qqid,
+            ),
+            (
+                self.get_group_task_menu_triggers(group_id),
                 "任务系统权限",
                 lambda: self.qq_task_system_menu(group_id, qqid),
-            )
-        if clean_msg in self.get_group_land_menu_triggers(group_id):
-            return self._run_permission_action(
-                group_id,
-                qqid,
+            ),
+            (
+                self.get_group_land_menu_triggers(group_id),
                 "领地系统权限",
                 lambda: self.qq_land_system_menu(group_id, qqid),
-            )
+            ),
+        )
+        for triggers, permission_name, action in actions:
+            if clean_msg in triggers:
+                return self._run_permission_action(
+                    group_id,
+                    qqid,
+                    permission_name,
+                    action,
+                )
+        return False
+
+    def _handle_feature_exact_trigger(
+        self,
+        group_id: int,
+        qqid: int,
+        clean_msg: str,
+    ) -> bool:
+        """处理权限菜单和公会菜单等功能型完全匹配触发词。"""
+        if self._handle_permission_exact_trigger(group_id, qqid, clean_msg):
+            return True
         if clean_msg in self.get_group_guild_menu_triggers(group_id):
             self.qq_guild_entry_menu(group_id, qqid)
             return True
         return False
+
+    def _handle_exact_trigger(
+            self,
+            group_id: int,
+            qqid: int,
+            clean_msg: str) -> bool:
+        """处理帮助、管理员菜单、背包查询等完全匹配型触发词。"""
+        if self._handle_identity_exact_trigger(group_id, qqid, clean_msg):
+            return True
+        return self._handle_feature_exact_trigger(group_id, qqid, clean_msg)
 
     def _handle_prefixed_command(
         self,
@@ -1271,4 +1351,3 @@ class QQLinkerRuntimeMixin:
         if not sent:
             return False, "没有可用私信通道或缺少用户 OpenID"
         return True, "已发送私信"
-

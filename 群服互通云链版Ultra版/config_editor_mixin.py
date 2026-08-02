@@ -648,4 +648,3 @@ class QQLinkerConfigEditorMixin:
             self._reply_to_qq(ctx["group_id"], ctx["qqid"], f"❀ {message}")
         else:
             self.print_console_error(message)
-

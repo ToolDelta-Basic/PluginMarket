@@ -32,6 +32,7 @@ class QQLinkerQQBotMixin:
 
     @staticmethod
     def _normalize_qqbot_member_role(role) -> str:
+        '''把官机平台成员角色规范化为 owner、admin 或 member。'''
         role_text = str(role or "member").strip().lower()
         if role_text in {"owner", "creator", "群主", "4"}:
             return "owner"
@@ -40,6 +41,7 @@ class QQLinkerQQBotMixin:
         return "member"
 
     def _qqbot_member_role(self, group_id: int, user_id: int) -> str | None:
+        '''获取官机群会话中缓存的成员角色。'''
         roles = getattr(self, "_qqbot_member_roles", {})
         return roles.get((int(group_id), int(user_id)))
 
@@ -83,16 +85,19 @@ class QQLinkerQQBotMixin:
         return True
 
     def is_group_owner(self, group_id: int, qqid: int):
+        '''判断会话成员是否为官机群主或其他通道群主。'''
         if self._qqbot_member_role(group_id, qqid) == "owner":
             return True
         return super().is_group_owner(group_id, qqid)
 
     def is_group_super_admin(self, group_id: int, qqid: int):
+        '''判断会话成员是否具备最高群管理权限。'''
         if self._qqbot_member_role(group_id, qqid) == "owner":
             return True
         return super().is_group_super_admin(group_id, qqid)
 
     def is_group_admin(self, group_id: int, qqid: int):
+        '''判断会话成员是否为官机群主、管理员或其他通道管理员。'''
         if self._qqbot_member_role(group_id, qqid) in {"owner", "admin"}:
             return True
         return super().is_group_admin(group_id, qqid)
@@ -103,6 +108,7 @@ class QQLinkerQQBotMixin:
         qqid: int,
         permission_name: str,
     ) -> bool:
+        '''按官机成员角色和群配置判断指定功能权限。'''
         role = self._qqbot_member_role(group_id, qqid)
         if role == "owner":
             return True
@@ -117,25 +123,29 @@ class QQLinkerQQBotMixin:
         return super().has_group_permission(group_id, qqid, permission_name)
 
     def qqbot_channel_enabled(self) -> bool:
+        '''返回配置是否启用了 QQ 官方机器人通道。'''
         settings = getattr(self, "cfg", {}).get("官机设置", {})
         return isinstance(settings, dict) and bool(
             settings.get("是否启用该通道", False))
 
     def qqbot_channel_available(self) -> bool:
+        '''返回官机通道是否已启用且客户端已经创建。'''
         client = getattr(self, "_qqbot_client", None)
         return self.qqbot_channel_enabled() and client is not None
 
     def _qqbot_openid_file_path(self) -> str:
+        '''返回官方群 OpenID 映射文件的数据目录路径。'''
         return self.format_data_path(self.QQBOT_OPENID_FILE)
 
     def _load_qqbot_openid_map(self) -> dict[str, str]:
+        '''从插件数据目录读取并清洗群号与 OpenID 映射。'''
         try:
             with open(
                 self._qqbot_openid_file_path(),
                 encoding="utf-8",
             ) as file:
                 data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError):
             return {}
         if not isinstance(data, dict):
             return {}
@@ -146,12 +156,14 @@ class QQLinkerQQBotMixin:
         }
 
     def _save_qqbot_openid_map(self, data: dict[str, str]) -> None:
+        '''把群号与官方群 OpenID 映射保存到插件数据目录。'''
         path = self._qqbot_openid_file_path()
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2)
 
     def start_qqbot_connection(self) -> None:
+        '''根据配置创建并启动 QQ 官方机器人客户端。'''
         if not self.qqbot_channel_enabled():
             self.stop_qqbot_connection()
             return
@@ -198,23 +210,26 @@ class QQLinkerQQBotMixin:
             )
 
     def stop_qqbot_connection(self) -> None:
+        '''停止并移除当前 QQ 官方机器人客户端。'''
         client = getattr(self, "_qqbot_client", None)
         self._qqbot_client = None
         if client is not None:
             client.stop_receiver()
 
     def reload_qqbot_connection(self) -> None:
+        '''重新加载 QQ 官方机器人连接。'''
         self.stop_qqbot_connection()
         if self.qqbot_channel_enabled():
             self.start_qqbot_connection()
 
     def on_qqbot_openid_discovered(self, group_id, openid) -> None:
+        '''持久化客户端发现的群 OpenID 映射。'''
         data = self._load_qqbot_openid_map()
         data[str(group_id)] = str(openid)
         self._save_qqbot_openid_map(data)
         client = getattr(self, "_qqbot_client", None)
         if client is not None:
-            client._openid_map = data
+            client.replace_openid_map(data)
         self.print_console_success(f"官机通道已绑定群 {group_id}")
 
     def dispatch_qqbot_group_message(self, *args) -> None:
@@ -235,6 +250,7 @@ class QQLinkerQQBotMixin:
         raw_openid="",
         role="member",
     ) -> None:
+        '''把官机群消息转换成 OneBot 风格事件并交给消息流水线。'''
         if is_bot:
             return
         group_id = int(group_id)
