@@ -381,12 +381,6 @@
       "version": "0.0.6",
       "plugin-type": "classic"
     },
-    "mcstructure导入器[可导入命令]": {
-      "name": "mcstructure导入器[可导入命令]",
-      "author": "style_天枢",
-      "version": "0.0.3",
-      "plugin-type": "classic"
-    },
     "杀戮光环举报": {
       "name": "杀戮光环举报",
       "author": "丸山彩",
@@ -487,12 +481,6 @@
       "name": "进服一言",
       "author": "机入 & Q3CC",
       "version": "0.0.2",
-      "plugin-type": "classic"
-    },
-    "schematic导入器": {
-      "name": "schematic导入器",
-      "author": "style_天枢",
-      "version": "0.0.4",
       "plugin-type": "classic"
     },
     "封禁系统": {
@@ -619,6 +607,12 @@
       "name": "无邪玩家互传",
       "author": "无邪",
       "version": "1.0.0",
+      "plugin-type": "classic"
+    },
+    "『Lyra-天琴座』ToolDelta导入器": {
+      "name": "『Lyra-天琴座』ToolDelta导入器",
+      "author": "style_天枢",
+      "version": "0.0.1",
       "plugin-type": "classic"
     },
     "玩家人数限制": {

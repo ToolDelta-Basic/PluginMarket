@@ -1041,15 +1041,6 @@
         "__init__.py": 0,
         "datas.json": 0
     },
-    "mcstructure导入器[可导入命令]": {
-        "command_loader.py": 0,
-        "nbt_parser.py": 0,
-        "config.py": 0,
-        "__init__.py": 0,
-        "datas.json": 0,
-        "core.py": 0,
-        "chunk_painter.py": 0
-    },
     "杀戮光环举报": {
         "__init__.py": 0,
         "datas.json": 0,
@@ -1175,15 +1166,6 @@
     "进服一言": {
         "__init__.py": 0,
         "datas.json": 0
-    },
-    "schematic导入器": {
-        "nbt_parser.py": 0,
-        "Minecraft_BE_block_id.json": 0,
-        "config.py": 0,
-        "__init__.py": 0,
-        "datas.json": 0,
-        "core.py": 0,
-        "chunk_painter.py": 0
     },
     "封禁系统": {
         "__init__.py": 0,
@@ -1371,6 +1353,60 @@
     "无邪玩家互传": {
         "__init__.py": 0,
         "datas.json": 0
+    },
+    "『Lyra-天琴座』ToolDelta导入器": {
+        "basic.py": 0,
+        "Minecraft_BE_block_id.json": 0,
+        "config.py": 0,
+        "__init__.py": 0,
+        "datas.json": 0,
+        "lyra_loader": {
+            "mcworld": {
+                "command_loader.py": 0,
+                "__init__.py": 0,
+                "world_reader.py": 0,
+                "chunk_painter.py": 0
+            },
+            "bdx": {
+                "command_loader.py": 0,
+                "__init__.py": 0,
+                "bdx_parser.py": 0,
+                "chunk_painter.py": 0
+            },
+            "common": {
+                "__init__.py": 0,
+                "generate_java_mapping.py": 0,
+                "dimensions.py": 0,
+                "streaming_nbt.py": 0,
+                "block_converter.py": 0
+            },
+            "mcstructure": {
+                "command_loader.py": 0,
+                "nbt_parser.py": 0,
+                "__init__.py": 0,
+                "chunk_painter.py": 0
+            },
+            "schematic": {
+                "nbt_parser.py": 0,
+                "generate_mapping.py": 0,
+                "__init__.py": 0,
+                "chunk_painter.py": 0
+            },
+            "__init__.py": 0,
+            "schem": {
+                "schem_parser.py": 0,
+                "__init__.py": 0,
+                "chunk_painter.py": 0
+            },
+            "litematic": {
+                "litematic_parser.py": 0,
+                "__init__.py": 0,
+                "chunk_painter.py": 0
+            }
+        },
+        "handlers.py": 0,
+        "java_to_bedrock.json": 0,
+        "THIRD_PARTY_LICENSES.md": 0
     },
     "latest_versions.json": 0,
     "玩家人数限制": {

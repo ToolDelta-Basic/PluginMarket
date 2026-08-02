@@ -1036,15 +1036,6 @@
         "__init__.py",
         "datas.json"
     ],
-    "mcstructure导入器[可导入命令]": [
-        "command_loader.py",
-        "nbt_parser.py",
-        "config.py",
-        "__init__.py",
-        "datas.json",
-        "core.py",
-        "chunk_painter.py"
-    ],
     "杀戮光环举报": [
         "__init__.py",
         "datas.json",
@@ -1167,15 +1158,6 @@
     "进服一言": [
         "__init__.py",
         "datas.json"
-    ],
-    "schematic导入器": [
-        "nbt_parser.py",
-        "Minecraft_BE_block_id.json",
-        "config.py",
-        "__init__.py",
-        "datas.json",
-        "core.py",
-        "chunk_painter.py"
     ],
     "封禁系统": [
         "__init__.py",
@@ -1360,6 +1342,60 @@
     "无邪玩家互传": [
         "__init__.py",
         "datas.json"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器": [
+        "basic.py",
+        "Minecraft_BE_block_id.json",
+        "config.py",
+        "__init__.py",
+        "datas.json",
+        "handlers.py",
+        "java_to_bedrock.json",
+        "THIRD_PARTY_LICENSES.md"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader": [
+        "__init__.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/mcworld": [
+        "command_loader.py",
+        "__init__.py",
+        "world_reader.py",
+        "chunk_painter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/bdx": [
+        "command_loader.py",
+        "__init__.py",
+        "bdx_parser.py",
+        "chunk_painter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/common": [
+        "__init__.py",
+        "generate_java_mapping.py",
+        "dimensions.py",
+        "streaming_nbt.py",
+        "block_converter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/mcstructure": [
+        "command_loader.py",
+        "nbt_parser.py",
+        "__init__.py",
+        "chunk_painter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/schematic": [
+        "nbt_parser.py",
+        "generate_mapping.py",
+        "__init__.py",
+        "chunk_painter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/schem": [
+        "schem_parser.py",
+        "__init__.py",
+        "chunk_painter.py"
+    ],
+    "『Lyra-天琴座』ToolDelta导入器/lyra_loader/litematic": [
+        "litematic_parser.py",
+        "__init__.py",
+        "chunk_painter.py"
     ],
     "玩家人数限制": [
         "__init__.py",
