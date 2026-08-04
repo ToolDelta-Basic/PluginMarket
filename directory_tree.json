@@ -1356,8 +1356,8 @@
     },
     "『Lyra-天琴座』ToolDelta导入器": {
         "basic.py": 0,
-        "Minecraft_BE_block_id.json": 0,
         "config.py": 0,
+        "java_ids_to_bedrock_names.json": 0,
         "__init__.py": 0,
         "datas.json": 0,
         "lyra_loader": {
@@ -1374,10 +1374,15 @@
                 "chunk_painter.py": 0
             },
             "common": {
+                "chunk_clear.py": 0,
+                "command_loader.py": 0,
+                "generate_mapping.py": 0,
+                "chunk_loading.py": 0,
                 "__init__.py": 0,
-                "generate_java_mapping.py": 0,
+                "waterlogging.py": 0,
                 "dimensions.py": 0,
                 "streaming_nbt.py": 0,
+                "parse_command.py": 0,
                 "block_converter.py": 0
             },
             "mcstructure": {
@@ -1405,7 +1410,7 @@
             }
         },
         "handlers.py": 0,
-        "java_to_bedrock.json": 0,
+        "java_names_to_bedrock_names.json": 0,
         "THIRD_PARTY_LICENSES.md": 0
     },
     "latest_versions.json": 0,
