@@ -3,7 +3,7 @@
 import math
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from tooldelta import fmts
 from ..common.parse_command import parse_command
@@ -13,7 +13,7 @@ from ..common.chunk_clear import chunk_clear
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
-    from .command_loader import CommandLoader
+    from ..common.command_loader import load_command_blocks
     from .nbt_parser import MCStructureData
 
 CHUNK_SIZE = 16
@@ -158,7 +158,6 @@ class ChunkPainter:
                     f"{rejected_examples[command]}, 返回: {rejected[command]}"
                 )
         if self.cfg.INCLUDE_CMD and structure.command_data:
-            command_loader = cast("CommandLoader", self.plugin.command_loader)
-            command_loader.load_commands(
-                structure.command_data, dim, start_x, start_y, start_z
+            load_command_blocks(
+                self.plugin, structure.command_data, dim, (start_x, start_y, start_z)
             )

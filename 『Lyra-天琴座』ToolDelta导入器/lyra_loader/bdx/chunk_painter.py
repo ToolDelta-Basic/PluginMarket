@@ -2,7 +2,7 @@
 
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from tooldelta import fmts
 from ..common.parse_command import parse_command
@@ -11,8 +11,8 @@ from ..common.chunk_loading import chunk_preload
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
+    from ..common.command_loader import load_command_blocks
     from .bdx_parser import BDXData
-    from .command_loader import CommandLoader
 
 COMMAND_BLOCKS = {
     0: "minecraft:command_block",
@@ -191,8 +191,7 @@ class ChunkPainter:
         if invalid_commands:
             fmts.print_inf(f"§6❀ 警告: 已跳过 {invalid_commands} 条无效命令方块操作")
         if self.cfg.INCLUDE_CMD and command_data:
-            command_loader = cast("CommandLoader", self.plugin.command_loader)
-            command_loader.load_commands(command_data, dimension)
+            load_command_blocks(self.plugin, command_data, dimension)
 
     def _preload(self, dimension: "Dimension", x: int, y: int, z: int) -> None:
         chunk_preload(

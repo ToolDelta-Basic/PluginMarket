@@ -2,7 +2,7 @@
 
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from tooldelta import fmts
 from ..common.parse_command import parse_command
@@ -13,7 +13,7 @@ from .world_reader import COMMAND_MODES, command_packet
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
-    from .command_loader import CommandLoader
+    from ..common.command_loader import load_command_blocks
     from .world_reader import MCWorldData
 
 CHUNK_SIZE = 16
@@ -227,8 +227,7 @@ class ChunkPainter:
                 f"§6❀ 警告: 已跳过 {invalid_commands} 条无法与命令方块Palette对应的数据"
             )
         if self.cfg.INCLUDE_CMD and command_data:
-            command_loader = cast("CommandLoader", self.plugin.command_loader)
-            command_loader.load_commands(command_data, dimension)
+            load_command_blocks(self.plugin, command_data, dimension)
 
 
 def _inside(

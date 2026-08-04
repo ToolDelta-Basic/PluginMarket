@@ -1,4 +1,4 @@
-"""Java 含水方块的 Bedrock secondary 水层放置。"""
+"""Java 含水方块的 Bedrock secondary 水层放置"""
 
 from collections.abc import Callable
 
@@ -16,7 +16,7 @@ def place_water_layer(
     verified_commands: set[str],
     rejected_commands: dict[str, str],
 ) -> tuple[bool, bool, str]:
-    """放置静态水层，返回（是否发送成功、是否首次确认、错误详情）。"""
+    """放置静态水层, 返回 (是否发送成功、是否首次确认、错误详情)"""
     if WATER_COMMAND in rejected_commands:
         return False, False, rejected_commands[WATER_COMMAND]
     setblock = f"/setblock {position[0]} {position[1]} {position[2]} {WATER_COMMAND}"
