@@ -1357,13 +1357,11 @@
         "__init__.py"
     ],
     "『Lyra-天琴座』ToolDelta导入器/lyra_loader/mcworld": [
-        "command_loader.py",
         "__init__.py",
         "world_reader.py",
         "chunk_painter.py"
     ],
     "『Lyra-天琴座』ToolDelta导入器/lyra_loader/bdx": [
-        "command_loader.py",
         "__init__.py",
         "bdx_parser.py",
         "chunk_painter.py"
@@ -1371,7 +1369,6 @@
     "『Lyra-天琴座』ToolDelta导入器/lyra_loader/common": [
         "chunk_clear.py",
         "command_loader.py",
-        "generate_mapping.py",
         "chunk_loading.py",
         "__init__.py",
         "waterlogging.py",
@@ -1381,7 +1378,6 @@
         "block_converter.py"
     ],
     "『Lyra-天琴座』ToolDelta导入器/lyra_loader/mcstructure": [
-        "command_loader.py",
         "nbt_parser.py",
         "__init__.py",
         "chunk_painter.py"

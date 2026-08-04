@@ -1362,13 +1362,11 @@
         "datas.json": 0,
         "lyra_loader": {
             "mcworld": {
-                "command_loader.py": 0,
                 "__init__.py": 0,
                 "world_reader.py": 0,
                 "chunk_painter.py": 0
             },
             "bdx": {
-                "command_loader.py": 0,
                 "__init__.py": 0,
                 "bdx_parser.py": 0,
                 "chunk_painter.py": 0
@@ -1376,7 +1374,6 @@
             "common": {
                 "chunk_clear.py": 0,
                 "command_loader.py": 0,
-                "generate_mapping.py": 0,
                 "chunk_loading.py": 0,
                 "__init__.py": 0,
                 "waterlogging.py": 0,
@@ -1386,7 +1383,6 @@
                 "block_converter.py": 0
             },
             "mcstructure": {
-                "command_loader.py": 0,
                 "nbt_parser.py": 0,
                 "__init__.py": 0,
                 "chunk_painter.py": 0
