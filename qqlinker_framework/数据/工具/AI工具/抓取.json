@@ -1,0 +1,24 @@
+{
+  "name": "web_scraper",
+  "tool_type": "ai",
+  "description": "抓取指定网页的文本内容。当用户要求查看某网页、获取链接详情时调用。参数：url (网页地址), timeout (可选超时秒数)。",
+  "parameters": {
+    "url": {
+      "type": "string",
+      "description": "要抓取的网页完整URL"
+    },
+    "timeout": {
+      "type": "integer",
+      "description": "超时秒数（默认10，最大10）"
+    }
+  },
+  "required": ["url"],
+  "risk_level": "medium",
+  "require_confirm": false,
+  "admin_only": false,
+  "api_type": "Scrapling服务",
+  "category": "network",
+  "timeout": 15,
+  "enabled": true,
+  "required_config_keys": ["Scrapling服务"]
+}

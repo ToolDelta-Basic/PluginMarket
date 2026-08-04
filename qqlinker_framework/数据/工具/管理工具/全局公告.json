@@ -1,0 +1,30 @@
+{
+  "name": "全局公告",
+  "tool_type": "admin",
+  "description": "向所有已连接的群组和游戏服务器发送全局广播公告。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "公告内容": {
+        "type": "string",
+        "description": "要广播的公告内容"
+      },
+      "目标渠道": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["QQ群", "游戏服务器", "全部"]
+        },
+        "description": "公告发放的目标渠道"
+      }
+    },
+    "required": ["公告内容"]
+  },
+  "risk_level": "medium",
+  "require_confirm": true,
+  "admin_only": true,
+  "api_type": "generic",
+  "category": "messaging",
+  "timeout": 30,
+  "enabled": true
+}
