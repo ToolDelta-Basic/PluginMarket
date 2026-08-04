@@ -2,8 +2,8 @@
   "author": "style_天枢",
   "version": "0.0.2",
   "plugin-type": "classic",
-  "description": "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧\n§l§d❐§f 『§6Lyra§f-§d天琴座§f』§bToolDelta§e导入器\n§l§b[ §e●§b ] §r§e支持的建筑格式\n§l§b[ §e1§b ] §r§ebdx\n§l§b[ §e2§b ] §r§elitematic\n§l§b[ §e3§b ] §r§emcstructure\n§l§b[ §e4§b ] §r§emcworld\n§l§b[ §e5§b ] §r§eschem\n§l§b[ §e6§b ] §r§eschematic\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧",
-  "pre-plugins": {"pip": "0.0.5"},
+  "description": "\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧\n§l§d❐§f 『§6Lyra§f-§d天琴座§f』§bToolDelta§e导入器\n§l§b[ §e●§b ] §r§e支持的建筑格式\n§l§b[ §e1§b ] §r§eBDX\n§l§b[ §e2§b ] §r§eLitematic\n§l§b[ §e3§b ] §r§eMCStructure\n§l§b[ §e4§b ] §r§eMCWorld\n§l§b[ §e5§b ] §r§eSchem\n§l§b[ §e6§b ] §r§eSchematic\n§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧",
+  "pre-plugins": {"pip": "0.0.8"},
   "plugin-id": "『Lyra-天琴座』ToolDelta导入器",
   "enabled": true
 }
