@@ -22,7 +22,6 @@ from ..common.streaming_nbt import (
     close_memmap,
 )
 
-MAX_VOLUME = 134_217_728
 COMMAND_MODES = {
     "minecraft:command_block": 0,
     "minecraft:repeating_command_block": 1,
@@ -78,7 +77,7 @@ class MCStructureData:
 
 
 def read_file(path: str, include_commands: bool) -> MCStructureData:
-    """顺序扫描未压缩小端 NBT，并将两层方块索引映射到磁盘。"""
+    """顺序扫描未压缩小端 NBT, 并将两层方块索引映射到磁盘"""
     temporary_directory = Path(tempfile.mkdtemp(prefix="tooldelta-mcstructure-"))
     primary = secondary = None
     materialize_paths = {
@@ -127,7 +126,7 @@ def read_file(path: str, include_commands: bool) -> MCStructureData:
 
         version = int(_required_value(result.values, ("format_version",)))
         if version != 1:
-            raise ValueError(f"仅支持 format_version=1，实际为 {version}")
+            raise ValueError(f"仅支持 format_version=1, 实际为 {version}")
         size = _required_value(result.values, ("size",))
         if not isinstance(size, list) or len(size) != 3:
             raise ValueError("size 必须是恰好包含三个整数的 List")
@@ -135,8 +134,6 @@ def read_file(path: str, include_commands: bool) -> MCStructureData:
         if min(size_x, size_y, size_z) <= 0:
             raise ValueError(f"建筑尺寸必须为正整数: {size_x} x {size_y} x {size_z}")
         volume = size_x * size_y * size_z
-        if volume > MAX_VOLUME:
-            raise ValueError(f"建筑体积过大: {volume} > {MAX_VOLUME}")
 
         numeric = result.numeric_lists
         primary_entry = numeric.get(("structure", "block_indices", "0"))

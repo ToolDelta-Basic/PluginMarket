@@ -6,7 +6,9 @@ from collections import Counter
 from typing import TYPE_CHECKING
 
 from tooldelta import fmts
-from tooldelta.internal.types import Packet_CommandOutput
+from ..common.parse_command import parse_command
+from ..common.chunk_loading import chunk_preload
+from ..common.chunk_clear import chunk_clear
 
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
@@ -65,13 +67,24 @@ class ChunkPainter:
                 fmts.print_inf(
                     f"§e当前区块 ({cx},{cz}) ({chunk_number}/{total_chunks})"
                 )
-                self.sendaicmd(
-                    f'/execute in {dim.command_id} run tp @a[name="{self.game_ctrl.bot_name}"] {tp_x} {start_y} {tp_z}'
+                chunk_preload(
+                    self.sendaicmd,
+                    self.sendaicmd_with_resp,
+                    self.game_ctrl.bot_name,
+                    dim.command_id,
+                    tp_x,
+                    start_y,
+                    tp_z,
                 )
-                self.sendaicmd_with_resp(f"/testforblock {tp_x} {start_y} {tp_z} air")
                 if self.cfg.INCLUDE_AIR:
-                    self._clear_chunk(
-                        start_x, start_y, start_z, x0, z0, x_size, z_size, height
+                    chunk_clear(
+                        self.sendaicmd,
+                        (start_x + x0, start_y, start_z + z0),
+                        (
+                            start_x + x0 + x_size - 1,
+                            start_y + height - 1,
+                            start_z + z0 + z_size - 1,
+                        ),
                     )
                     fmts.print_inf(f"§a区块 ({cx},{cz}) 清理已完成")
 
@@ -103,7 +116,7 @@ class ChunkPainter:
                                 continue
                             setblock = f"/setblock {start_x + local_x} {start_y + local_y} {start_z + local_z} {command}"
                             if command not in verified_commands:
-                                ok, error = _command_success(
+                                ok, error = parse_command(
                                     self.sendaicmd_with_resp(setblock)
                                 )
                                 if not ok:
@@ -138,7 +151,7 @@ class ChunkPainter:
                     f"§6- {key[0]}:{key[1]}: {count} 个, 示例相对坐标 {missing_examples[key]}"
                 )
         if explicit_skips:
-            fmts.print_inf("§6❀ 警告: 以下方块无法安全放置，已明确跳过:")
+            fmts.print_inf("§6❀ 警告: 以下方块无法安全放置, 已明确跳过:")
             for key, count in explicit_skips.most_common():
                 fmts.print_inf(
                     f"§6- {key[0]}:{key[1]}: {count} 个, 示例相对坐标 {skip_examples[key]}"
@@ -150,38 +163,3 @@ class ChunkPainter:
                     f"§c- {command}: {count} 个, 示例相对坐标 {rejected_examples[command]}, "
                     f"返回: {rejected_commands[command]}"
                 )
-
-    def _clear_chunk(
-        self,
-        start_x: int,
-        start_y: int,
-        start_z: int,
-        x0: int,
-        z0: int,
-        x_size: int,
-        z_size: int,
-        height: int,
-    ) -> None:
-        x1, z1 = start_x + x0, start_z + z0
-        x2, z2 = x1 + x_size - 1, z1 + z_size - 1
-        for y0 in range(0, height, CHUNK_SIZE):
-            y2 = start_y + min(height - 1, y0 + CHUNK_SIZE - 1)
-            self.sendaicmd(f"/fill {x1} {start_y + y0} {z1} {x2} {y2} {z2} air")
-
-
-def _command_success(response: Packet_CommandOutput) -> tuple[bool, str]:
-    try:
-        messages = response.as_dict.get("OutputMessages", [])
-        if not messages:
-            return False, "命令响应没有 OutputMessages"
-        message = messages[0]
-        if bool(message.get("Success")):
-            return True, ""
-        detail = str(
-            message.get("Message") or message.get("MessageId") or "命令执行失败"
-        )
-        if parameters := message.get("Parameters"):
-            detail += f"; Parameters={parameters}"
-        return False, detail
-    except Exception as error:
-        return False, f"无法解析命令响应: {error}"

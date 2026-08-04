@@ -12,7 +12,7 @@ class LyraSystem(Plugin):
 
     name = "『Lyra-天琴座』ToolDelta导入器"
     author = "style_天枢"
-    version = (0, 0, 1)
+    version = (0, 0, 2)
 
     def __init__(self, frame) -> None:
         super().__init__(frame)

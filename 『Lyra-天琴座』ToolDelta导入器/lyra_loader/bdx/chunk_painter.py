@@ -5,7 +5,8 @@ from collections import Counter
 from typing import TYPE_CHECKING, Any, cast
 
 from tooldelta import fmts
-from tooldelta.internal.types import Packet_CommandOutput
+from ..common.parse_command import parse_command
+from ..common.chunk_loading import chunk_preload
 
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
@@ -134,7 +135,7 @@ class ChunkPainter:
                         f"/setblock {target[0]} {target[1]} {target[2]} {command}"
                     )
                     if command not in verified:
-                        ok, error = _command_success(self.sendaicmd_with_resp(setblock))
+                        ok, error = parse_command(self.sendaicmd_with_resp(setblock))
                         if not ok:
                             rejected[command] = error
                             rejected_counts[command] += 1
@@ -194,10 +195,15 @@ class ChunkPainter:
             command_loader.load_commands(command_data, dimension)
 
     def _preload(self, dimension: "Dimension", x: int, y: int, z: int) -> None:
-        self.sendaicmd(
-            f'/execute in {dimension.command_id} run tp @a[name="{self.game_ctrl.bot_name}"] {x} {y} {z}'
+        chunk_preload(
+            self.sendaicmd,
+            self.sendaicmd_with_resp,
+            self.game_ctrl.bot_name,
+            dimension.command_id,
+            x,
+            y,
+            z,
         )
-        self.sendaicmd_with_resp(f"/testforblock {x} {y} {z} air")
 
 
 def _constant(strings: list[str], index: int) -> str:
@@ -231,21 +237,3 @@ def _command_packet(
         "TickDelay": int(operation["tick_delay"]),
         "ExecuteOnFirstTick": bool(operation["execute_on_first_tick"]),
     }
-
-
-def _command_success(response: Packet_CommandOutput) -> tuple[bool, str]:
-    try:
-        messages = response.as_dict.get("OutputMessages", [])
-        if not messages:
-            return False, "命令响应没有 OutputMessages"
-        message = messages[0]
-        if bool(message.get("Success")):
-            return True, ""
-        detail = str(
-            message.get("Message") or message.get("MessageId") or "命令执行失败"
-        )
-        if parameters := message.get("Parameters"):
-            detail += f"; Parameters={parameters}"
-        return False, detail
-    except Exception as error:
-        return False, f"无法解析命令响应: {error}"

@@ -9,8 +9,6 @@ from typing import Any
 import numpy as np
 from ..common.streaming_nbt import NBTStreamScanner, close_memmap
 
-MAX_VOLUME = 134_217_728
-
 
 @dataclass
 class SchemData:
@@ -90,8 +88,6 @@ def read_file(path: str) -> SchemData:
         height = _positive_int(root, "Height")
         length = _positive_int(root, "Length")
         volume = width * height * length
-        if volume > MAX_VOLUME:
-            raise ValueError(f"建筑体积过大: {volume} > {MAX_VOLUME}")
         palette_path = (
             *prefix,
             *(("Blocks", "Palette") if version == 3 else ("Palette",)),
@@ -192,8 +188,6 @@ def parse_root(root: dict[str, Any]) -> SchemData:
     height = _positive_int(root, "Height")
     length = _positive_int(root, "Length")
     volume = width * height * length
-    if volume > MAX_VOLUME:
-        raise ValueError(f"建筑体积过大: {volume}")
 
     if version == 3:
         blocks_root = root.get("Blocks")
@@ -235,7 +229,7 @@ def _positive_int(root: dict[str, Any], name: str) -> int:
         raise KeyError(f"文件缺少必须的 {name} 字段")
     value = int(root[name])
     if value <= 0:
-        raise ValueError(f"{name} 必须为正整数，实际为 {value}")
+        raise ValueError(f"{name} 必须为正整数, 实际为 {value}")
     return value
 
 

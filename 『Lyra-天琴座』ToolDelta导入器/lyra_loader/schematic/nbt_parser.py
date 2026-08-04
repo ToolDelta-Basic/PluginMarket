@@ -9,8 +9,6 @@ from typing import Any
 import numpy as np
 from ..common.streaming_nbt import NBTStreamScanner, close_memmap
 
-MAX_VOLUME = 134_217_728
-
 
 @dataclass
 class SchematicData:
@@ -60,7 +58,7 @@ class SchematicData:
 
 
 def read_file(path: str) -> SchematicData:
-    """流式读取经典 Alpha Schematic, 方块数组保存在临时 memmap。"""
+    """流式读取经典 Alpha Schematic, 方块数组保存在临时 memmap"""
     temporary_directory = Path(tempfile.mkdtemp(prefix="tooldelta-schematic-"))
     scalar_names = {
         "Materials",
@@ -97,8 +95,6 @@ def read_file(path: str) -> SchematicData:
         height = _positive_int(root, "Height")
         length = _positive_int(root, "Length")
         volume = width * height * length
-        if volume > MAX_VOLUME:
-            raise ValueError(f"建筑体积过大: {volume} > {MAX_VOLUME}")
         blocks_file = _extracted(result.arrays, ("Blocks",), volume)
         data_file = _extracted(result.arrays, ("Data",), volume)
         add_entry = result.arrays.get(("AddBlocks",))
@@ -159,8 +155,6 @@ def parse_root(root: dict[str, Any], root_name: str = "Schematic") -> SchematicD
     height = _positive_int(root, "Height")
     length = _positive_int(root, "Length")
     volume = width * height * length
-    if volume > MAX_VOLUME:
-        raise ValueError(f"建筑体积过大: {volume} > {MAX_VOLUME}")
 
     blocks_raw = _byte_array(_required(root, "Blocks"), "Blocks")
     data_raw = _byte_array(_required(root, "Data"), "Data")
@@ -182,7 +176,7 @@ def parse_root(root: dict[str, Any], root_name: str = "Schematic") -> SchematicD
             raise ValueError(f"AddBlocks 长度错误: {len(add)} != {expected_add}")
         packed = np.frombuffer(add, dtype=np.uint8)
         high = np.empty(volume, dtype=np.uint16)
-        # MCEdit 格式：偶数方块使用高半字节，奇数方块使用低半字节
+        # MCEdit 格式：偶数方块使用高半字节, 奇数方块使用低半字节
         high[0::2] = packed[: len(high[0::2])] >> 4
         high[1::2] = packed[: len(high[1::2])] & 0x0F
         block_ids |= high << 8

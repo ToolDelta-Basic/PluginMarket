@@ -89,7 +89,7 @@ class _LimitedReader:
 
 
 class NBTStreamScanner:
-    """扫描 NBT，仅物化指定小字段，并将指定 ByteArray 提取到磁盘"""
+    """扫描 NBT, 仅物化指定小字段, 并将指定 ByteArray 提取到磁盘"""
 
     def __init__(
         self,
@@ -165,7 +165,7 @@ class NBTStreamScanner:
                     raise NBTStreamError(f"NBT 根标签不是 Compound: {root_type}")
                 root_name = self._string(reader)
                 self._read_compound(reader, (), False, False, 0)
-                # 强制读取到文件尾；gzip 输入同时验证 CRC。
+                # 强制读取到文件尾；gzip 输入同时验证 CRC
                 if stream.read(1):
                     raise NBTStreamError("NBT 根标签结束后存在多余数据")
         except (gzip.BadGzipFile, OSError, EOFError) as error:
@@ -351,5 +351,5 @@ def close_memmap(array: Any) -> None:
 
 
 def remove_directory(path: Path) -> None:
-    """删除临时目录，供数据对象在关闭映射后调用"""
+    """删除临时目录, 供数据对象在关闭映射后调用"""
     shutil.rmtree(path)

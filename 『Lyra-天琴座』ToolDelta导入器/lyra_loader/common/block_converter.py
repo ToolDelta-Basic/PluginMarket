@@ -33,7 +33,7 @@ class BlockConverter:
     @classmethod
     def from_plugin(cls, plugin: PluginWithName) -> "BlockConverter":
         path = os.path.join(
-            "插件文件", "ToolDelta类式插件", plugin.name, "java_to_bedrock.json"
+            "插件文件", "ToolDelta类式插件", plugin.name, "java_names_to_bedrock_names.json"
         )
         with open(path, encoding="utf-8") as file:
             return cls(json.load(file))

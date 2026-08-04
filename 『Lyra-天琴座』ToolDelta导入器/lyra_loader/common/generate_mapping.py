@@ -24,7 +24,7 @@ def normalize(value: str) -> str:
 
 
 def load_state_types(palette_path: Path) -> dict[tuple[str, str], str]:
-    """读取 Bedrock palette，保留 JSON 映射中丢失的 NBT 数字类型。"""
+    """读取 Bedrock palette, 保留 JSON 映射中丢失的 NBT 数字类型"""
     with gzip.open(palette_path, "rb") as stream:
         palette = nbtlib.File.from_fileobj(stream)
     result: dict[tuple[str, str], str] = {}
@@ -97,6 +97,6 @@ def generate(source: Path, palette: Path, destination: Path) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         raise SystemExit(
-            "用法: generate_mapping.py <blocks_debug.json> <block_palette.nbt> <输出json>"
+            "用法: python generate_mapping.py <blocks_debug.json> <block_palette.nbt> <输出json>"
         )
     generate(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

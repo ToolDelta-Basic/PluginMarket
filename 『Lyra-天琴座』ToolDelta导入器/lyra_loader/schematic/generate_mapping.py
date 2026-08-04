@@ -1,8 +1,7 @@
 """生成经典 Java 1.12 ID/Data 到 Bedrock 的离线静态映射
 
 用法:
-    python generate_mapping.py <minecraft-data/legacy.json> \
-        <schem导入器/java_to_bedrock.json> <Minecraft_BE_block_id.json>
+    python generate_mapping.py <minecraft-data legacy.json> <java_names_to_bedrock_names.json> <输出json>
 
 目标文件中已有、但无法通过最新 Geyser 精确匹配的条目会作为显式覆盖保留
 """
@@ -68,7 +67,7 @@ def generate(legacy_path: Path, geyser_path: Path, destination: Path) -> None:
                 if command is not None:
                     overrides += 1
 
-    # moving_piston 是运行时占位方块，不能通过 /setblock 安全恢复
+    # moving_piston 是运行时占位方块, 不能通过 /setblock 安全恢复
     mappings["36"] = {str(metadata): None for metadata in range(16)}
     output = {
         "meta": {
@@ -96,7 +95,6 @@ def generate(legacy_path: Path, geyser_path: Path, destination: Path) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         raise SystemExit(
-            "用法: generate_mapping.py <minecraft-data legacy.json> "
-            "<java_to_bedrock.json> <输出json>"
+            "用法: python generate_mapping.py <minecraft-data legacy.json> <java_names_to_bedrock_names.json> <输出json>"
         )
     generate(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

@@ -6,12 +6,15 @@ from collections import Counter
 from typing import TYPE_CHECKING
 
 from tooldelta import fmts
-from tooldelta.internal.types import Packet_CommandOutput
+from ..common.parse_command import parse_command
+from ..common.waterlogging import WATER_COMMAND, place_water_layer
+from ..common.chunk_loading import chunk_preload
+from ..common.chunk_clear import chunk_clear
 
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
-    from .litematic_parser import LitematicData, LitematicRegion
+    from .litematic_parser import LitematicData
 
 CHUNK_SIZE = 16
 
@@ -45,7 +48,7 @@ class ChunkPainter:
         )
         conversion_missing: Counter[str] = Counter()
         missing_examples: dict[str, tuple[int, int, int]] = {}
-        degraded: Counter[str] = Counter()
+        water_layers = 0
         verified_commands: set[str] = set()
         rejected_commands: dict[str, str] = {}
         server_rejected: Counter[str] = Counter()
@@ -87,14 +90,34 @@ class ChunkPainter:
                     fmts.print_inf(
                         f"§e当前区块 ({cx},{cz}) ({chunk_number}/{total_chunks})"
                     )
-                    self.sendaicmd(
-                        f'/execute in {dim.command_id} run tp @a[name="{self.game_ctrl.bot_name}"] {tp[0]} {tp[1]} {tp[2]}'
-                    )
-                    self.sendaicmd_with_resp(
-                        f"/testforblock {tp[0]} {tp[1]} {tp[2]} air"
+                    chunk_preload(
+                        self.sendaicmd,
+                        self.sendaicmd_with_resp,
+                        self.game_ctrl.bot_name,
+                        dim.command_id,
+                        tp[0],
+                        tp[1],
+                        tp[2],
                     )
                     if self.cfg.INCLUDE_AIR:
-                        self._clear_chunk(region, offset, x0, z0, x_size, z_size)
+                        sy = region.dimensions[1]
+                        first = region.relative_position(x0, 0, z0)
+                        second = region.relative_position(
+                            x0 + x_size - 1, sy - 1, z0 + z_size - 1
+                        )
+                        chunk_clear(
+                            self.sendaicmd,
+                            (
+                                first[0] + offset[0],
+                                first[1] + offset[1],
+                                first[2] + offset[2],
+                            ),
+                            (
+                                second[0] + offset[0],
+                                second[1] + offset[1],
+                                second[2] + offset[2],
+                            ),
+                        )
                         fmts.print_inf(f"§a区块 ({cx},{cz}) 清理已完成")
 
                     chunk_success = 0
@@ -130,10 +153,30 @@ class ChunkPainter:
                                     server_rejected[java_state] += 1
                                     rejected_examples.setdefault(java_state, example)
                                     continue
+                                if converted.waterlogged:
+                                    water_ok, water_confirmed, _ = place_water_layer(
+                                        self.sendaicmd,
+                                        self.sendaicmd_with_resp,
+                                        target,
+                                        verified_commands,
+                                        rejected_commands,
+                                    )
+                                    if water_ok:
+                                        water_layers += 1
+                                        if water_confirmed:
+                                            confirmed_success += 1
+                                        else:
+                                            async_sent += 1
+                                        time.sleep(sleep_time)
+                                    else:
+                                        server_rejected[java_state] += 1
+                                        rejected_examples.setdefault(
+                                            java_state, example
+                                        )
                                 setblock = f"/setblock {target[0]} {target[1]} {target[2]} {command}"
                                 if command not in verified_commands:
                                     response = self.sendaicmd_with_resp(setblock)
-                                    ok, error = _command_success(response)
+                                    ok, error = parse_command(response)
                                     if not ok:
                                         rejected_commands[command] = error
                                         server_rejected[java_state] += 1
@@ -146,8 +189,6 @@ class ChunkPainter:
                                 else:
                                     self.sendaicmd(setblock)
                                     async_sent += 1
-                                if converted.waterlogged:
-                                    degraded[java_state] += 1
                                 chunk_success += 1
                                 time.sleep(sleep_time)
                     fmts.print_inf(
@@ -160,7 +201,8 @@ class ChunkPainter:
         fmts.print_inf(
             f"\n§a已完成方块导入, 首次确认成功 {confirmed_success} 方块, "
             f"异步发送 {async_sent} 方块, 转换缺失 {sum(conversion_missing.values())} 方块, "
-            f"服务器拒绝 {sum(server_rejected.values())} 方块, 共耗时 {elapsed:.6f} 秒"
+            f"服务器拒绝 {sum(server_rejected.values())} 方块, 恢复含水层 "
+            f"{water_layers} 个, 共耗时 {elapsed:.6f} 秒"
         )
         if conversion_missing:
             fmts.print_inf("§6❀ 警告: 以下Java方块状态没有可用转换:")
@@ -175,54 +217,11 @@ class ChunkPainter:
                 command = converted.command if converted else ""
                 fmts.print_inf(
                     f"§c- {state}: {count} 个, 示例相对坐标 {rejected_examples[state]}, "
-                    f"返回: {rejected_commands.get(command, '未知错误')}"
+                    f"返回: {rejected_commands.get(command, rejected_commands.get(WATER_COMMAND, '未知错误'))}"
                 )
-        if degraded:
-            fmts.print_inf(
-                f"§6❀ 警告: 另有 {sum(degraded.values())} 个含水方块仅导入了主方块,未恢复含水层"
-            )
         ignored = {
             key: value for key, value in structure.ignored_counts.items() if value
         }
         if ignored:
             detail = ", ".join(f"{key} {value} 条" for key, value in ignored.items())
             fmts.print_inf(f"§6❀ 警告: 首版未导入以下 NBT 数据: {detail}")
-
-    def _clear_chunk(
-        self,
-        region: "LitematicRegion",
-        offset: tuple[int, int, int],
-        x0: int,
-        z0: int,
-        x_size: int,
-        z_size: int,
-    ) -> None:
-        _, sy, _ = region.dimensions
-        for y0 in range(0, sy, CHUNK_SIZE):
-            a = region.relative_position(x0, y0, z0)
-            b = region.relative_position(
-                x0 + x_size - 1,
-                min(sy - 1, y0 + CHUNK_SIZE - 1),
-                z0 + z_size - 1,
-            )
-            p1 = tuple(a[axis] + offset[axis] for axis in range(3))
-            p2 = tuple(b[axis] + offset[axis] for axis in range(3))
-            self.sendaicmd(f"/fill {p1[0]} {p1[1]} {p1[2]} {p2[0]} {p2[1]} {p2[2]} air")
-
-
-def _command_success(response: Packet_CommandOutput) -> tuple[bool, str]:
-    try:
-        messages = response.as_dict.get("OutputMessages", [])
-        if not messages:
-            return False, "命令响应没有 OutputMessages"
-        message = messages[0]
-        if bool(message.get("Success")):
-            return True, ""
-        detail = str(
-            message.get("Message") or message.get("MessageId") or "命令执行失败"
-        )
-        if parameters := message.get("Parameters"):
-            detail += f"; Parameters={parameters}"
-        return False, detail
-    except Exception as error:
-        return False, f"无法解析命令响应: {error}"

@@ -14,7 +14,6 @@ import brotli
 
 MAX_DECOMPRESSED_BYTES = 1 << 30
 MAX_STRING_BYTES = 1 << 20
-MAX_OPERATIONS = 134_217_728
 
 
 @dataclass
@@ -35,8 +34,6 @@ class BDXData:
                 if opcode == 88:
                     return
                 count += 1
-                if count > MAX_OPERATIONS:
-                    raise ValueError(f"BDX 操作数量超过限制: {MAX_OPERATIONS}")
                 yield _read_operation(stream, opcode)
 
     def close(self) -> str | None:

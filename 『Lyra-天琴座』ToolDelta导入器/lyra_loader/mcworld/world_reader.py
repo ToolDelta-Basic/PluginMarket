@@ -18,7 +18,6 @@ import numpy as np
 
 MAX_EXTRACTED_BYTES = 32 << 30
 MAX_ARCHIVE_ENTRIES = 100_000
-MAX_VOLUME = 134_217_728
 ALLOWED_BITS = {0, 1, 2, 3, 4, 5, 6, 8, 16}
 COMMAND_MODES = {
     "minecraft:command_block": 0,
@@ -133,9 +132,6 @@ def open_world(
 ) -> MCWorldData:
     source_min = tuple(min(a, b) for a, b in zip(first, second))
     source_max = tuple(max(a, b) for a, b in zip(first, second))
-    volume = math.prod(high - low + 1 for low, high in zip(source_min, source_max))
-    if volume > MAX_VOLUME:
-        raise ValueError(f"选区体积过大: {volume} > {MAX_VOLUME}")
     temporary_directory = Path(tempfile.mkdtemp(prefix="tooldelta-mcworld-"))
     try:
         _extract_world(path, temporary_directory)
@@ -347,7 +343,7 @@ def parse_nbt_sequence(payload: bytes) -> list[dict[str, Any]]:
         try:
             root = nbtlib.File.parse(stream, byteorder="little")
         except Exception as error:
-            raise ValueError(f"无法解析方块实体 NBT，偏移 {before}: {error}") from error
+            raise ValueError(f"无法解析方块实体 NBT, 偏移 {before}: {error}") from error
         if stream.tell() <= before:
             raise ValueError("方块实体 NBT 解析器没有前进")
         result.append(dict(root))

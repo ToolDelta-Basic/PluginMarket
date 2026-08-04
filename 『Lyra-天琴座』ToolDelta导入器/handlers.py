@@ -166,7 +166,7 @@ def _run_schematic(
 
 def _load_schematic_mapping(plugin_name: str) -> dict[int, dict[int, str | None]]:
     path = os.path.join(
-        "插件文件", "ToolDelta类式插件", plugin_name, "Minecraft_BE_block_id.json"
+        "插件文件", "ToolDelta类式插件", plugin_name, "java_ids_to_bedrock_names.json"
     )
     with open(path, encoding="utf-8") as stream:
         raw = json.load(stream)

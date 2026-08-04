@@ -13,8 +13,6 @@ import numpy as np
 
 from ..common.streaming_nbt import NBTStreamScanner, TaggedValue, close_memmap
 
-MAX_VOLUME = 134_217_728
-
 
 @dataclass
 class LitematicRegion:
@@ -104,7 +102,7 @@ def read_file(path: str) -> LitematicData:
         ).scan_gzip(path)
         version = _required_int(first.values, ("Version",))
         if version not in (5, 6):
-            raise ValueError(f"仅支持 Litematica v5/v6，当前 Version={version}")
+            raise ValueError(f"仅支持 Litematica v5/v6, 当前 Version={version}")
         data_version = _required_int(first.values, ("MinecraftDataVersion",))
         names = first.compound_children.get(("Regions",), ())
         if not names:
@@ -138,7 +136,6 @@ def read_file(path: str) -> LitematicData:
         ).scan_gzip(path)
 
         regions: list[LitematicRegion] = []
-        total_volume = 0
         minimum = [2**63 - 1] * 3
         maximum = [-(2**63)] * 3
         ignored = {
@@ -155,11 +152,6 @@ def read_file(path: str) -> LitematicData:
             size = _vector(second.values.get((*base, "Size")), "Size", True)
             dimensions = tuple(abs(value) for value in size)
             volume = math.prod(dimensions)
-            total_volume += volume
-            if total_volume > MAX_VOLUME:
-                raise ValueError(
-                    f"所有 Region 总体积过大: {total_volume} > {MAX_VOLUME}"
-                )
             palette = _decode_palette(second.values.get((*base, "BlockStatePalette")))
             bits = max(2, (len(palette) - 1).bit_length())
             expected_longs = math.ceil(volume * bits / 64)
@@ -246,7 +238,7 @@ def _compatibility_state(state: str) -> str:
 
 
 def _validate_palette_indexes(region: LitematicRegion) -> None:
-    """分批矢量校验位流，不保留完整 Palette 索引副本。"""
+    """分批矢量校验位流, 不保留完整 Palette 索引副本"""
     mask = np.uint64((1 << region.bits_per_entry) - 1)
     for start in range(0, region.volume, 1 << 20):
         stop = min(region.volume, start + (1 << 20))
