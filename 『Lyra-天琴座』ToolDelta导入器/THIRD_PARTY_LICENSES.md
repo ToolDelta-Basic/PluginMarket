@@ -45,7 +45,7 @@ SOFTWARE.
 
 ## MCWorld LevelDB dependency
 
-Lyra installs `amulet-leveldb==1.0.7` through ToolDelta's pip support plugin and
+Lyra installs `amulet-leveldb==1.0.7` on demand when MCWorld import is used, through ToolDelta's pip support plugin, and
 uses only its Mojang LevelDB API. The package is not bundled; users and
 distributors must comply with the license shipped with the installed package.
 

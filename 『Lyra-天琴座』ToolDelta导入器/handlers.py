@@ -110,6 +110,7 @@ def _run_mcworld(
     dimension: Dimension,
     position,
 ) -> None:
+    plugin.ensure_mcworld_dependency()
     data = world_reader.open_world(path, source.dimension_id, source.start, source.end)
     try:
         fmts.print_inf(
