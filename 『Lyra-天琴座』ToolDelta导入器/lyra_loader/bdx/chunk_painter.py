@@ -5,13 +5,13 @@ from collections import Counter
 from typing import TYPE_CHECKING, Any
 
 from tooldelta import fmts
+from ..common.command_loader import load_command_blocks
 from ..common.parse_command import parse_command
 from ..common.chunk_loading import chunk_preload
 
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
-    from ..common.command_loader import load_command_blocks
     from .bdx_parser import BDXData
 
 COMMAND_BLOCKS = {

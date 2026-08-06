@@ -8,15 +8,12 @@ from typing import TYPE_CHECKING, Any
 from tooldelta import fmts
 
 from .lyra_loader.bdx import bdx_parser, chunk_painter as bdx_painter
-from .lyra_loader.bdx import command_loader as bdx_commands
 from .lyra_loader.common.dimensions import Dimension
 from .lyra_loader.litematic import chunk_painter as litematic_painter
 from .lyra_loader.litematic import litematic_parser
 from .lyra_loader.mcstructure import chunk_painter as mcstructure_painter
-from .lyra_loader.mcstructure import command_loader as mcstructure_commands
 from .lyra_loader.mcstructure import nbt_parser as mcstructure_parser
 from .lyra_loader.mcworld import chunk_painter as mcworld_painter
-from .lyra_loader.mcworld import command_loader as mcworld_commands
 from .lyra_loader.mcworld import world_reader
 from .lyra_loader.schem import chunk_painter as schem_painter
 from .lyra_loader.schem import schem_parser
@@ -70,7 +67,6 @@ def _run_bdx(plugin: "LyraSystem", path: str, dimension: Dimension, position) ->
     data = bdx_parser.read_file(path)
     try:
         fmts.print_inf(f"§a❀ 文件格式: Brotli BDX, 作者: {data.author or '未知'}")
-        plugin.command_loader = bdx_commands.CommandLoader(plugin)
         bdx_painter.ChunkPainter(plugin).paint(data, dimension, *position)
     finally:
         _cleanup(data)
@@ -102,7 +98,6 @@ def _run_mcstructure(
                 f"§6❀ 警告: 已忽略非命令方块实体 {data.ignored_block_entities} 个、"
                 f"实体 {data.entities} 个"
             )
-        plugin.command_loader = mcstructure_commands.CommandLoader(plugin)
         mcstructure_painter.ChunkPainter(plugin).paint(data, dimension, *position)
     finally:
         _cleanup(data)
@@ -121,7 +116,6 @@ def _run_mcworld(
             f"§a❀ 文件格式: Bedrock MCWorld, 存档版本: {data.world_version or '未知'}, "
             f"选区大小: {data.size[0]} x {data.size[1]} x {data.size[2]}"
         )
-        plugin.command_loader = mcworld_commands.CommandLoader(plugin)
         mcworld_painter.ChunkPainter(plugin).paint(data, dimension, *position)
     finally:
         _cleanup(data)

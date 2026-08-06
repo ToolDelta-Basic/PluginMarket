@@ -6,6 +6,7 @@ from collections import Counter
 from typing import TYPE_CHECKING
 
 from tooldelta import fmts
+from ..common.command_loader import load_command_blocks
 from ..common.parse_command import parse_command
 from ..common.chunk_loading import chunk_preload
 from ..common.chunk_clear import chunk_clear
@@ -13,7 +14,6 @@ from ..common.chunk_clear import chunk_clear
 if TYPE_CHECKING:
     from ...__init__ import LyraSystem
     from ..common.dimensions import Dimension
-    from ..common.command_loader import load_command_blocks
     from .nbt_parser import MCStructureData
 
 CHUNK_SIZE = 16
