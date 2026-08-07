@@ -1351,6 +1351,7 @@
         "datas.json",
         "handlers.py",
         "java_names_to_bedrock_names.json",
+        "linux_support.py",
         "THIRD_PARTY_LICENSES.md"
     ],
     "『Lyra-天琴座』ToolDelta导入器/lyra_loader": [
