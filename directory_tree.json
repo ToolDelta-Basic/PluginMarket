@@ -42,7 +42,10 @@
         }
     },
     "群服互通云链版Ultra版": {
+        "binding_mixin.py": 0,
+        "qqbot_client.py": 0,
         "message_utils.py": 0,
+        "qqbot_mixin.py": 0,
         "websocket": {
             "_wsdump.py": 0,
             "_logging.py": 0,
@@ -63,7 +66,9 @@
         "runtime_mixin.py": 0,
         "__init__.py": 0,
         "datas.json": 0,
+        "config_editor_mixin.py": 0,
         "orion_mixin.py": 0,
+        "API调用文档.md": 0,
         "config_mixin.py": 0
     },
     "音乐播放器": {
@@ -972,6 +977,13 @@
         "__init__.py": 0,
         "datas.json": 0
     },
+    "领地系统云链联动版": {
+        "geometry.py": 0,
+        "config.py": 0,
+        "__init__.py": 0,
+        "datas.json": 0,
+        "models.py": 0
+    },
     "计分板支持": {
         "__init__.py": 0
     },
@@ -1055,6 +1067,11 @@
     "游戏内显示插件报错": {
         "__init__.py": 0,
         "datas.json": 0
+    },
+    "任务系统云链联动版": {
+        "__init__.py": 0,
+        "datas.json": 0,
+        "readme.txt": 0
     },
     "directory.json": 0,
     "管理员白名单": {

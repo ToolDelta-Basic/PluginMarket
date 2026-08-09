@@ -42,12 +42,17 @@
         "meta.py"
     ],
     "群服互通云链版Ultra版": [
+        "binding_mixin.py",
+        "qqbot_client.py",
         "message_utils.py",
+        "qqbot_mixin.py",
         "qq_mixin.py",
         "runtime_mixin.py",
         "__init__.py",
         "datas.json",
+        "config_editor_mixin.py",
         "orion_mixin.py",
+        "API调用文档.md",
         "config_mixin.py"
     ],
     "群服互通云链版Ultra版/websocket": [
@@ -968,6 +973,13 @@
         "__init__.py",
         "datas.json"
     ],
+    "领地系统云链联动版": [
+        "geometry.py",
+        "config.py",
+        "__init__.py",
+        "datas.json",
+        "models.py"
+    ],
     "计分板支持": [
         "__init__.py"
     ],
@@ -1050,6 +1062,11 @@
     "游戏内显示插件报错": [
         "__init__.py",
         "datas.json"
+    ],
+    "任务系统云链联动版": [
+        "__init__.py",
+        "datas.json",
+        "readme.txt"
     ],
     "管理员白名单": [
         "__init__.py",

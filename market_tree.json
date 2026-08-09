@@ -15,10 +15,10 @@
       "version": "0.2.9",
       "plugin-type": "classic"
     },
-    "群服互通Ultra": {
+    "群服互通云链版Ultra版": {
       "name": "群服互通云链版Ultra版",
-      "author": "大庆油田&SuperScript&小六神",
-      "version": "1.0.0",
+      "author": "大庆油田 / SuperScript / 小六神",
+      "version": "2.1.8",
       "plugin-type": "classic"
     },
     "MusicPlayer": {
@@ -309,6 +309,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "领地系统云链联动版": {
+      "name": "领地系统云链联动版",
+      "author": "小石潭记qwq/小六神",
+      "version": "0.1.18",
+      "plugin-type": "classic"
+    },
     "玩家历史": {
       "name": "玩家记录",
       "author": "SuperScript",
@@ -396,6 +402,12 @@
     "ingame-errmsg": {
       "name": "游戏内显示插件报错",
       "author": "System",
+      "version": "0.0.5",
+      "plugin-type": "classic"
+    },
+    "任务系统云链联动版": {
+      "name": "任务系统云链联动版",
+      "author": "SuperScript / 小六神",
       "version": "0.0.5",
       "plugin-type": "classic"
     },
