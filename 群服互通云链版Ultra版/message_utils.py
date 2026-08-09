@@ -6,9 +6,8 @@
 
 import inspect
 import re
-from typing import Any
 from collections.abc import Callable
-
+from typing import Any
 
 EASTER_EGG_QQIDS = {2528622340: ("SuperScript", "Super")}
 
