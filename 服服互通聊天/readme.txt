@@ -1,0 +1,1 @@
+这是一个服服互通聊天的插件您可以选择部署自己的中转服务器下载 core_server.py 文件并使用 python3 core_server.py 运行随后在配置文件内修改服务器地址即可如果您听不懂以上内容您可以不修改中转服务器地址使用默认的 ws://core.aurorabot.top
