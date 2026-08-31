@@ -1,0 +1,14 @@
+{
+  "author": "反作弊-移动检测",
+  "version": "0.0.1",
+  "plugin-type": "classic",
+  "description": "\n# MUNAN ANTI CHEAT\n## 1.功能\n[ 1 ] Fly Check\n[ 2 ] Speed Check\n## 2.注意事项\n添加 admin 标签可以查看加速度 速度值\n添加 bypass 标签可以豁免检测\n当前版本：\n0.0.1(beta)\n如果可以的话求帮维护\n球球了qwq\n",
+  "pre-plugins": {
+    "XUID获取": "0.0.7",
+    "聊天栏菜单": "0.3.2",
+    "循环获取玩家坐标": "0.0.5",
+    "pip": "0.0.6"
+  },
+  "plugin-id": "MUNAN ANTI CHEAT",
+  "enabled": true
+}
