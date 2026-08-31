@@ -1,0 +1,20 @@
+{
+  "name": "web_search",
+  "tool_type": "ai",
+  "description": "搜索互联网获取实时信息。当用户的问题需要最新资讯、事实查询、百科知识时调用。参数：query (搜索关键词)。",
+  "parameters": {
+    "query": {
+      "type": "string",
+      "description": "搜索关键词"
+    }
+  },
+  "required": ["query"],
+  "risk_level": "low",
+  "require_confirm": false,
+  "admin_only": false,
+  "api_type": "百度千帆",
+  "category": "network",
+  "timeout": 15,
+  "enabled": true,
+  "required_config_keys": ["百度千帆"]
+}

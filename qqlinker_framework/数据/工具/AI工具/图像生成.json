@@ -1,0 +1,20 @@
+{
+  "name": "generate_image",
+  "tool_type": "ai",
+  "description": "根据描述生成图片。参数：prompt (字符串)。用于当用户要求生成图片、画图、来张图等场景。",
+  "parameters": {
+    "prompt": {
+      "type": "string",
+      "description": "图片描述提示词（英文效果更佳）"
+    }
+  },
+  "required": ["prompt"],
+  "risk_level": "medium",
+  "require_confirm": false,
+  "admin_only": false,
+  "api_type": "硅基流动",
+  "category": "image",
+  "timeout": 60,
+  "enabled": true,
+  "required_config_keys": ["硅基流动"]
+}

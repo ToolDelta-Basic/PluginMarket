@@ -1,0 +1,22 @@
+{
+  "name": "系统信息",
+  "tool_type": "admin",
+  "description": "查看框架系统运行信息：CPU/内存使用率、活跃群数、在线玩家数、AI 调用统计。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "信息类型": {
+        "type": "string",
+        "description": "要查看的系统信息",
+        "enum": ["资源使用", "连接统计", "AI统计", "全部"]
+      }
+    }
+  },
+  "risk_level": "low",
+  "require_confirm": false,
+  "admin_only": true,
+  "api_type": "generic",
+  "category": "system",
+  "timeout": 10,
+  "enabled": true
+}
