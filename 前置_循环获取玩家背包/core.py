@@ -143,13 +143,10 @@ class InventoryService:
         publish: Callable[[dict[str, Any]], Any] | None = None,
         now: Callable[[], str] | None = None,
     ):
-        """初始化背包服务：记录依赖、清空缓存并建立并发锁。"""
         self.game_ctrl = game_ctrl
         self.players_provider = players_provider
         self.publish = publish
-        self.now = now or (
-            lambda: datetime.now().astimezone().isoformat(timespec="seconds")
-        )
+        self.now = now or (lambda: datetime.now().astimezone().isoformat(timespec="seconds"))
         self._cache: dict[str, QueriedInventory] = {}
         self._last_failures: dict[str, dict[str, str]] = {}
         self._last_scan_timestamp: str | None = None

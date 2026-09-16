@@ -1,4 +1,3 @@
-"""玩家身份索引：聚合 XUID 前置插件的在线/离线名称数据。"""
 from __future__ import annotations
 
 import os
@@ -10,13 +9,10 @@ except ImportError:
 
 
 class IdentityIndex:
-    """聚合 XUID 前置插件数据，提供 XUID 与玩家名之间的解析与搜索。"""
-
     # 由 _refresh_identity_index() 写入，在此声明以便静态检查识别该实例属性。
     _identity_records: dict[str, str]
 
     def _refresh_identity_index(self) -> dict[str, str]:
-        """重建身份索引：读取 xuids.json 并叠加 XUID 前置插件的运行时映射。"""
         records: dict[str, str] = {}
         base = os.path.dirname(str(self.data_path))
         for folder in ("前置-玩家XUID获取", "前置_玩家XUID获取", "XUID获取"):
@@ -74,3 +70,4 @@ class IdentityIndex:
     def search_players(self, query: str, limit: int = 8) -> list[dict[str, str]]:
         """Search the XUID pre-plugin's online/offline identity index."""
         return search_player_records(self._refresh_identity_index(), query, limit)
+
