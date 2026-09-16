@@ -17,7 +17,12 @@ except ImportError:  # pragma: no cover
 
 try:
     from .config import ConfigManager
-    from .core import CONSOLE_ROOT_TRIGGER, format_flags, parse_flags, permission_descriptions
+    from .core import (
+        CONSOLE_ROOT_TRIGGER,
+        format_flags,
+        parse_flags,
+        permission_descriptions,
+    )
     from .abilities import permission_category
     from .identity import IdentityIndex
     from .menu import ConsoleMenuMixin
@@ -26,7 +31,12 @@ try:
     from .realtime import RealtimeManager
 except ImportError:  # pragma: no cover
     from config import ConfigManager  # type: ignore
-    from core import CONSOLE_ROOT_TRIGGER, format_flags, parse_flags, permission_descriptions  # type: ignore
+    from core import (  # type: ignore
+        CONSOLE_ROOT_TRIGGER,
+        format_flags,
+        parse_flags,
+        permission_descriptions,
+    )
     from abilities import permission_category  # type: ignore
     from identity import IdentityIndex  # type: ignore
     from menu import ConsoleMenuMixin  # type: ignore
@@ -35,7 +45,11 @@ except ImportError:  # pragma: no cover
     from realtime import RealtimeManager  # type: ignore
 
 
-class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex, Plugin):
+class ServerPermissionManager(
+    ConsoleMenuMixin, PermissionService, IdentityIndex, Plugin
+):
+    """服务器玩家权限管理插件：整合权限服务、身份索引、控制台菜单与实时管理。"""
+
     name = "『Libra-天秤座』玩家权限管理系统"
     author = "小六神"
     version = (0, 2, 0)
@@ -54,11 +68,15 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
     )
 
     def __init__(self, frame: ToolDelta):
+        """初始化插件：装载配置与状态、构建协作组件并注册事件监听。"""
         super().__init__(frame)
         self._lock = threading.RLock()
         self._mutation_lock = threading.Lock()
         self.make_data_path()
-        self.store = StateStore(self.format_data_path("状态.json"), self.format_data_path("审计日志.jsonl"))
+        self.store = StateStore(
+            self.format_data_path("状态.json"),
+            self.format_data_path("审计日志.jsonl"),
+        )
         self.state_path = str(self.store.state_path)
         self.audit_path = str(self.store.audit_path)
         self.cfg = ConfigManager(cfg, self.name, self.version).load()
@@ -75,12 +93,15 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         self.ListenFrameExit(self.on_exit)
 
     def _save_state(self) -> None:
+        """持久化当前状态到磁盘。"""
         self.store.save(self.state)
 
     def _audit(self, event: str, **details: Any) -> None:
+        """把审计事件写入审计日志文件。"""
         self.store.audit(event, **details)
 
     def _save_config(self) -> None:
+        """把内存中的配置写回 ToolDelta 配置系统。"""
         if cfg is not None and hasattr(cfg, "upgrade_plugin_config"):
             cfg.upgrade_plugin_config(self.name, self.cfg, self.version)
 
@@ -115,6 +136,7 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         return self._lock
 
     def on_preload(self) -> None:
+        """预加载：接入 XUID获取 API 并注册控制台触发词。"""
         try:
             self.xuid_api = self.GetPluginAPI("XUID获取", (0, 0, 7))
         except Exception as exc:
@@ -125,9 +147,16 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         )
 
     def on_active(self) -> None:
+        """插件激活：按配置刷新管理员列表并启动实时管理。"""
         realtime_cfg = self.cfg.get("实时管理", {})
-        realtime_enabled = isinstance(realtime_cfg, dict) and bool(realtime_cfg.get("是否启用", False))
-        immediate_check = bool(realtime_cfg.get("启动后立即检查", True)) if isinstance(realtime_cfg, dict) else True
+        realtime_enabled = isinstance(realtime_cfg, dict) and bool(
+            realtime_cfg.get("是否启用", False)
+        )
+        immediate_check = (
+            bool(realtime_cfg.get("启动后立即检查", True))
+            if isinstance(realtime_cfg, dict)
+            else True
+        )
         if not realtime_enabled or immediate_check:
             threading.Thread(
                 target=self._run_list,
@@ -138,12 +167,15 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         self.realtime.start()
 
     def on_player_join(self, player: Any) -> None:
+        """玩家进服时交给实时管理组件处理。"""
         self.realtime.on_player_join(player)
 
     def on_player_leave(self, player: Any) -> None:
+        """玩家离服时交给实时管理组件处理。"""
         self.realtime.on_player_leave(player)
 
     def on_exit(self, *_args: Any) -> None:
+        """插件卸载：停止实时管理并保存状态。"""
         self.realtime.stop()
         with self._lock:
             self._save_state()
@@ -184,6 +216,7 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         return list(records)[-max(0, int(limit)):]
 
     def get_player_permissions(self, xuid: str) -> dict[str, Any] | None:
+        """返回指定 XUID 最近一次观测到的权限数据。"""
         try:
             normalized = str(xuid).strip().lower()
         except Exception:
@@ -191,6 +224,7 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         return self.state.get("实时管理", {}).get("权限观测", {}).get(normalized)
 
     def request_permission_check(self, xuid: str | None = None) -> Any:
+        """按需检查一名或全部在线玩家的权限一致性。"""
         if xuid is None:
             return self.realtime.inspect_players()
         normalized = str(xuid).strip().lower()
@@ -201,7 +235,8 @@ class ServerPermissionManager(ConsoleMenuMixin, PermissionService, IdentityIndex
         if player is None and players is not None and self.xuid_api is not None:
             try:
                 name = self.xuid_api.get_name_by_xuid(normalized, allow_offline=True)
-                player = players.getPlayerByName(name) if name and hasattr(players, "getPlayerByName") else None
+                if name and hasattr(players, "getPlayerByName"):
+                    player = players.getPlayerByName(name)
             except Exception:
                 player = None
         if player is None:

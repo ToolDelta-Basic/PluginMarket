@@ -5,7 +5,14 @@ from __future__ import annotations
 import threading
 from typing import Any
 
-from tooldelta import FrameExit, InternalBroadcast, Plugin, ToolDelta, plugin_entry, utils
+from tooldelta import (
+    FrameExit,
+    InternalBroadcast,
+    Plugin,
+    ToolDelta,
+    plugin_entry,
+    utils,
+)
 
 from .config import DEFAULT_CONFIG, STANDARD_CONFIG
 from .core import (
@@ -24,6 +31,7 @@ class GlobalGetPlayerInventory(Plugin):
     description = "使用 WebSocket 指令循环查询在线玩家背包，并通过 API 广播对象和字典数据"
 
     def __init__(self, frame: ToolDelta):
+        """初始化插件：加载配置、构建背包服务并注册事件监听。"""
         super().__init__(frame)
         self.cfg, _ = self.get_config_and_version(STANDARD_CONFIG, DEFAULT_CONFIG)
         self._stop_event = threading.Event()
@@ -92,7 +100,9 @@ class GlobalGetPlayerInventory(Plugin):
 
     def _publish_inventory(self, snapshot: dict[str, Any]):
         """Broadcast the latest inventory snapshot to all plugins."""
-        self.BroadcastEvent(InternalBroadcast("ggpi:publish_player_inventory", snapshot))
+        self.BroadcastEvent(
+            InternalBroadcast("ggpi:publish_player_inventory", snapshot)
+        )
 
     def _on_force_update(self, _: InternalBroadcast):
         """Handle a broadcast request for an immediate full scan."""
@@ -102,7 +112,8 @@ class GlobalGetPlayerInventory(Plugin):
 
     def _on_set_cycle(self, event: InternalBroadcast):
         """Update the polling interval from an internal broadcast."""
-        value = event.data.get("间隔", event.data.get("cycle")) if isinstance(event.data, dict) else None
+        data = event.data if isinstance(event.data, dict) else {}
+        value = data.get("间隔", data.get("cycle"))
         if value is not None:
             self.set_cycle(value)
         return self.cfg["发送命令间隔时长(单位：秒)"]
