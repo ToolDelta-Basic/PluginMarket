@@ -184,17 +184,19 @@ class StateStore:
         legacy_audit = self.audit_path.parent / "audit.jsonl"
         if not self.audit_path.exists() and legacy_audit.exists():
             try:
-                with legacy_audit.open("r", encoding="utf-8") as source:
-                    with self.audit_path.open("w", encoding="utf-8") as target:
-                        for line in source:
-                            try:
-                                record = json.loads(line)
-                                target.write(
-                                    json.dumps(self._encode(record), ensure_ascii=False)
-                                    + "\n"
-                                )
-                            except (ValueError, TypeError):
-                                continue
+                with (
+                    legacy_audit.open("r", encoding="utf-8") as source,
+                    self.audit_path.open("w", encoding="utf-8") as target,
+                ):
+                    for line in source:
+                        try:
+                            record = json.loads(line)
+                            target.write(
+                                json.dumps(self._encode(record), ensure_ascii=False)
+                                + "\n"
+                            )
+                        except (ValueError, TypeError):
+                            continue
             except OSError:
                 pass
 
