@@ -1,3 +1,4 @@
+"""Orion 风格控制台菜单：分页渲染、超时输入与多层菜单分派。"""
 from __future__ import annotations
 
 import datetime as _datetime
@@ -22,21 +23,40 @@ class ConsoleMenuMixin:
     _BORDER = "§d✧✦§f〓〓§b〓〓〓§9〓〓〓〓§1〓〓〓〓〓〓§9〓〓〓〓§b〓〓〓§f〓〓§d✦✧"
 
     def _orion(self, tag: str, message: str) -> None:
-        marker = "§c❀" if tag in {"ALERT", "ERROR"} else "§6❀" if tag in {"WARN", "HELP"} else "§a❀"
+        """按标签着色输出一条 Orion 风格控制台消息。"""
+        alert = tag in {"ALERT", "ERROR"}
+        warn = tag in {"WARN", "HELP"}
+        marker = "§c❀" if alert else "§6❀" if warn else "§a❀"
         self._console_print(f"{marker} {message}")
 
     def _console_print(self, message: str) -> None:
+        """输出一行控制台信息，优先走 ToolDelta 的 ``fmts``。"""
         if fmts is not None:
             fmts.print_inf(message)
         else:
             self.print_inf(message)
 
     def _render_menu(self, menu: str) -> None:
+        """渲染指定层级的菜单标题、选项与操作提示。"""
         menus = {
             "main": ("总菜单", ("运行状态", "管理员列表", "设置权限", "快照管理", "实时管理")),
-            "set": ("设置权限", ("管理员（11111111）", "成员（11111100）", "访客（00000000）", "自定义 8 位权限")),
+            "set": (
+                "设置权限",
+                ("管理员（11111111）", "成员（11111100）", "访客（00000000）", "自定义 8 位权限"),
+            ),
             "snapshots": ("快照管理", ("新建快照", "还原快照", "删除快照")),
-            "realtime": ("实时管理", ("运行详情", "启用或停用", "查看在线玩家权限", "管理托管玩家", "立即检查", "最近处理记录", "未授权管理员处理")),
+            "realtime": (
+                "实时管理",
+                (
+                    "运行详情",
+                    "启用或停用",
+                    "查看在线玩家权限",
+                    "管理托管玩家",
+                    "立即检查",
+                    "最近处理记录",
+                    "未授权管理员处理",
+                ),
+            ),
         }
         title, items = menus.get(menu, menus["main"])
         self._console_print(self._BORDER)
@@ -47,21 +67,27 @@ class ConsoleMenuMixin:
         if menu == "main":
             self._console_print("§a❀ §b输入 §e[1-5]§b 之间的数字以选择功能，输入 §cq§b 退出")
         elif menu == "set":
-            self._console_print("§a❀ §b输入 §e[1-4]§b 之间的数字以选择权限模板，输入 §e!§b 返回上一级，输入 §cq§b 退出")
+            self._console_print(
+                "§a❀ §b输入 §e[1-4]§b 之间的数字以选择权限模板，"
+                "输入 §e!§b 返回上一级，输入 §cq§b 退出"
+            )
         else:
             self._console_print("§a❀ §b输入 §e[1-3]§b 之间的数字，输入 §e!§b 返回上一级，输入 §cq§b 退出")
 
     def _open_menu(self) -> None:
+        """打开总菜单并清空待处理输入。"""
         self._menu = "main"
         self._pending = None
         self._render_menu("main")
 
     def _close_menu(self) -> None:
+        """关闭菜单并清空待处理输入。"""
         self._menu = "closed"
         self._pending = None
         self._orion("OK", "权限中心菜单已退出")
 
     def _input_timeout(self) -> float:
+        """返回控制台输入等待超时秒数，配置非法时回退到 20 秒。"""
         try:
             return max(0.1, float(self.cfg.get("等待输入超时时间(秒)", 20)))
         except (TypeError, ValueError):
@@ -76,12 +102,15 @@ class ConsoleMenuMixin:
         values: queue.Queue[str | BaseException] = queue.Queue(maxsize=1)
 
         def read_line() -> None:
+            """在独立线程中读取一行输入，异常也放进队列以免线程挂死。"""
             try:
                 values.put(input(rendered).strip())
             except BaseException as exc:  # input 线程中的 EOF/中断
                 values.put(exc)
 
-        threading.Thread(target=read_line, name="libra-console-input", daemon=True).start()
+        threading.Thread(
+            target=read_line, name="libra-console-input", daemon=True
+        ).start()
         try:
             result = values.get(timeout=self._input_timeout())
         except queue.Empty:
@@ -92,6 +121,7 @@ class ConsoleMenuMixin:
         return result
 
     def _finish_or_timeout(self) -> bool:
+        """等待一次「继续」确认；超时或输入 q 时关闭菜单并返回 ``False``。"""
         value = self._console_input("输入任意字符继续，输入 q 退出：")
         if value is None:
             if self._input_timed_out:
@@ -104,6 +134,7 @@ class ConsoleMenuMixin:
         return True
 
     def _show_player_results(self, query: str) -> list[dict[str, str]]:
+        """按名称或 XUID 搜索玩家并打印编号列表，无结果时返回空列表。"""
         results = self.search_players(query)
         if not results:
             self._orion("ALERT", f"没有找到与“{query}”匹配的玩家")
@@ -111,7 +142,9 @@ class ConsoleMenuMixin:
         self._console_print(self._BORDER)
         self._console_print("§a❀ §b已发现以下玩家名称与 XUID")
         for index, item in enumerate(results, 1):
-            self._console_print(f"§l§b[ §e{index}§b ] §r§e{item['name']} - {item['xuid']}")
+            self._console_print(
+                f"§l§b[ §e{index}§b ] §r§e{item['name']} - {item['xuid']}"
+            )
         self._console_print(self._BORDER)
         return results
 
@@ -185,20 +218,27 @@ class ConsoleMenuMixin:
         return results[int(choice) - 1]
 
     def _show_set_options(self, target: dict[str, str], flags: str) -> None:
+        """打印即将设置的目标与权限，并提示两种生效方式。"""
         self._console_print(self._BORDER)
-        self._console_print(f"§a❀ §b将设置 §e{target['name']}§b（{target['xuid']}）为 §e{flags}")
+        self._console_print(
+            f"§a❀ §b将设置 §e{target['name']}§b（{target['xuid']}）为 §e{flags}"
+        )
         self._console_print("§a❀ §b[ §e1§b ] 仅设置本次权限")
         self._console_print("§a❀ §b[ §e2§b ] 设置并持续管理")
         if self._player_is_managed(target["xuid"].lower()):
             self._console_print("§6❀ §b该玩家已启用持续管理，选择 1 将被拒绝；可先暂停管理")
 
-    def _report_set_result(self, target: dict[str, str], flags: str, result: dict[str, Any]) -> None:
+    def _report_set_result(
+        self, target: dict[str, str], flags: str, result: dict[str, Any]
+    ) -> None:
+        """按设置结果输出成功或失败提示。"""
         if result.get("success"):
             self._orion("OK", f"已设置 {target['xuid']} -> {flags}")
         else:
             self._orion("ALERT", result.get("message", "设置失败"))
 
     def _select_player_interactive(self, flags: str) -> bool:
+        """交互式选定玩家并设置权限；返回 ``False`` 表示需要退出菜单。"""
         target = self._pick_player("请输入玩家名称或 XUID（! 返回，q 退出）：")
         if target is None:
             return False
@@ -224,15 +264,22 @@ class ConsoleMenuMixin:
         return True
 
     def _snapshot_page_size(self) -> int:
+        """返回控制台快照列表每页条数，配置非法时回退到 20。"""
         try:
             return max(1, int(self.cfg.get("控制台菜单每页显示几项", 20)))
         except (TypeError, ValueError):
             return 20
 
     def _snapshot_detail(self, item: dict[str, Any]) -> None:
+        """打印单个快照的名称、时间、管理员数量与期望权限数量。"""
         snapshot = item["快照"]
         name = snapshot.get("名称") or snapshot.get("name") or "未命名快照"
-        created = snapshot.get("创建时间") or snapshot.get("时间") or snapshot.get("time") or "未知"
+        created = (
+            snapshot.get("创建时间")
+            or snapshot.get("时间")
+            or snapshot.get("time")
+            or "未知"
+        )
         desired = snapshot.get("期望权限", snapshot.get("desired", {})) or {}
         admins = snapshot.get("已发现管理员", snapshot.get("observed_admins", [])) or []
         self._console_print(self._BORDER)
@@ -242,7 +289,10 @@ class ConsoleMenuMixin:
         self._console_print(f"§a❀ §b期望权限：§e{len(desired)} 个")
         self._console_print(self._BORDER)
 
-    def _render_snapshot_page(self, items: dict[str, Any], operation: str, page: int) -> None:
+    def _render_snapshot_page(
+        self, items: dict[str, Any], operation: str, page: int
+    ) -> None:
+        """渲染快照还原/删除列表的某一页及翻页提示。"""
         title = "还原" if operation == "restore" else "删除"
         self._console_print(self._BORDER)
         self._console_print(f"§l§d❐§f 『§6Libra-天秤座§f』 快照{title}列表 §7第 {page} 页")
@@ -250,7 +300,9 @@ class ConsoleMenuMixin:
             snapshot = item["快照"]
             name = snapshot.get("名称") or snapshot.get("name") or "未命名快照"
             desired = snapshot.get("期望权限", snapshot.get("desired", {})) or {}
-            self._console_print(f"§l§b[ §e{index}§b ] §r§e{name} §7({len(desired)} 个权限)")
+            self._console_print(
+                f"§l§b[ §e{index}§b ] §r§e{name} §7({len(desired)} 个权限)"
+            )
         self._console_print(self._BORDER)
         self._console_print("§a❀ §b输入序号选择，n 下一页，p 上一页，输入关键词查找，! 返回，q 退出")
 
@@ -276,6 +328,7 @@ class ConsoleMenuMixin:
         return "done"
 
     def _choose_snapshot(self, operation: str) -> str:
+        """快照选择循环：支持翻页、按关键词查找与选中后执行操作。"""
         page = 1
         query = ""
         page_size = self._snapshot_page_size()
@@ -305,6 +358,7 @@ class ConsoleMenuMixin:
         return "closed"
 
     def _create_snapshot_interactive(self) -> bool:
+        """交互式新建快照，名称为空时用当前时间戳。"""
         name = self._console_input("请输入快照名称，可留空：")
         if name is None:
             if self._input_timed_out:
@@ -321,6 +375,7 @@ class ConsoleMenuMixin:
         return True
 
     def _realtime_confirm(self, prompt: str) -> bool | None:
+        """实时管理专用确认输入：``True`` 确认、``False`` 返回、``None`` 中断。"""
         value = self._console_input(prompt)
         if value is None:
             if self._input_timed_out:
@@ -348,9 +403,13 @@ class ConsoleMenuMixin:
                 self._orion("ALERT", "无效的玩家编号")
                 return None
             return matches[int(choice) - 1]
-        return {"xuid": normalized, "name": self.resolve_player_name(normalized) or query}
+        return {
+            "xuid": normalized,
+            "name": self.resolve_player_name(normalized) or query,
+        }
 
     def _manage_realtime_player(self) -> None:
+        """交互式为一名玩家建立持续管理规则。"""
         status, query = self._ask("请输入玩家名称或 XUID（! 返回，q 退出）：")
         if not status:
             return
@@ -375,6 +434,7 @@ class ConsoleMenuMixin:
             self._orion("ALERT", result.get("message", "规则保存失败"))
 
     def _realtime_show_status(self) -> None:
+        """打印实时管理的运行状态与统计数字。"""
         status = self.realtime.status()
         state = "运行中" if status["是否运行"] else "未运行"
         self._orion(
@@ -385,6 +445,7 @@ class ConsoleMenuMixin:
         )
 
     def _realtime_toggle(self) -> None:
+        """确认后切换实时管理的启用状态。"""
         current = self.realtime.enabled()
         prompt = f"当前为{'启用' if current else '停用'}，确认切换？输入 y 确认："
         if self._realtime_confirm(prompt) is not True:
@@ -395,7 +456,11 @@ class ConsoleMenuMixin:
     @staticmethod
     def _permission_category(flags: Any) -> str:
         """把 8 位权限串归类为访客/成员/管理员/自定义，非法值归为未知。"""
-        if not isinstance(flags, str) or len(flags) != 8 or any(c not in "01" for c in flags):
+        if (
+            not isinstance(flags, str)
+            or len(flags) != 8
+            or any(c not in "01" for c in flags)
+        ):
             return "未知"
         if flags == "00000000":
             return "访客"
@@ -406,6 +471,7 @@ class ConsoleMenuMixin:
         return "自定义"
 
     def _realtime_show_online(self) -> None:
+        """打印在线玩家的托管状态与实际权限类别。"""
         for record in self.realtime.inspect_players():
             name = record.get("玩家名称", record.get("玩家名", "未知玩家"))
             xuid = str(record.get("XUID", "")).lower()
@@ -416,10 +482,12 @@ class ConsoleMenuMixin:
             self._orion("SCAN", f"{name}：{managed} {category} {shown}")
 
     def _realtime_run_check(self) -> None:
+        """立即执行一轮在线权限检查并汇报处理人数。"""
         records = self.realtime.inspect_players()
         self._orion("SCAN", f"立即检查完成，共处理 {len(records)} 个在线玩家")
 
     def _realtime_show_recent_fixes(self) -> None:
+        """打印最近的实时权限修正记录。"""
         rows = self.realtime.recent_fix_records(self._snapshot_page_size())
         if not rows:
             self._orion("OK", "暂无实时权限修正记录")
@@ -432,6 +500,7 @@ class ConsoleMenuMixin:
             )
 
     def _realtime_set_unauthorized_policy(self) -> None:
+        """交互式设置未授权管理员的处理策略并写回配置。"""
         self._console_print("§a❀ §b[ §e0§b ] 仅提醒  §b[ §e1§b ] 设为成员  §b[ §e2§b ] 设为访客")
         policy = self._console_input("请输入处理方式：")
         values = {"0": (0, "仅提醒"), "1": (1, "设为成员"), "2": (2, "设为访客")}
@@ -445,6 +514,7 @@ class ConsoleMenuMixin:
         self._orion("OK", f"未授权管理员处理已设置为：{number}（{label}）")
 
     def _run_realtime_menu(self, choice: str) -> bool:
+        """分派实时管理子菜单的选项；返回 ``False`` 表示需要退出菜单。"""
         handlers = {
             "1": self._realtime_show_status,
             "2": self._realtime_toggle,
@@ -499,6 +569,7 @@ class ConsoleMenuMixin:
         return True
 
     def _console_set_menu(self, choice: str) -> bool:
+        """分派「设置权限」子菜单的选项；返回 ``False`` 表示需要退出菜单。"""
         action, flags = menu_action("set", choice)
         if action in {"set_admin", "set_member", "set_guest"}:
             self._select_player_interactive(flags or "00000000")
@@ -512,6 +583,7 @@ class ConsoleMenuMixin:
         return self._finish_or_timeout()
 
     def _console_snapshots_menu(self, choice: str) -> bool:
+        """分派「快照管理」子菜单的选项；返回 ``False`` 表示需要退出菜单。"""
         action, _ = menu_action("snapshots", choice)
         if action == "snapshot_create":
             self._create_snapshot_interactive()
@@ -542,6 +614,7 @@ class ConsoleMenuMixin:
         return True
 
     def _run_console_menu(self) -> None:
+        """控制台菜单主循环：渲染、读输入、分派，直到菜单关闭。"""
         self._menu = "main"
         self._pending = None
         while self._menu != "closed":
@@ -559,6 +632,7 @@ class ConsoleMenuMixin:
                 return
 
     def on_menu_token(self, token: str, args: list[str] | None = None) -> None:
+        """处理菜单打开期间的额外按键令牌。"""
         if self._menu == "closed":
             return
         if token.lower() == "q":
@@ -571,4 +645,5 @@ class ConsoleMenuMixin:
             self._menu = "realtime"
 
     def on_console(self, args: list[str]) -> None:
+        """控制台触发词入口：进入菜单主循环。"""
         self._run_console_menu()

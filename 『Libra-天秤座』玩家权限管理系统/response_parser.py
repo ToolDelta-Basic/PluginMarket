@@ -14,12 +14,14 @@ _BLOCK_RE = re.compile(r"###\*", re.S)
 
 
 def _field(value: Any, name: str, default: Any = None) -> Any:
+    """从字典或对象上按名称取值，取不到时返回 ``default``。"""
     if isinstance(value, dict):
         return value.get(name, default)
     return getattr(value, name, default)
 
 
 def _try_load_json(value: str) -> Any:
+    """尝试解析 JSON 字符串，失败时返回 ``None``。"""
     try:
         return json.loads(value)
     except (TypeError, ValueError):
@@ -27,6 +29,7 @@ def _try_load_json(value: str) -> Any:
 
 
 def _collect_texts_and_success(response: Any) -> tuple[list[str], list[bool]]:
+    """提取响应里的文本消息与 ``Success`` 布尔值。"""
     messages = _field(response, "OutputMessages", []) or []
     if not isinstance(messages, list):
         messages = [messages]
@@ -76,6 +79,7 @@ def _resolve_outcome(
     payloads: list[dict[str, Any]],
     text: str,
 ) -> tuple[bool, bool, str | None]:
+    """综合 SuccessCount、Success 列表与 JSON 负载判定执行结果与错误码。"""
     success_count = _field(response, "SuccessCount", None)
     confirmed = bool(success_values) and all(success_values)
     if isinstance(success_count, int):
@@ -107,7 +111,9 @@ def normalize_response(response: Any, channel: str) -> dict[str, Any]:
     if not payloads:
         payloads = _decode_bare_payloads(texts)
 
-    success, confirmed, error_code = _resolve_outcome(response, success_values, payloads, text)
+    success, confirmed, error_code = _resolve_outcome(
+        response, success_values, payloads, text
+    )
     return {
         "success": success,
         "confirmed": confirmed,
@@ -132,7 +138,12 @@ def extract_admin_xuids(parsed: dict[str, Any]) -> list[str]:
             recognized = True
             if not isinstance(result, list):
                 raise ValueError("permissions.result 必须是列表")
-            candidates = [item.get("xuid") for item in result if isinstance(item, dict) and str(item.get("permission", "")).lower() == "operator"]
+            candidates = [
+                item.get("xuid")
+                for item in result
+                if isinstance(item, dict)
+                and str(item.get("permission", "")).lower() == "operator"
+            ]
         elif command == "ops":
             recognized = True
             if not isinstance(result, list):

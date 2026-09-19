@@ -36,19 +36,23 @@ class ConfigManager:
     """隔离 ToolDelta 配置 API，便于测试和后续扩展。"""
 
     def __init__(self, cfg_module: Any, plugin_name: str, version: tuple[int, ...]):
+        """记录配置 API 模块、插件名与版本号。"""
         self.cfg_module = cfg_module
         self.plugin_name = plugin_name
         self.version = version
 
     @staticmethod
     def _defaults_copy() -> dict[str, Any]:
+        """返回默认配置的浅层副本，避免调用方改动模块级常量。"""
         return {
             key: (value.copy() if isinstance(value, (list, dict)) else value)
             for key, value in DEFAULT_CONFIG.items()
         }
 
     @staticmethod
-    def _merge_with_defaults(source: dict[str, Any], defaults: dict[str, Any]) -> dict[str, Any]:
+    def _merge_with_defaults(
+        source: dict[str, Any], defaults: dict[str, Any]
+    ) -> dict[str, Any]:
         """把已保存的配置合并到默认值上，``实时管理`` 单独做一层合并。"""
         merged = dict(defaults)
         merged.update(source)
@@ -60,10 +64,14 @@ class ConfigManager:
         return merged
 
     def _upgrade(self, merged: dict[str, Any]) -> None:
+        """配置键集合发生变化时调用 ToolDelta 的配置升级接口。"""
         if hasattr(self.cfg_module, "upgrade_plugin_config"):
-            self.cfg_module.upgrade_plugin_config(self.plugin_name, merged, self.version)
+            self.cfg_module.upgrade_plugin_config(
+                self.plugin_name, merged, self.version
+            )
 
     def load(self) -> dict[str, Any]:
+        """加载配置：优先走 ToolDelta 配置 API，失败时回退到旧版配置文件。"""
         defaults = self._defaults_copy()
         if self.cfg_module is None:
             return defaults
@@ -73,6 +81,7 @@ class ConfigManager:
             return self._load_from_legacy_file(defaults)
 
     def _load_from_config_api(self, defaults: dict[str, Any]) -> dict[str, Any]:
+        """通过 ToolDelta 配置 API 读取配置并与默认值合并。"""
         auto_to_std = getattr(self.cfg_module, "auto_to_std", None)
         standard = auto_to_std(defaults) if callable(auto_to_std) else defaults
         loaded, _ = self.cfg_module.get_plugin_config_and_version(

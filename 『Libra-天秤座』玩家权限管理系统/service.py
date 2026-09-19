@@ -1,3 +1,4 @@
+"""Libra 权限服务：权限命令下发、状态落盘、快照与管理员同步。"""
 from __future__ import annotations
 
 import copy
@@ -7,28 +8,47 @@ from datetime import datetime
 from typing import Any
 
 try:
-    from .core import (build_delete_command, build_list_command, build_set_command, normalize_xuid, parse_flags, plan_admin_diff)
+    from .core import (
+        build_delete_command,
+        build_list_command,
+        build_set_command,
+        normalize_xuid,
+        parse_flags,
+        plan_admin_diff,
+    )
     from .response_parser import extract_admin_xuids, normalize_response
 except ImportError:
-    from core import (build_delete_command, build_list_command, build_set_command, normalize_xuid, parse_flags, plan_admin_diff)
+    from core import (
+        build_delete_command,
+        build_list_command,
+        build_set_command,
+        normalize_xuid,
+        parse_flags,
+        plan_admin_diff,
+    )
     from response_parser import extract_admin_xuids, normalize_response
 
 
 class PermissionService:
+    """向其它组件提供权限查询、设置、撤销、快照与同步能力。"""
+
     #: 上一次权限写命令的时间戳，用于全局节流；类级声明避免 PYL-W0201。
     _last_mutation_time: float = 0.0
 
     def _realtime_cfg(self) -> dict[str, Any]:
+        """返回实时管理配置字典，配置缺失或类型不对时返回空字典。"""
         value = getattr(self, "cfg", {}).get("实时管理", {})
         return value if isinstance(value, dict) else {}
 
     def _mutation_interval(self) -> float:
+        """返回两次权限写操作之间的最小间隔秒数。"""
         try:
             return max(0.0, float(self._realtime_cfg().get("权限修改最小间隔(秒)", 0.5)))
         except (TypeError, ValueError):
             return 0.5
 
     def _retry_count(self, management: str) -> int:
+        """返回该管理模式的失败重试次数；一次性命令不重试。"""
         # Automatic and managed updates are retried; one-off operator commands
         # remain single-shot so the console receives an immediate result.
         if management not in {"auto", "manage"}:
@@ -39,6 +59,7 @@ class PermissionService:
             return 2
 
     def _retry_interval(self) -> float:
+        """返回失败重试之间的等待秒数。"""
         try:
             return max(0.0, float(self._realtime_cfg().get("失败重试间隔(秒)", 5)))
         except (TypeError, ValueError):
@@ -78,22 +99,26 @@ class PermissionService:
         return last_output or {"success": False, "error_code": "command_failed"}
 
     def _record_limit(self) -> int:
+        """返回操作记录保留条数，配置非法时回退到 1000。"""
         try:
             return max(0, int(self._realtime_cfg().get("处理记录保留条数", 1000)))
         except (TypeError, ValueError):
             return 1000
 
     def _default_flags(self) -> str:
+        """返回默认权限标志，配置缺失时回退到 ``11111100``。"""
         value = getattr(self, "cfg", {}).get("默认权限", "11111100")
         return str(value) if value is not None else "11111100"
 
     def _use_magic_command(self) -> bool:
+        """判断是否使用魔法指令模式，兼容布尔与字符串两种配置写法。"""
         value = self.cfg.get("是否使用魔法指令模式运行", True)
         if isinstance(value, str):
             return value.strip().lower() in {"true", "1", "yes", "是", "开启"}
         return bool(value)
 
     def _send(self, command: str) -> dict[str, Any]:
+        """下发一条权限命令并归一化响应，自动适配接入点的发送方法签名。"""
         timeout = int(self.cfg.get("命令超时秒数", 30))
         magic = self._use_magic_command()
         channel = "magic" if magic else "normal"
@@ -105,7 +130,10 @@ class PermissionService:
             parameters = inspect.signature(sender).parameters
         except (TypeError, ValueError):
             parameters = {}
-        if "timeout" in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        accepts_keyword = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()
+        )
+        if "timeout" in parameters or accepts_keyword:
             response = sender(command, timeout=timeout)
         elif len(parameters) >= 2:
             response = sender(command, timeout)
@@ -114,6 +142,7 @@ class PermissionService:
         return normalize_response(response, channel)
 
     def _run_list(self, show: bool = True) -> list[str]:
+        """查询管理员列表并写入状态；失败时保留上一次成功缓存。"""
         try:
             output = self._send(build_list_command())
         except Exception as exc:
@@ -201,6 +230,7 @@ class PermissionService:
         management: str,
         output: dict[str, Any],
     ) -> None:
+        """按管理模式写入期望权限、持续管理与操作记录。"""
         record = {"xuid": normalized, "flags": flags, "actor": actor, "reason": reason}
         with self._lock:
             if management != "auto":
@@ -214,7 +244,15 @@ class PermissionService:
             self.state["操作记录"] = self.state["操作记录"][-limit:] if limit else []
             self._save_state()
 
-    def set_permission(self, xuid: str, flags: str | None = None, actor: str = "api", reason: str = "", management: str = "once") -> dict[str, Any]:
+    def set_permission(
+        self,
+        xuid: str,
+        flags: str | None = None,
+        actor: str = "api",
+        reason: str = "",
+        management: str = "once",
+    ) -> dict[str, Any]:
+        """设置玩家权限标志；``management`` 决定是否纳入持续管理。"""
         normalized = normalize_xuid(xuid)
         parsed = parse_flags(self._default_flags() if flags is None else flags)
         if management == "once":
@@ -227,16 +265,46 @@ class PermissionService:
         try:
             output = self._send_mutation(command, management)
         except Exception as exc:
-            self._audit("set_failed", xuid=normalized, flags=parsed.raw, actor=actor, error=str(exc))
-            return {"success": False, "error": "command_failed", "message": str(exc), "xuid": normalized}
+            self._audit(
+                "set_failed",
+                xuid=normalized,
+                flags=parsed.raw,
+                actor=actor,
+                error=str(exc),
+            )
+            return {
+                "success": False,
+                "error": "command_failed",
+                "message": str(exc),
+                "xuid": normalized,
+            }
         finally:
             self._mutation_lock.release()
         if not output.get("success") or not output.get("confirmed"):
             error = output.get("error_code") or "command_failed"
-            message = "当前命令模式没有 permission 权限" if error == "permission_denied" else "权限设置命令执行失败"
-            self._audit("设置权限失败", xuid=normalized, flags=parsed.raw, actor=actor, error=error, response=output)
-            return {"success": False, "error": error, "message": message, "xuid": normalized, "response": output}
-        self._write_permission_state(normalized, parsed.raw, actor, reason, management, output)
+            message = (
+                "当前命令模式没有 permission 权限"
+                if error == "permission_denied"
+                else "权限设置命令执行失败"
+            )
+            self._audit(
+                "设置权限失败",
+                xuid=normalized,
+                flags=parsed.raw,
+                actor=actor,
+                error=error,
+                response=output,
+            )
+            return {
+                "success": False,
+                "error": error,
+                "message": message,
+                "xuid": normalized,
+                "response": output,
+            }
+        self._write_permission_state(
+            normalized, parsed.raw, actor, reason, management, output
+        )
         self._audit(
             "设置权限",
             命令=command,
@@ -246,7 +314,13 @@ class PermissionService:
             actor=actor,
             reason=reason,
         )
-        return {"success": True, "action": "set", "xuid": normalized, "flags": parsed.raw, "response": output}
+        return {
+            "success": True,
+            "action": "set",
+            "xuid": normalized,
+            "flags": parsed.raw,
+            "response": output,
+        }
 
     def revoke_permission(
         self,
@@ -255,6 +329,7 @@ class PermissionService:
         reason: str = "",
         management: str = "once",
     ) -> dict[str, Any]:
+        """撤销玩家权限；成功时从期望权限中移除该 XUID。"""
         normalized = normalize_xuid(xuid)
         command = build_delete_command(normalized)
         if not self._mutation_lock.acquire(blocking=False):
@@ -263,30 +338,74 @@ class PermissionService:
             output = self._send_mutation(command, management)
         except Exception as exc:
             self._audit("revoke_failed", xuid=normalized, actor=actor, error=str(exc))
-            return {"success": False, "error": "command_failed", "message": str(exc), "xuid": normalized}
+            return {
+                "success": False,
+                "error": "command_failed",
+                "message": str(exc),
+                "xuid": normalized,
+            }
         finally:
             self._mutation_lock.release()
         if not output.get("success") or not output.get("confirmed"):
             error = output.get("error_code") or "command_failed"
-            message = "当前命令模式没有 permission 权限" if error == "permission_denied" else "权限撤销命令执行失败"
-            self._audit("撤销权限失败", xuid=normalized, actor=actor, error=error, response=output)
-            return {"success": False, "error": error, "message": message, "xuid": normalized, "response": output}
+            message = (
+                "当前命令模式没有 permission 权限"
+                if error == "permission_denied"
+                else "权限撤销命令执行失败"
+            )
+            self._audit(
+                "撤销权限失败",
+                xuid=normalized,
+                actor=actor,
+                error=error,
+                response=output,
+            )
+            return {
+                "success": False,
+                "error": error,
+                "message": message,
+                "xuid": normalized,
+                "response": output,
+            }
         with self._lock:
             self.state.setdefault("期望权限", {}).pop(normalized, None)
             self.state.setdefault("操作记录", []).append(
-                {"操作": "撤销权限", "xuid": normalized, "actor": actor, "reason": reason, "响应": output}
+                {
+                    "操作": "撤销权限",
+                    "xuid": normalized,
+                    "actor": actor,
+                    "reason": reason,
+                    "响应": output,
+                }
             )
             limit = self._record_limit()
             self.state["操作记录"] = self.state["操作记录"][-limit:] if limit else []
             self._save_state()
-        self._audit("撤销权限", command=command, response=output, xuid=normalized, actor=actor, reason=reason)
-        return {"success": True, "action": "revoke", "xuid": normalized, "response": output}
+        self._audit(
+            "撤销权限",
+            command=command,
+            response=output,
+            xuid=normalized,
+            actor=actor,
+            reason=reason,
+        )
+        return {
+            "success": True,
+            "action": "revoke",
+            "xuid": normalized,
+            "response": output,
+        }
 
     # 保留程序化 API，控制台入口已移除。
     def audit_admins(self) -> dict[str, Any]:
+        """列出已发现的管理员，并标出未在配置中声明的部分。"""
         observed = set(self._run_list(show=False))
         if self.state.get("最近列表状态") != "成功":
-            return {"success": False, "error": self.state.get("最近列表错误") or "list_failed", "admins": sorted(observed)}
+            return {
+                "success": False,
+                "error": self.state.get("最近列表错误") or "list_failed",
+                "admins": sorted(observed),
+            }
         configured = {
             str(x).strip().lower()
             for x in self.cfg.get("实时管理", {}).get("管理员XUID", [])
@@ -306,6 +425,7 @@ class PermissionService:
 
     # 保留程序化 API，控制台入口已移除。
     def preview_sync(self, refresh: bool = True) -> dict[str, Any]:
+        """预览权限同步计划，不实际下发任何命令。"""
         observed = set(self.list_permissions(refresh=refresh))
         if refresh and self.state.get("最近列表状态") != "成功":
             return {
@@ -335,11 +455,22 @@ class PermissionService:
         }
 
     # 保留程序化 API，控制台入口已移除。
-    def sync_all(self, remove_unknown: bool = False, actor: str = "api") -> dict[str, Any]:
+    def sync_all(
+        self, remove_unknown: bool = False, actor: str = "api"
+    ) -> dict[str, Any]:
+        """按期望权限同步全部管理员，可选清理未知管理员。"""
         plan = self.preview_sync(refresh=True)
         if not plan.get("success", True):
-            return {"success": False, "error": plan.get("error", "list_failed"), "plan": plan, "results": []}
-        results = [self.set_permission(item["xuid"], item["flags"], actor=actor) for item in plan["to_set"]]
+            return {
+                "success": False,
+                "error": plan.get("error", "list_failed"),
+                "plan": plan,
+                "results": [],
+            }
+        results = [
+            self.set_permission(item["xuid"], item["flags"], actor=actor)
+            for item in plan["to_set"]
+        ]
         if remove_unknown:
             configured = {
                 str(x).strip().lower()
@@ -352,12 +483,21 @@ class PermissionService:
                 if xuid not in configured
             )
         self._audit("sync", actor=actor, remove_unknown=remove_unknown, results=results)
-        return {"success": all(item.get("success", False) for item in results), "plan": plan, "results": results}
+        return {
+            "success": all(item.get("success", False) for item in results),
+            "plan": plan,
+            "results": results,
+        }
 
     def list_admin_details(self, refresh: bool = True) -> dict[str, Any]:
+        """返回带玩家名与权限类型的管理员明细列表。"""
         admins = self.list_permissions(refresh=refresh)
         success = self.state.get("最近列表状态") == "成功"
-        names = self.resolve_player_names(admins) if hasattr(self, "resolve_player_names") else {}
+        names = (
+            self.resolve_player_names(admins)
+            if hasattr(self, "resolve_player_names")
+            else {}
+        )
         return {
             "success": success,
             "error": None if success else self.state.get("最近列表错误"),
@@ -369,7 +509,10 @@ class PermissionService:
         }
 
     def create_snapshot(self, name: str | None = None) -> dict[str, Any]:
-        snapshot_name = str(name or "").strip() or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        """把当前期望权限、持续管理与已发现管理员存为一份快照。"""
+        snapshot_name = str(name or "").strip() or datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S"
+        )
         snapshot = {
             "名称": snapshot_name,
             "时间": int(time.time()),
@@ -383,9 +526,17 @@ class PermissionService:
             self._save_state()
         self._audit("snapshot", snapshot=snapshot)
         # 保留旧 API 返回键，文件中的快照仍全部使用中文键。
-        return {"name": snapshot_name, "名称": snapshot_name, "time": snapshot["时间"], "desired": snapshot["期望权限"], "observed_admins": snapshot["已发现管理员"]}
+        return {
+            "name": snapshot_name,
+            "名称": snapshot_name,
+            "time": snapshot["时间"],
+            "desired": snapshot["期望权限"],
+            "observed_admins": snapshot["已发现管理员"],
+        }
 
-    def list_snapshots(self, page: int = 1, page_size: int = 20, query: str = "") -> dict[str, Any]:
+    def list_snapshots(
+        self, page: int = 1, page_size: int = 20, query: str = ""
+    ) -> dict[str, Any]:
         """返回分页快照；索引指向状态中的真实位置，便于删除/还原。"""
         snapshots = self.state.get("权限快照", [])
         if not isinstance(snapshots, list):
@@ -399,7 +550,13 @@ class PermissionService:
             if normalized_query and normalized_query not in name.casefold():
                 continue
             records.append({"索引": index, "快照": copy.deepcopy(snapshot)})
-        records.sort(key=lambda item: (item["快照"].get("时间", item["快照"].get("time", 0)), item["索引"]), reverse=True)
+        records.sort(
+            key=lambda item: (
+                item["快照"].get("时间", item["快照"].get("time", 0)),
+                item["索引"],
+            ),
+            reverse=True,
+        )
         try:
             page = max(1, int(page))
             page_size = max(1, int(page_size))
@@ -407,9 +564,17 @@ class PermissionService:
             page, page_size = 1, 20
         start = (page - 1) * page_size
         selected = records[start:start + page_size]
-        return {"页码": page, "每页数量": page_size, "总数": len(records), "项目": selected, "items": selected, "snapshots": selected}
+        return {
+            "页码": page,
+            "每页数量": page_size,
+            "总数": len(records),
+            "项目": selected,
+            "items": selected,
+            "snapshots": selected,
+        }
 
     def preview_snapshot(self, index: int) -> dict[str, Any]:
+        """按索引返回快照的深拷贝，索引无效时返回错误。"""
         snapshots = self.state.get("权限快照", [])
         try:
             snapshot = snapshots[index]
@@ -420,6 +585,7 @@ class PermissionService:
         return {"success": True, "index": index, "snapshot": copy.deepcopy(snapshot)}
 
     def delete_snapshot(self, index: int, actor: str = "api") -> dict[str, Any]:
+        """删除指定索引的快照并写入审计日志。"""
         snapshots = self.state.get("权限快照", [])
         if not isinstance(snapshots, list) or not 0 <= index < len(snapshots):
             return {"success": False, "error": "snapshot_not_found"}
@@ -443,7 +609,9 @@ class PermissionService:
             desired = snapshot.get("期望权限", snapshot.get("desired"))
             if not isinstance(desired, dict):
                 raise ValueError
-            normalized = {normalize_xuid(x): parse_flags(f).raw for x, f in desired.items()}
+            normalized = {
+                normalize_xuid(x): parse_flags(f).raw for x, f in desired.items()
+            }
             managed = snapshot.get("持续管理玩家", {})
             if not isinstance(managed, dict):
                 managed = {}
@@ -463,6 +631,7 @@ class PermissionService:
         return {"success": True, "desired": normalized, "index": index}
 
     def get_health(self) -> dict[str, Any]:
+        """返回插件健康状态与关键计数，供外部探活使用。"""
         return {
             "ready": hasattr(self, "game_ctrl"),
             "cached_admins": len(self.state.get("已发现管理员", [])),
@@ -481,4 +650,3 @@ class PermissionService:
         if refresh:
             return self._run_list(show=False)
         return list(self.state.get("已发现管理员", []))
-
