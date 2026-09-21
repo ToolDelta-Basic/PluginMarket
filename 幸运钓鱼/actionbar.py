@@ -12,7 +12,14 @@ REFRESH = 0.6
 
 
 class ActionBar:
-    def __init__(self, send: Callable[[str], None], stop: threading.Event, alive: Callable[[], bool]):
+    """玩家动作栏上的提示, 按固定间隔重发来维持住不淡出。"""
+
+    def __init__(
+        self,
+        send: Callable[[str], None],
+        stop: threading.Event,
+        alive: Callable[[], bool],
+    ):
         self.send = send
         self.stop = stop
         self.alive = alive
@@ -45,5 +52,6 @@ class ActionBar:
             self._until.pop(player.xuid, None)
 
     def is_alerting(self, player: Player) -> bool:
+        """该玩家此刻动作栏上是不是还挂着提示。"""
         until = self._until.get(player.xuid)
         return until is not None and until > time.time()

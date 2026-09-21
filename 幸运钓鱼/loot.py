@@ -10,7 +10,7 @@ from .config import Settings
 
 
 def amount(raw) -> int:
-    "整数是定值, [最少, 最多] 在区间里随机"
+    """算出实际发放数量: 整数是定值, [最少, 最多] 在区间里随机。"""
     if isinstance(raw, (list, tuple)) and len(raw) >= 2:
         try:
             lo, hi = int(raw[0]), int(raw[1])
@@ -24,7 +24,15 @@ def amount(raw) -> int:
 
 
 class LootDealer:
-    def __init__(self, plugin, settings: Settings, actionbar: ActionBar, stop: threading.Event):
+    """按权重抽一件战利品, 然后负责把它发到玩家手上。"""
+
+    def __init__(
+        self,
+        plugin,
+        settings: Settings,
+        actionbar: ActionBar,
+        stop: threading.Event,
+    ):
         self.plugin = plugin
         self.settings = settings
         self.actionbar = actionbar
@@ -33,6 +41,7 @@ class LootDealer:
         self._loot_cmd_ok: bool | None = None
 
     def roll(self) -> dict | None:
+        """按权重抽一件战利品; 奖池为空返回 None。"""
         table = self.settings.loot_table()
         if not table:
             return None
@@ -54,6 +63,7 @@ class LootDealer:
         self.plugin.send(cmd)
 
     def grant(self, player: Player, entry: dict) -> None:
+        """把抽中的战利品发给玩家, 并按稀有度做提示、音效和播报。"""
         name = str(entry.get("名称", "??"))
         count = amount(entry.get("数量", 1))
         rarity = str(entry.get("稀有度", "普通"))
@@ -113,6 +123,7 @@ class LootDealer:
         return False
 
     def _run(self, cmd: str) -> bool:
+        """发一条指令并判断它是不是真的执行成功了。"""
         # SuccessCount 不受 sendcommandfeedback 影响, 关了回显也读得到
         resp = self.plugin.send_with_resp(cmd)
         return bool(resp and resp.SuccessCount)

@@ -73,7 +73,8 @@ CFG_DEFAULT = {
         {"名称": "§d神秘宝藏", "战利品表": "loot_tables/gameplay/fishing/treasure.json",
          "备用物品": "enchanted_book", "数量": 1, "权重": 5, "稀有度": "史诗"},
         {"名称": "§d海洋之心", "物品": "heart_of_the_sea", "数量": 1, "权重": 3, "稀有度": "史诗"},
-        {"名称": "§6§l附魔金苹果", "物品": "enchanted_golden_apple", "数量": 1, "权重": 2, "稀有度": "传说"},
+        {"名称": "§6§l附魔金苹果", "物品": "enchanted_golden_apple", "数量": 1,
+         "权重": 2, "稀有度": "传说"},
         {"名称": "§6§l三叉戟", "物品": "trident", "数量": 1, "权重": 1, "稀有度": "传说"},
         {"名称": "§6§l下界之星", "物品": "nether_star", "数量": 1, "权重": 1, "稀有度": "传说"},
     ],
@@ -94,16 +95,17 @@ CFG_DEFAULT = {
 
 
 class Settings:
-    "配置的只读视图, 外加几个派生值"
+    """配置的只读视图, 外加几个派生值。"""
 
     def __init__(self, data: dict):
         self.data = data
 
     def __getitem__(self, key: str):
+        """按配置项名取原始值。"""
         return self.data[key]
 
     def region(self) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
-        "两个角点整理成 (各轴最小值, 各轴最大值), 已算进容差"
+        """两个角点整理成 (各轴最小值, 各轴最大值), 已算进容差。"""
         zone = self.data["区域"]
         a = [float(v) for v in zone["角1"]]
         b = [float(v) for v in zone["角2"]]
@@ -113,16 +115,20 @@ class Settings:
         return lo, hi  # type: ignore[return-value]
 
     def in_region(self, pos: tuple[float, float, float]) -> bool:
+        """坐标在不在钓鱼判定区里。"""
         lo, hi = self.region()
         return all(lo[i] <= pos[i] <= hi[i] for i in range(3))
 
     def loot_table(self) -> list[dict]:
+        """战利品表, 权重为 0 的已经剔掉。"""
         return [e for e in self.data["战利品"] if float(e.get("权重", 0)) > 0]
 
     def style(self, rarity: str) -> dict:
+        """某个稀有度的颜色、音效、是否播报; 没配过返回空字典。"""
         return self.data["稀有度表"].get(rarity) or {}
 
     def dock_point(self) -> tuple[float, float, float]:
+        """机器人的停靠坐标; 配置里留空则自动取钓鱼区上方。"""
         custom = self.data["机器人停靠坐标"]
         if len(custom) >= 3:
             return (float(custom[0]), float(custom[1]), float(custom[2]))

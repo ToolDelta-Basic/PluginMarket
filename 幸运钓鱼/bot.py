@@ -14,18 +14,25 @@ TOLERANCE = 8.0
 
 
 def quote(name: str) -> str:
+    """把玩家名包成指令里的带引号字符串, 转义掉反斜杠和引号。"""
     return '"' + name.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 class Bot:
+    """让机器人守在钓鱼区, 顺带提供按选择器查坐标的能力。"""
+
     def __init__(self, plugin, settings: Settings):
         self.plugin = plugin
         self.settings = settings
 
     def query(self, selector: str, eye_offset: float = 0.0) -> dict[int, tuple]:
-        "返回 {uniqueId: (x, y, z)}"
+        """查询选择器选中的实体坐标, 返回 {uniqueId: (x, y, z)}。"""
         resp = self.plugin.send_with_resp(f"querytarget {selector}")
-        if resp is None or not resp.OutputMessages or not resp.OutputMessages[0].Success:
+        if (
+            resp is None
+            or not resp.OutputMessages
+            or not resp.OutputMessages[0].Success
+        ):
             return {}
         try:
             entries = json.loads(resp.OutputMessages[0].Parameters[0])
