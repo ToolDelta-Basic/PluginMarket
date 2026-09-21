@@ -1,6 +1,4 @@
-"""
-鱼钩数据包的字段解析, 以及在飞的鱼钩的存放处。
-"""
+"""鱼钩数据包的字段解析, 以及在飞的鱼钩的存放处。"""
 
 import threading
 from dataclasses import dataclass
