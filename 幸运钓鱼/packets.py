@@ -1,7 +1,8 @@
 """
-鱼钩数据包的字段解析。
+鱼钩数据包的字段解析, 以及在飞的鱼钩的存放处。
 """
 
+import threading
 from dataclasses import dataclass
 
 HOOK_TYPES = ("minecraft:fishing_hook", "fishing_hook")
@@ -84,15 +85,56 @@ def is_hook(packet: dict) -> bool:
 
 
 @dataclass
-class Hook:
+class Hook:  # skipcq: PYL-R0902
     runtime_id: int
     unique_id: int | None
     owner_id: int | None
     pos: tuple[float, float, float]
     cast_at: float
-    # 收到过移动包没有; 没有的话 pos 还是出手位置, 不是落水点
-    moved: bool = False
     # 靠近事件一竿会连发很多次, 提示过就不再提示
     warned: bool = False
     bit_at: float = 0.0
     last_alert: float = 0.0
+
+
+class HookStore:
+    """所有在飞的鱼钩。
+
+    收包线程和维护线程都会动这几张表, 所以锁和表放在一起, 外面只调方法。
+    """
+
+    def __init__(self) -> None:
+        self._hooks: dict[int, Hook] = {}
+        # unique ID -> 运行时 ID; RemoveActor 只给 unique ID, 靠这张表倒查
+        self._by_unique: dict[int, int] = {}
+        self._lock = threading.Lock()
+
+    def add(self, hook: Hook) -> None:
+        with self._lock:
+            self._hooks[hook.runtime_id] = hook
+            if hook.unique_id is not None:
+                self._by_unique[hook.unique_id] = hook.runtime_id
+
+    def get(self, rid: int) -> Hook | None:
+        with self._lock:
+            return self._hooks.get(rid)
+
+    def take(self, uid: int) -> Hook | None:
+        "按 unique ID 取走一个鱼钩; 少数接入点这里给的是运行时 ID, 兜一下底"
+        with self._lock:
+            rid = self._by_unique.pop(uid, None)
+            return self._hooks.pop(rid if rid is not None else uid, None)
+
+    def sweep(self, now: float, window: float, ttl: float) -> list[Hook]:
+        "丢掉过期记录, 返回咬钩之后等不到收竿包、该按跑掉结算的那些"
+        expired = []
+        with self._lock:
+            for rid, hook in list(self._hooks.items()):
+                if hook.bit_at and now - hook.bit_at > window:
+                    hook.bit_at = 0.0  # 免得随后的 RemoveActor 再结算一次
+                    expired.append(hook)
+                if now - hook.cast_at > ttl:
+                    self._hooks.pop(rid, None)
+                    if hook.unique_id is not None:
+                        self._by_unique.pop(hook.unique_id, None)
+        return expired

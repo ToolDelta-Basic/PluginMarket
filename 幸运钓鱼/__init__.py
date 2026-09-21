@@ -29,6 +29,7 @@ from .loot import LootDealer
 from .packets import (
     HOOK_EVENTS,
     Hook,
+    HookStore,
     get_any,
     is_hook,
     owner_of,
@@ -58,15 +59,12 @@ class FishingSystem(Plugin):
     def __init__(self, frame: ToolDelta):
         super().__init__(frame)
         self._stop = threading.Event()
-        self.cfg, _ = self.get_config_and_version(CFG_STD, CFG_DEFAULT)
-        self.settings = Settings(self.cfg)
-        self.bar = ActionBar(self.send, self._stop, self.is_current)
-        self.dealer = LootDealer(self, self.settings, self.bar, self._stop)
+        cfg, _ = self.get_config_and_version(CFG_STD, CFG_DEFAULT)
+        self.settings = Settings(cfg)
+        self.actionbar = ActionBar(self.send, self._stop, self.is_current)
+        self.dealer = LootDealer(self, self.settings, self.actionbar, self._stop)
         self.bot = Bot(self, self.settings)
-        self._hooks: dict[int, Hook] = {}
-        # unique ID -> 运行时 ID; RemoveActor 只给 unique ID, 靠这张表倒查
-        self._by_unique: dict[int, int] = {}
-        self._lock = threading.Lock()
+        self.hooks = HookStore()
         self._token = object()
         setattr(frame, LIVE_TOKEN_ATTR, self._token)
 
@@ -126,7 +124,7 @@ class FishingSystem(Plugin):
                     last_dock = now
                     self.bot.keep_docked()
                 self._sweep(now)
-            except Exception as err:
+            except Exception as err:  # skipcq: PYL-W0703
                 self.print_err(f"维护循环出错: {err}")
             if self._stop.wait(MAINTAIN):
                 return
@@ -134,17 +132,7 @@ class FishingSystem(Plugin):
     def _sweep(self, now: float) -> None:
         "咬钩之后等不到 RemoveActor 就判为跑了, 不然收竿包一丢玩家就停在上钩了上"
         window = float(self.settings["收竿窗口(秒)"])
-        expired = []
-        with self._lock:
-            for rid, hook in list(self._hooks.items()):
-                if hook.bit_at and now - hook.bit_at > window:
-                    hook.bit_at = 0.0  # 免得随后的 RemoveActor 再一次
-                    expired.append(hook)
-                if now - hook.cast_at > HOOK_TTL:
-                    self._hooks.pop(rid, None)
-                    if hook.unique_id is not None:
-                        self._by_unique.pop(hook.unique_id, None)
-        for hook in expired:
+        for hook in self.hooks.sweep(now, window, HOOK_TTL):
             self._settle_async(hook, window + 1)
 
     # ---------------- 数据包 ----------------
@@ -164,10 +152,7 @@ class FishingSystem(Plugin):
             pos=pos,
             cast_at=time.time(),
         )
-        with self._lock:
-            self._hooks[rid] = hook
-            if uid is not None:
-                self._by_unique[uid] = rid
+        self.hooks.add(hook)
         return False
 
     def on_move_actor(self, packet: dict) -> bool:
@@ -179,55 +164,50 @@ class FishingSystem(Plugin):
         rid = runtime_id(packet)
         if rid is None:
             return False
-        with self._lock:
-            hook = self._hooks.get(rid)
+        hook = self.hooks.get(rid)
         if hook is None:
             return False
         pos = parse_pos(get_any(packet, "Position", "position", "pos"))
         if pos is not None:
             hook.pos = pos
-            hook.moved = True
         return False
 
     def on_actor_event(self, packet: dict) -> bool:
+        self._track_event(packet)
+        return False
+
+    def _track_event(self, packet: dict) -> None:
+        "鱼钩的靠近/咬钩事件"
         rid = runtime_id(packet)
         if rid is None:
-            return False
-        with self._lock:
-            hook = self._hooks.get(rid)
+            return
+        hook = self.hooks.get(rid)
         if hook is None:
-            return False
+            return
         evt = get_any(packet, "EventType", "eventType", "event_id", "Event", "event")
         try:
             evt = int(evt)  # type: ignore[arg-type]
         except (TypeError, ValueError):
-            return False
+            return
         if evt not in HOOK_EVENTS:
-            return False
+            return
 
         now = time.time()
         if evt == int(self.settings["即将上钩事件号"]):
             if not hook.warned:
                 hook.warned = True
                 self._notify(hook, self.settings["即将上钩提示"])
-            return False
-        if evt == int(self.settings["咬钩事件号"]):
-            if now - hook.last_alert < 1.0:
-                return False
+        elif evt == int(self.settings["咬钩事件号"]) and now - hook.last_alert >= 1.0:
             hook.last_alert = now
             hook.bit_at = now
             self._notify(hook, self.settings["上钩提示"])
-        return False
 
     def on_remove_actor(self, packet: dict) -> bool:
         "鱼钩消失 = 收竿 (或自然销毁), 这就是钓没钓上的判定点"
         uid = unique_id(packet)
         if uid is None:
             return False
-        with self._lock:
-            rid = self._by_unique.pop(uid, None)
-            # 少数接入点这里给的是运行时 ID, 兜一下底
-            hook = self._hooks.pop(rid if rid is not None else uid, None)
+        hook = self.hooks.take(uid)
         if hook is None or not hook.bit_at:
             return False
         # 结算要发指令、还要把提示挂两秒, 在收包线程上做会堵住整条链路
@@ -247,8 +227,8 @@ class FishingSystem(Plugin):
             if player is None:
                 self.print_war(f"鱼钩 #{hook.runtime_id} 认不出主人, 提示无法发送")
                 return
-            self.bar.show(player, text, float(self.settings["提示持续(秒)"]))
-        except Exception as err:
+            self.actionbar.show(player, text, float(self.settings["提示持续(秒)"]))
+        except Exception as err:  # skipcq: PYL-W0703
             self.print_err(f"发提示出错: {err}")
 
     def _owner(self, hook: Hook) -> Player | None:
@@ -273,19 +253,19 @@ class FishingSystem(Plugin):
         duration = float(self.settings["提示持续(秒)"])
         if elapsed > float(self.settings["收竿窗口(秒)"]):
             if tip := self.settings["跑掉提示"]:
-                self.bar.show(player, tip, duration)
+                self.actionbar.show(player, tip, duration)
             return
         # 先清原版再发奖励: 那条鱼是收竿瞬间生成的, 晚了就飞到玩家身上了
         if self.settings["清除原版渔获"]:
             self.dealer.clear_vanilla(hook.pos)
-        if entry := self.dealer.roll():
-            self.dealer.grant(player, entry)
+        if prize := self.dealer.roll():
+            self.dealer.grant(player, prize)
 
     # ---------------- 对外 API ----------------
 
     def is_alerting(self, player: Player) -> bool:
         "给别的也往动作栏写字的插件用, 别把只有一两秒的上钩提示冲掉"
-        return self.bar.is_alerting(player)
+        return self.actionbar.is_alerting(player)
 
     def fishing_region(self) -> tuple[tuple, tuple]:
         return self.settings.region()

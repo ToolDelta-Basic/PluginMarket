@@ -24,10 +24,10 @@ def amount(raw) -> int:
 
 
 class LootDealer:
-    def __init__(self, plugin, settings: Settings, bar: ActionBar, stop: threading.Event):
+    def __init__(self, plugin, settings: Settings, actionbar: ActionBar, stop: threading.Event):
         self.plugin = plugin
         self.settings = settings
-        self.bar = bar
+        self.actionbar = actionbar
         self.stop = stop
         # 本服支不支持 /loot; None = 还没试过
         self._loot_cmd_ok: bool | None = None
@@ -71,7 +71,7 @@ class LootDealer:
         if tip := self.settings["钓获提示"]:
             text = tip.format(**fields)
             # 动作栏抢眼但会淡出, 聊天栏留痕可以往上翻, 两处都发
-            self.bar.show(player, text, float(self.settings["提示持续(秒)"]))
+            self.actionbar.show(player, text, float(self.settings["提示持续(秒)"]))
             player.show(text)
         if sound := style.get("音效"):
             self.plugin.send(f"playsound {sound} {player.safe_name}")
