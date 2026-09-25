@@ -1,0 +1,9 @@
+{
+    "author": "小六神",
+    "version": "0.0.1",
+    "description": "前置插件：使用 WebSocket 指令循环查询全部在线玩家背包，提供 QueriedInventory 对象、原始字典、缓存查询、即时查询、强制刷新及内部广播 API",
+    "plugin-type": "classic",
+    "pre-plugins": {},
+    "limit_launcher": null,
+    "plugin-id": "循环获取玩家背包"
+}
