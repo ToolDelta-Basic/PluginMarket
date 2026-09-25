@@ -14,8 +14,12 @@ from tooldelta import utils
 from tooldelta.internal.types.inventory_querier import QueriedInventory
 
 
-class MagicCommandUnavailable(RuntimeError):
-    """Compatibility exception for an unavailable command access point."""
+class WebSocketCommandUnavailable(RuntimeError):
+    """Raised when the launcher does not expose the WebSocket command channel.
+
+    This is about ``sendwscmd`` (the WebSocket channel used by
+    ``codebuilder_actorinfo``), not about the AI/魔法指令 channel.
+    """
 
 
 class InventoryQueryError(RuntimeError):
@@ -184,7 +188,7 @@ class InventoryService:
         """Send one inventory command over WebSocket and decode its response."""
         sender = getattr(self.game_ctrl, "sendwscmd", None)
         if not callable(sender):
-            raise MagicCommandUnavailable("当前接入点不支持 sendwscmd")
+            raise WebSocketCommandUnavailable("当前接入点不支持 sendwscmd")
         try:
             response = sender(
                 f"codebuilder_actorinfo inventory {_safe_selector(player)}",
@@ -192,7 +196,7 @@ class InventoryService:
                 timeout,
             )
         except (AttributeError, NotImplementedError) as exc:
-            raise MagicCommandUnavailable(
+            raise WebSocketCommandUnavailable(
                 "当前接入点不支持 sendwscmd"
             ) from exc
         return _decode_inventory(response)
@@ -202,7 +206,7 @@ class InventoryService:
         try:
             name = _player_name(player)
             return name, self._query_player(player, timeout), None
-        except MagicCommandUnavailable:
+        except WebSocketCommandUnavailable:
             raise
         except Exception as exc:  # one player must not abort the whole scan
             # A malformed player object has no stable key that can be exposed

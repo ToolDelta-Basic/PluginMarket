@@ -17,7 +17,7 @@ from tooldelta import (
 from .config import DEFAULT_CONFIG, STANDARD_CONFIG
 from .core import (
     InventoryService,
-    MagicCommandUnavailable,
+    WebSocketCommandUnavailable,
     validate_cycle_seconds,
 )
 
@@ -130,7 +130,7 @@ class GlobalGetPlayerInventory(Plugin):
             return self._service.scan_and_publish(
                 timeout=float(self.cfg["单次查询超时时间(秒)"])
             )
-        except MagicCommandUnavailable:
+        except WebSocketCommandUnavailable:
             # Keep direct API callers consistent with the background loop:
             # unsupported launchers pause polling and emit one warning.
             self._paused = True
@@ -172,7 +172,7 @@ class GlobalGetPlayerInventory(Plugin):
         while not self._stop_event.is_set():
             try:
                 self.force_update()
-            except MagicCommandUnavailable:
+            except WebSocketCommandUnavailable:
                 self._paused = True
                 self._warn_websocket_unavailable()
                 return
