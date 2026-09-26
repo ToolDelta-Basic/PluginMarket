@@ -1,0 +1,10 @@
+{
+    "plugin-id": "CPS显示",
+    "author": "丸山彩",
+    "version": "0.0.3",
+    "description": "在屏幕上显示CPS。",
+    "plugin-type": "classic",
+    "pre-plugins": {
+        "基本插件功能库": "0.0.12"
+    }
+}
