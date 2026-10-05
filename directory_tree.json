@@ -155,6 +155,21 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "红包": {
+        "interaction.py": 0,
+        "broadcasting.py": 0,
+        "runtime_reload.py": 0,
+        "messages.py": 0,
+        "datas.json": 0,
+        "models.py": 0,
+        "economy.py": 0,
+        "text_validation.py": 0,
+        "storage.py": 0,
+        "README.md": 0,
+        "service.py": 0,
+        "__init__.py": 0,
+        "configuration.py": 0
+    },
     "五子棋小游戏": {
         "datas.json": 0,
         "__init__.py": 0

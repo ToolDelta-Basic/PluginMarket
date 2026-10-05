@@ -153,6 +153,21 @@
         "datas.json",
         "__init__.py"
     ],
+    "红包": [
+        "interaction.py",
+        "broadcasting.py",
+        "runtime_reload.py",
+        "messages.py",
+        "datas.json",
+        "models.py",
+        "economy.py",
+        "text_validation.py",
+        "storage.py",
+        "README.md",
+        "service.py",
+        "__init__.py",
+        "configuration.py"
+    ],
     "五子棋小游戏": [
         "datas.json",
         "__init__.py"

@@ -105,6 +105,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "red_packet": {
+      "name": "红包",
+      "author": "Q3CC",
+      "version": "0.2.3",
+      "plugin-type": "classic"
+    },
     "gobang_game": {
       "name": "五子棋小游戏",
       "author": "SuperScript",
