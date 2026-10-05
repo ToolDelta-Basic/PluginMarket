@@ -1,0 +1,10 @@
+{
+  "plugin-id": "red_packet",
+  "author": "Q3CC",
+  "version": "0.2.3",
+  "description": "支持全服口令领取及手气最佳播报，未领完金额自动退回。",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "聊天栏菜单": "0.4.1"
+  }
+}
