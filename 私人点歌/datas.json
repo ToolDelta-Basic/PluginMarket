@@ -1,0 +1,14 @@
+{
+  "plugin-id": "solo-song-request",
+  "author": "小六神",
+  "version": "0.2.0",
+  "description": "免费点歌，只对点歌人播放。支持本地曲库分页与模糊搜索，以及通过 MIDI 中转服务（midishow）搜索并下载曲目；搜索结果会显示时长与下载量。",
+  "plugin-type": "classic",
+  "pre-plugins": {
+    "pip": "0.0.5",
+    "聊天栏菜单": "0.1.13",
+    "MC-MIDIPlayer": "0.0.1"
+  },
+  "limit_launcher": null,
+  "enabled": true
+}
