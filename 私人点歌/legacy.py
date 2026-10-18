@@ -69,7 +69,8 @@ class LegacyMixin:
             '/div/a[@class="d-block border-bottom pb-5 mb-5 position-relative"]'
         )
 
-    def legacy_parse_search_result(self, node) -> SongSearchResult:
+    @staticmethod
+    def legacy_parse_search_result(node) -> SongSearchResult:
         """[废弃] 把 midishow 搜索结果节点解析成 SongSearchResult。"""
         title = (
             node.xpath(".//h3")[0].xpath("string()").strip()

@@ -208,19 +208,23 @@ class PersonalSongRequest(NetworkMixin, LegacyMixin, Plugin):
     # 玩家提示与菜单骨架
     # ------------------------------------------------------------------
 
-    def show_info(self, player: Player, text: str):
+    @staticmethod
+    def show_info(player: Player, text: str):
         """向玩家输出普通提示。"""
         player.show(f"§f❀ {text}")
 
-    def show_success(self, player: Player, text: str):
+    @staticmethod
+    def show_success(player: Player, text: str):
         """向玩家输出成功提示。"""
         player.show(f"§a❀ {text}")
 
-    def show_warn(self, player: Player, text: str):
+    @staticmethod
+    def show_warn(player: Player, text: str):
         """向玩家输出警告提示。"""
         player.show(f"§6❀ {text}")
 
-    def show_error(self, player: Player, text: str):
+    @staticmethod
+    def show_error(player: Player, text: str):
         """向玩家输出错误提示。"""
         player.show(f"§c❀ {text}")
 
@@ -259,8 +263,9 @@ class PersonalSongRequest(NetworkMixin, LegacyMixin, Plugin):
             return None
         return response.strip()
 
+    @staticmethod
     def get_page_items(
-        self, items: list[Any], current_page: int, page_size: int
+        items: list[Any], current_page: int, page_size: int
     ) -> tuple[list[Any], int, int]:
         """按页大小切分列表，并把页码夹到合法范围内。"""
         total_pages = max(1, (len(items) + page_size - 1) // page_size)
