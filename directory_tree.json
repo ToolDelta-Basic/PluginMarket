@@ -398,6 +398,12 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "私人点歌": {
+        "network.py": 0,
+        "datas.json": 0,
+        "legacy.py": 0,
+        "__init__.py": 0
+    },
     "指令调试器": {
         "datas.json": 0,
         "__init__.py": 0

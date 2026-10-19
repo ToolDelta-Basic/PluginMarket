@@ -333,6 +333,12 @@
       "version": "0.0.3",
       "plugin-type": "classic"
     },
+    "solo-song-request": {
+      "name": "私人点歌",
+      "author": "小六神",
+      "version": "0.2.0",
+      "plugin-type": "classic"
+    },
     "cmd-debugger": {
       "name": "指令调试器",
       "author": "SuperScript",

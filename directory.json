@@ -393,6 +393,12 @@
         "datas.json",
         "__init__.py"
     ],
+    "私人点歌": [
+        "network.py",
+        "datas.json",
+        "legacy.py",
+        "__init__.py"
+    ],
     "指令调试器": [
         "datas.json",
         "__init__.py"
