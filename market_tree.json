@@ -747,6 +747,12 @@
       "version": "0.0.1",
       "plugin-type": "classic"
     },
+    "幸运钓鱼": {
+      "name": "幸运钓鱼",
+      "author": "jiru",
+      "version": "0.1.0",
+      "plugin-type": "classic"
+    },
     "简单程序启动器": {
       "name": "简单程序启动器",
       "author": "Eternal Crystal",

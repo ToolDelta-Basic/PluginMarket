@@ -1024,6 +1024,16 @@
         "datas.json": 0,
         "__init__.py": 0
     },
+    "幸运钓鱼": {
+        "loot.py": 0,
+        "bot.py": 0,
+        "datas.json": 0,
+        "config.py": 0,
+        "readme.txt": 0,
+        "packets.py": 0,
+        "__init__.py": 0,
+        "actionbar.py": 0
+    },
     "简单程序启动器": {
         "datas.json": 0,
         "__init__.py": 0
