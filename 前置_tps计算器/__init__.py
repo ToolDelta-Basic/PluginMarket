@@ -1,47 +1,81 @@
-import time
-from tooldelta import Plugin, constants, plugin_entry
+from threading import Event, Thread
+from time import monotonic
+
+from tooldelta import Plugin, plugin_entry
+from tooldelta.internal.types import FrameExit
 
 
 class TPSCalculator(Plugin):
     name = "前置-TPS计算器"
     author = "SuperScript"
-    version = (0, 0, 2)
+    version = (0, 0, 3)
+
+    sample_interval = 5
+    sample_max_age = 40
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.ListenPacket(constants.PacketIDS.IDSetTime, self.listener)
-        self.last_time = time.time()
-        self.last_server_time = 0
-        self._tps = 20
-        self._real_tps = 20
-        self._warned = False
+        self._last_sample: tuple[int, float] | None = None
+        self._measurement: tuple[float, float] | None = None
+        self._stop = Event()
+        self._sampler = Thread(
+            target=self._sample_loop, name="ToolDelta TPS calculator", daemon=True
+        )
+        self.ListenActive(self._start)
+        self.ListenFrameExit(self._close)
 
-    def listener(self, pkt):
-        self.calc_tps(pkt)
-        return False
+    def _start(self):
+        if self._sampler.ident is None:
+            self._sampler.start()
 
-    def calc_tps(self, pkt):
-        ntime = time.time()
-        server_time = pkt["Time"]
-        server_time_delta = server_time - self.last_server_time
-        real_time_delta = ntime - self.last_time
-        if server_time_delta == 0:
-            if not self._warned:
-                self._warned = True
-                self.print("§6警告: 无法正确取得租赁服 tps。你需要在设置中将§e昼夜更替§6打开。")
-            return
-        self._real_tps = server_time_delta / real_time_delta
-        self._tps = min(20, server_time_delta / self._real_tps)
-        self.last_time = ntime
-        self.last_server_time = server_time
+    def _close(self, _event: FrameExit):
+        self._stop.set()
 
+    def _sample_loop(self):
+        warned = False
+        while not self._stop.is_set():
+            try:
+                self._sample()
+            except Exception as exc:
+                if not warned and not self._stop.is_set():
+                    self.print_war(f"无法查询游戏时间，暂时无法更新 TPS：{exc}")
+                    warned = True
+            else:
+                warned = False
+            self._stop.wait(self.sample_interval)
 
-    def get_tps(self):
-        if time.time() - self.last_time > 40:
-            # server maybe dead
-            return 0
+    def _sample(self):
+        started = monotonic()
+        response = self.game_ctrl.sendwscmd_with_resp("/time query gametime", 2)
+        sampled_at = (started + monotonic()) / 2
+        for message in response.OutputMessages:
+            if (
+                message.Success
+                and message.Message.removeprefix("%") == "commands.time.query.gametime"
+                and message.Parameters
+            ):
+                tick = int(message.Parameters[0])
+                break
         else:
-            return self._tps
+            raise ValueError("/time query gametime 未返回游戏 tick 计数")
+
+        previous = self._last_sample
+        self._last_sample = (tick, sampled_at)
+        if previous is None:
+            return
+        previous_tick, previous_time = previous
+        elapsed = sampled_at - previous_time
+        if tick < previous_tick or elapsed > self.sample_max_age:
+            self._measurement = None
+        elif elapsed > 0:
+            self._measurement = (min(20.0, (tick - previous_tick) / elapsed), sampled_at)
+
+    def get_tps(self) -> float:
+        """返回最近两次有效采样算出的 TPS，采样不足或过期时返回 0。"""
+        measurement = self._measurement
+        if measurement is None or monotonic() - measurement[1] > self.sample_max_age:
+            return 0.0
+        return measurement[0]
 
 
 entry = plugin_entry(TPSCalculator, "tps计算器")
