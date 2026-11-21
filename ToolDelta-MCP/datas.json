@@ -1,0 +1,9 @@
+{
+  "author": "ToolDelta",
+  "version": "0.1.0",
+  "plugin-type": "classic",
+  "description": "供本机 MCP 客户端读取日志和事件、执行游戏指令与 Python 游戏自动化片段。",
+  "pre-plugins": {},
+  "plugin-id": "tooldelta-mcp-bridge",
+  "enabled": true
+}
